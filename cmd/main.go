@@ -1,16 +1,20 @@
 package main
 
 import (
+	"github.com/gimlet-io/gimlet-cli/commands/chart"
+	"github.com/gimlet-io/gimlet-cli/version"
 	"github.com/urfave/cli/v2"
 	"os"
-	"github.com/gimlet-io/gimlet-cli/version"
 )
 
 func main() {
 	app := &cli.App{
-		Name: "gimlet",
-		Version: version.String(),
+		Name:                 "gimlet",
+		Version:              version.String(),
 		EnableBashCompletion: true,
+		Commands: []*cli.Command{
+			&chart.Command,
+		},
 	}
 	app.Run(os.Args)
 }

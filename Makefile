@@ -5,6 +5,8 @@ DOCKER_RUN?=
 _with-docker:
 	$(eval DOCKER_RUN=docker run --rm -v $(shell pwd):/go/src/github.com/gimlet-io/gimlet-cli -w /go/src/github.com/gimlet-io/gimlet-cli golang:$(GO_VERSION))
 
+.PHONY: all test build
+
 all: test build
 
 format:
