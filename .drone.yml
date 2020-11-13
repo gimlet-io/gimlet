@@ -1,0 +1,14 @@
+clone:
+  git:
+    image: plugins/git:next
+
+pipeline:
+  test:
+    image: golang:1.14.7
+    commands:
+      - make test
+
+  build:
+    image: golang:1.14.7
+    commands:
+      - make build
