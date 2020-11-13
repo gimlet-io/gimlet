@@ -17,8 +17,23 @@ jobs:
       with:
         fetch-depth: 5
 
+    - id: get_version
+      uses: battila7/get-version-action@v2
+
+    - name: Version is sha or tag
+      id: sha_or_tag
+      run: |
+        if [[ $VERSION == refs/heads/* ]]
+        then
+            echo "::set-output name=version::$GITHUB_SHA"
+        fi
+      env:
+        VERSION: ${{ steps.get_version.outputs.version-without-v }}
+
     - name: Test
       run: make test
 
     - name: Build
       run: make build
+      env:
+        VERSION: ${{ steps.sha_or_tag.outputs.version }}

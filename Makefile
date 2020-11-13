@@ -14,4 +14,4 @@ test:
 	$(DOCKER_RUN) go test -race -timeout 30s github.com/gimlet-io/gimlet-cli/cmd $(go list ./... )
 
 build:
-	$(DOCKER_RUN) go build -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd
+	$(DOCKER_RUN) go build -ldflags '-extldflags "-static" -X github.com/gimlet-io/gimlet-cli/version.Version='${VERSION} -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd
