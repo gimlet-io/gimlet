@@ -15,10 +15,10 @@ format-backend:
 test-backend:
 	$(DOCKER_RUN) go test -race -timeout 30s github.com/gimlet-io/gimlet-cli/cmd $(go list ./... )
 
-generate-backend: build-frontend
+generate-backend:
 	$(DOCKER_RUN) go generate github.com/gimlet-io/gimlet-cli/cmd
 
-build-backend: generate-backend
+build-backend:
 	$(DOCKER_RUN) go build -ldflags '-extldflags "-static" -X github.com/gimlet-io/gimlet-cli/version.Version='${VERSION} -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd
 
 build-frontend:

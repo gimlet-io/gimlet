@@ -30,14 +30,14 @@ jobs:
       env:
         VERSION: ${{ steps.get_version.outputs.version-without-v }}
 
-    - name: Test Backend
-      run: make test-backend
-
     - name: Build Frontend
       run: make build-frontend
 
     - name: Generate go code from frontend
       run: make generate-backend
+
+    - name: Test Backend
+      run: make test-backend
 
     - name: Build Backend
       run: make build-backend
