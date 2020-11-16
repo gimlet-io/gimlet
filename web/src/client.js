@@ -2,9 +2,9 @@ export default class GimletCLIClient {
   constructor () {
     if (typeof window !== 'undefined') {
       let port = window.location.port
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        port = 28000
-      }
+      // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      //   port = 28000
+      // }
       this.url = window.location.protocol + '//' + window.location.hostname
       if (port && port !== '') {
         this.url = this.url + ':' + port
