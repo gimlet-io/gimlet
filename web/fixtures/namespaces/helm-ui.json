@@ -1,0 +1,45 @@
+[
+  {
+    "schemaID": "#/properties/namespaces",
+    "uiSchema": {
+    },
+    "metaData": {
+      "name": "Namespaces",
+      "icon": "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+    }
+  },
+  {
+    "schemaID": "#/properties/namespace",
+    "uiSchema": {
+      "overcommit": {
+        "cpu": {
+          "ui:widget": "range"
+        },
+        "memory": {
+          "ui:widget": "range"
+        }
+      }
+    },
+    "metaData": {
+      "name": "Namespace Default Quota",
+      "icon": "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+    }
+  },
+  {
+    "schemaID": "#/properties/pod",
+    "uiSchema": {
+      "overcommit": {
+        "cpu": {
+          "ui:widget": "range"
+        },
+        "memory": {
+          "ui:widget": "range"
+        }
+      }
+    },
+    "metaData": {
+      "name": "Pod Default Resources",
+      "icon": "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+    }
+  }
+]

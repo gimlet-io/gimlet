@@ -6,3 +6,8 @@ build
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+web/node_modules
+web/dist
+
+commands/chart/web.go

@@ -7,13 +7,19 @@ _with-docker:
 
 .PHONY: all test build
 
-all: test build
+all: test build-frontend build-backend
 
-format:
+format-backend:
 	@gofmt -w ${GOFILES}
 
-test:
+test-backend:
 	$(DOCKER_RUN) go test -race -timeout 30s github.com/gimlet-io/gimlet-cli/cmd $(go list ./... )
 
-build:
+generate-backend: build-frontend
+	$(DOCKER_RUN) go generate github.com/gimlet-io/gimlet-cli/cmd
+
+build-backend: generate-backend
 	$(DOCKER_RUN) go build -ldflags '-extldflags "-static" -X github.com/gimlet-io/gimlet-cli/version.Version='${VERSION} -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd
+
+build-frontend:
+	(cd web/; npm install; npm run build)

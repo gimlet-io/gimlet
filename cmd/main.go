@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+//go:generate go run ../scripts/includeWeb.go
+
 func main() {
 	app := &cli.App{
 		Name:                 "gimlet",

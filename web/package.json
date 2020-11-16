@@ -1,0 +1,45 @@
+{
+  "name": "gimlet-cli-ui",
+  "version": "1.0.0",
+  "description": "Gimlet CLI UI for editing Helm values.yaml",
+  "main": "dist/bundle.js",
+  "scripts": {
+    "test": "jest",
+    "start": "webpack serve --mode development --env development",
+    "build": "NODE_ENV=production webpack --mode production"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.1.0",
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "babel-jest": "^26.6.3",
+    "babel-loader": "^8.0.2",
+    "copy-webpack-plugin": "^6.3.1",
+    "css-loader": "^1.0.0",
+    "jest": "^26.6.3",
+    "postcss": "^8.1.4",
+    "postcss-loader": "^4.0.4",
+    "react-hot-loader": "^4.3.11",
+    "style-loader": "^0.23.0",
+    "webpack": "^5.4.0",
+    "webpack-cli": "^4.2.0",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "@graywolfai/react-heroicons": "^1.1.1",
+    "@tailwindcss/ui": "^0.7.2",
+    "and": "0.0.3",
+    "helm-react-ui": "github:gimlet-io/helm-react-ui#master",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "tailwindcss": "^1.9.6"
+  },
+  "jest": {
+    "moduleDirectories": [
+      "node_modules"
+    ]
+  }
+}
