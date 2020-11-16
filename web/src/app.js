@@ -26,7 +26,8 @@ class App extends Component {
   }
 
   setValues (values, nonDefaultValues) {
-    this.setState({ values: values, nonDefaultValues: nonDefaultValues })
+    this.setState({ values: values, nonDefaultValues: nonDefaultValues });
+    this.state.client.saveValues(nonDefaultValues);
   }
 
   render () {

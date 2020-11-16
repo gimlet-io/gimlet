@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -55,7 +56,7 @@ type Client struct {
 // reads from this goroutine.
 func (c *Client) readPump() {
 	defer func() {
-		fmt.Println("Browser closed")
+		fmt.Fprintf(os.Stderr, "Browser closed")
 		c.browserClosed <- 1
 		c.conn.Close()
 	}()
@@ -105,7 +106,7 @@ func ServeWs(browserClosed chan int, w http.ResponseWriter, r *http.Request) {
 	}
 	client := &Client{browserClosed: browserClosed, conn: conn, send: make(chan []byte, 256)}
 
-	fmt.Println("Browser opened")
+	fmt.Fprintf(os.Stderr, "Browser opened")
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.

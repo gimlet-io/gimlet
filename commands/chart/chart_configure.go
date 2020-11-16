@@ -1,13 +1,17 @@
 package chart
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/commands/chart/ws"
 	"github.com/gimlet-io/gimlet-cli/version"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -28,6 +32,8 @@ var chartConfigureCmd = cli.Command{
 	Action:    configure,
 }
 
+var values map[string]interface{}
+
 func configure(c *cli.Context) error {
 	port := randomPort()
 
@@ -45,8 +51,8 @@ func configure(c *cli.Context) error {
 	signal.Notify(ctrlC, os.Interrupt)
 
 	go srv.ListenAndServe()
-	fmt.Printf("%v Configure on http://127.0.0.1:%d\n", emoji.WomanTechnologist, port)
-	fmt.Printf("%v Close the browser when you are done\n", emoji.WomanTechnologist)
+	fmt.Fprintf(os.Stderr, "%v Configure on http://127.0.0.1:%d\n", emoji.WomanTechnologist, port)
+	fmt.Fprintf(os.Stderr, "%v Close the browser when you are done\n", emoji.WomanTechnologist)
 	openBrowser(fmt.Sprintf("http://127.0.0.1:%d", port))
 
 	select {
@@ -54,8 +60,17 @@ func configure(c *cli.Context) error {
 	case <-browserClosed:
 	}
 
-	fmt.Printf("%v Generating values..\n", emoji.FileFolder)
+	fmt.Fprintf(os.Stderr, "%v Generating values..\n\n", emoji.FileFolder)
 	srv.Shutdown(context.TODO())
+
+
+	yamlString := bytes.NewBufferString("")
+	e := yaml.NewEncoder(yamlString)
+	e.SetIndent(2)
+	e.Encode(values)
+
+	fmt.Println("---")
+	fmt.Println(yamlString.String())
 
 	return nil
 }
@@ -79,12 +94,25 @@ func setupRouter(workDir string, browserClosed chan int) *chi.Mux {
 		//r.Use(middleware.Logger)
 	}
 
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:28000", "http://127.0.0.1:28000"},
+		AllowedMethods:   []string{"GET", "POST"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
+
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
 	})
 
 	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws.ServeWs(browserClosed, w, r)
+	})
+
+	r.Post("/saveValues", func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&values)
+		w.WriteHeader(200)
+		w.Write([]byte("{}"))
 	})
 
 	filesDir := http.Dir(workDir)
