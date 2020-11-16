@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/enescakir/emoji"
+	"github.com/gimlet-io/gimlet-cli/commands/chart/ws"
+	"github.com/gimlet-io/gimlet-cli/version"
 	"github.com/go-chi/chi"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -33,10 +35,10 @@ func configure(c *cli.Context) error {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(workDir)
 	writeTempFiles(workDir)
 	defer removeTempFiles(workDir)
-	r := setupRouter(workDir)
+	browserClosed := make(chan int, 1)
+	r := setupRouter(workDir, browserClosed)
 	srv := http.Server{Addr: fmt.Sprintf(":%d", port), Handler: chi.ServerBaseContext(context.TODO(), r)}
 
 	ctrlC := make(chan os.Signal, 1)
@@ -44,11 +46,15 @@ func configure(c *cli.Context) error {
 
 	go srv.ListenAndServe()
 	fmt.Printf("%v Configure on http://127.0.0.1:%d\n", emoji.WomanTechnologist, port)
-	fmt.Printf("%v Close the browser when you are done\n\n", emoji.WomanTechnologist)
+	fmt.Printf("%v Close the browser when you are done\n", emoji.WomanTechnologist)
 	openBrowser(fmt.Sprintf("http://127.0.0.1:%d", port))
 
-	<-ctrlC
-	fmt.Printf("%v Generating values..\n\n", emoji.FileFolder)
+	select {
+	case <-ctrlC:
+	case <-browserClosed:
+	}
+
+	fmt.Printf("%v Generating values..\n", emoji.FileFolder)
 	srv.Shutdown(context.TODO())
 
 	return nil
@@ -67,12 +73,18 @@ func writeTempFiles(workDir string) {
 	}
 }
 
-func setupRouter(workDir string) *chi.Mux {
+func setupRouter(workDir string, browserClosed chan int) *chi.Mux {
 	r := chi.NewRouter()
-	//r.Use(middleware.Logger)
+	if version.String() == "idea" {
+		//r.Use(middleware.Logger)
+	}
 
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
+	})
+
+	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ws.ServeWs(browserClosed, w, r)
 	})
 
 	filesDir := http.Dir(workDir)
@@ -82,9 +94,13 @@ func setupRouter(workDir string) *chi.Mux {
 }
 
 func randomPort() int {
+	if version.String() == "idea" {
+		return 28000
+	}
+
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	return r1.Intn(10000)+20000
+	return r1.Intn(10000) + 20000
 }
 
 func openBrowser(url string) {
