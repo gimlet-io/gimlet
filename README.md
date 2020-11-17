@@ -6,17 +6,9 @@ For an open-source Gitops workflow.
 
 ## Installation
 
-Linux
+Linux / Mac
 ```
-curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.0.1/gimlet -o gimlet
-chmod +x gimlet
-sudo mv ./gimlet /usr/local/bin/gimlet
-gimlet --version
-```
-
-Mac
-```
-curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.0.1/gimlet -o gimlet
+curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.0.1/gimlet-$(uname)-$(uname -m) -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version
@@ -27,7 +19,7 @@ gimlet --version
 
 ### Configuring a Helm chart
 ```
-➜  ~ gimlet chart configure onechart/onechart                                             
+➜  ~ gimlet chart configure onechart/onechart
 👩‍💻 Configure on http://127.0.0.1:28955
 👩‍💻 Close the browser when you are done
 Browser opened
