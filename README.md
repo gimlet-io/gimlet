@@ -2,7 +2,7 @@
 
 # Gimlet CLI
 
-For an open-source Gitops workflow.
+For a modular Gitops workflow.
 
 ## Installation
 
