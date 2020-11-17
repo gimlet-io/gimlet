@@ -12,6 +12,9 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -22,12 +25,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"text/template"
 	"time"
 )
 
 var chartConfigureCmd = cli.Command{
 	Name:      "configure",
-	Usage:     "Configures Helm chart values",
+	Usage:     "configures Helm chart values",
 	ArgsUsage: "<repo/name>",
 	Action:    configure,
 }
@@ -35,13 +39,51 @@ var chartConfigureCmd = cli.Command{
 var values map[string]interface{}
 
 func configure(c *cli.Context) error {
+	repoArg := c.Args().First()
+	if repoArg == "" {
+		cli.ShowCommandHelp(c, "configure")
+		os.Exit(1)
+	}
+
+	chartLoader := action.NewShow(action.ShowChart)
+	var settings = helmCLI.New()
+	chartPath, err := chartLoader.ChartPathOptions.LocateChart(repoArg, settings)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart`\n", emoji.CrossMark, err.Error())
+		os.Exit(1)
+	}
+
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart`\n", emoji.CrossMark, err.Error())
+		os.Exit(1)
+	}
+
+	schema := string(chart.Schema)
+	var helmUISchema string
+	for _, r := range chart.Raw {
+		if "helm-ui.json" == r.Name {
+			helmUISchema = string(r.Data)
+		}
+	}
+
+	if schema == "" {
+		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a values.schema.json with the Helm schema defined`\n", emoji.CrossMark)
+		os.Exit(1)
+	}
+
+	if helmUISchema == "" {
+		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a helm-ui.json with the Helm UI schema defined`\n", emoji.CrossMark)
+		os.Exit(1)
+	}
+
 	port := randomPort()
 
 	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
 	if err != nil {
 		panic(err)
 	}
-	writeTempFiles(workDir)
+	writeTempFiles(workDir, schema, helmUISchema)
 	defer removeTempFiles(workDir)
 	browserClosed := make(chan int, 1)
 	r := setupRouter(workDir, browserClosed)
@@ -63,7 +105,6 @@ func configure(c *cli.Context) error {
 	fmt.Fprintf(os.Stderr, "%v Generating values..\n\n", emoji.FileFolder)
 	srv.Shutdown(context.TODO())
 
-
 	yamlString := bytes.NewBufferString("")
 	e := yaml.NewEncoder(yamlString)
 	e.SetIndent(2)
@@ -82,8 +123,21 @@ func removeTempFiles(workDir string) {
 	os.Remove(workDir)
 }
 
-func writeTempFiles(workDir string) {
+func writeTempFiles(workDir string, schema string, helmUISchema string) {
 	for file, content := range web {
+		tmpl, err := template.New("tpl").Parse(content)
+		if err != nil {
+			panic(err)
+		}
+		buf := bytes.NewBufferString("")
+		err = tmpl.Execute(buf, map[string]string{
+			"schema":       schema,
+			"helmUISchema": helmUISchema,
+		})
+		if err != nil {
+			panic(err)
+		}
+
 		ioutil.WriteFile(filepath.Join(workDir, file), []byte(content), 0666)
 	}
 }

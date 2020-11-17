@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { hot } from 'react-hot-loader'
-import * as schema from '../fixtures/onechart/values.schema.json'
-import * as helmUIConfig from '../fixtures/onechart/helm-ui.json'
+import * as schemaFixture from '../fixtures/onechart/values.schema.json'
+import * as helmUIConfigFixture from '../fixtures/onechart/helm-ui.json'
 import HelmUI from 'helm-react-ui'
 import './style.css'
 import StreamingBackend from './streamingBackend'
@@ -20,7 +20,9 @@ class App extends Component {
     this.state = {
       client: client,
       values: {},
-      nonDefaultValues: {}
+      nonDefaultValues: {},
+      schema: '{{ .schema }}',
+      helmUISchema: '{{ .helmUISchema }}'
     }
     this.setValues = this.setValues.bind(this)
   }
@@ -31,6 +33,15 @@ class App extends Component {
   }
 
   render () {
+    let { schema, helmUISchema } = this.state;
+
+    if (schema === '{{ .schema }}') {
+      schema = schemaFixture.default;
+    }
+    if (helmUISchema === '{{ .helmUISchema }}') {
+      helmUISchema = helmUIConfigFixture.default;
+    }
+
     return (
       <div>
         <StreamingBackend client={this.state.client}/>
@@ -50,8 +61,8 @@ class App extends Component {
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
-            schema={schema.default}
-            config={helmUIConfig.default}
+            schema={schema}
+            config={helmUISchema}
             values={this.state.values}
             setValues={this.setValues}
           />

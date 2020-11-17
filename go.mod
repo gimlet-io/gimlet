@@ -9,4 +9,6 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/urfave/cli/v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	helm.sh/helm/v3 v3.4.1
+	rsc.io/letsencrypt v0.0.3 // indirect
 )

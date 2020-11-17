@@ -13,6 +13,7 @@ func main() {
 	app := &cli.App{
 		Name:                 "gimlet",
 		Version:              version.String(),
+		Usage:                "for an open-source GitOps workflow",
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{
 			&chart.Command,
