@@ -8,7 +8,7 @@ _with-docker:
 
 .PHONY: all format-backend test-backend generate-backend build-backend dist build-frontend
 
-all: test build-frontend build-backend
+all: build-frontend generate-backend test-backend build-backend
 
 format-backend:
 	@gofmt -w ${GOFILES}

@@ -64,10 +64,3 @@ gimlet chart configure onechart/onechart | helm template myapp onechart/onechart
 make all
 ./build/gimlet
 ```
-
-#### Dockerized development
-
-Prepend make targets `_with-docker`:
-```
-make _with-docker test build
-``` 
