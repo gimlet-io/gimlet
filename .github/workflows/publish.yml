@@ -1,20 +1,17 @@
-name: Build
+name: publish
+
 on:
   push:
-    branches:
-      - '*'
-  pull_request:
-    branches:
+    tags:
       - '*'
 
 jobs:
-  build:
-    name: Build
+  publish:
     runs-on: ubuntu-latest
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v2 
+      uses: actions/setup-go@v2
       with:
         go-version: 1.14.7
 
@@ -42,10 +39,14 @@ jobs:
     - name: Generate go code from frontend
       run: make generate-backend
 
-    - name: Test Backend
-      run: make test-backend
-
     - name: Build Backend
-      run: make build-backend
+      run: make dist
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
+
+    - name: Upload release binaries
+      uses: alexellis/upload-assets@0.2.2
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        asset_paths: '["./bin/gimlet*"]'
