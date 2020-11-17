@@ -26,6 +26,7 @@ jobs:
     - name: Version is sha or tag
       id: sha_or_tag
       run: |
+        echo "::set-output name=version::$VERSION"
         if [[ $VERSION == refs/heads/* ]]
         then
             echo "::set-output name=version::$GITHUB_SHA"
