@@ -14,7 +14,7 @@ jobs:
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v2 
+      uses: actions/setup-go@v2
       with:
         go-version: 1.14.7
 
@@ -46,6 +46,14 @@ jobs:
       run: make test-backend
 
     - name: Build Backend
-      run: make build-backend
+      run: make dist
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
+
+    - name: tip
+      uses: eine/tip@master
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        rm: true
+        files: |
+          bin/*
