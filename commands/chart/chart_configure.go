@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/template"
 	"time"
 )
 
@@ -124,20 +123,10 @@ func removeTempFiles(workDir string) {
 }
 
 func writeTempFiles(workDir string, schema string, helmUISchema string) {
-	for file, content := range web {
-		tmpl, err := template.New("tpl").Parse(content)
-		if err != nil {
-			panic(err)
-		}
-		buf := bytes.NewBufferString("")
-		err = tmpl.Execute(buf, map[string]string{
-			"schema":       schema,
-			"helmUISchema": helmUISchema,
-		})
-		if err != nil {
-			panic(err)
-		}
+	ioutil.WriteFile(filepath.Join(workDir, "values.schema.json"), []byte(schema), 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "helm-ui.json"), []byte(helmUISchema), 0666)
 
+	for file, content := range web {
 		ioutil.WriteFile(filepath.Join(workDir, file), []byte(content), 0666)
 	}
 }

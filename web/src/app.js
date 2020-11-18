@@ -21,25 +21,42 @@ class App extends Component {
       client: client,
       values: {},
       nonDefaultValues: {},
-      schema: '{{ .schema }}',
-      helmUISchema: '{{ .helmUISchema }}'
     }
     this.setValues = this.setValues.bind(this)
   }
 
+  componentDidMount () {
+    fetch('/helm-ui.json')
+      .then(response => {
+        if (!response.ok && window !== undefined) {
+          console.log("Using fixture")
+          return helmUIConfigFixture.default
+        }
+        return response.json()
+      })
+      .then(data => this.setState({ helmUISchema: data }))
+
+    fetch('/values.schema.json')
+      .then(response => {
+        if (!response.ok && window !== undefined) {
+          console.log("Using fixture")
+          return schemaFixture.default
+        }
+        return response.json()
+      })
+      .then(data => this.setState({ schema: data }))
+  }
+
   setValues (values, nonDefaultValues) {
-    this.setState({ values: values, nonDefaultValues: nonDefaultValues });
-    this.state.client.saveValues(nonDefaultValues);
+    this.setState({ values: values, nonDefaultValues: nonDefaultValues })
+    this.state.client.saveValues(nonDefaultValues)
   }
 
   render () {
-    let { schema, helmUISchema } = this.state;
+    let { schema, helmUISchema } = this.state
 
-    if (schema === '{{ .schema }}') {
-      schema = schemaFixture.default;
-    }
-    if (helmUISchema === '{{ .helmUISchema }}') {
-      helmUISchema = helmUIConfigFixture.default;
+    if (schema === undefined || helmUISchema === undefined) {
+      return null
     }
 
     return (
