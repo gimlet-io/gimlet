@@ -45,6 +45,16 @@ class App extends Component {
         return response.json()
       })
       .then(data => this.setState({ schema: data }))
+
+    fetch('/values.json')
+      .then(response => {
+        if (!response.ok && window !== undefined) {
+          console.log("Using fixture")
+          return {}
+        }
+        return response.json()
+      })
+      .then(data => this.setState({ values: data }))
   }
 
   setValues (values, nonDefaultValues) {
@@ -53,10 +63,10 @@ class App extends Component {
   }
 
   render () {
-    let { schema, helmUISchema } = this.state
+    let { schema, helmUISchema, values } = this.state
 
-    if (schema === undefined || helmUISchema === undefined) {
-      return null
+    if (schema === undefined || helmUISchema === undefined || values === undefined) {
+      return null;
     }
 
     return (
@@ -80,7 +90,7 @@ class App extends Component {
           <HelmUI
             schema={schema}
             config={helmUISchema}
-            values={this.state.values}
+            values={values}
             setValues={this.setValues}
           />
         </div>

@@ -30,9 +30,16 @@ import (
 
 var chartConfigureCmd = cli.Command{
 	Name:      "configure",
-	Usage:     "configures Helm chart values",
+	Usage:     "configure Helm chart values",
 	ArgsUsage: "<repo/name>",
 	Action:    configure,
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "file",
+			Aliases: []string{"f"},
+			Usage:   "edit existing values file",
+		},
+	},
 }
 
 var values map[string]interface{}
@@ -48,13 +55,13 @@ func configure(c *cli.Context) error {
 	var settings = helmCLI.New()
 	chartPath, err := chartLoader.ChartPathOptions.LocateChart(repoArg, settings)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart`\n", emoji.CrossMark, err.Error())
+		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart\n", emoji.CrossMark, err.Error())
 		os.Exit(1)
 	}
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart`\n", emoji.CrossMark, err.Error())
+		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart\n", emoji.CrossMark, err.Error())
 		os.Exit(1)
 	}
 
@@ -67,13 +74,36 @@ func configure(c *cli.Context) error {
 	}
 
 	if schema == "" {
-		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a values.schema.json with the Helm schema defined`\n", emoji.CrossMark)
+		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a values.schema.json with the Helm schema defined\n", emoji.CrossMark)
 		os.Exit(1)
 	}
 
 	if helmUISchema == "" {
-		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a helm-ui.json with the Helm UI schema defined`\n", emoji.CrossMark)
+		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a helm-ui.json with the Helm UI schema defined\n", emoji.CrossMark)
 		os.Exit(1)
+	}
+
+	existingValuesPath := c.String("file")
+	existingValuesJson := []byte("{}")
+	if existingValuesPath != "" {
+		yamlString, err := ioutil.ReadFile(existingValuesPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s Cannot read values file\n", emoji.CrossMark)
+			os.Exit(1)
+		}
+
+		var parsedYaml map[string]interface{}
+		err = yaml.Unmarshal(yamlString, &parsedYaml)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s Cannot parse values file\n", emoji.CrossMark)
+			os.Exit(1)
+		}
+
+		existingValuesJson, err = json.Marshal(parsedYaml)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s Cannot serialize values file\n", emoji.CrossMark)
+			os.Exit(1)
+		}
 	}
 
 	port := randomPort()
@@ -82,7 +112,7 @@ func configure(c *cli.Context) error {
 	if err != nil {
 		panic(err)
 	}
-	writeTempFiles(workDir, schema, helmUISchema)
+	writeTempFiles(workDir, schema, helmUISchema, string(existingValuesJson))
 	defer removeTempFiles(workDir)
 	browserClosed := make(chan int, 1)
 	r := setupRouter(workDir, browserClosed)
@@ -122,9 +152,10 @@ func removeTempFiles(workDir string) {
 	os.Remove(workDir)
 }
 
-func writeTempFiles(workDir string, schema string, helmUISchema string) {
+func writeTempFiles(workDir string, schema string, helmUISchema string, existingValues string) {
 	ioutil.WriteFile(filepath.Join(workDir, "values.schema.json"), []byte(schema), 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "helm-ui.json"), []byte(helmUISchema), 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "values.json"), []byte(existingValues), 0666)
 
 	for file, content := range web {
 		ioutil.WriteFile(filepath.Join(workDir, file), []byte(content), 0666)
