@@ -42,10 +42,23 @@ replicas: 2
 gimlet chart configure onechart/onechart > values.yaml
 ```
 
-### Using with Helm template and install
+### Updating values.yaml in place
 
 ```
+gimlet chart configure -f values.yaml -o values.yaml onechart/onechart
+```
+
+### Using with Helm template and install
+
+Ad-hoc one-liner:
+```
 gimlet chart configure onechart/onechart | helm template myapp onechart/onechart -f -
+```
+
+Keeping values.yaml for versioning:
+```
+gimlet chart configure onechart/onechart > values.yaml
+helm template myapp onechart/onechart -f values.yaml
 ```
 
 ## Development
