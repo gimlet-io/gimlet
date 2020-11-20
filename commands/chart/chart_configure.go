@@ -39,6 +39,11 @@ var chartConfigureCmd = cli.Command{
 			Aliases: []string{"f"},
 			Usage:   "edit existing values file",
 		},
+		&cli.StringFlag{
+			Name:    "output",
+			Aliases: []string{"o"},
+			Usage:   "output values file",
+		},
 	},
 }
 
@@ -139,8 +144,17 @@ func configure(c *cli.Context) error {
 	e.SetIndent(2)
 	e.Encode(values)
 
-	fmt.Println("---")
-	fmt.Println(yamlString.String())
+	outputPath := c.String("output")
+	if outputPath != "" {
+		err := ioutil.WriteFile(outputPath, yamlString.Bytes(), 0666)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s Cannot write values file\n", emoji.CrossMark)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Println("---")
+		fmt.Println(yamlString.String())
+	}
 
 	return nil
 }
