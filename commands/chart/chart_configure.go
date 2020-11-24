@@ -52,22 +52,19 @@ var values map[string]interface{}
 func configure(c *cli.Context) error {
 	repoArg := c.Args().First()
 	if repoArg == "" {
-		cli.ShowCommandHelp(c, "configure")
-		os.Exit(1)
+		return fmt.Errorf("chart is mandatory. Run `gimlet chart configure --help` for usage")
 	}
 
 	chartLoader := action.NewShow(action.ShowChart)
 	var settings = helmCLI.New()
 	chartPath, err := chartLoader.ChartPathOptions.LocateChart(repoArg, settings)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart\n", emoji.CrossMark, err.Error())
-		os.Exit(1)
+		return fmt.Errorf("could not load %s Helm chart", err.Error())
 	}
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s Could not load %s Helm chart\n", emoji.CrossMark, err.Error())
-		os.Exit(1)
+		return fmt.Errorf("could not load %s Helm chart", err.Error())
 	}
 
 	schema := string(chart.Schema)
@@ -79,13 +76,11 @@ func configure(c *cli.Context) error {
 	}
 
 	if schema == "" {
-		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a values.schema.json with the Helm schema defined\n", emoji.CrossMark)
-		os.Exit(1)
+		return fmt.Errorf("chart doesn't have a values.schema.json with the Helm schema defined")
 	}
 
 	if helmUISchema == "" {
-		fmt.Fprintf(os.Stderr, "%s Chart doesn't have a helm-ui.json with the Helm UI schema defined\n", emoji.CrossMark)
-		os.Exit(1)
+		return fmt.Errorf("chart doesn't have a helm-ui.json with the Helm UI schema defined")
 	}
 
 	existingValuesPath := c.String("file")
@@ -93,21 +88,18 @@ func configure(c *cli.Context) error {
 	if existingValuesPath != "" {
 		yamlString, err := ioutil.ReadFile(existingValuesPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s Cannot read values file\n", emoji.CrossMark)
-			os.Exit(1)
+			return fmt.Errorf("cannot read values file")
 		}
 
 		var parsedYaml map[string]interface{}
 		err = yaml.Unmarshal(yamlString, &parsedYaml)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s Cannot parse values file\n", emoji.CrossMark)
-			os.Exit(1)
+			return fmt.Errorf("cannot parse values")
 		}
 
 		existingValuesJson, err = json.Marshal(parsedYaml)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s Cannot serialize values file\n", emoji.CrossMark)
-			os.Exit(1)
+			return fmt.Errorf("cannot serialize values")
 		}
 	}
 
@@ -148,8 +140,7 @@ func configure(c *cli.Context) error {
 	if outputPath != "" {
 		err := ioutil.WriteFile(outputPath, yamlString.Bytes(), 0666)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s Cannot write values file\n", emoji.CrossMark)
-			os.Exit(1)
+			return fmt.Errorf("cannot write values file %s", err)
 		}
 	} else {
 		fmt.Println("---")

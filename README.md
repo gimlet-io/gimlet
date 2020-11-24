@@ -1,3 +1,20 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Gimlet CLI](#gimlet-cli)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Configuring a Helm chart](#configuring-a-helm-chart)
+      - [Writing values.yaml](#writing-valuesyaml)
+      - [Updating values.yaml in place](#updating-valuesyaml-in-place)
+      - [Using with Helm template and install](#using-with-helm-template-and-install)
+    - [Writing manifests to the gitops repo](#writing-manifests-to-the-gitops-repo)
+      - [Configuring and writing a chart to gitops](#configuring-and-writing-a-chart-to-gitops)
+  - [Development](#development)
+    - [Housekeeping README.md](#housekeeping-readmemd)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/gimlet-io/gimlet-cli)
 
 # Gimlet CLI
@@ -7,6 +24,7 @@ For a modular Gitops workflow.
 ## Installation
 
 Linux / Mac
+
 ```
 curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.0.1/gimlet-$(uname)-$(uname -m) -o gimlet
 chmod +x gimlet
@@ -16,8 +34,8 @@ gimlet --version
 
 ## Usage
 
-
 ### Configuring a Helm chart
+
 ```
 ➜  ~ gimlet chart configure onechart/onechart
 👩‍💻 Configure on http://127.0.0.1:28955
@@ -36,29 +54,73 @@ ingress:
 replicas: 2
 ```
 
-### Writing values.yaml
+#### Writing values.yaml
 
 ```
 gimlet chart configure onechart/onechart > values.yaml
 ```
 
-### Updating values.yaml in place
+#### Updating values.yaml in place
 
 ```
 gimlet chart configure -f values.yaml -o values.yaml onechart/onechart
 ```
 
-### Using with Helm template and install
+#### Using with Helm template and install
 
 Ad-hoc one-liner:
+
 ```
 gimlet chart configure onechart/onechart | helm template myapp onechart/onechart -f -
 ```
 
 Keeping values.yaml for versioning:
+
 ```
 gimlet chart configure onechart/onechart > values.yaml
 helm template myapp onechart/onechart -f values.yaml
+```
+
+### Writing manifests to the gitops repo
+
+```
+gimlet gitops write \
+  -f my-app.yaml \
+  --env staging \
+  --app my-app \
+  --m "Releasing Bugfix 345"
+```
+
+Writing a manifest folder to the gitops repo
+
+```
+gimlet gitops write \
+  -f ../my-app/k8s \
+  --env staging \
+  --app my-app \
+  --m "Releasing Bugfix 345"
+```
+
+Specifying the gitops repo path
+
+```
+gimlet gitops write \
+  -f k8s \
+  --env staging \
+  --app my-app \
+  --m "Releasing Bugfix 345"
+  --gitops-repo-path ../gitops
+```
+
+#### Configuring and writing a chart to gitops
+
+```
+gimlet chart configure onechart/onechart | \
+  helm template myapp onechart/onechart -f - | \
+  gimlet gitops write -f - \
+    --env staging \
+    --app my-app \
+    -m "First deploy"
 ```
 
 ## Development
@@ -68,4 +130,10 @@ helm template myapp onechart/onechart -f values.yaml
 ```
 make all
 ./build/gimlet
+```
+
+### Housekeeping README.md
+
+```
+npx doctoc README.md && npx prettier --write "**/*.md" "*.md"
 ```
