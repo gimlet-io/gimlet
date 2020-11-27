@@ -1,15 +1,12 @@
-name: Build
+name: Tip
 on:
   push:
     branches:
-      - '*'
-  pull_request:
-    branches:
-      - '*'
+      - 'main'
 
 jobs:
   build:
-    name: Build
+    name: Tip
     runs-on: ubuntu-latest
     steps:
 
@@ -46,6 +43,14 @@ jobs:
       run: make test-backend
 
     - name: Build Backend
-      run: make build-backend
+      run: make dist
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
+
+    - name: tip
+      uses: eine/tip@master
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        rm: true
+        files: |
+          bin/*

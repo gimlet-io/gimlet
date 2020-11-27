@@ -3,7 +3,7 @@ name: publish
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
 
 jobs:
   publish:
@@ -15,8 +15,13 @@ jobs:
       with:
         go-version: 1.14.7
 
+    - name: Checkout main
+      uses: actions/checkout@v2
+      with:
+        ref: main
+
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         fetch-depth: 5
 
@@ -45,9 +50,31 @@ jobs:
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
 
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
     - name: Upload release binaries
       uses: alexellis/upload-assets@0.2.2
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         asset_paths: '["./bin/gimlet*"]'
+
+    - name: Update README on main branch with new version
+      env:
+        VERSION: ${{ steps.sha_or_tag.outputs.version }}
+      run: |
+       git config --global user.email "action@github.com"
+       git config --global user.name "Github Action"
+       git checkout main
+       sed -i "s/v[0-9]\.[0-9]\.[0-9]\+/v${VERSION}/" README.md
+       git commit -am "Update README with ${VERSION}"
+       git push origin main
