@@ -10,17 +10,19 @@ import (
 
 var gitopsDeleteCmd = cli.Command{
 	Name:      "delete",
-	Usage:     "delete app manifests from an environment",
+	Usage:     "Deletes app manifests from an environment",
 	ArgsUsage: " ",
 	Action:    delete,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "env",
 			Usage: "environment to write to (mandatory)",
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "app",
-			Usage: "name of the application that you configure (mandatory)",
+			Usage: "name of the application that you configure (	mandatory)",
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "gitops-repo-path",
@@ -60,9 +62,6 @@ func delete(c *cli.Context) error {
 	env := c.String("env")
 	app := c.String("app")
 	message := c.String("message")
-	if env == "" || app == "" {
-		return fmt.Errorf("--env and --app are mandatory. Run `gimlet gitops delete --help` for usage")
-	}
 
 	err = delDir(repo, filepath.Join(env, app))
 	if err != nil {

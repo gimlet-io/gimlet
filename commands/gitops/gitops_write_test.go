@@ -31,11 +31,6 @@ func Test_write(t *testing.T) {
 	args = append(args, "--app", app)
 
 	g.Describe("gimlet gitops write", func() {
-		g.It("Should validate path exist", func() {
-			err = run(args)
-			g.Assert(strings.Contains(err.Error(), "Run `gimlet gitops write --help` for usage")).IsTrue()
-		})
-
 		g.It("Should write a file", func() {
 			fileToWrite, err := ioutil.TempFile("", "gimlet-cli-test")
 			if err != nil {

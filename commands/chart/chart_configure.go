@@ -30,7 +30,7 @@ import (
 
 var chartConfigureCmd = cli.Command{
 	Name:      "configure",
-	Usage:     "configure Helm chart values",
+	Usage:     "Configures Helm chart values",
 	ArgsUsage: "<repo/name>",
 	Action:    configure,
 	Flags: []cli.Flag{

@@ -15,7 +15,7 @@ const dir_RWX_RX_R = 0754
 
 var gitopsWriteCmd = cli.Command{
 	Name:      "write",
-	Usage:     "write app manifests to an environment",
+	Usage:     "Writes app manifests to an environment",
 	ArgsUsage: " ",
 	Action:    write,
 	Flags: []cli.Flag{
@@ -23,14 +23,17 @@ var gitopsWriteCmd = cli.Command{
 			Name:    "file",
 			Aliases: []string{"f"},
 			Usage:   "manifests to write (mandatory)",
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "env",
 			Usage: "environment to write to (mandatory)",
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "app",
 			Usage: "name of the application that you configure (mandatory)",
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "gitops-repo-path",
@@ -71,9 +74,6 @@ func write(c *cli.Context) error {
 	app := c.String("app")
 	file := c.String("file")
 	message := c.String("message")
-	if env == "" || app == "" || file == "" {
-		return fmt.Errorf("--env and --app --file are mandatory. Run `gimlet gitops write --help` for usage")
-	}
 
 	err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), dir_RWX_RX_R)
 	if err != nil {
