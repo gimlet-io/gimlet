@@ -1,6 +1,6 @@
 GO_VERSION=1.14.7
 GOFILES = $(shell find . -type f -name '*.go' -not -path "./.git/*")
-LDFLAGS = '-extldflags "-static" -X github.com/gimlet-io/gimlet-cli/version.Version='${VERSION}
+LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/version.Version='${VERSION}
 
 DOCKER_RUN?=
 _with-docker:
@@ -14,7 +14,7 @@ format-backend:
 	@gofmt -w ${GOFILES}
 
 test-backend:
-	$(DOCKER_RUN) go test -race -timeout 30s github.com/gimlet-io/gimlet-cli/cmd $(go list ./... )
+	$(DOCKER_RUN) go test -race -timeout 30s $(shell go list ./... )
 
 generate-backend:
 	$(DOCKER_RUN) go generate github.com/gimlet-io/gimlet-cli/cmd
