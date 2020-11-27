@@ -15,14 +15,17 @@ const dir_RWX_RX_R = 0754
 
 var gitopsWriteCmd = cli.Command{
 	Name:      "write",
-	Usage:     "Writes app manifests to an environment",
-	ArgsUsage: " ",
+	Usage:     "Writes app manifests to a gitops environment",
+	UsageText: `gimlet gitops write -f my-app.yaml \
+     --env staging \
+     --app my-app \
+     -m "Releasing Bugfix 345"`,
 	Action:    write,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "file",
 			Aliases: []string{"f"},
-			Usage:   "manifests to write (mandatory)",
+			Usage:   "manifest file,folder or \"-\" for stdin to write (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
@@ -59,7 +62,7 @@ func write(c *cli.Context) error {
 
 	repo, err := git.PlainOpen(gitopsRepoPath)
 	if err == git.ErrRepositoryNotExists {
-		return fmt.Errorf("%s is not a git repo", gitopsRepoPath)
+		return fmt.Errorf("%s is not a git repository", gitopsRepoPath)
 	}
 
 	empty, err := nothingToCommit(repo)

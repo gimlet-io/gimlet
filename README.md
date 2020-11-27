@@ -5,8 +5,6 @@
   - [Installation](#installation)
   - [Usage](#usage)
     - [Configuring a Helm chart](#configuring-a-helm-chart)
-      - [Writing values.yaml](#writing-valuesyaml)
-      - [Updating values.yaml in place](#updating-valuesyaml-in-place)
       - [Using with Helm template and install](#using-with-helm-template-and-install)
     - [Writing manifests to the gitops repo](#writing-manifests-to-the-gitops-repo)
       - [Configuring and writing a chart to gitops](#configuring-and-writing-a-chart-to-gitops)
@@ -54,13 +52,13 @@ ingress:
 replicas: 2
 ```
 
-#### Writing values.yaml
+Saving values.yaml
 
 ```
 gimlet chart configure onechart/onechart > values.yaml
 ```
 
-#### Updating values.yaml in place
+Updating values.yaml in place
 
 ```
 gimlet chart configure -f values.yaml -o values.yaml onechart/onechart
@@ -68,7 +66,7 @@ gimlet chart configure -f values.yaml -o values.yaml onechart/onechart
 
 #### Using with Helm template and install
 
-Ad-hoc one-liner:
+One-liner:
 
 ```
 gimlet chart configure onechart/onechart | helm template myapp onechart/onechart -f -
@@ -84,32 +82,22 @@ helm template myapp onechart/onechart -f values.yaml
 ### Writing manifests to the gitops repo
 
 ```
-gimlet gitops write \
-  -f my-app.yaml \
-  --env staging \
-  --app my-app \
-  --m "Releasing Bugfix 345"
-```
+NAME:
+   gimlet gitops write - Writes app manifests to a gitops environment
 
-Writing a manifest folder to the gitops repo
+USAGE:
+   gimlet gitops write -f my-app.yaml \
+     --env staging \
+     --app my-app \
+     -m "Releasing Bugfix 345"
 
-```
-gimlet gitops write \
-  -f ../my-app/k8s \
-  --env staging \
-  --app my-app \
-  --m "Releasing Bugfix 345"
-```
-
-Specifying the gitops repo path
-
-```
-gimlet gitops write \
-  -f k8s \
-  --env staging \
-  --app my-app \
-  --m "Releasing Bugfix 345"
-  --gitops-repo-path ../gitops
+OPTIONS:
+   --file value, -f value     manifest file,folder or "-" for stdin to write (mandatory)
+   --env value                environment to write to (mandatory)
+   --app value                name of the application that you configure (mandatory)
+   --gitops-repo-path value   path to the working copy of the gitops repo
+   --message value, -m value  gitops commit message
+   --help, -h                 show help (default: false)
 ```
 
 #### Configuring and writing a chart to gitops

@@ -31,7 +31,7 @@ import (
 var chartConfigureCmd = cli.Command{
 	Name:      "configure",
 	Usage:     "Configures Helm chart values",
-	ArgsUsage: "<repo/name>",
+	UsageText: `gimlet chart configure onechart/onechart > values.yaml`,
 	Action:    configure,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
