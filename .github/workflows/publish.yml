@@ -45,7 +45,7 @@ jobs:
     - name: Generate go code from frontend
       run: make generate-backend
 
-    - name: Build Backend
+    - name: Dist
       run: make dist
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}

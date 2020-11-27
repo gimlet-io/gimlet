@@ -42,7 +42,7 @@ jobs:
     - name: Test Backend
       run: make test-backend
 
-    - name: Build Backend
+    - name: Dist
       run: make dist
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
