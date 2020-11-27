@@ -3,6 +3,7 @@ package gitops
 import (
 	"fmt"
 	"github.com/franela/goblin"
+	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/go-git/go-git/v5"
 	"io/ioutil"
 	"os"
@@ -41,7 +42,7 @@ func Test_write(t *testing.T) {
 			ioutil.WriteFile(fileToWrite.Name(), []byte("dummyContent"), file_RW_RW_R)
 			args = append(args, "-f", fileToWrite.Name())
 
-			err = run(args)
+			err = commands.Run(&Command, args)
 			g.Assert(err == nil).IsTrue()
 
 			head, err := repo.Head()
@@ -61,7 +62,7 @@ func Test_write(t *testing.T) {
 			ioutil.WriteFile(filepath.Join(dirToWrite, "dummy"), []byte("dummyContent"), file_RW_RW_R)
 			args = append(args, "-f", dirToWrite)
 
-			err = run(args)
+			err = commands.Run(&Command, args)
 			g.Assert(err == nil).IsTrue(err)
 
 			head, err := repo.Head()

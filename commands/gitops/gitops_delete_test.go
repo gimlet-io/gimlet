@@ -3,27 +3,14 @@ package gitops
 import (
 	"fmt"
 	"github.com/franela/goblin"
+	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/go-git/go-git/v5"
-	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-func run(args []string) error {
-	app := &cli.App{
-		Name:                 "gimlet",
-		Version:              "test",
-		Usage:                "for an open-source GitOps workflow",
-		EnableBashCompletion: true,
-		Commands: []*cli.Command{
-			&Command,
-		},
-	}
-	return app.Run(args)
-}
 
 func Test_delete(t *testing.T) {
 	gitopsRepoPath, err := ioutil.TempDir("", "gimlet-cli-test")
@@ -46,7 +33,7 @@ func Test_delete(t *testing.T) {
 
 	g.Describe("gimlet gitops delete", func() {
 		g.It("Should validate path exist", func() {
-			err = run(args)
+			err = commands.Run(&Command, args)
 			g.Assert(strings.Contains(err.Error(), "no such file or directory")).IsTrue()
 		})
 
@@ -60,7 +47,7 @@ func Test_delete(t *testing.T) {
 		})
 
 		g.It("Should delete path with a commit", func() {
-			err = run(args)
+			err = commands.Run(&Command, args)
 			g.Assert(err == nil).IsTrue()
 
 			head, err := repo.Head()

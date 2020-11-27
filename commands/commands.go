@@ -1,11 +1,25 @@
 package commands
 
 import (
+	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+func Run(command *cli.Command, args []string) error {
+	app := &cli.App{
+		Name:                 "gimlet",
+		Version:              "test",
+		Usage:                "for an open-source GitOps workflow",
+		EnableBashCompletion: true,
+		Commands: []*cli.Command{
+			command,
+		},
+	}
+	return app.Run(args)
+}
 
 func InputFiles(file string) (map[string]string, error) {
 	files := map[string]string{}
