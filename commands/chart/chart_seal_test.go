@@ -2,13 +2,19 @@ package chart
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"io"
 	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 	"os"
 	"strings"
 	"testing"
@@ -59,9 +65,38 @@ sealedSecrets:
 			}()
 			w.Close()
 			os.Stdout = old
-			out := <-outC
+			sealedValue := <-outC
 
-			fmt.Println(out)
+			fmt.Println(sealedValue)
+		})
+		g.It("Should seal then unseal", func() {
+			certs, err := cert.ParseCertsPEM([]byte(sealingKey))
+			g.Assert(err == nil).IsTrue(err)
+
+			cert, ok := certs[0].PublicKey.(*rsa.PublicKey)
+			g.Assert(ok).IsTrue()
+			val, err := sealValue(cert, "value1")
+			g.Assert(err == nil).IsTrue(err)
+
+			ss := &v1alpha1.SealedSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"sealedsecrets.bitnami.com/cluster-wide": "true",
+					},
+				},
+				Spec: v1alpha1.SealedSecretSpec{
+					EncryptedData: map[string]string{
+						"secret1": val,
+					},
+				},
+			}
+
+			key, err := keyutil.ParsePrivateKeyPEM([]byte(privateKey))
+			g.Assert(err == nil).IsTrue(err)
+
+			secret, err := ss.Unseal(scheme.Codecs, map[string]*rsa.PrivateKey{"": key.(*rsa.PrivateKey)})
+			g.Assert(err == nil).IsTrue(err)
+			fmt.Println(string(secret.Data["secret1"]))
 		})
 	})
 
@@ -221,4 +256,3 @@ D5CoIw1Sfp6FTKf5ugQkCQL391J478t7okZ/RMrm9XH6X1HYfSiLEHbFUP0hPOIP
 AgJK3PZ7ZcDzeHf7CfmtynwivUdSlv6FjpV/UttAPdkZC74ksFlUIDkf4VPR17pY
 hGs6DoX5eUU/AHBRIVySTePugHD1vA==
 -----END PRIVATE KEY-----`
-
