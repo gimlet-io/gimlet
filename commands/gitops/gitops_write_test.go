@@ -39,7 +39,7 @@ func Test_write(t *testing.T) {
 			}
 			defer os.Remove(fileToWrite.Name())
 
-			ioutil.WriteFile(fileToWrite.Name(), []byte("dummyContent"), file_RW_RW_R)
+			ioutil.WriteFile(fileToWrite.Name(), []byte("dummyContent"), commands.File_RW_RW_R)
 			args = append(args, "-f", fileToWrite.Name())
 
 			err = commands.Run(&Command, args)
@@ -59,7 +59,7 @@ func Test_write(t *testing.T) {
 			}
 			defer os.RemoveAll(dirToWrite)
 
-			ioutil.WriteFile(filepath.Join(dirToWrite, "dummy"), []byte("dummyContent"), file_RW_RW_R)
+			ioutil.WriteFile(filepath.Join(dirToWrite, "dummy"), []byte("dummyContent"), commands.File_RW_RW_R)
 			args = append(args, "-f", dirToWrite)
 
 			err = commands.Run(&Command, args)

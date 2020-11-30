@@ -38,8 +38,8 @@ func Test_delete(t *testing.T) {
 		})
 
 		g.It("Should stage and commit a folder", func() {
-			err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), dir_RWX_RX_R)
-			ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, "dummy"), []byte(""), file_RW_RW_R)
+			err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)
+			ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, "dummy"), []byte(""), commands.File_RW_RW_R)
 			err = stageFolder(repo, env)
 			g.Assert(err == nil).IsTrue()
 			err = commit(repo, "", env, app)

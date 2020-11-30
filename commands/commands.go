@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+const File_RW_RW_R = 0664
+const Dir_RWX_RX_R = 0754
+
 func Run(command *cli.Command, args []string) error {
 	app := &cli.App{
 		Name:                 "gimlet",

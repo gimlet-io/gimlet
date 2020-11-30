@@ -10,9 +10,6 @@ import (
 	"path/filepath"
 )
 
-const file_RW_RW_R = 0664
-const dir_RWX_RX_R = 0754
-
 var gitopsWriteCmd = cli.Command{
 	Name:  "write",
 	Usage: "Writes app manifests to a gitops environment",
@@ -78,7 +75,7 @@ func write(c *cli.Context) error {
 	file := c.String("file")
 	message := c.String("message")
 
-	err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), dir_RWX_RX_R)
+	err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)
 	if err != nil {
 		return err
 	}
@@ -88,7 +85,7 @@ func write(c *cli.Context) error {
 		return err
 	}
 	for path, content := range files {
-		err = ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, filepath.Base(path)), []byte(content), file_RW_RW_R)
+		err = ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, filepath.Base(path)), []byte(content), commands.File_RW_RW_R)
 		if err != nil {
 			return err
 		}
@@ -116,5 +113,5 @@ func copy(from string, to string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(to, contents, file_RW_RW_R)
+	return ioutil.WriteFile(to, contents, commands.File_RW_RW_R)
 }
