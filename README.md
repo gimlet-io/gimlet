@@ -119,17 +119,15 @@ You can store encrypted secrets in the GitOps repo with Gimlet CLI as it has bui
 
 #### Sealing secrets in `values.yaml`
 
-Sealing values under the `sealedSecrets` field using Bitnami's Sealed Secrets sealing key:
+Seal secret values with [Bitnami's Sealed Secret project](https://github.com/bitnami-labs/sealed-secrets).
 
-```
-gimlet seal -f values.yaml -o values.yaml -p sealedSecrets -k sealingKey.crt
-```
+```bash
+# Fetch the sealing key first
+kubeseal --fetch-cert --controller-namespace=infrastructure > sealing-key.pub
 
-Configuring and sealing Helm charts:
-
-```
+# Configure a Helm chart then seal all secrets in one go
 gimlet chart configure onechart/onechart |
-    gimlet seal -p sealedSecrets -k sealingKey.crt -f - > values.yaml
+    gimlet seal -p sealedSecrets -k sealingKey.pub -f - > values.yaml
 ```
 
 ## Development
