@@ -9,6 +9,8 @@ import (
 	"github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
+	"github.com/mdaverde/jsonpath"
+	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -157,6 +159,38 @@ func Test_sealed(t *testing.T) {
 		t.Error("Should be caught by edge case detection")
 	}
 }
+
+func Test_jsonpath(t *testing.T) {
+	var parsed map[string]interface{}
+	err := yaml.Unmarshal([]byte(data), &parsed)
+	if err != nil {
+		t.Error(err)
+	}
+
+	picked, err := jsonpath.Get(parsed, "envs.staging[0].sealedSecrets")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = jsonpath.Set(parsed, "envs.staging[0].sealedSecrets", picked)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+const data = `
+envs:
+  staging:
+    - name: my-app
+      sealedSecrets:
+        secret1: value1
+        secret2: value2
+  production:
+    - name: my-app
+      sealedSecrets:
+        secret1: prod1
+        secret2: prod2
+`
 
 // If a raw secret (without base64 encoding) starts with a char sequence that is a valid BigEndian encoded 16bit int
 // and the raw secret is long enough, then we could falsely identify it as a valid sealed secret.
