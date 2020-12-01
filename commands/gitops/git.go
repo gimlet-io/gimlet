@@ -64,3 +64,14 @@ func delDir(repo *git.Repository, path string) error {
 
 	return err
 }
+
+func stageFolder(repo *git.Repository, folder string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	return worktree.AddWithOptions(&git.AddOptions{
+		Glob: folder + "/*",
+	})
+}
