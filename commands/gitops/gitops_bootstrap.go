@@ -8,14 +8,13 @@ import (
 	"path/filepath"
 )
 
-var gitopsDeleteCmd = cli.Command{
-	Name:      "delete",
-	Usage:     "Deletes app manifests from an environment",
-	UsageText: `gimlet gitops delete \
+var gitopsBootstrapCmd = cli.Command{
+	Name:      "bootstrap",
+	Usage:     "Bootstraps the gitops controller for an environment",
+	UsageText: `gimlet gitops bootstrap \
      --env staging \
-     --app my-app-review-bugfix-345
-     -m "Dropping preview environment for Bugfix 345"`,
-	Action:    delete,
+     --gitops-repo-url https://github.com/<user>/<repo>.git`,
+	Action:    bootstrap,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "env",
@@ -23,23 +22,18 @@ var gitopsDeleteCmd = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "app",
-			Usage: "name of the application that you configure (	mandatory)",
+			Name:  "gitops-repo-url",
+			Usage: "URL of the gitops repo (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "gitops-repo-path",
 			Usage: "path to the working copy of the gitops repo",
 		},
-		&cli.StringFlag{
-			Name:    "message",
-			Aliases: []string{"m"},
-			Usage:   "gitops commit message",
-		},
 	},
 }
 
-func delete(c *cli.Context) error {
+func bootstrap(c *cli.Context) error {
 	gitopsRepoPath := c.String("gitops-repo-path")
 	if gitopsRepoPath == "" {
 		gitopsRepoPath, _ = os.Getwd()
@@ -63,13 +57,9 @@ func delete(c *cli.Context) error {
 	}
 
 	env := c.String("env")
-	app := c.String("app")
-	message := c.String("message")
+	//gitopsRepoUrl := c.String("gitops-repo-url")
 
-	err = delDir(repo, filepath.Join(env, app))
-	if err != nil {
-		return err
-	}
+
 
 	empty, err = nothingToCommit(repo)
 	if err != nil {
@@ -79,6 +69,6 @@ func delete(c *cli.Context) error {
 		return nil
 	}
 
-	gitMessage := fmt.Sprintf("[Gimlet CLI delete] %s/%s %s", env, app, message)
+	gitMessage := fmt.Sprintf("[Gimlet CLI bootstrap] %s", env)
 	return commit(repo, gitMessage)
 }

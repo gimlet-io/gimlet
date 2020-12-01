@@ -105,7 +105,7 @@ func write(c *cli.Context) error {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet CLI write] %s/%s %s", env, app, message)
-	return commit(repo, gitMessage, env, app)
+	return commit(repo, gitMessage)
 }
 
 func copy(from string, to string) error {

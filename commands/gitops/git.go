@@ -21,7 +21,7 @@ func nothingToCommit(repo *git.Repository) (bool, error) {
 	return status.IsClean(), nil
 }
 
-func commit(repo *git.Repository, message string, env string, app string) error {
+func commit(repo *git.Repository, message string) error {
 	worktree, err := repo.Worktree()
 	if err != nil {
 		return err
