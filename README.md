@@ -26,7 +26,7 @@ For a modular Gitops workflow.
 Linux / Mac
 
 ```
-curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.0.1/gimlet-$(uname)-$(uname -m) -o gimlet
+curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.1.0/gimlet-$(uname)-$(uname -m) -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version
