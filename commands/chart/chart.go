@@ -7,6 +7,5 @@ var Command = cli.Command{
 	Usage: "Manages Helm charts",
 	Subcommands: []*cli.Command{
 		&chartConfigureCmd,
-		&chartSealCmd,
 	},
 }

@@ -1,4 +1,4 @@
-package chart
+package seal
 
 import (
 	"bytes"
@@ -18,10 +18,10 @@ import (
 	"path/filepath"
 )
 
-var chartSealCmd = cli.Command{
+var Command = cli.Command{
 	Name:      "seal",
 	Usage:     "Seals secrets in the manifest",
-	UsageText: `gimlet chart seal -f values.yaml -o values.yaml -p sealedSecrets -k sealingKey.crt`,
+	UsageText: `gimlet seal -f values.yaml -o values.yaml -p sealedSecrets -k sealingKey.crt`,
 	Action:    seal,
 	Flags: []cli.Flag{
 		&cli.StringFlag{

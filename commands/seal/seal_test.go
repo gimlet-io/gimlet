@@ -1,4 +1,4 @@
-package chart
+package seal
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ func Test_seal(t *testing.T) {
 	ioutil.WriteFile(sealingKeyPath.Name(), []byte(sealingKey), commands.File_RW_RW_R)
 	defer os.Remove(sealingKeyPath.Name())
 
-	args := strings.Split("gimlet chart seal", " ")
+	args := strings.Split("gimlet seal", " ")
 	args = append(args, "-f", "-")
 	args = append(args, "-p", "sealedSecrets")
 	args = append(args, "-k", sealingKeyPath.Name())
@@ -66,7 +66,6 @@ sealedSecrets:
 			w.Close()
 			os.Stdout = old
 			sealedValue := <-outC
-
 			fmt.Println(sealedValue)
 		})
 		g.It("Should seal then unseal", func() {
@@ -96,7 +95,7 @@ sealedSecrets:
 
 			secret, err := ss.Unseal(scheme.Codecs, map[string]*rsa.PrivateKey{"": key.(*rsa.PrivateKey)})
 			g.Assert(err == nil).IsTrue(err)
-			fmt.Println(string(secret.Data["secret1"]))
+			g.Assert(string(secret.Data["secret1"])).Equal("value1")
 		})
 	})
 

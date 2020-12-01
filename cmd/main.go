@@ -5,6 +5,7 @@ import (
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/commands/chart"
 	"github.com/gimlet-io/gimlet-cli/commands/gitops"
+	"github.com/gimlet-io/gimlet-cli/commands/seal"
 	"github.com/gimlet-io/gimlet-cli/version"
 	"github.com/urfave/cli/v2"
 	"os"
@@ -21,6 +22,7 @@ func main() {
 		Commands: []*cli.Command{
 			&chart.Command,
 			&gitops.Command,
+			&seal.Command,
 		},
 	}
 	err := app.Run(os.Args)
