@@ -42,7 +42,7 @@ func Test_delete(t *testing.T) {
 			ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, "dummy"), []byte(""), commands.File_RW_RW_R)
 			err = stageFolder(repo, env)
 			g.Assert(err == nil).IsTrue()
-			err = commit(repo, "", env, app)
+			err = commit(repo, "")
 			g.Assert(err == nil).IsTrue()
 		})
 
