@@ -10,5 +10,6 @@ var Command = cli.Command{
 	Subcommands: []*cli.Command{
 		&gitopsWriteCmd,
 		&gitopsDeleteCmd,
+		&gitopsBootstrapCmd,
 	},
 }

@@ -5,8 +5,8 @@ go 1.14
 require (
 	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/enescakir/emoji v1.0.0
+	github.com/fluxcd/flux2 v0.4.3
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-chi/chi v1.5.0
 	github.com/go-chi/cors v1.1.1
 	github.com/go-git/go-git/v5 v5.2.0
