@@ -37,7 +37,7 @@ var gitopsWriteCmd = cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "gitops-repo-path",
-			Usage: "path to the working copy of the gitops repo",
+			Usage: "path to the working copy of the gitops repo, default: current dir",
 		},
 		&cli.StringFlag{
 			Name:    "message",
