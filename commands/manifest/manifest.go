@@ -7,5 +7,6 @@ var Command = cli.Command{
 	Usage: "Manages Gimlet manifests",
 	Subcommands: []*cli.Command{
 		&manifestCreateCmd,
+		&manifestTemplateCmd,
 	},
 }
