@@ -4,6 +4,7 @@
 - [Gimlet CLI](#gimlet-cli)
   - [Installation](#installation)
   - [Usage](#usage)
+    - [Bootstrapping GitOps](#bootstrapping-gitops)
     - [Configuring a Helm chart](#configuring-a-helm-chart)
       - [Using with Helm template and install](#using-with-helm-template-and-install)
     - [Writing manifests to the gitops repo](#writing-manifests-to-the-gitops-repo)
@@ -33,6 +34,37 @@ gimlet --version
 ```
 
 ## Usage
+
+### Bootstrapping GitOps
+
+```
+$ gimlet gitops bootstrap \
+  --env staging
+  --gitops-repo-url "git@github.com:<user>/<repo>.git"
+
+⏳ Generating manifests
+⏳ Generating deploy key
+✔️ GitOps configuration written to gitops/staging/flux
+
+👉 1) Push the configuration to git
+👉 2) Add the following deploy key to your Git provider
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDK0t17JqpvvciRNMj1tQ0pZdHLRIi/o/dNaI4Stdc8kaKci3DlL3P8BPu0tXt78OH2CHSEUaMNpoQcKpnvZrgomBQikTHGwdqM89o0C7MSjMdI1V4Lp8V7ZJ
+jY3nT2WCUgCYB3TDvQps/ficr5wXNB7Y0+nkNSf0q3sbtsnz9LL0vSFhK0Uj3b7p9eNdkEB8gYvedmBRW8GljDk/s5oKrHaz1eHwQqTMseTdPSgRuB6W1kFBFnOxMERpyRgfrcjkipiS/q8Or+eQQ7ghzHJ5GD
+30OicdBpdukJJ3fIymgxnuMDrJdh1x/rvoAN76MXKkGcApiUYTTPvNFhKMkmjjtLieUXCyigKIZOsA1Qh4eUhDEs4f7OAKgFU77KiGU73Lm0XYYEiwcupGR4nY9sW5BvaLDKSXuUXNIsVROKOFUOrUIMRT6pXD
+jlC92QkOo2Y10qfDazUoCkZ2i4mtMUpVLEWThVAg8h6yzcwpwOvR23ISMb6YWiHU4UQe29AJuatW0nWxpx7ks6+dqhP9LL2z10BiEpHehEYrOMf+H5iUxklRXNanvDoGWy9srRFOLG4uPaLDOLAj6DXcFySlda
+MPC3rWWiUPCsdzrdmI4AbAK3xEBUVw7dipGzZtkQQa+Vgb/F9QQuIXgOWcZkMhQBnfzebJsWP9simgEzPjYS+l5sWw==
+
+👉 3) Apply the gitops manifests on the cluster to start the gitops loop:
+
+kubectl apply -f gitops/staging/flux/flux.yaml
+kubectl apply -f gitops/staging/flux/deploy-key.yaml
+kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io
+kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io
+kubectl apply -f gitops/staging/flux/gitops-repo.yaml
+
+🎊 Happy Gitopsing
+```
 
 ### Configuring a Helm chart
 
