@@ -165,6 +165,7 @@ gimlet chart configure onechart/onechart |
 ## Development
 
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/gimlet-io/gimlet-cli)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgimlet-io%2Fgimlet-cli.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgimlet-io%2Fgimlet-cli?ref=badge_shield)
 
 ```
 make all
@@ -176,3 +177,7 @@ make all
 ```
 npx doctoc README.md && npx prettier --write "**/*.md" "*.md"
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgimlet-io%2Fgimlet-cli.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgimlet-io%2Fgimlet-cli?ref=badge_large)
