@@ -12,7 +12,7 @@ import (
 // and encodes them as strings literals in web.go
 func main() {
 	workDir, _ := os.Getwd()
-	fmt.Printf("Generating binaries from web/dist to %s\n", workDir + "/../commands/chart/web.go")
+	fmt.Printf("Generating binaries from web/dist to %s\n", workDir+"/../commands/chart/web.go")
 	out, err := os.Create("../commands/chart/web.go")
 	if err != nil {
 		panic(err)
@@ -20,7 +20,7 @@ func main() {
 
 	defer out.Close()
 
-	write(out,"package chart\n")
+	write(out, "package chart\n")
 
 	write(out, "var web = map[string]string{\n")
 
@@ -32,9 +32,7 @@ func main() {
 			return nil
 		}
 
-
-
-		entry := "\""+info.Name()+"\": `"
+		entry := "\"" + info.Name() + "\": `"
 		content, _ := ioutil.ReadFile(webDist + info.Name())
 		escapedBackticks := strings.ReplaceAll(string(content), "`", "` + \"`\" + `")
 		entry += escapedBackticks

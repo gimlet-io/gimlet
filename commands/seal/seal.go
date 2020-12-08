@@ -143,13 +143,14 @@ func sealFile(path string, contents string, jsonPath string, outputPath string, 
 
 	return nil
 }
+
 /*
 From https://github.com/bitnami-labs/sealed-secrets/blob/f903596e6561bd3151e9b2d12591472e886f24da/pkg/crypto/crypto.go#L86
 And https://github.com/bitnami-labs/sealed-secrets/blob/master/docs/crypto.md
 
 If it doesn't follow the sealed secret format constraints, it is not a sealed secret.
 It may still follow it, and not be a sealed secret. We don't cover that marginal case - famous last words
- */
+*/
 func sealed(value string) (bool, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {

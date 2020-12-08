@@ -86,7 +86,7 @@ func create(c *cli.Context) error {
 	}
 
 	chartParts := strings.Split(chartString, "/")
-	if len (chartParts) != 2 {
+	if len(chartParts) != 2 {
 		return fmt.Errorf("helm chart must be in the <repo>/<chart> format, try `helm repo ls` to find your chart")
 	}
 

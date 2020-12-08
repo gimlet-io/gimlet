@@ -9,21 +9,21 @@ import (
 )
 
 var gitopsDeleteCmd = cli.Command{
-	Name:      "delete",
-	Usage:     "Deletes app manifests from an environment",
+	Name:  "delete",
+	Usage: "Deletes app manifests from an environment",
 	UsageText: `gimlet gitops delete \
      --env staging \
      --app my-app-review-bugfix-345
      -m "Dropping preview environment for Bugfix 345"`,
-	Action:    delete,
+	Action: delete,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "env",
-			Usage: "environment to write to (mandatory)",
+			Name:     "env",
+			Usage:    "environment to write to (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "app",
+			Name: "app",
 			Usage: "name of the application that you configure (	mandatory)",
 			Required: true,
 		},
