@@ -18,7 +18,7 @@ func main() {
 	app := &cli.App{
 		Name:                 "gimlet",
 		Version:              version.String(),
-		Usage:                "for an open-source GitOps workflow",
+		Usage:                "a modular Gitops workflow for Kubernetes deployments",
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{
 			&chart.Command,
