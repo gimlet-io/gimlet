@@ -20,7 +20,7 @@ generate-backend:
 	$(DOCKER_RUN) go generate github.com/gimlet-io/gimlet-cli/cmd
 
 build-backend:
-	$(DOCKER_RUN) go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd
+	$(DOCKER_RUN) CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd
 
 dist:
 	mkdir -p bin

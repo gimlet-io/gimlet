@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var gitopsWriteCmd = cli.Command{
@@ -22,7 +23,7 @@ var gitopsWriteCmd = cli.Command{
 		&cli.StringFlag{
 			Name:     "file",
 			Aliases:  []string{"f"},
-			Usage:    "manifest file,folder or \"-\" for stdin to write (mandatory)",
+			Usage:    "manifest file, folder or \"-\" for stdin to write (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
@@ -54,7 +55,7 @@ func write(c *cli.Context) error {
 	}
 	gitopsRepoPath, err := filepath.Abs(gitopsRepoPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get absolute path %s", err)
 	}
 
 	repo, err := git.PlainOpen(gitopsRepoPath)
@@ -64,7 +65,7 @@ func write(c *cli.Context) error {
 
 	empty, err := nothingToCommit(repo)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get git state %s", err)
 	}
 	if !empty {
 		return fmt.Errorf("there are staged changes in the gitops repo. Commit them first then try again")
@@ -77,17 +78,22 @@ func write(c *cli.Context) error {
 
 	err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot create dir %s", err)
 	}
 
 	files, err := commands.InputFiles(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot read input files %s", err)
 	}
+	files = splitHelmOutput(files)
+
 	for path, content := range files {
+		if !strings.HasSuffix(content, "\n") {
+			content = content + "\n"
+		}
 		err = ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, filepath.Base(path)), []byte(content), commands.File_RW_RW_R)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot write file %s", err)
 		}
 	}
 
@@ -108,10 +114,32 @@ func write(c *cli.Context) error {
 	return commit(repo, gitMessage)
 }
 
-func copy(from string, to string) error {
-	contents, err := ioutil.ReadFile(from)
-	if err != nil {
-		return err
+func splitHelmOutput(input map[string]string) map[string]string {
+	if len(input) != 1 {
+		return input
 	}
-	return ioutil.WriteFile(to, contents, commands.File_RW_RW_R)
+
+	const separator = "---\n# Source: "
+
+	files := map[string]string{}
+
+	for _, content := range input {
+		if !strings.Contains(content, separator) {
+			return input
+		}
+
+		parts := strings.Split(content, separator)
+		for _, p := range parts {
+			p := strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+
+			filePath := strings.Split(p, "\n")[0]
+			fileName := filepath.Base(filePath)
+			files[fileName] = strings.Join(strings.Split(p, "\n")[1:], "\n")
+		}
+	}
+
+	return files
 }
