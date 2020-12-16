@@ -12,6 +12,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"io/ioutil"
+	"os"
 	"strings"
 	"text/template"
 )
@@ -34,7 +35,7 @@ var manifestTemplateCmd = cli.Command{
 		&cli.StringFlag{
 			Name:    "vars",
 			Aliases: []string{"v"},
-			Usage:   "variables file for the templating",
+			Usage:   "an .env file for template variables",
 		},
 		&cli.StringFlag{
 			Name:    "output",
@@ -46,7 +47,7 @@ var manifestTemplateCmd = cli.Command{
 
 func templateCmd(c *cli.Context) error {
 	varsPath := c.String("vars")
-	var vars map[string]string
+	vars := map[string]string{}
 	if varsPath != "" {
 		yamlString, err := ioutil.ReadFile(varsPath)
 		if err != nil {
@@ -56,6 +57,13 @@ func templateCmd(c *cli.Context) error {
 		vars, err = godotenv.Parse(strings.NewReader(string(yamlString)))
 		if err != nil {
 			return fmt.Errorf("cannot parse vars")
+		}
+	}
+
+	for _, v := range os.Environ() {
+		pair := strings.SplitN(v, "=", 2)
+		if _, exists := vars[pair[0]]; !exists {
+			vars[pair[0]] = pair[1]
 		}
 	}
 
