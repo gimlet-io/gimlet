@@ -19,7 +19,13 @@ import (
 var manifestCreateCmd = cli.Command{
 	Name:      "create",
 	Usage:     "Creates a Gimlet manifest",
-	UsageText: `gimlet manifest create -f values.yaml --app my-app --env staging > .gimlet/staging-myapp.yaml`,
+	UsageText: `gimlet manifest create \
+     -f values.yaml \
+     --chart onechart/onechart
+     --env staging \
+     --app myapp \
+     --namespace my-team \
+     > .gimlet/staging.yaml`,
 	Action:    create,
 	Flags: []cli.Flag{
 		&cli.StringFlag{

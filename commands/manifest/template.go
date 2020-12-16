@@ -20,8 +20,8 @@ var manifestTemplateCmd = cli.Command{
 	Name:  "template",
 	Usage: "Templates a Gimlet manifest",
 	UsageText: `gimlet manifest template \
-    -f .gimlet/staging-myapp.yaml \
-    -o app-manifests.yaml \
+    -f .gimlet/staging.yaml \
+    -o manifests.yaml \
     --vars ci.env`,
 	Action: templateCmd,
 	Flags: []cli.Flag{
