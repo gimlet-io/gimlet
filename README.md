@@ -21,11 +21,11 @@ gimlet --version
 
 Gimlet CLI supports you throughout your Kubernetes deployment journey.
 
-- If you are new to Kubernetes: coming soon
+- If you are new to Kubernetes: [Deploy your app to Kubernetes without the boilerplate](https://gimlet.io/gimlet-cli/deploy-your-app-to-kubernetes-without-the-boilerplate/)
 
-- If you want to modernize your CI pipeline: coming soon
+- If you want to modernize your CI pipeline: [Manage environments with Gimlet and GitOps](https://gimlet.io/gimlet-cli/manage-environments-with-gimlet-and-gitops/)
 
-- If you want to manage services and environments at scale: coming soon
+- If you want to manage services and environments at scale: [Manage environments with Gimlet and GitOps](https://gimlet.io/gimlet-cli/manage-environments-with-gimlet-and-gitops/)
 
 ## Reference
 
