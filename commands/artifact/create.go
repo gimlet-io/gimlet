@@ -35,12 +35,12 @@ var artifactCreateCmd = cli.Command{
 		&cli.BoolFlag{
 			Name:     "pr",
 			Usage:    "If this is a pull request build",
-			Required: true,
+			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "sourceBranch",
 			Usage:    "For pull requests, the feature branch name",
-			Required: true,
+			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "authorName",
