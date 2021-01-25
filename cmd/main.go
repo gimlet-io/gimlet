@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/enescakir/emoji"
+	"github.com/gimlet-io/gimlet-cli/commands/artifact"
 	"github.com/gimlet-io/gimlet-cli/commands/chart"
 	"github.com/gimlet-io/gimlet-cli/commands/gitops"
 	"github.com/gimlet-io/gimlet-cli/commands/manifest"
@@ -25,6 +26,7 @@ func main() {
 			&gitops.Command,
 			&seal.Command,
 			&manifest.Command,
+			&artifact.Command,
 		},
 	}
 	err := app.Run(os.Args)

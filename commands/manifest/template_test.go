@@ -46,6 +46,7 @@ func Test_template(t *testing.T) {
 
 	g.Describe("gimlet manifest template", func() {
 		g.It("Should template a manifest file with remote chart", func() {
+			g.Timeout(60*time.Second)
 			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
 			if err != nil {
 				t.Fatal(err)

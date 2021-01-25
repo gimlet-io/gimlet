@@ -113,7 +113,7 @@ func configure(c *cli.Context) error {
 	defer removeTempFiles(workDir)
 	browserClosed := make(chan int, 1)
 	r := setupRouter(workDir, browserClosed)
-	srv := http.Server{Addr: fmt.Sprintf(":%d", port), Handler: chi.ServerBaseContext(context.TODO(), r)}
+	srv := http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 
 	ctrlC := make(chan os.Signal, 1)
 	signal.Notify(ctrlC, os.Interrupt)
