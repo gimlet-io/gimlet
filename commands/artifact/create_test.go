@@ -2,6 +2,7 @@ package artifact
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/gimlet-io/gimletd/artifact"
@@ -37,10 +38,11 @@ func Test_create(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 
 			content, err := ioutil.ReadFile(fileToWrite.Name())
+			fmt.Println(string(content))
 			var a artifact.Artifact
 			err = json.Unmarshal(content, &a)
 			g.Assert(err == nil).IsTrue(err)
-			g.Assert(a.Version.Message == "Bugfix 123").IsTrue(err)
+			g.Assert(a.Version.Message == "Bugfix 123").IsTrue()
 		})
 	})
 }

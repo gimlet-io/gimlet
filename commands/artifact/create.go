@@ -19,57 +19,55 @@ var artifactCreateCmd = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "repository",
-			Usage:    "The git repository name",
+			Usage:    "The git repository name (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "sha",
-			Usage:    "The git sha",
+			Usage:    "The git sha (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "branch",
-			Usage:    "The git branch, or target branch for pull request builds",
+			Usage:    "The git branch, or target branch for pull request builds (mandatory)",
 			Required: true,
 		},
 		&cli.BoolFlag{
 			Name:     "pr",
 			Usage:    "If this is a pull request build",
-			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "sourceBranch",
 			Usage:    "For pull requests, the feature branch name",
-			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "authorName",
-			Usage:    "The person who originally wrote the code",
+			Usage:    "The person who originally wrote the code (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "authorEmail",
-			Usage:    "The person who originally wrote the code",
+			Usage:    "The person who originally wrote the code (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "committerName",
-			Usage:    "The person who originally wrote the code",
+			Usage:    "The person who originally wrote the code (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "committerEmail",
-			Usage:    "The committer is the person who committed the code. Important in case of history rewrite",
+			Usage:    "The committer is the person who committed the code. Important in case of history rewrite (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "message",
-			Usage:    "The git commit message",
+			Usage:    "The git commit message (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "url",
-			Usage:    "URL to the git commit",
+			Usage:    "URL to the git commit (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
