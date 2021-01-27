@@ -55,6 +55,7 @@ func Test_add(t *testing.T) {
 			g.Assert(len(a.Items) == 1).IsTrue("Should have 1 item")
 			g.Assert(a.Items[0]["name"] == "CI").IsTrue("Should add CI item")
 			g.Assert(a.Items[0]["url"] == "https://jenkins.example.com/job/dev/84/display/redirect").IsTrue("Should add CI item")
+			//fmt.Println(string(content))
 		})
 	})
 }

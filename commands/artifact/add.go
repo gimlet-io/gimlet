@@ -14,8 +14,8 @@ var artifactAddCmd = cli.Command{
 	Name:      "add",
 	Usage:     "Adds items to a release artifact",
 	UsageText: `gimlet artifact add \
-     --field name=CI
-     --field url=https://jenkins.example.com/job/dev/84/display/redirect
+     --field name=CI \
+     --field url=https://jenkins.example.com/job/dev/84/display/redirect \
      -f artifact.json`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{

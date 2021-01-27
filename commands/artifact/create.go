@@ -9,12 +9,22 @@ import (
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
+	"time"
 )
 
 var artifactCreateCmd = cli.Command{
 	Name:  "create",
 	Usage: "Creates a release artifact",
 	UsageText: `gimlet artifact create \
+     --repository=my-app \
+     --sha=26fc62ffa5cf63204ccbce6876c6d610 \
+     --branch=master \
+     --authorName=Laszlo \
+     --authorEmail=laszlo@laszlo.laszlo \
+     --committerName=Laszlo \
+     --committerEmail=laszlo@laszlo.laszlo \
+     --message="Bugfix 123" \
+     --url="https://github.com/owner/repo/commits/0017d995e32e3d1998395d971b969bcf682d2085" \
      > artifact.json`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -104,6 +114,7 @@ func create(c *cli.Context) error {
 		Items: []map[string]interface{}{
 
 		},
+		Created: time.Now().Unix(),
 	}
 
 	jsonString := bytes.NewBufferString("")
