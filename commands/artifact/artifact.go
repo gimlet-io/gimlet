@@ -9,5 +9,6 @@ var Command = cli.Command{
 		&artifactCreateCmd,
 		&artifactAddCmd,
 		&artifactPushCmd,
+		&artifactListCmd,
 	},
 }
