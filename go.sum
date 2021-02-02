@@ -271,8 +271,6 @@ github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2H
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gimlet-io/gimlet-cli v0.3.0/go.mod h1:Eepc0cmfjQq0v5N28ypFg6o5u0vQMyWH/Rs58fqyK3E=
-github.com/gimlet-io/gimletd v0.0.0-20210127120136-b37976eade47 h1:r4wwB3cjLNkJlj1hranI1vN2IOUMP1EvpJUxQTel4bk=
-github.com/gimlet-io/gimletd v0.0.0-20210127120136-b37976eade47/go.mod h1:au/+f8TT0S9O8xLRQslZ90hZLYcgKhpOhdA/F6+Wp6k=
 github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35 h1:LzBCfFLcHpf5HyhY2gastkSCPjtqpBMVRXShGvBxgkU=
 github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35/go.mod h1:au/+f8TT0S9O8xLRQslZ90hZLYcgKhpOhdA/F6+Wp6k=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
@@ -835,6 +833,8 @@ github.com/russross/blackfriday/v2 v2.0.1 h1:lPqVAte+HuHNfhJ/0LC98ESWRz8afy9tM/0
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/russross/meddler v1.0.0 h1:3HgwIot/NsCrLrmorjSO7JhzoshoSVfuqgFgZ0VTbro=
 github.com/russross/meddler v1.0.0/go.mod h1:j75NzzcOL4CGy+pPKykxZoT/At5Qj4ZnRRs1PXxweZI=
+github.com/rvflash/elapsed v0.2.0 h1:zpMX24KJzo8jJaCI/6690Hb8tCEe5xtjAAjEgba0cns=
+github.com/rvflash/elapsed v0.2.0/go.mod h1:sgjohdXO66LHVgIEQpO92eQjDWyZ5twX1ow122ixFGY=
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da/go.mod h1:gi+0XIa01GRL2eRQVjQkKGqKF3SF9vZR/HnPullcV2E=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=

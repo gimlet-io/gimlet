@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/gimlet-io/gimletd/client"
+	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 	"time"
@@ -61,6 +63,11 @@ var artifactListCmd = cli.Command{
 			Name:  "until",
 			Usage: "the RFC3339 format date to return the artifacts until (eg 2021-02-01T15:34:26+01:00)",
 		},
+		&cli.StringFlag{
+			Name:    "output",
+			Aliases: []string{"o"},
+			Usage:   "output format, eg.: json",
+		},
 	},
 	Action: list,
 }
@@ -109,14 +116,30 @@ func list(c *cli.Context) error {
 		return err
 	}
 
-	artifactsStr := bytes.NewBufferString("")
-	e := json.NewEncoder(artifactsStr)
-	e.SetIndent("", "  ")
-	err = e.Encode(artifacts)
-	if err != nil {
-		return fmt.Errorf("cannot deserialize artifacts %s", err)
+	if c.String("output") == "json" {
+		artifactsStr := bytes.NewBufferString("")
+		e := json.NewEncoder(artifactsStr)
+		e.SetIndent("", "  ")
+		err = e.Encode(artifacts)
+		if err != nil {
+			return fmt.Errorf("cannot deserialize artifacts %s", err)
+		}
+		fmt.Println(artifactsStr)
+	} else {
+		for _, artifact := range artifacts {
+			blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+			gray := color.New(color.FgHiBlack).SprintFunc()
+			yellow := color.New(color.FgYellow).SprintFunc()
+			green := color.New(color.FgGreen).SprintFunc()
+
+			created := time.Unix(artifact.Created, 0)
+
+			fmt.Printf("%s - %s %s %s\n", yellow(artifact.Version.SHA[:8]), artifact.Version.Message, green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(artifact.Version.CommitterName))
+			fmt.Printf("%s %s/%s\n", gray(artifact.ID), artifact.Version.RepositoryName, artifact.Version.Branch)
+			fmt.Println(artifact.Version.URL)
+			fmt.Println()
+		}
 	}
-	fmt.Println(artifactsStr)
 
 	return nil
 }

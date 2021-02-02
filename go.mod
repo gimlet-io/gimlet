@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/enescakir/emoji v1.0.0
+	github.com/fatih/color v1.7.0
 	github.com/fluxcd/flux2 v0.4.3
 	github.com/fluxcd/pkg/ssh v0.0.5
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
@@ -17,6 +18,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.3.0
 	github.com/mdaverde/jsonpath v0.0.0-20180315003411-f4ae4b6f36b5
+	github.com/rvflash/elapsed v0.2.0
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
