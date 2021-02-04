@@ -94,6 +94,7 @@ func Test_add(t *testing.T) {
 		})
 		g.It("Should add context variables to artifact", func() {
 			args = append(args, "--var", "KEY=VALUE")
+			args = append(args, "--var", "KEY2=VALUE2")
 			err = commands.Run(&Command, args)
 			g.Assert(err == nil).IsTrue(err)
 
@@ -101,7 +102,7 @@ func Test_add(t *testing.T) {
 			var a artifact.Artifact
 			err = json.Unmarshal(content, &a)
 			g.Assert(err == nil).IsTrue(err)
-			g.Assert(len(a.Context) == 1).IsTrue("Should have 1 var in context")
+			g.Assert(len(a.Context) == 2).IsTrue("Should have 1 var in context")
 			g.Assert(a.Context["KEY"] == "VALUE").IsTrue("Should add var")
 			fmt.Println(string(content))
 		})
