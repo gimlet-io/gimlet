@@ -8,5 +8,6 @@ var Command = cli.Command{
 	Subcommands: []*cli.Command{
 		&manifestCreateCmd,
 		&manifestTemplateCmd,
+		&manifestLintCmd,
 	},
 }

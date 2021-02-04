@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gimlet-io/gimlet-cli/manifest"
 	"github.com/gimlet-io/gimletd/artifact"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"strings"
 )
@@ -21,13 +23,15 @@ var artifactAddCmd = cli.Command{
 		&cli.StringFlag{
 			Name:     "file",
 			Aliases:  []string{"f"},
-			Usage:    "artifact file to update (mandatory)",
-			Required: true,
+			Usage:    "artifact file to update",
 		},
 		&cli.StringSliceFlag{
 			Name:     "field",
-			Usage:    "data fields to attach to the artifact item in a key=value format (mandatory)",
-			Required: true,
+			Usage:    "data fields to attach to the artifact item in a key=value format",
+		},
+		&cli.StringSliceFlag{
+			Name:     "envFile",
+			Usage:    "a Gimlet environment file to attach to the artifact",
 		},
 	},
 	Action:    add,
@@ -46,7 +50,6 @@ func add(c *cli.Context) error {
 
 	fields := c.StringSlice("field")
 	item := map[string]interface{}{}
-
 	for _, field := range fields {
 		keyValue := strings.Split(field, "=")
 		if len(keyValue) != 2 {
@@ -55,6 +58,22 @@ func add(c *cli.Context) error {
 		item[keyValue[0]] = keyValue[1]
 	}
 	a.Items = append(a.Items, item)
+
+	envFiles := c.StringSlice("envFile")
+	envs := []*manifest.Manifest{}
+	for _, envFile := range envFiles {
+		envString, err := ioutil.ReadFile(envFile)
+		if err != nil {
+			return fmt.Errorf("cannot read file %s", err)
+		}
+		var m manifest.Manifest
+		err = yaml.Unmarshal(envString, &m)
+		if err != nil {
+			return fmt.Errorf("cannot parse environment file %s", err)
+		}
+		envs = append(envs, &m)
+	}
+	a.Environments = envs
 
 	jsonString := bytes.NewBufferString("")
 	e := json.NewEncoder(jsonString)

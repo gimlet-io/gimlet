@@ -2,6 +2,7 @@ package artifact
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/gimlet-io/gimletd/artifact"
@@ -28,14 +29,35 @@ const artifactToExtend = `
 }
 `
 
+const env = `
+app: fosdem-2021
+env: staging
+namespace: default
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.10.0
+values:
+  replicas: 1
+  image:
+    repository: ghcr.io/gimlet-io/fosdem-2021
+    tag: "{{ .GITHUB_SHA }}"
+`
+
 func Test_add(t *testing.T) {
 	artifactFile, err := ioutil.TempFile("", "gimlet-cli-test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(artifactFile.Name())
-
 	ioutil.WriteFile(artifactFile.Name(), []byte(artifactToExtend), commands.File_RW_RW_R)
+
+	envFile, err := ioutil.TempFile("", "gimlet-cli-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(envFile.Name())
+	ioutil.WriteFile(envFile.Name(), []byte(env), commands.File_RW_RW_R)
 
 	args := strings.Split("gimlet artifact add", " ")
 	args = append(args, "-f", artifactFile.Name())
@@ -56,6 +78,19 @@ func Test_add(t *testing.T) {
 			g.Assert(a.Items[0]["name"] == "CI").IsTrue("Should add CI item")
 			g.Assert(a.Items[0]["url"] == "https://jenkins.example.com/job/dev/84/display/redirect").IsTrue("Should add CI item")
 			//fmt.Println(string(content))
+		})
+		g.It("Should add Gimlet environment to artifact", func() {
+			args = append(args, "--envFile", envFile.Name())
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a artifact.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Environments) == 1).IsTrue("Should have 1 env")
+			g.Assert(a.Environments[0].App == "fosdem-2021").IsTrue("Should add env")
+			fmt.Println(string(content))
 		})
 	})
 }
