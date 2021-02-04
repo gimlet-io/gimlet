@@ -92,5 +92,18 @@ func Test_add(t *testing.T) {
 			g.Assert(a.Environments[0].App == "fosdem-2021").IsTrue("Should add env")
 			fmt.Println(string(content))
 		})
+		g.It("Should add context variables to artifact", func() {
+			args = append(args, "--var", "KEY=VALUE")
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a artifact.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Context) == 1).IsTrue("Should have 1 var in context")
+			g.Assert(a.Context["KEY"] == "VALUE").IsTrue("Should add var")
+			fmt.Println(string(content))
+		})
 	})
 }

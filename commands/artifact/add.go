@@ -33,6 +33,10 @@ var artifactAddCmd = cli.Command{
 			Name:     "envFile",
 			Usage:    "a Gimlet environment file to attach to the artifact",
 		},
+		&cli.StringSliceFlag{
+			Name:     "var",
+			Usage:    "variables to make available in the Gimlet environment file",
+		},
 	},
 	Action:    add,
 }
@@ -74,6 +78,17 @@ func add(c *cli.Context) error {
 		envs = append(envs, &m)
 	}
 	a.Environments = envs
+
+	vars := c.StringSlice("var")
+	context := map[string]string{}
+	for _, v := range vars {
+		keyValue := strings.Split(v, "=")
+		if len(keyValue) != 2 {
+			return fmt.Errorf("--var should follow a key=value format")
+		}
+		context[keyValue[0]] = keyValue[1]
+	}
+	a.Context = context
 
 	jsonString := bytes.NewBufferString("")
 	e := json.NewEncoder(jsonString)
