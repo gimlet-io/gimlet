@@ -10,11 +10,10 @@ require (
 	github.com/fluxcd/flux2 v0.4.3
 	github.com/fluxcd/pkg/ssh v0.0.5
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
-	github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35
+	github.com/gimlet-io/gimletd v0.0.0-20210204144757-229506576799
 	github.com/go-chi/chi v1.5.1
 	github.com/go-chi/cors v1.1.1
 	github.com/go-git/go-git/v5 v5.2.0
-	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.3.0
 	github.com/mdaverde/jsonpath v0.0.0-20180315003411-f4ae4b6f36b5
@@ -27,5 +26,6 @@ require (
 	k8s.io/api v0.19.3
 	k8s.io/apimachinery v0.19.3
 	k8s.io/client-go v0.19.3
+	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/yaml v1.2.0
 )

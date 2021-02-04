@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/manifest"
+	"github.com/gimlet-io/gimletd/manifest"
 	"github.com/gimlet-io/gimletd/artifact"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"

@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/manifest"
+	"github.com/gimlet-io/gimletd/manifest"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"

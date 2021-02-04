@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
-	"github.com/gimlet-io/gimlet-cli/manifest"
+	"github.com/gimlet-io/gimletd/manifest"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"

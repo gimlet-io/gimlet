@@ -270,15 +270,12 @@ github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYis
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/gimlet-io/gimlet-cli v0.3.0/go.mod h1:Eepc0cmfjQq0v5N28ypFg6o5u0vQMyWH/Rs58fqyK3E=
-github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35 h1:LzBCfFLcHpf5HyhY2gastkSCPjtqpBMVRXShGvBxgkU=
-github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35/go.mod h1:au/+f8TT0S9O8xLRQslZ90hZLYcgKhpOhdA/F6+Wp6k=
+github.com/gimlet-io/gimletd v0.0.0-20210204144757-229506576799 h1:xwawiLQorGB6IFQRkRHV1jF6QUbtOV/JimSRSJm06Ew=
+github.com/gimlet-io/gimletd v0.0.0-20210204144757-229506576799/go.mod h1:A66VhcfMnw3GGWV02z/Rd8W8JbsJyh5r0774URkN8rA=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
 github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
-github.com/go-chi/chi v1.5.0 h1:2ZcJZozJ+rj6BA0c19ffBUGXEKAT/aOLOtQjD46vBRA=
-github.com/go-chi/chi v1.5.0/go.mod h1:REp24E+25iKvxgeTfHmdUoL5x15kBiDBlnIl5bCwe2k=
 github.com/go-chi/chi v1.5.1 h1:kfTK3Cxd/dkMu/rKs5ZceWYp+t5CtiE7vmaTv3LjC6w=
 github.com/go-chi/chi v1.5.1/go.mod h1:REp24E+25iKvxgeTfHmdUoL5x15kBiDBlnIl5bCwe2k=
 github.com/go-chi/cors v1.1.1 h1:eHuqxsIw89iXcWnWUN8R72JMibABJTN/4IOYI5WERvw=
