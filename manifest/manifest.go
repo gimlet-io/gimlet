@@ -4,7 +4,7 @@ type Manifest struct {
 	App       string                 `yaml:"app"`
 	Env       string                 `yaml:"env"`
 	Namespace string                 `yaml:"namespace"`
-	Deploy    Deploy                 `yaml:"deploy"`
+	Deploy    *Deploy                 `yaml:"deploy"`
 	Chart     Chart                  `yaml:"chart"`
 	Values    map[string]interface{} `yaml:"values"`
 }

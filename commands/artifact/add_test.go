@@ -33,6 +33,9 @@ const env = `
 app: fosdem-2021
 env: staging
 namespace: default
+deploy:
+  branch: master
+  event: push
 chart:
   repository: https://chart.onechart.dev
   name: onechart

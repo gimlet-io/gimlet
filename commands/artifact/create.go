@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gimlet-io/gimlet-cli/manifest"
 	"github.com/gimlet-io/gimletd/artifact"
-	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"time"
@@ -91,7 +90,6 @@ var artifactCreateCmd = cli.Command{
 
 func create(c *cli.Context) error {
 	artifact := &artifact.Artifact{
-		ID: c.String("repository") + "-" + uuid.New().String(),
 		Version: artifact.Version{
 			RepositoryName: c.String("repository"),
 			SHA:            c.String("sha"),
