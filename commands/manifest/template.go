@@ -1,20 +1,13 @@
 package manifest
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/Masterminds/sprig/v3"
 	"github.com/gimlet-io/gimletd/manifest"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v3"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"io/ioutil"
 	"os"
 	"strings"
-	"text/template"
 )
 
 var manifestTemplateCmd = cli.Command{
@@ -73,59 +66,19 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot read manifest file")
 	}
 
-	tpl, err := template.New("").Funcs(sprig.TxtFuncMap()).Parse(string(manifestString))
+	templatesManifests, err := manifest.HelmTemplate(string(manifestString), vars)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot template Helm chart %s", err)
 	}
 
-	var templated bytes.Buffer
-	err = tpl.Execute(&templated, vars)
-	if err != nil {
-		return err
-	}
-
-	var m manifest.Manifest
-	err = yaml.Unmarshal(templated.Bytes(), &m)
-	if err != nil {
-		return fmt.Errorf("cannot parse manifest")
-	}
-
-	actionConfig := new(action.Configuration)
-	client := action.NewInstall(actionConfig)
-
-	client.DryRun = true
-	client.ReleaseName = m.App
-	client.Replace = true
-	client.ClientOnly = true
-	client.APIVersions = []string{}
-	client.IncludeCRDs = false
-	client.ChartPathOptions.RepoURL = m.Chart.Repository
-	client.ChartPathOptions.Version = m.Chart.Version
-	client.Namespace = m.Namespace
-
-	var settings = helmCLI.New()
-	cp, err := client.ChartPathOptions.LocateChart(m.Chart.Name, settings)
-	if err != nil {
-		return err
-	}
-
-	chartRequested, err := loader.Load(cp)
-	if err != nil {
-		return err
-	}
-
-	rel, err := client.Run(chartRequested, m.Values)
-	if err != nil {
-		return err
-	}
 	outputPath := c.String("output")
 	if outputPath != "" {
-		err := ioutil.WriteFile(outputPath, []byte(rel.Manifest), 0666)
+		err := ioutil.WriteFile(outputPath, []byte(templatesManifests), 0666)
 		if err != nil {
 			return fmt.Errorf("cannot write values file %s", err)
 		}
 	} else {
-		fmt.Println(rel.Manifest)
+		fmt.Println(templatesManifests)
 	}
 
 	return nil
