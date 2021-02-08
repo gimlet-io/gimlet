@@ -2,6 +2,7 @@ package gitops
 
 import (
 	"fmt"
+	"github.com/gimlet-io/gimletd/githelper"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 	"os"
@@ -54,7 +55,7 @@ func delete(c *cli.Context) error {
 		return fmt.Errorf("%s is not a git repo\n", gitopsRepoPath)
 	}
 
-	empty, err := nothingToCommit(repo)
+	empty, err := githelper.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}
@@ -66,12 +67,12 @@ func delete(c *cli.Context) error {
 	app := c.String("app")
 	message := c.String("message")
 
-	err = delDir(repo, filepath.Join(env, app))
+	err = githelper.DelDir(repo, filepath.Join(env, app))
 	if err != nil {
 		return err
 	}
 
-	empty, err = nothingToCommit(repo)
+	empty, err = githelper.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}
@@ -80,5 +81,5 @@ func delete(c *cli.Context) error {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet CLI delete] %s/%s %s", env, app, message)
-	return commit(repo, gitMessage)
+	return githelper.Commit(repo, gitMessage)
 }

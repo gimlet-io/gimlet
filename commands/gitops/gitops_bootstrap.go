@@ -6,6 +6,7 @@ import (
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/flux2/pkg/manifestgen/sync"
 	"github.com/fluxcd/pkg/ssh"
+	"github.com/gimlet-io/gimletd/githelper"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -59,7 +60,7 @@ func bootstrap(c *cli.Context) error {
 		return fmt.Errorf("%s is not a git repo\n", gitopsRepoPath)
 	}
 
-	empty, err := nothingToCommit(repo)
+	empty, err := githelper.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}
@@ -118,12 +119,12 @@ func bootstrap(c *cli.Context) error {
 		return fmt.Errorf("cannot write deploy key %s", err)
 	}
 
-	err = stageFolder(repo, filepath.Join(env, "flux"))
+	err = githelper.StageFolder(repo, filepath.Join(env, "flux"))
 	if err != nil {
 		return err
 	}
 
-	empty, err = nothingToCommit(repo)
+	empty, err = githelper.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}
@@ -132,7 +133,7 @@ func bootstrap(c *cli.Context) error {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet CLI bootstrap] %s", env)
-	err = commit(repo, gitMessage)
+	err = githelper.Commit(repo, gitMessage)
 	if err != nil {
 		return err
 	}

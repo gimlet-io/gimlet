@@ -86,7 +86,7 @@ func Test_write(t *testing.T) {
 			}
 			defer os.Remove(fileToWrite.Name())
 
-			ioutil.WriteFile(fileToWrite.Name(), []byte(manifest), commands.File_RW_RW_R)
+			ioutil.WriteFile(fileToWrite.Name(), []byte(manifestStr), commands.File_RW_RW_R)
 			args = append(args, "-f", fileToWrite.Name())
 
 			err = commands.Run(&Command, args)
@@ -117,7 +117,7 @@ func Test_write(t *testing.T) {
 
 }
 
-const manifest = `
+const manifestStr = `
 ---
 # Source: onechart/templates/service.yaml
 apiVersion: v1

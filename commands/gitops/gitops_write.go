@@ -3,12 +3,12 @@ package gitops
 import (
 	"fmt"
 	"github.com/gimlet-io/gimlet-cli/commands"
+	"github.com/gimlet-io/gimletd/githelper"
+	"github.com/gimlet-io/gimletd/manifest"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 var gitopsWriteCmd = cli.Command{
@@ -63,83 +63,16 @@ func write(c *cli.Context) error {
 		return fmt.Errorf("%s is not a git repository", gitopsRepoPath)
 	}
 
-	empty, err := nothingToCommit(repo)
-	if err != nil {
-		return fmt.Errorf("cannot get git state %s", err)
-	}
-	if !empty {
-		return fmt.Errorf("there are staged changes in the gitops repo. Commit them first then try again")
-	}
-
 	env := c.String("env")
 	app := c.String("app")
 	file := c.String("file")
 	message := c.String("message")
 
-	err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)
-	if err != nil {
-		return fmt.Errorf("cannot create dir %s", err)
-	}
-
 	files, err := commands.InputFiles(file)
 	if err != nil {
 		return fmt.Errorf("cannot read input files %s", err)
 	}
-	files = splitHelmOutput(files)
+	files = manifest.SplitHelmOutput(files)
 
-	for path, content := range files {
-		if !strings.HasSuffix(content, "\n") {
-			content = content + "\n"
-		}
-		err = ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, filepath.Base(path)), []byte(content), commands.File_RW_RW_R)
-		if err != nil {
-			return fmt.Errorf("cannot write file %s", err)
-		}
-	}
-
-	err = stageFolder(repo, filepath.Join(env, app))
-	if err != nil {
-		return err
-	}
-
-	empty, err = nothingToCommit(repo)
-	if err != nil {
-		return err
-	}
-	if empty {
-		return nil
-	}
-
-	gitMessage := fmt.Sprintf("[Gimlet CLI write] %s/%s %s", env, app, message)
-	return commit(repo, gitMessage)
-}
-
-func splitHelmOutput(input map[string]string) map[string]string {
-	if len(input) != 1 {
-		return input
-	}
-
-	const separator = "---\n# Source: "
-
-	files := map[string]string{}
-
-	for _, content := range input {
-		if !strings.Contains(content, separator) {
-			return input
-		}
-
-		parts := strings.Split(content, separator)
-		for _, p := range parts {
-			p := strings.TrimSpace(p)
-			if p == "" {
-				continue
-			}
-
-			filePath := strings.Split(p, "\n")[0]
-			fileName := filepath.Base(filePath)
-			files[fileName] = strings.Join(strings.Split(p, "\n")[1:], "\n")
-		}
-	}
-
-	return files
+	return githelper.CommitFilesToGit(repo, files, env, app, message)
 }
