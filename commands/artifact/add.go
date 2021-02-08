@@ -61,7 +61,9 @@ func add(c *cli.Context) error {
 		}
 		item[keyValue[0]] = keyValue[1]
 	}
-	a.Items = append(a.Items, item)
+	if len(item) != 0 {
+		a.Items = append(a.Items, item)
+	}
 
 	envFiles := c.StringSlice("envFile")
 	envs := []*manifest.Manifest{}
@@ -77,7 +79,7 @@ func add(c *cli.Context) error {
 		}
 		envs = append(envs, &m)
 	}
-	a.Environments = envs
+	a.Environments = append(a.Environments, envs...)
 
 	vars := c.StringSlice("var")
 	context := map[string]string{}
