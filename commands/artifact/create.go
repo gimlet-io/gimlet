@@ -49,6 +49,14 @@ var artifactCreateCmd = cli.Command{
 			Usage: "For pull requests, the feature branch name",
 		},
 		&cli.StringFlag{
+			Name:  "targetBranch",
+			Usage: "For pull requests, the merge target",
+		},
+		&cli.StringFlag{
+			Name:  "tag",
+			Usage: "For tag builds, the name of the tag",
+		},
+		&cli.StringFlag{
 			Name:     "authorName",
 			Usage:    "The person who originally wrote the code (mandatory)",
 			Required: true,
@@ -102,6 +110,8 @@ func create(c *cli.Context) error {
 			Branch:         c.String("branch"),
 			Event:          event,
 			SourceBranch:   c.String("sourceBranch"),
+			TargetBranch:   c.String("targetBranch"),
+			Tag:            c.String("tag"),
 			AuthorName:     c.String("authorName"),
 			AuthorEmail:    c.String("authorEmail"),
 			CommitterName:  c.String("committerName"),
