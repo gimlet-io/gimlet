@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/gimlet-io/gimletd/client"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -40,9 +41,9 @@ var artifactListCmd = cli.Command{
 			Name:  "branch",
 			Usage: "filter artifacts to a branch",
 		},
-		&cli.BoolFlag{
-			Name:  "pr",
-			Usage: "filter artifacts to PRs",
+		&cli.StringFlag{
+			Name:  "event",
+			Usage: "filter artifacts to a git event",
 		},
 		&cli.StringFlag{
 			Name:  "sourceBranch",
@@ -103,9 +104,18 @@ func list(c *cli.Context) error {
 		until = &t
 	}
 
+	var event *dx.GitEvent
+	if c.String("event") != "" {
+		event = dx.PushPtr()
+		err := event.UnmarshalJSON([]byte(`"` + c.String("event") + `"`))
+		if err != nil {
+			return fmt.Errorf("cannot parse event: %s", err)
+		}
+	}
+
 	artifacts, err := client.ArtifactsGet(
 		c.String("app"), c.String("branch"),
-		c.Bool("pr"),
+		event,
 		c.String("sourceBranch"),
 		c.String("sha"),
 		c.Int("limit"), c.Int("offset"),
