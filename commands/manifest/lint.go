@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"fmt"
-	"github.com/gimlet-io/gimletd/manifest"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -30,7 +30,7 @@ func lint(c *cli.Context) error {
 		return fmt.Errorf("cannot read file %s", err)
 	}
 
-	var m manifest.Manifest
+	var m dx.Manifest
 	err = yaml.Unmarshal(envString, &m)
 	if err != nil {
 		return err

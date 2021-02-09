@@ -49,7 +49,7 @@ func Test_write(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			lastCommit, err := repo.CommitObject(head.Hash())
 			g.Assert(err == nil).IsTrue(err)
-			g.Assert(lastCommit.Message).Equal(fmt.Sprintf("[Gimlet CLI write] %s/%s %s", env, app, ""))
+			g.Assert(lastCommit.Message).Equal(fmt.Sprintf("[Gimlet] %s/%s %s", env, app, ""))
 		})
 
 		g.It("Should write a folder", func() {
@@ -69,7 +69,7 @@ func Test_write(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			lastCommit, err := repo.CommitObject(head.Hash())
 			g.Assert(err == nil).IsTrue(err)
-			g.Assert(lastCommit.Message).Equal(fmt.Sprintf("[Gimlet CLI write] %s/%s %s", env, app, ""))
+			g.Assert(lastCommit.Message).Equal(fmt.Sprintf("[Gimlet] %s/%s %s", env, app, ""))
 		})
 
 		g.It("Should split a templated Helm manifest to multiple files", func() {

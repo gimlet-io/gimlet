@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimletd/manifest"
-	"github.com/gimlet-io/gimletd/artifact"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -46,7 +45,7 @@ func add(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot read file %s", err)
 	}
-	var a artifact.Artifact
+	var a dx.Artifact
 	err = json.Unmarshal(content, &a)
 	if err != nil {
 		return fmt.Errorf("cannot parse artifact file %s", err)
@@ -66,13 +65,13 @@ func add(c *cli.Context) error {
 	}
 
 	envFiles := c.StringSlice("envFile")
-	envs := []*manifest.Manifest{}
+	envs := []*dx.Manifest{}
 	for _, envFile := range envFiles {
 		envString, err := ioutil.ReadFile(envFile)
 		if err != nil {
 			return fmt.Errorf("cannot read file %s", err)
 		}
-		var m manifest.Manifest
+		var m dx.Manifest
 		err = yaml.Unmarshal(envString, &m)
 		if err != nil {
 			return fmt.Errorf("cannot parse environment file %s", err)

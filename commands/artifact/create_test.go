@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
-	"github.com/gimlet-io/gimletd/artifact"
+	"github.com/gimlet-io/gimletd/dx"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -17,7 +17,7 @@ func Test_create(t *testing.T) {
 	args = append(args, "--repository", "my-app")
 	args = append(args, "--sha", "ea9ab7cc31b2599bf4afcfd639da516ca27a4780")
 	args = append(args, "--branch", "master")
-	args = append(args, "--pr")
+	args = append(args, "--event", "pr")
 	args = append(args, "--authorName", "Jane Doe")
 	args = append(args, "--authorEmail", "jane@doe.org")
 	args = append(args, "--committerName", "Jane Doe")
@@ -40,10 +40,11 @@ func Test_create(t *testing.T) {
 
 			content, err := ioutil.ReadFile(fileToWrite.Name())
 			fmt.Println(string(content))
-			var a artifact.Artifact
+			var a dx.Artifact
 			err = json.Unmarshal(content, &a)
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(a.Version.Message == "Bugfix 123").IsTrue()
+			g.Assert(a.Version.Event == dx.PR).IsTrue()
 		})
 	})
 }

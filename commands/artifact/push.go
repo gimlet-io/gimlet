@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimletd/artifact"
 	"github.com/gimlet-io/gimletd/client"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 	"io/ioutil"
@@ -46,7 +46,7 @@ func push(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot read file %s", err)
 	}
-	var a artifact.Artifact
+	var a dx.Artifact
 	err = json.Unmarshal(content, &a)
 	if err != nil {
 		return fmt.Errorf("cannot parse artifact file %s", err)

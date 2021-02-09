@@ -3,8 +3,8 @@ package gitops
 import (
 	"fmt"
 	"github.com/gimlet-io/gimlet-cli/commands"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/gimlet-io/gimletd/githelper"
-	"github.com/gimlet-io/gimletd/manifest"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 	"os"
@@ -72,7 +72,7 @@ func write(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot read input files %s", err)
 	}
-	files = manifest.SplitHelmOutput(files)
+	files = dx.SplitHelmOutput(files)
 
 	return githelper.CommitFilesToGit(repo, files, env, app, message)
 }

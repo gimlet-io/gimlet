@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimletd/manifest"
-	"github.com/gimlet-io/gimletd/artifact"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"time"
@@ -41,13 +40,13 @@ var artifactCreateCmd = cli.Command{
 			Usage:    "The git branch, or target branch for pull request builds (mandatory)",
 			Required: true,
 		},
-		&cli.BoolFlag{
-			Name:     "pr",
-			Usage:    "If this is a pull request build",
+		&cli.StringFlag{
+			Name:  "event",
+			Usage: "If this is a push/tag/pr build",
 		},
 		&cli.StringFlag{
-			Name:     "sourceBranch",
-			Usage:    "For pull requests, the feature branch name",
+			Name:  "sourceBranch",
+			Usage: "For pull requests, the feature branch name",
 		},
 		&cli.StringFlag{
 			Name:     "authorName",
@@ -89,12 +88,19 @@ var artifactCreateCmd = cli.Command{
 }
 
 func create(c *cli.Context) error {
-	artifact := &artifact.Artifact{
-		Version: artifact.Version{
+	eventStr := c.String("event")
+	event := dx.Push
+	err := event.UnmarshalJSON([]byte(`"` + eventStr + `"`))
+	if err != nil {
+		return fmt.Errorf("cannot parse event: %s", err)
+	}
+
+	artifact := &dx.Artifact{
+		Version: dx.Version{
 			RepositoryName: c.String("repository"),
 			SHA:            c.String("sha"),
 			Branch:         c.String("branch"),
-			PR:             c.Bool("pr"),
+			Event:          event,
 			SourceBranch:   c.String("sourceBranch"),
 			AuthorName:     c.String("authorName"),
 			AuthorEmail:    c.String("authorEmail"),
@@ -106,7 +112,7 @@ func create(c *cli.Context) error {
 		Context: map[string]string{
 
 		},
-		Environments: []*manifest.Manifest{
+		Environments: []*dx.Manifest{
 
 		},
 		Items: []map[string]interface{}{

@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"fmt"
-	"github.com/gimlet-io/gimletd/manifest"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -66,7 +66,7 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot read manifest file")
 	}
 
-	templatesManifests, err := manifest.HelmTemplate(string(manifestString), vars)
+	templatesManifests, err := dx.HelmTemplate(string(manifestString), vars)
 	if err != nil {
 		return fmt.Errorf("cannot template Helm chart %s", err)
 	}

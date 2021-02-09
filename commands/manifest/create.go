@@ -3,7 +3,7 @@ package manifest
 import (
 	"bytes"
 	"fmt"
-	"github.com/gimlet-io/gimletd/manifest"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/action"
@@ -114,11 +114,11 @@ func create(c *cli.Context) error {
 		return fmt.Errorf("cannot find Helm repository %s", repoName)
 	}
 
-	generatedManifest := manifest.Manifest{
+	generatedManifest := dx.Manifest{
 		App:       c.String("app"),
 		Env:       c.String("env"),
 		Namespace: c.String("namespace"),
-		Chart: manifest.Chart{
+		Chart: dx.Chart{
 			Repository: helmRepo.URL,
 			Name:       chart.Name(),
 			Version:    chart.Metadata.Version,
