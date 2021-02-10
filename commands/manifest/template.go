@@ -5,6 +5,7 @@ import (
 	"github.com/gimlet-io/gimletd/dx"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -66,7 +67,17 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot read manifest file")
 	}
 
-	templatesManifests, err := dx.HelmTemplate(string(manifestString), vars)
+	var m dx.Manifest
+	err = yaml.Unmarshal(manifestString, &m)
+	if err != nil {
+		return fmt.Errorf("cannot unmarshal manifest")
+	}
+	err = m.ResolveVars(vars)
+	if err != nil {
+		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
+	}
+
+	templatesManifests, err := dx.HelmTemplate(m)
 	if err != nil {
 		return fmt.Errorf("cannot template Helm chart %s", err)
 	}

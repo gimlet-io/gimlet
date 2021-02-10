@@ -283,6 +283,8 @@ github.com/gimlet-io/gimletd v0.0.0-20210209115929-04a67b99f033 h1:WjnyZxM2hV4SN
 github.com/gimlet-io/gimletd v0.0.0-20210209115929-04a67b99f033/go.mod h1:dJ4X606GHtv0fNIDLo5LqAEw8HA0T7hv7m9j3ro8kaM=
 github.com/gimlet-io/gimletd v0.0.0-20210210130021-f6ee5b73f805 h1:fm1w0Nx5duFarGpRfLtswJimVnqug1EBdd9C1TkbCWs=
 github.com/gimlet-io/gimletd v0.0.0-20210210130021-f6ee5b73f805/go.mod h1:dJ4X606GHtv0fNIDLo5LqAEw8HA0T7hv7m9j3ro8kaM=
+github.com/gimlet-io/gimletd v0.0.0-20210210145555-10ad2fdaed63 h1:t1kn3QdWCvMBXogqEqiMusrpgWzhn+tJ7SalGzCbysw=
+github.com/gimlet-io/gimletd v0.0.0-20210210145555-10ad2fdaed63/go.mod h1:dJ4X606GHtv0fNIDLo5LqAEw8HA0T7hv7m9j3ro8kaM=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
