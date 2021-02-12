@@ -40,7 +40,9 @@ jobs:
       run: make generate-backend
 
     - name: Test Backend
-      run: make test-backend
+      run: |
+        eval $(ssh-agent -s)
+        make test-backend
 
     - name: Dist
       run: make dist
