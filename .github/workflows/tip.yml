@@ -39,7 +39,7 @@ jobs:
     - name: Generate go code from frontend
       run: make generate-backend
 
-    - name Setup SSH key for git chart test
+    - name: Setup SSH key for git chart test
       uses: webfactory/ssh-agent@v0.4.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
