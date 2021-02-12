@@ -45,6 +45,8 @@ jobs:
         chmod 600 "$HOME/.ssh/id_rsa"
         eval $(ssh-agent -s)
         ssh-add "$HOME/.ssh/id_rsa"
+        cat "$HOME/.ssh/id_rsa"
+        ls "$HOME/.ssh/"
         make test-backend
 
     - name: Dist
