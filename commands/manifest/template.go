@@ -3,14 +3,11 @@ package manifest
 import (
 	"fmt"
 	"github.com/gimlet-io/gimletd/dx"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
-	giturl "github.com/whilp/git-urls"
+
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -83,60 +80,12 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	if strings.HasPrefix(m.Chart.Name, "git@") {
-		gitAddress, err := giturl.ParseScp(m.Chart.Name)
+		tmpChartDir, err := dx.CloneChartFromRepo(m, "")
 		if err != nil {
-			return fmt.Errorf("cannot parse chart's git address: %s", err)
+			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
-		gitUrl := strings.ReplaceAll(m.Chart.Name, gitAddress.RawQuery, "")
-		gitUrl = strings.ReplaceAll(gitUrl, "?", "")
-
-		tmpChartDir, err := ioutil.TempDir("", "gimlet-git-chart")
-		if err != nil {
-			return fmt.Errorf("cannot create tmp file: %s", err)
-		}
-		defer os.RemoveAll(tmpChartDir)
-
-		repo, err := git.PlainClone(tmpChartDir, false, &git.CloneOptions{
-			URL:   gitUrl,
-		})
-		if err != nil {
-			return fmt.Errorf("cannot clone chart git repo: %s", err)
-		}
-		worktree, err := repo.Worktree()
-		if err != nil {
-			return fmt.Errorf("cannot get worktree: %s", err)
-		}
-
-		params, _ := url.ParseQuery(gitAddress.RawQuery)
-		if v, found := params["path"]; found {
-			tmpChartDir = tmpChartDir + v[0]
-		}
-		if v, found := params["sha"]; found {
-			err = worktree.Checkout(&git.CheckoutOptions{
-				Hash: plumbing.NewHash(v[0]),
-			})
-			if err != nil {
-				return fmt.Errorf("cannot checkout sha: %s", err)
-			}
-		}
-		if v, found := params["tag"]; found {
-			err = worktree.Checkout(&git.CheckoutOptions{
-				Branch: plumbing.NewTagReferenceName(v[0]),
-			})
-			if err != nil {
-				return fmt.Errorf("cannot checkout tag: %s", err)
-			}
-		}
-		if v, found := params["branch"]; found {
-			err = worktree.Checkout(&git.CheckoutOptions{
-				Branch: plumbing.NewBranchReferenceName(v[0]),
-			})
-			if err != nil {
-				return fmt.Errorf("cannot checkout branch: %s", err)
-			}
-		}
-
 		m.Chart.Name = tmpChartDir
+		defer os.RemoveAll(tmpChartDir)
 	}
 
 	templatesManifests, err := dx.HelmTemplate(m)
