@@ -39,11 +39,11 @@ jobs:
     - name: Generate go code from frontend
       run: make generate-backend
 
+    - name: Setup ssh agent
+      uses: webfactory/ssh-agent@v0.4.1
+
     - name: Test Backend
-      run: |
-        cat /dev/zero | ssh-keygen -q -N ""
-        eval $(ssh-agent -s)
-        make test-backend
+      run: make test-backend
 
     - name: Dist
       run: make dist
