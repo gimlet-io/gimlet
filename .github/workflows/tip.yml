@@ -44,10 +44,8 @@ jobs:
         ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
         chmod 600 "$HOME/.ssh/id_rsa"
         chmod 600 "$HOME/.ssh/id_rsa.pub"
-        eval $(ssh-agent -s)
-        ssh-add "$HOME/.ssh/id_rsa"
-        cat "$HOME/.ssh/id_rsa"
-        ls -la "$HOME/.ssh/"
+#        eval $(ssh-agent -s)
+#        ssh-add "$HOME/.ssh/id_rsa"
         make test-backend
 
     - name: Dist
