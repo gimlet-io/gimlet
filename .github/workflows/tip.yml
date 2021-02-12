@@ -42,7 +42,9 @@ jobs:
     - name: Test Backend
       run: |
         ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
+        chmod 600 "$HOME/.ssh/id_rsa"
         eval $(ssh-agent -s)
+        ssh-add "$HOME/.ssh/id_rsa"
         make test-backend
 
     - name: Dist
