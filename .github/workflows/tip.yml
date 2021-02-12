@@ -39,12 +39,13 @@ jobs:
     - name: Generate go code from frontend
       run: make generate-backend
 
+    - name Setup SSH key for git chart test
+      uses: webfactory/ssh-agent@v0.4.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
     - name: Test Backend
-      run: |
-        ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
-        chmod 600 "$HOME/.ssh/id_rsa"
-        chmod 600 "$HOME/.ssh/id_rsa.pub"
-        make test-backend
+      run: make test-backend
 
     - name: Dist
       run: make dist
