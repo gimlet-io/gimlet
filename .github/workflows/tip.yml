@@ -41,6 +41,7 @@ jobs:
 
     - name: Test Backend
       run: |
+        cat /dev/zero | ssh-keygen -q -N ""
         eval $(ssh-agent -s)
         make test-backend
 
