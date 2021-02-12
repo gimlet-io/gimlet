@@ -17,8 +17,8 @@ import (
 )
 
 var manifestCreateCmd = cli.Command{
-	Name:      "create",
-	Usage:     "Creates a Gimlet manifest",
+	Name:  "create",
+	Usage: "Creates a Gimlet manifest",
 	UsageText: `gimlet manifest create \
      -f values.yaml \
      --chart onechart/onechart
@@ -26,7 +26,7 @@ var manifestCreateCmd = cli.Command{
      --app myapp \
      --namespace my-team \
      > .gimlet/staging.yaml`,
-	Action:    create,
+	Action: create,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "env",
@@ -78,40 +78,49 @@ func create(c *cli.Context) error {
 		}
 	}
 
-	chartString := c.String("chart")
-	chartLoader := action.NewShow(action.ShowChart)
-	var settings = helmCLI.New()
-	chartPath, err := chartLoader.ChartPathOptions.LocateChart(chartString, settings)
-	if err != nil {
-		return fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
+	var repoUrl, chartName, chartVersion string
 
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
-
-	chartParts := strings.Split(chartString, "/")
-	if len(chartParts) != 2 {
-		return fmt.Errorf("helm chart must be in the <repo>/<chart> format, try `helm repo ls` to find your chart")
-	}
-
-	repoName := chartParts[0]
-
-	var helmRepo *repo.Entry
-	f, err := repo.LoadFile(helmpath.ConfigPath("repositories.yaml"))
-	if err != nil {
-		return fmt.Errorf("cannot load Helm repositories")
-	}
-	for _, r := range f.Repositories {
-		if r.Name == repoName {
-			helmRepo = r
-			break
+	if strings.HasPrefix(c.String("chart"), "git@") {
+		chartName = c.String("chart")
+	} else {
+		chartString := c.String("chart")
+		chartLoader := action.NewShow(action.ShowChart)
+		var settings = helmCLI.New()
+		chartPath, err := chartLoader.ChartPathOptions.LocateChart(chartString, settings)
+		if err != nil {
+			return fmt.Errorf("could not load %s Helm chart", err.Error())
 		}
-	}
 
-	if helmRepo == nil {
-		return fmt.Errorf("cannot find Helm repository %s", repoName)
+		chart, err := loader.Load(chartPath)
+		if err != nil {
+			return fmt.Errorf("could not load %s Helm chart", err.Error())
+		}
+
+		chartName = chart.Name()
+		chartVersion = chart.Metadata.Version
+
+		chartParts := strings.Split(chartString, "/")
+		if len(chartParts) != 2 {
+			return fmt.Errorf("helm chart must be in the <repo>/<chart> format, try `helm repo ls` to find your chart")
+		}
+		repoName := chartParts[0]
+
+		var helmRepo *repo.Entry
+		f, err := repo.LoadFile(helmpath.ConfigPath("repositories.yaml"))
+		if err != nil {
+			return fmt.Errorf("cannot load Helm repositories")
+		}
+		for _, r := range f.Repositories {
+			if r.Name == repoName {
+				helmRepo = r
+				break
+			}
+		}
+
+		if helmRepo == nil {
+			return fmt.Errorf("cannot find Helm repository %s", repoName)
+		}
+		repoUrl = helmRepo.URL
 	}
 
 	generatedManifest := dx.Manifest{
@@ -119,9 +128,9 @@ func create(c *cli.Context) error {
 		Env:       c.String("env"),
 		Namespace: c.String("namespace"),
 		Chart: dx.Chart{
-			Repository: helmRepo.URL,
-			Name:       chart.Name(),
-			Version:    chart.Metadata.Version,
+			Repository: repoUrl,
+			Name:       chartName,
+			Version:    chartVersion,
 		},
 		Values: values,
 	}
