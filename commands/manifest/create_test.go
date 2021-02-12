@@ -62,7 +62,7 @@ func Test_create(t *testing.T) {
 			var m dx.Manifest
 			err = yaml.Unmarshal(manifestString, &m)
 			g.Assert(err == nil).IsTrue(err)
-			g.Assert(m.Chart.Repository == "https://chart.onechart.dev").IsTrue("Should resolve chart repo url")
+			g.Assert(m.Chart.Name == "git@github.com:gimlet-io/onechart.git?path=/charts/onechart/").IsTrue("Should resolve chart repo url")
 		})
 	})
 }
