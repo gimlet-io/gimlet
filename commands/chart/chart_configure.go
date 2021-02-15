@@ -75,7 +75,7 @@ func configure(c *cli.Context) error {
 		}
 	}
 
-	yamlBytes, err := ConfigureChart(repoArg, existingValuesJson)
+	yamlBytes, err := ConfigureChart(repoArg, "", "", existingValuesJson)
 	if err != nil {
 		return err
 	}
@@ -94,10 +94,13 @@ func configure(c *cli.Context) error {
 	return nil
 }
 
-func ConfigureChart(repoArg string, existingValuesJson []byte) ([]byte, error) {
+func ConfigureChart(chartName string, chartRepository string, chartVersion string, existingValuesJson []byte) ([]byte, error) {
 	chartLoader := action.NewShow(action.ShowChart)
 	var settings = helmCLI.New()
-	chartPath, err := chartLoader.ChartPathOptions.LocateChart(repoArg, settings)
+
+	chartLoader.ChartPathOptions.RepoURL = chartRepository
+	chartLoader.ChartPathOptions.Version = chartVersion
+	chartPath, err := chartLoader.ChartPathOptions.LocateChart(chartName, settings)
 	if err != nil {
 		return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
 	}

@@ -19,9 +19,9 @@ var manifestConfigureCmd = cli.Command{
 	Action:    configure,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    "file",
-			Aliases: []string{"f"},
-			Usage:   "configuring an existing manifest file",
+			Name:     "file",
+			Aliases:  []string{"f"},
+			Usage:    "configuring an existing manifest file",
 			Required: true,
 		},
 		&cli.StringFlag{
@@ -63,7 +63,7 @@ func configure(c *cli.Context) error {
 		return fmt.Errorf("cannot marshal values %s", err.Error())
 	}
 
-	yamlBytes, err := chart.ConfigureChart(tmpChartName, existingValuesJson)
+	yamlBytes, err := chart.ConfigureChart(tmpChartName, m.Chart.Repository, m.Chart.Version, existingValuesJson)
 	if err != nil {
 		return err
 	}
