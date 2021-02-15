@@ -22,7 +22,7 @@ func main() {
 
 	write(out, "package chart\n")
 
-	write(out, "var web = map[string]string{\n")
+	write(out, "var Web = map[string]string{\n")
 
 	const webDist = "../web/dist/"
 	var entries []string

@@ -9,5 +9,6 @@ var Command = cli.Command{
 		&manifestCreateCmd,
 		&manifestTemplateCmd,
 		&manifestLintCmd,
+		&manifestConfigureCmd,
 	},
 }

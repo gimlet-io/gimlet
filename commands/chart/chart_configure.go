@@ -55,34 +55,6 @@ func configure(c *cli.Context) error {
 		return fmt.Errorf("chart is mandatory. Run `gimlet chart configure --help` for usage")
 	}
 
-	chartLoader := action.NewShow(action.ShowChart)
-	var settings = helmCLI.New()
-	chartPath, err := chartLoader.ChartPathOptions.LocateChart(repoArg, settings)
-	if err != nil {
-		return fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
-
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
-
-	schema := string(chart.Schema)
-	var helmUISchema string
-	for _, r := range chart.Raw {
-		if "helm-ui.json" == r.Name {
-			helmUISchema = string(r.Data)
-		}
-	}
-
-	if schema == "" {
-		return fmt.Errorf("chart doesn't have a values.schema.json with the Helm schema defined")
-	}
-
-	if helmUISchema == "" {
-		return fmt.Errorf("chart doesn't have a helm-ui.json with the Helm UI schema defined")
-	}
-
 	existingValuesPath := c.String("file")
 	existingValuesJson := []byte("{}")
 	if existingValuesPath != "" {
@@ -101,6 +73,54 @@ func configure(c *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("cannot serialize values")
 		}
+	}
+
+	yamlBytes, err := ConfigureChart(repoArg, existingValuesJson)
+	if err != nil {
+		return err
+	}
+
+	outputPath := c.String("output")
+	if outputPath != "" {
+		err := ioutil.WriteFile(outputPath, yamlBytes, 0666)
+		if err != nil {
+			return fmt.Errorf("cannot write values file %s", err)
+		}
+	} else {
+		fmt.Println("---")
+		fmt.Println(string(yamlBytes))
+	}
+
+	return nil
+}
+
+func ConfigureChart(repoArg string, existingValuesJson []byte) ([]byte, error) {
+	chartLoader := action.NewShow(action.ShowChart)
+	var settings = helmCLI.New()
+	chartPath, err := chartLoader.ChartPathOptions.LocateChart(repoArg, settings)
+	if err != nil {
+		return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
+	}
+
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
+	}
+
+	schema := string(chart.Schema)
+	var helmUISchema string
+	for _, r := range chart.Raw {
+		if "helm-ui.json" == r.Name {
+			helmUISchema = string(r.Data)
+		}
+	}
+
+	if schema == "" {
+		return nil, fmt.Errorf("chart doesn't have a values.schema.json with the Helm schema defined")
+	}
+
+	if helmUISchema == "" {
+		return nil, fmt.Errorf("chart doesn't have a helm-ui.json with the Helm UI schema defined")
 	}
 
 	port := randomPort()
@@ -135,23 +155,11 @@ func configure(c *cli.Context) error {
 	e := yaml.NewEncoder(yamlString)
 	e.SetIndent(2)
 	e.Encode(values)
-
-	outputPath := c.String("output")
-	if outputPath != "" {
-		err := ioutil.WriteFile(outputPath, yamlString.Bytes(), 0666)
-		if err != nil {
-			return fmt.Errorf("cannot write values file %s", err)
-		}
-	} else {
-		fmt.Println("---")
-		fmt.Println(yamlString.String())
-	}
-
-	return nil
+	return yamlString.Bytes(), nil
 }
 
 func removeTempFiles(workDir string) {
-	for file, _ := range web {
+	for file, _ := range Web {
 		os.Remove(filepath.Join(workDir, file))
 	}
 	os.Remove(workDir)
@@ -162,7 +170,7 @@ func writeTempFiles(workDir string, schema string, helmUISchema string, existing
 	ioutil.WriteFile(filepath.Join(workDir, "helm-ui.json"), []byte(helmUISchema), 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "values.json"), []byte(existingValues), 0666)
 
-	for file, content := range web {
+	for file, content := range Web {
 		ioutil.WriteFile(filepath.Join(workDir, file), []byte(content), 0666)
 	}
 }
