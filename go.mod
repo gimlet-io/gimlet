@@ -1,6 +1,6 @@
 module github.com/gimlet-io/gimlet-cli
 
-go 1.14
+go 1.16
 
 require (
 	github.com/bitnami-labs/sealed-secrets v0.13.1

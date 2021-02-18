@@ -14,7 +14,7 @@ format-backend:
 	@gofmt -w ${GOFILES}
 
 test-backend:
-	$(DOCKER_RUN) go test -race -timeout 30s $(shell go list ./... )
+	$(DOCKER_RUN) go test -race -timeout 60s $(shell go list ./... )
 
 generate-backend:
 	$(DOCKER_RUN) go generate github.com/gimlet-io/gimlet-cli/cmd
