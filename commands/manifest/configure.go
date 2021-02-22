@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gimlet-io/gimlet-cli/commands/chart"
@@ -73,20 +74,20 @@ func configure(c *cli.Context) error {
 		return fmt.Errorf("cannot unmarshal configured values %s", err.Error())
 	}
 
-	yamlBytes, err = yaml.Marshal(m)
-	if err != nil {
-		return fmt.Errorf("cannot marshal manifest %s", err.Error())
-	}
+	yamlBuff := bytes.NewBuffer([]byte(""))
+	e := yaml.NewEncoder(yamlBuff)
+	e.SetIndent(2)
+	e.Encode(m)
 
 	outputPath := c.String("output")
 	if outputPath != "" {
-		err := ioutil.WriteFile(outputPath, yamlBytes, 0666)
+		err := ioutil.WriteFile(outputPath, yamlBuff.Bytes(), 0666)
 		if err != nil {
 			return fmt.Errorf("cannot write values file %s", err)
 		}
 	} else {
 		fmt.Println("---")
-		fmt.Println(string(yamlBytes))
+		fmt.Println(yamlBuff.String())
 	}
 
 	return nil
