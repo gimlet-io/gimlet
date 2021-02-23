@@ -44,6 +44,16 @@ var chartConfigureCmd = cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "output values file",
 		},
+		&cli.StringFlag{
+			Name:    "schema",
+			Aliases: []string{"s"},
+			Usage:   "schema file to render, made for schema development",
+		},
+		&cli.StringFlag{
+			Name:    "ui-schema",
+			Aliases: []string{"u"},
+			Usage:   "ui schema file to render, made for schema development",
+		},
 	},
 }
 
@@ -75,7 +85,30 @@ func configure(c *cli.Context) error {
 		}
 	}
 
-	yamlBytes, err := ConfigureChart(repoArg, "", "", existingValuesJson)
+	var debugSchema, debugUISchema string
+	if c.String("schema") != "" {
+		debugSchemaBytes, err := ioutil.ReadFile(c.String("schema"))
+		if err != nil {
+			return fmt.Errorf("cannot read debugSchema file")
+		}
+		debugSchema = string(debugSchemaBytes)
+	}
+	if c.String("ui-schema") != "" {
+		debugUISchemaBytes, err := ioutil.ReadFile(c.String("ui-schema"))
+		if err != nil {
+			return fmt.Errorf("cannot read debugUISchema file")
+		}
+		debugUISchema = string(debugUISchemaBytes)
+	}
+
+	yamlBytes, err := ConfigureChart(
+		repoArg,
+		"",
+		"",
+		existingValuesJson,
+		debugSchema,
+		debugUISchema,
+	)
 	if err != nil {
 		return err
 	}
@@ -94,34 +127,50 @@ func configure(c *cli.Context) error {
 	return nil
 }
 
-func ConfigureChart(chartName string, chartRepository string, chartVersion string, existingValuesJson []byte) ([]byte, error) {
-	chartLoader := action.NewShow(action.ShowChart)
-	var settings = helmCLI.New()
+func ConfigureChart(
+	chartName string,
+	chartRepository string,
+	chartVersion string,
+	existingValuesJson []byte,
+	debugSchema string,
+	debugUISchema string,
+) ([]byte, error) {
+	var schema, helmUISchema string
 
-	chartLoader.ChartPathOptions.RepoURL = chartRepository
-	chartLoader.ChartPathOptions.Version = chartVersion
-	chartPath, err := chartLoader.ChartPathOptions.LocateChart(chartName, settings)
-	if err != nil {
-		return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
+	if debugSchema == "" && debugUISchema == "" {
+		chartLoader := action.NewShow(action.ShowChart)
+		var settings = helmCLI.New()
 
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
-
-	schema := string(chart.Schema)
-	var helmUISchema string
-	for _, r := range chart.Raw {
-		if "helm-ui.json" == r.Name {
-			helmUISchema = string(r.Data)
+		chartLoader.ChartPathOptions.RepoURL = chartRepository
+		chartLoader.ChartPathOptions.Version = chartVersion
+		chartPath, err := chartLoader.ChartPathOptions.LocateChart(chartName, settings)
+		if err != nil {
+			return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
 		}
+
+		chart, err := loader.Load(chartPath)
+		if err != nil {
+			return nil, fmt.Errorf("could not load %s Helm chart", err.Error())
+		}
+
+		schema = string(chart.Schema)
+		for _, r := range chart.Raw {
+			if "helm-ui.json" == r.Name {
+				helmUISchema = string(r.Data)
+			}
+		}
+	}
+
+	if debugSchema != "" {
+		schema = debugSchema
+	}
+	if debugUISchema != "" {
+		helmUISchema = debugUISchema
 	}
 
 	if schema == "" {
 		return nil, fmt.Errorf("chart doesn't have a values.schema.json with the Helm schema defined")
 	}
-
 	if helmUISchema == "" {
 		return nil, fmt.Errorf("chart doesn't have a helm-ui.json with the Helm UI schema defined")
 	}

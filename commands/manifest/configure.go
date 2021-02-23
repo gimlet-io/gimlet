@@ -30,6 +30,16 @@ var manifestConfigureCmd = cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "output values file",
 		},
+		&cli.StringFlag{
+			Name:    "schema",
+			Aliases: []string{"s"},
+			Usage:   "schema file to render, made for schema development",
+		},
+		&cli.StringFlag{
+			Name:    "ui-schema",
+			Aliases: []string{"u"},
+			Usage:   "ui schema file to render, made for schema development",
+		},
 	},
 }
 
@@ -64,7 +74,30 @@ func configure(c *cli.Context) error {
 		return fmt.Errorf("cannot marshal values %s", err.Error())
 	}
 
-	yamlBytes, err := chart.ConfigureChart(tmpChartName, m.Chart.Repository, m.Chart.Version, existingValuesJson)
+	var debugSchema, debugUISchema string
+	if c.String("schema") != "" {
+		debugSchemaBytes, err := ioutil.ReadFile(c.String("schema"))
+		if err != nil {
+			return fmt.Errorf("cannot read debugSchema file")
+		}
+		debugSchema = string(debugSchemaBytes)
+	}
+	if c.String("ui-schema") != "" {
+		debugUISchemaBytes, err := ioutil.ReadFile(c.String("ui-schema"))
+		if err != nil {
+			return fmt.Errorf("cannot read debugUISchema file")
+		}
+		debugUISchema = string(debugUISchemaBytes)
+	}
+
+	yamlBytes, err := chart.ConfigureChart(
+		tmpChartName,
+		m.Chart.Repository,
+		m.Chart.Version,
+		existingValuesJson,
+		debugSchema,
+		debugUISchema,
+	)
 	if err != nil {
 		return err
 	}
