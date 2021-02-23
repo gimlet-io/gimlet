@@ -11,7 +11,7 @@ A modular Gitops workflow for Kubernetes deployments.
 Linux / Mac
 
 ```
-curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.4.0/gimlet-$(uname)-$(uname -m) -o gimlet
+curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.5.0/gimlet-$(uname)-$(uname -m) -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version
