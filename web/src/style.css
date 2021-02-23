@@ -75,7 +75,7 @@
 }
 
 .array-item {
-    @apply flex
+    @apply flex bg-gray-100 mt-12
 }
 
 .array-item .col-xs-9 {
