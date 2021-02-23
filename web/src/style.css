@@ -70,6 +70,10 @@
     content: "-";
 }
 
+.array-item-list {
+    display: block !important;
+}
+
 .array-item {
     @apply flex
 }
