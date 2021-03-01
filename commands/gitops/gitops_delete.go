@@ -81,5 +81,6 @@ func delete(c *cli.Context) error {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet CLI delete] %s/%s %s", env, app, message)
-	return githelper.Commit(repo, gitMessage)
+	_, err = githelper.Commit(repo, gitMessage)
+	return err
 }

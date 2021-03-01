@@ -133,7 +133,7 @@ func bootstrap(c *cli.Context) error {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet CLI bootstrap] %s", env)
-	err = githelper.Commit(repo, gitMessage)
+	_, err = githelper.Commit(repo, gitMessage)
 	if err != nil {
 		return err
 	}

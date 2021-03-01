@@ -329,6 +329,7 @@ github.com/fluxcd/pkg/apis/meta v0.7.0 h1:5e8gm4OLqjuKWdrOIY5DEEsjcwzyJFK8rCDesJ
 github.com/fluxcd/pkg/apis/meta v0.7.0/go.mod h1:yHuY8kyGHYz22I0jQzqMMGCcHViuzC/WPdo9Gisk8Po=
 github.com/fluxcd/pkg/git v0.0.7/go.mod h1:5Vu92x6Q3CpxDUllmB69kAkVY5jAtPpXcY2TSZ/oCJI=
 github.com/fluxcd/pkg/git v0.3.0/go.mod h1:ZwG0iLOqNSyNw6lsPIAO+v6+BqqCXyV+r1Oq6Lm+slg=
+github.com/fluxcd/pkg/recorder v0.0.6/go.mod h1:IfQxfVRSNsWs3B0Yp5B6ObEWwKHILlAx8N7XkoDdhFg=
 github.com/fluxcd/pkg/runtime v0.3.1 h1:UI+FQd1OgipZ6N8YxXHtKYMAu1NRFWaR/Gp1M3T6RZA=
 github.com/fluxcd/pkg/runtime v0.3.1/go.mod h1:wg33L6k5FkGEYoZta7hbUlBIscM5VZd/PfCbaEi+wK4=
 github.com/fluxcd/pkg/runtime v0.6.2/go.mod h1:RuqYOYCvBJwo4rg83d28WOt2vfSaemuZCVpUagAjWQc=
@@ -366,6 +367,8 @@ github.com/gimlet-io/gimletd v0.0.0-20210212105208-008720d7884f h1:hwK+LfI8axLuN
 github.com/gimlet-io/gimletd v0.0.0-20210212105208-008720d7884f/go.mod h1:/1frSY5kNp7aA4t6WtWD7fGZbZ/5Ay08mTtpKj9B2h4=
 github.com/gimlet-io/gimletd v0.0.0-20210212112824-f323fdb006fe h1:hpBYsqa9hTOdrobnpaXdGH0ov3CLHbYBGbux3194sKc=
 github.com/gimlet-io/gimletd v0.0.0-20210212112824-f323fdb006fe/go.mod h1:/1frSY5kNp7aA4t6WtWD7fGZbZ/5Ay08mTtpKj9B2h4=
+github.com/gimlet-io/gimletd v0.0.0-20210301134851-e3199f7eb3d1 h1:yQ4WJUY/QO+GQbdbYWjB1hndmmP5GKcU4wRi3Wfxs18=
+github.com/gimlet-io/gimletd v0.0.0-20210301134851-e3199f7eb3d1/go.mod h1:9yoAi47Unrauzhu142/s2E4NJr8q1U3Cy8aAXmBLWok=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
@@ -649,6 +652,7 @@ github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHh
 github.com/hashicorp/go-multierror v1.1.0 h1:B9UzwGQJehnUY1yNrnwREHc3fGbC2xefo8g4TbElacI=
 github.com/hashicorp/go-multierror v1.1.0/go.mod h1:spPvp8C1qA32ftKqdAHm4hHTbPw+vmowP0z+KUhOZdA=
 github.com/hashicorp/go-retryablehttp v0.6.4/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
+github.com/hashicorp/go-retryablehttp v0.6.6/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-retryablehttp v0.6.7/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-retryablehttp v0.6.8/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-rootcerts v1.0.0/go.mod h1:K6zTfqpRlCUIjkwsN4Z+hiSfzSTQa6eBIzfwKfwNnHU=
