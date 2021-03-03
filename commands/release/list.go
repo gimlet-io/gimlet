@@ -34,9 +34,16 @@ var releaseListCmd = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "app",
-			Usage: "filter artifacts to an application",
-		}, &cli.IntFlag{
+			Name:     "app",
+			Usage:    "filter releases to an application",
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "env",
+			Usage:    "filter envs to an application",
+			Required: true,
+		},
+		&cli.IntFlag{
 			Name:  "limit",
 			Usage: "limit the number of returned artifacts",
 		}, &cli.IntFlag{
@@ -90,8 +97,10 @@ func list(c *cli.Context) error {
 	}
 
 	releases, err := client.ReleasesGet(
-		c.String("app"), c.String("env"),
-		c.Int("limit"), c.Int("offset"),
+		c.String("app"),
+		c.String("env"),
+		c.Int("limit"),
+		c.Int("offset"),
 		since, until,
 	)
 
@@ -115,11 +124,22 @@ func list(c *cli.Context) error {
 			yellow := color.New(color.FgYellow).SprintFunc()
 			green := color.New(color.FgGreen).SprintFunc()
 
-			created := time.Unix(time.Now().Unix(), 0)
+			created := time.Unix(release.Created, 0)
 
-			fmt.Printf("%s - %s %s %s\n", yellow(release.SHA[:8]), release.Env, green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(release.TriggeredBy))
-			fmt.Printf("%s %s/%s\n", gray(release.ArtifactID), release.RepositoryName, release.Branch)
-			fmt.Println(release.GitopsRef)
+			fmt.Printf("%s %s %s\n",
+				gray(fmt.Sprintf("%s/%s", release.Env, release.App)),
+				blue(fmt.Sprintf("%s@%s", release.GitopsRepo, release.GitopsRef[:8])),
+				green(fmt.Sprintf("(%s)", elapsed.Time(created))),
+			)
+
+			if release.Version != nil {
+				fmt.Printf("\t%s - %s %s\n",
+					yellow(release.Version.SHA[:8]),
+					release.Version.Message, blue(release.Version.CommitterName),
+				)
+				fmt.Printf("\t%s/%s %s\n", release.Version.RepositoryName, release.Version.Branch, gray(release.ArtifactID))
+				fmt.Printf("\t%s\n", release.Version.URL)
+			}
 			fmt.Println()
 		}
 	}

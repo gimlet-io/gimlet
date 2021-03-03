@@ -7,6 +7,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/commands/chart"
 	"github.com/gimlet-io/gimlet-cli/commands/gitops"
 	"github.com/gimlet-io/gimlet-cli/commands/manifest"
+	"github.com/gimlet-io/gimlet-cli/commands/release"
 	"github.com/gimlet-io/gimlet-cli/commands/seal"
 	"github.com/gimlet-io/gimlet-cli/version"
 	"github.com/urfave/cli/v2"
@@ -27,6 +28,7 @@ func main() {
 			&seal.Command,
 			&manifest.Command,
 			&artifact.Command,
+			&release.Command,
 		},
 	}
 	err := app.Run(os.Args)

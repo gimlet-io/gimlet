@@ -9,7 +9,7 @@ require (
 	github.com/fluxcd/flux2 v0.7.7
 	github.com/fluxcd/pkg/ssh v0.0.5
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
-	github.com/gimlet-io/gimletd v0.0.0-20210301134851-e3199f7eb3d1
+	github.com/gimlet-io/gimletd v0.0.0-20210303144950-d649e3aa97db
 	github.com/go-chi/chi v1.5.1
 	github.com/go-chi/cors v1.1.1
 	github.com/go-git/go-git/v5 v5.2.0
@@ -34,4 +34,6 @@ replace (
 	// https://github.com/helm/helm/issues/9354
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+
+	github.com/go-git/go-git/v5 => github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd
 )

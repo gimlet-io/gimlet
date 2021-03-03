@@ -369,6 +369,12 @@ github.com/gimlet-io/gimletd v0.0.0-20210212112824-f323fdb006fe h1:hpBYsqa9hTOdr
 github.com/gimlet-io/gimletd v0.0.0-20210212112824-f323fdb006fe/go.mod h1:/1frSY5kNp7aA4t6WtWD7fGZbZ/5Ay08mTtpKj9B2h4=
 github.com/gimlet-io/gimletd v0.0.0-20210301134851-e3199f7eb3d1 h1:yQ4WJUY/QO+GQbdbYWjB1hndmmP5GKcU4wRi3Wfxs18=
 github.com/gimlet-io/gimletd v0.0.0-20210301134851-e3199f7eb3d1/go.mod h1:9yoAi47Unrauzhu142/s2E4NJr8q1U3Cy8aAXmBLWok=
+github.com/gimlet-io/gimletd v0.0.0-20210303140842-6f223568eab0 h1:xAHwSizFeaDYWgwF48ZQfrEVQofoELm19ZtybqcDPd0=
+github.com/gimlet-io/gimletd v0.0.0-20210303140842-6f223568eab0/go.mod h1:cOsxMEgjafMcwqCv4C6E6Jjd9WWKbBOZI5ZuZmTHB74=
+github.com/gimlet-io/gimletd v0.0.0-20210303144950-d649e3aa97db h1:/q3D7odY9mcnz4ReJYH6hkWLm7QBjWM/1oLOO55EyFA=
+github.com/gimlet-io/gimletd v0.0.0-20210303144950-d649e3aa97db/go.mod h1:cOsxMEgjafMcwqCv4C6E6Jjd9WWKbBOZI5ZuZmTHB74=
+github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd h1:gc151Vj9AP6IfmciV1P8N7+pgmJU8TkMmu8Ug5pIjIU=
+github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd/go.mod h1:kh02eMX+wdqqxgNMEyq8YgwlIOsDOa9homkUq1PoTMs=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
