@@ -7,6 +7,6 @@ var Command = cli.Command{
 	Usage: "Manages Gimlet releases",
 	Subcommands: []*cli.Command{
 		&releaseListCmd,
-		&releasemMakeCmd,
+		&releaseMakeCmd,
 	},
 }

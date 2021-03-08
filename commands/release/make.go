@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-var releasemMakeCmd = cli.Command{
+var releaseMakeCmd = cli.Command{
 	Name:  "make",
 	Usage: "Make an ad-hoc release",
 	UsageText: `gimlet release make \
@@ -42,7 +42,7 @@ var releasemMakeCmd = cli.Command{
 			Required: true,
 		},
 	},
-	Action: list,
+	Action: make,
 }
 
 func make(c *cli.Context) error {
@@ -58,7 +58,6 @@ func make(c *cli.Context) error {
 	)
 
 	client := client.NewClient(serverURL, auth)
-
 	err := client.ReleasesPost(
 		c.String("env"),
 		c.String("artifact"),
