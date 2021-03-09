@@ -58,7 +58,7 @@ func make(c *cli.Context) error {
 	)
 
 	client := client.NewClient(serverURL, auth)
-	err := client.ReleasesPost(
+	trackingID, err := client.ReleasesPost(
 		c.String("env"),
 		c.String("artifact"),
 	)
@@ -66,7 +66,7 @@ func make(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%v Release is now added to the release queue\n\n", emoji.WomanGesturingOk)
+	fmt.Fprintf(os.Stderr, "%v Release is now added to the release queue with ID %s\n\n", emoji.WomanGesturingOk, trackingID)
 
 	return nil
 }
