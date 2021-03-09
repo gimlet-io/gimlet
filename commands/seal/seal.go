@@ -121,8 +121,7 @@ func sealFile(path string, contents string, jsonPaths []string, outputPath strin
 	yamlString := bytes.NewBufferString("")
 	e := yaml.NewEncoder(yamlString)
 	e.SetIndent(2)
-	e.Encode(parsed)
-
+	err = e.Encode(parsed)
 	if err != nil {
 		return fmt.Errorf("could not marshal yaml: %s", err)
 	}
