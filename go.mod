@@ -9,7 +9,7 @@ require (
 	github.com/fluxcd/flux2 v0.7.7
 	github.com/fluxcd/pkg/ssh v0.0.5
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
-	github.com/gimlet-io/gimletd v0.0.0-20210305093021-125e592a40a1
+	github.com/gimlet-io/gimletd v0.0.0-20210309134130-0402d35691cf
 	github.com/go-chi/chi v1.5.1
 	github.com/go-chi/cors v1.1.1
 	github.com/go-git/go-git/v5 v5.2.0

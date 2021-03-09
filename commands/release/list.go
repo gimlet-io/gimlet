@@ -120,15 +120,22 @@ func list(c *cli.Context) error {
 	} else {
 		for _, release := range releases {
 			blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+			red := color.New(color.FgRed, color.Bold).SprintFunc()
 			gray := color.New(color.FgHiBlack).SprintFunc()
 			yellow := color.New(color.FgYellow).SprintFunc()
 			green := color.New(color.FgGreen).SprintFunc()
 
 			created := time.Unix(release.Created, 0)
 
-			fmt.Printf("%s %s %s\n",
+			rolledBack := ""
+			if release.RolledBack {
+				rolledBack = "**ROLLED BACK**"
+			}
+
+			fmt.Printf("%s %s %s %s\n",
 				gray(fmt.Sprintf("%s/%s", release.Env, release.App)),
-				blue(fmt.Sprintf("%s@%s", release.GitopsRepo, release.GitopsRef[:8])),
+				blue(fmt.Sprintf("%s@%s", release.GitopsRepo, release.GitopsRef)),
+				red(rolledBack),
 				green(fmt.Sprintf("(%s)", elapsed.Time(created))),
 			)
 
