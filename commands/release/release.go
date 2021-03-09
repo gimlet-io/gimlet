@@ -9,5 +9,6 @@ var Command = cli.Command{
 		&releaseListCmd,
 		&releaseMakeCmd,
 		&releaseRollbackCmd,
+		&releaseTrackCmd,
 	},
 }
