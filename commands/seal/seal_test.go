@@ -6,20 +6,21 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/mdaverde/jsonpath"
 	"gopkg.in/yaml.v3"
-	"io"
-	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
-	"os"
-	"strings"
-	"testing"
 )
 
 func Test_seal(t *testing.T) {
@@ -27,12 +28,13 @@ func Test_seal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ioutil.WriteFile(sealingKeyPath.Name(), []byte(sealingKey), commands.File_RW_RW_R)
+	_ = ioutil.WriteFile(sealingKeyPath.Name(), []byte(sealingKey), commands.File_RW_RW_R)
 	defer os.Remove(sealingKeyPath.Name())
 
 	args := strings.Split("gimlet seal", " ")
 	args = append(args, "-f", "-")
 	args = append(args, "-p", "sealedSecrets")
+	args = append(args, "-p", "sealedSecrets2")
 	args = append(args, "-k", sealingKeyPath.Name())
 
 	g := goblin.Goblin(t)
@@ -46,6 +48,8 @@ another: one
 sealedSecrets:
   secret1: value1
   secret2: value2
+sealedSecrets2:
+  secret3: value3
 `
 
 			oldStdin, err := feedStringToStdin(toSeal)
@@ -62,12 +66,15 @@ sealedSecrets:
 			outC := make(chan string)
 			go func() {
 				var buf bytes.Buffer
-				io.Copy(&buf, r)
+				_, _ = io.Copy(&buf, r)
 				outC <- buf.String()
 			}()
 			w.Close()
 			os.Stdout = old
 			sealedValue := <-outC
+			g.Assert(strings.Contains(sealedValue, "secret1")).IsTrue(sealedValue)
+			g.Assert(strings.Contains(sealedValue, "secret2")).IsTrue(sealedValue)
+			g.Assert(strings.Contains(sealedValue, "secret3")).IsTrue(sealedValue)
 			fmt.Println(sealedValue)
 		})
 		g.It("Should seal then unseal", func() {

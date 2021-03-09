@@ -7,15 +7,16 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/bitnami-labs/sealed-secrets/pkg/crypto"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/mdaverde/jsonpath"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"k8s.io/client-go/util/cert"
-	"os"
-	"path/filepath"
 )
 
 var Command = cli.Command{
@@ -30,10 +31,10 @@ var Command = cli.Command{
 			Usage:    "manifest file,folder or \"-\" for stdin (mandatory)",
 			Required: true,
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:     "path",
 			Aliases:  []string{"p"},
-			Usage:    "path of the field to seal (mandatory)",
+			Usage:    "path(s) of the field(s) to seal (mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{
@@ -52,7 +53,7 @@ var Command = cli.Command{
 
 func seal(c *cli.Context) error {
 	file := c.String("file")
-	jsonPath := c.String("path")
+	jsonPaths := c.StringSlice("path")
 	outputPath := c.String("output")
 	keyPath := c.String("key")
 
@@ -66,7 +67,7 @@ func seal(c *cli.Context) error {
 		return err
 	}
 	for path, contents := range files {
-		err := sealFile(path, contents, jsonPath, outputPath, key)
+		err := sealFile(path, contents, jsonPaths, outputPath, key)
 		if err != nil {
 			return err
 		}
@@ -75,52 +76,52 @@ func seal(c *cli.Context) error {
 	return nil
 }
 
-func sealFile(path string, contents string, jsonPath string, outputPath string, key *rsa.PublicKey) error {
+func sealFile(path string, contents string, jsonPaths []string, outputPath string, key *rsa.PublicKey) error {
 	var parsed map[string]interface{}
 	err := yaml.Unmarshal([]byte(contents), &parsed)
 	if err != nil {
 		return fmt.Errorf("could not parse %s: %s", path, err)
 	}
 
-	secrets, err := jsonpath.Get(parsed, jsonPath)
-	if err != nil {
-		return fmt.Errorf("could not lookup %s: %s", jsonPath, err)
-	}
-
-	sealedSecrets := map[string]string{}
-	switch secretMap := secrets.(type) {
-	case map[string]interface{}:
-		for k, v := range secretMap {
-			vString := v.(string)
-			sealed, err := sealed(vString)
-			if err != nil {
-				return fmt.Errorf("could not check %s state: %s", jsonPath, err)
-			}
-
-			if sealed {
-				sealedSecrets[k] = vString
-			} else {
-				sealedValue, err := sealValue(key, vString)
-				if err != nil {
-					return fmt.Errorf("could not seal %s: %s", v, err)
-				}
-				sealedSecrets[k] = sealedValue
-			}
+	for _, jsonPath := range jsonPaths {
+		secrets, err := jsonpath.Get(parsed, jsonPath)
+		if err != nil {
+			return fmt.Errorf("could not lookup %s: %s", jsonPath, err)
 		}
-	default:
-		return fmt.Errorf("%s is not a map of secrets", jsonPath)
-	}
+		sealedSecrets := map[string]string{}
+		switch secretMap := secrets.(type) {
+		case map[string]interface{}:
+			for k, v := range secretMap {
+				vString := v.(string)
+				sealed, err := sealed(vString)
+				if err != nil {
+					return fmt.Errorf("could not check %s state: %s", jsonPath, err)
+				}
 
-	err = jsonpath.Set(parsed, jsonPath, sealedSecrets)
-	if err != nil {
-		return fmt.Errorf("could not set sealed secrets: %s", err)
+				if sealed {
+					sealedSecrets[k] = vString
+				} else {
+					sealedValue, err := sealValue(key, vString)
+					if err != nil {
+						return fmt.Errorf("could not seal %s: %s", v, err)
+					}
+					sealedSecrets[k] = sealedValue
+				}
+			}
+		default:
+			return fmt.Errorf("%s is not a map of secrets", jsonPath)
+		}
+
+		err = jsonpath.Set(parsed, jsonPath, sealedSecrets)
+		if err != nil {
+			return fmt.Errorf("could not set sealed secrets: %s", err)
+		}
 	}
 
 	yamlString := bytes.NewBufferString("")
 	e := yaml.NewEncoder(yamlString)
 	e.SetIndent(2)
-	e.Encode(parsed)
-
+	err = e.Encode(parsed)
 	if err != nil {
 		return fmt.Errorf("could not marshal yaml: %s", err)
 	}
