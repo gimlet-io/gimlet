@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/gimlet-io/gimlet-cli/commands/artifact"
 	"github.com/gimlet-io/gimletd/client"
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
@@ -122,7 +123,6 @@ func list(c *cli.Context) error {
 			blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 			red := color.New(color.FgRed, color.Bold).SprintFunc()
 			gray := color.New(color.FgHiBlack).SprintFunc()
-			yellow := color.New(color.FgYellow).SprintFunc()
 			green := color.New(color.FgGreen).SprintFunc()
 
 			created := time.Unix(release.Created, 0)
@@ -140,12 +140,7 @@ func list(c *cli.Context) error {
 			)
 
 			if release.Version != nil {
-				fmt.Printf("\t%s - %s %s\n",
-					yellow(release.Version.SHA[:8]),
-					release.Version.Message, blue(release.Version.CommitterName),
-				)
-				fmt.Printf("\t%s/%s %s\n", release.Version.RepositoryName, release.Version.Branch, gray(release.ArtifactID))
-				fmt.Printf("\t%s\n", release.Version.URL)
+				fmt.Print(artifact.RenderGitVersion(*release.Version, "\t"))
 			}
 			fmt.Println()
 		}

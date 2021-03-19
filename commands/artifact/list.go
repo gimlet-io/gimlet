@@ -138,23 +138,37 @@ func list(c *cli.Context) error {
 		fmt.Println(artifactsStr)
 	} else {
 		for _, artifact := range artifacts {
-			blue := color.New(color.FgBlue, color.Bold).SprintFunc()
-			gray := color.New(color.FgHiBlack).SprintFunc()
 			yellow := color.New(color.FgYellow).SprintFunc()
-			green := color.New(color.FgGreen).SprintFunc()
-			red := color.New(color.FgRed).SprintFunc()
-
-			created := time.Unix(artifact.Created, 0)
-
 			fmt.Printf("%s\n", yellow(artifact.ID))
-			fmt.Printf("%s - %s %s %s\n", red(artifact.Version.SHA[:8]), limitMessage(makeSingleLine(artifact.Version.Message)), green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(artifact.Version.CommitterName))
-			fmt.Printf("%s %s\n", artifact.Version.RepositoryName, green(artifact.Version.Branch))
-			fmt.Println(gray(artifact.Version.URL))
+			fmt.Printf("%s\n", RenderGitVersion(artifact.Version, ""))
 			fmt.Println()
 		}
 	}
 
 	return nil
+}
+
+func RenderGitVersion(version dx.Version, indent string) string {
+	var sb strings.Builder
+
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+	gray := color.New(color.FgHiBlack).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+
+	sb.WriteString(
+		fmt.Sprintf("%s%s - %s %s %s\n",
+			indent,
+			red(version.SHA[:8]),
+			limitMessage(makeSingleLine(version.Message)),
+			green(fmt.Sprintf("(%s)", elapsed.Time(time.Unix(version.Created, 0)))),
+			blue(version.CommitterName),
+		),
+	)
+	sb.WriteString(fmt.Sprintf("%s%s %s\n", indent, version.RepositoryName, green(version.Branch)))
+	sb.WriteString(fmt.Sprintf("%s%s\n", indent, gray(version.URL)))
+
+	return sb.String()
 }
 
 func makeSingleLine(message string) string {
@@ -163,7 +177,7 @@ func makeSingleLine(message string) string {
 	return message
 }
 
-func limitMessage(message string) string{
+func limitMessage(message string) string {
 	if len(message) > 80 {
 		message = message[0:79]
 		message = message + "..."
