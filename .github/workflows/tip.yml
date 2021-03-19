@@ -48,7 +48,7 @@ jobs:
       run: make test-backend
 
     - name: Dist
-      run: make dist
+      run: make fast-dist
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
 
