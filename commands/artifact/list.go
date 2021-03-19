@@ -10,6 +10,7 @@ import (
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
+	"strings"
 	"time"
 )
 
@@ -144,7 +145,7 @@ func list(c *cli.Context) error {
 
 			created := time.Unix(artifact.Created, 0)
 
-			fmt.Printf("%s - %s %s %s\n", yellow(artifact.Version.SHA[:8]), artifact.Version.Message, green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(artifact.Version.CommitterName))
+			fmt.Printf("%s - %s %s %s\n", yellow(artifact.Version.SHA[:8]), limitMessage(makeSingleLine(artifact.Version.Message)), green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(artifact.Version.CommitterName))
 			fmt.Printf("%s %s/%s\n", gray(artifact.ID), artifact.Version.RepositoryName, artifact.Version.Branch)
 			fmt.Println(artifact.Version.URL)
 			fmt.Println()
@@ -152,4 +153,19 @@ func list(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func makeSingleLine(message string) string {
+	message = strings.ReplaceAll(message, "\n\n", "\n")
+	message = strings.ReplaceAll(message, "\n", "; ")
+	return message
+}
+
+func limitMessage(message string) string{
+	if len(message) > 80 {
+		message = message[0:79]
+		message = message + "..."
+	}
+
+	return message
 }
