@@ -35,8 +35,9 @@ var artifactListCmd = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "app",
-			Usage: "filter artifacts to an application",
+			Name:  "repository",
+			Aliases: []string{"repo"},
+			Usage: "filter artifacts to a git repository in owner/repo format",
 		},
 		&cli.StringFlag{
 			Name:  "branch",
@@ -115,7 +116,7 @@ func list(c *cli.Context) error {
 	}
 
 	artifacts, err := client.ArtifactsGet(
-		c.String("app"), c.String("branch"),
+		c.String("repository"), c.String("branch"),
 		event,
 		c.String("sourceBranch"),
 		c.String("sha"),
