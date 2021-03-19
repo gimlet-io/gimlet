@@ -7,7 +7,6 @@ import (
 	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
-	"time"
 )
 
 var artifactCreateCmd = cli.Command{
@@ -128,7 +127,6 @@ func create(c *cli.Context) error {
 		Items: []map[string]interface{}{
 
 		},
-		Created: time.Now().Unix(),
 	}
 
 	jsonString := bytes.NewBufferString("")
