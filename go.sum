@@ -393,6 +393,8 @@ github.com/gimlet-io/gimletd v0.0.0-20210309145356-3af3532bba24 h1:mKl6Jw60cfTH9
 github.com/gimlet-io/gimletd v0.0.0-20210309145356-3af3532bba24/go.mod h1:kHo0U2FOK06wZukJPtoj/6JwYA1tXnfpPFcgt9aOeLM=
 github.com/gimlet-io/gimletd v0.1.1-0.20210319113239-3ecce9201fcd h1:kckon7TzOzeKuLoQoJACqZ5pahZhd4g/9Wk1YWDl+y0=
 github.com/gimlet-io/gimletd v0.1.1-0.20210319113239-3ecce9201fcd/go.mod h1:kHo0U2FOK06wZukJPtoj/6JwYA1tXnfpPFcgt9aOeLM=
+github.com/gimlet-io/gimletd v0.1.1-0.20210319125454-545e91c54f48 h1:XwlMxv6+m1CDM1uLL6SaCI9xSlExl/2OB1Mfi8g6qdw=
+github.com/gimlet-io/gimletd v0.1.1-0.20210319125454-545e91c54f48/go.mod h1:kHo0U2FOK06wZukJPtoj/6JwYA1tXnfpPFcgt9aOeLM=
 github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd h1:gc151Vj9AP6IfmciV1P8N7+pgmJU8TkMmu8Ug5pIjIU=
 github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd/go.mod h1:kh02eMX+wdqqxgNMEyq8YgwlIOsDOa9homkUq1PoTMs=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
