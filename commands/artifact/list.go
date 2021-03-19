@@ -18,7 +18,7 @@ var artifactListCmd = cli.Command{
 	Name:  "list",
 	Usage: "Lists the releasable artifacts",
 	UsageText: `gimlet artifact list \
-     --app my-app \
+     --repo my-company/my-app \
      --server http://gimletd.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
