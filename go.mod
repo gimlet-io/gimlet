@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/bitnami-labs/sealed-secrets v0.13.1
+	github.com/btubbs/datetime v0.1.1 // indirect
 	github.com/enescakir/emoji v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/fluxcd/flux2 v0.7.7

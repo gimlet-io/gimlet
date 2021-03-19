@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/btubbs/datetime"
 	"github.com/gimlet-io/gimletd/dx"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -32,6 +33,11 @@ var artifactCreateCmd = cli.Command{
 		&cli.StringFlag{
 			Name:     "sha",
 			Usage:    "The git sha (mandatory)",
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "created",
+			Usage:    "The git commit created date (mandatory), ISO 8601 output of `git log -1 --format=%cI`",
 			Required: true,
 		},
 		&cli.StringFlag{
@@ -102,10 +108,17 @@ func create(c *cli.Context) error {
 		return fmt.Errorf("cannot parse event: %s", err)
 	}
 
+	// parses ISO 8601 output of `git log -1 --format=%cI`
+	created, err := datetime.ParseLocal(c.String("created"))
+	if err != nil {
+		return fmt.Errorf("cannot parse created time: %s", err)
+	}
+
 	artifact := &dx.Artifact{
 		Version: dx.Version{
 			RepositoryName: c.String("repository"),
 			SHA:            c.String("sha"),
+			Created:        created.Unix(),
 			Branch:         c.String("branch"),
 			Event:          event,
 			SourceBranch:   c.String("sourceBranch"),
