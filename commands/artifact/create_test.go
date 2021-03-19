@@ -16,6 +16,7 @@ func Test_create(t *testing.T) {
 	args := strings.Split("gimlet artifact create", " ")
 	args = append(args, "--repository", "my-app")
 	args = append(args, "--sha", "ea9ab7cc31b2599bf4afcfd639da516ca27a4780")
+	args = append(args, "--created", "2021-03-19T12:56:03+01:00")
 	args = append(args, "--branch", "my-feature")
 	args = append(args, "--event", "pr")
 	args = append(args, "--sourceBranch", "my-feature")
@@ -47,6 +48,7 @@ func Test_create(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(a.Version.Message == "Bugfix 123").IsTrue()
 			g.Assert(a.Version.Event == dx.PR).IsTrue()
+			g.Assert(a.Version.Created == 1616154963).IsTrue()
 		})
 	})
 }
