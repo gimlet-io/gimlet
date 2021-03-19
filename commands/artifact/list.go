@@ -142,12 +142,14 @@ func list(c *cli.Context) error {
 			gray := color.New(color.FgHiBlack).SprintFunc()
 			yellow := color.New(color.FgYellow).SprintFunc()
 			green := color.New(color.FgGreen).SprintFunc()
+			red := color.New(color.FgRed).SprintFunc()
 
 			created := time.Unix(artifact.Created, 0)
 
-			fmt.Printf("%s - %s %s %s\n", yellow(artifact.Version.SHA[:8]), limitMessage(makeSingleLine(artifact.Version.Message)), green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(artifact.Version.CommitterName))
-			fmt.Printf("%s %s/%s\n", gray(artifact.ID), artifact.Version.RepositoryName, artifact.Version.Branch)
-			fmt.Println(artifact.Version.URL)
+			fmt.Printf("%s\n", yellow(artifact.ID))
+			fmt.Printf("%s - %s %s %s\n", red(artifact.Version.SHA[:8]), limitMessage(makeSingleLine(artifact.Version.Message)), green(fmt.Sprintf("(%s)", elapsed.Time(created))), blue(artifact.Version.CommitterName))
+			fmt.Printf("%s %s\n", artifact.Version.RepositoryName, green(artifact.Version.Branch))
+			fmt.Println(gray(artifact.Version.URL))
 			fmt.Println()
 		}
 	}
