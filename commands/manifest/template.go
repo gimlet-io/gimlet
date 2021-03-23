@@ -46,12 +46,12 @@ func templateCmd(c *cli.Context) error {
 	if varsPath != "" {
 		yamlString, err := ioutil.ReadFile(varsPath)
 		if err != nil {
-			return fmt.Errorf("cannot read vars file")
+			return fmt.Errorf("cannot read vars file: %s", err.Error())
 		}
 
 		vars, err = godotenv.Parse(strings.NewReader(string(yamlString)))
 		if err != nil {
-			return fmt.Errorf("cannot parse vars")
+			return fmt.Errorf("cannot parse vars: %s", err.Error())
 		}
 	}
 
@@ -65,13 +65,13 @@ func templateCmd(c *cli.Context) error {
 	manifestPath := c.String("file")
 	manifestString, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
-		return fmt.Errorf("cannot read manifest file")
+		return fmt.Errorf("cannot read manifest file: %s", err.Error())
 	}
 
 	var m dx.Manifest
 	err = yaml.Unmarshal(manifestString, &m)
 	if err != nil {
-		return fmt.Errorf("cannot unmarshal manifest")
+		return fmt.Errorf("cannot unmarshal manifest: %s", err.Error())
 	}
 
 	err = m.ResolveVars(vars)
