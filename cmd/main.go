@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/commands/artifact"
 	"github.com/gimlet-io/gimlet-cli/commands/chart"
@@ -11,10 +13,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/commands/seal"
 	"github.com/gimlet-io/gimlet-cli/version"
 	"github.com/urfave/cli/v2"
-	"os"
 )
-
-//go:generate go run ../scripts/includeWeb.go
 
 func main() {
 	app := &cli.App{
