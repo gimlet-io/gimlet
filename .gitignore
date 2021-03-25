@@ -11,4 +11,6 @@ bin
 web/node_modules
 web/dist
 
-commands/chart/web.go
+commands/chart/bundle.js
+commands/chart/bundle.js.LICENSE.txt
+commands/chart/index.html
