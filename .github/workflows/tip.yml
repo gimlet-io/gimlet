@@ -36,9 +36,6 @@ jobs:
     - name: Build Frontend
       run: make build-frontend
 
-    - name: Generate go code from frontend
-      run: make generate-backend
-
     - name: Setup SSH key for git chart test
       uses: webfactory/ssh-agent@v0.4.1
       with:
