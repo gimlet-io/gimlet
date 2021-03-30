@@ -5,16 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/commands/chart/ws"
-	"github.com/gimlet-io/gimlet-cli/version"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/cors"
-	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v3"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -26,6 +16,17 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/enescakir/emoji"
+	"github.com/gimlet-io/gimlet-cli/commands/chart/ws"
+	"github.com/gimlet-io/gimlet-cli/version"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
+	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	helmCLI "helm.sh/helm/v3/pkg/cli"
 )
 
 var chartConfigureCmd = cli.Command{
@@ -211,9 +212,6 @@ func ConfigureChart(
 }
 
 func removeTempFiles(workDir string) {
-	for file, _ := range Web {
-		os.Remove(filepath.Join(workDir, file))
-	}
 	os.Remove(workDir)
 }
 
@@ -221,10 +219,9 @@ func writeTempFiles(workDir string, schema string, helmUISchema string, existing
 	ioutil.WriteFile(filepath.Join(workDir, "values.schema.json"), []byte(schema), 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "helm-ui.json"), []byte(helmUISchema), 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "values.json"), []byte(existingValues), 0666)
-
-	for file, content := range Web {
-		ioutil.WriteFile(filepath.Join(workDir, file), []byte(content), 0666)
-	}
+	ioutil.WriteFile(filepath.Join(workDir, "bundle.js"), bundlejs, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "bundle.js.LICENSE.txt"), licensetxt, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "index.html"), indexhtml, 0666)
 }
 
 func setupRouter(workDir string, browserClosed chan int) *chi.Mux {

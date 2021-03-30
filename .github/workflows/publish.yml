@@ -42,9 +42,6 @@ jobs:
     - name: Build Frontend
       run: make build-frontend
 
-    - name: Generate go code from frontend
-      run: make generate-backend
-
     - name: Dist
       run: make dist
       env:
