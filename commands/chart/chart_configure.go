@@ -219,9 +219,9 @@ func writeTempFiles(workDir string, schema string, helmUISchema string, existing
 	ioutil.WriteFile(filepath.Join(workDir, "values.schema.json"), []byte(schema), 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "helm-ui.json"), []byte(helmUISchema), 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "values.json"), []byte(existingValues), 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "bundle.js"), bundlejs, 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "bundle.js.LICENSE.txt"), licensetxt, 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "index.html"), indexhtml, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "bundle.js"), bundleJs, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "bundle.js.LICENSE.txt"), licenseTxt, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "index.html"), indexHtml, 0666)
 }
 
 func setupRouter(workDir string, browserClosed chan int) *chi.Mux {

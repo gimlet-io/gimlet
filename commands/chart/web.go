@@ -3,10 +3,10 @@ package chart
 import _ "embed"
 
 //go:embed bundle.js
-var bundlejs []byte
+var bundleJs []byte
 
 //go:embed bundle.js.LICENSE.txt
-var licensetxt []byte
+var licenseTxt []byte
 
 //go:embed index.html
-var indexhtml []byte
+var indexHtml []byte
