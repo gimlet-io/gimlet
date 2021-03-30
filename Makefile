@@ -34,4 +34,6 @@ fast-dist:
 
 build-frontend:
 	(cd web/; npm install; npm run build)
-	@cp web/dist/*.* commands/chart/
+	@cp web/dist/bundle.js commands/chart/
+	@cp web/dist/bundle.js.LICENSE.txt commands/chart/
+	@cp web/dist/index.html commands/chart/
