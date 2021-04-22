@@ -1,12 +1,14 @@
 package release
 
 import (
+	"context"
 	"fmt"
+	"os"
+
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimletd/client"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
-	"os"
 )
 
 var releaseMakeCmd = cli.Command{
@@ -51,7 +53,7 @@ func make(c *cli.Context) error {
 
 	config := new(oauth2.Config)
 	auth := config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: token,
 		},
@@ -66,7 +68,8 @@ func make(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%v Release is now added to the release queue with ID %s\n\n", emoji.WomanGesturingOk, trackingID)
+	fmt.Fprintf(os.Stderr, "%v Release is now added to the release queue with ID %s\n", emoji.WomanGesturingOk, trackingID)
+	fmt.Fprintf(os.Stderr, "Track it with:\ngimlet track %s\n\n", trackingID)
 
 	return nil
 }
