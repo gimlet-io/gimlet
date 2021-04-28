@@ -26,7 +26,7 @@ var gitopsBootstrapCmd = cli.Command{
 	UsageText: `gimlet gitops bootstrap \
      --env staging \
      --gitops-repo-url git@github.com:<user>/<repo>.git`,
-	Action: bootstrap,
+	Action: Bootstrap,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "env",
@@ -52,7 +52,7 @@ var gitopsBootstrapCmd = cli.Command{
 	},
 }
 
-func bootstrap(c *cli.Context) error {
+func Bootstrap(c *cli.Context) error {
 	gitopsRepoPath := c.String("gitops-repo-path")
 	if gitopsRepoPath == "" {
 		gitopsRepoPath, _ = os.Getwd()
@@ -130,6 +130,9 @@ func bootstrap(c *cli.Context) error {
 	}
 
 	syncOpts.TargetPath = env
+	if singleEnv {
+		syncOpts.TargetPath = ""
+	}
 	syncManifest, err := sync.Generate(syncOpts)
 	if err != nil {
 		return fmt.Errorf("cannot generate git manifests %s", err)
