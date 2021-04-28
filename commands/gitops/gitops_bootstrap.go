@@ -78,7 +78,7 @@ func bootstrap(c *cli.Context) error {
 
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
 
-	installManifest, err := install.Generate(installOpts)
+	installManifest, err := install.Generate(installOpts, "")
 	if err != nil {
 		return fmt.Errorf("cannot generate installation manifests %s", err)
 	}
