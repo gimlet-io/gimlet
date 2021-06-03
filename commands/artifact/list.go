@@ -71,6 +71,11 @@ var artifactListCmd = cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "output format, eg.: json",
 		},
+		&cli.BoolFlag{
+			Name:  "reverse",
+			Aliases: []string{"r"},
+			Usage: "reverse the chronological order of the displayed artifacts",
+		},
 	},
 	Action: list,
 }
@@ -115,17 +120,25 @@ func list(c *cli.Context) error {
 		}
 	}
 
+	limit :=  c.Int("limit")
+	if limit == 0 {
+		limit = 3
+	}
+
 	artifacts, err := client.ArtifactsGet(
 		c.String("repository"), c.String("branch"),
 		event,
 		c.String("sourceBranch"),
 		c.String("sha"),
-		c.Int("limit"), c.Int("offset"),
+		limit, c.Int("offset"),
 		since, until,
 	)
-
 	if err != nil {
 		return err
+	}
+
+	if !c.Bool("reverse") { // by default the latest is the bottom of the output
+		artifacts = reverse(artifacts)
 	}
 
 	if c.String("output") == "json" {
@@ -139,6 +152,7 @@ func list(c *cli.Context) error {
 		fmt.Println(artifactsStr)
 	} else {
 		for _, artifact := range artifacts {
+			fmt.Println()
 			yellow := color.New(color.FgYellow).SprintFunc()
 			fmt.Printf("%s\n", yellow(artifact.ID))
 			fmt.Printf("%s\n", RenderGitVersion(artifact.Version, ""))
@@ -185,4 +199,11 @@ func limitMessage(message string) string {
 	}
 
 	return message
+}
+
+func reverse(input []*dx.Artifact) []*dx.Artifact {
+	if len(input) == 0 {
+		return input
+	}
+	return append(reverse(input[1:]), input[0])
 }
