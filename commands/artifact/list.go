@@ -151,16 +151,40 @@ func list(c *cli.Context) error {
 		}
 		fmt.Println(artifactsStr)
 	} else {
+		fmt.Println()
 		for _, artifact := range artifacts {
-			fmt.Println()
 			yellow := color.New(color.FgYellow).SprintFunc()
 			fmt.Printf("%s\n", yellow(artifact.ID))
-			fmt.Printf("%s\n", RenderGitVersion(artifact.Version, ""))
+			fmt.Printf("%s", RenderGitVersion(artifact.Version, ""))
+			gray := color.New(color.FgWhite).SprintFunc()
+			for _, env := range artifact.Environments {
+				fmt.Printf("%s\n", gray(fmt.Sprintf("  %s -> %s%s", env.App, env.Env, triggerString(env.Deploy))))
+			}
 			fmt.Println()
 		}
 	}
 
 	return nil
+}
+
+func triggerString(deploy *dx.Deploy) string {
+	if deploy == nil {
+		return ""
+	}
+
+	if deploy.Event != nil {
+		if deploy.Branch != "" {
+			return fmt.Sprintf(" @ %s on %s", deploy.Event, deploy.Branch)
+		} else {
+			return fmt.Sprintf(" @ %s", deploy.Event)
+		}
+	} else {
+		if deploy.Branch != "" {
+			return fmt.Sprintf(" @ %s", deploy.Branch)
+		}
+	}
+
+	return ""
 }
 
 func RenderGitVersion(version dx.Version, indent string) string {
@@ -180,8 +204,7 @@ func RenderGitVersion(version dx.Version, indent string) string {
 			blue(version.CommitterName),
 		),
 	)
-	sb.WriteString(fmt.Sprintf("%s%s %s\n", indent, version.RepositoryName, green(version.Branch)))
-	sb.WriteString(fmt.Sprintf("%s%s\n", indent, gray(version.URL)))
+	sb.WriteString(fmt.Sprintf("%s%s@%s %s\n", indent, version.RepositoryName, green(version.Branch), gray(version.URL)))
 
 	return sb.String()
 }

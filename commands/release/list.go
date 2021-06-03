@@ -146,14 +146,14 @@ func list(c *cli.Context) error {
 			}
 
 			fmt.Printf("%s %s %s %s\n",
-				gray(fmt.Sprintf("%s/%s", release.Env, release.App)),
+				gray(fmt.Sprintf("%s -> %s", release.App, release.Env)),
 				blue(fmt.Sprintf("%s@%s", release.GitopsRepo, release.GitopsRef)),
 				red(rolledBack),
 				green(fmt.Sprintf("(%s)", elapsed.Time(created))),
 			)
 
 			if release.Version != nil {
-				fmt.Print(artifact.RenderGitVersion(*release.Version, "\t"))
+				fmt.Print(artifact.RenderGitVersion(*release.Version, "  "))
 			}
 			fmt.Println()
 		}
