@@ -7,6 +7,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/gimlet-io/gimlet-cli/commands/artifact"
 	"github.com/gimlet-io/gimletd/client"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -62,6 +63,11 @@ var releaseListCmd = cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "output format, eg.: json",
 		},
+		&cli.BoolFlag{
+			Name:  "reverse",
+			Aliases: []string{"r"},
+			Usage: "reverse the chronological order of the displayed artifacts",
+		},
 	},
 	Action: list,
 }
@@ -97,14 +103,18 @@ func list(c *cli.Context) error {
 		until = &t
 	}
 
+	limit :=  c.Int("limit")
+	if limit == 0 {
+		limit = 3
+	}
+
 	releases, err := client.ReleasesGet(
 		c.String("app"),
 		c.String("env"),
-		c.Int("limit"),
+		limit,
 		c.Int("offset"),
 		since, until,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -119,6 +129,9 @@ func list(c *cli.Context) error {
 		}
 		fmt.Println(artifactsStr)
 	} else {
+		if !c.Bool("reverse") { // by default the latest is the bottom of the output
+			releases = reverse(releases)
+		}
 		for _, release := range releases {
 			blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 			red := color.New(color.FgRed, color.Bold).SprintFunc()
@@ -147,4 +160,11 @@ func list(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func reverse(input []*dx.Release) []*dx.Release {
+	if len(input) == 0 {
+		return input
+	}
+	return append(reverse(input[1:]), input[0])
 }
