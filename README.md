@@ -13,7 +13,7 @@ Gimlet CLI is a command line tool that packages a set of conventions and matchin
 Linux / Mac
 
 ```console
-curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.8.0-rc2/gimlet-$(uname)-$(uname -m) -o gimlet
+curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.8.0-rc3-rc2/gimlet-$(uname)-$(uname -m) -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version
