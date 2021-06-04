@@ -14,7 +14,7 @@ format-backend:
 	@gofmt -w ${GOFILES}
 
 test-backend:
-	$(DOCKER_RUN) go test -race -timeout 60s $(shell go list ./... )
+	$(DOCKER_RUN) go test -timeout 60s $(shell go list ./... )
 
 build-backend:
 	$(DOCKER_RUN) CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd

@@ -38,7 +38,6 @@ var releaseListCmd = cli.Command{
 		&cli.StringFlag{
 			Name:     "app",
 			Usage:    "filter releases to an application",
-			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "env",
@@ -67,6 +66,10 @@ var releaseListCmd = cli.Command{
 			Name:  "reverse",
 			Aliases: []string{"r"},
 			Usage: "reverse the chronological order of the displayed artifacts",
+		},
+		&cli.StringFlag{
+			Name:     "repo",
+			Usage:    "filter envs to a source code git repository eg.: laszlocph/myapp",
 		},
 	},
 	Action: list,
@@ -113,6 +116,7 @@ func list(c *cli.Context) error {
 		c.String("env"),
 		limit,
 		c.Int("offset"),
+		c.String("repo"),
 		since, until,
 	)
 	if err != nil {
