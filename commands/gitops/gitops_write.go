@@ -74,6 +74,6 @@ func write(c *cli.Context) error {
 	}
 	files = dx.SplitHelmOutput(files)
 
-	_, err = githelper.CommitFilesToGit(repo, files, env, app, message)
+	_, err = githelper.CommitFilesToGit(repo, files, env, app, message, "")
 	return err
 }
