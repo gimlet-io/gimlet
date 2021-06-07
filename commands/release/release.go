@@ -10,5 +10,6 @@ var Command = cli.Command{
 		&releaseMakeCmd,
 		&releaseRollbackCmd,
 		&releaseTrackCmd,
+		&releaseStatusCmd,
 	},
 }
