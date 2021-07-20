@@ -77,7 +77,7 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 		},
 		Spec: kustomizev1.KustomizationSpec{
 			Interval: metav1.Duration{
-				Duration: 10 * time.Minute,
+				Duration: 24 * time.Hour,
 			},
 			Path:  fmt.Sprintf("./%s", strings.TrimPrefix(options.TargetPath, "./")),
 			Prune: true,
