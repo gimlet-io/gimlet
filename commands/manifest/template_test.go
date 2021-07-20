@@ -17,7 +17,7 @@ namespace: my-team
 chart:
   repository: https://chart.onechart.dev
   name: onechart
-  version: 0.10.0
+  version: 0.21.0
 values:
   replicas: 1
   image:
@@ -26,6 +26,15 @@ values:
   ingress:
     host: myapp.staging.mycompany.com
     tlsEnabled: true
+  volumes:
+  - name: uploads
+    path: /files
+    size: 12Gi
+    storageClass: efs-ftp-uploads
+  - name: errors
+    path: /tmp/err
+    size: 12Gi
+    storageClass: efs-ftp-errors
 `
 
 const manifestWithLocalChart = `

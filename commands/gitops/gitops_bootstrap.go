@@ -29,12 +29,12 @@ var gitopsBootstrapCmd = cli.Command{
 	Action: Bootstrap,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:     "env",
-			Usage:    "environment to bootstrap",
+			Name:  "env",
+			Usage: "environment to bootstrap",
 		},
 		&cli.BoolFlag{
-			Name:     "single-env",
-			Usage:    "if the repo holds manifests from a single environment",
+			Name:  "single-env",
+			Usage: "if the repo holds manifests from a single environment",
 		},
 		&cli.StringFlag{
 			Name:     "gitops-repo-url",
@@ -46,8 +46,8 @@ var gitopsBootstrapCmd = cli.Command{
 			Usage: "path to the working copy of the gitops repo, default: current dir",
 		},
 		&cli.BoolFlag{
-			Name:     "no-controller",
-			Usage:    "to not bootstrap the FluxV2 gitops controller, only the GitRepository and Kustomization to add a new source",
+			Name:  "no-controller",
+			Usage: "to not bootstrap the FluxV2 gitops controller, only the GitRepository and Kustomization to add a new source",
 		},
 	},
 }
@@ -126,7 +126,7 @@ func Bootstrap(c *cli.Context) error {
 		Secret:       gitopsRepositoryName,
 		Namespace:    "flux-system",
 		Branch:       branch,
-		ManifestFile: gitopsRepositoryName+".yaml",
+		ManifestFile: gitopsRepositoryName + ".yaml",
 	}
 
 	syncOpts.TargetPath = env
@@ -189,7 +189,7 @@ func Bootstrap(c *cli.Context) error {
 	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "deploy-key.yaml"))
 	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
 	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
-	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "gitops-repo.yaml"))
+	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", gitopsRepositoryName+".yaml"))
 
 	fmt.Fprintf(os.Stderr, "\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall)
 
