@@ -8,7 +8,10 @@ require (
 	github.com/enescakir/emoji v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/fluxcd/flux2 v0.13.1
+	github.com/fluxcd/kustomize-controller/api v0.11.1 // indirect
+	github.com/fluxcd/pkg/apis/meta v0.9.0 // indirect
 	github.com/fluxcd/pkg/ssh v0.0.5
+	github.com/fluxcd/source-controller/api v0.12.1 // indirect
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
 	github.com/gimlet-io/gimletd v0.2.0-rc3.0.20210607094115-f41105f29511
 	github.com/go-chi/chi v1.5.1
