@@ -3,6 +3,7 @@ package manifest
 import (
 	"fmt"
 	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimletd/dx/helm"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 
@@ -80,7 +81,7 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	if strings.HasPrefix(m.Chart.Name, "git@") {
-		tmpChartDir, err := dx.CloneChartFromRepo(m, "")
+		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
@@ -88,7 +89,7 @@ func templateCmd(c *cli.Context) error {
 		defer os.RemoveAll(tmpChartDir)
 	}
 
-	templatesManifests, err := dx.HelmTemplate(m)
+	templatesManifests, err := helm.HelmTemplate(m)
 	if err != nil {
 		return fmt.Errorf("cannot template Helm chart %s", err)
 	}

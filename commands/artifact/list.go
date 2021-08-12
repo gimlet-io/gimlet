@@ -35,9 +35,9 @@ var artifactListCmd = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "repository",
+			Name:    "repository",
 			Aliases: []string{"repo"},
-			Usage: "filter artifacts to a git repository in owner/repo format",
+			Usage:   "filter artifacts to a git repository in owner/repo format",
 		},
 		&cli.StringFlag{
 			Name:  "branch",
@@ -72,9 +72,9 @@ var artifactListCmd = cli.Command{
 			Usage:   "output format, eg.: json",
 		},
 		&cli.BoolFlag{
-			Name:  "reverse",
+			Name:    "reverse",
 			Aliases: []string{"r"},
-			Usage: "reverse the chronological order of the displayed artifacts",
+			Usage:   "reverse the chronological order of the displayed artifacts",
 		},
 	},
 	Action: list,
@@ -120,7 +120,7 @@ func list(c *cli.Context) error {
 		}
 	}
 
-	limit :=  c.Int("limit")
+	limit := c.Int("limit")
 	if limit == 0 {
 		limit = 3
 	}
@@ -129,7 +129,7 @@ func list(c *cli.Context) error {
 		c.String("repository"), c.String("branch"),
 		event,
 		c.String("sourceBranch"),
-		c.String("sha"),
+		[]string{c.String("sha")},
 		limit, c.Int("offset"),
 		since, until,
 	)

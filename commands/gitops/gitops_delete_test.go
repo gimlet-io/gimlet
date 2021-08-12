@@ -27,16 +27,22 @@ func Test_delete(t *testing.T) {
 	const env = "staging"
 	const app = "my-app"
 
-	args := strings.Split("gimlet gitops delete", " ")
-	args = append(args, "--gitops-repo-path", gitopsRepoPath)
-	args = append(args, "--env", env)
-	args = append(args, "--app", app)
+
 
 	g.Describe("gimlet gitops delete", func() {
 		g.It("Should validate path exist", func() {
+			args := strings.Split("gimlet gitops delete", " ")
+			args = append(args, "--gitops-repo-path", "does-not-exist")
+			args = append(args, "--env", env)
+			args = append(args, "--app", app)
 			err = commands.Run(&Command, args)
-			g.Assert(strings.Contains(err.Error(), "no such file or directory")).IsTrue()
+			g.Assert(strings.Contains(err.Error(), "is not a git repo")).IsTrue()
 		})
+
+		args := strings.Split("gimlet gitops delete", " ")
+		args = append(args, "--gitops-repo-path", gitopsRepoPath)
+		args = append(args, "--env", env)
+		args = append(args, "--app", app)
 
 		g.It("Should stage and commit a folder", func() {
 			err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)

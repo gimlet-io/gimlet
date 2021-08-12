@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimletd/dx/helm"
 	"github.com/urfave/cli/v2"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
@@ -45,7 +46,7 @@ func lint(c *cli.Context) error {
 
 	var tmpChartName string
 	if strings.HasPrefix(m.Chart.Name, "git@") {
-		tmpChartName, err = dx.CloneChartFromRepo(m, "")
+		tmpChartName, err = helm.CloneChartFromRepo(m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
