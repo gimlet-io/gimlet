@@ -125,11 +125,16 @@ func list(c *cli.Context) error {
 		limit = 3
 	}
 
+	var hashes []string
+	if c.String("sha") != "" {
+		hashes = append(hashes, c.String("sha"))
+	}
+
 	artifacts, err := client.ArtifactsGet(
 		c.String("repository"), c.String("branch"),
 		event,
 		c.String("sourceBranch"),
-		[]string{c.String("sha")},
+		hashes,
 		limit, c.Int("offset"),
 		since, until,
 	)
