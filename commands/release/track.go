@@ -6,7 +6,6 @@ import (
 	"github.com/gimlet-io/gimletd/client"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
-	"os"
 )
 
 var releaseTrackCmd = cli.Command{
@@ -47,12 +46,18 @@ func track(c *cli.Context) error {
 	trackingID := c.Args().First()
 
 	client := client.NewClient(serverURL, auth)
-	state, desc, err := client.TrackGet(trackingID)
+	releaseStatus, err := client.TrackGet(trackingID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%v Request (%s) is %s %s\n", emoji.BackhandIndexPointingRight, trackingID, state, desc)
+	fmt.Printf(
+		"%v Request (%s) is %s %s\n",
+		emoji.BackhandIndexPointingRight,
+		trackingID,
+		releaseStatus.Status,
+		releaseStatus.StatusDesc,
+	)
 
 	return nil
 }

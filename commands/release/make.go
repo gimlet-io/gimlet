@@ -3,6 +3,7 @@ package release
 import (
 	"context"
 	"fmt"
+	"github.com/gimlet-io/gimletd/dx"
 	"os"
 
 	"github.com/enescakir/emoji"
@@ -61,8 +62,10 @@ func make(c *cli.Context) error {
 
 	client := client.NewClient(serverURL, auth)
 	trackingID, err := client.ReleasesPost(
-		c.String("env"),
-		c.String("artifact"),
+		dx.ReleaseRequest{
+			Env:        c.String("env"),
+			ArtifactID: c.String("artifact"),
+		},
 	)
 	if err != nil {
 		return err
