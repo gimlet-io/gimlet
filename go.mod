@@ -8,13 +8,12 @@ require (
 	github.com/enescakir/emoji v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/fluxcd/flux2 v0.13.1
-	github.com/fluxcd/kustomize-controller/api v0.11.1 // indirect
-	github.com/fluxcd/pkg/apis/meta v0.9.0 // indirect
-	github.com/fluxcd/pkg/recorder v0.0.6 // indirect
+	github.com/fluxcd/kustomize-controller/api v0.11.1
+	github.com/fluxcd/pkg/apis/meta v0.9.0
 	github.com/fluxcd/pkg/ssh v0.0.5
-	github.com/fluxcd/source-controller/api v0.12.1 // indirect
+	github.com/fluxcd/source-controller/api v0.12.1
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
-	github.com/gimlet-io/gimletd v0.3.3-0.20210824112317-4eba5a4c9a58
+	github.com/gimlet-io/gimletd v0.3.3-0.20210827073315-3da3f68cb6e9
 	github.com/go-chi/chi v1.5.1
 	github.com/go-chi/cors v1.1.1
 	github.com/go-git/go-git/v5 v5.2.0

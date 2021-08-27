@@ -315,8 +315,6 @@ github.com/fluxcd/pkg/apis/meta v0.4.0/go.mod h1:wOzQQx8CdtUQCGaLzqGu4QgnNxYkI6/
 github.com/fluxcd/pkg/apis/meta v0.9.0 h1:rxW69p+VmJCKXXkaRYnovRBFlKjd+MJQfm2RrB0B4j8=
 github.com/fluxcd/pkg/apis/meta v0.9.0/go.mod h1:yHuY8kyGHYz22I0jQzqMMGCcHViuzC/WPdo9Gisk8Po=
 github.com/fluxcd/pkg/git v0.0.7/go.mod h1:5Vu92x6Q3CpxDUllmB69kAkVY5jAtPpXcY2TSZ/oCJI=
-github.com/fluxcd/pkg/recorder v0.0.6 h1:me/n8syeeGXz50OXoPX3jgIj9AtinvhHdKT9Dy+MbHs=
-github.com/fluxcd/pkg/recorder v0.0.6/go.mod h1:IfQxfVRSNsWs3B0Yp5B6ObEWwKHILlAx8N7XkoDdhFg=
 github.com/fluxcd/pkg/runtime v0.3.1/go.mod h1:wg33L6k5FkGEYoZta7hbUlBIscM5VZd/PfCbaEi+wK4=
 github.com/fluxcd/pkg/runtime v0.11.0 h1:FPsiu1k5NQGl2tsaXH5WgSmrOMg7o44jdOP0rW/TI1Y=
 github.com/fluxcd/pkg/runtime v0.11.0/go.mod h1:ZjAwug6DBLXwo9UdP1/tTPyuWpK9kZ0BEJbctbuEB1o=
@@ -346,18 +344,8 @@ github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeME
 github.com/gimlet-io/gimlet-cli v0.3.0/go.mod h1:Eepc0cmfjQq0v5N28ypFg6o5u0vQMyWH/Rs58fqyK3E=
 github.com/gimlet-io/gimlet-cli v0.4.0/go.mod h1:aK3Z81jOG3uJ0KO7JHrwisP6LspaWWIDssHl+XlzaOc=
 github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35/go.mod h1:au/+f8TT0S9O8xLRQslZ90hZLYcgKhpOhdA/F6+Wp6k=
-github.com/gimlet-io/gimletd v0.2.0-rc3.0.20210607094115-f41105f29511 h1:sekq9sAui+2gItuUMbszVZmKp/yCTpKVm1+Iqbx0EAE=
-github.com/gimlet-io/gimletd v0.2.0-rc3.0.20210607094115-f41105f29511/go.mod h1:eDxILpZ3KLuzf0sRQlPgaIdCqRX7V3/d7nnMiPEhtQY=
-github.com/gimlet-io/gimletd v0.3.2-0.20210812062423-98cae8456a8b h1:mA6Pyf4ilLxRNooqtTjtRwYO61GQiKwL2oTqmBVEU68=
-github.com/gimlet-io/gimletd v0.3.2-0.20210812062423-98cae8456a8b/go.mod h1:Vt1Aw7RcdOYm2LWteOomZFvoDFdV1raT0jPEAODL+IU=
-github.com/gimlet-io/gimletd v0.3.3-0.20210812132811-00df24513b66 h1:6EIN5ckypD11QuuJCl8mAn19hrgwtP0NoyYxDfb74zE=
-github.com/gimlet-io/gimletd v0.3.3-0.20210812132811-00df24513b66/go.mod h1:Vt1Aw7RcdOYm2LWteOomZFvoDFdV1raT0jPEAODL+IU=
-github.com/gimlet-io/gimletd v0.3.3-0.20210813114435-53625a4bbbff h1:i2GUNnObd2GY8FI9l85lPYO/g3Hbevjr7/TsUXIpcHg=
-github.com/gimlet-io/gimletd v0.3.3-0.20210813114435-53625a4bbbff/go.mod h1:Vt1Aw7RcdOYm2LWteOomZFvoDFdV1raT0jPEAODL+IU=
-github.com/gimlet-io/gimletd v0.3.3-0.20210823131823-bf9289495444 h1:zIcx9lazWBzNNZ2gD2qDimkZxG6G3Cz41NmsKeL/M0g=
-github.com/gimlet-io/gimletd v0.3.3-0.20210823131823-bf9289495444/go.mod h1:Vt1Aw7RcdOYm2LWteOomZFvoDFdV1raT0jPEAODL+IU=
-github.com/gimlet-io/gimletd v0.3.3-0.20210824112317-4eba5a4c9a58 h1://xAW33YKrYcW3tgKWjbWIrhxer8bpfFeROvwh1yQnY=
-github.com/gimlet-io/gimletd v0.3.3-0.20210824112317-4eba5a4c9a58/go.mod h1:Vt1Aw7RcdOYm2LWteOomZFvoDFdV1raT0jPEAODL+IU=
+github.com/gimlet-io/gimletd v0.3.3-0.20210827073315-3da3f68cb6e9 h1:pq98NAd7X85R3UbTUw/RU+e6RekQfBah/cn2jix+J8Y=
+github.com/gimlet-io/gimletd v0.3.3-0.20210827073315-3da3f68cb6e9/go.mod h1:Vt1Aw7RcdOYm2LWteOomZFvoDFdV1raT0jPEAODL+IU=
 github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd h1:gc151Vj9AP6IfmciV1P8N7+pgmJU8TkMmu8Ug5pIjIU=
 github.com/gimlet-io/go-git/v5 v5.2.1-0.20210122134038-45142aa695dd/go.mod h1:kh02eMX+wdqqxgNMEyq8YgwlIOsDOa9homkUq1PoTMs=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
@@ -628,7 +616,6 @@ github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHh
 github.com/hashicorp/go-multierror v1.1.0 h1:B9UzwGQJehnUY1yNrnwREHc3fGbC2xefo8g4TbElacI=
 github.com/hashicorp/go-multierror v1.1.0/go.mod h1:spPvp8C1qA32ftKqdAHm4hHTbPw+vmowP0z+KUhOZdA=
 github.com/hashicorp/go-retryablehttp v0.6.4/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
-github.com/hashicorp/go-retryablehttp v0.6.6/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-retryablehttp v0.6.7/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-retryablehttp v0.6.8 h1:92lWxgpa+fF3FozM4B3UZtHZMJX8T5XT+TFdCxsPyWs=
 github.com/hashicorp/go-retryablehttp v0.6.8/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
