@@ -44,6 +44,10 @@ var releaseMakeCmd = cli.Command{
 			Aliases:  []string{"a"},
 			Required: true,
 		},
+		&cli.StringFlag{
+			Name:  "app",
+			Usage: "release only a specific app from the artifact",
+		},
 	},
 	Action: make,
 }
@@ -65,6 +69,7 @@ func make(c *cli.Context) error {
 		dx.ReleaseRequest{
 			Env:        c.String("env"),
 			ArtifactID: c.String("artifact"),
+			App:        c.String("app"),
 		},
 	)
 	if err != nil {
