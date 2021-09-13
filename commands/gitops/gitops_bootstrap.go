@@ -6,7 +6,7 @@ import (
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/commands/gitops/sync"
-	"github.com/gimlet-io/gimletd/githelper"
+	"github.com/gimlet-io/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -68,14 +68,14 @@ func Bootstrap(c *cli.Context) error {
 	}
 	branch, _ := branchName(err, repo, gitopsRepoPath)
 	if branch == "" {
-		_, err = githelper.Commit(repo, "Initial commit")
+		_, err = nativeGit.Commit(repo, "Initial commit")
 		if err != nil {
 			return err
 		}
 		branch, _ = branchName(err, repo, gitopsRepoPath)
 	}
 
-	empty, err := githelper.NothingToCommit(repo)
+	empty, err := nativeGit.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}
@@ -155,12 +155,12 @@ func Bootstrap(c *cli.Context) error {
 		return fmt.Errorf("cannot write deploy key %s", err)
 	}
 
-	err = githelper.StageFolder(repo, filepath.Join(env, "flux"))
+	err = nativeGit.StageFolder(repo, filepath.Join(env, "flux"))
 	if err != nil {
 		return err
 	}
 
-	empty, err = githelper.NothingToCommit(repo)
+	empty, err = nativeGit.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func Bootstrap(c *cli.Context) error {
 	if singleEnv {
 		gitMessage = "[Gimlet CLI] Bootstrapping"
 	}
-	_, err = githelper.Commit(repo, gitMessage)
+	_, err = nativeGit.Commit(repo, gitMessage)
 	if err != nil {
 		return err
 	}

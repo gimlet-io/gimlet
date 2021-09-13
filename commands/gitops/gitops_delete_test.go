@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
-	"github.com/gimlet-io/gimletd/githelper"
+	"github.com/gimlet-io/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"io/ioutil"
 	"os"
@@ -47,9 +47,9 @@ func Test_delete(t *testing.T) {
 		g.It("Should stage and commit a folder", func() {
 			err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)
 			ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, "dummy"), []byte(""), commands.File_RW_RW_R)
-			err = githelper.StageFolder(repo, env)
+			err = nativeGit.StageFolder(repo, env)
 			g.Assert(err == nil).IsTrue()
-			_, err = githelper.Commit(repo, "")
+			_, err = nativeGit.Commit(repo, "")
 			g.Assert(err == nil).IsTrue()
 		})
 
