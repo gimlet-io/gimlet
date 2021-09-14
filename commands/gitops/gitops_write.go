@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/gimlet-io/gimletd/dx/helm"
-	"github.com/gimlet-io/gimletd/githelper"
+	"github.com/gimlet-io/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 	"os"
@@ -74,6 +74,6 @@ func write(c *cli.Context) error {
 	}
 	files = helm.SplitHelmOutput(files)
 
-	_, err = githelper.CommitFilesToGit(repo, files, env, app, message, "")
+	_, err = nativeGit.CommitFilesToGit(repo, files, env, app, message, "")
 	return err
 }
