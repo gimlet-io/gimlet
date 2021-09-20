@@ -347,12 +347,8 @@ github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeME
 github.com/gimlet-io/gimlet-cli v0.3.0/go.mod h1:Eepc0cmfjQq0v5N28ypFg6o5u0vQMyWH/Rs58fqyK3E=
 github.com/gimlet-io/gimlet-cli v0.4.0/go.mod h1:aK3Z81jOG3uJ0KO7JHrwisP6LspaWWIDssHl+XlzaOc=
 github.com/gimlet-io/gimletd v0.0.0-20210201142623-e972848cda35/go.mod h1:au/+f8TT0S9O8xLRQslZ90hZLYcgKhpOhdA/F6+Wp6k=
-github.com/gimlet-io/gimletd v0.4.4-0.20210913102003-5640b549e08c h1:tmdB3oiqwLMokQRpgktKksVcVMrz9EaMJG+9pwLu594=
-github.com/gimlet-io/gimletd v0.4.4-0.20210913102003-5640b549e08c/go.mod h1:aN8fi6HxWphqJZ5CJf8emf2+8G8cMxg8gGSOreqRD88=
-github.com/gimlet-io/gimletd v0.4.4-0.20210913130222-8bdb9f2b5084 h1:qha3EdF0mlHBoATOCvnM7lZb8pEWcUVbh3x34J0Y4yI=
-github.com/gimlet-io/gimletd v0.4.4-0.20210913130222-8bdb9f2b5084/go.mod h1:aN8fi6HxWphqJZ5CJf8emf2+8G8cMxg8gGSOreqRD88=
-github.com/gimlet-io/gimletd v0.4.4-0.20210914115904-3ce4d091ab79 h1:yF2pMvDkQJf+bIkDk5ybpjFnwa5FyekBQ4vbDfJPyao=
-github.com/gimlet-io/gimletd v0.4.4-0.20210914115904-3ce4d091ab79/go.mod h1:aN8fi6HxWphqJZ5CJf8emf2+8G8cMxg8gGSOreqRD88=
+github.com/gimlet-io/gimletd v0.5.2 h1:Jt0bgY/Iv2bEjeMsIRZa9SPiUSp+e7w8WwWc9Q+yIbM=
+github.com/gimlet-io/gimletd v0.5.2/go.mod h1:BoHTiZteX69u3NdLIvZif/kdhdpGmSej66rThBZ/ZKM=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
@@ -368,6 +364,7 @@ github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm
 github.com/go-git/gcfg v1.5.0 h1:Q5ViNfGF8zFgyJWPqYwA7qGFoMTEiBmdlkcfRmpIMa4=
 github.com/go-git/gcfg v1.5.0/go.mod h1:5m20vg6GwYabIxaOonVkTdrILxQMpEShl1xiMF4ua+E=
 github.com/go-git/go-billy/v5 v5.0.0/go.mod h1:pmpqyWchKfYfrkb/UVH4otLvyi/5gJlGI4Hb3ZqZ3W0=
+github.com/go-git/go-billy/v5 v5.1.0/go.mod h1:pmpqyWchKfYfrkb/UVH4otLvyi/5gJlGI4Hb3ZqZ3W0=
 github.com/go-git/go-billy/v5 v5.2.0/go.mod h1:pmpqyWchKfYfrkb/UVH4otLvyi/5gJlGI4Hb3ZqZ3W0=
 github.com/go-git/go-billy/v5 v5.3.1 h1:CPiOUAzKtMRvolEKw+bG1PLRpT7D3LIs3/3ey4Aiu34=
 github.com/go-git/go-billy/v5 v5.3.1/go.mod h1:pmpqyWchKfYfrkb/UVH4otLvyi/5gJlGI4Hb3ZqZ3W0=
@@ -377,6 +374,7 @@ github.com/go-git/go-git-fixtures/v4 v4.2.1 h1:n9gGL1Ct/yIw+nfsfr8s4+sbhT+Ncu2Su
 github.com/go-git/go-git-fixtures/v4 v4.2.1/go.mod h1:K8zd3kDUAykwTdDCr+I0per6Y6vMiRR/nnVTBtavnB0=
 github.com/go-git/go-git/v5 v5.1.0/go.mod h1:ZKfuPUoY1ZqIG4QG9BDBh3G4gLM5zvPuSJAozQrZuyM=
 github.com/go-git/go-git/v5 v5.2.0/go.mod h1:kh02eMX+wdqqxgNMEyq8YgwlIOsDOa9homkUq1PoTMs=
+github.com/go-git/go-git/v5 v5.3.0/go.mod h1:xdX4bWJ48aOrdhnl2XqHYstHbbp6+LFS4r4X+lNVprw=
 github.com/go-git/go-git/v5 v5.4.2 h1:BXyZu9t0VkbiHtqrsvdq39UDhGJTl1h55VW6CSC4aY4=
 github.com/go-git/go-git/v5 v5.4.2/go.mod h1:gQ1kArt6d+n+BGd+/B/I74HwRTLhth2+zti4ihgckDc=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=

@@ -80,7 +80,8 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
 	}
 
-	if strings.HasPrefix(m.Chart.Name, "git@") {
+	if strings.HasPrefix(m.Chart.Name, "git@") ||
+		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
 		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
