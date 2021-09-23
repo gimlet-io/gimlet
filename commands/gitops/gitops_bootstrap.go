@@ -144,7 +144,7 @@ func Bootstrap(c *cli.Context) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-	secretFileName := fmt.Sprintf("deploy-key-%s.yaml", env)
+	secretFileName := fmt.Sprintf("deploy-key%s.yaml", "-"+env)
 
 	publicKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
 	if err != nil {
@@ -186,7 +186,9 @@ func Bootstrap(c *cli.Context) error {
 
 	fmt.Fprintf(os.Stderr, "%v 3) Apply the gitops manifests on the cluster to start the gitops loop:\n\n", emoji.BackhandIndexPointingRight)
 
-	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "flux.yaml"))
+	if !noController {
+		fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "flux.yaml"))
+	}
 	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", secretFileName))
 	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
 	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
