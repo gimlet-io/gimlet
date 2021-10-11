@@ -144,7 +144,10 @@ func Bootstrap(c *cli.Context) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-	secretFileName := fmt.Sprintf("deploy-key%s.yaml", "-"+env)
+	secretFileName := fmt.Sprintf("deploy-key-%s.yaml", env)
+	if singleEnv {
+		secretFileName = "deploy-key.yaml"
+	}
 
 	publicKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
 	if err != nil {
