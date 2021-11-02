@@ -89,7 +89,12 @@ func add(c *cli.Context) error {
 		}
 		context[keyValue[0]] = keyValue[1]
 	}
-	a.Context = context
+	for k,v := range context {
+		if a.Context == nil {
+			a.Context = map[string]string{}
+		}
+		a.Context[k] = v
+	}
 
 	jsonString := bytes.NewBufferString("")
 	e := json.NewEncoder(jsonString)

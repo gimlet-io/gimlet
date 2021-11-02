@@ -21,6 +21,7 @@ var artifactCreateCmd = cli.Command{
      --authorEmail=laszlo@laszlo.laszlo \
      --committerName=Laszlo \
      --committerEmail=laszlo@laszlo.laszlo \
+     --created="2020-10-07T13:55:29+02:00" \
      --message="Bugfix 123" \
      --url="https://github.com/owner/repo/commits/0017d995e32e3d1998395d971b969bcf682d2085" \
      > artifact.json`,

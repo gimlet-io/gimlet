@@ -1,11 +1,13 @@
 package artifact
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
 	"github.com/gimlet-io/gimletd/dx"
+	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -62,25 +64,68 @@ func Test_add(t *testing.T) {
 	defer os.Remove(envFile.Name())
 	ioutil.WriteFile(envFile.Name(), []byte(env), commands.File_RW_RW_R)
 
+	envFile2, err := ioutil.TempFile("", "gimlet-cli-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(envFile2.Name())
+	ioutil.WriteFile(envFile2.Name(), []byte(env), commands.File_RW_RW_R)
+
 	g := goblin.Goblin(t)
 	g.Describe("gimlet artifact add", func() {
-		//g.It("Should add CI URL to artifact", func() {
-		//	args := strings.Split("gimlet artifact add", " ")
-		//	args = append(args, "-f", artifactFile.Name())
-		//	args = append(args, "--field", "name=CI")
-		//	args = append(args, "--field", "url=https://jenkins.example.com/job/dev/84/display/redirect")
-		//	err = commands.Run(&Command, args)
-		//	g.Assert(err == nil).IsTrue(err)
-		//
-		//	content, err := ioutil.ReadFile(artifactFile.Name())
-		//	var a dx.Artifact
-		//	err = json.Unmarshal(content, &a)
-		//	g.Assert(err == nil).IsTrue(err)
-		//	g.Assert(len(a.Items) == 1).IsTrue("Should have 1 item")
-		//	g.Assert(a.Items[0]["name"] == "CI").IsTrue("Should add CI item")
-		//	g.Assert(a.Items[0]["url"] == "https://jenkins.example.com/job/dev/84/display/redirect").IsTrue("Should add CI item")
-		//	//fmt.Println(string(content))
-		//})
+		g.It("Should add CI URL to artifact", func() {
+			args := strings.Split("gimlet artifact add", " ")
+			args = append(args, "-f", artifactFile.Name())
+			args = append(args, "--field", "name=CI")
+			args = append(args, "--field", "url=https://jenkins.example.com/job/dev/84/display/redirect")
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a dx.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Items) == 1).IsTrue("Should have 1 item")
+			g.Assert(a.Items[0]["name"] == "CI").IsTrue("Should add CI item")
+			g.Assert(a.Items[0]["url"] == "https://jenkins.example.com/job/dev/84/display/redirect").IsTrue("Should add URL item")
+		})
+		g.It("Should append custom field to artifact", func() {
+			args := strings.Split("gimlet artifact add", " ")
+			args = append(args, "-f", artifactFile.Name())
+			args = append(args, "--field", "custom=myValue")
+			app := &cli.App{ // needed to redefine the command as stringSlice cached the fields
+				Name: "gimlet",
+				Commands: []*cli.Command{
+					{
+						Name: "artifact",
+						Subcommands: []*cli.Command{
+							{
+								Name: "add",
+								Flags: []cli.Flag{
+									&cli.StringFlag{
+										Name:    "file",
+										Aliases: []string{"f"},
+									},
+									&cli.StringSliceFlag{
+										Name:  "field",
+									},
+								},
+								Action: add,
+							},
+						},
+					},
+				},
+			}
+			err = app.RunContext(context.TODO(), args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a dx.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Items) == 2).IsTrue("Should have 2 items")
+			g.Assert(a.Items[1]["custom"] == "myValue").IsTrue("Should add custom item")
+		})
 		g.It("Should add Gimlet environment to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
 			args = append(args, "-f", artifactFile.Name())
@@ -94,23 +139,73 @@ func Test_add(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(len(a.Environments) == 1).IsTrue("Should have 1 env")
 			g.Assert(a.Environments[0].App == "fosdem-2021").IsTrue("Should add env")
+		})
+		g.It("Should append Gimlet environment to artifact", func() {
+			args := strings.Split("gimlet artifact add", " ")
+			args = append(args, "-f", artifactFile.Name())
+			args = append(args, "--envFile", envFile2.Name())
+			app := &cli.App{ // needed to redefine the command as stringSlice cached the fields
+				Name: "gimlet",
+				Commands: []*cli.Command{
+					{
+						Name: "artifact",
+						Subcommands: []*cli.Command{
+							{
+								Name: "add",
+								Flags: []cli.Flag{
+									&cli.StringFlag{
+										Name:    "file",
+										Aliases: []string{"f"},
+									},
+									&cli.StringSliceFlag{
+										Name:  "envFile",
+									},
+								},
+								Action: add,
+							},
+						},
+					},
+				},
+			}
+			err = app.RunContext(context.TODO(), args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a dx.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Environments) == 2).IsTrue("Should have 2 envs")
+			g.Assert(a.Environments[0].App == "fosdem-2021").IsTrue("Should add env")
 			fmt.Println(string(content))
 		})
-		//g.It("Should add context variables to artifact", func() {
-		//	args := strings.Split("gimlet artifact add", " ")
-		//	args = append(args, "-f", artifactFile.Name())
-		//	args = append(args, "--var", "KEY=VALUE")
-		//	args = append(args, "--var", "KEY2=VALUE2")
-		//	err = commands.Run(&Command, args)
-		//	g.Assert(err == nil).IsTrue(err)
-		//
-		//	content, err := ioutil.ReadFile(artifactFile.Name())
-		//	var a dx.Artifact
-		//	err = json.Unmarshal(content, &a)
-		//	g.Assert(err == nil).IsTrue(err)
-		//	g.Assert(len(a.Context) == 2).IsTrue("Should have 1 var in context")
-		//	g.Assert(a.Context["KEY"] == "VALUE").IsTrue("Should add var")
-		//	fmt.Println(string(content))
-		//})
+		g.It("Should add context variables to artifact", func() {
+			args := strings.Split("gimlet artifact add", " ")
+			args = append(args, "-f", artifactFile.Name())
+			args = append(args, "--var", "KEY=VALUE")
+			args = append(args, "--var", "KEY2=VALUE2")
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a dx.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Context) == 2).IsTrue("Should have 2 vars in context")
+			g.Assert(a.Context["KEY"] == "VALUE").IsTrue("Should add var")
+		})
+		g.It("Should append context variable to artifact", func() {
+			args := strings.Split("gimlet artifact add", " ")
+			args = append(args, "-f", artifactFile.Name())
+			args = append(args, "--var", "KEY3=VALUE3")
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, err := ioutil.ReadFile(artifactFile.Name())
+			var a dx.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(len(a.Context) == 3).IsTrue("Should have 3 vars in context")
+			g.Assert(a.Context["KEY3"] == "VALUE3").IsTrue("Should append var")
+		})
 	})
 }
