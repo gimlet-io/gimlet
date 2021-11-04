@@ -1,6 +1,6 @@
 tasks:
   - init: |
-      go build
+      make all
 
 vscode:
   extensions:
