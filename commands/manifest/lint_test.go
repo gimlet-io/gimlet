@@ -1,13 +1,14 @@
 package manifest
 
 import (
-	"github.com/franela/goblin"
-	"github.com/gimlet-io/gimlet-cli/commands"
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/franela/goblin"
+	"github.com/gimlet-io/gimlet-cli/commands"
 )
 
 const validEnv = `
@@ -15,7 +16,9 @@ app: fosdem-2021
 env: staging
 namespace: default
 chart:
-  name: git@github.com:gimlet-io/onechart.git?sha=8e52597ae4fb4ed7888c819b3c77331622136aba&path=/charts/onechart/
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.10.0
 values:
   replicas: 1
   image:
@@ -73,7 +76,7 @@ func Test_lint(t *testing.T) {
 			g.Assert(err != nil).IsTrue(err)
 		})
 		g.It("Should fail schema error", func() {
-			g.Timeout(60*time.Second)
+			g.Timeout(60 * time.Second)
 			ioutil.WriteFile(envFile.Name(), []byte(invalidReplicaType), commands.File_RW_RW_R)
 			err = commands.Run(&Command, args)
 			g.Assert(err != nil).IsTrue(err)
