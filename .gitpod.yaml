@@ -1,0 +1,13 @@
+tasks:
+  - init: |
+      go build
+
+vscode:
+  extensions:
+    - golang.go
+
+gitConfig:
+  alias.st: status
+  alias.l: log --graph --pretty=default
+  alias.lola: log --graph --oneline --all
+  alias.fp: fetch --prune
