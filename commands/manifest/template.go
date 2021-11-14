@@ -2,15 +2,19 @@ package manifest
 
 import (
 	"fmt"
+
 	"github.com/gimlet-io/gimletd/dx"
 	"github.com/gimlet-io/gimletd/dx/helm"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
+	"sigs.k8s.io/kustomize/api/filesys"
+	"sigs.k8s.io/kustomize/api/krusty"
 
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 var manifestTemplateCmd = cli.Command{
@@ -95,6 +99,11 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot template Helm chart %s", err)
 	}
 
+	// Check for patches
+	if patch, ok := m.Values["patches"]; ok {
+		templatesManifests = applyPatches(patch, templatesManifests)
+	}
+
 	outputPath := c.String("output")
 	if outputPath != "" {
 		err := ioutil.WriteFile(outputPath, []byte(templatesManifests), 0666)
@@ -106,4 +115,44 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func applyPatches(patch interface{}, templatesManifests string) string {
+
+	fSys := filesys.MakeFsInMemory()
+
+	byteKey := []byte(fmt.Sprintf("%v", (patch)))
+
+	fSys.WriteFile("manifests.yaml", []byte(templatesManifests))
+
+	fSys.WriteFile("patches.yaml", []byte(byteKey))
+
+	fSys.WriteFile("kustomization.yaml", []byte(`
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- manifests.yaml
+patchesStrategicMerge:
+- patches.yaml
+`))
+
+	b := krusty.MakeKustomizer(fSys, krusty.MakeDefaultOptions())
+
+	resources, err := b.Run(".")
+	if err != nil {
+		fmt.Println(err)
+	}
+	var files []byte
+	for _, res := range resources.Resources() {
+		yaml, err := res.AsYAML()
+		if err != nil {
+			fmt.Println(err)
+		}
+		delimiter := []byte("---\n")
+		files = append(files, delimiter...)
+		files = append(files, yaml...)
+
+	}
+
+	return string(files)
 }
