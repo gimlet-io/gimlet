@@ -119,14 +119,11 @@ func templateCmd(c *cli.Context) error {
 
 func applyPatches(patch interface{}, templatesManifests string) string {
 
+	bytePatch := []byte(fmt.Sprintf("%v", (patch)))
+
 	fSys := filesys.MakeFsInMemory()
-
-	byteKey := []byte(fmt.Sprintf("%v", (patch)))
-
 	fSys.WriteFile("manifests.yaml", []byte(templatesManifests))
-
-	fSys.WriteFile("patches.yaml", []byte(byteKey))
-
+	fSys.WriteFile("patches.yaml", []byte(bytePatch))
 	fSys.WriteFile("kustomization.yaml", []byte(`
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -137,11 +134,11 @@ patchesStrategicMerge:
 `))
 
 	b := krusty.MakeKustomizer(fSys, krusty.MakeDefaultOptions())
-
 	resources, err := b.Run(".")
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	var files []byte
 	for _, res := range resources.Resources() {
 		yaml, err := res.AsYAML()
