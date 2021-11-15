@@ -101,7 +101,10 @@ func templateCmd(c *cli.Context) error {
 
 	// Check for patches
 	if m.StrategicMergePatches != "" {
-		templatesManifests = applyPatches(m.StrategicMergePatches, templatesManifests)
+		templatesManifests, err = applyPatches(m.StrategicMergePatches, templatesManifests)
+		if err != nil {
+			return fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
+		}
 	}
 
 	outputPath := c.String("output")
@@ -117,14 +120,22 @@ func templateCmd(c *cli.Context) error {
 	return nil
 }
 
-func applyPatches(patch string, templatesManifests string) string {
+func applyPatches(patch string, templatesManifests string) (string, error) {
 
 	bytePatch := []byte(fmt.Sprintf("%v", (patch)))
 
 	fSys := filesys.MakeFsInMemory()
-	fSys.WriteFile("manifests.yaml", []byte(templatesManifests))
-	fSys.WriteFile("patches.yaml", []byte(bytePatch))
-	fSys.WriteFile("kustomization.yaml", []byte(`
+	err := fSys.WriteFile("manifests.yaml", []byte(templatesManifests))
+	if err != nil {
+		fmt.Errorf("%s", err)
+	}
+
+	err = fSys.WriteFile("patches.yaml", []byte(bytePatch))
+	if err != nil {
+		fmt.Errorf("%s", err)
+	}
+
+	err = fSys.WriteFile("kustomization.yaml", []byte(`
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -132,18 +143,21 @@ resources:
 patchesStrategicMerge:
 - patches.yaml
 `))
+	if err != nil {
+		fmt.Errorf("%s", err)
+	}
 
 	b := krusty.MakeKustomizer(fSys, krusty.MakeDefaultOptions())
 	resources, err := b.Run(".")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Errorf("%s", err)
 	}
 
 	var files []byte
 	for _, res := range resources.Resources() {
 		yaml, err := res.AsYAML()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Errorf("%s", err)
 		}
 		delimiter := []byte("---\n")
 		files = append(files, delimiter...)
@@ -151,5 +165,5 @@ patchesStrategicMerge:
 
 	}
 
-	return string(files)
+	return string(files), err
 }
