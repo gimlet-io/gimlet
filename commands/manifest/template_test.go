@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -67,28 +68,29 @@ chart:
   name: onechart
   version: 0.10.0
 values:
-  patches: |
-    ---
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: myapp
-      namespace: my-team
-    spec:
-      template:
-        spec:
-          containers:
-          - name: myapp
-            volumeMounts:
-              - name: azure-file
-                mountPath: /azure-bucket
-        volumes:
-          - name: azure-file
-            azureFile:
-              secretName: my-azure-secret
-              shareName: my-azure-share
-              readOnly: false
-    ---
+  replicas: 10  
+strategicMergePatches: |
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: myapp
+    namespace: my-team
+  spec:
+    template:
+      spec:
+        containers:
+        - name: myapp
+          volumeMounts:
+            - name: azure-file
+              mountPath: /azure-bucket
+      volumes:
+        - name: azure-file
+          azureFile:
+            secretName: my-azure-secret
+            shareName: my-azure-share
+            readOnly: false
+  ---
 `
 
 func Test_template(t *testing.T) {
@@ -209,7 +211,7 @@ func Test_template(t *testing.T) {
 				t.Fatal(err)
 			}
 			g.Assert(strings.Contains(string(templated), "mountPath: /azure-bucket")).IsTrue("the spec should contain volumeMounts")
-			//fmt.Println(string(templated))
+			fmt.Println(string(templated))
 		})
 	})
 }

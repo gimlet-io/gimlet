@@ -100,8 +100,8 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	// Check for patches
-	if patch, ok := m.Values["patches"]; ok {
-		templatesManifests = applyPatches(patch, templatesManifests)
+	if m.StrategicMergePatches != "" {
+		templatesManifests = applyPatches(m.StrategicMergePatches, templatesManifests)
 	}
 
 	outputPath := c.String("output")
@@ -117,7 +117,7 @@ func templateCmd(c *cli.Context) error {
 	return nil
 }
 
-func applyPatches(patch interface{}, templatesManifests string) string {
+func applyPatches(patch string, templatesManifests string) string {
 
 	bytePatch := []byte(fmt.Sprintf("%v", (patch)))
 
