@@ -127,12 +127,12 @@ func applyPatches(patch string, templatesManifests string) (string, error) {
 	fSys := filesys.MakeFsInMemory()
 	err := fSys.WriteFile("manifests.yaml", []byte(templatesManifests))
 	if err != nil {
-		fmt.Errorf("%s", err)
+		return "", err
 	}
 
 	err = fSys.WriteFile("patches.yaml", []byte(bytePatch))
 	if err != nil {
-		fmt.Errorf("%s", err)
+		return "", err
 	}
 
 	err = fSys.WriteFile("kustomization.yaml", []byte(`
@@ -144,20 +144,21 @@ patchesStrategicMerge:
 - patches.yaml
 `))
 	if err != nil {
-		fmt.Errorf("%s", err)
+		return "", err
 	}
 
+	fmt.Println(templatesManifests)
 	b := krusty.MakeKustomizer(fSys, krusty.MakeDefaultOptions())
 	resources, err := b.Run(".")
 	if err != nil {
-		fmt.Errorf("%s", err)
+		return "", err
 	}
 
 	var files []byte
 	for _, res := range resources.Resources() {
 		yaml, err := res.AsYAML()
 		if err != nil {
-			fmt.Errorf("%s", err)
+			return "", err
 		}
 		delimiter := []byte("---\n")
 		files = append(files, delimiter...)
