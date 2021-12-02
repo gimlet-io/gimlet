@@ -40,8 +40,12 @@ var gitopsUpgradeCmd = cli.Command{
 			Usage: "to not bootstrap the FluxV2 gitops controller, only the GitRepository and Kustomization to add a new source",
 		},
 		&cli.BoolFlag{
-			Name:  "upgrade-kustomization",
-			Usage: "if you want to upgrade not just Flux, but the gitops repo and folder configuration. Check diff carefully before comitting the changes",
+			Name:  "no-kustomization",
+			Usage: "if you don't want to upgrade your Flux repo and folder config",
+		},
+		&cli.BoolFlag{
+			Name:  "no-deploykey",
+			Usage: "if you don't want re-generate your deploy key",
 		},
 	},
 }
@@ -78,16 +82,17 @@ func Upgrade(c *cli.Context) error {
 	}
 
 	noController := c.Bool("no-controller")
+	noKustomization := c.Bool("no-kustomization")
+	noDeployKey := c.Bool("no-deploykey")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
-	upgradeKustomization := c.Bool("upgrade-kustomization")
 	_, _, _, err = generateManifests(
-		noController,
+		!noController,
 		env,
 		singleEnv,
 		gitopsRepoPath,
-		upgradeKustomization,
-		false,
+		!noKustomization,
+		!noDeployKey,
 		c.String("gitops-repo-url"),
 		branch,
 	)
@@ -100,7 +105,9 @@ func Upgrade(c *cli.Context) error {
 	fmt.Fprintf(os.Stderr, "%v 1) Check the git diff\n", emoji.BackhandIndexPointingRight)
 	fmt.Fprintf(os.Stderr, "%v 2) Commit and push to git origin\n", emoji.BackhandIndexPointingRight)
 
-	fmt.Fprintf(os.Stderr, "\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall)
+	fmt.Fprintf(os.Stderr, "\nFlux will find the changes and apply them. Essentially upgrading itself\n")
+
+	fmt.Fprintf(os.Stderr, "\nYay Gitops%v\n\n", emoji.RaisingHands)
 
 	return nil
 }

@@ -148,11 +148,11 @@ func Bootstrap(c *cli.Context) error {
 }
 
 func generateManifests(
-	noController bool,
+	shouldGenerateController bool,
 	env string,
 	singleEnv bool,
 	gitopsRepoPath string,
-	generateKustomizationAndRepo bool,
+	shouldGenerateKustomizationAndRepo bool,
 	shouldGenerateDeployKey bool,
 	gitopsRepoUrl string,
 	branch string,
@@ -176,7 +176,7 @@ func generateManifests(
 		env = "."
 	}
 
-	if !noController {
+	if shouldGenerateController {
 		installManifest, err := install.Generate(installOpts, "")
 		if err != nil {
 			return "", "", "", fmt.Errorf("cannot generate installation manifests %s", err)
@@ -188,7 +188,7 @@ func generateManifests(
 		}
 	}
 
-	if generateKustomizationAndRepo {
+	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := parseRepoURL(gitopsRepoUrl)
 		gitopsRepositoryName = fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
 		if singleEnv {
