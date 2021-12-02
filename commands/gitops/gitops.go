@@ -11,5 +11,6 @@ var Command = cli.Command{
 		&gitopsWriteCmd,
 		&gitopsDeleteCmd,
 		&gitopsBootstrapCmd,
+		&gitopsUpgradeCmd,
 	},
 }

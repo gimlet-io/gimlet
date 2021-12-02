@@ -2,6 +2,13 @@ package gitops
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/enescakir/emoji"
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
@@ -9,15 +16,9 @@ import (
 	"github.com/gimlet-io/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"path"
-	"path/filepath"
 	"sigs.k8s.io/yaml"
-	"strings"
-	"time"
 )
 
 var gitopsBootstrapCmd = cli.Command{
@@ -83,79 +84,22 @@ func Bootstrap(c *cli.Context) error {
 		return fmt.Errorf("there are changes in the gitops repo. Commit them first then try again")
 	}
 
-	singleEnv := c.Bool("single-env")
-	if !singleEnv && c.String("env") == "" {
-		return fmt.Errorf("either `--env` or `--single-env` is mandatory")
-	}
-
-	env := "."
-	if !singleEnv {
-		env = c.String("env")
-	}
-
-	gitopsRepoUrl := c.String("gitops-repo-url")
-	host, owner, repoName := parseRepoURL(gitopsRepoUrl)
-
-	installOpts := install.MakeDefaultOptions()
-	installOpts.ManifestFile = "flux.yaml"
-	installOpts.TargetPath = env
-
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
 
 	noController := c.Bool("no-controller")
-	if !noController {
-		installManifest, err := install.Generate(installOpts, "")
-		if err != nil {
-			return fmt.Errorf("cannot generate installation manifests %s", err)
-		}
-		installManifest.Path = path.Join(env, "flux", installOpts.ManifestFile)
-		_, err = installManifest.WriteFile(gitopsRepoPath)
-		if err != nil {
-			return fmt.Errorf("cannot write installation manifests %s", err)
-		}
-	}
-
-	gitopsRepositoryName := fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
-	if singleEnv {
-		gitopsRepositoryName = "gitops-repo"
-	}
-	syncOpts := sync.Options{
-		Interval:     15 * time.Second,
-		URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
-		Name:         gitopsRepositoryName,
-		Secret:       gitopsRepositoryName,
-		Namespace:    "flux-system",
-		Branch:       branch,
-		ManifestFile: gitopsRepositoryName + ".yaml",
-	}
-
-	syncOpts.TargetPath = env
-	if singleEnv {
-		syncOpts.TargetPath = ""
-	}
-	syncManifest, err := sync.Generate(syncOpts)
+	singleEnv := c.Bool("single-env")
+	env := c.String("env")
+	gitopsRepositoryName, publicKey, secretFileName, err := generateManifests(
+		noController,
+		env,
+		singleEnv,
+		gitopsRepoPath,
+		true,
+		c.String("gitops-repo-url"),
+		branch,
+	)
 	if err != nil {
-		return fmt.Errorf("cannot generate git manifests %s", err)
-	}
-	syncManifest.Path = path.Join(env, "flux", syncOpts.ManifestFile)
-	_, err = syncManifest.WriteFile(gitopsRepoPath)
-	if err != nil {
-		return fmt.Errorf("cannot write git manifests %s", err)
-	}
-
-	fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-	secretFileName := fmt.Sprintf("deploy-key-%s.yaml", env)
-	if singleEnv {
-		secretFileName = "deploy-key.yaml"
-	}
-
-	publicKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
-	if err != nil {
-		return fmt.Errorf("cannot generate deploy key %s", err)
-	}
-	err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("cannot write deploy key %s", err)
+		return err
 	}
 
 	err = nativeGit.StageFolder(repo, filepath.Join(env, "flux"))
@@ -200,6 +144,96 @@ func Bootstrap(c *cli.Context) error {
 	fmt.Fprintf(os.Stderr, "\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall)
 
 	return nil
+}
+
+func generateManifests(
+	noController bool,
+	env string,
+	singleEnv bool,
+	gitopsRepoPath string,
+	generateKustomizationDeployKeyAndRepo bool,
+	gitopsRepoUrl string,
+	branch string,
+) (string, string, string, error) {
+	publicKey := ""
+	gitopsRepositoryName := ""
+	secretFileName := ""
+
+	installOpts := install.MakeDefaultOptions()
+	installOpts.ManifestFile = "flux.yaml"
+	installOpts.TargetPath = env
+
+	if !singleEnv && env == "" {
+		return "", "", "", fmt.Errorf("either `--env` or `--single-env` is mandatory")
+	}
+	if singleEnv && env != "" {
+		return "", "", "", fmt.Errorf("`--env` and `--single-env` are mutually exclusive")
+	}
+
+	if singleEnv {
+		env = "."
+	}
+
+	if !noController {
+		installManifest, err := install.Generate(installOpts, "")
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot generate installation manifests %s", err)
+		}
+		installManifest.Path = path.Join(env, "flux", installOpts.ManifestFile)
+		_, err = installManifest.WriteFile(gitopsRepoPath)
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot write installation manifests %s", err)
+		}
+	}
+
+	if generateKustomizationDeployKeyAndRepo {
+		host, owner, repoName := parseRepoURL(gitopsRepoUrl)
+		gitopsRepositoryName = fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
+		if singleEnv {
+			gitopsRepositoryName = "gitops-repo"
+		}
+		syncOpts := sync.Options{
+			Interval:     15 * time.Second,
+			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
+			Name:         gitopsRepositoryName,
+			Secret:       gitopsRepositoryName,
+			Namespace:    "flux-system",
+			Branch:       branch,
+			ManifestFile: gitopsRepositoryName + ".yaml",
+		}
+
+		syncOpts.TargetPath = env
+		if singleEnv {
+			syncOpts.TargetPath = ""
+		}
+		syncManifest, err := sync.Generate(syncOpts)
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot generate git manifests %s", err)
+		}
+		syncManifest.Path = path.Join(env, "flux", syncOpts.ManifestFile)
+		_, err = syncManifest.WriteFile(gitopsRepoPath)
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot write git manifests %s", err)
+		}
+
+		fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
+		secretFileName = fmt.Sprintf("deploy-key-%s.yaml", env)
+		if singleEnv {
+			secretFileName = "deploy-key.yaml"
+		}
+
+		pKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
+		publicKey = pKey
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
+		}
+		err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot write deploy key %s", err)
+		}
+	}
+
+	return gitopsRepositoryName, publicKey, secretFileName, nil
 }
 
 func branchName(err error, repo *git.Repository, gitopsRepoPath string) (string, error) {
