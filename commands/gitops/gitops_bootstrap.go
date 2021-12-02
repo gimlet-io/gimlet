@@ -95,6 +95,7 @@ func Bootstrap(c *cli.Context) error {
 		singleEnv,
 		gitopsRepoPath,
 		true,
+		true,
 		c.String("gitops-repo-url"),
 		branch,
 	)
@@ -151,7 +152,8 @@ func generateManifests(
 	env string,
 	singleEnv bool,
 	gitopsRepoPath string,
-	generateKustomizationDeployKeyAndRepo bool,
+	generateKustomizationAndRepo bool,
+	shouldGenerateDeployKey bool,
 	gitopsRepoUrl string,
 	branch string,
 ) (string, string, string, error) {
@@ -186,7 +188,7 @@ func generateManifests(
 		}
 	}
 
-	if generateKustomizationDeployKeyAndRepo {
+	if generateKustomizationAndRepo {
 		host, owner, repoName := parseRepoURL(gitopsRepoUrl)
 		gitopsRepositoryName = fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
 		if singleEnv {
@@ -216,20 +218,22 @@ func generateManifests(
 			return "", "", "", fmt.Errorf("cannot write git manifests %s", err)
 		}
 
-		fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-		secretFileName = fmt.Sprintf("deploy-key-%s.yaml", env)
-		if singleEnv {
-			secretFileName = "deploy-key.yaml"
-		}
+		if shouldGenerateDeployKey {
+			fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
+			secretFileName = fmt.Sprintf("deploy-key-%s.yaml", env)
+			if singleEnv {
+				secretFileName = "deploy-key.yaml"
+			}
 
-		pKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
-		publicKey = pKey
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
-		}
-		err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot write deploy key %s", err)
+			pKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
+			publicKey = pKey
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
+			}
+			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot write deploy key %s", err)
+			}
 		}
 	}
 
