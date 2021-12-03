@@ -83,20 +83,10 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
 	}
 
-	if strings.HasPrefix(m.Chart.Name, "git@") ||
-		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
-		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
-		if err != nil {
-			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
-		}
-		m.Chart.Name = tmpChartDir
-		defer os.RemoveAll(tmpChartDir)
-	}
+	// Get Manifest Yamls
+	templatesManifests := GetTemplatesManifests(m)
 
-	templatesManifests, err := helm.HelmTemplate(m)
-	if err != nil {
-		return fmt.Errorf("cannot template Helm chart %s", err)
-	}
+	// fmt.Println("manifests %s", templatesManifests)
 
 	// Check for patches
 	if m.StrategicMergePatches != "" {
@@ -117,4 +107,51 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func GetTemplatesManifests(m dx.Manifest) string {
+
+	switch {
+	case m.Manifests != "" && m.Chart.Name != "":
+		templatesManifests, err := TemplateChart(m)
+		if err != nil {
+			fmt.Errorf("cannot template Helm chart %s", err)
+		}
+
+		templatesManifests += m.Manifests
+
+		return templatesManifests
+	case m.Chart.Name != "":
+		templatesManifests, err := TemplateChart(m)
+		if err != nil {
+			fmt.Errorf("cannot template Helm chart %s", err)
+		}
+
+		return templatesManifests
+	case m.Manifests != "":
+		return m.Manifests
+	default:
+		return "No Chart or Manifests"
+	}
+}
+
+func TemplateChart(m dx.Manifest) (string, error) {
+	var templatesManifests string
+	if strings.HasPrefix(m.Chart.Name, "git@") ||
+		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
+		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
+		if err != nil {
+			fmt.Errorf("cannot fetch chart from git %s", err.Error())
+		}
+		m.Chart.Name = tmpChartDir
+		defer os.RemoveAll(tmpChartDir)
+	}
+
+	templatesManifests, err := helm.HelmTemplate(m)
+	if err != nil {
+		fmt.Errorf("cannot template Helm chart %s", err)
+	}
+
+	return templatesManifests, err
+
 }
