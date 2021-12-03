@@ -83,10 +83,11 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
 	}
 
-	// Get Manifest Yamls
-	templatesManifests := GetTemplatesManifests(m)
-
-	// fmt.Println("manifests %s", templatesManifests)
+	// Get templates manifests
+	templatesManifests, err := GetTemplatesManifests(m)
+	if err != nil {
+		return fmt.Errorf("cannot get templates manifests %s", err.Error())
+	}
 
 	// Check for patches
 	if m.StrategicMergePatches != "" {
@@ -109,7 +110,7 @@ func templateCmd(c *cli.Context) error {
 	return nil
 }
 
-func GetTemplatesManifests(m dx.Manifest) string {
+func GetTemplatesManifests(m dx.Manifest) (string, error) {
 
 	switch {
 	case m.Manifests != "" && m.Chart.Name != "":
@@ -120,18 +121,18 @@ func GetTemplatesManifests(m dx.Manifest) string {
 
 		templatesManifests += m.Manifests
 
-		return templatesManifests
+		return templatesManifests, err
 	case m.Chart.Name != "":
 		templatesManifests, err := TemplateChart(m)
 		if err != nil {
 			fmt.Errorf("cannot template Helm chart %s", err)
 		}
 
-		return templatesManifests
+		return templatesManifests, err
 	case m.Manifests != "":
-		return m.Manifests
+		return m.Manifests, nil
 	default:
-		return "No Chart or Manifests"
+		return "No Chart or Manifests", nil
 	}
 }
 
