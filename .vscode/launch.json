@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Gimlet CLI",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd",
+            "args": ["artifact", "list"],
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

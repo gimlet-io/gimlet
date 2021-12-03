@@ -14,3 +14,5 @@ web/dist
 commands/chart/bundle.js
 commands/chart/bundle.js.LICENSE.txt
 commands/chart/index.html
+
+.env
