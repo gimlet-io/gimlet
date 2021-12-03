@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "artifact list",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd",
+            "args": ["artifact", "list"],
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "release track",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd",
+            "args": ["release", "track", "c3e857ce-0e4e-402a-8cbb-0325c06532be"],
+            "envFile": "${workspaceFolder}/.env"
+        },
+    ]
+}
