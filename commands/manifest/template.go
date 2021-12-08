@@ -84,7 +84,7 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	// Get templates manifests
-	templatesManifests, err := GetTemplatesManifests(m)
+	templatesManifests, err := getTemplatesManifests(m)
 	if err != nil {
 		return fmt.Errorf("cannot get templates manifests %s", err.Error())
 	}
@@ -110,34 +110,28 @@ func templateCmd(c *cli.Context) error {
 	return nil
 }
 
-func GetTemplatesManifests(m dx.Manifest) (string, error) {
+func getTemplatesManifests(m dx.Manifest) (string, error) {
 
-	switch {
-	case m.Manifests != "" && m.Chart.Name != "":
-		templatesManifests, err := TemplateChart(m)
-		if err != nil {
-			fmt.Errorf("cannot template Helm chart %s", err)
-		}
-
-		templatesManifests += m.Manifests
-
-		return templatesManifests, err
-	case m.Chart.Name != "":
-		templatesManifests, err := TemplateChart(m)
-		if err != nil {
-			fmt.Errorf("cannot template Helm chart %s", err)
-		}
-
-		return templatesManifests, err
-	case m.Manifests != "":
-		return m.Manifests, nil
-	default:
-		return "No Chart or Manifests", nil
+	templatemanifests, err := templateChart(m)
+	if err != nil {
+		return templatemanifests, fmt.Errorf("cannot template Helm chart %s", err)
 	}
+
+	templatemanifests += m.Manifests
+	if templatemanifests == "" {
+		return templatemanifests, fmt.Errorf("no chart or raw yaml has been found")
+	}
+	return templatemanifests, nil
+
 }
 
-func TemplateChart(m dx.Manifest) (string, error) {
+func templateChart(m dx.Manifest) (string, error) {
 	var templatesManifests string
+
+	if m.Chart.Name == "" {
+		return "", nil
+	}
+
 	if strings.HasPrefix(m.Chart.Name, "git@") ||
 		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
 		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
@@ -146,6 +140,7 @@ func TemplateChart(m dx.Manifest) (string, error) {
 		}
 		m.Chart.Name = tmpChartDir
 		defer os.RemoveAll(tmpChartDir)
+
 	}
 
 	templatesManifests, err := helm.HelmTemplate(m)

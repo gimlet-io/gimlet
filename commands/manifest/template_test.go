@@ -454,6 +454,7 @@ func Test_template(t *testing.T) {
 				t.Fatal(err)
 			}
 			g.Assert(strings.Contains(string(templated), "type: LoadBalancer")).IsTrue("the service spec should contain type: LoadBalancer ")
+			g.Assert(strings.Contains(string(templated), "app.kubernetes.io/managed-by: Helm")).IsTrue("the resources should contain app.kubernetes.io/managed-by: Helm label")
 			// fmt.Println(string(templated))
 		})
 		g.It("Should template a manifest file with raw yaml and patch", func() {
@@ -512,5 +513,6 @@ func Test_template(t *testing.T) {
 			g.Assert(strings.Contains(string(templated), "secretName: tls-myapp")).IsTrue("the ingress spec should contain secretName: tls-myapp")
 			// fmt.Println(string(templated))
 		})
+
 	})
 }
