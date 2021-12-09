@@ -84,14 +84,14 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	// Get templates manifests
-	templatesManifests, err := getTemplatesManifests(m)
+	templatedManifests, err := getTemplatedManifests(m)
 	if err != nil {
 		return fmt.Errorf("cannot get templates manifests %s", err.Error())
 	}
 
 	// Check for patches
 	if m.StrategicMergePatches != "" {
-		templatesManifests, err = kustomize.ApplyPatches(m.StrategicMergePatches, templatesManifests)
+		templatedManifests, err = kustomize.ApplyPatches(m.StrategicMergePatches, templatedManifests)
 		if err != nil {
 			return fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
 		}
@@ -99,34 +99,34 @@ func templateCmd(c *cli.Context) error {
 
 	outputPath := c.String("output")
 	if outputPath != "" {
-		err := ioutil.WriteFile(outputPath, []byte(templatesManifests), 0666)
+		err := ioutil.WriteFile(outputPath, []byte(templatedManifests), 0666)
 		if err != nil {
 			return fmt.Errorf("cannot write values file %s", err)
 		}
 	} else {
-		fmt.Println(templatesManifests)
+		fmt.Println(templatedManifests)
 	}
 
 	return nil
 }
 
-func getTemplatesManifests(m dx.Manifest) (string, error) {
+func getTemplatedManifests(m dx.Manifest) (string, error) {
 
-	templatemanifests, err := templateChart(m)
+	templatedManifests, err := templateChart(m)
 	if err != nil {
-		return templatemanifests, fmt.Errorf("cannot template Helm chart %s", err)
+		return templatedManifests, fmt.Errorf("cannot template Helm chart %s", err)
 	}
 
-	templatemanifests += m.Manifests
-	if templatemanifests == "" {
-		return templatemanifests, fmt.Errorf("no chart or raw yaml has been found")
+	templatedManifests += m.Manifests
+	if templatedManifests == "" {
+		return templatedManifests, fmt.Errorf("no chart or raw yaml has been found")
 	}
-	return templatemanifests, nil
+	return templatedManifests, nil
 
 }
 
 func templateChart(m dx.Manifest) (string, error) {
-	var templatesManifests string
+	var templatedManifests string
 
 	if m.Chart.Name == "" {
 		return "", nil
@@ -143,11 +143,11 @@ func templateChart(m dx.Manifest) (string, error) {
 
 	}
 
-	templatesManifests, err := helm.HelmTemplate(m)
+	templatedManifests, err := helm.HelmTemplate(m)
 	if err != nil {
 		fmt.Errorf("cannot template Helm chart %s", err)
 	}
 
-	return templatesManifests, err
+	return templatedManifests, err
 
 }
