@@ -83,24 +83,15 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
 	}
 
-	if strings.HasPrefix(m.Chart.Name, "git@") ||
-		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
-		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
-		if err != nil {
-			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
-		}
-		m.Chart.Name = tmpChartDir
-		defer os.RemoveAll(tmpChartDir)
-	}
-
-	templatesManifests, err := helm.HelmTemplate(m)
+	// Get templates manifests
+	templatedManifests, err := getTemplatedManifests(m)
 	if err != nil {
-		return fmt.Errorf("cannot template Helm chart %s", err)
+		return fmt.Errorf("cannot get templates manifests %s", err.Error())
 	}
 
 	// Check for patches
 	if m.StrategicMergePatches != "" {
-		templatesManifests, err = kustomize.ApplyPatches(m.StrategicMergePatches, templatesManifests)
+		templatedManifests, err = kustomize.ApplyPatches(m.StrategicMergePatches, templatedManifests)
 		if err != nil {
 			return fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
 		}
@@ -108,13 +99,55 @@ func templateCmd(c *cli.Context) error {
 
 	outputPath := c.String("output")
 	if outputPath != "" {
-		err := ioutil.WriteFile(outputPath, []byte(templatesManifests), 0666)
+		err := ioutil.WriteFile(outputPath, []byte(templatedManifests), 0666)
 		if err != nil {
 			return fmt.Errorf("cannot write values file %s", err)
 		}
 	} else {
-		fmt.Println(templatesManifests)
+		fmt.Println(templatedManifests)
 	}
 
 	return nil
+}
+
+func getTemplatedManifests(m dx.Manifest) (string, error) {
+
+	templatedManifests, err := templateChart(m)
+	if err != nil {
+		return templatedManifests, fmt.Errorf("cannot template Helm chart %s", err)
+	}
+
+	templatedManifests += m.Manifests
+	if templatedManifests == "" {
+		return templatedManifests, fmt.Errorf("no chart or raw yaml has been found")
+	}
+	return templatedManifests, nil
+
+}
+
+func templateChart(m dx.Manifest) (string, error) {
+	var templatedManifests string
+
+	if m.Chart.Name == "" {
+		return "", nil
+	}
+
+	if strings.HasPrefix(m.Chart.Name, "git@") ||
+		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
+		tmpChartDir, err := helm.CloneChartFromRepo(m, "")
+		if err != nil {
+			fmt.Errorf("cannot fetch chart from git %s", err.Error())
+		}
+		m.Chart.Name = tmpChartDir
+		defer os.RemoveAll(tmpChartDir)
+
+	}
+
+	templatedManifests, err := helm.HelmTemplate(m)
+	if err != nil {
+		fmt.Errorf("cannot template Helm chart %s", err)
+	}
+
+	return templatedManifests, err
+
 }

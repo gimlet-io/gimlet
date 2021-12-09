@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -91,6 +90,222 @@ strategicMergePatches: |
             shareName: my-azure-share
             readOnly: false
   ---
+`
+
+const manifestWithChartAndRawYaml = `
+app: myapp
+env: staging
+namespace: my-team
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.10.0
+values:
+  replicas: 10
+  image:
+    repository: myapp
+    tag: 1.1.0
+  ingress:
+    host: myapp.staging.mycompany.com
+    tlsEnabled: true
+manifests: |
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: myapp-svc-02
+    namespace: my-team
+  spec:
+    ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+    selector:
+      app.kubernetes.io/instance: myapp
+      app.kubernetes.io/name: onechart
+    type: LoadBalancer  
+`
+
+const manifestWithRawYamlandPatch = `
+app: myapp
+env: staging
+namespace: my-team
+manifests: |
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/instance: myapp
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: onechart
+      helm.sh/chart: onechart-0.10.0
+    name: myapp
+    namespace: my-team
+  spec:
+    replicas: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: myapp
+        app.kubernetes.io/name: onechart
+    template:
+      metadata:
+        annotations:
+          checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        labels:
+          app.kubernetes.io/instance: myapp
+          app.kubernetes.io/name: onechart
+      spec:
+        containers:
+        - image: myapp:1.1.0
+          name: myapp
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 200m
+              memory: 200Mi
+          securityContext: {}
+          volumeMounts:
+          - mountPath: /azure-bucket
+            name: azure-file
+        securityContext:
+          fsGroup: 999
+      volumes:
+      - azureFile:
+          readOnly: false
+          secretName: my-azure-secret
+          shareName: my-azure-share
+        name: azure-file
+strategicMergePatches: |
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: myapp
+    namespace: my-team
+  spec:
+    template:
+      spec:
+        containers:
+        - name: myapp
+          volumeMounts:
+            - name: azure-file
+              mountPath: /azure-bucket
+      volumes:
+        - name: azure-file
+          azureFile:
+            secretName: my-azure-secret
+            shareName: my-azure-share
+            readOnly: false
+  ---`
+
+const manifestwithRaWYaml = `
+app: myapp
+env: staging
+namespace: my-team
+manifests: |
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/instance: myapp
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: onechart
+      helm.sh/chart: onechart-0.10.0
+    name: myapp
+    namespace: my-team
+  spec:
+    ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+    selector:
+      app.kubernetes.io/instance: myapp
+      app.kubernetes.io/name: onechart
+    type: ClusterIP
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/instance: myapp
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: onechart
+      helm.sh/chart: onechart-0.10.0
+    name: myapp
+    namespace: my-team
+  spec:
+    replicas: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: myapp
+        app.kubernetes.io/name: onechart
+    template:
+      metadata:
+        annotations:
+          checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        labels:
+          app.kubernetes.io/instance: myapp
+          app.kubernetes.io/name: onechart
+      spec:
+        containers:
+        - image: myapp:1.1.0
+          name: myapp
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 200m
+              memory: 200Mi
+          securityContext: {}
+          volumeMounts:
+          - mountPath: /azure-bucket
+            name: azure-file
+        securityContext:
+          fsGroup: 999
+      volumes:
+      - azureFile:
+          readOnly: false
+          secretName: my-azure-secret
+          shareName: my-azure-share
+        name: azure-file
+  ---
+  apiVersion: networking.k8s.io/v1beta1
+  kind: Ingress
+  metadata:
+    labels:
+      app.kubernetes.io/instance: myapp
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: onechart
+      helm.sh/chart: onechart-0.10.0
+    name: myapp
+    namespace: my-team
+  spec:
+    rules:
+    - host: myapp.staging.mycompany.com
+      http:
+        paths:
+        - backend:
+            serviceName: myapp
+            servicePort: 80
+    tls:
+    - hosts:
+      - myapp.staging.mycompany.com
+      secretName: tls-myapp  
 `
 
 func Test_template(t *testing.T) {
@@ -211,7 +426,93 @@ func Test_template(t *testing.T) {
 				t.Fatal(err)
 			}
 			g.Assert(strings.Contains(string(templated), "mountPath: /azure-bucket")).IsTrue("the spec should contain volumeMounts")
-			fmt.Println(string(templated))
+			// fmt.Println(string(templated))
 		})
+		g.It("Should template a manifest file with Chart and raw yaml", func() {
+			g.Timeout(100 * time.Second)
+			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(manifestFile.Name())
+			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(templatedFile.Name())
+
+			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithChartAndRawYaml), commands.File_RW_RW_R)
+			args = append(args, "-f", manifestFile.Name())
+			args = append(args, "-o", templatedFile.Name())
+
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			templated, err := ioutil.ReadFile(templatedFile.Name())
+			g.Assert(err == nil).IsTrue(err)
+			if err != nil {
+				t.Fatal(err)
+			}
+			g.Assert(strings.Contains(string(templated), "type: LoadBalancer")).IsTrue("the service spec should contain type: LoadBalancer ")
+			g.Assert(strings.Contains(string(templated), "app.kubernetes.io/managed-by: Helm")).IsTrue("the resources should contain app.kubernetes.io/managed-by: Helm label")
+			// fmt.Println(string(templated))
+		})
+		g.It("Should template a manifest file with raw yaml and patch", func() {
+			g.Timeout(100 * time.Second)
+			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(manifestFile.Name())
+			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(templatedFile.Name())
+
+			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithRawYamlandPatch), commands.File_RW_RW_R)
+			args = append(args, "-f", manifestFile.Name())
+			args = append(args, "-o", templatedFile.Name())
+
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			templated, err := ioutil.ReadFile(templatedFile.Name())
+			g.Assert(err == nil).IsTrue(err)
+			if err != nil {
+				t.Fatal(err)
+			}
+			g.Assert(strings.Contains(string(templated), "mountPath: /azure-bucket")).IsTrue("the deployment spec should contain mountPath: /azure-bucket")
+			// fmt.Println(string(templated))
+		})
+		g.It("Should template a manifest file with raw yaml", func() {
+			g.Timeout(100 * time.Second)
+			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(manifestFile.Name())
+			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(templatedFile.Name())
+
+			ioutil.WriteFile(manifestFile.Name(), []byte(manifestwithRaWYaml), commands.File_RW_RW_R)
+			args = append(args, "-f", manifestFile.Name())
+			args = append(args, "-o", templatedFile.Name())
+
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			templated, err := ioutil.ReadFile(templatedFile.Name())
+			g.Assert(err == nil).IsTrue(err)
+			if err != nil {
+				t.Fatal(err)
+			}
+			g.Assert(strings.Contains(string(templated), "secretName: tls-myapp")).IsTrue("the ingress spec should contain secretName: tls-myapp")
+			// fmt.Println(string(templated))
+		})
+
 	})
 }
