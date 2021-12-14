@@ -90,8 +90,12 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	// Check for patches
-	if m.StrategicMergePatches != "" {
-		templatedManifests, err = kustomize.ApplyPatches(m.StrategicMergePatches, templatedManifests)
+	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
+		templatedManifests, err = kustomize.ApplyPatches(
+			m.StrategicMergePatches,
+			m.Json6902Patches,
+			templatedManifests,
+		)
 		if err != nil {
 			return fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
 		}
