@@ -1,6 +1,6 @@
 # Gimlet manifest examples
 
-On this page you Gimlet manifest files achieving various goals
+On this page you can find Gimlet manifest files achieving various goals
 
 Template each file with the following command:
 
