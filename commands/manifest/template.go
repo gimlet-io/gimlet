@@ -66,13 +66,34 @@ func templateCmd(c *cli.Context) error {
 		}
 	}
 
-	manifestPath := c.String("file")
-	manifestString, err := ioutil.ReadFile(manifestPath)
+	var templatedManifests string
+
+	filePath := c.String("file")
+	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("cannot read manifest file: %s", err.Error())
+		return fmt.Errorf("cannot read file: %s", err.Error())
 	}
 
-	templatedManifests, err := processManifest(manifestString, vars)
+	if strings.HasSuffix(filePath, ".cue") { // handling CUE format
+		manifests, err := processCue(fileContent)
+		if err != nil {
+			return fmt.Errorf("cannot parse cue file: %s", err.Error())
+		}
+
+		for _, m := range manifests {
+			tm, err := processManifest([]byte(m), vars)
+			if err != nil {
+				return fmt.Errorf(err.Error())
+			}
+
+			templatedManifests += tm
+		}
+	} else { // handling YAML format
+		templatedManifests, err = processManifest(fileContent, vars)
+		if err != nil {
+			return fmt.Errorf(err.Error())
+		}
+	}
 
 	outputPath := c.String("output")
 	if outputPath != "" {
@@ -118,4 +139,8 @@ func processManifest(manifestString []byte, vars map[string]string) (string, err
 	}
 
 	return templatedManifests, nil
+}
+
+func processCue(fileContent []byte) ([]string, error) {
+	return []string{}, nil
 }
