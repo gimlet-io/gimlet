@@ -1,0 +1,26 @@
+app: myapp
+env: staging
+namespace: my-team
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.32.0
+values:
+  replicas: 10
+  ingress:
+    host: myapp.staging.mycompany.com
+    tlsEnabled: true
+json6902Patches:
+- target:
+    group: "networking.k8s.io"
+    version: "v1"
+    kind: "Ingress"
+    name: "myapp"
+  patch: |
+    ---
+    - op: replace
+      path: /spec/rules/0/host
+      value: myapp.com
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: myapp.com

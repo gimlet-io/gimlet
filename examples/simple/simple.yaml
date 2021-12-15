@@ -1,0 +1,12 @@
+app: myapp
+env: staging
+namespace: my-team
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.32.0
+values:
+  replicas: 1
+  image:
+    repository: myapp
+    tag: 1.1.0

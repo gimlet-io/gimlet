@@ -1,0 +1,33 @@
+app: myapp
+env: staging
+namespace: my-team
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.32.0
+values:
+  replicas: 1
+  image:
+    repository: myapp
+    tag: 1.1.0
+strategicMergePatches: |
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: myapp
+    namespace: my-team
+  spec:
+    template:
+      spec:
+        containers:
+        - name: myapp
+          volumeMounts:
+            - name: azure-file
+              mountPath: /azure-bucket
+      volumes:
+        - name: azure-file
+          azureFile:
+            secretName: my-azure-secret
+            shareName: my-azure-share
+            readOnly: false

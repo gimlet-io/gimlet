@@ -1,0 +1,7 @@
+app: myapp
+env: staging
+namespace: my-team
+chart:
+  name: https://github.com/gimlet-io/onechart.git?sha=8e52597ae4fb4ed7888c819b3c77331622136aba&path=/charts/onechart/
+values:
+  replicas: 10
