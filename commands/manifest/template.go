@@ -72,34 +72,7 @@ func templateCmd(c *cli.Context) error {
 		return fmt.Errorf("cannot read manifest file: %s", err.Error())
 	}
 
-	var m dx.Manifest
-	err = yaml.Unmarshal(manifestString, &m)
-	if err != nil {
-		return fmt.Errorf("cannot unmarshal manifest: %s", err.Error())
-	}
-
-	err = m.ResolveVars(vars)
-	if err != nil {
-		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
-	}
-
-	// Get templates manifests
-	templatedManifests, err := helm.GetTemplatedManifests(m)
-	if err != nil {
-		return fmt.Errorf("cannot get templates manifests %s", err.Error())
-	}
-
-	// Check for patches
-	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
-		templatedManifests, err = kustomize.ApplyPatches(
-			m.StrategicMergePatches,
-			m.Json6902Patches,
-			templatedManifests,
-		)
-		if err != nil {
-			return fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
-		}
-	}
+	templatedManifests, err := processManifest(manifestString, vars)
 
 	outputPath := c.String("output")
 	if outputPath != "" {
@@ -112,4 +85,37 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func processManifest(manifestString []byte, vars map[string]string) (string, error) {
+	var m dx.Manifest
+	err := yaml.Unmarshal(manifestString, &m)
+	if err != nil {
+		return "", fmt.Errorf("cannot unmarshal manifest: %s", err.Error())
+	}
+
+	err = m.ResolveVars(vars)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve manifest vars %s", err.Error())
+	}
+
+	// Get templates manifests
+	templatedManifests, err := helm.GetTemplatedManifests(m)
+	if err != nil {
+		return "", fmt.Errorf("cannot get templates manifests %s", err.Error())
+	}
+
+	// Check for patches
+	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
+		templatedManifests, err = kustomize.ApplyPatches(
+			m.StrategicMergePatches,
+			m.Json6902Patches,
+			templatedManifests,
+		)
+		if err != nil {
+			return "", fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
+		}
+	}
+
+	return templatedManifests, nil
 }
