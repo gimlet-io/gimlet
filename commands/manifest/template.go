@@ -8,12 +8,16 @@ import (
 	"github.com/gimlet-io/gimletd/dx/kustomize"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
 	"io/ioutil"
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/cuecontext"
+	"cuelang.org/go/cue/errors"
+	cueyaml "cuelang.org/go/encoding/yaml"
 )
 
 var manifestTemplateCmd = cli.Command{
@@ -142,5 +146,30 @@ func processManifest(manifestString []byte, vars map[string]string) (string, err
 }
 
 func processCue(fileContent []byte) ([]string, error) {
-	return []string{}, nil
+	c := cuecontext.New()
+	v := c.CompileBytes(fileContent)
+
+	err := v.Validate()
+	if err != nil {
+		msg := errors.Details(err, nil)
+		return []string{}, fmt.Errorf("cannot parse cue file: %s", msg)
+	}
+
+	configs := v.LookupPath(cue.ParsePath("configs"))
+	if !configs.Exists() {
+		return []string{}, fmt.Errorf("cue files should have a `configs` field that holds an array of Gimlet manfiests")
+	}
+
+	var manifests []string
+
+	iter, _ := configs.List()
+	for iter.Next() {
+		m, err := cueyaml.Encode(iter.Value())
+		if err != nil {
+			return []string{}, err
+		}
+		manifests = append(manifests, string(m))
+	}
+
+	return manifests, nil
 }

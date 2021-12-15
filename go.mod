@@ -3,6 +3,7 @@ module github.com/gimlet-io/gimlet-cli
 go 1.16
 
 require (
+	cuelang.org/go v0.4.0
 	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/btubbs/datetime v0.1.1
 	github.com/enescakir/emoji v1.0.0
@@ -22,6 +23,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mdaverde/jsonpath v0.0.0-20180315003411-f4ae4b6f36b5
 	github.com/rvflash/elapsed v0.2.0
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
