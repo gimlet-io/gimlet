@@ -92,6 +92,35 @@ strategicMergePatches: |
   ---
 `
 
+const manifestWithKustomizeJsonPatch = `
+app: myapp
+env: staging
+namespace: my-team
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.32.0
+values:
+  replicas: 10
+  ingress:
+    host: myapp.staging.mycompany.com
+    tlsEnabled: true
+json6902Patches:
+- target:
+    group: "networking.k8s.io"
+    version: "v1"
+    kind: "Ingress"
+    name: "myapp"
+  patch: |
+    ---
+    - op: replace
+      path: /spec/rules/0/host
+      value: myapp.com
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: myapp.com
+`
+
 const manifestWithChartAndRawYaml = `
 app: myapp
 env: staging
@@ -427,6 +456,35 @@ func Test_template(t *testing.T) {
 			}
 			g.Assert(strings.Contains(string(templated), "mountPath: /azure-bucket")).IsTrue("the spec should contain volumeMounts")
 			// fmt.Println(string(templated))
+		})
+		g.It("Should template a manifest file with a kustomize json patch", func() {
+			g.Timeout(100 * time.Second)
+			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(manifestFile.Name())
+			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(templatedFile.Name())
+
+			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithKustomizeJsonPatch), commands.File_RW_RW_R)
+			args = append(args, "-f", manifestFile.Name())
+			args = append(args, "-o", templatedFile.Name())
+
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			templated, err := ioutil.ReadFile(templatedFile.Name())
+			g.Assert(err == nil).IsTrue(err)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// fmt.Println(string(templated))
+			g.Assert(strings.Contains(string(templated), "host: myapp.com")).
+				IsTrue("ingress url should have been replaced by kustomize json patch")
 		})
 		g.It("Should template a manifest file with Chart and raw yaml", func() {
 			g.Timeout(100 * time.Second)
