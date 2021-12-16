@@ -17,7 +17,7 @@ configs: [ for instance in _instances {
   values: {
     image: {
       repository: "<account>.dkr.ecr.eu-west-1.amazonaws.com/myapp"
-      tag:        "1.1.1"
+      tag:        "{{ .GIT_SHA }}"
     }
   }
 }]
