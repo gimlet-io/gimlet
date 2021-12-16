@@ -10,6 +10,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/commands"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -631,13 +632,13 @@ func Test_template(t *testing.T) {
 }
 
 func Test_ProcessCue(t *testing.T) {
-	manifests, err := processCue([]byte(cueTemplate))
+	manifests, err := dx.RenderCueToManifests(cueTemplate)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(manifests))
 
-	_, err = processCue([]byte(`
+	_, err = dx.RenderCueToManifests(`
 a: "hello"
-`))
+`)
 	assert.NotNil(t, err)
 	assert.True(t, strings.Contains(err.Error(), "should have a `configs` field"))
 }
