@@ -4,16 +4,13 @@ import (
 	"fmt"
 
 	"github.com/gimlet-io/gimletd/dx"
-	"github.com/gimlet-io/gimletd/dx/helm"
-	"github.com/gimlet-io/gimletd/dx/kustomize"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
 	"io/ioutil"
 	"os"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
 var manifestTemplateCmd = cli.Command{
@@ -66,38 +63,32 @@ func templateCmd(c *cli.Context) error {
 		}
 	}
 
-	manifestPath := c.String("file")
-	manifestString, err := ioutil.ReadFile(manifestPath)
+	var templatedManifests string
+
+	filePath := c.String("file")
+	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("cannot read manifest file: %s", err.Error())
+		return fmt.Errorf("cannot read file: %s", err.Error())
 	}
 
-	var m dx.Manifest
-	err = yaml.Unmarshal(manifestString, &m)
-	if err != nil {
-		return fmt.Errorf("cannot unmarshal manifest: %s", err.Error())
-	}
-
-	err = m.ResolveVars(vars)
-	if err != nil {
-		return fmt.Errorf("cannot resolve manifest vars %s", err.Error())
-	}
-
-	// Get templates manifests
-	templatedManifests, err := helm.GetTemplatedManifests(m)
-	if err != nil {
-		return fmt.Errorf("cannot get templates manifests %s", err.Error())
-	}
-
-	// Check for patches
-	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
-		templatedManifests, err = kustomize.ApplyPatches(
-			m.StrategicMergePatches,
-			m.Json6902Patches,
-			templatedManifests,
-		)
+	if strings.HasSuffix(filePath, ".cue") { // handling CUE format
+		manifests, err := dx.RenderCueToManifests(string(fileContent))
 		if err != nil {
-			return fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
+			return fmt.Errorf("cannot parse cue file: %s", err.Error())
+		}
+
+		for _, m := range manifests {
+			tm, err := parseResolveAndRenderManifest([]byte(m), vars)
+			if err != nil {
+				return fmt.Errorf(err.Error())
+			}
+
+			templatedManifests += tm
+		}
+	} else { // handling YAML format
+		templatedManifests, err = parseResolveAndRenderManifest(fileContent, vars)
+		if err != nil {
+			return fmt.Errorf(err.Error())
 		}
 	}
 
@@ -112,4 +103,19 @@ func templateCmd(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func parseResolveAndRenderManifest(manifestString []byte, vars map[string]string) (string, error) {
+	var m dx.Manifest
+	err := yaml.Unmarshal(manifestString, &m)
+	if err != nil {
+		return "", fmt.Errorf("cannot unmarshal manifest: %s", err.Error())
+	}
+
+	err = m.ResolveVars(vars)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve manifest vars %s", err.Error())
+	}
+
+	return m.Render()
 }

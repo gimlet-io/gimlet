@@ -2,13 +2,14 @@ package gitops
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/gimlet-io/gimlet-cli/commands"
-	"github.com/gimlet-io/gimletd/dx/helm"
+	"github.com/gimlet-io/gimletd/dx"
 	"github.com/gimlet-io/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
-	"os"
-	"path/filepath"
 )
 
 var gitopsWriteCmd = cli.Command{
@@ -72,7 +73,7 @@ func write(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot read input files %s", err)
 	}
-	files = helm.SplitHelmOutput(files)
+	files = dx.SplitHelmOutput(files)
 
 	_, err = nativeGit.CommitFilesToGit(repo, files, env, app, message, "")
 	return err

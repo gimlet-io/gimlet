@@ -3,17 +3,17 @@ package manifest
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/gimlet-io/gimletd/dx"
-	"github.com/gimlet-io/gimletd/dx/helm"
 	"github.com/urfave/cli/v2"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	helmCLI "helm.sh/helm/v3/pkg/cli"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 var manifestLintCmd = cli.Command{
@@ -46,7 +46,7 @@ func lint(c *cli.Context) error {
 
 	var tmpChartName string
 	if strings.HasPrefix(m.Chart.Name, "git@") {
-		tmpChartName, err = helm.CloneChartFromRepo(m, "")
+		tmpChartName, err = dx.CloneChartFromRepo(&m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}

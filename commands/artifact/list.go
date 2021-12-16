@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/gimlet-io/gimletd/client"
 	"github.com/gimlet-io/gimletd/dx"
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
-	"strings"
-	"time"
 )
 
 var artifactListCmd = cli.Command{
@@ -162,6 +163,13 @@ func list(c *cli.Context) error {
 			fmt.Printf("%s\n", yellow(artifact.ID))
 			fmt.Printf("%s", RenderGitVersion(artifact.Version, ""))
 			gray := color.New(color.FgWhite).SprintFunc()
+
+			manifests, err := artifact.CueEnvironmentsToManifests()
+			if err != nil {
+				return err
+			}
+			artifact.Environments = append(artifact.Environments, manifests...)
+
 			for _, env := range artifact.Environments {
 				fmt.Printf("%s\n", gray(fmt.Sprintf("  %s -> %s%s", env.App, env.Env, triggerString(env.Deploy))))
 			}
