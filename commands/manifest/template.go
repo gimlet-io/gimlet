@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gimlet-io/gimletd/dx"
-	"github.com/gimlet-io/gimletd/dx/helm"
-	"github.com/gimlet-io/gimletd/dx/kustomize"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -85,7 +83,7 @@ func templateCmd(c *cli.Context) error {
 		}
 
 		for _, m := range manifests {
-			tm, err := processManifest([]byte(m), vars)
+			tm, err := parseResolveAndRenderManifest([]byte(m), vars)
 			if err != nil {
 				return fmt.Errorf(err.Error())
 			}
@@ -93,7 +91,7 @@ func templateCmd(c *cli.Context) error {
 			templatedManifests += tm
 		}
 	} else { // handling YAML format
-		templatedManifests, err = processManifest(fileContent, vars)
+		templatedManifests, err = parseResolveAndRenderManifest(fileContent, vars)
 		if err != nil {
 			return fmt.Errorf(err.Error())
 		}
@@ -112,7 +110,7 @@ func templateCmd(c *cli.Context) error {
 	return nil
 }
 
-func processManifest(manifestString []byte, vars map[string]string) (string, error) {
+func parseResolveAndRenderManifest(manifestString []byte, vars map[string]string) (string, error) {
 	var m dx.Manifest
 	err := yaml.Unmarshal(manifestString, &m)
 	if err != nil {
@@ -124,25 +122,7 @@ func processManifest(manifestString []byte, vars map[string]string) (string, err
 		return "", fmt.Errorf("cannot resolve manifest vars %s", err.Error())
 	}
 
-	// Get templates manifests
-	templatedManifests, err := helm.GetTemplatedManifests(m)
-	if err != nil {
-		return "", fmt.Errorf("cannot get templates manifests %s", err.Error())
-	}
-
-	// Check for patches
-	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
-		templatedManifests, err = kustomize.ApplyPatches(
-			m.StrategicMergePatches,
-			m.Json6902Patches,
-			templatedManifests,
-		)
-		if err != nil {
-			return "", fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
-		}
-	}
-
-	return templatedManifests, nil
+	return m.Render()
 }
 
 func processCue(fileContent []byte) ([]string, error) {

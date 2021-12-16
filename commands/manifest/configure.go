@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/commands/chart"
-	"github.com/gimlet-io/gimletd/dx"
-	"github.com/gimlet-io/gimletd/dx/helm"
-	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/gimlet-io/gimlet-cli/commands/chart"
+	"github.com/gimlet-io/gimletd/dx"
+	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 )
 
 var manifestConfigureCmd = cli.Command{
@@ -61,7 +61,7 @@ func configure(c *cli.Context) error {
 
 	var tmpChartName string
 	if strings.HasPrefix(m.Chart.Name, "git@") {
-		tmpChartName, err = helm.CloneChartFromRepo(m, "")
+		tmpChartName, err = dx.CloneChartFromRepo(&m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}

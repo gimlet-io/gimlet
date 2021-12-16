@@ -14,7 +14,7 @@ require (
 	github.com/fluxcd/pkg/ssh v0.0.5
 	github.com/fluxcd/source-controller/api v0.19.0
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
-	github.com/gimlet-io/gimletd v0.7.1-0.20211215085715-19ddbc8149cc
+	github.com/gimlet-io/gimletd v0.7.1-0.20211216110605-52412d1ec884
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.0
 	github.com/go-git/go-git/v5 v5.4.2
