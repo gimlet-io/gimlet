@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -625,8 +624,8 @@ func Test_template(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// g.Assert(strings.Contains(string(templated), "secretName: tls-myapp")).IsTrue("the ingress spec should contain secretName: tls-myapp")
-			fmt.Println(string(templated))
+			g.Assert(strings.Contains(string(templated), "myapp-first")).IsTrue("should render two manifests")
+			g.Assert(strings.Contains(string(templated), "myapp-second")).IsTrue("should render two manifests")
 		})
 	})
 }
