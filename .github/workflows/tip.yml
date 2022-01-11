@@ -10,12 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+    - name: 🛑 Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        access_token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.16
 
-    - name: Check out code into the Go module directory
+    - name: ⬇️ Check out code into the Go module directory
       uses: actions/checkout@v1
       with:
         fetch-depth: 5
@@ -33,15 +38,10 @@ jobs:
       env:
         VERSION: ${{ steps.get_version.outputs.version-without-v }}
 
-    - name: Build Frontend
+    - name: 🏗️ Build Frontend
       run: make build-frontend
 
-    - name: Setup SSH key for git chart test
-      uses: webfactory/ssh-agent@v0.4.1
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    - name: Test Backend
+    - name: 🤞 Test Backend
       run: make test-backend
 
     - name: Dist
@@ -49,7 +49,7 @@ jobs:
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
 
-    - name: tip
+    - name: 🚀 tip
       uses: eine/tip@master
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
