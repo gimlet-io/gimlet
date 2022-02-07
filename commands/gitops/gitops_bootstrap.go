@@ -90,7 +90,7 @@ func Bootstrap(c *cli.Context) error {
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
 	gitopsRepositoryName, publicKey, secretFileName, err := generateManifests(
-		noController,
+		!noController,
 		env,
 		singleEnv,
 		gitopsRepoPath,
