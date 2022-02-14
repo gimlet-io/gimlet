@@ -1,9 +1,10 @@
-package template
+package stack
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-	"testing"
 )
 
 func manualTest_Configure(t *testing.T) {

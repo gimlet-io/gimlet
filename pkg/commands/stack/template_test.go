@@ -1,10 +1,11 @@
-package template
+package stack
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-	"testing"
 )
 
 func Test_FilterEmptyFiles(t *testing.T) {

@@ -18,8 +18,8 @@ pkg/commands/chart/bundle.js
 pkg/commands/chart/bundle.js.LICENSE.txt
 pkg/commands/chart/index.html
 
-pkg/stack/template/web/bundle.js
-pkg/stack/template/web/bundle.js.LICENSE.txt
-pkg/stack/template/web/index.html
+pkg/commands/stack/web/bundle.js
+pkg/commands/stack/web/bundle.js.LICENSE.txt
+pkg/commands/stack/web/index.html
 
 .env

@@ -1,8 +1,15 @@
-package template
+package stack
 
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"text/template"
+
 	"github.com/Masterminds/sprig/v3"
 	"github.com/blang/semver/v4"
 	"github.com/fluxcd/source-controller/pkg/sourceignore"
@@ -13,12 +20,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/storage/memory"
 	giturl "github.com/whilp/git-urls"
-	"io/ioutil"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
-	"text/template"
 )
 
 type StackRef struct {
@@ -26,8 +27,8 @@ type StackRef struct {
 }
 
 type StackConfig struct {
-	Stack      StackRef               `yaml:"stack" json:"stack"`
-	Config     map[string]interface{} `yaml:"config" json:"config"`
+	Stack  StackRef               `yaml:"stack" json:"stack"`
+	Config map[string]interface{} `yaml:"config" json:"config"`
 }
 
 func GenerateFromStackYaml(stackConfig StackConfig) (map[string]string, error) {
@@ -217,7 +218,6 @@ func loadStackFromFS(root string) (map[string]string, error) {
 			return nil
 		}
 
-
 		if ignore.Match(strings.Split(path, "/"), false) {
 			return nil
 		}
@@ -385,5 +385,3 @@ func RepoUrlWithoutVersion(repoURL string) string {
 
 	return gitUrl
 }
-
-

@@ -7,9 +7,9 @@ format:
 	@gofmt -w ${GOFILES}
 
 test-prep:
-	touch pkg/stack/template/web/bundle.js
-	touch pkg/stack/template/web/bundle.js.LICENSE.txt
-	touch pkg/stack/template/web/index.html
+	touch pkg/commands/stack/web/bundle.js
+	touch pkg/commands/stack/web/bundle.js.LICENSE.txt
+	touch pkg/commands/stack/web/index.html
 	touch pkg/commands/chart/bundle.js
 	touch pkg/commands/chart/bundle.js.LICENSE.txt
 	touch pkg/commands/chart/index.html
@@ -49,6 +49,6 @@ build-cli-frontend:
 
 build-stack-frontend:
 	(cd web/stack; npm install; npm run build)
-	@cp web/stack/dist/bundle.js pkg/stack/template/web/
-	@cp web/stack/dist/bundle.js.LICENSE.txt pkg/stack/template/web/
-	@cp web/stack/dist/index.html pkg/stack/template/web/
+	@cp web/stack/dist/bundle.js pkg/commands/stack/web/
+	@cp web/stack/dist/bundle.js.LICENSE.txt pkg/commands/stack/web/
+	@cp web/stack/dist/index.html pkg/commands/stack/web/

@@ -12,7 +12,6 @@ import (
 	markdown "github.com/MichaelMure/go-term-markdown"
 	"github.com/enescakir/emoji"
 	"github.com/epiclabs-io/diff3"
-	"github.com/gimlet-io/gimlet-cli/pkg/stack/template"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -21,7 +20,7 @@ var GenerateCmd = cli.Command{
 	Name:      "generate",
 	Usage:     "Generates Kubernetes resources from stack.yaml",
 	UsageText: `stack generate`,
-	Action:    generate,
+	Action:    generateFunc,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "config",
@@ -30,7 +29,7 @@ var GenerateCmd = cli.Command{
 	},
 }
 
-func generate(c *cli.Context) error {
+func generateFunc(c *cli.Context) error {
 	stackConfigPath := c.String("config")
 	if stackConfigPath == "" {
 		stackConfigPath = "stack.yaml"
@@ -46,7 +45,7 @@ func generate(c *cli.Context) error {
 	}
 	checkForUpdates(stackConfig)
 
-	generatedFiles, err := template.GenerateFromStackYaml(stackConfig)
+	generatedFiles, err := GenerateFromStackYaml(stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot generate stack: %s", err.Error())
 	}
@@ -56,7 +55,7 @@ func generate(c *cli.Context) error {
 	if err != nil {
 		oldStackConfig = stackConfig
 	}
-	previousGenerationFiles, err := template.GenerateFromStackYaml(oldStackConfig)
+	previousGenerationFiles, err := GenerateFromStackYaml(oldStackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot generate stack: %s", err.Error())
 	}
@@ -78,11 +77,11 @@ func generate(c *cli.Context) error {
 
 	fmt.Printf("\n%v  Generated\n\n", emoji.CheckMark)
 
-	stackDefinitionYaml, err := template.StackDefinitionFromRepo(stackConfig.Stack.Repository)
+	stackDefinitionYaml, err := StackDefinitionFromRepo(stackConfig.Stack.Repository)
 	if err != nil {
 		return fmt.Errorf("cannot get stack definition: %s", err.Error())
 	}
-	var stackDefinition template.StackDefinition
+	var stackDefinition StackDefinition
 	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
 	if err != nil {
 		return fmt.Errorf("cannot parse stack definition: %s", err.Error())
@@ -96,16 +95,16 @@ func generate(c *cli.Context) error {
 	return nil
 }
 
-func readStackConfig(stackConfigPath string) (template.StackConfig, error) {
+func readStackConfig(stackConfigPath string) (StackConfig, error) {
 	stackConfigYaml, err := ioutil.ReadFile(stackConfigPath)
 	if err != nil {
-		return template.StackConfig{}, fmt.Errorf("cannot read stack config file: %s", err.Error())
+		return StackConfig{}, fmt.Errorf("cannot read stack config file: %s", err.Error())
 	}
 
-	var stackConfig template.StackConfig
+	var stackConfig StackConfig
 	err = yaml.Unmarshal(stackConfigYaml, &stackConfig)
 	if err != nil {
-		return template.StackConfig{}, fmt.Errorf("cannot parse stack config file: %s", err.Error())
+		return StackConfig{}, fmt.Errorf("cannot parse stack config file: %s", err.Error())
 	}
 	return stackConfig, nil
 }
@@ -177,7 +176,7 @@ func writeFilesAndPreserveCustomChanges(
 
 func keepStackConfigUsedForGeneration(
 	stackConfigPath string,
-	stackConfig template.StackConfig,
+	stackConfig StackConfig,
 ) error {
 	stackBackupPath := filepath.Join(filepath.Dir(stackConfigPath), ".stack", "old")
 	err := os.MkdirAll(filepath.Dir(stackBackupPath), 0775)
@@ -187,10 +186,10 @@ func keepStackConfigUsedForGeneration(
 	return writeStackConfig(stackConfig, stackBackupPath)
 }
 
-func checkForUpdates(stackConfig template.StackConfig) {
-	currentTagString := template.CurrentVersion(stackConfig.Stack.Repository)
+func checkForUpdates(stackConfig StackConfig) {
+	currentTagString := CurrentVersion(stackConfig.Stack.Repository)
 	if currentTagString != "" {
-		versionsSince, err := template.VersionsSince(stackConfig.Stack.Repository, currentTagString)
+		versionsSince, err := VersionsSince(stackConfig.Stack.Repository, currentTagString)
 		if err != nil {
 			fmt.Printf("\n%v  Cannot check for updates \n\n", emoji.Warning)
 		}
@@ -201,13 +200,13 @@ func checkForUpdates(stackConfig template.StackConfig) {
 	}
 }
 
-func lockVersionIfNotLocked(stackConfig template.StackConfig, stackConfigPath string) error {
-	locked, err := template.IsVersionLocked(stackConfig)
+func lockVersionIfNotLocked(stackConfig StackConfig, stackConfigPath string) error {
+	locked, err := IsVersionLocked(stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot check version: %s", err.Error())
 	}
 	if !locked {
-		latestTag, _ := template.LatestVersion(stackConfig.Stack.Repository)
+		latestTag, _ := LatestVersion(stackConfig.Stack.Repository)
 		if latestTag != "" {
 			stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?tag=" + latestTag
 
