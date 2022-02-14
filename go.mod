@@ -3,20 +3,25 @@ module github.com/gimlet-io/gimlet-cli
 go 1.16
 
 require (
-	cuelang.org/go v0.4.0
+	github.com/Masterminds/sprig/v3 v3.2.2
+	github.com/MichaelMure/go-term-markdown v0.1.4
 	github.com/bitnami-labs/sealed-secrets v0.13.1
+	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
 	github.com/enescakir/emoji v1.0.0
-	github.com/fatih/color v1.7.0
+	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
+	github.com/fatih/color v1.9.0
 	github.com/fluxcd/flux2 v0.24.0
 	github.com/fluxcd/kustomize-controller/api v0.18.1
-	github.com/fluxcd/pkg/apis/meta v0.10.1
-	github.com/fluxcd/pkg/ssh v0.0.5
-	github.com/fluxcd/source-controller/api v0.19.0
+	github.com/fluxcd/pkg/apis/meta v0.10.2
+	github.com/fluxcd/pkg/ssh v0.2.0
+	github.com/fluxcd/source-controller v0.21.2
+	github.com/fluxcd/source-controller/api v0.21.2
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
 	github.com/gimlet-io/gimletd v0.7.1-0.20211216134136-f09dfb479d9b
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.0
+	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.4.0
@@ -25,13 +30,14 @@ require (
 	github.com/rvflash/elapsed v0.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
+	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	helm.sh/helm/v3 v3.7.1
-	k8s.io/api v0.22.4
-	k8s.io/apimachinery v0.22.4
-	k8s.io/client-go v0.22.2
+	helm.sh/helm/v3 v3.7.2
+	k8s.io/api v0.23.1
+	k8s.io/apimachinery v0.23.1
+	k8s.io/client-go v0.23.1
 	sigs.k8s.io/yaml v1.3.0
 )

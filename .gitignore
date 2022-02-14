@@ -8,11 +8,18 @@ bin
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-web/node_modules
-web/dist
+web/cli/node_modules
+web/cli/dist
 
-commands/chart/bundle.js
-commands/chart/bundle.js.LICENSE.txt
-commands/chart/index.html
+web/stack/node_modules
+web/stack/dist
+
+pkg/commands/chart/bundle.js
+pkg/commands/chart/bundle.js.LICENSE.txt
+pkg/commands/chart/index.html
+
+pkg/commands/stack/web/bundle.js
+pkg/commands/stack/web/bundle.js.LICENSE.txt
+pkg/commands/stack/web/index.html
 
 .env
