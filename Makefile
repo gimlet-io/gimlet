@@ -1,7 +1,7 @@
 GOFILES = $(shell find . -type f -name '*.go' -not -path "./.git/*")
 LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg.version.Version='${VERSION}
 
-.PHONY: all format test build-cli build-stack dist build-cli-frontend build-stack-frontend fast-dist-cli fast-dist-stack
+.PHONY: all format test build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli
 
 format:
 	@gofmt -w ${GOFILES}
@@ -19,10 +19,8 @@ test: test-prep
 
 build-cli:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd/cli
-build-stack:
-	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/stack github.com/gimlet-io/gimlet-cli/cmd/stack
 
-dist:
+dist-cli:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-arm64 github.com/gimlet-io/gimlet-cli/cmd/cli
@@ -35,11 +33,6 @@ fast-dist-cli:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-arm64 github.com/gimlet-io/gimlet-cli/cmd/cli
-
-fast-dist-stack:
-	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/stack-linux-x86_64 github.com/gimlet-io/gimlet-stack/cmd
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/stack-darwin-x86_64 github.com/gimlet-io/gimlet-stack/cmd
 
 build-cli-frontend:
 	(cd web/cli; npm install; npm run build)
