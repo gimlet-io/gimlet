@@ -32,12 +32,12 @@ jobs:
         fi
       env:
         VERSION: ${{ steps.get_version.outputs.version-without-v }}
-    - name: 🏗️ Build Stack frontend
-      run: make build-stack-frontend
-    - name: 🏗️ Build CLI frontend
+    - name: 🏗️ Build chart configure frontend
       run: make build-cli-frontend
+    - name: 🏗️ Build stack frontend
+      run: make build-stack-frontend
     - name: Dist
-      run: make fast-dist
+      run: make fast-dist-cli
       env:
         VERSION: ${{ steps.sha_or_tag.outputs.version }}
     - name: 🚀 tip
