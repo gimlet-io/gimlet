@@ -12,32 +12,32 @@ import (
 )
 
 var artifactAddCmd = cli.Command{
-	Name:      "add",
-	Usage:     "Adds items to a release artifact",
+	Name:  "add",
+	Usage: "Adds items to a release artifact",
 	UsageText: `gimlet artifact add \
      --field name=CI \
      --field url=https://jenkins.example.com/job/dev/84/display/redirect \
      -f artifact.json`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:     "file",
-			Aliases:  []string{"f"},
-			Usage:    "artifact file to update",
+			Name:    "file",
+			Aliases: []string{"f"},
+			Usage:   "artifact file to update",
 		},
 		&cli.StringSliceFlag{
-			Name:     "field",
-			Usage:    "data fields to attach to the artifact item in a key=value format",
+			Name:  "field",
+			Usage: "data fields to attach to the artifact item in a key=value format",
 		},
 		&cli.StringSliceFlag{
-			Name:     "envFile",
-			Usage:    "a Gimlet environment file to attach to the artifact",
+			Name:  "envFile",
+			Usage: "a Gimlet environment file to attach to the artifact",
 		},
 		&cli.StringSliceFlag{
-			Name:     "var",
-			Usage:    "variables to make available in the Gimlet environment file",
+			Name:  "var",
+			Usage: "variables to make available in the Gimlet environment file",
 		},
 	},
-	Action:    add,
+	Action: add,
 }
 
 func add(c *cli.Context) error {
@@ -89,7 +89,7 @@ func add(c *cli.Context) error {
 		}
 		context[keyValue[0]] = keyValue[1]
 	}
-	for k,v := range context {
+	for k, v := range context {
 		if a.Context == nil {
 			a.Context = map[string]string{}
 		}
