@@ -62,6 +62,12 @@ class App extends Component {
     this.state.client.saveValues(nonDefaultValues)
   }
 
+  validationCallback (errors) {
+    if (errors !== null) {
+      console.log(errors)
+    }
+  };
+
   render () {
     let { schema, helmUISchema, values } = this.state
 
@@ -92,6 +98,8 @@ class App extends Component {
             config={helmUISchema}
             values={values}
             setValues={this.setValues}
+            validate={true}
+            validationCallback={this.validationCallback}
           />
         </div>
       </div>
