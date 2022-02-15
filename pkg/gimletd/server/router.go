@@ -2,9 +2,9 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/gimlet-io/gimletd/cmd/config"
-	"github.com/gimlet-io/gimletd/git/nativeGit"
-	"github.com/gimlet-io/gimletd/notifications"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/go-chi/chi"

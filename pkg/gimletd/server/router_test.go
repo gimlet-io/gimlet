@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/base32"
-	"github.com/gimlet-io/gimletd/cmd/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
