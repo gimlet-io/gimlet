@@ -64,7 +64,6 @@ jobs:
       uses: actions/checkout@v1
       with:
         fetch-depth: 5
-      run: make build-stack-frontend
     - name: 🏗️ Build GimletD
       run: make build-gimletd
       env:
