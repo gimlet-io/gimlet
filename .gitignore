@@ -24,7 +24,6 @@ pkg/commands/stack/web/index.html
 
 .env
 
-gimletd.sqlite
 deploykey
 deploykey.pub
 repocache
@@ -32,3 +31,6 @@ repocache
 fixtures/k3s/kubeconfig.yaml
 
 .vscode/settings.json
+
+gimletd.sqlite
+gimlet-dashboard.sqlite

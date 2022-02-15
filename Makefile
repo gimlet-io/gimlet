@@ -20,7 +20,8 @@ test-prep:
 
 test: test-prep
 	go test -timeout 60s $(shell go list ./... )
-
+test-dashboard-frontend:
+	(cd web/dashboard; npm install; npm run test)
 test-with-postgres:
 	docker run --rm -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
 
@@ -32,10 +33,18 @@ build-cli:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd/cli
 build-gimletd:
 	go build -ldflags $(LDFLAGS) -o build/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
+build-agent:
+	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
+build-dashboard:
+	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
 
 dist-gimletd:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimletd-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/gimletd
+dist-dashboard:
+	mkdir -p bin
+	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-dashboard-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/dashboard
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-agent-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/agent
 dist-cli:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
@@ -59,6 +68,8 @@ build-stack-frontend:
 	@cp web/stack/dist/bundle.js pkg/commands/stack/web/
 	@cp web/stack/dist/bundle.js.LICENSE.txt pkg/commands/stack/web/
 	@cp web/stack/dist/index.html pkg/commands/stack/web/
+build-dashboard-frontend:
+	(cd web/dashboard; npm install; npm run build)
 
 start-local-env:
 	docker-compose -f fixtures/k3s/docker-compose.yml up -d

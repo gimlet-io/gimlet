@@ -1,0 +1,25 @@
+.pulsar-gray {
+    animation: pulse-gray 1s infinite;
+}
+
+@keyframes pulse-gray {
+    0% {
+        color: #81DEFD
+    }
+    100% {
+        color: #3B3B3B;
+    }
+}
+
+.pulsar-green {
+    animation: pulse-green 1s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        color: #E3F8FF
+    }
+    100% {
+        color: #81DEFD;
+    }
+}

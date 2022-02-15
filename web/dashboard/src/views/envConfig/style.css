@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hierarchy */
+
+.form-group .form-group {
+    @apply mx-2 my-4
+}
+.form-group .form-group label {
+    @apply block text-sm font-medium leading-5 text-gray-700
+}
+
+.field-description {
+    @apply text-sm text-gray-500
+}
+.help-block {
+    @apply text-sm text-gray-500 mt-1
+}
+
+.field-object legend {
+    @apply block text-sm font-bold leading-5 text-gray-700
+}
+
+.field label {
+    @apply block text-sm font-bold leading-5 text-gray-700
+}
+
+.form-control {
+    @apply form-input block w-full text-sm leading-5 mt-2
+}
+
+/* Arrays */
+
+.row .array-item-add {
+    @apply text-left mx-2 my-4;
+}
+.row .btn-add {
+    @apply h-8 w-8 inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs leading-4 font-medium rounded text-indigo-700 bg-indigo-100 transition ease-in-out duration-150
+}
+.row .btn-add:hover {
+    @apply bg-indigo-50
+}
+.row .btn-add:focus {
+    @apply outline-none border-indigo-300
+}
+.row .btn-add:active {
+    @apply bg-indigo-200
+}
+.row .btn-add::before {
+    content: "+";
+}
+
+.row .array-item-remove {
+    @apply my-4
+}
+.row .array-item-remove {
+    @apply h-8 w-8 items-center px-2.5 py-1.5 border border-transparent text-xs leading-4 font-medium rounded text-red-700 bg-red-100 transition ease-in-out duration-150
+}
+.row .array-item-remove:hover {
+    @apply bg-red-50
+}
+.row .array-item-remove:focus {
+    @apply outline-none border-red-300
+}
+.row .array-item-remove:active {
+    @apply bg-red-200
+}
+.row .array-item-remove::before {
+    content: "-";
+}
+
+.array-item-list {
+    display: block !important;
+}
+
+.array-item {
+    @apply flex bg-gray-100 mt-12
+}
+
+.array-item .col-xs-9 {
+    @apply flex-grow
+}
+
+.array-item .col-xs-3 {
+    @apply flex-none
+}
+
+.btn-info {
+    display: none;
+}
+
+/* AdditionalProperties */
+
+.row {
+    @apply flex
+}
+
+.row .col-xs-5 {
+    @apply flex-1
+}
+
+.row .col-xs-5 label {
+    display: none;
+}
+
+.row .col-xs-2 {
+    @apply flex-none
+}
+
+.form-additional.form-group {
+    @apply my-0
+}
+
+.form-additional .form-group {
+    @apply my-0
+}
+
+.col-xs-2 .array-item-remove {
+    @apply my-2
+}
+
+.object-property-expand .btn-add {
+    @apply mt-4
+}
+
+
+.form-input {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  background-color: #ffffff;
+  border-color: #d2d6dc;
+  border-width: 1px;
+  border-radius: 0.375rem;
+  padding-top: 0.5rem;
+  padding-right: 0.75rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.form-input::-webkit-input-placeholder {
+  color: #9fa6b2;
+  opacity: 1;
+}
+
+.form-input::-moz-placeholder {
+  color: #9fa6b2;
+  opacity: 1;
+}
+
+.form-input:-ms-input-placeholder {
+  color: #9fa6b2;
+  opacity: 1;
+}
+
+.form-input::-ms-input-placeholder {
+  color: #9fa6b2;
+  opacity: 1;
+}
+
+.form-input::placeholder {
+  color: #9fa6b2;
+  opacity: 1;
+}
+
+.form-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(164, 202, 254, 0.45);
+  border-color: #a4cafe;
+}
