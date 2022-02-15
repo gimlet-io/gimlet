@@ -1,9 +1,9 @@
-name: 🚀 Publish CLI
+name: 🚀 Publish Dashboard
 
 on:
   push:
     tags:
-      - 'gimletd-v*'
+      - 'dashboard-v*'
 
 jobs:
   publish:
@@ -32,7 +32,7 @@ jobs:
             echo "::set-output name=version::$GITHUB_SHA"
         fi
     - name: Dist
-      run: make dist-gimletd
+      run: make dist-dashboard
       env:
         VERSION: ${{ steps.version.outputs.version }}
     - name: Create Release
@@ -42,7 +42,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: GimletD ${{ github.ref }}
+        release_name: Dashboard ${{ github.ref }}
         draft: false
         prerelease: false
     - name: Set up Docker Buildx
@@ -53,12 +53,21 @@ jobs:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.PAT }} # `PAT` is a secret that contains your Personal Access Token with `write:packages` scope
-    - name: Build and push Docker image
+    - name: Build and push Dashboard image
       uses: docker/build-push-action@v2
       with:
         context: .
-        file: docker/gimletd/Dockerfile
+        file: docker/dashboard/Dockerfile
         platforms: linux/amd64
         push: true
         tags: |
-          ghcr.io/gimlet-io/gimletd:${{ steps.version.outputs.version }}
+          ghcr.io/gimlet-io/gimlet-dashboard:${{ steps.version.outputs.version }}
+    - name: Build and push Agent image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: docker/dashboard/Dockerfile.agent
+        platforms: linux/amd64
+        push: true
+        tags: |
+          ghcr.io/gimlet-io/gimlet-dashboard:agent-${{ steps.version.outputs.version }}
