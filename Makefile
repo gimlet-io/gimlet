@@ -68,8 +68,7 @@ build-stack-frontend:
 	@cp web/stack/dist/bundle.js pkg/commands/stack/web/
 	@cp web/stack/dist/bundle.js.LICENSE.txt pkg/commands/stack/web/
 	@cp web/stack/dist/index.html pkg/commands/stack/web/
-
-build-frontend:
+build-dashboard-frontend:
 	(cd web/dashboard; npm install; npm run build)
 
 start-local-env:
