@@ -13,6 +13,8 @@ test-prep:
 	touch pkg/commands/chart/bundle.js
 	touch pkg/commands/chart/bundle.js.LICENSE.txt
 	touch pkg/commands/chart/index.html
+	git config --global user.email "git@gimlet.io"
+	git config --global user.name "Github Actions"
 
 test: test-prep
 	go test -timeout 60s $(shell go list ./... )
