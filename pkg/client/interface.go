@@ -17,7 +17,7 @@ package client
 
 import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimletd/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"net/http"
 	"time"
 )
