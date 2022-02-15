@@ -23,3 +23,12 @@ pkg/commands/stack/web/bundle.js.LICENSE.txt
 pkg/commands/stack/web/index.html
 
 .env
+
+gimletd.sqlite
+deploykey
+deploykey.pub
+repocache
+
+fixtures/k3s/kubeconfig.yaml
+
+.vscode/settings.json

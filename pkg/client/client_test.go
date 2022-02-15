@@ -2,12 +2,12 @@ package client
 
 import (
 	"encoding/base32"
-	"github.com/gimlet-io/gimletd/cmd/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimletd/model"
-	"github.com/gimlet-io/gimletd/server"
-	"github.com/gimlet-io/gimletd/server/token"
-	"github.com/gimlet-io/gimletd/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gorilla/securecookie"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"

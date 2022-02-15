@@ -1,0 +1,69 @@
+{
+    "version": {
+      "repositoryName": "laszlocph/gimletd-test-repo",
+      "sha": "123456789012oiwasejgoiuewrjguiroeg",
+      "created": 1634778998,
+      "branch": "main",
+      "authorName": "Laszlo Fogas",
+      "authorEmail": "laszlo@laszlo.cloud",
+      "committerName": "Laszlo Fogas",
+      "committerEmail": "laszlo@laszlo.cloud",
+      "message": "Cue based artifact",
+      "url": "https://github.com/laszlocph/gimletd-test-repo/commit/1234567890123456789sgerdhrehr"
+    },
+    "context": {
+      "GITHUB_BRANCH": "main",
+      "GITHUB_SHA": "123456789012oiwasejgoiuewrjguiroeg"
+    },
+    "environments": [
+      {
+        "app": "myapp-variation",
+        "env": "staging",
+        "namespace": "gimlet-demo-staging",
+        "deploy": {
+          "tag": "v*",
+          "event": "tag"
+        },
+        "chart": {
+          "repository": "https://chart.onechart.dev",
+          "name": "onechart",
+          "version": "0.31.0"
+        },
+        "values": {
+          "gitRepository": "laszlocph/gimletd-test-repo",
+          "gitSha": "{{ .GITHUB_SHA }}",
+          "image": {
+            "repository": "ghcr.io/podtato-head/podtatoserver",
+            "tag": "v0.1.1"
+          },
+          "replicas": 2
+        }
+      },
+      {
+        "app": "myapp",
+        "env": "staging",
+        "namespace": "gimlet-demo-staging",
+        "deploy": {
+          "tag": "v*",
+          "event": "tag"
+        },
+        "chart": {
+          "repository": "https://chart.onechart.dev",
+          "name": "onechart",
+          "version": "0.31.0"
+        },
+        "values": {
+          "gitRepository": "laszlocph/gimletd-test-repo",
+          "gitSha": "{{ .GITHUB_SHA }}",
+          "image": {
+            "repository": "ghcr.io/podtato-head/podtatoserver",
+            "tag": "v0.1.1"
+          },
+          "replicas": 2
+        }
+      }
+    ],
+    "cueEnvironments": [
+      "import \"text/template\"\n_instances: [\"first\",\"second\",]\nconfigs: [ for instance in _instances {\n  app: template.Execute(\"myapp-{{ . }}\", instance)\nenv:\"local\"\nnamespace: \"default\"\nchart: {\n    repository: \"https://chart.onechart.dev\"\n    name:\"onechart\"\n    version:0.32\n}\nvalues: {\n  image: {\n    repository: \"ghcr.io/podtato-head/podtatoserver\"\n    tag:\"v0.1.1\"\n}\n}\n}]"
+    ]
+  }

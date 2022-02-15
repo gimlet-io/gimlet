@@ -1,0 +1,85 @@
+{
+    "version": {
+      "repositoryName": "laszlocph/gimletd-test-repo",
+      "sha": "1234567890123456789sgerdhrehr",
+      "created": 1634734999,
+      "branch": "main",
+      "authorName": "Laszlo Fogas",
+      "authorEmail": "laszlo@laszlo.cloud",
+      "committerName": "Laszlo Fogas",
+      "committerEmail": "laszlo@laszlo.cloud",
+      "message": "Another commit",
+      "url": "https://github.com/laszlocph/gimletd-test-repo/commit/1234567890123456789sgerdhrehr"
+    },
+    "context": {
+      "GITHUB_BRANCH": "main",
+      "GITHUB_SHA": "1234567890123456789sgerdhrehr"
+    },
+    "environments": [
+      {
+        "app": "myapp",
+        "env": "production",
+        "namespace": "gimlet-demo",
+        "chart": {
+          "repository": "",
+          "name": "https://github.com/laszlocph/onechart.git?branch=master\u0026path=/charts/onechart/",
+          "version": ""
+        },
+        "values": {
+          "gitRepository": "laszlocph/gimletd-test-repo",
+          "gitSha": "{{ .GITHUB_SHA }}",
+          "image": {
+            "repository": "ghcr.io/podtato-head/podtatoserver",
+            "tag": "v0.1.1"
+          },
+          "replicas": 3
+        }
+      },
+      {
+        "app": "myapp-variation",
+        "env": "staging",
+        "namespace": "gimlet-demo-staging",
+        "deploy": {
+          "tag": "v*",
+          "event": "tag"
+        },
+        "chart": {
+          "repository": "https://chart.onechart.dev",
+          "name": "onechart",
+          "version": "0.31.0"
+        },
+        "values": {
+          "gitRepository": "laszlocph/gimletd-test-repo",
+          "gitSha": "{{ .GITHUB_SHA }}",
+          "image": {
+            "repository": "ghcr.io/podtato-head/podtatoserver",
+            "tag": "v0.1.1"
+          },
+          "replicas": 2
+        }
+      },
+      {
+        "app": "myapp",
+        "env": "staging",
+        "namespace": "gimlet-demo-staging",
+        "deploy": {
+          "tag": "v*",
+          "event": "tag"
+        },
+        "chart": {
+          "repository": "https://chart.onechart.dev",
+          "name": "onechart",
+          "version": "0.31.0"
+        },
+        "values": {
+          "gitRepository": "laszlocph/gimletd-test-repo",
+          "gitSha": "{{ .GITHUB_SHA }}",
+          "image": {
+            "repository": "ghcr.io/podtato-head/podtatoserver",
+            "tag": "v0.1.1"
+          },
+          "replicas": 2
+        }
+      }
+    ]
+  }
