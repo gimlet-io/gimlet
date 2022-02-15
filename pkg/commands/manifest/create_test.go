@@ -8,7 +8,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands"
-	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"sigs.k8s.io/yaml"
 )
 

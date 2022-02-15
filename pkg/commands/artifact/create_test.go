@@ -10,7 +10,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands"
-	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 )
 
 func Test_create(t *testing.T) {

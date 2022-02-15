@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/commands"
-	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
