@@ -34,7 +34,7 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.version }}
     - name: 🚀 tip
-      uses: eine/tip@master
+      uses: pyTooling/Actions/releaser@r0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         rm: true
