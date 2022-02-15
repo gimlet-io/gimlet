@@ -3,6 +3,7 @@ module github.com/gimlet-io/gimlet-cli
 go 1.16
 
 require (
+	cuelang.org/go v0.4.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/MichaelMure/go-term-markdown v0.1.4
 	github.com/bitnami-labs/sealed-secrets v0.13.1
@@ -23,6 +24,7 @@ require (
 	github.com/go-chi/cors v1.2.0
 	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.4.2
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-isatty v0.0.12 // indirect
@@ -34,10 +36,12 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	helm.sh/helm/v3 v3.7.2
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1
 	k8s.io/client-go v0.23.1
+	sigs.k8s.io/kustomize/api v0.10.1
 	sigs.k8s.io/yaml v1.3.0
 )

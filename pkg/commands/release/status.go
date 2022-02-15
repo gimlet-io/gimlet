@@ -9,7 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
-	"github.com/gimlet-io/gimletd/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/client"
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"

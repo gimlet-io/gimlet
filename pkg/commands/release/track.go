@@ -3,7 +3,7 @@ package release
 import (
 	"fmt"
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimletd/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/client"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )

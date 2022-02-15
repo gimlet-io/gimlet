@@ -3,7 +3,7 @@ package manifest
 import (
 	"fmt"
 
-	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"

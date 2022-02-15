@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart"
-	"github.com/gimlet-io/gimletd/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
