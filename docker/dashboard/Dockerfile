@@ -9,13 +9,13 @@ ENV XDG_CACHE_HOME /var/lib/gimlet-dashboard
 
 RUN addgroup -S gimlet-dashboard && adduser -S gimlet-dashboard -G gimlet-dashboard
 
-ADD docker/known_hosts /etc/ssh/ssh_known_hosts
+ADD docker/dashboard/known_hosts /etc/ssh/ssh_known_hosts
 
 RUN mkdir /var/lib/gimlet-dashboard
 WORKDIR /gimlet-dashboard
 
 COPY --chown=gimlet-dashboard:gimlet-dashboard bin/gimlet-dashboard-linux-x86_64 gimlet-dashboard
-COPY --chown=gimlet-dashboard:gimlet-dashboard web/build ./web/build/
+COPY --chown=gimlet-dashboard:gimlet-dashboard web/dashboard/build ./web/build/
 
 USER gimlet-dashboard
 
