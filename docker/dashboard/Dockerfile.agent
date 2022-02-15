@@ -1,0 +1,18 @@
+FROM alpine:3.13
+
+RUN apk update && apk upgrade && \
+    apk add --no-cache bash openssh
+
+ADD bin/gimlet-agent-linux-x86_64 /bin/gimlet-agent
+
+RUN addgroup -S gimlet-agent && adduser -S gimlet-agent -G gimlet-agent
+
+ADD docker/known_hosts /etc/ssh/ssh_known_hosts
+
+RUN mkdir /var/lib/gimlet-agent
+RUN chown gimlet-agent:gimlet-agent /var/lib/gimlet-agent
+
+USER gimlet-agent
+WORKDIR /var/lib/gimlet-agent
+
+CMD ["/bin/gimlet-agent"]

@@ -32,6 +32,10 @@ build-cli:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd/cli
 build-gimletd:
 	go build -ldflags $(LDFLAGS) -o build/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
+build-agent:
+	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
+build-dashboard:
+	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
 
 dist-gimletd:
 	mkdir -p bin
