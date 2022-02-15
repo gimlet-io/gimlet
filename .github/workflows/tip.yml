@@ -103,6 +103,8 @@ jobs:
       id: version
       run: |
           echo "::set-output name=version::$GITHUB_SHA"
+    - name: 🏗️ Build dashboard frontend
+      run: make build-dashboard-frontend
     - name: Dist
       run: make dist-dashboard
       env:

@@ -31,6 +31,8 @@ jobs:
         else
             echo "::set-output name=version::$GITHUB_SHA"
         fi
+    - name: 🏗️ Build dashboard frontend
+      run: make build-dashboard-frontend
     - name: Dist
       run: make dist-dashboard
       env:
