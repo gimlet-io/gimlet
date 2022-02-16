@@ -23,11 +23,13 @@ test: test-prep
 test-dashboard-frontend:
 	(cd web/dashboard; npm install; npm run test)
 test-with-postgres:
-	docker run --rm -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
+	docker stop testpostgres || true
+	docker run --rm -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 --name testpostgres -d postgres
 
-	export DATABASE_DRIVER=postgres
-	export DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
-	go test -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/gimletd/store/...
+	DATABASE_DRIVER=postgres DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/gimletd/store/...
+	DATABASE_DRIVER=postgres DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/...
+
+	docker stop testpostgres || true
 
 build-cli:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd/cli
