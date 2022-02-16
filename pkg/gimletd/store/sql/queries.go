@@ -81,7 +81,7 @@ FROM events
 WHERE status='new' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
-UPDATE events SET status = $1, status_desc = $1, gitops_hashes = $1 WHERE id = $1;
+UPDATE events SET status = $1, status_desc = $2, gitops_hashes = $3 WHERE id = $4;
 `,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc
