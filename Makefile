@@ -27,7 +27,8 @@ test-with-postgres:
 
 	export DATABASE_DRIVER=postgres
 	export DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
-	go test -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/gimletd/store/...
+	go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/gimletd/store/...
+	go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/...
 
 build-cli:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd/cli
