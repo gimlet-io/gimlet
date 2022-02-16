@@ -2,7 +2,6 @@ package customGithub
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,7 +10,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/google/go-github/v37/github"
 	"github.com/shurcooL/githubv4"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -141,28 +139,30 @@ func (c *GithubClient) FetchCommits(
 		"sha9":  githubv4.GitObjectID(hashesToFetch[9]),
 	}
 
-	q, _ := json.Marshal(queryObjects)
-	logrus.Infof("Github query: %s", q)
-	logrus.Infof("Github variables: %s", variables)
-	err := graphQLClient.Query(context.Background(), &queryObjects, variables)
+	var query queryObjects
+
+	// q, _ := json.Marshal(query)
+	// logrus.Infof("Github query: %s", q)
+	// logrus.Infof("Github variables: %s", variables)
+	err := graphQLClient.Query(context.Background(), &query, variables)
 	if err != nil {
 		return nil, err
 	}
 
 	var commits []*model.Commit
-	commits = append(commits, translateCommit(queryObjects.Repository.Object0.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object1.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object2.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object3.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object4.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object5.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object6.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object7.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object8.Commit))
-	commits = append(commits, translateCommit(queryObjects.Repository.Object9.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object0.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object1.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object2.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object3.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object4.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object5.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object6.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object7.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object8.Commit))
+	commits = append(commits, translateCommit(query.Repository.Object9.Commit))
 
-	response, _ := json.Marshal(queryObjects)
-	logrus.Infof("Github response: %s", response)
+	// response, _ := json.Marshal(query)
+	// logrus.Infof("Github response: %s", response)
 
 	return commits[:10-toPadWidth], nil
 }
@@ -255,7 +255,7 @@ type checkRun struct {
 	CompletedAt string
 }
 
-var queryObjects struct {
+type queryObjects struct {
 	Viewer struct {
 		Login string
 	}
