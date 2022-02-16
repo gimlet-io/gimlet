@@ -31,14 +31,14 @@ SELECT 1;
 		SelectUserByLogin: `
 SELECT id, login, secret, admin
 FROM users
-WHERE login = ?;
+WHERE login = $1;
 `,
 		SelectAllUser: `
 SELECT id, login, secret, admin
 FROM users;
 `,
 		DeleteUser: `
-DELETE FROM users where login = ?;
+DELETE FROM users where login = $1;
 `,
 		SelectUnprocessedEvents: `
 SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
@@ -46,17 +46,17 @@ FROM events
 WHERE status='new' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
-UPDATE events SET status = ?, status_desc = ?, gitops_hashes = ? WHERE id = ?;
+UPDATE events SET status = $1, status_desc = $2, gitops_hashes = $3 WHERE id = $4;
 `,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc
 FROM gitops_commits
-WHERE sha = ?;
+WHERE sha = $1;
 `,
 		SelectKeyValue: `
 SELECT id, key, value
 FROM key_values
-WHERE key = ?;
+WHERE key = $1;
 `,
 	},
 	"postgres": {
