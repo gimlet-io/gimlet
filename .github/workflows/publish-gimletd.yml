@@ -27,7 +27,7 @@ jobs:
         if [[ $GITHUB_REF == refs/tags/* ]]
         then
             tag=${GITHUB_REF##refs/tags/}
-            v=${tag##cli-}
+            v=${tag##gimletd-}
             echo "::set-output name=version::$v"
         else
             echo "::set-output name=version::$GITHUB_SHA"
