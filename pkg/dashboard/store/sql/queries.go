@@ -27,18 +27,18 @@ SELECT 1;
 		SelectUserByLogin: `
 SELECT id, login, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users
-WHERE login = ?;
+WHERE login = $1;
 `,
 		SelectCommitsByRepo: `
 SELECT id, repo, sha, url, author, author_pic, message, created, tags, status
 FROM commits
-WHERE repo = ?
+WHERE repo = $1
 LIMIT 20;
 `,
 		SelectKeyValue: `
 SELECT id, key, value
 FROM key_values
-WHERE key = ?;
+WHERE key = $1;
 `,
 	},
 	"postgres": {
