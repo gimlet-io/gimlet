@@ -24,7 +24,8 @@ jobs:
     - name: Version
       id: version
       run: |
-        if [[ $VERSION == refs/tags/* ]]
+        if [[ $GITHUB_REF == refs/tags/* ]]
+        then
             tag=${GITHUB_REF##refs/tags/}
             v=${tag##cli-}
             echo "::set-output name=version::$v"
