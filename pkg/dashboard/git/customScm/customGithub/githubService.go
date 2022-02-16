@@ -2,7 +2,6 @@ package customGithub
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,7 +10,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/google/go-github/v37/github"
 	"github.com/shurcooL/githubv4"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -143,9 +141,9 @@ func (c *GithubClient) FetchCommits(
 
 	var query queryObjects
 
-	q, _ := json.Marshal(query)
-	logrus.Infof("Github query: %s", q)
-	logrus.Infof("Github variables: %s", variables)
+	// q, _ := json.Marshal(query)
+	// logrus.Infof("Github query: %s", q)
+	// logrus.Infof("Github variables: %s", variables)
 	err := graphQLClient.Query(context.Background(), &query, variables)
 	if err != nil {
 		return nil, err
@@ -163,8 +161,8 @@ func (c *GithubClient) FetchCommits(
 	commits = append(commits, translateCommit(query.Repository.Object8.Commit))
 	commits = append(commits, translateCommit(query.Repository.Object9.Commit))
 
-	response, _ := json.Marshal(query)
-	logrus.Infof("Github response: %s", response)
+	// response, _ := json.Marshal(query)
+	// logrus.Infof("Github response: %s", response)
 
 	return commits[:10-toPadWidth], nil
 }
