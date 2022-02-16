@@ -30,8 +30,6 @@ tasks:
       echo $DEPLOY_KEY_PUB | base64 -d > deploykey.pub
       chmod 500 deploykey
       chmod 500 deploykey.pub
-
-      make test
   - name: vscode settings
     init: |
       mkdir -p "$PWD/.vscode";
