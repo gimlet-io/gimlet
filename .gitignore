@@ -14,6 +14,9 @@ web/cli/dist
 web/stack/node_modules
 web/stack/dist
 
+web/dashboard/node_modules
+web/dashboard/dist
+
 pkg/commands/chart/bundle.js
 pkg/commands/chart/bundle.js.LICENSE.txt
 pkg/commands/chart/index.html
