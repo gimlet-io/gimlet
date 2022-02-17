@@ -1,35 +1,8 @@
 tasks:
   - init: |
-      cat << EOF > $PWD/.env
-      GIMLET_SERVER=$GIMLET_SERVER
-      GIMLET_TOKEN=$GIMLET_TOKEN
-      EOF
-
-      sudo cp docker/gimletd/known_hosts /etc/ssh/ssh_known_hosts
-
-      curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.12.2/gimlet-$(uname)-$(uname -m) -o gimlet
-      chmod +x gimlet
-      sudo mv ./gimlet /usr/local/bin/gimlet
-      gimlet --version
-
-      cat << EOF > ~/.gimlet/config
-      export GIMLET_SERVER=http://127.0.0.1:8888
-      EOF
-
-      cat << EOF > $PWD/.env
-      GITOPS_REPO=$GITOPS_REPO
-      GITOPS_REPO_DEPLOY_KEY_PATH=/workspace/gimlet/deploykey
-      PRINT_ADMIN_TOKEN=true
-
-      NOTIFICATIONS_PROVIDER=slack
-      NOTIFICATIONS_TOKEN=$SLACK_TOKEN
-      NOTIFICATIONS_DEFAULT_CHANNEL=gimletd
-      EOF
-
-      echo $DEPLOY_KEY | base64 -d > deploykey
-      echo $DEPLOY_KEY_PUB | base64 -d > deploykey.pub
-      chmod 500 deploykey
-      chmod 500 deploykey.pub
+      bash fixtures/gitpod/setupEnvForCLI.sh
+      bash fixtures/gitpod/setupEnvForGimletD.sh
+      bash fixtures/gitpod/setupEnvForGimletDashboard.sh
   - name: vscode settings
     init: |
       mkdir -p "$PWD/.vscode";
@@ -50,6 +23,14 @@ ports:
     visibility: public
   - port: 6060
     onOpen: ignore
+  - port: 9000
+    onOpen: ignore
+    visibility: public
+  - port: 9001
+    onOpen: ignore
+  - port: 3000
+    onOpen: open-browser
+    visibility: public
 
 vscode:
   extensions:
