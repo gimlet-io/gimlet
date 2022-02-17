@@ -19,5 +19,13 @@
             "args": ["release", "track", "c3e857ce-0e4e-402a-8cbb-0325c06532be"],
             "envFile": "${workspaceFolder}/.env"
         },
+        {
+            "name": "GimletD",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd/gimletd",
+            "envFile": "${workspaceFolder}/.env"
+        }
     ]
 }

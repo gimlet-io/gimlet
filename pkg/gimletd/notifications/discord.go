@@ -41,9 +41,15 @@ func (s *DiscordProvider) send(msg Message) error {
 }
 
 func (s *DiscordProvider) post(d *discordgo.Session, msg *discordMessage) error {
+	_, err := d.ChannelMessageSend(s.ChannelID, msg.Text)
+	if err != nil {
+		return err
+	}
 
-	d.ChannelMessageSend(s.ChannelID, msg.Text)
 	d.ChannelMessageSendEmbed(s.ChannelID, msg.Embed)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
