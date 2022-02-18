@@ -95,6 +95,7 @@ drop table migrations;
 drop table users;
 drop table commits;
 drop table key_values;
+drop table environments;
 `)
 		setupDatabase(driver, store.DB)
 	}

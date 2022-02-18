@@ -27,9 +27,9 @@ export default class APIBackend extends Component {
     this.props.gimletClient.getUser()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_USER, payload: data }), () => {/* Generic error handler deals with it */
       });
-      this.props.gimletClient.getApp()
-      .then(data => this.props.store.dispatch({type: ACTION_TYPE_APPLICATION, payload: data}), () => {/* Generic error handler deals with it */
-      });  
+    this.props.gimletClient.getApp()
+      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_APPLICATION, payload: data }), () => {/* Generic error handler deals with it */
+      });
     this.props.gimletClient.getEnvs()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_ENVS, payload: data }), () => {/* Generic error handler deals with it */
       });
@@ -42,7 +42,9 @@ export default class APIBackend extends Component {
     this.props.gimletClient.getChartSchema()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_CHARTSCHEMA, payload: data }), () => {/* Generic error handler deals with it */
       });
-
+    this.props.gimletClient.getEnvs()
+      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_ENVS, payload: data }), () => {/* Generic error handler deals with it */
+      });
   }
 
   render() {

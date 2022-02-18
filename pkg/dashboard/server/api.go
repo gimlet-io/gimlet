@@ -59,7 +59,18 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envString, err := json.Marshal(envs)
+	db := r.Context().Value("store").(*store.Store)
+	envsFromDB, err := db.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get all environments from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	allEnvs := map[string]interface{}{}
+	allEnvs["envs"] = envs
+	allEnvs["envsFromDB"] = envsFromDB
+
+	allEnvsString, err := json.Marshal(allEnvs)
 	if err != nil {
 		logrus.Errorf("cannot serialize envs: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -67,7 +78,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
-	w.Write(envString)
+	w.Write(allEnvsString)
 
 	time.Sleep(50 * time.Millisecond) // there is a race condition in local dev: the refetch arrives sooner
 	go agentHub.ForceStateSend()
@@ -214,4 +225,50 @@ func application(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(appinfosString))
 
+}
+
+func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
+	var envNameToSave string
+	err := json.NewDecoder(r.Body).Decode(&envNameToSave)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	db := r.Context().Value("store").(*store.Store)
+	envToSave := &model.Environment{
+		Name: envNameToSave,
+	}
+	err = db.CreateEnvironment(envToSave)
+	if err != nil {
+		logrus.Errorf("cannot create environment to database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(envNameToSave))
+}
+
+func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
+	var envNameToDelete string
+	err := json.NewDecoder(r.Body).Decode(&envNameToDelete)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	db := r.Context().Value("store").(*store.Store)
+
+	err = db.DeleteEnvironment(envNameToDelete)
+	if err != nil {
+		logrus.Errorf("cannot delete environment to database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(envNameToDelete))
 }

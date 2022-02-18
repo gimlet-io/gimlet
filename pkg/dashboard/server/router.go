@@ -107,6 +107,8 @@ func userRoutes(r *chi.Mux) {
 		r.Post("/api/saveFavoriteServices", saveFavoriteServices)
 		r.Get("/api/chartSchema", chartSchema)
 		r.Get(("/api/app"), application)
+		r.Post(("/api/saveEnvToDB"), saveEnvToDB)
+		r.Post(("/api/deleteEnvFromDB"), deleteEnvFromDB)
 	})
 }
 

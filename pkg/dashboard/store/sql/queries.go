@@ -18,6 +18,8 @@ const Dummy = "dummy"
 const SelectUserByLogin = "select-user-by-login"
 const SelectCommitsByRepo = "select-commits-by-repo"
 const SelectKeyValue = "select-key-value"
+const SelectEnvironment = "select-environment"
+const DeleteEnvironment = "delete-environment"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -40,6 +42,14 @@ SELECT id, key, value
 FROM key_values
 WHERE key = $1;
 `,
+		SelectEnvironment: `
+SELECT id, name
+FROM environments;
+`,
+		DeleteEnvironment: `
+DELETE FROM environments
+WHERE name = ?;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -60,6 +70,14 @@ LIMIT 20;
 SELECT id, key, value
 FROM key_values
 WHERE key = $1;
+`,
+		SelectEnvironment: `
+SELECT id, name
+FROM environments;
+`,
+		DeleteEnvironment: `
+DELETE FROM environments
+WHERE name = $1;
 `,
 	},
 }
