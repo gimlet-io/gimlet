@@ -73,8 +73,7 @@ WHERE key = $1;
 `,
 		SelectEnvironment: `
 SELECT id, name
-FROM environments
-WHERE key = $1;
+FROM environments;
 `,
 		DeleteEnvironment: `
 DELETE FROM environments
