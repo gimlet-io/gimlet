@@ -132,9 +132,9 @@ class Environments extends Component {
                                 <EnvironmentsPopUpWindow
                                     hasRequestError={this.state.hasRequestError} />}
                             {this.getEnvironmentCards()}
-                            <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                            <div className="mt-12 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                                 <div className="px-4 py-5 sm:px-6">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Create environment</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Create new environment</h3>
                                 </div>
                                 <div className="px-4 py-5 sm:px-6">
                                     <input
