@@ -27,7 +27,7 @@ const gitSSHAddressFormat = "git@github.com:%s.git"
 const File_RW_RW_R = 0664
 const Dir_RWX_RX_R = 0754
 
-func CloneToTmpFs(rootPath string, repoName string, privateKeyPath string) (string, *git.Repository, error) {
+func CloneToFs(rootPath string, repoName string, privateKeyPath string) (string, *git.Repository, error) {
 	err := os.MkdirAll(rootPath, Dir_RWX_RX_R)
 	if err != nil {
 		return "", nil, errors.WithMessage(err, "cannot create folder at $REPO_CACHE_PATH")

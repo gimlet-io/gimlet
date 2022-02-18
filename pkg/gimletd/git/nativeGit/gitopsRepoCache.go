@@ -30,7 +30,7 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
-	cachePath, repo, err := CloneToTmpFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+	cachePath, repo, err := CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
 	if err != nil {
 		return nil, err
 	}

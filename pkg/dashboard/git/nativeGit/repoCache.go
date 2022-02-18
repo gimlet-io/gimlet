@@ -26,7 +26,7 @@ import (
 const Dir_RWX_RX_R = 0754
 
 var fetchRefSpec = []config.RefSpec{
-	"refs/heads/*:refs/heads/*",
+	"refs/heads/*:refs/remotes/origin/*",
 }
 
 type RepoCache struct {
@@ -102,11 +102,6 @@ func (r *RepoCache) Run() {
 		case repoName := <-r.invalidateCh:
 			logrus.Infof("received cache invalidate message for %s", repoName)
 			r.syncGitRepo(repoName)
-			jsonString, _ := json.Marshal(streaming.StaleRepoDataEvent{
-				Repo:           repoName,
-				StreamingEvent: streaming.StreamingEvent{Event: streaming.StaleRepoDataEventString},
-			})
-			r.clientHub.Broadcast <- jsonString
 		case <-time.After(30 * time.Second):
 		}
 	}
@@ -124,18 +119,15 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return // preventing a race condition in cleanup
 	}
 
-	w, err := r.repos[repoName].Worktree()
-	if err != nil {
-		logrus.Errorf("could not get worktree: %s", err)
-		return
-	}
-
-	err = w.Pull(&git.PullOptions{
+	err = r.repos[repoName].Fetch(&git.FetchOptions{
+		RefSpecs: fetchRefSpec,
 		Auth: &http.BasicAuth{
 			Username: user,
 			Password: token,
 		},
-		RemoteName: "origin",
+		Depth: 100,
+		Tags:  git.NoTags,
+		Prune: true,
 	})
 	if err == git.NoErrAlreadyUpToDate {
 		return
@@ -144,6 +136,12 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		logrus.Errorf("could not pull: %s", err)
 		r.cleanRepo(repoName)
 	}
+
+	jsonString, _ := json.Marshal(streaming.StaleRepoDataEvent{
+		Repo:           repoName,
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.StaleRepoDataEventString},
+	})
+	r.clientHub.Broadcast <- jsonString
 }
 
 func (r *RepoCache) cleanRepo(repoName string) {

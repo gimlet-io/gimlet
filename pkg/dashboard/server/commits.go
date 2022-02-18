@@ -23,44 +23,26 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	name := chi.URLParam(r, "name")
 	repoName := fmt.Sprintf("%s/%s", owner, name)
-
 	branch := r.URL.Query().Get("branch")
-	if branch == "" {
-		branch = "main"
-	}
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	var repo *git.Repository
-	if branch != "master" && branch != "main" {
-		r, pathToClanUp, err := gitRepoCache.InstanceForWrite(repoName)
-		defer gitRepoCache.CleanupWrittenRepo(pathToClanUp)
-		if err != nil {
-			logrus.Errorf("cannot get repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		repo = r
-
-		err = switchToBranch(repo, branch)
-		if err != nil {
-			logrus.Errorf("cannot switch to branch: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-	} else {
-		r, err := gitRepoCache.InstanceForRead(repoName)
-		if err != nil {
-			logrus.Errorf("cannot get repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		repo = r
+	repo, err := gitRepoCache.InstanceForRead(repoName)
+	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
-	commitWalker, err := repo.Log(&git.LogOptions{})
+	if branch == "" {
+		branch = headBranch(repo)
+	}
+
+	head := branchHeadHash(repo, branch)
+	commitWalker, err := repo.Log(&git.LogOptions{
+		From: head,
+	})
 	if err != nil {
 		logrus.Errorf("cannot walk commits: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

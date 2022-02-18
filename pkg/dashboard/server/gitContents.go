@@ -71,9 +71,11 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files, err := helper.Folder(repo, ".gimlet")
+	branch := headBranch(repo)
+
+	files, err := remoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
-		if strings.Contains(err.Error(), "no such file or directory") {
+		if strings.Contains(err.Error(), "directory not found") {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("{}"))
 			return
@@ -113,6 +115,57 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(configsPerEnvJson))
+}
+
+func remoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, path string) (map[string]string, error) {
+	files := map[string]string{}
+
+	head := branchHeadHash(repo, branch)
+	headCommit, err := repo.CommitObject(head)
+	if err != nil {
+		return files, fmt.Errorf("cannot get head commit: %s", err)
+	}
+
+	t, err := headCommit.Tree()
+	if err != nil {
+		return files, fmt.Errorf("cannot get head tree: %s", err)
+	}
+
+	subTree, err := t.Tree(".gimlet")
+	if err != nil {
+		return files, fmt.Errorf("cannot get .gimlet tree: %s", err)
+	}
+
+	for _, entry := range subTree.Entries {
+		f, err := subTree.File(entry.Name)
+		if err != nil {
+			return files, fmt.Errorf("cannot get file: %s", err)
+		}
+		contents, err := f.Contents()
+		if err != nil {
+			return files, fmt.Errorf("cannot get file: %s", err)
+		}
+		files[entry.Name] = contents
+	}
+
+	return files, nil
+}
+
+func branchHeadHash(repo *git.Repository, branch string) plumbing.Hash {
+	var head plumbing.Hash
+	refIter, _ := repo.References()
+	refIter.ForEach(func(r *plumbing.Reference) error {
+		if r.Name().IsRemote() {
+			remoteBranch := r.Name().Short()
+			remoteBranch = strings.TrimPrefix(remoteBranch, "origin/")
+			if remoteBranch == branch {
+				head = r.Hash()
+			}
+		}
+		return nil
+	})
+
+	return head
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
@@ -252,9 +305,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		gitRepoCache.Invalidate(repoPath)
 	}
 
+	gitRepoCache.Invalidate(repoPath)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
