@@ -16,6 +16,7 @@ package ddl
 
 const createTableUsers = "create-table-users"
 const addNameColumnToUsersTable = "add-name-column-to-users-table"
+const createTableEnvironments = "create-table-environments"
 const createTableCommits = "create-table-commits"
 const addMessageColumnToCommitsTable = "add-message-column-to-commits-table"
 const addCreatedColumnToCommitsTable = "add-created-column-to-commits-table"
@@ -54,6 +55,16 @@ UNIQUE(login)
 		{
 			name: addNameColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN name TEXT default '';`,
+		},
+		{
+			name: createTableEnvironments,
+			stmt: `
+CREATE TABLE IF NOT EXISTS environments (
+id         	INTEGER PRIMARY KEY AUTOINCREMENT,
+name        TEXT,
+UNIQUE(name)
+);
+`,
 		},
 		{
 			name: createTableCommits,
@@ -142,6 +153,16 @@ UNIQUE(login)
 		{
 			name: addNameColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN name TEXT default '';`,
+		},
+		{
+			name: createTableEnvironments,
+			stmt: `
+CREATE TABLE IF NOT EXISTS environments (
+id         	SERIAL,
+name        TEXT,
+UNIQUE(name)
+);
+`,
 		},
 		{
 			name: createTableCommits,

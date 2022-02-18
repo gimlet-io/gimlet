@@ -23,10 +23,11 @@ export function agents(state, event) {
   return state;
 }
 
-export function envsUpdated(state, envs) {
-  envs.forEach((env) => {
+export function envsUpdated(state, allEnvs) {
+  allEnvs.envs.forEach((env) => {
     state.envs[env.name] = env;
   });
+  state.envsFromDB = allEnvs.envsFromDB;
   return state;
 }
 

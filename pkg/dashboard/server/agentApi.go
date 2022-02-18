@@ -8,6 +8,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
@@ -51,6 +52,9 @@ func register(w http.ResponseWriter, r *http.Request) {
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
 	broadcastAgentConnectedEvent(clientHub, a)
 
+	db := r.Context().Value("store").(*store.Store)
+	assureAgentInDB(name, db)
+
 	for {
 		select {
 		case <-r.Context().Done():
@@ -67,6 +71,29 @@ func register(w http.ResponseWriter, r *http.Request) {
 				io.WriteString(w, "\n\n")
 				flusher.Flush()
 			}
+		}
+	}
+}
+
+func assureAgentInDB(name string, db *store.Store) {
+	envsFromDB, err := db.GetEnvironments()
+	if err != nil {
+		log.Debugf("cannot get all environments from database: %s", err)
+	}
+	agentInDB := false
+	for _, env := range envsFromDB {
+		if env.Name == name {
+			agentInDB = true
+			break
+		}
+	}
+	if !agentInDB {
+		envToSave := &model.Environment{
+			Name: name,
+		}
+		err := db.CreateEnvironment(envToSave)
+		if err != nil {
+			log.Debugf("cannot create environment to database: %s", err)
 		}
 	}
 }
