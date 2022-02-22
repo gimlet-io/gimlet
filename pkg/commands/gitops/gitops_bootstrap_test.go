@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_parseRepoURL(t *testing.T) {
@@ -51,12 +53,6 @@ func Test_generateManifest(t *testing.T) {
 		t.Errorf("cannot find")
 	}
 
-	assertEqual(t, secretFileName, secretFile.Name())
-	assertEqual(t, gitopsRepoFileName, fileName.Name())
-}
-
-func assertEqual(t *testing.T, a interface{}, b interface{}) {
-	if a != b {
-		t.Errorf("%s != %s", a, b)
-	}
+	assert.Equal(t, gitopsRepoFileName+".yaml", fileName.Name())
+	assert.Equal(t, secretFileName, secretFile.Name())
 }
