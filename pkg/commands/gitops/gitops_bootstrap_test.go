@@ -31,6 +31,8 @@ func Test_generateManifest(t *testing.T) {
 	defer os.RemoveAll(dirToWrite)
 
 	env := "staging"
+	owner := "gimlet"
+	repo := "test-repo"
 
 	gitopsRepoFileName, _, secretFileName, err := generateManifests(
 		false,
@@ -39,14 +41,14 @@ func Test_generateManifest(t *testing.T) {
 		dirToWrite,
 		true,
 		true,
-		"git@github.com:dzsak/gitops-apps.git",
+		fmt.Sprintf("git@github.com:%s/%s.git", owner, repo),
 		"",
 	)
 	if err != nil {
 		t.Errorf("Cannot generate manifest")
 	}
 
-	gitopsRepoFileLocal, err := os.Stat(dirToWrite + fmt.Sprintf("/%s/flux/%s.yaml", env, gitopsRepoFileName))
+	gitopsRepoFileLocal, err := os.Stat(dirToWrite + fmt.Sprintf("/%s/flux/%s", env, gitopsRepoFileName))
 	if err != nil {
 		t.Errorf("cannot find gitops repo file in the local directory")
 	}
@@ -56,6 +58,6 @@ func Test_generateManifest(t *testing.T) {
 		t.Errorf("cannot find secret file in the local directory")
 	}
 
-	assert.Equal(t, gitopsRepoFileName+".yaml", gitopsRepoFileLocal.Name())
-	assert.Equal(t, secretFileName, secretFileLocal.Name())
+	assert.Equal(t, fmt.Sprintf("gitops-repo-%s-%s-%s-%s.yaml", env, owner, repo, env), gitopsRepoFileLocal.Name())
+	assert.Equal(t, fmt.Sprintf("deploy-key-%s-%s-%s-%s.yaml", env, owner, repo, env), secretFileLocal.Name())
 }
