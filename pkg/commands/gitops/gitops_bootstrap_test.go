@@ -1,6 +1,7 @@
 package gitops
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -29,9 +30,11 @@ func Test_generateManifest(t *testing.T) {
 
 	defer os.RemoveAll(dirToWrite)
 
+	env := "staging"
+
 	gitopsRepoFileName, _, secretFileName, err := generateManifests(
 		false,
-		"staging",
+		env,
 		false,
 		dirToWrite,
 		true,
@@ -43,16 +46,16 @@ func Test_generateManifest(t *testing.T) {
 		t.Errorf("Cannot generate manifest")
 	}
 
-	fileName, err := os.Stat(dirToWrite + "/staging/flux/gitops-repo-staging.yaml")
+	gitopsRepoFileLocal, err := os.Stat(dirToWrite + fmt.Sprintf("/%s/flux/%s.yaml", env, gitopsRepoFileName))
 	if err != nil {
-		t.Errorf("cannot find")
+		t.Errorf("cannot find gitops repo file in the local directory")
 	}
 
-	secretFile, err := os.Stat(dirToWrite + "/staging/flux/deploy-key-staging.yaml")
+	secretFileLocal, err := os.Stat(dirToWrite + fmt.Sprintf("/%s/flux/%s", env, secretFileName))
 	if err != nil {
-		t.Errorf("cannot find")
+		t.Errorf("cannot find secret file in the local directory")
 	}
 
-	assert.Equal(t, gitopsRepoFileName+".yaml", fileName.Name())
-	assert.Equal(t, secretFileName, secretFile.Name())
+	assert.Equal(t, gitopsRepoFileName+".yaml", gitopsRepoFileLocal.Name())
+	assert.Equal(t, secretFileName, secretFileLocal.Name())
 }
