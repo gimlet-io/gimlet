@@ -199,7 +199,7 @@ func generateManifests(
 			strings.ToLower(env))
 		if singleEnv {
 			gitopsRepositoryName = "gitops-repo"
-			gitopsRepoFileName = "gitops-repo"
+			gitopsRepoFileName = "gitops-repo.yaml"
 		}
 		syncOpts := sync.Options{
 			Interval:     15 * time.Second,
