@@ -58,7 +58,6 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	github.com/zenizh/go-capturer v0.0.0-20211219060012-52ea6c8fed04 // indirect
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
