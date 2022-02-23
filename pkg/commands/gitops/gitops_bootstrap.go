@@ -89,7 +89,7 @@ func Bootstrap(c *cli.Context) error {
 	noController := c.Bool("no-controller")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
-	gitopsRepositoryName, publicKey, secretFileName, err := generateManifests(
+	gitopsRepoFileName, publicKey, secretFileName, err := generateManifests(
 		!noController,
 		env,
 		singleEnv,
@@ -125,24 +125,9 @@ func Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%v GitOps configuration written to %s\n\n\n", emoji.CheckMark, filepath.Join(gitopsRepoPath, env, "flux"))
+	guidingTextFMTPrint := guidingText(gitopsRepoPath, env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
-	fmt.Fprintf(os.Stderr, "%v 1) Push the configuration to git\n", emoji.BackhandIndexPointingRight)
-	fmt.Fprintf(os.Stderr, "%v 2) Add the following deploy key to your Git provider\n", emoji.BackhandIndexPointingRight)
-
-	fmt.Printf("\n%s\n", publicKey)
-
-	fmt.Fprintf(os.Stderr, "%v 3) Apply the gitops manifests on the cluster to start the gitops loop:\n\n", emoji.BackhandIndexPointingRight)
-
-	if !noController {
-		fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "flux.yaml"))
-	}
-	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", secretFileName))
-	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
-	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
-	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", gitopsRepositoryName+".yaml"))
-
-	fmt.Fprintf(os.Stderr, "\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall)
+	fmt.Print(guidingTextFMTPrint)
 
 	return nil
 }
@@ -160,6 +145,7 @@ func generateManifests(
 	publicKey := ""
 	gitopsRepositoryName := ""
 	secretFileName := ""
+	gitopsRepoFileName := ""
 
 	installOpts := install.MakeDefaultOptions()
 	installOpts.ManifestFile = "flux.yaml"
@@ -191,8 +177,14 @@ func generateManifests(
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := parseRepoURL(gitopsRepoUrl)
 		gitopsRepositoryName = fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
+		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s-%s-%s-%s.yaml",
+			strings.ToLower(env),
+			strings.ToLower(owner),
+			strings.ToLower(repoName),
+			strings.ToLower(env))
 		if singleEnv {
 			gitopsRepositoryName = "gitops-repo"
+			gitopsRepoFileName = "gitops-repo.yaml"
 		}
 		syncOpts := sync.Options{
 			Interval:     15 * time.Second,
@@ -201,7 +193,7 @@ func generateManifests(
 			Secret:       gitopsRepositoryName,
 			Namespace:    "flux-system",
 			Branch:       branch,
-			ManifestFile: gitopsRepositoryName + ".yaml",
+			ManifestFile: gitopsRepoFileName,
 		}
 
 		syncOpts.TargetPath = env
@@ -220,7 +212,12 @@ func generateManifests(
 
 		if shouldGenerateDeployKey {
 			fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-			secretFileName = fmt.Sprintf("deploy-key-%s.yaml", env)
+			secretFileName = fmt.Sprintf("deploy-key-%s-%s-%s-%s.yaml",
+				strings.ToLower(env),
+				strings.ToLower(owner),
+				strings.ToLower(repoName),
+				strings.ToLower(env))
+
 			if singleEnv {
 				secretFileName = "deploy-key.yaml"
 			}
@@ -237,7 +234,7 @@ func generateManifests(
 		}
 	}
 
-	return gitopsRepositoryName, publicKey, secretFileName, nil
+	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
 func branchName(err error, repo *git.Repository, gitopsRepoPath string) (string, error) {
@@ -293,4 +290,49 @@ func parseRepoURL(url string) (string, string, string) {
 	repo = strings.TrimSuffix(repo, ".git")
 
 	return host, owner, repo
+}
+
+func guidingText(
+	gitopsRepoPath string,
+	env string,
+	publicKey string,
+	noController bool,
+	secretFileName string,
+	gitopsRepoFileName string) string {
+	var stringBuilder strings.Builder
+
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v GitOps configuration written to %s\n\n\n", emoji.CheckMark, filepath.Join(gitopsRepoPath, env, "flux")),
+	)
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v 1) Push the configuration to git\n", emoji.BackhandIndexPointingRight),
+	)
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v 2) Add the following deploy key to your Git provider\n", emoji.BackhandIndexPointingRight),
+	)
+
+	stringBuilder.WriteString(fmt.Sprintf("\n%s\n\n", publicKey))
+
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v 3) Apply the gitops manifests on the cluster to start the gitops loop:\n\n", emoji.BackhandIndexPointingRight),
+	)
+
+	if !noController {
+		stringBuilder.WriteString(fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "flux.yaml")))
+	}
+
+	stringBuilder.WriteString(
+		fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", secretFileName)),
+	)
+	stringBuilder.WriteString(
+		"kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
+	stringBuilder.WriteString(
+		"kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
+	stringBuilder.WriteString(
+		fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", gitopsRepoFileName)),
+	)
+
+	stringBuilder.WriteString(fmt.Sprintf("\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall))
+
+	return stringBuilder.String()
 }
