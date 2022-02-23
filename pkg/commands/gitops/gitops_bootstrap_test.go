@@ -112,13 +112,12 @@ func Test_generateManifestWithSingleEnvWithoutController(t *testing.T) {
 
 	defer os.RemoveAll(dirToWrite)
 
-	env := ""
 	owner := "gimlet"
 	repo := "test-repo"
 
 	gitopsRepoFileName, _, secretFileName, err := generateManifests(
 		false,
-		env,
+		"",
 		true,
 		dirToWrite,
 		true,
@@ -133,18 +132,18 @@ func Test_generateManifestWithSingleEnvWithoutController(t *testing.T) {
 	assert.Equal(t, "gitops-repo.yaml", gitopsRepoFileName)
 	assert.Equal(t, "deploy-key.yaml", secretFileName)
 
-	gitopsRepoFileLocal, err := os.Stat(dirToWrite + fmt.Sprintf("/%s/flux/%s", env, gitopsRepoFileName))
+	gitopsRepoFileLocal, err := os.Stat(dirToWrite + "/flux/gitops-repo.yaml")
 	if err != nil {
 		t.Errorf("cannot find gitops repo file in the local directory")
 	}
 
-	secretFileLocal, err := os.Stat(dirToWrite + fmt.Sprintf("/%s/flux/%s", env, secretFileName))
+	secretFileLocal, err := os.Stat(dirToWrite + "/flux/deploy-key.yaml")
 	if err != nil {
 		t.Errorf("cannot find secret file in the local directory")
 	}
 
-	assert.Equal(t, fmt.Sprintf("gitops-repo-%s-%s-%s-%s.yaml", env, owner, repo, env), gitopsRepoFileLocal.Name())
-	assert.Equal(t, fmt.Sprintf("deploy-key-%s-%s-%s-%s.yaml", env, owner, repo, env), secretFileLocal.Name())
+	assert.Equal(t, "gitops-repo.yaml", gitopsRepoFileLocal.Name())
+	assert.Equal(t, "deploy-key.yaml", secretFileLocal.Name())
 }
 
 func Test_generateManifestWithControllerWithoutSingleEnv(t *testing.T) {
