@@ -319,22 +319,26 @@ func Test_guidingText(t *testing.T) {
 		return
 	}
 
-
-	env := "staging"
-	owner := "gimlet"
-	repo := "test-repo"
 	gitopsRepoPathName := "gitops-repo-path"
 	publicKey := "12345"
+	shouldGenerateController := false
+	env := "staging"
+	singleEnv := false
+	gitopsRepoPath := dirToWrite
+	shouldGenerateKustomizationAndRepo := true
+	shouldGenerateDeployKey := true
+	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
+	branch := ""
 
 	gitopsRepoFileName, _, secretFileName, _ := generateManifests(
-		false,
+		shouldGenerateController,
 		env,
-		false,
-		dirToWrite,
-		true,
-		true,
-		fmt.Sprintf("git@github.com:%s/%s.git", owner, repo),
-		"",
+		singleEnv,
+		gitopsRepoPath,
+		shouldGenerateKustomizationAndRepo,
+		shouldGenerateDeployKey,
+		gitopsRepoUrl,
+		branch,
 	)
 
 	stderrString := capturer.CaptureOutput(func() {
