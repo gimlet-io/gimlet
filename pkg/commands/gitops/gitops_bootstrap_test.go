@@ -311,7 +311,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 	}
 }
 
-func Test_guidingText(t *testing.T) {
+func Test_guidingTextWithController(t *testing.T) {
 	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
 	defer os.RemoveAll(dirToWrite)
 	if err != nil {
@@ -321,6 +321,7 @@ func Test_guidingText(t *testing.T) {
 
 	gitopsRepoPathName := "gitops-repo-path"
 	publicKey := "12345"
+	noController := false
 	shouldGenerateController := false
 	env := "staging"
 	singleEnv := false
@@ -341,18 +342,16 @@ func Test_guidingText(t *testing.T) {
 		branch,
 	)
 
-	stderrString := capturer.CaptureOutput(func() {
-		(guidingText(gitopsRepoPathName, env, publicKey, false, secretFileName, gitopsRepoFileName))
-	})
+	guidingTextString := guidingText(gitopsRepoPathName, env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
 	secretFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/" + secretFileName
 	gitopsRepoFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/" + gitopsRepoFileName
 
-	if !strings.Contains(stderrString, secretFileNameGuidingText) {
-		t.Errorf("Stderr does not contain specified string in deploy key path")
+	if !strings.Contains(guidingTextString, secretFileNameGuidingText) {
+		t.Errorf("Should contain specified string in deploy key path")
 	}
 
-	if !strings.Contains(stderrString, gitopsRepoFileNameGuidingText) {
-		t.Errorf("Stderr does not contain specified string in gitops repo path")
+	if !strings.Contains(guidingTextString, gitopsRepoFileNameGuidingText) {
+		t.Errorf("Should contain specified string in gitops repo path")
 	}
 }
