@@ -125,7 +125,7 @@ func Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	GuidingText(gitopsRepoPath, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+	guidingText(gitopsRepoPath, env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
 	return nil
 }
@@ -290,7 +290,7 @@ func parseRepoURL(url string) (string, string, string) {
 	return host, owner, repo
 }
 
-func GuidingText(
+func guidingText(
 	gitopsRepoPath string,
 	env string,
 	publicKey string,

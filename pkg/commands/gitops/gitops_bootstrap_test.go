@@ -337,7 +337,7 @@ func Test_guidingText(t *testing.T) {
 	)
 
 	stderrString := capturer.CaptureOutput(func() {
-		(GuidingText(gitopsRepoPathName, env, publicKey, false, secretFileName, gitopsRepoFileName))
+		(guidingText(gitopsRepoPathName, env, publicKey, false, secretFileName, gitopsRepoFileName))
 	})
 
 	secretFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/" + secretFileName
