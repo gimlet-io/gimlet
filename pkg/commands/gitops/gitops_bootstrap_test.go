@@ -311,7 +311,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 	}
 }
 
-func Test_guidingTextWithController(t *testing.T) {
+func Test_guidingTextWithoutController(t *testing.T) {
 	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
 	defer os.RemoveAll(dirToWrite)
 	if err != nil {
@@ -321,7 +321,7 @@ func Test_guidingTextWithController(t *testing.T) {
 
 	gitopsRepoPathName := "gitops-repo-path"
 	publicKey := "12345"
-	noController := false
+	noController := true
 	shouldGenerateController := false
 	env := "staging"
 	singleEnv := false
