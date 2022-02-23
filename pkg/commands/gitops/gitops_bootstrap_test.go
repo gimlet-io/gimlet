@@ -355,3 +355,43 @@ func Test_guidingTextWithController(t *testing.T) {
 		t.Errorf("Should contain specified string in gitops repo path")
 	}
 }
+
+func Test_guidingTextWithController(t *testing.T) {
+	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
+	defer os.RemoveAll(dirToWrite)
+	if err != nil {
+		t.Errorf("Cannot create directory")
+		return
+	}
+
+	gitopsRepoPathName := "gitops-repo-path"
+	publicKey := "12345"
+	noController := false
+	shouldGenerateController := false
+	env := "staging"
+	singleEnv := false
+	gitopsRepoPath := dirToWrite
+	shouldGenerateKustomizationAndRepo := true
+	shouldGenerateDeployKey := true
+	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
+	branch := ""
+
+	gitopsRepoFileName, _, secretFileName, _ := generateManifests(
+		shouldGenerateController,
+		env,
+		singleEnv,
+		gitopsRepoPath,
+		shouldGenerateKustomizationAndRepo,
+		shouldGenerateDeployKey,
+		gitopsRepoUrl,
+		branch,
+	)
+
+	guidingTextString := guidingText(gitopsRepoPathName, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+
+	guidingTextWithoutControllerText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/flux.yaml"
+
+	if !strings.Contains(guidingTextString, guidingTextWithoutControllerText) {
+		t.Errorf("Should contain line about flux.yaml creation")
+	}
+}
