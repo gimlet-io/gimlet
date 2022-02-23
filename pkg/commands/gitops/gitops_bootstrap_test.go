@@ -1,14 +1,11 @@
 package gitops
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/zenizh/go-capturer"
 )
 
 func Test_parseRepoURL(t *testing.T) {
