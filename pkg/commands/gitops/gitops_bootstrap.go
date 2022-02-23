@@ -324,7 +324,8 @@ func guidingText(
 	stringBuilder.WriteString(
 		fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", secretFileName)),
 	)
-	stringBuilder.WriteString("kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
+	stringBuilder.WriteString(
+		"kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
 	stringBuilder.WriteString(
 		"kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
 	stringBuilder.WriteString(
