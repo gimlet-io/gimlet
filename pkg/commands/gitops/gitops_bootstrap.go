@@ -125,7 +125,9 @@ func Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	guidingText(gitopsRepoPath, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+	guidingTextFMTPrint := guidingText(gitopsRepoPath, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+
+	fmt.Print(guidingTextFMTPrint)
 
 	return nil
 }
@@ -296,23 +298,40 @@ func guidingText(
 	publicKey string,
 	noController bool,
 	secretFileName string,
-	gitopsRepoFileName string) {
-	fmt.Fprintf(os.Stderr, "%v GitOps configuration written to %s\n\n\n", emoji.CheckMark, filepath.Join(gitopsRepoPath, env, "flux"))
+	gitopsRepoFileName string) string {
+	var stringBuilder strings.Builder
 
-	fmt.Fprintf(os.Stderr, "%v 1) Push the configuration to git\n", emoji.BackhandIndexPointingRight)
-	fmt.Fprintf(os.Stderr, "%v 2) Add the following deploy key to your Git provider\n", emoji.BackhandIndexPointingRight)
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v GitOps configuration written to %s\n\n\n", emoji.CheckMark, filepath.Join(gitopsRepoPath, env, "flux")),
+	)
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v 1) Push the configuration to git\n", emoji.BackhandIndexPointingRight),
+	)
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v 2) Add the following deploy key to your Git provider\n", emoji.BackhandIndexPointingRight),
+	)
 
-	fmt.Printf("\n%s\n", publicKey)
+	stringBuilder.WriteString(fmt.Sprintf("\n%s\n\n", publicKey))
 
-	fmt.Fprintf(os.Stderr, "%v 3) Apply the gitops manifests on the cluster to start the gitops loop:\n\n", emoji.BackhandIndexPointingRight)
+	stringBuilder.WriteString(
+		fmt.Sprintf("%v 3) Apply the gitops manifests on the cluster to start the gitops loop:\n\n", emoji.BackhandIndexPointingRight),
+	)
 
 	if !noController {
-		fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "flux.yaml"))
+		stringBuilder.WriteString(fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", "flux.yaml")))
 	}
-	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", secretFileName))
-	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
-	fmt.Fprintf(os.Stderr, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
-	fmt.Fprintf(os.Stderr, "kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", gitopsRepoFileName))
 
-	fmt.Fprintf(os.Stderr, "\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall)
+	stringBuilder.WriteString(
+		fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", secretFileName)),
+	)
+	stringBuilder.WriteString("kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io\n")
+	stringBuilder.WriteString(
+		"kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io\n")
+	stringBuilder.WriteString(
+		fmt.Sprintf("kubectl apply -f %s\n", path.Join(gitopsRepoPath, env, "flux", gitopsRepoFileName)),
+	)
+
+	stringBuilder.WriteString(fmt.Sprintf("\n\t Happy Gitopsing%v\n\n", emoji.ConfettiBall))
+
+	return stringBuilder.String()
 }
