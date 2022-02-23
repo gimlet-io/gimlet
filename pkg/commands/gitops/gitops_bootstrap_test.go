@@ -313,11 +313,12 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 
 func Test_guidingText(t *testing.T) {
 	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
+	defer os.RemoveAll(dirToWrite)
 	if err != nil {
 		t.Errorf("Cannot create directory")
+		return
 	}
 
-	defer os.RemoveAll(dirToWrite)
 
 	env := "staging"
 	owner := "gimlet"
