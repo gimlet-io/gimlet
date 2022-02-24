@@ -13,6 +13,8 @@ export default class GimletClient {
 
   getGitopsRepo = () => this.get('/api/gitopsRepo');
 
+  getGitopsInfraContent = (owner) => this.getWithAxios(`/api/repo/${owner}/gitopsInfraContent`);
+
   getAgents = () => this.get('/api/agents');
 
   getEnvs = () => this.get('/api/envs');

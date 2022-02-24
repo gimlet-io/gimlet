@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
@@ -271,4 +272,33 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(envNameToDelete))
+}
+
+func gitopsInfraContent(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	repoName := fmt.Sprintf("%s/gitops-infra", owner)
+
+	ctx := r.Context()
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
+
+	gitopsRepo, err := goScm.DirectoryContents(token, repoName, "")
+	if err != nil {
+		logrus.Errorf("cannot fetch env from github: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitopsRepoString, err := json.Marshal(gitopsRepo)
+	if err != nil {
+		logrus.Errorf("cannot serialize gitopsRepo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(gitopsRepoString)
 }

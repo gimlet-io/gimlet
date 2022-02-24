@@ -2,7 +2,7 @@ import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
 import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
 import {
-    ACTION_TYPE_ENVS
+    ACTION_TYPE_ENVS, ACTION_TYPE_GITOPSINFRACONTENT
 } from "../../redux/redux";
 
 class Environments extends Component {
@@ -18,7 +18,8 @@ class Environments extends Component {
             saveButtonTriggered: false,
             hasSameEnvNameError: false,
             gitRepos: reduxState.gitRepos,
-            user: reduxState.user
+            user: reduxState.user,
+            gitopsInfraContent: reduxState.gitopsInfraContent
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -27,13 +28,15 @@ class Environments extends Component {
                 envs: reduxState.envs,
                 envsFromDB: reduxState.envsFromDB,
                 gitRepos: reduxState.gitRepos,
-                user: reduxState.user
+                user: reduxState.user,
+                gitopsInfraContent: reduxState.gitopsInfraContent
             });
         });
     }
 
     componentDidUpdate(prevProps, prevState) {
         if (prevState.envsFromDB.length !== this.state.envsFromDB.length) {
+            this.getGitopsInfraContent(this.state.user.login)
             this.props.gimletClient.getEnvs()
                 .then(data => {
                     this.props.store.dispatch({
@@ -43,6 +46,19 @@ class Environments extends Component {
                 }, () => {/* Generic error handler deals with it */
                 });
         }
+    }
+
+    getGitopsInfraContent(owner) {
+       return this.props.gimletClient.getGitopsInfraContent(owner)
+        .then(gitopsInfraContent => {
+          this.props.store.dispatch({
+            type: ACTION_TYPE_GITOPSINFRACONTENT, payload: {
+              owner: owner,
+              gitopsInfraContent: gitopsInfraContent
+            }
+          });
+        }, () => {/* Generic error handler deals with it */
+        });
     }
 
     getEnvironmentCards() {
@@ -75,7 +91,8 @@ class Environments extends Component {
     };
 
     hasGitopsRepo(owner, env) {
-        return this.state.gitRepos.includes(`${owner}/${env}`)
+        return this.state.gitRepos.includes(`${owner}/${env}`) ||
+        Object.keys(this.state.gitopsInfraContent).includes(`${env}`)
     }
 
     setTimeOutForButtonTriggered() {
@@ -120,6 +137,10 @@ class Environments extends Component {
 
     render() {
         if (!this.state.envsFromDB) {
+            return null;
+        }
+
+        if (!this.state.gitopsInfraContent) {
             return null;
         }
 
