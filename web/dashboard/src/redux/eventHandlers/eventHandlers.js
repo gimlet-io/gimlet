@@ -14,7 +14,7 @@ export function gitopsRepo(state, event) {
 }
 
 export function getGitopsInfraContent(state, payload) {
-  state.gitopsInfraContent = payload.gitopsInfraContent;
+  state.gitopsInfraRepo = payload.gitopsInfraContent;
   return state;
 }
 

@@ -19,7 +19,7 @@ class Environments extends Component {
             hasSameEnvNameError: false,
             gitRepos: reduxState.gitRepos,
             user: reduxState.user,
-            gitopsInfraContent: reduxState.gitopsInfraContent
+            gitopsInfraRepo: reduxState.gitopsInfraRepo
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -29,7 +29,7 @@ class Environments extends Component {
                 envsFromDB: reduxState.envsFromDB,
                 gitRepos: reduxState.gitRepos,
                 user: reduxState.user,
-                gitopsInfraContent: reduxState.gitopsInfraContent
+                gitopsInfraRepo: reduxState.gitopsInfraRepo
             });
         });
     }
@@ -91,8 +91,8 @@ class Environments extends Component {
     };
 
     hasGitopsRepo(owner, env) {
-        return this.state.gitRepos.includes(`${owner}/${env}`) ||
-        Object.keys(this.state.gitopsInfraContent).includes(`${env}`)
+        return this.state.gitRepos.includes(`${owner}/gitops-${env}-infra`) ||
+        Object.keys(this.state.gitopsInfraRepo).includes(`${env}`)
     }
 
     setTimeOutForButtonTriggered() {
@@ -140,7 +140,7 @@ class Environments extends Component {
             return null;
         }
 
-        if (!this.state.gitopsInfraContent) {
+        if (!this.state.gitopsInfraRepo) {
             return null;
         }
 

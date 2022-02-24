@@ -56,7 +56,7 @@ export const initialState = {
   envConfigs: {},
   application: {},
   envsFromDB: [],
-  gitopsInfraContent : undefined
+  gitopsInfraRepo : undefined
 };
 
 export function rootReducer(state = initialState, action) {
