@@ -17,13 +17,17 @@ class Environments extends Component {
             hasRequestError: false,
             saveButtonTriggered: false,
             hasSameEnvNameError: false,
+            gitRepos: reduxState.gitRepos,
+            user: reduxState.user
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
 
             this.setState({
                 envs: reduxState.envs,
-                envsFromDB: reduxState.envsFromDB
+                envsFromDB: reduxState.envsFromDB,
+                gitRepos: reduxState.gitRepos,
+                user: reduxState.user
             });
         });
     }
@@ -51,6 +55,7 @@ class Environments extends Component {
                 singleEnv={env}
                 deleteEnv={() => this.delete(env.name)}
                 isOnline={this.isOnline(this.state.envs, env)}
+                hasGitopsRepo={this.hasGitopsRepo(this.state.user.login, env.name)}
             />))
         )
     }
@@ -68,6 +73,10 @@ class Environments extends Component {
                 return onlineEnv.name === singleEnv.name
             })
     };
+
+    hasGitopsRepo(owner, env) {
+        return this.state.gitRepos.includes(`${owner}/${env}`)
+    }
 
     setTimeOutForButtonTriggered() {
         setTimeout(() => {
