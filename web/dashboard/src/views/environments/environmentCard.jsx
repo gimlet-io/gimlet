@@ -8,6 +8,54 @@ function classNames(...classes) {
 const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
     const [enabled, setEnabled] = useState(false)
 
+    const createGitopsLink = (url, name) => {
+        return (
+            <a className="cursor-pointer text-gray-500 hover:text-gray-700 mr-4"
+                target="_blank"
+                rel="noreferrer"
+                href={url}>
+                {name}
+            </a>
+        )
+    }
+
+    const gitopsBootstrapCreationMenu = () => {
+        return (
+            <>
+                <Switch
+                    checked={enabled}
+                    onChange={setEnabled}
+                    className={classNames(
+                        enabled ? 'bg-indigo-600' : 'bg-gray-200',
+                        'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200'
+                    )}
+                >
+                    <span className="sr-only">Use setting</span>
+                    <span
+                        aria-hidden="true"
+                        className={classNames(
+                            enabled ? 'translate-x-5' : 'translate-x-0',
+                            'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200'
+                        )}
+                    />
+                </Switch>
+                <span className="ml-4 align-top">{`Separate environments by ${enabled ? "repositories" : "folders"}`}</span>
+                <div className="mt-5">{`${enabled ? `The environment will have its own gitops-${singleEnv.name}-infra repository.` : "The environment will be placed in its own folder in your gitops-infra repository."}`}</div>
+                <div className="p-0 flow-root">
+                    <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+                        <button
+                            // disabled={this.state.input === "" || this.state.saveButtonTriggered}
+                            onClick={() => console.log("MEGNYOMTAK")}
+                        // className={(this.state.input === "" || this.state.saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}
+                        >
+                            Bootstrap gitops repo
+                        </button>
+                    </span>
+                </div>
+            </>
+        )
+    }
+
     return (
         <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
             <div className="px-4 py-5 sm:px-6">
@@ -26,7 +74,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                     </div>
                     {!isOnline &&
                         <div className="inline-flex">
-                            <a className="cursor-pointer text-gray-500 hover:text-gray-700 mx-4"
+                            <a className="cursor-pointer text-gray-500 hover:text-gray-700 mr-4"
                                 target="_blank"
                                 rel="noreferrer"
                                 href="https://gimlet.io/docs/installing-gimlet-agent">
@@ -42,40 +90,11 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
             <div className="px-4 py-5 sm:px-6">
                 {hasGitopsRepo ?
                     <div className="inline-flex">
-                        <a className="cursor-pointer text-gray-500 hover:text-gray-700 mr-4"
-                            target="_blank"
-                            rel="noreferrer"
-                            href="https://gimlet.io/docs/installing-gimlet-agent">
-                            Gitops-infra
-                        </a>
-                        <a className="cursor-pointer text-gray-500 hover:text-gray-700 mx-4"
-                            target="_blank"
-                            rel="noreferrer"
-                            href="https://gimlet.io/docs/installing-gimlet-agent">
-                            Gitops-apps
-                        </a>
+                        {createGitopsLink("https://gimlet.io/docs/installing-gimlet-agent", "Gitops-infra")}
+                        {createGitopsLink("https://gimlet.io/docs/installing-gimlet-agent", "Gitops-apps")}
                     </div>
                     :
-                    <>
-                        <div className="mb-4">Which gitops bootstrapping strategy would you like to choose?</div>
-                        <Switch
-                            checked={enabled}
-                            onChange={setEnabled}
-                            className={classNames(
-                                enabled ? 'bg-indigo-600' : 'bg-gray-200',
-                                'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200'
-                            )}
-                        >
-                            <span className="sr-only">Use setting</span>
-                            <span
-                                aria-hidden="true"
-                                className={classNames(
-                                    enabled ? 'translate-x-5' : 'translate-x-0',
-                                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200'
-                                )}
-                            />
-                        </Switch>
-                    </>
+                    gitopsBootstrapCreationMenu()
                 }
             </div>
         </div >
