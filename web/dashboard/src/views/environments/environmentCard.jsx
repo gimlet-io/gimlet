@@ -40,7 +40,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                     />
                 </Switch>
                 <span className="ml-4 align-top">{`Separate environments by ${enabled ? "repositories" : "folders"}`}</span>
-                <div className="mt-5">{`${enabled ? `The environment will have its own gitops-${singleEnv.name}-infra repository.` : "The environment will be placed in its own folder in your gitops-infra repository."}`}</div>
+                <div className="mt-5">{`${enabled ? `The environment will have its own gitops-${singleEnv.name}-infra repository.` : "The environment will have its own folder in your gitops-infra repository."}`}</div>
                 <div className="p-0 flow-root">
                     <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
                         <button
