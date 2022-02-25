@@ -9,7 +9,7 @@ export default class Services extends Component {
     // default state
     let reduxState = this.props.store.getState();
     this.state = {
-      envs: reduxState.envs,
+      connectedAgents: reduxState.connectedAgents,
       search: reduxState.search,
       agents: reduxState.settings.agents
     }
@@ -18,7 +18,7 @@ export default class Services extends Component {
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
-      this.setState({envs: reduxState.envs});
+      this.setState({connectedAgents: reduxState.connectedAgents});
       this.setState({search: reduxState.search});
       this.setState({agents: reduxState.settings.agents});
     });
@@ -31,14 +31,14 @@ export default class Services extends Component {
   }
 
   render() {
-    let {envs, search, agents} = this.state;
+    let {connectedAgents, search, agents} = this.state;
 
-    let filteredEnvs = {};
-    for (const envName of Object.keys(envs)) {
-      const env = envs[envName];
-      filteredEnvs[env.name] = {name: env.name, stacks: env.stacks};
+    let filteredAgents = {};
+    for (const envName of Object.keys(connectedAgents)) {
+      const env = connectedAgents[envName];
+      filteredAgents[env.name] = {name: env.name, stacks: env.stacks};
       if (search.filter !== '') {
-        filteredEnvs[env.name].stacks = env.stacks.filter((service) => {
+        filteredAgents[env.name].stacks = env.stacks.filter((service) => {
           return service.service.name.includes(search.filter) ||
             (service.deployment !== undefined && service.deployment.name.includes(search.filter)) ||
             (service.ingresses !== undefined && service.ingresses.filter((ingress) => ingress.url.includes(search.filter)).length > 0)
@@ -63,8 +63,8 @@ export default class Services extends Component {
             <div className="px-4 py-8 sm:px-0">
               <div>
                 {agents.length === 0 && emptyStateNoAgents()}
-                {Object.keys(filteredEnvs).map((envName) => {
-                  const env = filteredEnvs[envName];
+                {Object.keys(filteredAgents).map((envName) => {
+                  const env = filteredAgents[envName];
                   const renderedServices = env.stacks.map((service) => {
                     return (
                       <li key={service.name} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">

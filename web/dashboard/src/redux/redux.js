@@ -43,7 +43,7 @@ export const initialState = {
   settings: {
     agents: []
   },
-  envs: {},
+  connectedAgents: {},
   search: { filter: '' },
   rolloutHistory: {},
   commits: {},
@@ -55,7 +55,7 @@ export const initialState = {
   chartUISchema: undefined,
   envConfigs: {},
   application: {},
-  envsFromDB: [],
+  envs: [],
   gitopsInfraRepo : undefined
 };
 

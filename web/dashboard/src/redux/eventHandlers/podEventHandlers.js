@@ -3,11 +3,11 @@ export function podCreated(state, event) {
   const namespace = event.subject.split('/')[0];
   const podName = event.subject.split('/')[1];
 
-  if (state.envs[env] === undefined) {
+  if (state.connectedAgents[env] === undefined) {
     return state;
   }
 
-  state.envs[env].stacks.forEach((stack, stackID, stacks) => {
+  state.connectedAgents[env].stacks.forEach((stack, stackID, stacks) => {
     if (stack.service.namespace + '/' + stack.service.name !== event.svc) {
       return;
     }
@@ -38,11 +38,11 @@ export function podUpdated(state, event) {
   const namespace = event.subject.split('/')[0];
   const podName = event.subject.split('/')[1];
 
-  if (state.envs[env] === undefined) {
+  if (state.connectedAgents[env] === undefined) {
     return state;
   }
 
-  state.envs[env].stacks.forEach((stack, stackID, stacks) => {
+  state.connectedAgents[env].stacks.forEach((stack, stackID, stacks) => {
     if (!stack.deployment) {
       return state;
     }
@@ -64,11 +64,11 @@ export function podUpdated(state, event) {
 export function podDeleted(state, event) {
   const env = event.env;
 
-  if (state.envs[env] === undefined) {
+  if (state.connectedAgents[env] === undefined) {
     return state;
   }
 
-  state.envs[env].stacks.forEach((stack, stackID, stacks) => {
+  state.connectedAgents[env].stacks.forEach((stack, stackID, stacks) => {
     let toRemove = undefined;
     if (!stack.deployment) {
       // happens when a deployment is deleted

@@ -29,10 +29,10 @@ export function agents(state, event) {
 }
 
 export function envsUpdated(state, allEnvs) {
-  allEnvs.envs.forEach((env) => {
-    state.envs[env.name] = env;
+  allEnvs.connectedAgents.forEach((agent) => {
+    state.connectedAgents[agent.name] = agent;
   });
-  state.envsFromDB = allEnvs.envsFromDB;
+  state.envs = allEnvs.envs;
   return state;
 }
 
