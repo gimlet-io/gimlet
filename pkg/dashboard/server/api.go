@@ -36,7 +36,7 @@ func user(w http.ResponseWriter, r *http.Request) {
 func envs(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
-	envs := []*api.Env{
+	connectedAgents := []*api.Env{
 		// {
 		// 	Name:   "staging",
 		// 	Stacks: []*api.Stack{},
@@ -46,13 +46,13 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		for _, stack := range a.Stacks {
 			stack.Env = a.Name
 		}
-		envs = append(envs, &api.Env{
+		connectedAgents = append(connectedAgents, &api.Env{
 			Name:   a.Name,
 			Stacks: a.Stacks,
 		})
 	}
 
-	err := decorateDeployments(r.Context(), envs)
+	err := decorateDeployments(r.Context(), connectedAgents)
 	if err != nil {
 		logrus.Errorf("cannot decorate deployments: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -60,15 +60,15 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value("store").(*store.Store)
-	envsFromDB, err := db.GetEnvironments()
+	envs, err := db.GetEnvironments()
 	if err != nil {
 		logrus.Errorf("cannot get all environments from database: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
 	allEnvs := map[string]interface{}{}
+	allEnvs["connectedAgents"] = connectedAgents
 	allEnvs["envs"] = envs
-	allEnvs["envsFromDB"] = envsFromDB
 
 	allEnvsString, err := json.Marshal(allEnvs)
 	if err != nil {

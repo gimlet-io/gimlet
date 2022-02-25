@@ -14,7 +14,7 @@ export default class Repositories extends Component {
     }
 
     this.state = {
-      repositories: this.mapToRepositories(reduxState.envs, reduxState.gitRepos),
+      repositories: this.mapToRepositories(reduxState.connectedAgents, reduxState.gitRepos),
       favorites: favoriteRepos,
       search: reduxState.search,
       agents: reduxState.settings.agents
@@ -29,7 +29,7 @@ export default class Repositories extends Component {
         favoriteRepos = reduxState.user.favoriteRepos;
       }
 
-      this.setState({repositories: this.mapToRepositories(reduxState.envs, reduxState.gitRepos)});
+      this.setState({repositories: this.mapToRepositories(reduxState.connectedAgents, reduxState.gitRepos)});
       this.setState({search: reduxState.search});
       this.setState({agents: reduxState.settings.agents});
       this.setState({favorites: favoriteRepos});
@@ -39,7 +39,7 @@ export default class Repositories extends Component {
     this.favoriteHandler = this.favoriteHandler.bind(this);
   }
 
-  mapToRepositories(envs, gitRepos) {
+  mapToRepositories(connectedAgents, gitRepos) {
     const repositories = {}
 
     for (const r of gitRepos) {
@@ -48,8 +48,8 @@ export default class Repositories extends Component {
       }
     }
 
-    for (const envName of Object.keys(envs)) {
-      const env = envs[envName];
+    for (const envName of Object.keys(connectedAgents)) {
+      const env = connectedAgents[envName];
 
       for (const service of env.stacks) {
         if (repositories[service.repo] === undefined) {

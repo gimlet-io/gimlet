@@ -11,8 +11,8 @@ class Environments extends Component {
         let reduxState = this.props.store.getState();
 
         this.state = {
+            connectedAgents: reduxState.connectedAgents,
             envs: reduxState.envs,
-            envsFromDB: reduxState.envsFromDB,
             input: "",
             hasRequestError: false,
             saveButtonTriggered: false,
@@ -22,14 +22,14 @@ class Environments extends Component {
             let reduxState = this.props.store.getState();
 
             this.setState({
-                envs: reduxState.envs,
-                envsFromDB: reduxState.envsFromDB
+                connectedAgents: reduxState.connectedAgents,
+                envs: reduxState.envs
             });
         });
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (prevState.envsFromDB.length !== this.state.envsFromDB.length) {
+        if (prevState.envs.length !== this.state.envs.length) {
             this.props.gimletClient.getEnvs()
                 .then(data => {
                     this.props.store.dispatch({
@@ -42,23 +42,23 @@ class Environments extends Component {
     }
 
     getEnvironmentCards() {
-        const { envs, envsFromDB } = this.state;
-        const envsArray = Object.keys(envs).map(env => envs[env]);
-        const sortedEnvArrayByStatus = this.sortingEnvByStatus(envsArray, envsFromDB)
+        const { connectedAgents, envs } = this.state;
+        const envsArray = Object.keys(connectedAgents).map(agent => connectedAgents[agent]);
+        const sortedEnvArrayByStatus = this.sortingEnvByStatus(envsArray, envs)
 
         return (
             sortedEnvArrayByStatus.map(env => (<EnvironmentCard
                 singleEnv={env}
                 deleteEnv={() => this.delete(env.name)}
-                isOnline={this.isOnline(this.state.envs, env)}
+                isOnline={this.isOnline(this.state.connectedAgents, env)}
             />))
         )
     }
 
-    sortingEnvByStatus(envs, envsFromDB) {
-        return envs.concat(envsFromDB
-            .filter(env => !envs
-                .some(envFromDB => env.name === envFromDB.name)));
+    sortingEnvByStatus(connectedAgents, envs) {
+        return connectedAgents.concat(envs
+            .filter(agent => !connectedAgents
+                .some(env => agent.name === env.name)));
     }
 
     isOnline(onlineEnvs, singleEnv) {
@@ -81,11 +81,11 @@ class Environments extends Component {
 
     save() {
         this.setState({ saveButtonTriggered: true });
-        if (!this.state.envsFromDB.some(env => env.name === this.state.input)) {
+        if (!this.state.envs.some(env => env.name === this.state.input)) {
             this.props.gimletClient.saveEnvToDB(this.state.input)
                 .then(() => {
                     this.setState({
-                        envsFromDB: [...this.state.envsFromDB, { name: this.state.input }],
+                        envs: [...this.state.envs, { name: this.state.input }],
                         input: "",
                         saveButtonTriggered: false
                     });
@@ -102,7 +102,7 @@ class Environments extends Component {
     delete(envName) {
         this.props.gimletClient.deleteEnvFromDB(envName)
             .then(() => {
-                this.setState({ envsFromDB: this.state.envsFromDB.filter(env => env.name !== envName) });
+                this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
             }, () => {
                 this.setState({ hasRequestError: true });
                 this.setTimeOutForButtonTriggered();
@@ -110,11 +110,11 @@ class Environments extends Component {
     }
 
     render() {
-        if (!this.state.envsFromDB) {
+        if (!this.state.envs) {
             return null;
         }
 
-        if (!this.state.envs) {
+        if (!this.state.connectedAgents) {
             return null;
         }
 

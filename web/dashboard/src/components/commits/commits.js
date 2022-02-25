@@ -4,7 +4,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 
 export class Commits extends Component {
   render() {
-    const {commits, envs, rolloutHistory, deployHandler, repo} = this.props;
+    const {commits, connectedAgents, rolloutHistory, deployHandler, repo} = this.props;
 
     if (!commits) {
       return null;
@@ -75,7 +75,7 @@ export class Commits extends Component {
               <div className="pr-4">
                 <ReleaseBadges
                   sha={commit.sha}
-                  envs={envs}
+                  connectedAgents={connectedAgents}
                   rolloutHistory={rolloutHistory}
                 />
                 <DeployWidget
@@ -146,11 +146,11 @@ class StatusIcon extends Component {
 
 class ReleaseBadges extends Component {
   render() {
-    const {sha, envs, rolloutHistory} = this.props;
+    const {sha, connectedAgents, rolloutHistory} = this.props;
 
     let current = [];
-    for (let envName of Object.keys(envs)) {
-      const env = envs[envName];
+    for (let envName of Object.keys(connectedAgents)) {
+      const env = connectedAgents[envName];
       for (let stack of env.stacks) {
         if (stack.deployment &&
           stack.deployment.sha === sha) {
