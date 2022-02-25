@@ -42,9 +42,6 @@ export default class APIBackend extends Component {
     this.props.gimletClient.getChartSchema()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_CHARTSCHEMA, payload: data }), () => {/* Generic error handler deals with it */
       });
-    this.props.gimletClient.getEnvs()
-      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_ENVS, payload: data }), () => {/* Generic error handler deals with it */
-      });
   }
 
   render() {

@@ -3,11 +3,11 @@ export function ingressCreated(state, event) {
   const namespace = event.subject.split('/')[0];
   const ingressName = event.subject.split('/')[1];
 
-  if (state.envs[env] === undefined) {
+  if (state.connectedAgents[env] === undefined) {
     return state;
   }
 
-  state.envs[env].stacks.forEach((stack, stackID, stacks) => {
+  state.connectedAgents[env].stacks.forEach((stack, stackID, stacks) => {
     if (stack.service.namespace + '/' + stack.service.name !== event.svc) {
       return;
     }
@@ -29,11 +29,11 @@ export function ingressCreated(state, event) {
 export function ingressUpdated(state, event) {
   const env = event.env;
 
-  if (state.envs[env] === undefined) {
+  if (state.connectedAgents[env] === undefined) {
     return state;
   }
 
-  state.envs[env].stacks.forEach((stack, stackID, stacks) => {
+  state.connectedAgents[env].stacks.forEach((stack, stackID, stacks) => {
     if (stack.service.namespace + '/' + stack.service.name !== event.svc) {
       return;
     }
@@ -55,11 +55,11 @@ export function ingressUpdated(state, event) {
 export function ingressDeleted(state, event) {
   const env = event.env;
 
-  if (state.envs[env] === undefined) {
+  if (state.connectedAgents[env] === undefined) {
     return state;
   }
 
-  state.envs[env].stacks.forEach((stack, stackID, stacks) => {
+  state.connectedAgents[env].stacks.forEach((stack, stackID, stacks) => {
     if (!stack.ingresses) {
       return;
     }

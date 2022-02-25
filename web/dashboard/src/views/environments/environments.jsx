@@ -11,7 +11,7 @@ class Environments extends Component {
         let reduxState = this.props.store.getState();
 
         this.state = {
-            envs: reduxState.envs,
+            connectedAgents: reduxState.connectedAgents,
             envsFromDB: reduxState.envsFromDB,
             input: "",
             hasRequestError: false,
@@ -22,7 +22,7 @@ class Environments extends Component {
             let reduxState = this.props.store.getState();
 
             this.setState({
-                envs: reduxState.envs,
+                connectedAgents: reduxState.connectedAgents,
                 envsFromDB: reduxState.envsFromDB
             });
         });
@@ -42,23 +42,23 @@ class Environments extends Component {
     }
 
     getEnvironmentCards() {
-        const { envs, envsFromDB } = this.state;
-        const envsArray = Object.keys(envs).map(env => envs[env]);
+        const { connectedAgents, envsFromDB } = this.state;
+        const envsArray = Object.keys(connectedAgents).map(agent => connectedAgents[agent]);
         const sortedEnvArrayByStatus = this.sortingEnvByStatus(envsArray, envsFromDB)
 
         return (
             sortedEnvArrayByStatus.map(env => (<EnvironmentCard
                 singleEnv={env}
                 deleteEnv={() => this.delete(env.name)}
-                isOnline={this.isOnline(this.state.envs, env)}
+                isOnline={this.isOnline(this.state.connectedAgents, env)}
             />))
         )
     }
 
-    sortingEnvByStatus(envs, envsFromDB) {
-        return envs.concat(envsFromDB
-            .filter(env => !envs
-                .some(envFromDB => env.name === envFromDB.name)));
+    sortingEnvByStatus(connectedAgents, envsFromDB) {
+        return connectedAgents.concat(envsFromDB
+            .filter(agent => !connectedAgents
+                .some(envFromDB => agent.name === envFromDB.name)));
     }
 
     isOnline(onlineEnvs, singleEnv) {
@@ -114,7 +114,7 @@ class Environments extends Component {
             return null;
         }
 
-        if (!this.state.envs) {
+        if (!this.state.connectedAgents) {
             return null;
         }
 

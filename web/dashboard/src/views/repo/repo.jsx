@@ -22,7 +22,7 @@ export default class Repo extends Component {
     // default state
     let reduxState = this.props.store.getState();
     this.state = {
-      envs: reduxState.envs,
+      connectedAgents: reduxState.connectedAgents,
       search: reduxState.search,
       rolloutHistory: reduxState.rolloutHistory,
       commits: reduxState.commits,
@@ -39,7 +39,7 @@ export default class Repo extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        envs: reduxState.envs,
+        connectedAgents: reduxState.connectedAgents,
         search: reduxState.search,
         rolloutHistory: reduxState.rolloutHistory,
         commits: reduxState.commits,
@@ -278,10 +278,10 @@ export default class Repo extends Component {
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, search, rolloutHistory, commits, agents } = this.state;
+    let { connectedAgents, search, rolloutHistory, commits, agents } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
-    let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, repoName, search.filter);
+    let filteredEnvs = envsForRepoFilteredBySearchFilter(connectedAgents, repoName, search.filter);
 
     let repoRolloutHistory = undefined;
     if (rolloutHistory && rolloutHistory[repoName]) {
@@ -351,7 +351,7 @@ export default class Repo extends Component {
                   {commits &&
                     <Commits
                       commits={commits[repoName]}
-                      envs={filteredEnvs}
+                      connectedAgents={filteredEnvs}
                       rolloutHistory={repoRolloutHistory}
                       deployHandler={this.deploy}
                       repo={repoName}

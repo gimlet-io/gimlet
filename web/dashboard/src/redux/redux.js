@@ -42,7 +42,7 @@ export const initialState = {
   settings: {
     agents: []
   },
-  envs: {},
+  connectedAgents: {},
   search: { filter: '' },
   rolloutHistory: {},
   commits: {},
