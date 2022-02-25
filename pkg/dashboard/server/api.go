@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -14,7 +15,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
@@ -274,31 +274,61 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(envNameToDelete))
 }
 
-func gitopsInfraContent(w http.ResponseWriter, r *http.Request) {
-	owner := chi.URLParam(r, "owner")
-	repoName := fmt.Sprintf("%s/gitops-infra", owner)
-
+func gitopsInfra(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-
 	config := ctx.Value("config").(*config.Config)
 	goScm := genericScm.NewGoScmHelper(config, nil)
+	org := config.Github.Org
+	repoName := fmt.Sprintf("%s/gitops-infra", org)
+	hasGitops := false
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+
+	envs := []*api.Env{
+		// {
+		// 	Name:   "staging",
+		// 	Stacks: []*api.Stack{},
+		// },
+	}
+	for _, a := range agentHub.Agents {
+		for _, stack := range a.Stacks {
+			stack.Env = a.Name
+		}
+		envs = append(envs, &api.Env{
+			Name:   a.Name,
+			Stacks: a.Stacks,
+		})
+	}
 
 	gitopsRepo, err := goScm.DirectoryContents(token, repoName, "")
 	if err != nil {
-		logrus.Errorf("cannot fetch env from github: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		if strings.Contains(err.Error(), "Not found") {
+			hasGitops = true
+		} else {
+			logrus.Errorf("cannot fetch directory content from github: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
-	gitopsRepoString, err := json.Marshal(gitopsRepo)
+	repoPerEnv := map[string]interface{}{}
+
+	repoPerFolder := map[string]interface{}{}
+	repoPerFolder["hasFolderPerEnv"] = hasGitops
+	repoPerFolder["content"] = gitopsRepo
+
+	gitops := map[string]map[string]interface{}{}
+	gitops["repoPerEnv"] = repoPerEnv
+	gitops["repoPerFolder"] = repoPerFolder
+
+	gitopsString, err := json.Marshal(gitops)
 	if err != nil {
-		logrus.Errorf("cannot serialize gitopsRepo: %s", err)
+		logrus.Errorf("cannot serialize appinfos: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(gitopsRepoString)
+	w.Write(gitopsString)
 }

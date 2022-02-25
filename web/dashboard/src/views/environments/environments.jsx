@@ -2,7 +2,7 @@ import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
 import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
 import {
-    ACTION_TYPE_ENVS, ACTION_TYPE_GITOPSINFRACONTENT
+    ACTION_TYPE_ENVS, ACTION_TYPE_GITOPSINFRAREPO
 } from "../../redux/redux";
 
 class Environments extends Component {
@@ -36,7 +36,7 @@ class Environments extends Component {
 
     componentDidUpdate(prevProps, prevState) {
         if (prevState.envsFromDB.length !== this.state.envsFromDB.length) {
-            this.getGitopsInfraContent(this.state.user.login)
+            this.getGitopsInfraRepo()
             this.props.gimletClient.getEnvs()
                 .then(data => {
                     this.props.store.dispatch({
@@ -48,13 +48,12 @@ class Environments extends Component {
         }
     }
 
-    getGitopsInfraContent(owner) {
-       return this.props.gimletClient.getGitopsInfraContent(owner)
-        .then(gitopsInfraContent => {
+    getGitopsInfraRepo() {
+       return this.props.gimletClient.getGitopsInfraRepo()
+        .then(gitopsInfraRepo => {
           this.props.store.dispatch({
-            type: ACTION_TYPE_GITOPSINFRACONTENT, payload: {
-              owner: owner,
-              gitopsInfraContent: gitopsInfraContent
+            type: ACTION_TYPE_GITOPSINFRAREPO, payload: {
+              gitopsInfraRepo: gitopsInfraRepo
             }
           });
         }, () => {/* Generic error handler deals with it */

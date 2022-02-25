@@ -6,7 +6,8 @@ import {
   ACTION_TYPE_GITOPS_REPO,
   ACTION_TYPE_USER,
   ACTION_TYPE_CHARTSCHEMA,
-  ACTION_TYPE_APPLICATION
+  ACTION_TYPE_APPLICATION,
+  ACTION_TYPE_GITOPSINFRAREPO
 } from "./redux/redux";
 
 export default class APIBackend extends Component {
@@ -45,6 +46,8 @@ export default class APIBackend extends Component {
     this.props.gimletClient.getEnvs()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_ENVS, payload: data }), () => {/* Generic error handler deals with it */
       });
+      this.props.gimletClient.getGitopsInfraRepo()
+        .then(gitopsInfraRepo => this.props.store.dispatch({ type: ACTION_TYPE_GITOPSINFRAREPO, payload: { gitopsInfraRepo: gitopsInfraRepo }}), () => {/* Generic error handler deals with it */});
   }
 
   render() {
