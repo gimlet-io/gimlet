@@ -27,7 +27,7 @@ export function envsUpdated(state, allEnvs) {
   allEnvs.connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;
   });
-  state.envsFromDB = allEnvs.envs;
+  state.envs = allEnvs.envs;
   return state;
 }
 
