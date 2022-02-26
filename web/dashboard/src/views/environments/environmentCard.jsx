@@ -5,16 +5,19 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 
 const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
   const [enabled, setEnabled] = useState(false)
+  const [tabs, setTabs] = useState([
+    { name: "Gitops repositories", current: true },
+    { name: "Infrastructure components", current: false }
+  ]);
 
-  const createGitopsLink = (url, name) => {
-    return (
-      <a className="cursor-pointer text-gray-500 hover:text-gray-700 mr-4"
-        target="_blank"
-        rel="noreferrer"
-        href={url}>
-        {name}
-      </a>
-    )
+  const switchTabHandler = (tabName) => {
+    setTabs(tabs.map(tab => {
+      if (tab.name === tabName) {
+        return { ...tab, current: true }
+      } else {
+        return { ...tab, current: false }
+      }
+    }))
   }
 
   const gitopsBootstrapWizard = () => {
@@ -126,16 +129,44 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
       </div>
       <div className="px-4 py-5 sm:px-6">
         {hasGitopsRepo ?
-          <div className="inline-flex">
-            {createGitopsLink("https://gimlet.io/docs/installing-gimlet-agent", "Gitops-infra")}
-            {createGitopsLink("https://gimlet.io/docs/installing-gimlet-agent", "Gitops-apps")}
-          </div>
+          <>
+            <div className="sm:hidden">
+              <label htmlFor="tabs" className="sr-only">
+                Select a tab
+              </label>
+              <select
+                id="tabs"
+                name="tabs"
+                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                defaultValue={tabs.find((tab) => tab.current).name}
+              >
+                {tabs.map((tab) => (
+                  <option key={tab.name}>{tab.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="hidden sm:block">
+              <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                  {tabs.map((tab) => (
+                    <div
+                      key={tab.name}
                       className={(
                         tab.current
                           ? "border-indigo-500 text-indigo-600"
                           : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") +
-                        " whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                        " cursor-pointer whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
                       }
+                      aria-current={tab.current ? "page" : undefined}
+                      onClick={() => switchTabHandler(tab.name)}
+                    >
+                      {tab.name}
+                    </div>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </>
           :
           gitopsBootstrapWizard()
         }
