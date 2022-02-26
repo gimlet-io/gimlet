@@ -48,7 +48,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                 <div className="font-medium">Separate environments by git repositories</div>
               </label>
               <div className="mt-1 ml-4 sm:mt-0">
-                <div className="max-w-lg flex rounded-md">
+                <div className="max-w-lg flex rounded-md mt-1 ml-4 sm:mt-0">
                   <Switch
                     checked={enabled}
                     onChange={setEnabled}
