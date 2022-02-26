@@ -105,6 +105,12 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                 />
               </svg>
             </span>
+            {!hasGitopsRepo &&
+              <span title="Uninitiated">
+                <svg xmlns="http://www.w3.org/2000/svg" className="ml-1 h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>}
           </div>
           {!isOnline &&
             <div className="inline-flex">
