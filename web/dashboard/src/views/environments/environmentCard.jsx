@@ -2,9 +2,6 @@ import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
 
 const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
   const [enabled, setEnabled] = useState(false)
@@ -54,18 +51,18 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                   <Switch
                     checked={enabled}
                     onChange={setEnabled}
-                    className={classNames(
-                      enabled ? 'bg-indigo-600' : 'bg-gray-200',
-                      'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200'
-                    )}
+                    className={(
+                      enabled ? "bg-indigo-600" : "bg-gray-200") +
+                      " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
+                    }
                   >
                     <span className="sr-only">Use setting</span>
                     <span
                       aria-hidden="true"
-                      className={classNames(
-                        enabled ? 'translate-x-5' : 'translate-x-0',
-                        'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200'
-                      )}
+                      className={(
+                        enabled ? "translate-x-5" : "translate-x-0") +
+                        " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
+                      }
                     />
                   </Switch>
                 </div>
@@ -133,6 +130,12 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
             {createGitopsLink("https://gimlet.io/docs/installing-gimlet-agent", "Gitops-infra")}
             {createGitopsLink("https://gimlet.io/docs/installing-gimlet-agent", "Gitops-apps")}
           </div>
+                      className={(
+                        tab.current
+                          ? "border-indigo-500 text-indigo-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") +
+                        " whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                      }
           :
           gitopsBootstrapWizard()
         }
