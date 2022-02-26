@@ -29,7 +29,6 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
             To initialize this environment, bootstrap the gitops repository first
           </p>
         </div>
-
         <div className="mt-4 rounded-md bg-blue-50 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -42,7 +41,6 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
             </div>
           </div>
         </div>
-
         <div className=" text-gray-700">
           <div>
             <div className="sm:pt-5 flex">
@@ -71,7 +69,6 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                 </div>
               </div>
             </div>
-
           </div>
           <div className="mt-2 text-sm text-gray-500 leading-loose">Manifests will be placed in the environment specific <span className="text-xs font-mono bg-gray-100 text-gray-500 font-medium px-1 py-1 rounded">gitops-{singleEnv.name}-infra</span> repository</div>
           <div className="p-0 flow-root mt-8">
