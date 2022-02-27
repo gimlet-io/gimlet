@@ -30,7 +30,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
       <div className="mt-4 text-gray-700 inline-grid">
         {gitopsRepositories.map((gitopsRepo) =>
         (
-          <a className="mb-1" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}</a>
+          <a className="mb-1 text-sm text-gray-500 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}</a>
         ))}
       </div>
     )
