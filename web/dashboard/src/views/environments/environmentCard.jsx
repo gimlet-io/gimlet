@@ -36,6 +36,15 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
     )
   }
 
+  const infrastructureComponentsTab = () => {
+    return (
+      <div className="mt-4 text-gray-700">
+        <div>INFRÁK VAGYUNK</div>
+        <div>BIZONY</div>
+      </div>
+    )
+  }
+
   const gitopsBootstrapWizard = () => {
     return (
       <>
@@ -178,10 +187,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
             {tabs[0].current ?
               gitopsRepositoriesTab()
               :
-              <>
-                <div>MÁSOK VAGYUNK</div>
-                <div>BIZONY</div>
-              </>
+              infrastructureComponentsTab()
             }
           </>
           :
