@@ -15,10 +15,6 @@ const userNavigation = [
   {name: 'Sign out', href: '/logout'},
 ]
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
-
 export default class Nav extends Component {
   constructor(props) {
     super(props);
@@ -70,12 +66,12 @@ export default class Nav extends Component {
                         <button
                           key={item.name}
                           href="#"
-                          className={classNames(
+                          className={(
                             selected
                               ? 'border-indigo-500 text-gray-900'
-                              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                            'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
-                          )}
+                              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700') +
+                            ' inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
+                          }
                           aria-current={selected ? 'page' : undefined}
                           onClick={() => {
                             this.props.history.push(item.href);
@@ -165,10 +161,10 @@ export default class Nav extends Component {
                                 {({active}) => (
                                   <button
                                     href="#"
-                                    className={classNames(
-                                      active ? 'bg-gray-100' : '',
-                                      'block px-4 py-2 text-sm text-gray-700 w-full text-left'
-                                    )}
+                                    className={(
+                                      active ? 'bg-gray-100' : '') +
+                                      ' block px-4 py-2 text-sm text-gray-700 w-full text-left'
+                                    }
                                     onClick={() => {
                                       if (item.href === '/logout') {
                                         window.location.replace("/logout");
@@ -212,12 +208,12 @@ export default class Nav extends Component {
                     <button
                       key={item.name}
                       href="#"
-                      className={classNames(
+                      className={(
                         selected
                           ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
-                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800',
-                        'block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
-                      )}
+                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800') +
+                        ' block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
+                      }
                       aria-current={selected ? 'page' : undefined}
                       onClick={() => {
                         this.props.history.push(item.href);
