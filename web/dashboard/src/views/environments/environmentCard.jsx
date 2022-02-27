@@ -3,12 +3,17 @@ import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 
 
-const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
+const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }) => {
   const [enabled, setEnabled] = useState(false)
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
   ]);
+
+  const gitopsRepositories = [
+    { name: "Gitops-infra", href: `https://github.com/${user}/gitops-infra` },
+    { name: "Gitops-apps", href: `https://github.com/${user}/gitops-apps` }
+  ]
 
   const switchTabHandler = (tabName) => {
     setTabs(tabs.map(tab => {
@@ -18,6 +23,17 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
         return { ...tab, current: false }
       }
     }))
+  }
+
+  const gitopsRepositoriesTab = () => {
+    return (
+      <div className="mt-4 text-gray-700 inline-grid">
+        {gitopsRepositories.map((gitopsRepo) =>
+        (
+          <a className="mb-1" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}</a>
+        ))}
+      </div>
+    )
   }
 
   const gitopsBootstrapWizard = () => {
@@ -159,6 +175,14 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo }) => {
                 </nav>
               </div>
             </div>
+            {tabs[0].current ?
+              gitopsRepositoriesTab()
+              :
+              <>
+                <div>MÁSOK VAGYUNK</div>
+                <div>BIZONY</div>
+              </>
+            }
           </>
           :
           gitopsBootstrapWizard()
