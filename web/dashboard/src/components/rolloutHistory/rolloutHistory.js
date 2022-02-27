@@ -126,7 +126,7 @@ Deployed by ${rollout.triggeredBy}
 at ${exactDate}`;
 
   return (
-    <div key={nanoid()} class={`h-8 ${border} cursor-pointer`} title={title} onClick={() => toggle()}>
+    <div key={nanoid()} className={`h-8 ${border} cursor-pointer`} title={title} onClick={() => toggle()}>
       <div className={`h-2 ml-1 md:mx-1 ${color} rounded`}></div>
       {showDate &&
         <div className="hidden lg:block mx-2 mt-2 text-xs text-gray-400">

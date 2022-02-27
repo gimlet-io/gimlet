@@ -12,7 +12,7 @@ export default function DeployWidget(props) {
     return (
       // eslint-disable-next-line
       <a href="https://gimlet.io/gimletd/on-demand-releases/" target="_blank"
-         class="text-xs text-gray-400 cursor-pointer">
+         className="text-xs text-gray-400 cursor-pointer">
         Want to deploy this version?
       </a>
     )

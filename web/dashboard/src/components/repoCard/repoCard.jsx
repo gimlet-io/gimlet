@@ -11,7 +11,7 @@ function RepoCard(props) {
     let ingressWidgets = [];
     if (service.ingresses !== undefined) {
       ingressWidgets = service.ingresses.map(ingress => (
-        <p class="text-gray-400">
+        <p className="text-gray-400">
           <span>{ingress.url}</span>
           <a href={`https://${ingress.url}`} target="_blank" rel="noopener noreferrer"
              onClick={(e) => {
