@@ -70,7 +70,7 @@ class Environments extends Component {
                 singleEnv={env}
                 deleteEnv={() => this.delete(env.name)}
                 isOnline={this.isOnline(this.state.connectedAgents, env)}
-                hasGitopsRepo={this.hasGitopsRepo(this.state.user.login, env.name)}
+                hasGitopsRepo={this.hasGitopsRepo(env)}
             />))
         )
     }
@@ -89,9 +89,9 @@ class Environments extends Component {
             })
     };
 
-    hasGitopsRepo(owner, env) {
-        return this.state.gitRepos.includes(`${owner}/gitops-${env}-infra`) ||
-        Object.keys(this.state.gitopsInfraRepo).includes(`${env}`)
+    hasGitopsRepo(env) {
+       const singleEnv = this.state.envs.find(singleEnv => singleEnv.name === env.name);
+       return singleEnv.repoPerEnv || singleEnv.folderPerEnv;
     }
 
     setTimeOutForButtonTriggered() {
