@@ -25,9 +25,10 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
     "redux": "^4.1.0",
+    "remarkable": "^2.0.1",
+    "stack-ui": "../stack-ui/dist",
     "typescript": "^4.2.4",
-    "web-vitals": "^1.1.1",
-    "stack-ui": "../stack-ui/dist"
+    "web-vitals": "^1.1.1"
   },
   "scripts": {
     "start": "craco start --config craco.config.js",
