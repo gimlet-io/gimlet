@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
-import { Button } from 'stack-ui';
+import { StackUI } from 'stack-ui';
+import * as stackDefinitionFixture from './fixtures/stack-definition.json'
 
 const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }) => {
   const [enabled, setEnabled] = useState(false)
@@ -9,6 +10,9 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
   ]);
+  const [stack, setStack] = useState({});
+  const [stackNonDefaultValues, setStackNonDefaultValues] = useState({});
+  const [errors, setErrors] = useState({});
 
   const gitopsRepositories = [
     { name: "Gitops-infra", href: `https://github.com/${user}/gitops-infra` },
@@ -23,6 +27,54 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
         return { ...tab, current: false }
       }
     }))
+  }
+
+  const setValues = (variable, values, nonDefaultValues) => {
+    const updatedNonDefaultValues = {
+      ...stackNonDefaultValues,
+      [variable]: nonDefaultValues
+    }
+
+    setStack(prevState => ({
+      ...prevState.stack,
+      [variable]: values
+    }))
+
+    setStackNonDefaultValues(prevState => ({
+      ...prevState.stackNonDefaultValues,
+      [variable]: nonDefaultValues
+    }))
+  }
+
+  const validationCallback = (variable, validationErrors) => {
+    console.log(variable)
+    console.log(validationErrors)
+
+    if (validationErrors !== null) {
+      validationErrors = validationErrors.filter(error => error.keyword !== 'oneOf');
+      validationErrors = validationErrors.filter(error => error.dataPath !== '.enabled');
+
+    }
+
+    setErrors(prevState => ({
+      ...prevState.errors,
+      [variable]: validationErrors
+    }))
+  }
+
+  const saveComponents = () => {
+    console.log(stack)
+    console.log(stackNonDefaultValues)
+    console.log(errors)
+
+    Object.keys(errors).map((variable) => {
+      if (errors[variable] !== null) {
+        console.log("We have a validation error, not saving state at all!!!")
+        return false
+      }
+    });
+
+    console.log("Saving stackNonDefaultValues with the API...")
   }
 
   const gitopsRepositoriesTab = () => {
@@ -49,9 +101,24 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
   const infrastructureComponentsTab = () => {
     return (
       <div className="mt-4 text-gray-700">
-        <div>INFRÁK VAGYUNK</div>
-        <div>BIZONY</div>
-        <div><Button label="test" kind="primary"/></div>
+        <div>
+          <StackUI
+            stack={stack}
+            stackDefinition={stackDefinitionFixture.default}
+            setValues={setValues}
+            validationCallback={validationCallback}
+          />
+          <div className="p-0 flow-root my-8">
+            <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+              <button
+                onClick={() => saveComponents()}
+                className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
+              >
+                Save components
+              </button>
+            </span>
+          </div>
+        </div>
       </div>
     )
   }

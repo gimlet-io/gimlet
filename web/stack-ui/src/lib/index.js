@@ -1,5 +1,3 @@
-import Button from './components/Button';
+import StackUI from './components/stack-ui';
 
-
-
-export { Button };
+export { StackUI };
