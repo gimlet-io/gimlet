@@ -75,10 +75,23 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 	var envs []*api.GitopsEnv
 	for _, env := range envsFromDB {
+		hasFolderPerEnv, err := hasFolderPerEnv(goScm, token, org, env.Name)
+		if err != nil {
+			logrus.Errorf("cannot fetch directory content from github: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+
+		hasRepoPerEnv, err := hasRepoPerEnv(goScm, token, org, env.Name)
+		if err != nil {
+			logrus.Errorf("cannot fetch directory content from github: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+
 		envs = append(envs, &api.GitopsEnv{
 			Name:         env.Name,
-			RepoPerEnv:   hasRepoPerEnv(goScm, token, org, env.Name),
-			FolderPerEnv: hasFolderPerEnv(goScm, token, org, env.Name)})
+			RepoPerEnv:   hasRepoPerEnv,
+			FolderPerEnv: hasFolderPerEnv,
+		})
 	}
 
 	allEnvs := map[string]interface{}{}

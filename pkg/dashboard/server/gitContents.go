@@ -336,15 +336,14 @@ func headBranch(repo *git.Repository) string {
 	return "master"
 }
 
-func hasFolderPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) bool {
+func hasFolderPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) (bool, error) {
 	repoName := fmt.Sprintf("%s/gitops-infra", org)
-	hasGitops := false
 	repoContent, err := goScm.DirectoryContents(token, repoName, "")
 	if err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
-			return hasGitops
+			return false, nil
 		} else {
-			logrus.Errorf("cannot fetch directory content from github: %s", err)
+			return false, err
 		}
 	}
 
@@ -355,26 +354,24 @@ func hasFolderPerEnv(goScm *genericScm.GoScmHelper, token string, org string, en
 
 	for _, content := range keys {
 		if content == envName {
-			hasGitops = true
+			return true, nil
 		}
 	}
-	return hasGitops
+	return false, nil
 }
 
-func hasRepoPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) bool {
-	hasGitops := false
-
+func hasRepoPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) (bool, error) {
 	repoName := fmt.Sprintf("%s/gitops-%s-infra", org, envName)
 
 	_, err := goScm.DirectoryContents(token, repoName, "")
 	if err != nil {
 		fmt.Println(err.Error())
 		if strings.Contains(err.Error(), "Not Found") {
-			return hasGitops
+			return false, nil
 		} else {
-			hasGitops = true
+			return true, nil
 		}
 	}
 
-	return hasGitops
+	return false, nil
 }
