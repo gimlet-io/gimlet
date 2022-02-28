@@ -1,10 +1,6 @@
 import {Menu} from '@headlessui/react'
 import {ChevronDownIcon} from '@heroicons/react/solid'
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
-
 export default function DeployWidget(props) {
   const {deployTargets, deployHandler, sha, repo} = props;
 
@@ -55,10 +51,10 @@ export default function DeployWidget(props) {
                             app: "",
                             artifactId: deployTargetsByEnv[env][0].artifactId
                           }, sha, repo)}
-                          className={classNames(
-                            active ? 'bg-yellow-100 text-gray-900' : 'bg-yellow-50 text-gray-700',
-                            'block px-4 py-2 text-sm w-full text-left'
-                          )}
+                          className={(
+                            active ? 'bg-yellow-100 text-gray-900' : 'bg-yellow-50 text-gray-700') +
+                            ' block px-4 py-2 text-sm w-full text-left'
+                          }
                         >
                           Deploy all to {env}
                         </button>
@@ -74,10 +70,10 @@ export default function DeployWidget(props) {
                   {({active}) => (
                     <button
                       onClick={() => deployHandler(target, sha, repo)}
-                      className={classNames(
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                        'block px-4 py-2 text-sm w-full text-left'
-                      )}
+                      className={(
+                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                        ' block px-4 py-2 text-sm w-full text-left'
+                      }
                     >
                       {target.app} to {target.env}
                     </button>

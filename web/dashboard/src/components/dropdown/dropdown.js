@@ -2,10 +2,6 @@ import {Fragment, useEffect, useState} from 'react'
 import {Listbox, Transition} from '@headlessui/react'
 import {CheckIcon, SelectorIcon} from '@heroicons/react/solid'
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
-
 export default function Dropdown(props) {
   const {items, value, changeHandler} = props;
   const [selected, setSelected] = useState(value)
@@ -46,25 +42,22 @@ export default function Dropdown(props) {
                   <Listbox.Option
                     key={item}
                     className={({active}) =>
-                      classNames(
-                        active ? 'text-white bg-indigo-600' : 'text-gray-900',
-                        'cursor-default select-none relative py-2 pl-3 pr-9'
-                      )
+                      (active ? 'text-white bg-indigo-600' : 'text-gray-900') +
+                        ' cursor-default select-none relative py-2 pl-3 pr-9'
                     }
                     value={item}
                   >
                     {({selected, active}) => (
                       <>
-                        <span className={classNames(selected ? 'font-semibold' : 'font-normal', 'block truncate')}>
+                        <span className={(selected ? 'font-semibold' : 'font-normal') + ' block truncate'}>
                           {item}
                         </span>
 
                         {selected ? (
                           <span
-                            className={classNames(
-                              active ? 'text-white' : 'text-indigo-600',
-                              'absolute inset-y-0 right-0 flex items-center pr-4'
-                            )}
+                            className={(active ? 'text-white' : 'text-indigo-600') +
+                              ' absolute inset-y-0 right-0 flex items-center pr-4'
+                            }
                           >
                             <CheckIcon className="h-5 w-5" aria-hidden="true"/>
                           </span>
