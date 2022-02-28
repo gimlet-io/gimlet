@@ -110,7 +110,7 @@ export class Category extends Component {
     const md = new Remarkable();
     const gettingStartedPanel = selectedComponentName === undefined ? null : (
       <div className="py-6 px-4 space-y-6 sm:p-6">
-        <div class="prose" dangerouslySetInnerHTML={{__html: md.render(selectedComponent.onePager)}}/>
+        <div className="prose" dangerouslySetInnerHTML={{__html: md.render(selectedComponent.onePager)}}/>
       </div>
     );
 
@@ -119,8 +119,8 @@ export class Category extends Component {
     const tabState = this.state.tabState
 
     return (
-      <div class="my-8">
-        <h2 class="text-lg">{category.name}</h2>
+      <div className="my-8">
+        <h2 className="text-lg">{category.name}</h2>
         <div className="flex space-x-2 my-2">
           {componentTitles}
         </div>

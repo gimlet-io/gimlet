@@ -42,7 +42,7 @@ export default class DeployStatus extends Component {
 
     if (deploy.status === 'error') {
       gitopsWidget = (
-        <div class="mt-2">
+        <div className="mt-2">
           <p className="text-red-500 font-semibold">
             Gitops write failed
           </p>
@@ -55,7 +55,7 @@ export default class DeployStatus extends Component {
 
     if (deploy.gitopsHashes && deploy.gitopsHashes.length !== 0) {
       gitopsWidget = (
-        <div class="mt-2">
+        <div className="mt-2">
           <p className="text-yellow-100 font-semibold">
             Manifests written to git
           </p>
@@ -92,11 +92,11 @@ export default class DeployStatus extends Component {
                   <a
                     href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
                     target="_blank" rel="noopener noreferrer"
-                    class='ml-1'
+                    className='ml-1'
                   >
                     {hashStatus.hash.slice(0, 6)}
                   </a>
-                  <span class='ml-1 block'>{hashStatus.statusDesc}</span>
+                  <span className='ml-1 block'>{hashStatus.statusDesc}</span>
                 </p>
               )
             } else {
@@ -106,11 +106,11 @@ export default class DeployStatus extends Component {
                   <a
                     href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
                     target="_blank" rel="noopener noreferrer"
-                    class='ml-1'
+                    className='ml-1'
                   >
                     {hashStatus.hash.slice(0, 6)}
                   </a>
-                  <span class='ml-1'>applied</span>
+                  <span className='ml-1'>applied</span>
                 </p>
               )
             }
@@ -151,23 +151,23 @@ export default class DeployStatus extends Component {
                         Rolling back {deploy.app}
                       </p>
                       }
-                      <p class="pl-2  ">
+                      <p className="pl-2  ">
                         🎯 {deploy.env}
                       </p>
                       {!deploy.rollback &&
-                      <p class="pl-2">
+                      <p className="pl-2">
                         <span>📎</span>
                         <a
                           href={`https://github.com/${deploy.repo}/commit/${deploy.sha}`}
                           target="_blank" rel="noopener noreferrer"
-                          class='ml-1'
+                          className='ml-1'
                         >
                           {deploy.sha.slice(0, 6)}
                         </a>
                       </p>
                       }
                       {gitopsWidget}
-                      <div class='pl-2 mt-4'>{appliedWidget}</div>
+                      <div className='pl-2 mt-4'>{appliedWidget}</div>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex">
                       <button

@@ -11,7 +11,7 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, repoName} = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, repoName } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback);
 
@@ -47,7 +47,7 @@ export class Env extends Component {
           </svg>
         </h4>
         {this.state.isClosed ? null : (
-          <div class="bg-white shadow divide-y divide-gray-200 p-4 sm:p-6 lg:p-8">
+          <div className="bg-white shadow divide-y divide-gray-200 p-4 sm:p-6 lg:p-8">
             {renderedServices.length > 0
               ? renderedServices
               : emptyState(searchFilter, envConfigs, navigateToConfigEdit, envName, repoName)}
@@ -90,9 +90,11 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
     ...configsWeHaventDeployed.map(config => {
       return <ServiceDetail
         key={config}
-        stack={{service: {
-          name: config
-        }}}
+        stack={{
+          service: {
+            name: config
+          }
+        }}
         rolloutHistory={appRolloutHistory(envName, config, repoRolloutHistory)}
         rollback={rollback}
         envName={envName}

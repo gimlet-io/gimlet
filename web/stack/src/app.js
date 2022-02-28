@@ -119,12 +119,12 @@ class App extends Component {
         <StreamingBackend client={this.state.client}/>
         <div
           className={this.state.showErrors ? 'block fixed bottom-0 right-0 mb-48 mr-8 bg-red-300 rounded-md shadow py-4 px-8' : 'hidden'}>
-          <ul class="list-disc list-inside">
+          <ul className="list-disc list-inside">
             {
               Object.keys(this.state.errors).map(variable => {
                 return (
                   <div>
-                    <p class='capitalize font-bold'>{variable}</p>
+                    <p className='capitalize font-bold'>{variable}</p>
                     {this.state.errors[variable].map(e => {
                       return (
                         <li>{e.message}</li>
@@ -164,8 +164,8 @@ class App extends Component {
           </span>
         </div>
         <div className="container mx-auto m-8 max-w-4xl">
-          <h1 class="text-2xl font-bold my-16">{stackDefinition.name}
-            <span class="font-normal text-lg block">{stackDefinition.description}</span>
+          <h1 className="text-2xl font-bold my-16">{stackDefinition.name}
+            <span className="font-normal text-lg block">{stackDefinition.description}</span>
           </h1>
           {categories}
         </div>
