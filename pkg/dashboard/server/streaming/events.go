@@ -24,7 +24,7 @@ type AgentDisconnectedEvent struct {
 }
 
 type EnvsUpdatedEvent struct {
-	Envs []*api.Env `json:"envs"`
+	Envs []*api.ConnectedAgent `json:"envs"`
 	StreamingEvent
 }
 

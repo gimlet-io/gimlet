@@ -49,7 +49,7 @@ type Ingress struct {
 	URL       string `json:"url"`
 }
 
-type Env struct {
+type ConnectedAgent struct {
 	Name   string   `json:"name"`
 	Stacks []*Stack `json:"stacks"`
 }

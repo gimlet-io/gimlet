@@ -142,7 +142,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 	}
 	agent.Stacks = stackPointers
 
-	envs := []*api.Env{{
+	envs := []*api.ConnectedAgent{{
 		Name:   name,
 		Stacks: stackPointers,
 	}}

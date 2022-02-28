@@ -222,13 +222,13 @@ func orderRolloutHistoryFromAscending(rolloutHistory []*Env) []*Env {
 	return orderedRolloutHistory
 }
 
-func gatherEnvsFromAgents(agentHub *streaming.AgentHub) []*api.Env {
-	envs := []*api.Env{}
+func gatherEnvsFromAgents(agentHub *streaming.AgentHub) []*api.ConnectedAgent {
+	envs := []*api.ConnectedAgent{}
 	for _, a := range agentHub.Agents {
 		for _, stack := range a.Stacks {
 			stack.Env = a.Name
 		}
-		envs = append(envs, &api.Env{
+		envs = append(envs, &api.ConnectedAgent{
 			Name:   a.Name,
 			Stacks: a.Stacks,
 		})

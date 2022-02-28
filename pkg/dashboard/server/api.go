@@ -43,17 +43,17 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	goScm := genericScm.NewGoScmHelper(config, nil)
 	org := config.Github.Org
 
-	connectedAgents := []*api.Env{
-		{
-			Name:   "staging",
-			Stacks: []*api.Stack{},
-		},
+	connectedAgents := []*api.ConnectedAgent{
+		// {
+		// 	Name:   "staging",
+		// 	Stacks: []*api.Stack{},
+		// },
 	}
 	for _, a := range agentHub.Agents {
 		for _, stack := range a.Stacks {
 			stack.Env = a.Name
 		}
-		connectedAgents = append(connectedAgents, &api.Env{
+		connectedAgents = append(connectedAgents, &api.ConnectedAgent{
 			Name:   a.Name,
 			Stacks: a.Stacks,
 		})
@@ -120,7 +120,7 @@ func agents(w http.ResponseWriter, r *http.Request) {
 	w.Write(agentsString)
 }
 
-func decorateDeployments(ctx context.Context, envs []*api.Env) error {
+func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
@@ -299,7 +299,7 @@ func gitopsInfra(w http.ResponseWriter, r *http.Request) {
 	hasGitops := false
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
-	envs := []*api.Env{
+	envs := []*api.ConnectedAgent{
 		// {
 		// 	Name:   "staging",
 		// 	Stacks: []*api.Stack{},
@@ -309,7 +309,7 @@ func gitopsInfra(w http.ResponseWriter, r *http.Request) {
 		for _, stack := range a.Stacks {
 			stack.Env = a.Name
 		}
-		envs = append(envs, &api.Env{
+		envs = append(envs, &api.ConnectedAgent{
 			Name:   a.Name,
 			Stacks: a.Stacks,
 		})
