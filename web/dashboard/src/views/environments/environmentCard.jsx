@@ -4,7 +4,7 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 import * as stackDefinitionFixture from './fixtures/stack-definition.json'
 
-const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }) => {
+const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, gimletClient }) => {
   const [enabled, setEnabled] = useState(false)
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
@@ -30,38 +30,21 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
   }
 
   const setValues = (variable, values, nonDefaultValues) => {
-    setStack(prevState => ({
-      ...prevState.stack,
-      [variable]: values
-    }))
+    setStack({ ...stack, [variable]: values })
 
-    setStackNonDefaultValues(prevState => ({
-      ...prevState.stackNonDefaultValues,
-      [variable]: nonDefaultValues
-    }))
+    setStackNonDefaultValues({ ...stackNonDefaultValues, [variable]: nonDefaultValues })
   }
 
   const validationCallback = (variable, validationErrors) => {
-    console.log(variable)
-    console.log(validationErrors)
-
     if (validationErrors !== null) {
       validationErrors = validationErrors.filter(error => error.keyword !== 'oneOf');
       validationErrors = validationErrors.filter(error => error.dataPath !== '.enabled');
-
     }
 
-    setErrors(prevState => ({
-      ...prevState.errors,
-      [variable]: validationErrors
-    }))
+    setErrors({ ...errors, [variable]: validationErrors })
   }
 
   const saveComponents = () => {
-    console.log(stack)
-    console.log(stackNonDefaultValues)
-    console.log(errors)
-
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         console.log("We have a validation error, not saving state at all!!!")
@@ -69,7 +52,13 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
       }
     }
 
-    console.log("Saving stackNonDefaultValues with the API...")
+    gimletClient.saveInfrastructureComponents(stackNonDefaultValues)
+      .then((data) => {
+        console.log(data);
+        console.log("MINDEN OKÉ.")
+      }, () => {
+        console.log("AJJAJ, SCOOBY, BAJ VAN!");
+      })
   }
 
   const gitopsRepositoriesTab = () => {

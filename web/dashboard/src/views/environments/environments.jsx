@@ -1,9 +1,7 @@
 import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
 import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
-import {
-    ACTION_TYPE_ENVS, ACTION_TYPE_GITOPSINFRAREPO
-} from "../../redux/redux";
+import { ACTION_TYPE_ENVS } from "../../redux/redux";
 
 class Environments extends Component {
     constructor(props) {
@@ -33,8 +31,8 @@ class Environments extends Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-            if (prevState.envs.length !== this.state.envs.length) {
-                this.props.gimletClient.getEnvs()
+        if (prevState.envs.length !== this.state.envs.length) {
+            this.props.gimletClient.getEnvs()
                 .then(data => {
                     this.props.store.dispatch({
                         type: ACTION_TYPE_ENVS,
@@ -48,13 +46,14 @@ class Environments extends Component {
     getEnvironmentCards() {
         const { connectedAgents, envs } = this.state;
         const sortedEnvs = this.sortingByName(envs);
-        
+
         return (
             sortedEnvs.map(env => (<EnvironmentCard
                 singleEnv={env}
                 deleteEnv={() => this.delete(env.name)}
                 isOnline={this.isOnline(connectedAgents, env)}
                 hasGitopsRepo={env.repoPerEnv || env.folderPerEnv}
+                gimletClient={this.props.gimletClient}
             />))
         )
     }
