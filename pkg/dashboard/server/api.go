@@ -42,6 +42,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 	org := config.Github.Org
+	gitopsInfraRepo := fmt.Sprintf("%s/gitops-infra", org)
 
 	connectedAgents := []*api.ConnectedAgent{
 		// {
@@ -73,19 +74,22 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
+	orgRepos, err := getOrgRepos(ctx, goScm, token)
+	if err != nil {
+		logrus.Errorf("cannot get repos: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	gitopsInfraContent, err := getGitopsInfra(ctx, goScm, token, gitopsInfraRepo)
+	if err != nil {
+		logrus.Errorf("cannot get gitops infra from github: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
 	var envs []*api.GitopsEnv
 	for _, env := range envsFromDB {
-		hasFolderPerEnv, err := hasFolderPerEnv(goScm, token, org, env.Name)
-		if err != nil {
-			logrus.Errorf("cannot fetch directory content from github: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-
-		hasRepoPerEnv, err := hasRepoPerEnv(goScm, token, org, env.Name)
-		if err != nil {
-			logrus.Errorf("cannot fetch directory content from github: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		hasRepoPerEnv := hasRepoPerEnv(orgRepos, org, env.Name)
+		hasFolderPerEnv := hasFolderPerEnv(gitopsInfraContent, env.Name)
 
 		envs = append(envs, &api.GitopsEnv{
 			Name:         env.Name,

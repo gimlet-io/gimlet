@@ -2,6 +2,8 @@ package server
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +13,8 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/go-chi/chi"
@@ -336,42 +340,59 @@ func headBranch(repo *git.Repository) string {
 	return "master"
 }
 
-func hasFolderPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) (bool, error) {
-	repoName := fmt.Sprintf("%s/gitops-infra", org)
-	repoContent, err := goScm.DirectoryContents(token, repoName, "")
+func getOrgRepos(ctx context.Context, goScm *genericScm.GoScmHelper, token string) ([]string, error) {
+	var orgRepos []string
+	dao := ctx.Value("store").(*store.Store)
+	orgReposJson, err := dao.KeyValue(model.OrgRepos)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if orgReposJson.Value == "" {
+		orgReposJson.Value = "[]"
+	}
+
+	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
 	if err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-			return false, nil
-		} else {
-			return false, err
-		}
+		return nil, err
 	}
 
-	var keys []string
-	for k := range repoContent {
-		keys = append(keys, k)
-	}
-
-	for _, content := range keys {
-		if content == envName {
-			return true, nil
-		}
-	}
-	return false, nil
+	return orgRepos, nil
 }
 
-func hasRepoPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) (bool, error) {
-	repoName := fmt.Sprintf("%s/gitops-%s-infra", org, envName)
-
-	_, err := goScm.DirectoryContents(token, repoName, "")
+func getGitopsInfra(ctx context.Context, goScm *genericScm.GoScmHelper, token string, gitopsInfraRepo string) ([]string, error) {
+	gitopsRepoDirectoryContent, err := goScm.DirectoryContents(token, gitopsInfraRepo, "")
 	if err != nil {
-		fmt.Println(err.Error())
 		if strings.Contains(err.Error(), "Not Found") {
-			return false, nil
+			return nil, nil
 		} else {
-			return true, nil
+			return nil, err
 		}
 	}
 
-	return false, nil
+	var gitopsRepoContent []string
+	for file := range gitopsRepoDirectoryContent {
+		gitopsRepoContent = append(gitopsRepoContent, file)
+	}
+
+	return gitopsRepoContent, nil
+}
+
+func hasRepoPerEnv(orgRepos []string, org string, envName string) bool {
+	gitopsRepo := fmt.Sprintf("%s/gitops-%s-infra", org, envName)
+
+	for _, orgRepo := range orgRepos {
+		if orgRepo == gitopsRepo {
+			return true
+		}
+	}
+	return false
+}
+
+func hasFolderPerEnv(gitopsRepoContent []string, envName string) bool {
+	for _, content := range gitopsRepoContent {
+		if content == envName {
+			return true
+		}
+	}
+	return false
 }
