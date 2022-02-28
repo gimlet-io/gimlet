@@ -37,3 +37,5 @@ fixtures/k3s/kubeconfig.yaml
 
 gimletd.sqlite
 gimlet-dashboard.sqlite
+
+__debug_bin

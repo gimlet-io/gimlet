@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
-
+import { Button } from 'stack-ui';
 
 const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }) => {
   const [enabled, setEnabled] = useState(false)
@@ -51,6 +51,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
       <div className="mt-4 text-gray-700">
         <div>INFRÁK VAGYUNK</div>
         <div>BIZONY</div>
+        <div><Button label="test" kind="primary"/></div>
       </div>
     )
   }
