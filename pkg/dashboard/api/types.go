@@ -54,6 +54,12 @@ type Env struct {
 	Stacks []*Stack `json:"stacks"`
 }
 
+type GitopsEnv struct {
+	Name         string `json:"name"`
+	RepoPerEnv   bool   `json:"repoPerEnv"`
+	FolderPerEnv bool   `json:"folderPerEnv"`
+}
+
 type Stack struct {
 	Repo       string      `json:"repo"`
 	Env        string      `json:"env"`

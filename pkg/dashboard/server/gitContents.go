@@ -335,3 +335,46 @@ func headBranch(repo *git.Repository) string {
 	}
 	return "master"
 }
+
+func hasFolderPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) bool {
+	repoName := fmt.Sprintf("%s/gitops-infra", org)
+	hasGitops := false
+	repoContent, err := goScm.DirectoryContents(token, repoName, "")
+	if err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			return hasGitops
+		} else {
+			logrus.Errorf("cannot fetch directory content from github: %s", err)
+		}
+	}
+
+	var keys []string
+	for k := range repoContent {
+		keys = append(keys, k)
+	}
+
+	for _, content := range keys {
+		if content == envName {
+			hasGitops = true
+		}
+	}
+	return hasGitops
+}
+
+func hasRepoPerEnv(goScm *genericScm.GoScmHelper, token string, org string, envName string) bool {
+	hasGitops := false
+
+	repoName := fmt.Sprintf("%s/gitops-%s-infra", org, envName)
+
+	_, err := goScm.DirectoryContents(token, repoName, "")
+	if err != nil {
+		fmt.Println(err.Error())
+		if strings.Contains(err.Error(), "Not Found") {
+			return hasGitops
+		} else {
+			hasGitops = true
+		}
+	}
+
+	return hasGitops
+}

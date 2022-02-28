@@ -35,7 +35,13 @@ func user(w http.ResponseWriter, r *http.Request) {
 }
 
 func envs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
+	org := config.Github.Org
 
 	connectedAgents := []*api.Env{
 		{
@@ -61,10 +67,18 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value("store").(*store.Store)
-	envs, err := db.GetEnvironments()
+	envsFromDB, err := db.GetEnvironments()
 	if err != nil {
 		logrus.Errorf("cannot get all environments from database: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	var envs []*api.GitopsEnv
+	for _, env := range envsFromDB {
+		envs = append(envs, &api.GitopsEnv{
+			Name:         env.Name,
+			RepoPerEnv:   hasRepoPerEnv(goScm, token, org, env.Name),
+			FolderPerEnv: hasFolderPerEnv(goScm, token, org, env.Name)})
 	}
 
 	allEnvs := map[string]interface{}{}
@@ -303,7 +317,7 @@ func gitopsInfra(w http.ResponseWriter, r *http.Request) {
 
 	gitopsRepo, err := goScm.DirectoryContents(token, repoName, "")
 	if err != nil {
-		if strings.Contains(err.Error(), "Not found") {
+		if strings.Contains(err.Error(), "Not Found") {
 			hasGitops = true
 		} else {
 			logrus.Errorf("cannot fetch directory content from github: %s", err)
