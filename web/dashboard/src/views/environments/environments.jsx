@@ -47,23 +47,21 @@ class Environments extends Component {
 
     getEnvironmentCards() {
         const { connectedAgents, envs } = this.state;
-        const envsArray = Object.keys(connectedAgents).map(agent => connectedAgents[agent]);
-        const sortedEnvArrayByStatus = this.sortingEnvByStatus(envsArray, envs)
-
+        const sortedEnvs = this.sortingByName(envs);
+        
         return (
-            sortedEnvArrayByStatus.map(env => (<EnvironmentCard
+            sortedEnvs.map(env => (<EnvironmentCard
                 singleEnv={env}
                 deleteEnv={() => this.delete(env.name)}
-                isOnline={this.isOnline(this.state.connectedAgents, env)}
-                hasGitopsRepo={this.hasGitopsRepo(env)}
+                isOnline={this.isOnline(connectedAgents, env)}
+                hasGitopsRepo={env.repoPerEnv || env.folderPerEnv}
             />))
         )
     }
 
-    sortingEnvByStatus(connectedAgents, envs) {
-        return connectedAgents.concat(envs
-            .filter(agent => !connectedAgents
-                .some(env => agent.name === env.name)));
+    sortingByName(envs) {
+        const envsCopy = [...envs]
+        return envsCopy.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     isOnline(onlineEnvs, singleEnv) {
