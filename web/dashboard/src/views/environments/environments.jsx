@@ -18,8 +18,7 @@ class Environments extends Component {
             saveButtonTriggered: false,
             hasSameEnvNameError: false,
             gitRepos: reduxState.gitRepos,
-            user: reduxState.user,
-            gitopsInfraRepo: reduxState.gitopsInfraRepo
+            user: reduxState.user
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -28,15 +27,13 @@ class Environments extends Component {
                 connectedAgents: reduxState.connectedAgents,
                 envs: reduxState.envs,
                 gitRepos: reduxState.gitRepos,
-                user: reduxState.user,
-                gitopsInfraRepo: reduxState.gitopsInfraRepo
+                user: reduxState.user
             });
         });
     }
 
     componentDidUpdate(prevProps, prevState) {
             if (prevState.envs.length !== this.state.envs.length) {
-                this.getGitopsInfraRepo()
                 this.props.gimletClient.getEnvs()
                 .then(data => {
                     this.props.store.dispatch({
@@ -46,18 +43,6 @@ class Environments extends Component {
                 }, () => {/* Generic error handler deals with it */
                 });
         }
-    }
-
-    getGitopsInfraRepo() {
-       return this.props.gimletClient.getGitopsInfraRepo()
-        .then(gitopsInfraRepo => {
-          this.props.store.dispatch({
-            type: ACTION_TYPE_GITOPSINFRAREPO, payload: {
-              gitopsInfraRepo: gitopsInfraRepo
-            }
-          });
-        }, () => {/* Generic error handler deals with it */
-        });
     }
 
     getEnvironmentCards() {
@@ -88,11 +73,6 @@ class Environments extends Component {
                 return onlineEnv.name === singleEnv.name
             })
     };
-
-    hasGitopsRepo(env) {
-       const singleEnv = this.state.envs.find(singleEnv => singleEnv.name === env.name);
-       return singleEnv.repoPerEnv || singleEnv.folderPerEnv;
-    }
 
     setTimeOutForButtonTriggered() {
         setTimeout(() => {
@@ -136,10 +116,6 @@ class Environments extends Component {
 
     render() {
         if (!this.state.envs) {
-            return null;
-        }
-
-        if (!this.state.gitopsInfraRepo) {
             return null;
         }
 

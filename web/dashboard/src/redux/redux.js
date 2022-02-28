@@ -20,7 +20,6 @@ export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
-export const ACTION_TYPE_GITOPSINFRAREPO = "gitopsInfraRepo";
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
@@ -55,8 +54,7 @@ export const initialState = {
   chartUISchema: undefined,
   envConfigs: {},
   application: {},
-  envs: [],
-  gitopsInfraRepo : undefined
+  envs: []
 };
 
 export function rootReducer(state = initialState, action) {
@@ -64,9 +62,7 @@ export function rootReducer(state = initialState, action) {
     case ACTION_TYPE_STREAMING:
       return processStreamingEvent(state, action.payload)
     case ACTION_TYPE_GITOPS_REPO:
-      return eventHandlers.gitopsRepo(state, action.payload);
-    case ACTION_TYPE_GITOPSINFRAREPO:
-      return eventHandlers.getGitopsInfraRepo(state, action.payload);  
+      return eventHandlers.gitopsRepo(state, action.payload);  
     case ACTION_TYPE_GIT_REPOS:
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:

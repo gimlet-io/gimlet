@@ -13,11 +13,6 @@ export function gitopsRepo(state, event) {
   return state;
 }
 
-export function getGitopsInfraRepo(state, payload) {
-  state.gitopsInfraRepo = payload.gitopsInfraRepo;
-  return state;
-}
-
 export function gitRepos(state, event) {
   state.gitRepos = event;
   return state;

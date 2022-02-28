@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -303,63 +302,4 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(envNameToDelete))
-}
-
-func gitopsInfra(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
-	goScm := genericScm.NewGoScmHelper(config, nil)
-	org := config.Github.Org
-	repoName := fmt.Sprintf("%s/gitops-infra", org)
-	hasGitops := false
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-
-	envs := []*api.ConnectedAgent{
-		// {
-		// 	Name:   "staging",
-		// 	Stacks: []*api.Stack{},
-		// },
-	}
-	for _, a := range agentHub.Agents {
-		for _, stack := range a.Stacks {
-			stack.Env = a.Name
-		}
-		envs = append(envs, &api.ConnectedAgent{
-			Name:   a.Name,
-			Stacks: a.Stacks,
-		})
-	}
-
-	gitopsRepo, err := goScm.DirectoryContents(token, repoName, "")
-	if err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-			hasGitops = true
-		} else {
-			logrus.Errorf("cannot fetch directory content from github: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	repoPerEnv := map[string]interface{}{}
-
-	repoPerFolder := map[string]interface{}{}
-	repoPerFolder["hasFolderPerEnv"] = hasGitops
-	repoPerFolder["content"] = gitopsRepo
-
-	gitops := map[string]map[string]interface{}{}
-	gitops["repoPerEnv"] = repoPerEnv
-	gitops["repoPerFolder"] = repoPerFolder
-
-	gitopsString, err := json.Marshal(gitops)
-	if err != nil {
-		logrus.Errorf("cannot serialize appinfos: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(gitopsString)
 }
