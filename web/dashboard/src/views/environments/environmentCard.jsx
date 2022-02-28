@@ -30,11 +30,6 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
   }
 
   const setValues = (variable, values, nonDefaultValues) => {
-    const updatedNonDefaultValues = {
-      ...stackNonDefaultValues,
-      [variable]: nonDefaultValues
-    }
-
     setStack(prevState => ({
       ...prevState.stack,
       [variable]: values
@@ -67,12 +62,12 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user }
     console.log(stackNonDefaultValues)
     console.log(errors)
 
-    Object.keys(errors).map((variable) => {
+    for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         console.log("We have a validation error, not saving state at all!!!")
         return false
       }
-    });
+    }
 
     console.log("Saving stackNonDefaultValues with the API...")
   }
