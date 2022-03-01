@@ -73,13 +73,13 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	orgRepos, err := getOrgRepos(ctx, goScm, token)
+	orgRepos, err := getOrgRepos(ctx)
 	if err != nil {
 		logrus.Errorf("cannot get repos: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	gitopsInfraContent, err := getGitopsInfra(ctx, goScm, token, gitopsInfraRepo)
+	gitopsInfraContent, err := getGitopsInfra(goScm, token, gitopsInfraRepo)
 	if err != nil {
 		logrus.Errorf("cannot get gitops infra from github: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
