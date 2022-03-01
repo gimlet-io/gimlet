@@ -16,7 +16,9 @@ class Environments extends Component {
             saveButtonTriggered: false,
             hasSameEnvNameError: false,
             gitRepos: reduxState.gitRepos,
-            user: reduxState.user
+            user: reduxState.user,
+            stackDefinition: reduxState.stackDefinition,
+            stack: reduxState.stack
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -25,7 +27,9 @@ class Environments extends Component {
                 connectedAgents: reduxState.connectedAgents,
                 envs: reduxState.envs,
                 gitRepos: reduxState.gitRepos,
-                user: reduxState.user
+                user: reduxState.user,
+                stackDefinition: reduxState.stackDefinition,
+                stack: reduxState.stack
             });
         });
     }
@@ -54,6 +58,8 @@ class Environments extends Component {
                 isOnline={this.isOnline(connectedAgents, env)}
                 hasGitopsRepo={env.repoPerEnv || env.folderPerEnv}
                 gimletClient={this.props.gimletClient}
+                stackDefinition={this.state.stackDefinition}
+                savedStack={this.state.stack}
             />))
         )
     }

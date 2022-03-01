@@ -2,15 +2,14 @@ import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
-import * as stackDefinitionFixture from './fixtures/stack-definition.json'
 
-const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, gimletClient }) => {
+const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, gimletClient, stackDefinition, savedStack }) => {
   const [enabled, setEnabled] = useState(false)
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
   ]);
-  const [stack, setStack] = useState({});
+  const [stack, setStack] = useState(savedStack);
   const [stackNonDefaultValues, setStackNonDefaultValues] = useState({});
   const [errors, setErrors] = useState({});
 
@@ -87,8 +86,8 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
       <div className="mt-4 text-gray-700">
         <div>
           <StackUI
-            stack={stack}
-            stackDefinition={stackDefinitionFixture.default}
+            stack={savedStack}
+            stackDefinition={stackDefinition}
             setValues={setValues}
             validationCallback={validationCallback}
           />

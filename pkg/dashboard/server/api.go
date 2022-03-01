@@ -89,11 +89,13 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	for _, env := range envsFromDB {
 		hasRepoPerEnv := hasRepoPerEnv(orgRepos, org, env.Name)
 		hasFolderPerEnv := hasFolderPerEnv(gitopsInfraContent, env.Name)
+		// stackConfig := 
 
 		envs = append(envs, &api.GitopsEnv{
 			Name:         env.Name,
 			RepoPerEnv:   hasRepoPerEnv,
 			FolderPerEnv: hasFolderPerEnv,
+			// StackConfig:  stackConfig,
 		})
 	}
 
