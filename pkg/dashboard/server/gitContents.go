@@ -16,7 +16,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	helper "github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -340,7 +340,7 @@ func headBranch(repo *git.Repository) string {
 	return "master"
 }
 
-func getOrgRepos(ctx context.Context, goScm *genericScm.GoScmHelper, token string) ([]string, error) {
+func getOrgRepos(ctx context.Context) ([]string, error) {
 	var orgRepos []string
 	dao := ctx.Value("store").(*store.Store)
 	orgReposJson, err := dao.KeyValue(model.OrgRepos)
@@ -359,7 +359,7 @@ func getOrgRepos(ctx context.Context, goScm *genericScm.GoScmHelper, token strin
 	return orgRepos, nil
 }
 
-func getGitopsInfra(ctx context.Context, goScm *genericScm.GoScmHelper, token string, gitopsInfraRepo string) ([]string, error) {
+func getGitopsInfra(goScm *genericScm.GoScmHelper, token string, gitopsInfraRepo string) ([]string, error) {
 	gitopsRepoDirectoryContent, err := goScm.DirectoryContents(token, gitopsInfraRepo, "")
 	if err != nil {
 		if strings.Contains(err.Error(), "Not Found") {

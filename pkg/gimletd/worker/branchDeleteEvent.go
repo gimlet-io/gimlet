@@ -4,12 +4,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -17,12 +23,7 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/yaml"
-	"strings"
-	"time"
 )
 
 const Dir_RWX_RX_R = 0754

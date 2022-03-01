@@ -6,7 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 )
@@ -86,7 +87,7 @@ func Upgrade(c *cli.Context) error {
 	noDeployKey := c.Bool("no-deploykey")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
-	_, _, _, err = generateManifests(
+	_, _, _, err = gitops.GenerateManifests(
 		!noController,
 		env,
 		singleEnv,
