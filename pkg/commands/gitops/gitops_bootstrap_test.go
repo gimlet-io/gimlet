@@ -6,10 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 )
 
 func Test_parseRepoURL(t *testing.T) {
-	host, owner, repo := parseRepoURL("git@github.com:gimlet-io/gimlet-cli.git")
+	host, owner, repo := gitops.ParseRepoURL("git@github.com:gimlet-io/gimlet-cli.git")
 	if host != "github.com" {
 		t.Errorf("Must parse host")
 	}
@@ -36,7 +38,7 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 	shouldGenerateDeployKey := true
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	gitopsRepoFileName, _, secretFileName, err := generateManifests(
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -81,7 +83,7 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 	shouldGenerateDeployKey := true
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	_, _, _, err = generateManifests(
+	_, _, _, err = gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -127,7 +129,7 @@ func Test_generateManifestWithControllerWithoutSingleEnv(t *testing.T) {
 	shouldGenerateDeployKey := true
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	gitopsRepoFileName, _, secretFileName, err := generateManifests(
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -173,7 +175,7 @@ func Test_generateManifestWithControllerWithSingleEnv(t *testing.T) {
 	shouldGenerateDeployKey := true
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	_, _, _, err = generateManifests(
+	_, _, _, err = gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -219,7 +221,7 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 	shouldGenerateDeployKey := false
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	_, _, _, err = generateManifests(
+	_, _, _, err = gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -265,7 +267,7 @@ func Test_generateManifestWithoutKustomizationAndRepoWithDeployKey(t *testing.T)
 	shouldGenerateDeployKey := true
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	_, _, _, err = generateManifests(
+	_, _, _, err = gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -311,7 +313,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 	shouldGenerateDeployKey := false
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
 
-	_, _, _, err = generateManifests(
+	_, _, _, err = gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -357,7 +359,7 @@ func Test_guidingTextWithoutController(t *testing.T) {
 	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
 	branch := ""
 
-	gitopsRepoFileName, _, secretFileName, err := generateManifests(
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -411,7 +413,7 @@ func Test_guidingTextWithoutControllerAndSingleEnv(t *testing.T) {
 	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
 	branch := ""
 
-	gitopsRepoFileName, _, secretFileName, err := generateManifests(
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -465,7 +467,7 @@ func Test_guidingTextWithController(t *testing.T) {
 	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
 	branch := ""
 
-	gitopsRepoFileName, _, secretFileName, err := generateManifests(
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,

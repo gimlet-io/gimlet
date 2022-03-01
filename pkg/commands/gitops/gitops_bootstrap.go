@@ -2,23 +2,16 @@ package gitops
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/enescakir/emoji"
-	"github.com/fluxcd/flux2/pkg/manifestgen/install"
-	"github.com/fluxcd/pkg/ssh"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops/sync"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var gitopsBootstrapCmd = cli.Command{
@@ -89,7 +82,7 @@ func Bootstrap(c *cli.Context) error {
 	noController := c.Bool("no-controller")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
-	gitopsRepoFileName, publicKey, secretFileName, err := generateManifests(
+	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		!noController,
 		env,
 		singleEnv,
@@ -132,111 +125,6 @@ func Bootstrap(c *cli.Context) error {
 	return nil
 }
 
-func generateManifests(
-	shouldGenerateController bool,
-	env string,
-	singleEnv bool,
-	gitopsRepoPath string,
-	shouldGenerateKustomizationAndRepo bool,
-	shouldGenerateDeployKey bool,
-	gitopsRepoUrl string,
-	branch string,
-) (string, string, string, error) {
-	publicKey := ""
-	gitopsRepositoryName := ""
-	secretFileName := ""
-	gitopsRepoFileName := ""
-
-	installOpts := install.MakeDefaultOptions()
-	installOpts.ManifestFile = "flux.yaml"
-	installOpts.TargetPath = env
-
-	if !singleEnv && env == "" {
-		return "", "", "", fmt.Errorf("either `--env` or `--single-env` is mandatory")
-	}
-	if singleEnv && env != "" {
-		return "", "", "", fmt.Errorf("`--env` and `--single-env` are mutually exclusive")
-	}
-
-	if singleEnv {
-		env = "."
-	}
-
-	if shouldGenerateController {
-		installManifest, err := install.Generate(installOpts, "")
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot generate installation manifests %s", err)
-		}
-		installManifest.Path = path.Join(env, "flux", installOpts.ManifestFile)
-		_, err = installManifest.WriteFile(gitopsRepoPath)
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot write installation manifests %s", err)
-		}
-	}
-
-	if shouldGenerateKustomizationAndRepo {
-		host, owner, repoName := parseRepoURL(gitopsRepoUrl)
-		gitopsRepositoryName = fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
-		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s-%s-%s-%s.yaml",
-			strings.ToLower(env),
-			strings.ToLower(owner),
-			strings.ToLower(repoName),
-			strings.ToLower(env))
-		if singleEnv {
-			gitopsRepositoryName = "gitops-repo"
-			gitopsRepoFileName = "gitops-repo.yaml"
-		}
-		syncOpts := sync.Options{
-			Interval:     15 * time.Second,
-			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
-			Name:         gitopsRepositoryName,
-			Secret:       gitopsRepositoryName,
-			Namespace:    "flux-system",
-			Branch:       branch,
-			ManifestFile: gitopsRepoFileName,
-		}
-
-		syncOpts.TargetPath = env
-		if singleEnv {
-			syncOpts.TargetPath = ""
-		}
-		syncManifest, err := sync.Generate(syncOpts)
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot generate git manifests %s", err)
-		}
-		syncManifest.Path = path.Join(env, "flux", syncOpts.ManifestFile)
-		_, err = syncManifest.WriteFile(gitopsRepoPath)
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot write git manifests %s", err)
-		}
-
-		if shouldGenerateDeployKey {
-			fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-			secretFileName = fmt.Sprintf("deploy-key-%s-%s-%s-%s.yaml",
-				strings.ToLower(env),
-				strings.ToLower(owner),
-				strings.ToLower(repoName),
-				strings.ToLower(env))
-
-			if singleEnv {
-				secretFileName = "deploy-key.yaml"
-			}
-
-			pKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
-			publicKey = pKey
-			if err != nil {
-				return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
-			}
-			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
-			if err != nil {
-				return "", "", "", fmt.Errorf("cannot write deploy key %s", err)
-			}
-		}
-	}
-
-	return gitopsRepoFileName, publicKey, secretFileName, nil
-}
-
 func branchName(err error, repo *git.Repository, gitopsRepoPath string) (string, error) {
 	ref, err := repo.Head()
 	if err != nil {
@@ -248,48 +136,6 @@ func branchName(err error, repo *git.Repository, gitopsRepoPath string) (string,
 	}
 
 	return ref.Name().Short(), nil
-}
-
-func generateDeployKey(host string, name string) (string, []byte, error) {
-	privateKeyBytes, publicKeyBytes := generateKeyPair()
-
-	hostKey, err := ssh.ScanHostKey(host+":22", 30*time.Second)
-	if err != nil {
-		return "", []byte(""), err
-	}
-
-	secret := corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "flux-system",
-		},
-		StringData: map[string]string{
-			"identity":     string(privateKeyBytes),
-			"identity.pub": string(publicKeyBytes),
-			"known_hosts":  string(hostKey),
-		},
-	}
-
-	yamlString, err := yaml.Marshal(secret)
-	return string(publicKeyBytes), yamlString, err
-}
-
-func parseRepoURL(url string) (string, string, string) {
-	host := strings.Split(url, ":")[0]
-	host = strings.Split(host, "@")[1]
-
-	owner := strings.Split(url, ":")[1]
-	owner = strings.Split(owner, "/")[0]
-
-	repo := strings.Split(url, ":")[1]
-	repo = strings.Split(repo, "/")[1]
-	repo = strings.TrimSuffix(repo, ".git")
-
-	return host, owner, repo
 }
 
 func guidingText(
