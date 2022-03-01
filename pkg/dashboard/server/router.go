@@ -112,6 +112,7 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Get(("/api/stackDefinition"), stackDefinition)
 		r.Get(("/api/stack"), stack)
+		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
 	})
 }
 

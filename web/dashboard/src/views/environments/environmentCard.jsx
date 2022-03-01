@@ -60,6 +60,18 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
       })
   }
 
+  const bootstrapGitops = (envName, isRepository) => {
+    console.log("bootstrapping!");
+    console.log(envName);
+    console.log(isRepository);
+    gimletClient.bootstrapGitops(envName, isRepository)
+    .then((data) => {
+      console.log("received data from backend");
+      console.log(data);
+    }, () => {
+    })
+  }
+
   const gitopsRepositoriesTab = () => {
     return (
       <div className="mt-4 inline-grid">
@@ -155,7 +167,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
                 // disabled={this.state.input === "" || this.state.saveButtonTriggered}
-                onClick={() => console.log("MEGNYOMTAK")}
+                onClick={() => bootstrapGitops(singleEnv.name, enabled)}
                 className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
               >
                 Bootstrap gitops repository

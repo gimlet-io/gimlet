@@ -61,6 +61,11 @@ type GitopsEnv struct {
 	StackConfig  map[string]interface{}	`json:"stackConfig"`
 }
 
+type GitopsBootstrapConfig struct {
+	EnvName      string `json:"envName"`
+	IsRepository bool   `json:"isRepository"`
+}
+
 type Stack struct {
 	Repo       string      `json:"repo"`
 	Env        string      `json:"env"`
