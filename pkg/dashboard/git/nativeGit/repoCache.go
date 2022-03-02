@@ -179,8 +179,9 @@ func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, 
 			errors.WithMessage(err, "couldn't clone")
 		}
 		go r.registerWebhook(repoName)
+	} else {
+		mutex.Unlock()
 	}
-	mutex.Unlock()
 
 	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
 	err = copy.Copy(repoPath, tmpPath)
