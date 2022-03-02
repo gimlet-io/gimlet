@@ -17,6 +17,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,6 +67,26 @@ func Push(repo *git.Repository, privateKeyPath string) error {
 	t0 = time.Now().UnixNano()
 	err = repo.Push(&git.PushOptions{
 		Auth: publicKeys,
+	})
+	logrus.Infof("Actual push took %d", (time.Now().UnixNano()-t0)/1000/1000)
+
+	if err == git.NoErrAlreadyUpToDate {
+		return nil
+	}
+
+	return err
+}
+
+func PushWithToken(repo *git.Repository, accessToken string) error {
+	t0 := time.Now().UnixNano()
+	logrus.Infof("Reading public key took %d", (time.Now().UnixNano()-t0)/1000/1000)
+
+	t0 = time.Now().UnixNano()
+	err := repo.Push(&git.PushOptions{
+		Auth: &http.BasicAuth{
+			Username: "abc123", // yes, this can be anything except an empty string
+			Password: accessToken,
+		},
 	})
 	logrus.Infof("Actual push took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
