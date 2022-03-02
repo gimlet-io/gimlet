@@ -5,18 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 func user(w http.ResponseWriter, r *http.Request) {
@@ -36,18 +40,14 @@ func user(w http.ResponseWriter, r *http.Request) {
 func envs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
 	config := ctx.Value("config").(*config.Config)
-	goScm := genericScm.NewGoScmHelper(config, nil)
 	org := config.Github.Org
-	gitopsInfraRepo := fmt.Sprintf("%s/gitops-infra", org)
 
 	connectedAgents := []*api.ConnectedAgent{
-		// {
-		// 	Name:   "staging",
-		// 	Stacks: []*api.Stack{},
-		// },
+		{
+			Name:   "staging",
+			Stacks: []*api.Stack{},
+		},
 	}
 	for _, a := range agentHub.Agents {
 		for _, stack := range a.Stacks {
@@ -79,23 +79,66 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	gitopsInfraContent, err := getGitopsInfra(goScm, token, gitopsInfraRepo)
-	if err != nil {
-		logrus.Errorf("cannot get gitops infra from github: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+
+	sharedGitopsRepoName := fmt.Sprintf("%s/gitops-infra", org)
+	sharedGitopsInfraRepoExists := hasRepo(orgRepos, sharedGitopsRepoName)
 
 	var envs []*api.GitopsEnv
 	for _, env := range envsFromDB {
-		hasRepoPerEnv := hasRepoPerEnv(orgRepos, org, env.Name)
-		hasFolderPerEnv := hasFolderPerEnv(gitopsInfraContent, env.Name)
-		// stackConfig := 
+		repoPerEnvRepoName := fmt.Sprintf("%s/gitops-%s-infra", org, env.Name)
+		hasRepoPerEnv := hasRepo(orgRepos, repoPerEnvRepoName)
+		hasFolderPerEnv := false
+		if !hasRepoPerEnv && sharedGitopsInfraRepoExists {
+			repo, err := gitRepoCache.InstanceForRead(sharedGitopsRepoName)
+			if err != nil {
+				logrus.Errorf("cannot get repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			gitopsInfraContent, err := helper.RemoteFoldersOnBranchWithoutCheckout(repo, "", "")
+			if err != nil {
+				logrus.Errorf("cannot get gitops infra from github: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			hasFolderPerEnv = folderExists(gitopsInfraContent, env.Name)
+		}
+
+		var stackConfig *dx.StackConfig
+		if hasRepoPerEnv {
+			repo, err := gitRepoCache.InstanceForRead(repoPerEnvRepoName)
+			if err != nil {
+				logrus.Errorf("cannot get repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			stackConfig, err = stackYaml(repo, "stack.yaml")
+			if err != nil {
+				logrus.Errorf("cannot get stack yaml from repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		} else if hasFolderPerEnv {
+			repo, err := gitRepoCache.InstanceForRead(sharedGitopsRepoName)
+			if err != nil {
+				logrus.Errorf("cannot get repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
+			if err != nil {
+				logrus.Errorf("cannot get stack yaml from repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
 
 		envs = append(envs, &api.GitopsEnv{
 			Name:         env.Name,
 			RepoPerEnv:   hasRepoPerEnv,
 			FolderPerEnv: hasFolderPerEnv,
-			// StackConfig:  stackConfig,
+			StackConfig:  stackConfig,
 		})
 	}
 
@@ -115,6 +158,21 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(50 * time.Millisecond) // there is a race condition in local dev: the refetch arrives sooner
 	go agentHub.ForceStateSend()
+}
+
+func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
+	var stackConfig dx.StackConfig
+	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, helper.HeadBranch(repo), path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal([]byte(yamlString), &stackConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stackConfig, nil
 }
 
 func agents(w http.ResponseWriter, r *http.Request) {
@@ -155,15 +213,6 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 		}
 	}
 	return nil
-}
-
-func switchToBranch(repo *git.Repository, branch string) error {
-	b := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-	return worktree.Checkout(&git.CheckoutOptions{Create: false, Force: false, Branch: b})
 }
 
 func chartSchema(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/blang/semver/v4"
 	"github.com/fluxcd/source-controller/pkg/sourceignore"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/util"
 	"github.com/go-git/go-git/v5"
@@ -22,16 +23,7 @@ import (
 	giturl "github.com/whilp/git-urls"
 )
 
-type StackRef struct {
-	Repository string `yaml:"repository" json:"repository"`
-}
-
-type StackConfig struct {
-	Stack  StackRef               `yaml:"stack" json:"stack"`
-	Config map[string]interface{} `yaml:"config" json:"config"`
-}
-
-func GenerateFromStackYaml(stackConfig StackConfig) (map[string]string, error) {
+func GenerateFromStackYaml(stackConfig dx.StackConfig) (map[string]string, error) {
 	stackTemplates, err := cloneStackFromRepo(stackConfig.Stack.Repository)
 	if err != nil {
 		return nil, err
@@ -237,7 +229,7 @@ func loadStackFromFS(root string) (map[string]string, error) {
 	return files, nil
 }
 
-func IsVersionLocked(stackConfig StackConfig) (bool, error) {
+func IsVersionLocked(stackConfig dx.StackConfig) (bool, error) {
 	gitAddress, err := giturl.ParseScp(stackConfig.Stack.Repository)
 	if err != nil {
 		_, err2 := os.Stat(stackConfig.Stack.Repository)

@@ -14,6 +14,8 @@
 
 package api
 
+import "github.com/gimlet-io/gimlet-cli/pkg/dx"
+
 type Service struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
@@ -55,10 +57,10 @@ type ConnectedAgent struct {
 }
 
 type GitopsEnv struct {
-	Name         string					`json:"name"`
-	RepoPerEnv   bool					`json:"repoPerEnv"`
-	FolderPerEnv bool					`json:"folderPerEnv"`
-	StackConfig  map[string]interface{}	`json:"stackConfig"`
+	Name         string          `json:"name"`
+	RepoPerEnv   bool            `json:"repoPerEnv"`
+	FolderPerEnv bool            `json:"folderPerEnv"`
+	StackConfig  *dx.StackConfig `json:"stackConfig"`
 }
 
 type GitopsBootstrapConfig struct {

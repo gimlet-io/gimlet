@@ -53,8 +53,6 @@ export default class GimletClient {
 
   getStackDefinition = () => this.getWithAxios('/api/stackDefinition');
 
-  getStack = () => this.getWithAxios('/api/stack');
-
   getWithAxios = async (path) => {
     try {
       const { data } = await axios.get(path, {

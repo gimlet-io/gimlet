@@ -9,7 +9,16 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
   ]);
-  const [stack, setStack] = useState(savedStack);
+
+  console.log(singleEnv)
+  let initStack = {};
+  if (singleEnv.stackConfig) {
+    initStack = singleEnv.stackConfig.config;
+  }
+
+  console.log(initStack)
+
+  const [stack, setStack] = useState(initStack);
   const [stackNonDefaultValues, setStackNonDefaultValues] = useState({});
   const [errors, setErrors] = useState({});
 

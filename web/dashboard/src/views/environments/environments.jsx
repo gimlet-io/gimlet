@@ -59,7 +59,6 @@ class Environments extends Component {
                 hasGitopsRepo={env.repoPerEnv || env.folderPerEnv}
                 gimletClient={this.props.gimletClient}
                 stackDefinition={this.state.stackDefinition}
-                savedStack={this.state.stack}
             />))
         )
     }

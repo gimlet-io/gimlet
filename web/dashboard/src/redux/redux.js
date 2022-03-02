@@ -21,7 +21,6 @@ export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
 export const ACTION_TYPE_STACK_DEFINITION = 'stackDefinition';
-export const ACTION_TYPE_STACK = 'stack';
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
@@ -58,7 +57,6 @@ export const initialState = {
   application: {},
   envs: [],
   stackDefinition: {},
-  stack: {}
 };
 
 export function rootReducer(state = initialState, action) {
@@ -73,8 +71,6 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.agents(state, action.payload);
     case ACTION_TYPE_STACK_DEFINITION:
       return eventHandlers.stackDefinition(state, action.payload);
-    case ACTION_TYPE_STACK:
-      return eventHandlers.stack(state, action.payload);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_TYPE_USER:
