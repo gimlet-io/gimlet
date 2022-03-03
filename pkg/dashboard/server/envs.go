@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -70,19 +71,56 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stackConfig.Config = req.InfrastructureComponents
-	stackConfigBytes, err := yaml.Marshal(stackConfig)
+	stackConfigBuff := bytes.NewBufferString("")
+	e := yaml.NewEncoder(stackConfigBuff)
+	e.SetIndent(2)
+	err = e.Encode(stackConfig)
 	if err != nil {
 		logrus.Errorf("cannot serialize stack config: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBytes, dNativeGit.Dir_RWX_RX_R)
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), dNativeGit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		logrus.Errorf("cannot get working copy: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = worktree.AddWithOptions(&git.AddOptions{
+		All: true,
+	})
+	if err != nil {
+		logrus.Errorf("cannot stage changes: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = nativeGit.Commit(repo, "[Gimlet Dashboard] Updating infrastructure components")
+	if err != nil {
+		logrus.Errorf("cannot commit changes: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	err = nativeGit.PushWithToken(repo, token)
+	if err != nil {
+		logrus.Errorf("cannot push changes: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache.Invalidate(repoName)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))

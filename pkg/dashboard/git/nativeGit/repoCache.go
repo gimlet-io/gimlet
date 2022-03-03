@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -119,7 +120,9 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return // preventing a race condition in cleanup
 	}
 
-	err = r.repos[repoName].Fetch(&git.FetchOptions{
+	repo := r.repos[repoName]
+
+	err = repo.Fetch(&git.FetchOptions{
 		RefSpecs: fetchRefSpec,
 		Auth: &http.BasicAuth{
 			Username: user,
@@ -133,8 +136,27 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 	if err != nil {
-		logrus.Errorf("could not pull: %s", err)
+		logrus.Errorf("could not fetch: %s", err)
 		r.cleanRepo(repoName)
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		logrus.Errorf("could not get working copy: %s", err)
+		r.cleanRepo(repoName)
+		return
+	}
+
+	headBranch := nativeGit.HeadBranch(repo)
+	branchHeadHash := nativeGit.BranchHeadHash(repo, headBranch)
+	err = w.Reset(&git.ResetOptions{
+		Commit: branchHeadHash,
+		Mode:   git.HardReset,
+	})
+	if err != nil {
+		logrus.Errorf("could not reset: %s", err)
+		r.cleanRepo(repoName)
+		return
 	}
 
 	jsonString, _ := json.Marshal(streaming.StaleRepoDataEvent{

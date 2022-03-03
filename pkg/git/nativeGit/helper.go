@@ -78,19 +78,12 @@ func Push(repo *git.Repository, privateKeyPath string) error {
 }
 
 func PushWithToken(repo *git.Repository, accessToken string) error {
-	t0 := time.Now().UnixNano()
-	logrus.Infof("Reading public key took %d", (time.Now().UnixNano()-t0)/1000/1000)
-
-	t0 = time.Now().UnixNano()
-
 	err := repo.Push(&git.PushOptions{
 		Auth: &http.BasicAuth{
 			Username: "abc123", // yes, this can be anything except an empty string
 			Password: accessToken,
 		},
 	})
-	logrus.Infof("Actual push took %d", (time.Now().UnixNano()-t0)/1000/1000)
-
 	if err == git.NoErrAlreadyUpToDate {
 		return nil
 	}
