@@ -18,7 +18,7 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
   }
 
   const [stack, setStack] = useState(initStack);
-  const [stackNonDefaultValues, setStackNonDefaultValues] = useState({});
+  const [stackNonDefaultValues, setStackNonDefaultValues] = useState(initStack);
   const [errors, setErrors] = useState({});
 
   const gitopsRepositories = env.repoPerEnv ? [
@@ -40,6 +40,8 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
   }
 
   const setValues = (variable, values, nonDefaultValues) => {
+    console.log("setting values")
+    console.log(stack)
     setStack({ ...stack, [variable]: values })
 
     setStackNonDefaultValues({ ...stackNonDefaultValues, [variable]: nonDefaultValues })
@@ -58,16 +60,18 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         console.log("We have a validation error, not saving state at all!!!")
+        // TODO
         return false
       }
     }
 
-    gimletClient.saveInfrastructureComponents(stackNonDefaultValues)
+    gimletClient.saveInfrastructureComponents(env.name, env.repoPerEnv, stackNonDefaultValues)
       .then((data) => {
-        console.log(data);
-        console.log("MINDEN OKÉ.")
+        console.log("Components saved")
+        // TODO
       }, () => {
-        console.log("AJJAJ, SCOOBY, BAJ VAN!");
+        console.log("Error occured in saving");
+        // TODO
       })
   }
 

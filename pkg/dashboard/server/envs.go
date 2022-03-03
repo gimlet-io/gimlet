@@ -6,40 +6,90 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	dNativeGit "github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v3"
 )
 
+type saveInfrastructureComponentsReq struct {
+	Env                      string                 `json:"env"`
+	IsPerRepository          bool                   `json:"isPerRepository"`
+	InfrastructureComponents map[string]interface{} `json:"infrastructureComponents"`
+}
+
 func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
-	var infrastructureComponents map[string]interface{}
-	err := json.NewDecoder(r.Body).Decode(&infrastructureComponents)
+	var req saveInfrastructureComponentsReq
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		logrus.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
-	infrastructureComponentsString, err := json.Marshal(infrastructureComponents)
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	org := config.Github.Org
+
+	repoName := fmt.Sprintf("%s/gitops-infra", org)
+	if req.IsPerRepository {
+		repoName = fmt.Sprintf("%s/gitops-%s-infra", org, req.Env)
+	}
+
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
+	defer os.RemoveAll(tmpPath)
 	if err != nil {
-		logrus.Errorf("cannot serialize infrastructure components: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	var stackConfig *dx.StackConfig
+	stackYamlPath := filepath.Join(req.Env, "stack.yaml")
+	if req.IsPerRepository {
+		stackYamlPath = "stack.yaml"
+	}
+
+	stackConfig, err = stackYaml(repo, stackYamlPath)
+	if err != nil {
+		logrus.Errorf("cannot get stack yaml from repo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	stackConfig.Config = req.InfrastructureComponents
+	stackConfigBytes, err := yaml.Marshal(stackConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBytes, dNativeGit.Dir_RWX_RX_R)
+	if err != nil {
+		logrus.Errorf("cannot write file: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(infrastructureComponentsString)
+	w.Write([]byte("{}"))
 }
 
 func stackDefinition(w http.ResponseWriter, r *http.Request) {
+	// TODO get it from Github
 	stackDefinitionString := `
 	{
 		"name": "Gimlet Stack Reference",
@@ -195,35 +245,6 @@ func stackDefinition(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(stackDefinitionString))
-}
-
-func stack(w http.ResponseWriter, r *http.Request) {
-	stackString := `
-	{
-		"certManager": {
-    "email": "laszlo@gimlet.io",
-    "enabled": "true"
-		},
-  "loki": {
-    "enabled": "true",
-    "persistence": "true"
-  },
-  "nginx": {
-    "enabled": "true",
-    "host": "staging.gimlet.io"
-  },
-  "prometheus": {
-    "enabled": "true",
-    "persistence": "true"
-  },
-  "sealedSecrets": {
-    "enabled": "true"
-  }
-	}
-	`
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(stackString))
 }
 
 func bootstrapGitops(w http.ResponseWriter, r *http.Request) {

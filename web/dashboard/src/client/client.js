@@ -49,7 +49,7 @@ export default class GimletClient {
 
   saveFavoriteServices = (favoriteServices) => this.post('/api/saveFavoriteServices', JSON.stringify({ favoriteServices }));
 
-  saveInfrastructureComponents = (infrastructureComponents) => this.postWithAxios('/api/environments', JSON.stringify({ infrastructureComponents }));
+  saveInfrastructureComponents = (env, isPerRepository, infrastructureComponents) => this.postWithAxios('/api/environments', JSON.stringify({ env, isPerRepository, infrastructureComponents }));
 
   getStackDefinition = () => this.getWithAxios('/api/stackDefinition');
 
