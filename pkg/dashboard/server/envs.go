@@ -9,11 +9,14 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	dNativeGit "github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
+	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 )
 
 func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
@@ -234,21 +237,26 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
 	org := config.Github.Org
 	var gitopsRepoURL string
 	var env string
 	var repoName string
+	var repoPath string
 
-	if bootstrapConfig.IsRepository {
-		repoName = fmt.Sprintf("%s/gitops-%s-infra", org, bootstrapConfig.EnvName)
-		gitopsRepoURL = fmt.Sprintf("git@github.com:%s.git", repoName)
+	if bootstrapConfig.RepoPerEnv {
+		repoName = fmt.Sprintf("gitops-%s-infra", bootstrapConfig.EnvName)
+		repoPath = fmt.Sprintf("%s/%s", org, repoName)
+		gitopsRepoURL = fmt.Sprintf("git@github.com:%s.git", repoPath)
 	} else {
-		repoName = fmt.Sprintf("%s/gitops-infra", org)
+		repoName = "gitops-infra"
+		repoPath = fmt.Sprintf("%s/%s", org, repoName)
 		env = bootstrapConfig.EnvName
-		gitopsRepoURL = fmt.Sprintf("git@github.com:%s.git", repoName)
+		gitopsRepoURL = fmt.Sprintf("git@github.com:%s.git", repoPath)
 	}
 
-	err = assureRepoExists(ctx, repoName)
+	err = assureRepoExists(ctx, repoPath, repoName, token)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -256,7 +264,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	_, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoPath)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -267,7 +275,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err = gitops.GenerateManifests(
 		true,
 		env,
-		bootstrapConfig.IsRepository,
+		bootstrapConfig.RepoPerEnv,
 		tmpPath,
 		true,
 		true,
@@ -280,7 +288,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = commitAndPush(repoName, "")
+	err = commitAndPush(repo, token, bootstrapConfig.RepoPerEnv, bootstrapConfig.EnvName, tmpPath)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -293,35 +301,65 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{}`))
 }
 
-func assureRepoExists(ctx context.Context, repoName string) error {
-	_, err := git.PlainInit(repoName, true)
+func assureRepoExists(ctx context.Context, repoPath string, repoName string, token string) error {
+	orgRepos, err := getOrgRepos(ctx)
 	if err != nil {
-		if err == git.ErrRepositoryAlreadyExists {
+		return err
+	}
+
+	for _, orgRepo := range orgRepos {
+		if orgRepo == repoPath {
 			return nil
-		} else {
-			return err
 		}
+	}
+
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalToken})
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+
+	var (
+		name     = repoName
+		private  = true
+		autoInit = true
+	)
+
+	r := &github.Repository{
+		Name:     &name,
+		Private:  &private,
+		AutoInit: &autoInit}
+	_, _, err = client.Repositories.Create(ctx, "", r)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func commitAndPush(repoName string, privateKeyPath string) error {
-	repo, err := git.PlainOpen(repoName)
+func commitAndPush(repo *git.Repository, token string, repoPerEnv bool, envName string, repoPath string) error {
+	var folderToAdd string
+	var gitMessage string
+
+	if repoPerEnv {
+		folderToAdd = "flux"
+		gitMessage = "Gimlet Bootstrapping"
+	} else {
+		folderToAdd = envName
+		gitMessage = fmt.Sprintf("Gimlet Bootstrapping %s", envName)
+	}
+
+	err := nativeGit.StageFolder(repo, fmt.Sprintf("./%s", folderToAdd))
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(repo)
-
-	gitMessage := "Gimlet Bootstrapping"
 
 	_, err = nativeGit.Commit(repo, gitMessage)
 	if err != nil {
 		return err
 	}
 
-	err = nativeGit.Push(repo, privateKeyPath)
+	//GIT PULL
+
+	err = nativeGit.PushWithToken(repo, token, repoPath, repoPerEnv)
 	if err != nil {
 		return err
 	}

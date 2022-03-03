@@ -77,11 +77,19 @@ func Push(repo *git.Repository, privateKeyPath string) error {
 	return err
 }
 
-func PushWithToken(repo *git.Repository, accessToken string) error {
+func PushWithToken(repo *git.Repository, accessToken string, repoPath string, isRepository bool) error {
 	t0 := time.Now().UnixNano()
 	logrus.Infof("Reading public key took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
 	t0 = time.Now().UnixNano()
+
+	if !isRepository {
+		err := execCommand(repoPath, "git", "pull", "--rebase")
+		if err != nil {
+			return err
+		}
+	}
+
 	err := repo.Push(&git.PushOptions{
 		Auth: &http.BasicAuth{
 			Username: "abc123", // yes, this can be anything except an empty string

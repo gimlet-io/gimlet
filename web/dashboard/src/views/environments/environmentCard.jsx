@@ -71,11 +71,11 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
       })
   }
 
-  const bootstrapGitops = (envName, isRepository) => {
+  const bootstrapGitops = (envName, repoPerEnv) => {
     console.log("bootstrapping!");
     console.log(envName);
-    console.log(isRepository);
-    gimletClient.bootstrapGitops(envName, isRepository)
+    console.log(repoPerEnv);
+    gimletClient.bootstrapGitops(envName, repoPerEnv)
     .then((data) => {
       console.log("received data from backend");
       console.log(data);

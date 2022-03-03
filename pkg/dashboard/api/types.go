@@ -64,8 +64,8 @@ type GitopsEnv struct {
 }
 
 type GitopsBootstrapConfig struct {
-	EnvName      string `json:"envName"`
-	IsRepository bool   `json:"isRepository"`
+	EnvName    string `json:"envName"`
+	RepoPerEnv bool   `json:"repoPerEnv"`
 }
 
 type Stack struct {
