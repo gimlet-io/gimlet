@@ -3,6 +3,7 @@ package stack
 import (
 	"testing"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -69,7 +70,7 @@ components:
     ]
 `
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err := yaml.Unmarshal([]byte(stackConfigYaml), &stackConfig)
 	assert.Nil(t, err)
 

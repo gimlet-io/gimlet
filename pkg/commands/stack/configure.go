@@ -19,6 +19,7 @@ import (
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart/ws"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/stack/web"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -48,7 +49,7 @@ var ConfigureCmd = cli.Command{
 }
 
 func configure(c *cli.Context) error {
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	stackConfigPath := c.String("config")
 
 	if stackConfigPath == "" {
@@ -173,7 +174,7 @@ func StackDefinitionFromRepo(repoUrl string) (string, error) {
 var values map[string]interface{}
 var written bool
 
-func Configure(stackDefinition StackDefinition, existingStackConfig StackConfig) (StackConfig, bool, error) {
+func Configure(stackDefinition StackDefinition, existingStackConfig dx.StackConfig) (dx.StackConfig, bool, error) {
 	stackDefinitionJson, err := json.Marshal(stackDefinition)
 	if err != nil {
 		panic(err)

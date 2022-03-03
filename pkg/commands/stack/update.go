@@ -8,6 +8,7 @@ import (
 
 	markdown "github.com/MichaelMure/go-term-markdown"
 	"github.com/enescakir/emoji"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -43,7 +44,7 @@ func update(c *cli.Context) error {
 		return fmt.Errorf("cannot read stack config file: %s", err.Error())
 	}
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err = yaml.Unmarshal(stackConfigYaml, &stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot parse stack config file: %s", err.Error())
@@ -123,7 +124,7 @@ func update(c *cli.Context) error {
 	return nil
 }
 
-func writeStackConfig(stackConfig StackConfig, stackConfigPath string) error {
+func writeStackConfig(stackConfig dx.StackConfig, stackConfigPath string) error {
 	updatedStackConfigBuffer := bytes.NewBufferString("")
 	e := yaml.NewEncoder(updatedStackConfigBuffer)
 	e.SetIndent(2)
@@ -133,7 +134,7 @@ func writeStackConfig(stackConfig StackConfig, stackConfigPath string) error {
 	return ioutil.WriteFile(stackConfigPath, []byte(updatedStackConfigString), 0666)
 }
 
-func printChangeLog(stackConfig StackConfig, versions []string) error {
+func printChangeLog(stackConfig dx.StackConfig, versions []string) error {
 	for _, version := range versions {
 		fmt.Printf("   - %s \n", version)
 

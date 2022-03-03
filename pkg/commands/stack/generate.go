@@ -12,6 +12,7 @@ import (
 	markdown "github.com/MichaelMure/go-term-markdown"
 	"github.com/enescakir/emoji"
 	"github.com/epiclabs-io/diff3"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -95,16 +96,16 @@ func generateFunc(c *cli.Context) error {
 	return nil
 }
 
-func readStackConfig(stackConfigPath string) (StackConfig, error) {
+func readStackConfig(stackConfigPath string) (dx.StackConfig, error) {
 	stackConfigYaml, err := ioutil.ReadFile(stackConfigPath)
 	if err != nil {
-		return StackConfig{}, fmt.Errorf("cannot read stack config file: %s", err.Error())
+		return dx.StackConfig{}, fmt.Errorf("cannot read stack config file: %s", err.Error())
 	}
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err = yaml.Unmarshal(stackConfigYaml, &stackConfig)
 	if err != nil {
-		return StackConfig{}, fmt.Errorf("cannot parse stack config file: %s", err.Error())
+		return dx.StackConfig{}, fmt.Errorf("cannot parse stack config file: %s", err.Error())
 	}
 	return stackConfig, nil
 }
@@ -176,7 +177,7 @@ func writeFilesAndPreserveCustomChanges(
 
 func keepStackConfigUsedForGeneration(
 	stackConfigPath string,
-	stackConfig StackConfig,
+	stackConfig dx.StackConfig,
 ) error {
 	stackBackupPath := filepath.Join(filepath.Dir(stackConfigPath), ".stack", "old")
 	err := os.MkdirAll(filepath.Dir(stackBackupPath), 0775)
@@ -186,7 +187,7 @@ func keepStackConfigUsedForGeneration(
 	return writeStackConfig(stackConfig, stackBackupPath)
 }
 
-func checkForUpdates(stackConfig StackConfig) {
+func checkForUpdates(stackConfig dx.StackConfig) {
 	currentTagString := CurrentVersion(stackConfig.Stack.Repository)
 	if currentTagString != "" {
 		versionsSince, err := VersionsSince(stackConfig.Stack.Repository, currentTagString)
@@ -200,7 +201,7 @@ func checkForUpdates(stackConfig StackConfig) {
 	}
 }
 
-func lockVersionIfNotLocked(stackConfig StackConfig, stackConfigPath string) error {
+func lockVersionIfNotLocked(stackConfig dx.StackConfig, stackConfigPath string) error {
 	locked, err := IsVersionLocked(stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot check version: %s", err.Error())

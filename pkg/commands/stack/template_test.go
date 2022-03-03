@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -73,7 +74,7 @@ config:
     enabled: true
 `
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err := yaml.Unmarshal([]byte(stackConfigYaml), &stackConfig)
 	assert.Nil(t, err)
 
@@ -91,7 +92,7 @@ stack:
   repository: "https://github.com/gimlet-io/gimlet-stack-reference.git?sha=63630b03c805ef6c4c6ba02afdfe508f250d9719"
 `
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err := yaml.Unmarshal([]byte(stackConfigYaml), &stackConfig)
 	assert.Nil(t, err)
 

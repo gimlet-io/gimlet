@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
@@ -35,7 +36,7 @@ func lint(c *cli.Context) error {
 		return fmt.Errorf("cannot read stack config file: %s", err.Error())
 	}
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err = yaml.Unmarshal(stackConfigYaml, &stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot parse stack config file: %s", err.Error())
