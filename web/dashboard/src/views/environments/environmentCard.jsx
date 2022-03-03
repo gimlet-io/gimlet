@@ -2,9 +2,15 @@ import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
+import PopUpWindow from "../envConfig/popUpWindow";
 
 const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDefinition }) => {
   const [enabled, setEnabled] = useState(false)
+  const [saveButtonTriggered, setSaveButtonTriggered] = useState(false)
+  const [hasAPIResponded, setHasAPIResponded] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const [isError, setIsError] = useState(true)
+  const [isTimedOut, setIsTimedOut] = useState(false)
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
@@ -126,6 +132,14 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
               >
                 Save components
               </button>
+              {saveButtonTriggered &&
+              <PopUpWindow
+                hasAPIResponded={hasAPIResponded}
+                errorMessage={errorMessage}
+                isError={isError}
+                isTimedOut={isTimedOut}
+              />
+            }
             </span>
           </div>
         </div>
