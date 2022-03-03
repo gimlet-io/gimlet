@@ -77,18 +77,11 @@ func Push(repo *git.Repository, privateKeyPath string) error {
 	return err
 }
 
-func PushWithToken(repo *git.Repository, accessToken string, repoPath string, isRepository bool) error {
+func PushWithToken(repo *git.Repository, accessToken string) error {
 	t0 := time.Now().UnixNano()
 	logrus.Infof("Reading public key took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
 	t0 = time.Now().UnixNano()
-
-	if !isRepository {
-		err := execCommand(repoPath, "git", "pull", "--rebase")
-		if err != nil {
-			return err
-		}
-	}
 
 	err := repo.Push(&git.PushOptions{
 		Auth: &http.BasicAuth{
@@ -103,6 +96,14 @@ func PushWithToken(repo *git.Repository, accessToken string, repoPath string, is
 	}
 
 	return err
+}
+
+func PullRebase(repoPath string) error {
+	err := execCommand(repoPath, "git", "pull", "--rebase")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NothingToCommit(repo *git.Repository) (bool, error) {

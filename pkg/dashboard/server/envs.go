@@ -355,9 +355,14 @@ func commitAndPush(repo *git.Repository, token string, repoPerEnv bool, envName 
 		return err
 	}
 
-	//GIT PULL
+	if !repoPerEnv {
+		err = nativeGit.PullRebase(repoPath)
+		if err != nil {
+			return err
+		}
+	}
 
-	err = nativeGit.PushWithToken(repo, token, repoPath, repoPerEnv)
+	err = nativeGit.PushWithToken(repo, token)
 	if err != nil {
 		return err
 	}
