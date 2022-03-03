@@ -288,7 +288,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = commitAndPush(repo, token, bootstrapConfig.RepoPerEnv, bootstrapConfig.EnvName, tmpPath)
+	folderToAdd := folderToAdd(bootstrapConfig.EnvName, bootstrapConfig.RepoPerEnv)
+	err = commitAndPush(repo, token, folderToAdd)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -333,33 +334,15 @@ func assureRepoExists(ctx context.Context, repoPath string, repoName string, tok
 	return nil
 }
 
-func commitAndPush(repo *git.Repository, token string, repoPerEnv bool, envName string, repoPath string) error {
-	var folderToAdd string
-	var gitMessage string
-
-	if repoPerEnv {
-		folderToAdd = "flux"
-		gitMessage = "Gimlet Bootstrapping"
-	} else {
-		folderToAdd = envName
-		gitMessage = fmt.Sprintf("Gimlet Bootstrapping %s", envName)
-	}
-
+func commitAndPush(repo *git.Repository, token string, folderToAdd string) error {
 	err := nativeGit.StageFolder(repo, fmt.Sprintf("./%s", folderToAdd))
 	if err != nil {
 		return err
 	}
 
-	_, err = nativeGit.Commit(repo, gitMessage)
+	_, err = nativeGit.Commit(repo, "Gimlet Bootstrapping")
 	if err != nil {
 		return err
-	}
-
-	if !repoPerEnv {
-		err = nativeGit.PullRebase(repoPath)
-		if err != nil {
-			return err
-		}
 	}
 
 	err = nativeGit.PushWithToken(repo, token)
@@ -368,4 +351,12 @@ func commitAndPush(repo *git.Repository, token string, repoPerEnv bool, envName 
 	}
 
 	return nil
+}
+
+func folderToAdd(envName string, repoPerEnv bool) string {
+	if repoPerEnv {
+		return "flux"
+	} else {
+		return envName
+	}
 }
