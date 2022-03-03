@@ -307,29 +307,27 @@ func assureRepoExists(ctx context.Context, repoPath string, repoName string, tok
 		return err
 	}
 
-	for _, orgRepo := range orgRepos {
-		if orgRepo == repoPath {
-			return nil
+	if !hasRepo(orgRepos, repoPath) {
+		personalToken := ""
+
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalToken})
+		tc := oauth2.NewClient(ctx, ts)
+		client := github.NewClient(tc)
+
+		var (
+			name     = repoName
+			private  = true
+			autoInit = true
+		)
+
+		r := &github.Repository{
+			Name:     &name,
+			Private:  &private,
+			AutoInit: &autoInit}
+		_, _, err = client.Repositories.Create(ctx, "", r)
+		if err != nil {
+			return err
 		}
-	}
-
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalToken})
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
-
-	var (
-		name     = repoName
-		private  = true
-		autoInit = true
-	)
-
-	r := &github.Repository{
-		Name:     &name,
-		Private:  &private,
-		AutoInit: &autoInit}
-	_, _, err = client.Repositories.Create(ctx, "", r)
-	if err != nil {
-		return err
 	}
 
 	return nil
