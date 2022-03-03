@@ -4,10 +4,10 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 import PopUpWindow from "../envConfig/popUpWindow";
 
-const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDefinition }) => {
+const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient, stackDefinition }) => {
   const [enabled, setEnabled] = useState(false)
   const [saveButtonTriggered, setSaveButtonTriggered] = useState(false)
-  const [hasAPIResponded, setHasAPIResponded] = useState(false)
+  const [hasResponded, setHasResponded] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [isError, setIsError] = useState(true)
   const [isTimedOut, setIsTimedOut] = useState(false)
@@ -63,10 +63,19 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
   }
 
   const saveComponents = () => {
+    setSaveButtonTriggered(true)
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         console.log("We have a validation error, not saving state at all!!!")
-        // TODO
+        setHasResponded(true)
+        setIsError(true)
+        setErrorMessage(errors[variable][0].message)
+        setTimeout(() => {
+          setSaveButtonTriggered(false);
+          setIsError(false);
+          setHasResponded(false);
+          setErrorMessage("");
+        }, 3000);
         return false
       }
     }
@@ -74,8 +83,9 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
     gimletClient.saveInfrastructureComponents(env.name, env.repoPerEnv, stackNonDefaultValues)
       .then((data) => {
         console.log("Components saved")
-        // TODO
-      }, () => {
+        setHasResponded(true)
+        setTimeout(() => { setSaveButtonTriggered(false); setHasResponded(false) }, 3000);
+      }, (err) => {
         console.log("Error occured in saving");
         // TODO
       })
@@ -86,11 +96,11 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
     console.log(envName);
     console.log(repoPerEnv);
     gimletClient.bootstrapGitops(envName, repoPerEnv)
-    .then((data) => {
-      console.log("received data from backend");
-      console.log(data);
-    }, () => {
-    })
+      .then((data) => {
+        console.log("received data from backend");
+        console.log(data);
+      }, () => {
+      })
   }
 
   const gitopsRepositoriesTab = () => {
@@ -128,18 +138,18 @@ const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDef
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
                 onClick={() => saveComponents()}
-                className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
-              >
+                disabled={saveButtonTriggered}
+                className={(!saveButtonTriggered ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}              >
                 Save components
               </button>
               {saveButtonTriggered &&
-              <PopUpWindow
-                hasAPIResponded={hasAPIResponded}
-                errorMessage={errorMessage}
-                isError={isError}
-                isTimedOut={isTimedOut}
-              />
-            }
+                <PopUpWindow
+                  hasAPIResponded={hasResponded}
+                  errorMessage={errorMessage}
+                  isError={isError}
+                  isTimedOut={isTimedOut}
+                />
+              }
             </span>
           </div>
         </div>
