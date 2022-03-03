@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -114,7 +115,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			stackConfig, err = stackYaml(repo, "stack.yaml")
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "file not found") {
 				logrus.Errorf("cannot get stack yaml from repo: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
@@ -127,7 +128,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "file not found") {
 				logrus.Errorf("cannot get stack yaml from repo: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
