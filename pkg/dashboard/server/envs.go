@@ -394,12 +394,19 @@ func assureRepoExists(ctx context.Context, repoPath string, repoName string, tok
 }
 
 func commitAndPush(repo *git.Repository, token string, folderToAdd string) error {
-	err := nativeGit.StageFolder(repo, fmt.Sprintf("./%s", folderToAdd))
+	worktree, err := repo.Worktree()
 	if err != nil {
 		return err
 	}
 
-	_, err = nativeGit.Commit(repo, "Gimlet Bootstrapping")
+	err = worktree.AddWithOptions(&git.AddOptions{
+		Glob: fmt.Sprintf("./%s/*", folderToAdd),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = nativeGit.Commit(repo, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
 		return err
 	}

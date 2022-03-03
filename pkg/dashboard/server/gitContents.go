@@ -146,7 +146,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files, err := helper.Folder(repo, ".gimlet")
+	headBranch := helper.HeadBranch(repo)
+	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
 	if err != nil {
 		if !strings.Contains(err.Error(), "no such file or directory") {
 			logrus.Errorf("cannot list files in .gimlet/: %s", err)
