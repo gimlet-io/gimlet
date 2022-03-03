@@ -63,11 +63,11 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	err = setSessionCookie(w, r, user)
 	if err != nil {
 		log.Errorf("cannot set session cookie: %s", err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	http.RedirectHandler("/"+token.AppState, 303).ServeHTTP(w, r)
+	http.RedirectHandler("/"+token.AppState, http.StatusSeeOther).ServeHTTP(w, r)
 }
 
 func validateOrganizationMembership(orgList []*scm.Organization, org string, userName string) bool {
@@ -85,7 +85,7 @@ func validateOrganizationMembership(orgList []*scm.Organization, org string, use
 
 func logout(w http.ResponseWriter, r *http.Request) {
 	httputil.DelCookie(w, r, "user_sess")
-	http.RedirectHandler("/login", 303).ServeHTTP(w, r)
+	http.RedirectHandler("/login", http.StatusSeeOther).ServeHTTP(w, r)
 }
 
 func getOrCreateUser(store *store.Store, scmUser *scm.User, token *login.Token) (*model.User, error) {
@@ -110,7 +110,6 @@ func getOrCreateUser(store *store.Store, scmUser *scm.User, token *login.Token) 
 			if err != nil {
 				return nil, err
 			}
-			break
 		default:
 			return nil, err
 		}

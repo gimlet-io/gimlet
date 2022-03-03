@@ -113,7 +113,7 @@ type DeployTarget struct {
 // Commit represents a Github commit
 type Commit struct {
 	SHA           string               `json:"sha"`
-	URL           string               `json:"url""`
+	URL           string               `json:"url"`
 	Author        string               `json:"author"`
 	AuthorName    string               `json:"authorName"`
 	AuthorPic     string               `json:"author_pic"`

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,7 +33,7 @@ func gitopsRepo(w http.ResponseWriter, r *http.Request) {
 
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: config.GimletD.TOKEN,
 		},
@@ -71,7 +72,7 @@ func gimletd(w http.ResponseWriter, r *http.Request) {
 
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: config.GimletD.TOKEN,
 		},
@@ -245,7 +246,7 @@ func getAppReleasesFromGimletD(
 ) ([]*dx.Release, error) {
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: gimletdToken,
 		},
@@ -283,7 +284,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 	}
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: config.GimletD.TOKEN,
 		},
@@ -300,7 +301,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 
 	oauth2Config = new(oauth2.Config)
 	auth = oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: gimletdUser.Token,
 		},
@@ -344,7 +345,7 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 	}
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: config.GimletD.TOKEN,
 		},
@@ -361,7 +362,7 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 
 	oauth2Config = new(oauth2.Config)
 	auth = oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: gimletdUser.Token,
 		},
@@ -407,7 +408,7 @@ func deployStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: config.GimletD.TOKEN,
 		},
@@ -440,7 +441,7 @@ func decorateCommitsWithGimletArtifacts(commits []*Commit, config *config.Config
 	}
 	oauth2Config := new(oauth2.Config)
 	auth := oauth2Config.Client(
-		oauth2.NoContext,
+		context.Background(),
 		&oauth2.Token{
 			AccessToken: config.GimletD.TOKEN,
 		},

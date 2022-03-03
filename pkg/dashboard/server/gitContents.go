@@ -284,24 +284,6 @@ func getOrgRepos(ctx context.Context) ([]string, error) {
 	return orgRepos, nil
 }
 
-func getGitopsInfra(goScm *genericScm.GoScmHelper, token string, gitopsInfraRepo string) ([]string, error) {
-	gitopsRepoDirectoryContent, err := goScm.DirectoryContents(token, gitopsInfraRepo, "")
-	if err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-			return nil, nil
-		} else {
-			return nil, err
-		}
-	}
-
-	var gitopsRepoContent []string
-	for file := range gitopsRepoDirectoryContent {
-		gitopsRepoContent = append(gitopsRepoContent, file)
-	}
-
-	return gitopsRepoContent, nil
-}
-
 func hasRepo(orgRepos []string, repo string) bool {
 	for _, orgRepo := range orgRepos {
 		if orgRepo == repo {

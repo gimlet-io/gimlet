@@ -158,7 +158,7 @@ func fileServer(r chi.Router, path string, root http.FileSystem) {
 	}
 
 	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
 		path += "/"
 	}
 	path += "*"
@@ -179,7 +179,7 @@ func mustAgent(next http.Handler) http.Handler {
 		_, claims, _ := jwtauth.FromContext(r.Context())
 		userId := claims["user_id"]
 		if userId != "gimlet-agent" {
-			http.Error(w, "Unauthorized", 401)
+			http.Error(w, "Unauthorized", http.StatusForbidden)
 			return
 		}
 
