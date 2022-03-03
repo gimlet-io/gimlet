@@ -53,10 +53,9 @@ class Environments extends Component {
 
         return (
             sortedEnvs.map(env => (<EnvironmentCard
-                singleEnv={env}
+                env={env}
                 deleteEnv={() => this.delete(env.name)}
                 isOnline={this.isOnline(connectedAgents, env)}
-                hasGitopsRepo={env.repoPerEnv || env.folderPerEnv}
                 gimletClient={this.props.gimletClient}
                 stackDefinition={this.state.stackDefinition}
             />))

@@ -3,29 +3,31 @@ import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 
-const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, gimletClient, stackDefinition, savedStack }) => {
+const EnvironmentCard = ({isOnline, env, deleteEnv, user, gimletClient, stackDefinition }) => {
   const [enabled, setEnabled] = useState(false)
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
   ]);
 
-  console.log(singleEnv)
-  let initStack = {};
-  if (singleEnv.stackConfig) {
-    initStack = singleEnv.stackConfig.config;
-  }
+  const hasGitopsRepo = env.repoPerEnv || env.folderPerEnv;
 
-  console.log(initStack)
+  let initStack = {};
+  if (env.stackConfig) {
+    initStack = env.stackConfig.config;
+  }
 
   const [stack, setStack] = useState(initStack);
   const [stackNonDefaultValues, setStackNonDefaultValues] = useState({});
   const [errors, setErrors] = useState({});
 
-  const gitopsRepositories = [
-    { name: "Gitops-infra", href: `https://github.com/${user}/gitops-infra` },
-    { name: "Gitops-apps", href: `https://github.com/${user}/gitops-apps` }
-  ]
+  const gitopsRepositories = env.repoPerEnv ? [
+    { name: `gitops-${env.name}-infra`, href: `https://github.com/${user}/gitops-${env.name}-infra` },
+    { name: `gitops-${env.name}-apps`, href: `https://github.com/${user}/gitops-${env.name}-apps` }
+  ] : [
+    { name: "gitops-infra", href: `https://github.com/${user}/gitops-infra` },
+    { name: "gitops-apps", href: `https://github.com/${user}/gitops-apps` }
+  ];
 
   const switchTabHandler = (tabName) => {
     setTabs(tabs.map(tab => {
@@ -107,7 +109,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
       <div className="mt-4 text-gray-700">
         <div>
           <StackUI
-            stack={savedStack}
+            stack={stack}
             stackDefinition={stackDefinition}
             setValues={setValues}
             validationCallback={validationCallback}
@@ -143,7 +145,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
             </div>
             <div className="ml-3 md:justify-between">
               <p className="text-sm text-blue-500">
-                By default, manifests of this environment will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{singleEnv.name}</span> folder in the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span> git repository
+                By default, manifests of this environment will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder in the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span> git repository
               </p>
             </div>
           </div>
@@ -171,12 +173,12 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
               </Switch>
             </div>
           </div>
-          <div className="mt-2 text-sm text-gray-500 leading-loose">Manifests will be placed in the environment specific <span className="text-xs font-mono bg-gray-100 text-gray-500 font-medium px-1 py-1 rounded">gitops-{singleEnv.name}-infra</span> repository</div>
+          <div className="mt-2 text-sm text-gray-500 leading-loose">Manifests will be placed in the environment specific <span className="text-xs font-mono bg-gray-100 text-gray-500 font-medium px-1 py-1 rounded">gitops-{env.name}-infra</span> repository</div>
           <div className="p-0 flow-root mt-8">
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
                 // disabled={this.state.input === "" || this.state.saveButtonTriggered}
-                onClick={() => bootstrapGitops(singleEnv.name, enabled)}
+                onClick={() => bootstrapGitops(env.name, enabled)}
                 className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
               >
                 Bootstrap gitops repository
@@ -194,7 +196,7 @@ const EnvironmentCard = ({ isOnline, singleEnv, deleteEnv, hasGitopsRepo, user, 
         <div className="flex justify-between">
           <div className="inline-flex">
             <h3 className="text-lg leading-6 font-medium text-gray-900 pr-1">
-              {singleEnv.name}
+              {env.name}
             </h3>
             <span title={isOnline ? "Connected" : "Disconnected"}>
               <svg className={(isOnline ? "text-green-400" : "text-red-400") + " inline fill-current ml-1"} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20">
