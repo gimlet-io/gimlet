@@ -27,7 +27,7 @@ export default class PopUpWindow extends Component {
             return (
                 <>
                     <ExclamationCircleIcon className="mr-1 h-5 w-5" />
-                    <div>Something went wrong: {this.state.popupWindow.message}.</div>
+                    <div>Something went wrong: {this.state.popupWindow.errorMessage}.</div>
                 </>
             )
         } else {

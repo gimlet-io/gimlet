@@ -60,9 +60,8 @@ export const initialState = {
   stackDefinition: {},
   popupWindow: {
     visible: false,
-    progressed : false,
     isError: false,
-    message: ""
+    errorMessage: ""
   }
 };
 
