@@ -108,7 +108,7 @@ func update(c *cli.Context) error {
 	} else {
 		fmt.Printf("%v  Stack version is updating to %s... \n\n", emoji.HourglassNotDone, latestTag)
 		stackConfig.Stack.Repository = stack.RepoUrlWithoutVersion(stackConfig.Stack.Repository) + "?tag=" + latestTag
-		err = writeStackConfig(stackConfig, stackConfigPath)
+		err = stack.WriteStackConfig(stackConfig, stackConfigPath)
 		if err != nil {
 			return fmt.Errorf("cannot write stack file %s", err)
 		}
@@ -123,16 +123,6 @@ func update(c *cli.Context) error {
 	}
 
 	return nil
-}
-
-func writeStackConfig(stackConfig dx.StackConfig, stackConfigPath string) error {
-	updatedStackConfigBuffer := bytes.NewBufferString("")
-	e := yaml.NewEncoder(updatedStackConfigBuffer)
-	e.SetIndent(2)
-	e.Encode(stackConfig)
-
-	updatedStackConfigString := "---\n" + updatedStackConfigBuffer.String()
-	return ioutil.WriteFile(stackConfigPath, []byte(updatedStackConfigString), 0666)
 }
 
 func printChangeLog(stackConfig dx.StackConfig, versions []string) error {

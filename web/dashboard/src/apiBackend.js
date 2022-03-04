@@ -7,7 +7,6 @@ import {
   ACTION_TYPE_USER,
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_APPLICATION,
-  ACTION_TYPE_STACK_DEFINITION,
 } from "./redux/redux";
 
 export default class APIBackend extends Component {

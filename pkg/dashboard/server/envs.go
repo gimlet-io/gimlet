@@ -16,6 +16,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
@@ -84,6 +85,13 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), dNativeGit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	if err != nil {
+		logrus.Errorf("cannot generate and write files: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
