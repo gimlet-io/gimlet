@@ -51,8 +51,6 @@ export default class GimletClient {
 
   saveInfrastructureComponents = (env, isPerRepository, infrastructureComponents) => this.postWithAxios('/api/environments', JSON.stringify({ env, isPerRepository, infrastructureComponents }));
 
-  getStackDefinition = () => this.getWithAxios('/api/stackDefinition');
-
   getWithAxios = async (path) => {
     try {
       const { data } = await axios.get(path, {

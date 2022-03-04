@@ -4,7 +4,7 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 import PopUpWindow from "../envConfig/popUpWindow";
 
-const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient, stackDefinition }) => {
+const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient }) => {
   const [enabled, setEnabled] = useState(false)
   const [saveButtonTriggered, setSaveButtonTriggered] = useState(false)
   const [hasResponded, setHasResponded] = useState(false)
@@ -130,7 +130,7 @@ const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient, stackDe
         <div>
           <StackUI
             stack={stack}
-            stackDefinition={stackDefinition}
+            stackDefinition={env.stackDefinition}
             setValues={setValues}
             validationCallback={validationCallback}
           />

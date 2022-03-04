@@ -23,11 +23,6 @@ export function agents(state, event) {
   return state;
 }
 
-export function stackDefinition(state, event) {
-  state.stackDefinition = event;
-  return state;
-}
-
 export function envsUpdated(state, allEnvs) {
   allEnvs.connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;

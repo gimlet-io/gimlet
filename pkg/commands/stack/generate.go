@@ -13,6 +13,7 @@ import (
 	"github.com/enescakir/emoji"
 	"github.com/epiclabs-io/diff3"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -46,7 +47,7 @@ func generateFunc(c *cli.Context) error {
 	}
 	checkForUpdates(stackConfig)
 
-	generatedFiles, err := GenerateFromStackYaml(stackConfig)
+	generatedFiles, err := stack.GenerateFromStackYaml(stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot generate stack: %s", err.Error())
 	}
@@ -56,7 +57,7 @@ func generateFunc(c *cli.Context) error {
 	if err != nil {
 		oldStackConfig = stackConfig
 	}
-	previousGenerationFiles, err := GenerateFromStackYaml(oldStackConfig)
+	previousGenerationFiles, err := stack.GenerateFromStackYaml(oldStackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot generate stack: %s", err.Error())
 	}
@@ -78,7 +79,7 @@ func generateFunc(c *cli.Context) error {
 
 	fmt.Printf("\n%v  Generated\n\n", emoji.CheckMark)
 
-	stackDefinitionYaml, err := StackDefinitionFromRepo(stackConfig.Stack.Repository)
+	stackDefinitionYaml, err := stack.StackDefinitionFromRepo(stackConfig.Stack.Repository)
 	if err != nil {
 		return fmt.Errorf("cannot get stack definition: %s", err.Error())
 	}
@@ -188,9 +189,9 @@ func keepStackConfigUsedForGeneration(
 }
 
 func checkForUpdates(stackConfig dx.StackConfig) {
-	currentTagString := CurrentVersion(stackConfig.Stack.Repository)
+	currentTagString := stack.CurrentVersion(stackConfig.Stack.Repository)
 	if currentTagString != "" {
-		versionsSince, err := VersionsSince(stackConfig.Stack.Repository, currentTagString)
+		versionsSince, err := stack.VersionsSince(stackConfig.Stack.Repository, currentTagString)
 		if err != nil {
 			fmt.Printf("\n%v  Cannot check for updates \n\n", emoji.Warning)
 		}
@@ -202,12 +203,12 @@ func checkForUpdates(stackConfig dx.StackConfig) {
 }
 
 func lockVersionIfNotLocked(stackConfig dx.StackConfig, stackConfigPath string) error {
-	locked, err := IsVersionLocked(stackConfig)
+	locked, err := stack.IsVersionLocked(stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot check version: %s", err.Error())
 	}
 	if !locked {
-		latestTag, _ := LatestVersion(stackConfig.Stack.Repository)
+		latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
 		if latestTag != "" {
 			stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?tag=" + latestTag
 

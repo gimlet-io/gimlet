@@ -62,6 +62,15 @@ func generate(
 	return generatedFiles, nil
 }
 
+func StackDefinitionFromRepo(repoUrl string) (string, error) {
+	stackTemplates, err := cloneStackFromRepo(repoUrl)
+	if err != nil {
+		return "", err
+	}
+
+	return stackTemplates["stack-definition.yaml"], nil
+}
+
 // cloneStackFromRepo takes a git repo url, and returns the files of the git reference
 // if the repoUrl is a local filesystem location, it loads the files from there
 func cloneStackFromRepo(repoURL string) (map[string]string, error) {

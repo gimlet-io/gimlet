@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -138,11 +139,19 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		stackDefinition, err := loadStackDefinition(stackConfig, config.DefaultStackUrl)
+		if err != nil && !strings.Contains(err.Error(), "file not found") {
+			logrus.Errorf("cannot get stack definition: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		envs = append(envs, &api.GitopsEnv{
-			Name:         env.Name,
-			RepoPerEnv:   repoPerEnvRepoExists,
-			FolderPerEnv: envInSharedGitopsRepoExists,
-			StackConfig:  stackConfig,
+			Name:            env.Name,
+			RepoPerEnv:      repoPerEnvRepoExists,
+			FolderPerEnv:    envInSharedGitopsRepoExists,
+			StackConfig:     stackConfig,
+			StackDefinition: stackDefinition,
 		})
 	}
 
@@ -162,6 +171,22 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(50 * time.Millisecond) // there is a race condition in local dev: the refetch arrives sooner
 	go agentHub.ForceStateSend()
+}
+
+func loadStackDefinition(stackConfig *dx.StackConfig, defaultStackUrl string) (map[string]interface{}, error) {
+	url := defaultStackUrl
+	if stackConfig != nil {
+		url = stackConfig.Stack.Repository
+	}
+
+	stackDefinitionYaml, err := stack.StackDefinitionFromRepo(url)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get stack definition: %s", err.Error())
+	}
+
+	var stackDefinition map[string]interface{}
+	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
+	return stackDefinition, err
 }
 
 func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {

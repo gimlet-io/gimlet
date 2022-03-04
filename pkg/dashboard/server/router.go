@@ -110,7 +110,6 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/saveEnvToDB"), saveEnvToDB)
 		r.Post(("/api/deleteEnvFromDB"), deleteEnvFromDB)
 		r.Post(("/api/environments"), saveInfrastructureComponents)
-		r.Get(("/api/stackDefinition"), stackDefinition)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
 	})
 }
