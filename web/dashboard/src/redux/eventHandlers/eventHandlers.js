@@ -23,6 +23,19 @@ export function agents(state, event) {
   return state;
 }
 
+export function stackDefinition(state, event) {
+  state.stackDefinition = event;
+  return state;
+}
+
+export function popupWindow(state, payload) {
+  state.popupWindow.visible = payload.visible;
+  state.popupWindow.isError = payload.isError;
+  state.popupWindow.progressed = payload.progressed;
+  state.popupWindow.message = payload.message;
+  return state;
+}
+
 export function envsUpdated(state, allEnvs) {
   allEnvs.connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;

@@ -2,15 +2,20 @@ import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
-import PopUpWindow from "../envConfig/popUpWindow";
+import {ACTION_TYPE_POPUPWINDOW,
+} from "../../redux/redux";
 
-const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }) => {
+  let reduxState = store.getState();
   const [enabled, setEnabled] = useState(false)
-  const [saveButtonTriggered, setSaveButtonTriggered] = useState(false)
-  const [hasResponded, setHasResponded] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [isError, setIsError] = useState(true)
-  const [isTimedOut, setIsTimedOut] = useState(false)
+  let [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
+
+  store.subscribe(() => {
+    let reduxState = store.getState();
+
+    setPopupWindow(reduxState.popupWindow);
+  });
+
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
@@ -63,18 +68,26 @@ const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient }) => {
   }
 
   const saveComponents = () => {
-    setSaveButtonTriggered(true)
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         console.log("We have a validation error, not saving state at all!!!")
-        setHasResponded(true)
-        setIsError(true)
-        setErrorMessage(errors[variable][0].message)
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOW, payload: {
+            visible: true,
+            isError: true,
+            progressed: true,
+            message: "This is not the button you are looking for"
+          }
+        });
         setTimeout(() => {
-          setSaveButtonTriggered(false);
-          setIsError(false);
-          setHasResponded(false);
-          setErrorMessage("");
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOW, payload: {
+              visible: false,
+              isError: false,
+              progressed: false,
+              errorMesssage: ""
+            }
+          });
         }, 3000);
         return false
       }
@@ -83,8 +96,7 @@ const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient }) => {
     gimletClient.saveInfrastructureComponents(env.name, env.repoPerEnv, stackNonDefaultValues)
       .then((data) => {
         console.log("Components saved")
-        setHasResponded(true)
-        setTimeout(() => { setSaveButtonTriggered(false); setHasResponded(false) }, 3000);
+        // TODO
       }, (err) => {
         console.log("Error occured in saving");
         // TODO
@@ -138,18 +150,10 @@ const EnvironmentCard = ({ isOnline, env, deleteEnv, user, gimletClient }) => {
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
                 onClick={() => saveComponents()}
-                disabled={saveButtonTriggered}
-                className={(!saveButtonTriggered ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}              >
+                disabled={false}
+                className={(true ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}              >
                 Save components
               </button>
-              {saveButtonTriggered &&
-                <PopUpWindow
-                  hasAPIResponded={hasResponded}
-                  errorMessage={errorMessage}
-                  isError={isError}
-                  isTimedOut={isTimedOut}
-                />
-              }
             </span>
           </div>
         </div>

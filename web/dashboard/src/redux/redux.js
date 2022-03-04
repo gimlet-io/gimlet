@@ -20,6 +20,8 @@ export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
+export const ACTION_TYPE_STACK_DEFINITION = 'stackDefinition';
+export const ACTION_TYPE_POPUPWINDOW = 'popupWindow';
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
@@ -55,7 +57,16 @@ export const initialState = {
   envConfigs: {},
   application: {},
   envs: [],
+  stackDefinition: {},
+  popupWindow: {
+    visible: false,
+    progressed : false,
+    isError: false,
+    message: ""
+  }
 };
+
+console.log("REDUX")
 
 export function rootReducer(state = initialState, action) {
   switch (action.type) {
@@ -67,6 +78,10 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:
       return eventHandlers.agents(state, action.payload);
+    case ACTION_TYPE_STACK_DEFINITION:
+      return eventHandlers.stackDefinition(state, action.payload);
+    case ACTION_TYPE_POPUPWINDOW:
+      return eventHandlers.popupWindow(state, action.payload);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_TYPE_USER:
