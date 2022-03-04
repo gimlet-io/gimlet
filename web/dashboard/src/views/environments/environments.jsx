@@ -52,6 +52,7 @@ class Environments extends Component {
                 deleteEnv={() => this.delete(env.name)}
                 isOnline={this.isOnline(connectedAgents, env)}
                 gimletClient={this.props.gimletClient}
+                user={this.state.user.login}
             />))
         )
     }
