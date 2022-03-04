@@ -20,7 +20,7 @@ func main() {
 	r.Post("/saveAppCredentials", saveAppCredentials)
 	r.HandleFunc("/*", serveTemplate)
 
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":3333", r)
 }
 
 type app struct {

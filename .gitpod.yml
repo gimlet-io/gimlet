@@ -31,6 +31,9 @@ ports:
   - port: 3000
     onOpen: open-browser
     visibility: public
+  - port: 3333
+    onOpen: open-browser
+    visibility: public
 
 vscode:
   extensions:
