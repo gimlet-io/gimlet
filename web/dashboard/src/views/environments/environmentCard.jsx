@@ -71,6 +71,14 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
     setErrors({ ...errors, [variable]: validationErrors })
   }
 
+  const resetPopupWindowAfterThreeSeconds = () => {
+    setTimeout(() => {
+      store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
+    }, 3000);
+  };
+
   const saveComponents = () => {
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWOPENED
@@ -84,11 +92,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
             errorMessage: errorMessage
           }
         });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
+        resetPopupWindowAfterThreeSeconds()
         return false
       }
     }
@@ -99,11 +103,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSAVED
         });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
+        resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         console.log("Error occured in saving");
         store.dispatch({
@@ -111,24 +111,29 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
             errorMessage: err.statusText
           }
         });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
+        resetPopupWindowAfterThreeSeconds()
       })
   }
 
   const bootstrapGitops = (envName, repoPerEnv) => {
-    console.log(popupWindow)
-    console.log("bootstrapping!");
-    console.log(envName);
-    console.log(repoPerEnv);
+    console.log(popupWindow);
+       store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWOPENED
+    });
+
     gimletClient.bootstrapGitops(envName, repoPerEnv)
       .then((data) => {
-        console.log("received data from backend");
-        console.log(data);
-      }, () => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSAVED
+        });
+        resetPopupWindowAfterThreeSeconds()
+      }, (err) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            errorMessage: err.statusText
+          }
+        });
+        resetPopupWindowAfterThreeSeconds()
       })
   }
 
