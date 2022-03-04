@@ -104,6 +104,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
   }
 
   const bootstrapGitops = (envName, repoPerEnv) => {
+    console.log(popupWindow)
     console.log("bootstrapping!");
     console.log(envName);
     console.log(repoPerEnv);
