@@ -20,9 +20,10 @@ export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
+export const ACTION_TYPE_POPUPWINDOWOPENED = 'popupWindowOpened';
 export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
-export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 export const ACTION_TYPE_POPUPWINDOWSAVED = 'popupWindowSaved';
+export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
@@ -60,6 +61,7 @@ export const initialState = {
   envs: [],
   popupWindow: {
     visible: false,
+    finished: false,
     isError: false,
     errorMessage: ""
   }
@@ -75,12 +77,14 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:
       return eventHandlers.agents(state, action.payload);
+    case ACTION_TYPE_POPUPWINDOWOPENED:
+      return eventHandlers.popupWindowOpened(state);
     case ACTION_TYPE_POPUPWINDOWERROR:
       return eventHandlers.popupWindowError(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWRESET:
-      return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_POPUPWINDOWSAVED:
       return eventHandlers.popupWindowSaved(state);
+    case ACTION_TYPE_POPUPWINDOWRESET:
+      return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_TYPE_USER:

@@ -3,7 +3,10 @@ import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 import {
-  ACTION_TYPE_POPUPWINDOWERROR, ACTION_TYPE_POPUPWINDOWRESET, ACTION_TYPE_POPUPWINDOWSAVED,
+  ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWRESET,
+  ACTION_TYPE_POPUPWINDOWSAVED,
+  ACTION_TYPE_POPUPWINDOWOPENED
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }) => {
@@ -69,6 +72,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
   }
 
   const saveComponents = () => {
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWOPENED
+    });
+
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         const errorMessage = `${variable} ${errors[variable].map(e => e.message).join(". ")}`

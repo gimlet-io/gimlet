@@ -23,22 +23,27 @@ export function agents(state, event) {
   return state;
 }
 
-export function popupWindowError(state, payload) {
+export function popupWindowOpened(state) {
   state.popupWindow.visible = true;
+  return state;
+}
+
+export function popupWindowError(state, payload) {
+  state.popupWindow.finished = true;
   state.popupWindow.isError = true;
   state.popupWindow.errorMessage = payload.errorMessage;
   return state;
 }
 
-export function popupWindowSaved(state, payload) {
-  state.popupWindow.visible = true;
-  state.popupWindow.isError = false;
+export function popupWindowSaved(state) {
+  state.popupWindow.finished = true;
   return state;
 }
 
 export function popupWindowReset(state) {
   state.popupWindow.visible = false;
   state.popupWindow.isError = false;
+  state.popupWindow.finished = false;
   state.popupWindow.errorMessage = "";
   return state;
 }
