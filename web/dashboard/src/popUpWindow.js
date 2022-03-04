@@ -41,7 +41,6 @@ export default class PopUpWindow extends Component {
     }
 
     render() {
-        console.log(this.state.popupWindow)
         return (<div
             className={(this.state.popupWindow.visible ? "visible" : "invisible") + " fixed inset-0 flex px-4 py-6 pointer-events-none sm:p-6 w-full flex-col items-end space-y-4"}>
             <div

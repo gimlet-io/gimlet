@@ -66,8 +66,6 @@ export const initialState = {
   }
 };
 
-console.log("REDUX")
-
 export function rootReducer(state = initialState, action) {
   switch (action.type) {
     case ACTION_TYPE_STREAMING:
