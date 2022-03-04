@@ -53,14 +53,15 @@ export default class PopUpWindow extends Component {
     }
 
     render() {
-        return (<div
-            className={(this.state.popupWindow.visible ? "visible" : "invisible") + " fixed inset-0 flex px-4 py-6 pointer-events-none sm:p-6 w-full flex-col items-end space-y-4"}>
+        return (
             <div
-                className={this.backgroundColor() + " max-w-lg w-full text-gray-100 text-sm shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden"}>
-                <div className="flex p-4">
-                    {this.savingText()}
+                className={(this.state.popupWindow.visible ? "visible" : "invisible") + " fixed z-50 inset-0 flex px-4 py-6 pointer-events-none sm:p-6 w-full flex-col items-end space-y-4"}>
+                <div
+                    className={this.backgroundColor() + " max-w-lg w-full text-gray-100 text-sm shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5"}>
+                    <div className="flex p-4">
+                        {this.savingText()}
+                    </div>
                 </div>
-            </div>
-        </div>)
+            </div>)
     }
 }
