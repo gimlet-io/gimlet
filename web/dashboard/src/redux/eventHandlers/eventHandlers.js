@@ -23,11 +23,6 @@ export function agents(state, event) {
   return state;
 }
 
-export function stackDefinition(state, event) {
-  state.stackDefinition = event;
-  return state;
-}
-
 export function popupWindowError(state, payload) {
   state.popupWindow.visible = true;
   state.popupWindow.isError = true;

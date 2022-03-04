@@ -20,7 +20,6 @@ export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
-export const ACTION_TYPE_STACK_DEFINITION = 'stackDefinition';
 export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 export const ACTION_TYPE_POPUPWINDOWSAVED = 'popupWindowSaved';
@@ -77,8 +76,6 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:
       return eventHandlers.agents(state, action.payload);
-    case ACTION_TYPE_STACK_DEFINITION:
-      return eventHandlers.stackDefinition(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWERROR:
       return eventHandlers.popupWindowError(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWRESET:
