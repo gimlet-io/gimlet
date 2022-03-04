@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
-import {ACTION_TYPE_POPUPWINDOW,
+import {
+  ACTION_TYPE_POPUPWINDOWERROR, ACTION_TYPE_POPUPWINDOWRESET, ACTION_TYPE_POPUPWINDOWSAVED,
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }) => {
@@ -70,23 +71,15 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
   const saveComponents = () => {
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
-        console.log("We have a validation error, not saving state at all!!!")
+        const errorMessage = `${variable} ${errors[variable].map(e => e.message).join(". ")}`
         store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOW, payload: {
-            visible: true,
-            isError: true,
-            progressed: true,
-            message: "This is not the button you are looking for"
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            errorMessage: errorMessage
           }
         });
         setTimeout(() => {
           store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOW, payload: {
-              visible: false,
-              isError: false,
-              progressed: false,
-              errorMesssage: ""
-            }
+            type: ACTION_TYPE_POPUPWINDOWRESET
           });
         }, 3000);
         return false
@@ -96,10 +89,26 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
     gimletClient.saveInfrastructureComponents(env.name, env.repoPerEnv, stackNonDefaultValues)
       .then((data) => {
         console.log("Components saved")
-        // TODO
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSAVED
+        });
+        setTimeout(() => {
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWRESET
+          });
+        }, 3000);
       }, (err) => {
         console.log("Error occured in saving");
-        // TODO
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            errorMessage: err.statusText
+          }
+        });
+        setTimeout(() => {
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWRESET
+          });
+        }, 3000);
       })
   }
 

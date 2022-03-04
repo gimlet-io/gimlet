@@ -28,11 +28,23 @@ export function stackDefinition(state, event) {
   return state;
 }
 
-export function popupWindow(state, payload) {
-  state.popupWindow.visible = payload.visible;
-  state.popupWindow.isError = payload.isError;
-  state.popupWindow.progressed = payload.progressed;
-  state.popupWindow.message = payload.message;
+export function popupWindowError(state, payload) {
+  state.popupWindow.visible = true;
+  state.popupWindow.isError = true;
+  state.popupWindow.errorMessage = payload.errorMessage;
+  return state;
+}
+
+export function popupWindowSaved(state, payload) {
+  state.popupWindow.visible = true;
+  state.popupWindow.isError = false;
+  return state;
+}
+
+export function popupWindowReset(state) {
+  state.popupWindow.visible = false;
+  state.popupWindow.isError = false;
+  state.popupWindow.errorMessage = "";
   return state;
 }
 
