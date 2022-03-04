@@ -6,7 +6,7 @@ import {
   ACTION_TYPE_GITOPS_REPO,
   ACTION_TYPE_USER,
   ACTION_TYPE_CHARTSCHEMA,
-  ACTION_TYPE_APPLICATION,
+  ACTION_TYPE_APPLICATION
 } from "./redux/redux";
 
 export default class APIBackend extends Component {
