@@ -8,7 +8,7 @@ import {ACTION_TYPE_POPUPWINDOW,
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }) => {
   let reduxState = store.getState();
   const [enabled, setEnabled] = useState(false)
-  let [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
+  const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
 
   store.subscribe(() => {
     let reduxState = store.getState();
