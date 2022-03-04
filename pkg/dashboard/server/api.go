@@ -88,45 +88,48 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	var envs []*api.GitopsEnv
 	for _, env := range envsFromDB {
 		repoPerEnvRepoName := fmt.Sprintf("%s/gitops-%s-infra", org, env.Name)
-		hasRepoPerEnv := hasRepo(orgRepos, repoPerEnvRepoName)
-		hasFolderPerEnv := false
-		if !hasRepoPerEnv && sharedGitopsInfraRepoExists {
-			repo, err := gitRepoCache.InstanceForRead(sharedGitopsRepoName)
-			if err != nil {
-				logrus.Errorf("cannot get repo: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			gitopsInfraContent, err := helper.RemoteFoldersOnBranchWithoutCheckout(repo, "", "")
-			if err != nil {
-				logrus.Errorf("cannot get gitops infra from github: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			hasFolderPerEnv = folderExists(gitopsInfraContent, env.Name)
+		repoPerEnvRepoExists := hasRepo(orgRepos, repoPerEnvRepoName)
+
+		if !sharedGitopsInfraRepoExists && !repoPerEnvRepoExists {
+			envs = append(envs, &api.GitopsEnv{
+				Name:         env.Name,
+				RepoPerEnv:   false,
+				FolderPerEnv: false,
+				StackConfig:  nil,
+			})
+			continue
+		}
+
+		repoName := sharedGitopsRepoName
+		if repoPerEnvRepoExists {
+			repoName = repoPerEnvRepoName
+		}
+
+		repo, err := gitRepoCache.InstanceForRead(repoName)
+		if err != nil {
+			logrus.Errorf("cannot get repo: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		var stackConfig *dx.StackConfig
-		if hasRepoPerEnv {
-			repo, err := gitRepoCache.InstanceForRead(repoPerEnvRepoName)
-			if err != nil {
-				logrus.Errorf("cannot get repo: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
+		var envInSharedGitopsRepoExists bool
+		if repoPerEnvRepoExists {
 			stackConfig, err = stackYaml(repo, "stack.yaml")
 			if err != nil && !strings.Contains(err.Error(), "file not found") {
 				logrus.Errorf("cannot get stack yaml from repo: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-		} else if hasFolderPerEnv {
-			repo, err := gitRepoCache.InstanceForRead(sharedGitopsRepoName)
+		} else {
+			envsInSharedGitopsRepo, err := helper.RemoteFoldersOnBranchWithoutCheckout(repo, "", "")
 			if err != nil {
-				logrus.Errorf("cannot get repo: %s", err)
+				logrus.Errorf("cannot get gitops infra from github: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
+			envInSharedGitopsRepoExists = folderExists(envsInSharedGitopsRepo, env.Name)
+
 			stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
 			if err != nil && !strings.Contains(err.Error(), "file not found") {
 				logrus.Errorf("cannot get stack yaml from repo: %s", err)
@@ -137,8 +140,8 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 		envs = append(envs, &api.GitopsEnv{
 			Name:         env.Name,
-			RepoPerEnv:   hasRepoPerEnv,
-			FolderPerEnv: hasFolderPerEnv,
+			RepoPerEnv:   repoPerEnvRepoExists,
+			FolderPerEnv: envInSharedGitopsRepoExists,
 			StackConfig:  stackConfig,
 		})
 	}
