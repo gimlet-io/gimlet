@@ -35,6 +35,20 @@ func TestEnvironmentCreateAndGetAll(t *testing.T) {
 	assert.Equal(t, 2, len(envArray))
 	assert.Equal(t, environmentStaging.Name, envArray[0].Name)
 	assert.Equal(t, environmentProd.Name, envArray[1].Name)
+
+	staging := envArray[0]
+	staging.InfraRepo = "my-custom-repo"
+	err = s.UpdateEnvironment(staging)
+	if err != nil {
+		t.Errorf("Cannot update environment: %s", err)
+	}
+
+	envArray, err = s.GetEnvironments()
+	if err != nil {
+		t.Errorf("Cannot get environments: %s", err)
+	}
+
+	assert.Equal(t, "my-custom-repo", envArray[0].InfraRepo)
 }
 
 func TestEnvironmentDelete(t *testing.T) {

@@ -2,6 +2,7 @@ import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
 import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
 import { ACTION_TYPE_ENVS } from "../../redux/redux";
+import { nanoid } from 'nanoid';
 
 class Environments extends Component {
     constructor(props) {
@@ -26,19 +27,19 @@ class Environments extends Component {
                 user: reduxState.user,
             });
         });
+
+        this.refreshEnvs = this.refreshEnvs.bind(this)
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        if (prevState.envs.length !== this.state.envs.length) {
-            this.props.gimletClient.getEnvs()
-                .then(data => {
-                    this.props.store.dispatch({
-                        type: ACTION_TYPE_ENVS,
-                        payload: data
-                    });
-                }, () => {/* Generic error handler deals with it */
+    refreshEnvs() {
+        this.props.gimletClient.getEnvs()
+            .then(data => {
+                this.props.store.dispatch({
+                    type: ACTION_TYPE_ENVS,
+                    payload: data
                 });
-        }
+            }, () => {/* Generic error handler deals with it */
+            });
     }
 
     getEnvironmentCards() {
@@ -47,12 +48,13 @@ class Environments extends Component {
 
         return (
             sortedEnvs.map(env => (<EnvironmentCard
+                key={nanoid()}
                 store={this.props.store}
                 env={env}
                 deleteEnv={() => this.delete(env.name)}
                 isOnline={this.isOnline(connectedAgents, env)}
                 gimletClient={this.props.gimletClient}
-                user={this.state.user.login}
+                refreshEnvs={this.refreshEnvs}
             />))
         )
     }
@@ -86,7 +88,11 @@ class Environments extends Component {
             this.props.gimletClient.saveEnvToDB(this.state.input)
                 .then(() => {
                     this.setState({
-                        envs: [...this.state.envs, { name: this.state.input }],
+                        envs: [...this.state.envs, { 
+                            name: this.state.input,
+                            infraRepo: "",
+                            appsRepo: ""
+                        }],
                         input: "",
                         saveButtonTriggered: false
                     });

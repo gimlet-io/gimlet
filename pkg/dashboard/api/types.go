@@ -58,8 +58,8 @@ type ConnectedAgent struct {
 
 type GitopsEnv struct {
 	Name            string                 `json:"name"`
-	RepoPerEnv      bool                   `json:"repoPerEnv"`
-	FolderPerEnv    bool                   `json:"folderPerEnv"`
+	InfraRepo       string                 `json:"infraRepo"`
+	AppsRepo        string                 `json:"appsRepo"`
 	StackConfig     *dx.StackConfig        `json:"stackConfig"`
 	StackDefinition map[string]interface{} `json:"stackDefinition"`
 }
@@ -67,6 +67,8 @@ type GitopsEnv struct {
 type GitopsBootstrapConfig struct {
 	EnvName    string `json:"envName"`
 	RepoPerEnv bool   `json:"repoPerEnv"`
+	InfraRepo  string `json:"infraRepo"`
+	AppsRepo   string `json:"appsRepo"`
 }
 
 type Stack struct {

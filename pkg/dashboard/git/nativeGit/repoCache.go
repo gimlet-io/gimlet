@@ -42,6 +42,8 @@ type RepoCache struct {
 	config      *dashboardConfig.Config
 
 	clientHub *streaming.ClientHub
+
+	lock sync.Mutex
 }
 
 func NewRepoCache(
@@ -167,24 +169,23 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 }
 
 func (r *RepoCache) cleanRepo(repoName string) {
-	mutex.Lock()
+	r.lock.Lock()
 	delete(r.repos, repoName)
-	mutex.Unlock()
+	r.lock.Unlock()
 }
 
-var mutex = &sync.Mutex{}
-
-func (r *RepoCache) InstanceForRead(repoName string) (*git.Repository, error) {
-	mutex.Lock()
+func (r *RepoCache) InstanceForRead(repoName string) (instance *git.Repository, err error) {
+	r.lock.Lock()
 	if repo, ok := r.repos[repoName]; ok {
-		mutex.Unlock()
-		return repo, nil
+		instance = repo
+	} else {
+		repo, err = r.clone(repoName)
+		instance = repo
+		go r.registerWebhook(repoName)
 	}
-	repo, err := r.clone(repoName)
-	mutex.Unlock()
-	go r.registerWebhook(repoName)
+	r.lock.Unlock()
 
-	return repo, err
+	return instance, err
 }
 
 func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, error) {
@@ -193,16 +194,14 @@ func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, 
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
 
-	mutex.Lock()
+	r.lock.Lock()
 	if _, ok := r.repos[repoName]; !ok {
 		_, err = r.clone(repoName)
-		mutex.Unlock()
-		if err != nil {
-			errors.WithMessage(err, "couldn't clone")
-		}
 		go r.registerWebhook(repoName)
-	} else {
-		mutex.Unlock()
+	}
+	r.lock.Unlock()
+	if err != nil {
+		return nil, "", err
 	}
 
 	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
@@ -228,6 +227,10 @@ func (r *RepoCache) Invalidate(repoName string) {
 }
 
 func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
+	if repoName == "" {
+		return nil, fmt.Errorf("repo name is mandatory")
+	}
+
 	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
 
 	os.RemoveAll(repoPath)

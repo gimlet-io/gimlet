@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -265,9 +264,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func getOrgRepos(ctx context.Context) ([]string, error) {
+func getOrgRepos(dao *store.Store) ([]string, error) {
 	var orgRepos []string
-	dao := ctx.Value("store").(*store.Store)
 	orgReposJson, err := dao.KeyValue(model.OrgRepos)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err

@@ -43,14 +43,8 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	config := ctx.Value("config").(*config.Config)
-	org := config.Github.Org
 
-	connectedAgents := []*api.ConnectedAgent{
-		{
-			Name:   "staging",
-			Stacks: []*api.Stack{},
-		},
-	}
+	connectedAgents := []*api.ConnectedAgent{}
 	for _, a := range agentHub.Agents {
 		for _, stack := range a.Stacks {
 			stack.Env = a.Name
@@ -75,47 +69,27 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	orgRepos, err := getOrgRepos(ctx)
-	if err != nil {
-		logrus.Errorf("cannot get repos: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	sharedGitopsRepoName := fmt.Sprintf("%s/gitops-infra", org)
-	sharedGitopsInfraRepoExists := hasRepo(orgRepos, sharedGitopsRepoName)
-
-	var envs []*api.GitopsEnv
+	envs := []*api.GitopsEnv{}
 	for _, env := range envsFromDB {
-		repoPerEnvRepoName := fmt.Sprintf("%s/gitops-%s-infra", org, env.Name)
-		repoPerEnvRepoExists := hasRepo(orgRepos, repoPerEnvRepoName)
-
-		if !sharedGitopsInfraRepoExists && !repoPerEnvRepoExists {
-			envs = append(envs, &api.GitopsEnv{
-				Name:         env.Name,
-				RepoPerEnv:   false,
-				FolderPerEnv: false,
-				StackConfig:  nil,
-			})
-			continue
-		}
-
-		repoName := sharedGitopsRepoName
-		if repoPerEnvRepoExists {
-			repoName = repoPerEnvRepoName
-		}
-
-		repo, err := gitRepoCache.InstanceForRead(repoName)
+		repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
 		if err != nil {
-			logrus.Errorf("cannot get repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			if strings.Contains(err.Error(), "repository not found") ||
+				strings.Contains(err.Error(), "repo name is mandatory") {
+				envs = append(envs, &api.GitopsEnv{
+					Name: env.Name,
+				})
+				continue
+			} else {
+				logrus.Errorf("cannot get repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
 		}
 
 		var stackConfig *dx.StackConfig
-		var envInSharedGitopsRepoExists bool
-		if repoPerEnvRepoExists {
+		if env.RepoPerEnv {
 			stackConfig, err = stackYaml(repo, "stack.yaml")
 			if err != nil && !strings.Contains(err.Error(), "file not found") {
 				logrus.Errorf("cannot get stack yaml from repo: %s", err)
@@ -123,17 +97,9 @@ func envs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			envsInSharedGitopsRepo, err := helper.RemoteFoldersOnBranchWithoutCheckout(repo, "", "")
-			if err != nil {
-				logrus.Errorf("cannot get gitops infra from github: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			envInSharedGitopsRepoExists = folderExists(envsInSharedGitopsRepo, env.Name)
-
 			stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
 			if err != nil && !strings.Contains(err.Error(), "file not found") {
-				logrus.Errorf("cannot get stack yaml from repo: %s", err)
+				logrus.Errorf("cannot get stack yaml from %s repo for env %s: %s", env.InfraRepo, env.Name, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -148,8 +114,8 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 		envs = append(envs, &api.GitopsEnv{
 			Name:            env.Name,
-			RepoPerEnv:      repoPerEnvRepoExists,
-			FolderPerEnv:    envInSharedGitopsRepoExists,
+			InfraRepo:       env.InfraRepo,
+			AppsRepo:        env.AppsRepo,
 			StackConfig:     stackConfig,
 			StackDefinition: stackDefinition,
 		})
@@ -207,7 +173,7 @@ func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
 func agents(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
-	agents := []string{"staging"}
+	agents := []string{}
 	for _, a := range agentHub.Agents {
 		agents = append(agents, a.Name)
 	}
@@ -372,7 +338,6 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value("store").(*store.Store)
-
 	err = db.DeleteEnvironment(envNameToDelete)
 	if err != nil {
 		logrus.Errorf("cannot delete environment to database: %s", err)

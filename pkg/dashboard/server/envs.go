@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	dNativeGit "github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
@@ -26,7 +28,6 @@ import (
 
 type saveInfrastructureComponentsReq struct {
 	Env                      string                 `json:"env"`
-	IsPerRepository          bool                   `json:"isPerRepository"`
 	InfrastructureComponents map[string]interface{} `json:"infrastructureComponents"`
 }
 
@@ -41,34 +42,46 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	org := config.Github.Org
+	db := r.Context().Value("store").(*store.Store)
 
-	repoName := fmt.Sprintf("%s/gitops-infra", org)
-	if req.IsPerRepository {
-		repoName = fmt.Sprintf("%s/gitops-%s-infra", org, req.Env)
+	env, err := db.GetEnvironment(req.Env)
+	if err != nil {
+		logrus.Errorf("cannot get env: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	var stackConfig *dx.StackConfig
 	stackYamlPath := filepath.Join(req.Env, "stack.yaml")
-	if req.IsPerRepository {
+	if env.RepoPerEnv {
 		stackYamlPath = "stack.yaml"
 	}
 
 	stackConfig, err = stackYaml(repo, stackYamlPath)
 	if err != nil {
-		logrus.Errorf("cannot get stack yaml from repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		if strings.Contains(err.Error(), "file not found") {
+			config := ctx.Value("config").(*config.Config)
+			stackConfig = &dx.StackConfig{
+				Stack: dx.StackRef{
+					Repository: config.DefaultStackUrl,
+				},
+			}
+		} else {
+			logrus.Errorf("cannot get stack yaml from repo: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	stackConfig.Config = req.InfrastructureComponents
@@ -96,39 +109,17 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	worktree, err := repo.Worktree()
-	if err != nil {
-		logrus.Errorf("cannot get working copy: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	err = worktree.AddWithOptions(&git.AddOptions{
-		All: true,
-	})
-	if err != nil {
-		logrus.Errorf("cannot stage changes: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = nativeGit.Commit(repo, "[Gimlet Dashboard] Updating infrastructure components")
-	if err != nil {
-		logrus.Errorf("cannot commit changes: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	err = nativeGit.PushWithToken(repo, token)
+	err = stageCommitAndPush(repo, token, "[Gimlet Dashboard] Updating components")
 	if err != nil {
-		logrus.Errorf("cannot push changes: %s", err)
+		logrus.Errorf("cannot stage commit and push: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	gitRepoCache.Invalidate(repoName)
+	gitRepoCache.Invalidate(env.InfraRepo)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
@@ -148,114 +139,141 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	org := config.Github.Org
-	var gitopsRepoURL string
-	var env string
-	var repoName string
-	var repoPath string
+
+	db := r.Context().Value("store").(*store.Store)
+	environment, err := db.GetEnvironment(bootstrapConfig.EnvName)
+	if err != nil {
+		logrus.Errorf("cannot get environment: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	if bootstrapConfig.RepoPerEnv {
-		repoName = fmt.Sprintf("gitops-%s-infra", bootstrapConfig.EnvName)
-		repoPath = fmt.Sprintf("%s/%s", org, repoName)
-		gitopsRepoURL = fmt.Sprintf("git@github.com:%s.git", repoPath)
+		environment.InfraRepo = bootstrapConfig.InfraRepo
+		environment.AppsRepo = bootstrapConfig.AppsRepo
+		if !strings.Contains(environment.InfraRepo, "/") {
+			environment.InfraRepo = filepath.Join(org, environment.InfraRepo)
+		}
+		if !strings.Contains(environment.AppsRepo, "/") {
+			environment.AppsRepo = filepath.Join(org, environment.AppsRepo)
+		}
 	} else {
-		repoName = "gitops-infra"
-		repoPath = fmt.Sprintf("%s/%s", org, repoName)
-		env = bootstrapConfig.EnvName
-		gitopsRepoURL = fmt.Sprintf("git@github.com:%s.git", repoPath)
+		environment.InfraRepo = filepath.Join(org, "gitops-infra")
+		environment.AppsRepo = filepath.Join(org, "gitops-apps")
 	}
 
-	err = assureRepoExists(ctx, repoPath, repoName, token)
+	environment.RepoPerEnv = bootstrapConfig.RepoPerEnv
+	err = db.UpdateEnvironment(environment)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot update environment: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	err = assureRepoExists(db, environment.InfraRepo, token)
+	if err != nil {
+		logrus.Errorf("cannot assure repo exists: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	// err = assureRepoExists(db, environment.AppsRepo, token)
+	// if err != nil {
+	// 	logrus.Errorf("cannot assure repo exists: %s", err)
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoPath)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(environment.InfraRepo)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
+	envName := bootstrapConfig.EnvName
+	if bootstrapConfig.RepoPerEnv {
+		envName = ""
+	}
 	_, _, _, err = gitops.GenerateManifests(
 		true,
-		env,
+		envName,
 		bootstrapConfig.RepoPerEnv,
 		tmpPath,
 		true,
 		true,
-		gitopsRepoURL,
+		fmt.Sprintf("git@github.com:%s.git", environment.InfraRepo),
 		"main",
 	)
 	if err != nil {
+		logrus.Errorf("cannot generate manifest: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	folderToAdd := folderToAdd(bootstrapConfig.EnvName, bootstrapConfig.RepoPerEnv)
-	err = commitAndPush(repo, token, folderToAdd)
+	err = stageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	gitRepoCache.Invalidate(repoName)
+	gitRepoCache.Invalidate(environment.InfraRepo)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{}`))
 }
 
-func assureRepoExists(ctx context.Context, repoPath string, repoName string, token string) error {
-	orgRepos, err := getOrgRepos(ctx)
+func assureRepoExists(dao *store.Store, repoName string, token string) error {
+	orgRepos, err := getOrgRepos(dao)
 	if err != nil {
 		return err
 	}
 
-	if !hasRepo(orgRepos, repoPath) {
-		personalToken := ""
-
-		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalToken})
-		tc := oauth2.NewClient(ctx, ts)
-		client := github.NewClient(tc)
-
-		var (
-			name     = repoName
-			private  = true
-			autoInit = true
-		)
-
-		r := &github.Repository{
-			Name:     &name,
-			Private:  &private,
-			AutoInit: &autoInit}
-		_, _, err = client.Repositories.Create(ctx, "", r)
-		if err != nil {
-			return err
-		}
+	if hasRepo(orgRepos, repoName) {
+		return nil
 	}
 
-	return nil
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	var (
+		name     = repoName
+		private  = true
+		autoInit = true
+	)
+
+	r := &github.Repository{
+		Name:     &name,
+		Private:  &private,
+		AutoInit: &autoInit,
+	}
+	_, _, err = client.Repositories.Create(context.Background(), "", r)
+
+	return err
 }
 
-func commitAndPush(repo *git.Repository, token string, folderToAdd string) error {
+func stageCommitAndPush(repo *git.Repository, token string, msg string) error {
 	worktree, err := repo.Worktree()
 	if err != nil {
 		return err
 	}
 
 	err = worktree.AddWithOptions(&git.AddOptions{
-		Glob: fmt.Sprintf("./%s/*", folderToAdd),
+		All: true,
 	})
 	if err != nil {
 		return err
 	}
 
-	_, err = nativeGit.Commit(repo, "[Gimlet Dashboard] Bootstrapping")
+	_, err = nativeGit.Commit(repo, msg)
 	if err != nil {
 		return err
 	}
@@ -266,12 +284,4 @@ func commitAndPush(repo *git.Repository, token string, folderToAdd string) error
 	}
 
 	return nil
-}
-
-func folderToAdd(envName string, repoPerEnv bool) string {
-	if repoPerEnv {
-		return "flux"
-	} else {
-		return envName
-	}
 }

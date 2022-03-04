@@ -7,17 +7,36 @@ import {
   ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWOPENED
+  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_ENVS
 } from "../../redux/redux";
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs }) => {
   const [enabled, setEnabled] = useState(false)
+  let reduxState = store.getState();
+  const [repoPerEnv, setRepoPerEnv] = useState(false)
+  const [infraRepo, setInfraRepo] = useState(env.infraRepo)
+  const [appsRepo, setAppsRepo] = useState(env.appsRepo)
+  const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
+
+  if (repoPerEnv && infraRepo === "") {
+    setInfraRepo(`gitops-${env.name}-infra`);
+  }
+  if (repoPerEnv && appsRepo === "") {
+    setAppsRepo(`gitops-${env.name}-apps`);
+  }
+
+  store.subscribe(() => {
+    let reduxState = store.getState();
+    setPopupWindow(reduxState.popupWindow);
+  });
+
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
   ]);
 
-  const hasGitopsRepo = env.repoPerEnv || env.folderPerEnv;
+  const hasGitopsRepo = env.infraRepo !== "";
 
   let initStack = {};
   if (env.stackConfig) {
@@ -28,12 +47,9 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
   const [stackNonDefaultValues, setStackNonDefaultValues] = useState(initStack);
   const [errors, setErrors] = useState({});
 
-  const gitopsRepositories = env.repoPerEnv ? [
-    { name: `gitops-${env.name}-infra`, href: `https://github.com/${user}/gitops-${env.name}-infra` },
-    { name: `gitops-${env.name}-apps`, href: `https://github.com/${user}/gitops-${env.name}-apps` }
-  ] : [
-    { name: "gitops-infra", href: `https://github.com/${user}/gitops-infra` },
-    { name: "gitops-apps", href: `https://github.com/${user}/gitops-apps` }
+  const gitopsRepositories = [
+    { name: env.infraRepo, href: `https://github.com/${env.infraRepo}` },
+    { name: env.appsRepo, href: `https://github.com/${env.appsRepo}` }
   ];
 
   const switchTabHandler = (tabName) => {
@@ -47,10 +63,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
   }
 
   const setValues = (variable, values, nonDefaultValues) => {
-    console.log("setting values")
-    console.log(stack)
     setStack({ ...stack, [variable]: values })
-
     setStackNonDefaultValues({ ...stackNonDefaultValues, [variable]: nonDefaultValues })
   }
 
@@ -88,9 +101,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
       }
     }
 
-    gimletClient.saveInfrastructureComponents(env.name, env.repoPerEnv, stackNonDefaultValues)
+    gimletClient.saveInfrastructureComponents(env.name, stackNonDefaultValues)
       .then((data) => {
         console.log("Components saved")
+        refreshEnvs();
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             message: "Component saved"
@@ -120,6 +134,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
             message: "Bootstrap Gitops"
           }
         });
+        refreshEnvs();
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
@@ -193,20 +208,22 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
             </div>
             <div className="ml-3 md:justify-between">
               <p className="text-sm text-blue-500">
-                By default, manifests of this environment will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder in the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span> git repository
+                By default, infrastructure manifests of this environment will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder of the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span> git repository,
+                <br />
+                and application manifests will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder of the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-apps</span> git repository
               </p>
             </div>
           </div>
         </div>
         <div className="text-gray-700">
-          <div className="flex mt-2">
+          <div className="flex mt-4">
             <div className="font-medium self-center">Separate environments by git repositories</div>
             <div className="max-w-lg flex rounded-md ml-4">
               <Switch
-                checked={enabled}
-                onChange={setEnabled}
+                checked={repoPerEnv}
+                onChange={setRepoPerEnv}
                 className={(
-                  enabled ? "bg-indigo-600" : "bg-gray-200") +
+                  repoPerEnv ? "bg-indigo-600" : "bg-gray-200") +
                   " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
                 }
               >
@@ -214,19 +231,49 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
                 <span
                   aria-hidden="true"
                   className={(
-                    enabled ? "translate-x-5" : "translate-x-0") +
+                    repoPerEnv ? "translate-x-5" : "translate-x-0") +
                     " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
                   }
                 />
               </Switch>
             </div>
           </div>
-          <div className="mt-2 text-sm text-gray-500 leading-loose">Manifests will be placed in the environment specific <span className="text-xs font-mono bg-gray-100 text-gray-500 font-medium px-1 py-1 rounded">gitops-{env.name}-infra</span> repository</div>
+          <div className="text-sm text-gray-500 leading-loose">Manifests will be placed in environment specific repositories</div>
+          {repoPerEnv &&
+            <div className="ml-8">
+              <div className="flex mt-4">
+                <div className="font-medium self-center">Infrastructure git repository</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="infra" name="infra"
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="text"
+                      value={infraRepo}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 leading-loose">Infrastructure manifests will be placed in the root of the specified repository</div>
+              <div className="flex mt-4">
+                <div className="font-medium self-center">Application git repository</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="apps" name="apps"
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="text"
+                      value={appsRepo}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 leading-loose">Application manifests will be placed in the root of the specified repository</div>
+            </div>
+          }
           <div className="p-0 flow-root mt-8">
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
                 // disabled={this.state.input === "" || this.state.saveButtonTriggered}
-                onClick={() => bootstrapGitops(env.name, enabled)}
+                onClick={() => bootstrapGitops(env.name, repoPerEnv)}
                 className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
               >
                 Bootstrap gitops repository
