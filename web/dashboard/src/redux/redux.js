@@ -58,7 +58,6 @@ export const initialState = {
   envConfigs: {},
   application: {},
   envs: [],
-  stackDefinition: {},
   popupWindow: {
     visible: false,
     isError: false,
