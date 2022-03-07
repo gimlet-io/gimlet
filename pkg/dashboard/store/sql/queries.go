@@ -45,7 +45,8 @@ WHERE key = $1;
 `,
 		SelectEnvironments: `
 SELECT id, name, infra_repo, apps_repo, repo_per_env
-FROM environments;
+FROM environments
+ORDER BY name asc;
 `,
 		SelectEnvironment: `
 SELECT id, name, infra_repo, apps_repo, repo_per_env
@@ -79,7 +80,8 @@ WHERE key = $1;
 `,
 		SelectEnvironments: `
 SELECT id, name, infra_repo, apps_repo, repo_per_env
-FROM environments;
+FROM environments
+ORDER BY name asc;
 `,
 		SelectEnvironment: `
 SELECT id, name, infra_repo, apps_repo, repo_per_env
