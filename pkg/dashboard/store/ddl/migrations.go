@@ -33,6 +33,7 @@ const addInfrarepoColumnToEnvironmentsTable = "addInfrarepoColumnToEnvironmentsT
 const addAppsrepoColumnToEnvironmentsTable = "addAppsrepoColumnToEnvironmentsTable"
 const defaultValueForGitopsRepos = "defaultValueForGitopsRepos"
 const addRepoPerEnvColumnToEnvironmentsTable = "addRepoPerEnvColumnToEnvironmentsTable"
+const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 
 type migration struct {
 	name string
@@ -153,6 +154,10 @@ CREATE TABLE IF NOT EXISTS key_values (
 			name: addRepoPerEnvColumnToEnvironmentsTable,
 			stmt: `ALTER TABLE environments ADD COLUMN repo_per_env TEXT;`,
 		},
+		{
+			name: defaultValueForRepoPerEnv,
+			stmt: `update environments set repo_per_env=false where repo_per_env is null;`,
+		},
 	},
 	"postgres": {
 		{
@@ -265,6 +270,10 @@ CREATE TABLE IF NOT EXISTS key_values (
 		{
 			name: addRepoPerEnvColumnToEnvironmentsTable,
 			stmt: `ALTER TABLE environments ADD COLUMN repo_per_env TEXT;`,
+		},
+		{
+			name: defaultValueForRepoPerEnv,
+			stmt: `update environments set repo_per_env=false where repo_per_env is null;`,
 		},
 	},
 }
