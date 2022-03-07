@@ -27,10 +27,12 @@ func GenerateManifests(
 	gitopsRepoUrl string,
 	branch string,
 ) (string, string, string, error) {
-	publicKey := ""
-	gitopsRepositoryName := ""
-	secretFileName := ""
-	gitopsRepoFileName := ""
+	var (
+		publicKey          string
+		gitopsRepoName     string
+		gitopsRepoFileName string
+		secretFileName     string
+	)
 
 	installOpts := install.MakeDefaultOptions()
 	installOpts.ManifestFile = "flux.yaml"
@@ -61,21 +63,23 @@ func GenerateManifests(
 
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
-		gitopsRepositoryName = fmt.Sprintf("gitops-repo-%s", strings.ToLower(env))
-		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s-%s-%s-%s.yaml",
-			strings.ToLower(env),
+		gitopsRepoName = fmt.Sprintf("gitops-repo-%s-%s-%s",
 			strings.ToLower(owner),
 			strings.ToLower(repoName),
-			strings.ToLower(env))
+			strings.ToLower(env),
+		)
 		if singleEnv {
-			gitopsRepositoryName = "gitops-repo"
-			gitopsRepoFileName = "gitops-repo.yaml"
+			gitopsRepoName = fmt.Sprintf("gitops-repo-%s-%s",
+				strings.ToLower(owner),
+				strings.ToLower(repoName),
+			)
 		}
+		gitopsRepoFileName = gitopsRepoName + ".yaml"
 		syncOpts := sync.Options{
 			Interval:     15 * time.Second,
 			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
-			Name:         gitopsRepositoryName,
-			Secret:       gitopsRepositoryName,
+			Name:         gitopsRepoName,
+			Secret:       gitopsRepoName,
 			Namespace:    "flux-system",
 			Branch:       branch,
 			ManifestFile: gitopsRepoFileName,
@@ -97,17 +101,20 @@ func GenerateManifests(
 
 		if shouldGenerateDeployKey {
 			fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-			secretFileName = fmt.Sprintf("deploy-key-%s-%s-%s-%s.yaml",
-				strings.ToLower(env),
+			secretName := fmt.Sprintf("deploy-key-%s-%s-%s",
 				strings.ToLower(owner),
 				strings.ToLower(repoName),
-				strings.ToLower(env))
-
+				strings.ToLower(env),
+			)
 			if singleEnv {
-				secretFileName = "deploy-key.yaml"
+				secretName = fmt.Sprintf("deploy-key-%s-%s",
+					strings.ToLower(owner),
+					strings.ToLower(repoName),
+				)
 			}
+			secretFileName = secretName + ".yaml"
 
-			pKey, deployKeySecret, err := generateDeployKey(host, gitopsRepositoryName)
+			pKey, deployKeySecret, err := generateDeployKey(host, secretName)
 			publicKey = pKey
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)

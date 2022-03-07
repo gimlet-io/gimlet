@@ -33,9 +33,9 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 	singleEnv := false
 	shouldGenerateKustomizationAndRepo := true
 	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
+	gitOpsRepoURL := "git@github.com:gimlet-io/test-repo.git"
 
-	gitopsRepoFileName, _, secretFileName, err := GenerateManifests(
+	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
 		env,
 		singleEnv,
@@ -52,17 +52,17 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 
 	fluxFile, _ := os.Stat(filepath.Join(dirToWrite, env, "flux", "flux.yaml"))
 	if fluxFile != nil {
-		t.Errorf("Should not find flux.yaml in the flux directory")
+		t.Errorf("Should not generate flux.yaml")
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", gitopsRepoFileName))
+	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "gitops-repo-gimlet-io-test-repo-staging.yaml"))
 	if err != nil {
-		t.Errorf("Should find gitops-repo file in the local directory")
+		t.Errorf("Should generate Kustomization")
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", secretFileName))
+	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "deploy-key-gimlet-io-test-repo-staging.yaml"))
 	if err != nil {
-		t.Errorf("Should find deploy-key file in the local directory")
+		t.Errorf("Should generate deploy key")
 	}
 }
 
@@ -78,7 +78,7 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 	singleEnv := true
 	shouldGenerateKustomizationAndRepo := true
 	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
+	gitOpsRepoURL := "git@github.com:gimlet-io/gitops-staging-infra.git"
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
@@ -97,21 +97,21 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 
 	fluxFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "flux.yaml"))
 	if fluxFile != nil {
-		t.Errorf("Should not find flux.yaml in the flux directory")
+		t.Errorf("Should not generate flux.yaml")
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo-gimlet-io-gitops-staging-infra.yaml"))
 	if err != nil {
-		t.Errorf("Should find gitops-repo.yaml in the flux directory")
+		t.Errorf("Should generate Kustomization")
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key-gimlet-io-gitops-staging-infra.yaml"))
 	if err != nil {
-		t.Errorf("Should find deploy-key.yaml in the flux directory")
+		t.Errorf("Should generate deploy key")
 	}
 }
 
-func Test_generateManifestWithControllerWithoutSingleEnv(t *testing.T) {
+func Test_generateManifestWithController(t *testing.T) {
 	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
 	defer os.RemoveAll(dirToWrite)
 	if err != nil {
@@ -122,52 +122,6 @@ func Test_generateManifestWithControllerWithoutSingleEnv(t *testing.T) {
 	shouldGenerateController := true
 	env := "staging"
 	singleEnv := false
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
-
-	gitopsRepoFileName, _, secretFileName, err := GenerateManifests(
-		shouldGenerateController,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
-	if err != nil {
-		t.Errorf("Cannot generate manifest files, %s", err)
-		return
-	}
-
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "flux.yaml"))
-	if err != nil {
-		t.Errorf("Should find flux.yaml in the flux directory")
-	}
-
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", gitopsRepoFileName))
-	if err != nil {
-		t.Errorf("Should find gitops-repo file in the flux directory")
-	}
-
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", secretFileName))
-	if err != nil {
-		t.Errorf("Should find deploy-key file in the flux directory")
-	}
-}
-
-func Test_generateManifestWithControllerWithSingleEnv(t *testing.T) {
-	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
-	defer os.RemoveAll(dirToWrite)
-	if err != nil {
-		t.Errorf("Cannot create directory")
-		return
-	}
-
-	shouldGenerateController := true
-	env := ""
-	singleEnv := true
 	shouldGenerateKustomizationAndRepo := true
 	shouldGenerateDeployKey := true
 	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
@@ -187,19 +141,9 @@ func Test_generateManifestWithControllerWithSingleEnv(t *testing.T) {
 		return
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "flux.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "flux.yaml"))
 	if err != nil {
-		t.Errorf("Should find flux.yaml in the flux directory")
-	}
-
-	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo.yaml"))
-	if err != nil {
-		t.Errorf("Should find gitopsrepo.yaml file in the flux directory")
-	}
-
-	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key.yaml"))
-	if err != nil {
-		t.Errorf("Should find deploy-key.yaml in the flux directory")
+		t.Errorf("Should generate flux.yaml")
 	}
 }
 
@@ -233,65 +177,14 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 		return
 	}
 
-	fluxFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "flux.yaml"))
-	if fluxFile != nil {
-		t.Errorf("Should not find flux.yaml in the flux directory")
+	kustomizationFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo-gimlet-io-gitops-staging-infra.yaml"))
+	if kustomizationFile != nil {
+		t.Errorf("Should not generate Kustomization")
 	}
 
-	gitopsRepoFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo.yaml"))
-	if gitopsRepoFile != nil {
-		t.Errorf("Should not find gitops-repo.yaml file in the flux directory")
-	}
-
-	secretFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key.yaml"))
+	secretFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key-gimlet-io-gitops-staging-infra.yaml"))
 	if secretFile != nil {
-		t.Errorf("Should not find deploy-key.yaml in the flux directory")
-	}
-}
-
-func Test_generateManifestWithoutKustomizationAndRepoWithDeployKey(t *testing.T) {
-	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
-	defer os.RemoveAll(dirToWrite)
-	if err != nil {
-		t.Errorf("Cannot create directory")
-		return
-	}
-
-	shouldGenerateController := false
-	env := ""
-	singleEnv := true
-	shouldGenerateKustomizationAndRepo := false
-	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
-
-	_, _, _, err = GenerateManifests(
-		shouldGenerateController,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
-	if err != nil {
-		t.Errorf("Cannot generate manifest files, %s", err)
-		return
-	}
-
-	fluxFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "flux.yaml"))
-	if fluxFile != nil {
-		t.Errorf("Should not find flux.yaml in the flux directory")
-	}
-
-	gitopsRepoFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo.yaml"))
-	if gitopsRepoFile != nil {
-		t.Errorf("Should not find gitops-repo.yaml file in the flux directory")
-	}
-
-	secretFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key.yaml"))
-	if secretFile != nil {
-		t.Errorf("Should not find deploy-key.yaml in the flux directory")
+		t.Errorf("Should not generate deploy key")
 	}
 }
 
@@ -308,7 +201,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 	singleEnv := true
 	shouldGenerateKustomizationAndRepo := true
 	shouldGenerateDeployKey := false
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
+	gitOpsRepoURL := "git@github.com:gimlet-io/gitops-staging-infra.git"
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
@@ -325,13 +218,13 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 		return
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, "flux", "gitops-repo-gimlet-io-gitops-staging-infra.yaml"))
 	if err != nil {
-		t.Errorf("Should find gitops-repo.yaml file in the flux directory")
+		t.Errorf("Should generate Kustomization")
 	}
 
-	secretFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key.yaml"))
+	secretFile, _ := os.Stat(filepath.Join(dirToWrite, "flux", "deploy-key-gimlet-io-gitops-staging-infra.yaml"))
 	if secretFile != nil {
-		t.Errorf("Should not find deploy-key.yaml in the flux directory")
+		t.Errorf("Should not generate deploy key")
 	}
 }
