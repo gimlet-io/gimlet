@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	dNativeGit "github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
@@ -170,64 +171,83 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = assureRepoExists(db, environment.InfraRepo, token)
+	user := ctx.Value("user").(*model.User)
+	err = assureRepoExists(db, environment.InfraRepo, user.AccessToken)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	// err = assureRepoExists(db, environment.AppsRepo, token)
-	// if err != nil {
-	// 	logrus.Errorf("cannot assure repo exists: %s", err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
+	err = assureRepoExists(db, environment.AppsRepo, user.AccessToken)
+	if err != nil {
+		logrus.Errorf("cannot assure repo exists: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	go updateOrgRepos(ctx)
+	go updateUserRepos(config, db, user)
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	repo, tmpPath, err := gitRepoCache.InstanceForWrite(environment.InfraRepo)
-	defer os.RemoveAll(tmpPath)
+	err = bootstrapEnv(gitRepoCache, *environment, environment.InfraRepo, bootstrapConfig.RepoPerEnv, token)
 	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	err = bootstrapEnv(gitRepoCache, *environment, environment.AppsRepo, bootstrapConfig.RepoPerEnv, token)
+	if err != nil {
+		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	envName := bootstrapConfig.EnvName
-	if bootstrapConfig.RepoPerEnv {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{}`))
+}
+
+func bootstrapEnv(
+	gitRepoCache *dNativeGit.RepoCache,
+	environment model.Environment,
+	repoName string,
+	repoPerEnv bool,
+	token string,
+) error {
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		return fmt.Errorf("cannot get repo: %s", err)
+	}
+
+	envName := environment.Name
+	if repoPerEnv {
 		envName = ""
 	}
 	_, _, _, err = gitops.GenerateManifests(
 		true,
 		envName,
-		bootstrapConfig.RepoPerEnv,
+		repoPerEnv,
 		tmpPath,
 		true,
 		true,
-		fmt.Sprintf("git@github.com:%s.git", environment.InfraRepo),
+		fmt.Sprintf("git@github.com:%s.git", repoName),
 		"main",
 	)
 	if err != nil {
-		logrus.Errorf("cannot generate manifest: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
 	err = stageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
-		logrus.Errorf("cannot stage commit and push: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
 	gitRepoCache.Invalidate(environment.InfraRepo)
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{}`))
+	return nil
 }
 
 func assureRepoExists(dao *store.Store, repoName string, token string) error {
@@ -238,6 +258,11 @@ func assureRepoExists(dao *store.Store, repoName string, token string) error {
 
 	if hasRepo(orgRepos, repoName) {
 		return nil
+	}
+
+	parts := strings.Split(repoName, "/")
+	if len(parts) == 2 {
+		repoName = parts[1]
 	}
 
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
