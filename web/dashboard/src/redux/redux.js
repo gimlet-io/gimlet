@@ -22,7 +22,9 @@ export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
 export const ACTION_TYPE_POPUPWINDOWOPENED = 'popupWindowOpened';
 export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
-export const ACTION_TYPE_POPUPWINDOWSAVED = 'popupWindowSaved';
+export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
+
+export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
@@ -63,7 +65,8 @@ export const initialState = {
     visible: false,
     finished: false,
     isError: false,
-    errorMessage: ""
+    message: "",
+    errorList: null
   }
 };
 
@@ -81,8 +84,10 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.popupWindowOpened(state);
     case ACTION_TYPE_POPUPWINDOWERROR:
       return eventHandlers.popupWindowError(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWSAVED:
-      return eventHandlers.popupWindowSaved(state);
+    case ACTION_TYPE_POPUPWINDOWERRORLIST:
+        return eventHandlers.popupWindowErrorList(state, action.payload);
+    case ACTION_TYPE_POPUPWINDOWSUCCESS:
+      return eventHandlers.popupWindowSuccess(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWRESET:
       return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_ENVS:

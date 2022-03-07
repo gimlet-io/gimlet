@@ -31,12 +31,20 @@ export function popupWindowOpened(state) {
 export function popupWindowError(state, payload) {
   state.popupWindow.finished = true;
   state.popupWindow.isError = true;
-  state.popupWindow.errorMessage = payload.errorMessage;
+  state.popupWindow.message = payload.message;
   return state;
 }
 
-export function popupWindowSaved(state) {
+export function popupWindowErrorList(state, payload) {
   state.popupWindow.finished = true;
+  state.popupWindow.isError = true;
+  state.popupWindow.errorList = payload.errorList;
+  return state;
+}
+
+export function popupWindowSuccess(state, payload) {
+  state.popupWindow.finished = true;
+  state.popupWindow.message = payload.message;
   return state;
 }
 
@@ -44,7 +52,8 @@ export function popupWindowReset(state) {
   state.popupWindow.visible = false;
   state.popupWindow.isError = false;
   state.popupWindow.finished = false;
-  state.popupWindow.errorMessage = "";
+  state.popupWindow.message = "";
+  state.popupWindow.errorList = null;
   return state;
 }
 

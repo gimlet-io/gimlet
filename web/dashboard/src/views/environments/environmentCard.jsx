@@ -4,22 +4,14 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWSAVED,
+  ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWOPENED
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }) => {
-  let reduxState = store.getState();
   const [enabled, setEnabled] = useState(false)
-  const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
-
-  store.subscribe(() => {
-    let reduxState = store.getState();
-
-    setPopupWindow(reduxState.popupWindow);
-  });
-
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false }
@@ -86,10 +78,9 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
 
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
-        const errorMessage = `${variable} ${errors[variable].map(e => e.message).join(". ")}`
         store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            errorMessage: errorMessage
+          type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
+            errorList: errors
           }
         });
         resetPopupWindowAfterThreeSeconds()
@@ -101,14 +92,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
       .then((data) => {
         console.log("Components saved")
         store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSAVED
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            message: "Component saved"
+          }
         });
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         console.log("Error occured in saving");
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            errorMessage: err.statusText
+            message: err.statusText
           }
         });
         resetPopupWindowAfterThreeSeconds()
@@ -116,7 +109,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
   }
 
   const bootstrapGitops = (envName, repoPerEnv) => {
-    console.log(popupWindow);
        store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWOPENED
     });
@@ -124,13 +116,15 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, user, gimletClient }
     gimletClient.bootstrapGitops(envName, repoPerEnv)
       .then((data) => {
         store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSAVED
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            message: "Bootstrap Gitops"
+          }
         });
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            errorMessage: err.statusText
+            message: err.statusText
           }
         });
         resetPopupWindowAfterThreeSeconds()
