@@ -85,13 +85,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const saveComponents = () => {
     store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED
+      type: ACTION_TYPE_POPUPWINDOWOPENED,  payload: {
+        header: "Saving..."
+      }
     });
 
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
+            header: "Error",
             errorList: errors
           }
         });
@@ -106,6 +109,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         refreshEnvs();
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
             message: "Component saved"
           }
         });
@@ -114,6 +118,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         console.log("Couldn't save components");
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
             message: err.statusText
           }
         });
@@ -123,13 +128,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const bootstrapGitops = (envName, repoPerEnv) => {
        store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED
+      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+        header: "Bootstrapping..."
+      }
     });
 
     gimletClient.bootstrapGitops(envName, repoPerEnv, infraRepo, appsRepo)
       .then(() => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
             message: "Gitops environment bootstrapped"
           }
         });
@@ -138,6 +146,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       }, (err) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
             message: err.statusText
           }
         });

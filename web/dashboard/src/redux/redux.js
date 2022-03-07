@@ -65,6 +65,7 @@ export const initialState = {
     visible: false,
     finished: false,
     isError: false,
+    header: "",
     message: "",
     errorList: null
   }
@@ -81,7 +82,7 @@ export function rootReducer(state = initialState, action) {
     case ACTION_TYPE_AGENTS:
       return eventHandlers.agents(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWOPENED:
-      return eventHandlers.popupWindowOpened(state);
+      return eventHandlers.popupWindowOpened(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWERROR:
       return eventHandlers.popupWindowError(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWERRORLIST:

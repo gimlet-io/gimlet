@@ -42,7 +42,7 @@ export default class PopUpWindow extends Component {
                         </svg>
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-gray-800">Saving...</h3>
+                        <h3 className="text-sm font-medium text-gray-800">{this.state.popupWindow.header}</h3>
                     </div>
                 </div>
             )
@@ -53,7 +53,7 @@ export default class PopUpWindow extends Component {
                         <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800">There were error with your submission</h3>
+                        <h3 className="text-sm font-medium text-red-800">{this.state.popupWindow.header}</h3>
                         <div className="mt-2 text-sm text-red-700">
                             {this.state.popupWindow.errorList ?
                                 <ul className="list-disc pl-5 space-y-1">
@@ -72,7 +72,7 @@ export default class PopUpWindow extends Component {
                         <CheckIcon className="h-5 w-5 text-green-400" aria-hidden="true" />
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-green-800">Operation success</h3>
+                        <h3 className="text-sm font-medium text-green-800">{this.state.popupWindow.header}</h3>
                         <div className="mt-2 text-sm text-green-700">
                             <p>{this.state.popupWindow.message}</p>
                         </div>
