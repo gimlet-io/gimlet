@@ -7,16 +7,15 @@ import {
   ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWOPENED,
-  ACTION_TYPE_ENVS
+  ACTION_TYPE_POPUPWINDOWOPENED
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs }) => {
-  const [enabled, setEnabled] = useState(false)
   let reduxState = store.getState();
   const [repoPerEnv, setRepoPerEnv] = useState(false)
   const [infraRepo, setInfraRepo] = useState(env.infraRepo)
   const [appsRepo, setAppsRepo] = useState(env.appsRepo)
+  /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "popupWindow" }]*/
   const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
 
   if (repoPerEnv && infraRepo === "") {
@@ -102,7 +101,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     }
 
     gimletClient.saveInfrastructureComponents(env.name, stackNonDefaultValues)
-      .then((data) => {
+      .then(() => {
         console.log("Components saved")
         refreshEnvs();
         store.dispatch({
@@ -112,7 +111,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         });
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
-        console.log("Error occured in saving");
+        console.log("Couldn't save components");
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
             message: err.statusText
@@ -127,11 +126,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       type: ACTION_TYPE_POPUPWINDOWOPENED
     });
 
-    gimletClient.bootstrapGitops(envName, repoPerEnv)
-      .then((data) => {
+    gimletClient.bootstrapGitops(envName, repoPerEnv, infraRepo, appsRepo)
+      .then(() => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            message: "Bootstrap Gitops"
+            message: "Gitops environment bootstrapped"
           }
         });
         refreshEnvs();
