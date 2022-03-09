@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Switch } from '@headlessui/react'
-import { InformationCircleIcon } from '@heroicons/react/solid'
+import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
 import { StackUI } from 'stack-ui';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
@@ -85,7 +85,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const saveComponents = () => {
     store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED,  payload: {
+      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
         header: "Saving..."
       }
     });
@@ -127,7 +127,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const bootstrapGitops = (envName, repoPerEnv) => {
-       store.dispatch({
+    store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
         header: "Bootstrapping..."
       }
@@ -293,6 +293,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     )
   }
 
+  const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
+
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
       <div className="px-4 py-5 sm:px-6">
@@ -309,7 +311,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </svg>
             </span>
             {!hasGitopsRepo &&
-              <span title="Uninitialized">
+              <span title="Gitops automation is not bootstrapped">
                 <svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -317,12 +319,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           </div>
           {!isOnline &&
             <div className="inline-flex">
-              <a className="cursor-pointer text-gray-500 hover:text-gray-700 mr-4"
-                target="_blank"
-                rel="noreferrer"
-                href="https://gimlet.io/docs/installing-gimlet-agent">
-                Install agent
-              </a>
               <svg xmlns="http://www.w3.org/2000/svg" onClick={deleteEnv} className="cursor-pointer inline text-red-400 hover:text-red-600 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
@@ -333,6 +329,21 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div className="px-4 py-5 sm:px-6">
         {hasGitopsRepo ?
           <>
+            {!isOnline && !gimletAgentConfigured &&
+              <div className="rounded-md bg-red-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">This environment is disconnected</h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      Configure the Gimlet Agent under <span className="font-medium">Infrastructure components &gt; Gimlet</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
             <div className="sm:hidden">
               <label htmlFor="tabs" className="sr-only">
                 Select a tab
