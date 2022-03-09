@@ -2,7 +2,6 @@ import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
 import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
 import { ACTION_TYPE_ENVS } from "../../redux/redux";
-import { nanoid } from 'nanoid';
 
 class Environments extends Component {
     constructor(props) {
@@ -48,7 +47,7 @@ class Environments extends Component {
 
         return (
             sortedEnvs.map(env => (<EnvironmentCard
-                key={nanoid()}
+                key={env.name}
                 store={this.props.store}
                 env={env}
                 deleteEnv={() => this.delete(env.name)}
@@ -88,7 +87,7 @@ class Environments extends Component {
             this.props.gimletClient.saveEnvToDB(this.state.input)
                 .then(() => {
                     this.setState({
-                        envs: [...this.state.envs, { 
+                        envs: [...this.state.envs, {
                             name: this.state.input,
                             infraRepo: "",
                             appsRepo: ""
