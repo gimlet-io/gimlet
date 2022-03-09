@@ -110,11 +110,11 @@ class Environments extends Component {
         this.props.gimletClient.deleteEnvFromDB(envName)
             .then(() => {
                 this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
+                this.refreshEnvs();
             }, () => {
                 this.setState({ hasRequestError: true });
                 this.setTimeOutForButtonTriggered();
             });
-        this.refreshEnvs();
     }
 
     render() {
