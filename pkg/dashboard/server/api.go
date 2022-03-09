@@ -123,6 +123,14 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	for _, e := range envs {
+		for _, a := range agentHub.Agents {
+			if e.Name == a.Name {
+				e.Stacks = a.Stacks
+			}
+		}
+	}
+
 	allEnvs := map[string]interface{}{}
 	allEnvs["connectedAgents"] = connectedAgents
 	allEnvs["envs"] = envs
