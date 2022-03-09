@@ -189,8 +189,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
                 onClick={() => saveComponents()}
-                disabled={false}
-                className={(true ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}              >
+                disabled={popupWindow.visible}
+                className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}              >
                 Save components
               </button>
             </span>
@@ -280,9 +280,9 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           <div className="p-0 flow-root mt-8">
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
-                // disabled={this.state.input === "" || this.state.saveButtonTriggered}
                 onClick={() => bootstrapGitops(env.name, repoPerEnv)}
-                className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
+                disabled={popupWindow.visible}
+                className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               >
                 Bootstrap gitops repository
               </button>
