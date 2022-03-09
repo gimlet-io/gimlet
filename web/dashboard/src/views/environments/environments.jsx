@@ -95,6 +95,7 @@ class Environments extends Component {
                         input: "",
                         saveButtonTriggered: false
                     });
+                    this.refreshEnvs();
                 }, () => {
                     this.setState({ hasRequestError: true });
                     this.setTimeOutForButtonTriggered();
@@ -113,6 +114,7 @@ class Environments extends Component {
                 this.setState({ hasRequestError: true });
                 this.setTimeOutForButtonTriggered();
             });
+        this.refreshEnvs();
     }
 
     render() {
