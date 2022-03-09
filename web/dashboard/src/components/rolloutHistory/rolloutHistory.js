@@ -139,7 +139,7 @@ at ${exactDate}`;
 
 function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
   return (
-    <li key={exactDate}
+    <li key={rollout.gitopsRef}
       className="hover:bg-yellow-100 p-4 rounded"
     >
       <div className="relative pb-4">
