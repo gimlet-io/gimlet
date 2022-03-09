@@ -78,8 +78,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(err.Error(), "repository not found") ||
 				strings.Contains(err.Error(), "repo name is mandatory") {
 				envs = append(envs, &api.GitopsEnv{
-					Name:   env.Name,
-					Stacks: []*api.Stack{},
+					Name: env.Name,
 				})
 				continue
 			} else {
@@ -119,16 +118,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			AppsRepo:        env.AppsRepo,
 			StackConfig:     stackConfig,
 			StackDefinition: stackDefinition,
-			Stacks:          []*api.Stack{},
 		})
-	}
-
-	for _, e := range envs {
-		for _, a := range agentHub.Agents {
-			if e.Name == a.Name {
-				e.Stacks = a.Stacks
-			}
-		}
 	}
 
 	allEnvs := map[string]interface{}{}

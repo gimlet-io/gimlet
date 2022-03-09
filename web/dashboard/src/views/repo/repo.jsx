@@ -280,10 +280,10 @@ export default class Repo extends Component {
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, search, rolloutHistory, commits, agents } = this.state;
+    let { envs, connectedAgents, search, rolloutHistory, commits, agents } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
-    let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, repoName, search.filter);
+    let filteredEnvs = envsForRepoFilteredBySearchFilter(connectedAgents, repoName, search.filter);
 
     let repoRolloutHistory = undefined;
     if (rolloutHistory && rolloutHistory[repoName]) {
@@ -378,7 +378,8 @@ function envsForRepoFilteredBySearchFilter(envs, repoName, searchFilter) {
   let filteredEnvs = {};
 
   // iterate through all Kubernetes envs
-  for (const env of envs) {
+  for (const envName of Object.keys(envs)) {
+    const env = envs[envName];
     filteredEnvs[env.name] = { name: env.name, stacks: env.stacks };
 
     // find all stacks that belong to this repo

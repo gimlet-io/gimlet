@@ -62,7 +62,6 @@ type GitopsEnv struct {
 	AppsRepo        string                 `json:"appsRepo"`
 	StackConfig     *dx.StackConfig        `json:"stackConfig"`
 	StackDefinition map[string]interface{} `json:"stackDefinition"`
-	Stacks          []*Stack               `json:"stacks"`
 }
 
 type GitopsBootstrapConfig struct {
