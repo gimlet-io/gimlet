@@ -32,6 +32,7 @@ export default class Repo extends Component {
       settings: reduxState.settings,
       refreshQueue: reduxState.repoRefreshQueue.filter(repo => repo === repoName).length,
       agents: reduxState.settings.agents,
+      envs: reduxState.envs
     }
 
     // handling API and streaming state changes
@@ -44,7 +45,8 @@ export default class Repo extends Component {
         rolloutHistory: reduxState.rolloutHistory,
         commits: reduxState.commits,
         branches: reduxState.branches,
-        envConfigs: reduxState.envConfigs[repoName]
+        envConfigs: reduxState.envConfigs[repoName],
+        envs: reduxState.envs
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -278,10 +280,10 @@ export default class Repo extends Component {
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { connectedAgents, search, rolloutHistory, commits, agents } = this.state;
+    let { envs, search, rolloutHistory, commits, agents } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
-    let filteredEnvs = envsForRepoFilteredBySearchFilter(connectedAgents, repoName, search.filter);
+    let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, repoName, search.filter);
 
     let repoRolloutHistory = undefined;
     if (rolloutHistory && rolloutHistory[repoName]) {
@@ -376,8 +378,7 @@ function envsForRepoFilteredBySearchFilter(envs, repoName, searchFilter) {
   let filteredEnvs = {};
 
   // iterate through all Kubernetes envs
-  for (const envName of Object.keys(envs)) {
-    const env = envs[envName];
+  for (const env of envs) {
     filteredEnvs[env.name] = { name: env.name, stacks: env.stacks };
 
     // find all stacks that belong to this repo

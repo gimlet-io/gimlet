@@ -78,7 +78,8 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(err.Error(), "repository not found") ||
 				strings.Contains(err.Error(), "repo name is mandatory") {
 				envs = append(envs, &api.GitopsEnv{
-					Name: env.Name,
+					Name:   env.Name,
+					Stacks: []*api.Stack{},
 				})
 				continue
 			} else {
@@ -118,6 +119,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			AppsRepo:        env.AppsRepo,
 			StackConfig:     stackConfig,
 			StackDefinition: stackDefinition,
+			Stacks:          []*api.Stack{},
 		})
 	}
 
