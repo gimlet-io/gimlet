@@ -18,6 +18,7 @@ func main() {
 	r.Use(middleware.WithValue("app", &app{}))
 
 	r.Post("/saveAppCredentials", saveAppCredentials)
+	r.Post("/bootstrap", bootstrap)
 	r.HandleFunc("/*", serveTemplate)
 
 	http.ListenAndServe(":3333", r)
@@ -78,4 +79,13 @@ func saveAppCredentials(w http.ResponseWriter, r *http.Request) {
 	app.pem = formValues.Get("pem")
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func bootstrap(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	formValues := r.PostForm
+	fmt.Println(formValues)
 }
