@@ -1,5 +1,5 @@
 import { format, formatDistance } from "date-fns";
-import React, { Component } from "react";
+import { Component } from "react";
 import Emoji from "react-emoji-render";
 import { nanoid } from 'nanoid';
 
@@ -139,7 +139,7 @@ at ${exactDate}`;
 
 function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
   return (
-    <li key={nanoid()}
+    <li key={rollout.gitopsRef}
       className="hover:bg-yellow-100 p-4 rounded"
     >
       <div className="relative pb-4">
