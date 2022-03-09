@@ -283,7 +283,7 @@ export default class Repo extends Component {
     let { envs, connectedAgents, search, rolloutHistory, commits, agents } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
-    let filteredEnvs = envsForRepoFilteredBySearchFilter(connectedAgents, repoName, search.filter);
+    let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
 
     let repoRolloutHistory = undefined;
     if (rolloutHistory && rolloutHistory[repoName]) {
@@ -374,16 +374,25 @@ export default class Repo extends Component {
   and finds the relevant stacks for the repo for each environment
   then filters the relevant stacks further with the search box filter
 */
-function envsForRepoFilteredBySearchFilter(envs, repoName, searchFilter) {
+function stacks(connectedAgents, envName) {
+  for (const agentName of Object.keys(connectedAgents)) {
+    const agent = connectedAgents[agentName];
+    if (agentName === envName) {
+      return agent.stacks;
+    }
+    return [];
+  }
+}
+
+function envsForRepoFilteredBySearchFilter(envs, connectedAgents,  repoName, searchFilter) {
   let filteredEnvs = {};
 
   // iterate through all Kubernetes envs
-  for (const envName of Object.keys(envs)) {
-    const env = envs[envName];
-    filteredEnvs[env.name] = { name: env.name, stacks: env.stacks };
+  for (const env of envs) {
+    filteredEnvs[env.name] = { name: env.name };
 
     // find all stacks that belong to this repo
-    filteredEnvs[env.name].stacks = env.stacks.filter((service) => {
+    filteredEnvs[env.name].stacks = stacks(connectedAgents, env.name).filter((service) => {
       return service.repo === repoName
     });
 
