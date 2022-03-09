@@ -312,7 +312,7 @@ func (c *GithubClient) OrgRepos(installationToken string) ([]string, error) {
 	return allRepos, nil
 }
 
-func (c *GithubClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context.Context) (string, string, string, error) {
+func (c *GithubClient) GetAppNameAndAppSettingsURLs(appToken string) (string, string, string, error) {
 
 	config := ctx.Value("config").(*config.Config)
 

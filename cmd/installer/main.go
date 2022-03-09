@@ -15,7 +15,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	r.Use(middleware.WithValue("app", &app{}))
+	r.Use(middleware.WithValue("data", &data{}))
 
 	r.Post("/saveAppCredentials", saveAppCredentials)
 	r.Post("/bootstrap", bootstrap)
@@ -24,11 +24,12 @@ func main() {
 	http.ListenAndServe(":3333", r)
 }
 
-type app struct {
+type data struct {
 	id           string
 	clientId     string
 	clientSecret string
 	pem          string
+	org          string
 }
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
@@ -49,13 +50,14 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	app := ctx.Value("app").(*app)
+	data := ctx.Value("data").(*data)
 
 	err = tmpl.Execute(w, map[string]string{
-		"appId":        app.id,
-		"clientId":     app.clientId,
-		"clientSecret": app.clientSecret,
-		"pem":          app.pem,
+		"appId":        data.id,
+		"clientId":     data.clientId,
+		"clientSecret": data.clientSecret,
+		"pem":          data.pem,
+		"org":          data.org,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -70,13 +72,15 @@ func saveAppCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	app := ctx.Value("app").(*app)
+	data := ctx.Value("data").(*data)
 
 	formValues := r.PostForm
-	app.id = formValues.Get("appId")
-	app.clientId = formValues.Get("clientId")
-	app.clientSecret = formValues.Get("clientSecret")
-	app.pem = formValues.Get("pem")
+	data.id = formValues.Get("appId")
+	data.clientId = formValues.Get("clientId")
+	data.clientSecret = formValues.Get("clientSecret")
+	data.pem = formValues.Get("pem")
+
+	
 
 	w.WriteHeader(http.StatusOK)
 }
