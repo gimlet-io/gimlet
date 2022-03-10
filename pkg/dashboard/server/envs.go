@@ -172,14 +172,21 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := ctx.Value("user").(*model.User)
-	isNewInfraRepo, err := assureRepoExists(db, environment.InfraRepo, user.AccessToken)
+	orgRepos, err := getOrgRepos(db)
+	if err != nil {
+		logrus.Errorf("cannot get repo list: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	isNewInfraRepo, err := AssureRepoExists(orgRepos, environment.InfraRepo, user.AccessToken)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	isNewAppsRepo, err := assureRepoExists(db, environment.AppsRepo, user.AccessToken)
+	isNewAppsRepo, err := AssureRepoExists(orgRepos, environment.AppsRepo, user.AccessToken)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -190,9 +197,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	go updateUserRepos(config, db, user)
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := bootstrapEnv(
+	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
-		*environment,
+		environment.Name,
 		environment.InfraRepo,
 		bootstrapConfig.RepoPerEnv,
 		token)
@@ -202,9 +209,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := bootstrapEnv(
+	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
-		*environment,
+		environment.Name,
 		environment.AppsRepo,
 		bootstrapConfig.RepoPerEnv,
 		token)
@@ -241,9 +248,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	w.Write(guidingTextsString)
 }
 
-func bootstrapEnv(
+func BootstrapEnv(
 	gitRepoCache *dNativeGit.RepoCache,
-	environment model.Environment,
+	envName string,
 	repoName string,
 	repoPerEnv bool,
 	token string,
@@ -254,7 +261,6 @@ func bootstrapEnv(
 		return "", "", "", fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	envName := environment.Name
 	if repoPerEnv {
 		envName = ""
 	}
@@ -277,17 +283,12 @@ func bootstrapEnv(
 		return "", "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
-	gitRepoCache.Invalidate(environment.InfraRepo)
+	gitRepoCache.Invalidate(repoName)
 
 	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
-func assureRepoExists(dao *store.Store, repoName string, token string) (bool, error) {
-	orgRepos, err := getOrgRepos(dao)
-	if err != nil {
-		return false, err
-	}
-
+func AssureRepoExists(orgRepos []string, repoName string, token string) (bool, error) {
 	if hasRepo(orgRepos, repoName) {
 		return false, nil
 	}
@@ -312,7 +313,7 @@ func assureRepoExists(dao *store.Store, repoName string, token string) (bool, er
 		Private:  &private,
 		AutoInit: &autoInit,
 	}
-	_, _, err = client.Repositories.Create(context.Background(), "", r)
+	_, _, err := client.Repositories.Create(context.Background(), "", r)
 
 	return true, err
 }

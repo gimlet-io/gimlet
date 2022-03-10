@@ -87,49 +87,20 @@
     </div>
   </div>
 
-
-
-  <script>
-    var url = new URL(window.location);
-    var code = url.searchParams.get("code");
-
-    if (code) {
-      var xhr = new XMLHttpRequest();
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          console.log(xhr.response)
-          var responseObj = JSON.parse(xhr.response)
-
-          var http = new XMLHttpRequest();
-          var url = '/saveAppCredentials';
-          var params = `appId=${responseObj.id}&clientId=${responseObj.client_id}&clientSecret=${responseObj.client_secret}&pem=${responseObj.pem}`;
-          http.open('POST', url, true);
-          http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-          http.onreadystatechange = function () {
-            if (http.readyState == 4 && http.status == 200) {
-              window.location.replace("/step-2");
-            }
-          }
-          http.send(params);
-        }
-      }
-      xhr.open("POST", "https://api.github.com/app-manifests/" + code + "/conversions", true);
-      xhr.send();
-    }
-  </script>
-
   <script>
     input = document.getElementById("manifest")
     input.value = JSON.stringify({
       "name": "Gimlet Dashboard",
-      "url": "https://gimlet.mycompany.com",
-      "callback_url": "https://gimlet.mycompany.com/auth",
+      "url": window.location.href,
+      "callback_url": window.location.href + '/auth',
       "hook_attributes": {
-        "url": "https://gimlet.mycompany.com/hook"
+        "url": window.location.href + '/hook'
       },
-      "redirect_url": window.location.href,
+      "redirect_url": window.location.href + '/created',
+      "setup_url": window.location.href + '/installed',
       "public": false,
       "default_permissions": {
+        "administration": "write",
         "checks": "read",
         "contents": "write",
         "repository_hooks": "write",
