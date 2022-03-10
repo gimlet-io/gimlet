@@ -161,6 +161,9 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 
+	if r.clientHub == nil {
+		return
+	}
 	jsonString, _ := json.Marshal(streaming.StaleRepoDataEvent{
 		Repo:           repoName,
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.StaleRepoDataEventString},
@@ -284,6 +287,10 @@ func (r *RepoCache) registerWebhook(repoName string) {
 		logrus.Errorf("couldn't get scm token: %s", err)
 	}
 
+	if r.goScmHelper == nil {
+		logrus.Warnf("not registering webhook for %s", repoName)
+		return
+	}
 	err = r.goScmHelper.RegisterWebhook(
 		r.config.Host,
 		token,

@@ -45,6 +45,7 @@ type data struct {
 	tokenManager   *customGithub.GithubOrgTokenManager
 	accessToken    string
 	refreshToken   string
+	repoCache      *nativeGit.RepoCache
 }
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
@@ -261,20 +262,31 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	repoCachePath, err := ioutil.TempDir("", "cache")
+	if err != nil {
+		panic(err)
+	}
+	gitRepoCache, err := nativeGit.NewRepoCache(
+		data.tokenManager,
+		nil,
+		repoCachePath,
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		panic(err)
+	}
+	go gitRepoCache.Run()
+	data.repoCache = gitRepoCache
+
 	err = server.BootstrapEnv(gitRepoCache, envName, infraRepo, repoPerEnv, tokenString)
 	if err != nil {
-		logrus.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		panic(err)
 	}
 	err = server.BootstrapEnv(gitRepoCache, envName, appsRepo, repoPerEnv, tokenString)
 	if err != nil {
-		logrus.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		panic(err)
 	}
 
 	http.Redirect(w, r, "/step-3", http.StatusSeeOther)
