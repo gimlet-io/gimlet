@@ -315,8 +315,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		Config: map[string]interface{}{
 			"nginx": map[string]interface{}{
 				"enabled": true,
+				"host": r.Host,
 			},
-			"gimletD": map[string]interface{}{
+			"gimletd": map[string]interface{}{
 				"enabled":    true,
 				"gitopsRepo": appsRepo,
 				"deployKey":  string(privateKeyBytes),
