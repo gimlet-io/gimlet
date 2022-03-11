@@ -364,7 +364,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             </div>
             {bootstrapMessage &&
           <>
-            <h3 className="text-2xl p-2 my-2">Finalize Gitops bootstrapping with these two steps below</h3>
+            <h3 className="text-2xl font-bold p-2 mt-4 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
             <BootstrapGuide
               envName={bootstrapMessage.envName}
               repoPath={bootstrapMessage.infraRepo}
@@ -372,6 +372,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               publicKey={bootstrapMessage.infraPublicKey}
               secretFileName={bootstrapMessage.infraSecretFileName}
               gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
+              isNewRepo={bootstrapMessage.isNewInfraRepo}
             />
             <BootstrapGuide
               envName={bootstrapMessage.envName}
@@ -380,6 +381,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               publicKey={bootstrapMessage.appsPublicKey}
               secretFileName={bootstrapMessage.appsSecretFileName}
               gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
+              isNewRepo={bootstrapMessage.isNewAppsRepo}
             />
           </>
         }

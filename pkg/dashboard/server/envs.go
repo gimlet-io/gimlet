@@ -172,14 +172,14 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := ctx.Value("user").(*model.User)
-	err = assureRepoExists(db, environment.InfraRepo, user.AccessToken)
+	isNewInfraRepo, err := assureRepoExists(db, environment.InfraRepo, user.AccessToken)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	err = assureRepoExists(db, environment.AppsRepo, user.AccessToken)
+	isNewAppsRepo, err := assureRepoExists(db, environment.AppsRepo, user.AccessToken)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -226,6 +226,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		"appsPublicKey":           appsPublicKey,
 		"appsSecretFileName":      appsSecretFileName,
 		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
+		"isNewInfraRepo":          isNewInfraRepo,
+		"isNewAppsRepo":           isNewAppsRepo,
 	}
 
 	guidingTextsString, err := json.Marshal(guidingTexts)
@@ -280,14 +282,14 @@ func bootstrapEnv(
 	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
-func assureRepoExists(dao *store.Store, repoName string, token string) error {
+func assureRepoExists(dao *store.Store, repoName string, token string) (bool, error) {
 	orgRepos, err := getOrgRepos(dao)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if hasRepo(orgRepos, repoName) {
-		return nil
+		return false, nil
 	}
 
 	parts := strings.Split(repoName, "/")
@@ -312,7 +314,7 @@ func assureRepoExists(dao *store.Store, repoName string, token string) error {
 	}
 	_, _, err = client.Repositories.Create(context.Background(), "", r)
 
-	return err
+	return true, err
 }
 
 func stageCommitAndPush(repo *git.Repository, token string, msg string) error {
