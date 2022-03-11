@@ -41,7 +41,9 @@ func main() {
 	r.Post("/bootstrap", bootstrap)
 	r.HandleFunc("/*", serveTemplate)
 
-	http.ListenAndServe(":3333", r)
+	// http.ListenAndServe(":3333", r)
+	err := http.ListenAndServeTLS(":443", "server.crt", "server.key", nil)
+	fmt.Println(err)
 }
 
 type data struct {
@@ -315,7 +317,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		Config: map[string]interface{}{
 			"nginx": map[string]interface{}{
 				"enabled": true,
-				"host": r.Host,
+				"host":    r.Host,
 			},
 			"gimletd": map[string]interface{}{
 				"enabled":    true,

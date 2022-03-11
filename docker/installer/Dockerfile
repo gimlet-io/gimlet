@@ -13,6 +13,7 @@ WORKDIR /gimlet-installer
 
 COPY --chown=gimlet-installer:gimlet-installer bin/gimlet-installer-linux-x86_64 gimlet-installer
 COPY --chown=gimlet-installer:gimlet-installer cmd/installer/web ./web
+COPY --chown=gimlet-installer:gimlet-installer docker/installer/server.* ./
 
 USER gimlet-installer
 
