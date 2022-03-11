@@ -4,6 +4,7 @@
   <title>Gimlet Installer</title>
   <link rel="icon" type="image/png" sizes="32x32" href="https://gimlet.io/favicon-32x32.png">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="//unpkg.com/alpinejs" defer></script>
 </head>
 
 <body>
@@ -55,7 +56,7 @@
                       clip-rule="evenodd" />
                   </svg>
                 </span>
-                <span class="ml-4 text-sm font-medium text-gray-900">Bootstrap Gitops Automation</span>
+                <span class="ml-4 text-sm font-medium text-gray-900">Prepare gitops repository</span>
               </span>
             </div>
 
@@ -75,7 +76,7 @@
                 class="flex-shrink-0 w-10 h-10 flex items-center justify-center border-2 border-indigo-600 rounded-full">
                 <span class="text-indigo-600">01</span>
               </span>
-              <span class="ml-4 text-sm font-medium text-indigo-600">Install Gimlet</span>
+              <span class="ml-4 text-sm font-medium text-indigo-600">Bootstrap gitops automation</span>
             </div>
           </li>
         </ol>
@@ -101,110 +102,9 @@
       </div>
       {{ end }}
       <div class="mt-8 text-sm">
-        <fieldset id="root">
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="jwtSecret">JWT Secret</label>
-            <input id="jwtSecret" name="jwtSecret"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="jwtSecret" />
-            <p class="text-gray-500">Random string to seed JWT tokens, eg the output of `openssl rand -hex 32`</p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="org">Github Organization</label>
-            <input id="org" name="org"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="org" />
-            <p class="text-gray-500">Users that are members of this Github Organization will be able to authenticate to
-              the
-              dashboard</p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="gimletdToken">GimletD
-              Token</label>
-            <input id="gimletdToken" name="ogimletdTokenrg"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="gimletdToken" />
-            <p class="text-gray-500">A GimletD admin token</p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="githubAppId">Github App ID</label>
-            <input id="githubAppId" name="githubAppId"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="githubAppId" />
-            <p class="text-gray-500"></p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="githubPrivateKey">Github
-              Private Key</label>
-            <input id="githubPrivateKey" name="githubPrivateKey"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="githubPrivateKey" />
-            <p class="text-gray-500"></p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="githubClientId">Github
-              Client ID</label>
-            <input id="githubClientId" name="githubClientId"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="githubClientId" />
-            <p class="text-gray-500"></p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="githubClientSecret">Github
-              Client Secret</label>
-            <input id="githubClientSecret" name="githubClientSecret"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="githubClientSecret" />
-            <p class="text-gray-500"></p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="webhookSecret">Webhook
-              Secret</label>
-            <input id="webhookSecret" name="webhookSecret"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="webhookSecret" />
-            <p class="text-gray-500"></p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="environment">Environment</label>
-            <input id="environment" name="environment"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="environment" />
-            <p class="text-gray-500">The logical name of the environment the agent is deployed to</p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="agentKey">Agent
-              Key</label>
-            <input id="agentKey" name="agentKey"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="agentKey" />
-            <p class="text-gray-500">Agent Key to authenticate to Gimlet Dashboard</p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="gitopsRepo">Gitops
-              Repository</label>
-            <input id="gitopsRepo" name="gitopsRepo"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="gitopsRepo" />
-            <p class="text-gray-500">Repository owner and name (owner/name) where GimletD writes the application manifests</p>
-          </div>
-          <div class="mt-4">
-            <label class="font-medium text-gray-700" for="deployKey">Deploy
-              Key</label>
-            <input id="deployKey" name="deployKey"
-              class="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              type="text" x-model="deployKey" />
-            <p class="text-gray-500">The private key of the deploy key pair to access the gitops repo on Github</p>
-          </div>
-        </fieldset>
-        <div class="p-0 flow-root my-8">
-          <span class="inline-flex rounded-md shadow-sm gap-x-3 float-right">
-            <button
-              class="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150">
-              Write Gimlet config to gitops
-            </button>
-          </span>
-        </div>
+        go checkout the gitops infra repo
+        bootstrap applies
+        gimletd deploy key
       </div>
 
     </div>

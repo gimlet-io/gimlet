@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -14,9 +16,17 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
+
+	"crypto/rand"
+	"encoding/hex"
 )
 
 func main() {
@@ -35,17 +45,18 @@ func main() {
 }
 
 type data struct {
-	id             string
-	slug           string
-	clientId       string
-	clientSecret   string
-	pem            string
-	org            string
-	installationId string
-	tokenManager   *customGithub.GithubOrgTokenManager
-	accessToken    string
-	refreshToken   string
-	repoCache      *nativeGit.RepoCache
+	id               string
+	slug             string
+	clientId         string
+	clientSecret     string
+	pem              string
+	org              string
+	installationId   string
+	tokenManager     *customGithub.GithubOrgTokenManager
+	accessToken      string
+	refreshToken     string
+	repoCache        *nativeGit.RepoCache
+	gimletdPublicKey string
 }
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +79,7 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
-	err = tmpl.Execute(w, map[string]string{
+	err = tmpl.Execute(w, map[string]interface{}{
 		"appId":        data.id,
 		"clientId":     data.clientId,
 		"clientSecret": data.clientSecret,
@@ -289,5 +300,94 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	jwtSecret, _ := randomHex(32)
+	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
+	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
+
+	webhookSecret, _ := randomHex(32)
+	privateKeyBytes, publicKeyBytes := gitops.GenerateKeyPair()
+	data.gimletdPublicKey = string(publicKeyBytes)
+
+	stackConfig := &dx.StackConfig{
+		Stack: dx.StackRef{
+			Repository: "https://github.com/gimlet-io/gimlet-stack-reference.git?branch=gimlet-in-stack",
+		},
+		Config: map[string]interface{}{
+			"nginx": map[string]interface{}{
+				"enabled": true,
+			},
+			"gimletD": map[string]interface{}{
+				"enabled":    true,
+				"gitopsRepo": appsRepo,
+				"deployKey":  string(privateKeyBytes),
+			},
+			"gimletAgent": map[string]interface{}{
+				"enabled":     true,
+				"environment": envName,
+				"agentKey":    agentToken,
+			},
+			"gimletDashboard": map[string]interface{}{
+				"enabled":            true,
+				"jwtSecret":          jwtSecret,
+				"githubOrg":          data.org,
+				"gimletdToken":       "TODO",
+				"githubAppId":        data.id,
+				"githubPrivateKey":   data.pem,
+				"githubClientId":     data.clientId,
+				"githubClientSecret": data.clientSecret,
+				"webhookSecret":      webhookSecret,
+			},
+		},
+	}
+
+	stackConfigBuff := bytes.NewBufferString("")
+	e := yaml.NewEncoder(stackConfigBuff)
+	e.SetIndent(2)
+	err = e.Encode(stackConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	stackYamlPath := filepath.Join(envName, "stack.yaml")
+	if repoPerEnv {
+		stackYamlPath = "stack.yaml"
+	}
+
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(infraRepo)
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpPath)
+
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
+	if err != nil {
+		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	if err != nil {
+		logrus.Errorf("cannot generate and write files: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = server.StageCommitAndPush(repo, tokenString, "[Gimlet Dashboard] Updating components")
+	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	http.Redirect(w, r, "/step-3", http.StatusSeeOther)
+}
+
+func randomHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }

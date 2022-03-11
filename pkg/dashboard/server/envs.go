@@ -112,7 +112,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	err = stageCommitAndPush(repo, token, "[Gimlet Dashboard] Updating components")
+	err = StageCommitAndPush(repo, token, "[Gimlet Dashboard] Updating components")
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -278,7 +278,7 @@ func BootstrapEnv(
 		return "", "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = stageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
+	err = StageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
 		return "", "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -318,7 +318,7 @@ func AssureRepoExists(orgRepos []string, repoName string, token string) (bool, e
 	return true, err
 }
 
-func stageCommitAndPush(repo *git.Repository, token string, msg string) error {
+func StageCommitAndPush(repo *git.Repository, token string, msg string) error {
 	worktree, err := repo.Worktree()
 	if err != nil {
 		return err
