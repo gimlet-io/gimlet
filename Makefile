@@ -63,7 +63,7 @@ fast-dist-cli:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-arm64 github.com/gimlet-io/gimlet-cli/cmd/cli
 dist-gimlet-installer:
 	mkdir -p bin
-	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-installer-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/gimlet-installer
+	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-installer-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/installer
 
 build-cli-frontend:
 	(cd web/cli; npm install; npm run build)
