@@ -9,8 +9,10 @@ RUN addgroup -S gimlet-installer && adduser -S gimlet-installer -G gimlet-instal
 
 ADD docker/gimlet-installer/known_hosts /etc/ssh/ssh_known_hosts
 
-RUN mkdir /var/lib/gimlet-installer
-RUN chown gimlet-installer:gimlet-installer /var/lib/gimlet-installer
+WORKDIR /gimlet-installer
+
+COPY --chown=gimlet-installer:gimlet-installer bin/gimlet-installer-linux-x86_64 gimlet-installer
+COPY --chown=gimlet-installer:gimlet-installer cmd/web ./web
 
 USER gimlet-installer
 WORKDIR /var/lib/gimlet-installer
