@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Switch } from '@headlessui/react'
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
+import BootstrapGuide from './bootstrapGuide';
 import { StackUI } from 'stack-ui';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
@@ -17,6 +18,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   const [appsRepo, setAppsRepo] = useState(env.appsRepo)
   /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "popupWindow" }]*/
   const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
+  const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
 
   if (repoPerEnv && infraRepo === "") {
     setInfraRepo(`gitops-${env.name}-infra`);
@@ -134,7 +136,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     });
 
     gimletClient.bootstrapGitops(envName, repoPerEnv, infraRepo, appsRepo)
-      .then(() => {
+      .then((data) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
@@ -142,6 +144,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           }
         });
         refreshEnvs();
+        setBootstrapMessage(data)
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
@@ -156,7 +159,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const gitopsRepositoriesTab = () => {
     return (
-      <div className="mt-4 inline-grid">
+      <div className="mt-4">
         {gitopsRepositories.map((gitopsRepo) =>
         (
           <div className="flex">
@@ -359,6 +362,27 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 ))}
               </select>
             </div>
+            {bootstrapMessage &&
+          <>
+            <h3 className="text-2xl p-2 my-2">Finalize Gitops bootstrapping with these two steps below</h3>
+            <BootstrapGuide
+              envName={bootstrapMessage.envName}
+              repoPath={bootstrapMessage.infraRepo}
+              repoPerEnv={bootstrapMessage.repoPerEnv}
+              publicKey={bootstrapMessage.infraPublicKey}
+              secretFileName={bootstrapMessage.infraSecretFileName}
+              gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
+            />
+            <BootstrapGuide
+              envName={bootstrapMessage.envName}
+              repoPath={bootstrapMessage.appsRepo}
+              repoPerEnv={bootstrapMessage.repoPerEnv}
+              publicKey={bootstrapMessage.appsPublicKey}
+              secretFileName={bootstrapMessage.appsSecretFileName}
+              gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
+            />
+          </>
+        }
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">

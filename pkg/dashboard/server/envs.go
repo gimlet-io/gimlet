@@ -190,14 +190,24 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	go updateUserRepos(config, db, user)
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	err = bootstrapEnv(gitRepoCache, *environment, environment.InfraRepo, bootstrapConfig.RepoPerEnv, token)
+	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := bootstrapEnv(
+		gitRepoCache,
+		*environment,
+		environment.InfraRepo,
+		bootstrapConfig.RepoPerEnv,
+		token)
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	err = bootstrapEnv(gitRepoCache, *environment, environment.AppsRepo, bootstrapConfig.RepoPerEnv, token)
+	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := bootstrapEnv(
+		gitRepoCache,
+		*environment,
+		environment.AppsRepo,
+		bootstrapConfig.RepoPerEnv,
+		token)
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -205,8 +215,28 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	guidingTexts := map[string]interface{}{
+		"envName":                 bootstrapConfig.EnvName,
+		"repoPerEnv":              bootstrapConfig.RepoPerEnv,
+		"infraRepo":               environment.InfraRepo,
+		"infraPublicKey":          infraPublicKey,
+		"infraSecretFileName":     infraSecretFileName,
+		"infraGitopsRepoFileName": infraGitopsRepoFileName,
+		"appsRepo":                environment.AppsRepo,
+		"appsPublicKey":           appsPublicKey,
+		"appsSecretFileName":      appsSecretFileName,
+		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
+	}
+
+	guidingTextsString, err := json.Marshal(guidingTexts)
+	if err != nil {
+		logrus.Errorf("cannot serialize guiding texts: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{}`))
+	w.Write(guidingTextsString)
 }
 
 func bootstrapEnv(
@@ -215,18 +245,18 @@ func bootstrapEnv(
 	repoName string,
 	repoPerEnv bool,
 	token string,
-) error {
+) (string, string, string, error) {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
-		return fmt.Errorf("cannot get repo: %s", err)
+		return "", "", "", fmt.Errorf("cannot get repo: %s", err)
 	}
 
 	envName := environment.Name
 	if repoPerEnv {
 		envName = ""
 	}
-	_, _, _, err = gitops.GenerateManifests(
+	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		true,
 		envName,
 		repoPerEnv,
@@ -237,17 +267,17 @@ func bootstrapEnv(
 		"main",
 	)
 	if err != nil {
-		return fmt.Errorf("cannot generate manifest: %s", err)
+		return "", "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
 	err = stageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
-		return fmt.Errorf("cannot stage commit and push: %s", err)
+		return "", "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
 	gitRepoCache.Invalidate(environment.InfraRepo)
 
-	return nil
+	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
 func assureRepoExists(dao *store.Store, repoName string, token string) error {
