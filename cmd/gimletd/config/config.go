@@ -38,17 +38,18 @@ func (c *Config) String() string {
 }
 
 type Config struct {
-	Debug                   bool `envconfig:"DEBUG"`
+	Debug                   bool		`envconfig:"DEBUG"`
 	Logging                 Logging
-	Host                    string `envconfig:"HOST"`
+	Host                    string		`envconfig:"HOST"`
 	Database                Database
-	GitopsRepo              string `envconfig:"GITOPS_REPO"`
-	GitopsRepoDeployKeyPath string `envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
-	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
+	GitopsRepo              string		`envconfig:"GITOPS_REPO"`
+	GitopsRepoDeployKeyPath string		`envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
+	RepoCachePath           string		`envconfig:"REPO_CACHE_PATH"`
 	Notifications           Notifications
 	Github                  Github
-	ReleaseStats            string `envconfig:"RELEASE_STATS"`
-	PrintAdminToken         bool   `envconfig:"PRINT_ADMIN_TOKEN"`
+	ReleaseStats            string		`envconfig:"RELEASE_STATS"`
+	PrintAdminToken         bool		`envconfig:"PRINT_ADMIN_TOKEN"`
+	AdminToken				string		`envconfig:"ADMIN_TOKEN"`
 }
 
 type Database struct {

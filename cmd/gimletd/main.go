@@ -208,9 +208,7 @@ func setupAdminUser(config *config.Config, store *store.Store) error {
 	if err == sql.ErrNoRows {
 		admin := &model.User{
 			Login: "admin",
-			Secret: base32.StdEncoding.EncodeToString(
-				securecookie.GenerateRandomKey(32),
-			),
+			Secret: adminToken(config),
 			Admin: true,
 		}
 		err = store.CreateUser(admin)
@@ -246,4 +244,14 @@ func printAdminToken(admin *model.User) error {
 	logrus.Infof("Admin token: %s", tokenStr)
 
 	return nil
+}
+
+func adminToken(config *config.Config) string {
+	if config.AdminToken == "" {
+		return base32.StdEncoding.EncodeToString(
+			securecookie.GenerateRandomKey(32),
+		)
+	} else {
+		return config.AdminToken
+	}
 }
