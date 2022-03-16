@@ -2,6 +2,9 @@ package server
 
 import (
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
@@ -11,8 +14,6 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/prometheus/client_golang/prometheus"
-	"net/http"
-	"time"
 )
 
 func SetupRouter(

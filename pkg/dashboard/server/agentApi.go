@@ -12,7 +12,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 )
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -35,13 +34,13 @@ func register(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, ": ping\n\n")
 	flusher.Flush()
 
-	log.Debugf("agent connected: %s/%s", name, namespace)
+	logrus.Debugf("agent connected: %s/%s", name, namespace)
 
 	eventChannel := make(chan []byte, 10)
 	defer func() {
 		<-r.Context().Done()
 		close(eventChannel)
-		log.Debugf("agent disconnected: %s/%s", name, namespace)
+		logrus.Debugf("agent disconnected: %s/%s", name, namespace)
 	}()
 
 	a := &streaming.ConnectedAgent{Name: name, Namespace: namespace, EventChannel: eventChannel}
@@ -78,7 +77,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 func assureAgentInDB(name string, db *store.Store) {
 	envsFromDB, err := db.GetEnvironments()
 	if err != nil {
-		log.Debugf("cannot get all environments from database: %s", err)
+		logrus.Debugf("cannot get all environments from database: %s", err)
 	}
 	agentInDB := false
 	for _, env := range envsFromDB {
@@ -93,7 +92,7 @@ func assureAgentInDB(name string, db *store.Store) {
 		}
 		err := db.CreateEnvironment(envToSave)
 		if err != nil {
-			log.Debugf("cannot create environment to database: %s", err)
+			logrus.Debugf("cannot create environment to database: %s", err)
 		}
 	}
 }
@@ -142,7 +141,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 	}
 	agent.Stacks = stackPointers
 
-	envs := []*api.Env{{
+	envs := []*api.ConnectedAgent{{
 		Name:   name,
 		Stacks: stackPointers,
 	}}

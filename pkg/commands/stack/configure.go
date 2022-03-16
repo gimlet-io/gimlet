@@ -19,6 +19,8 @@ import (
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart/ws"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/stack/web"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -48,7 +50,7 @@ var ConfigureCmd = cli.Command{
 }
 
 func configure(c *cli.Context) error {
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	stackConfigPath := c.String("config")
 
 	if stackConfigPath == "" {
@@ -79,12 +81,12 @@ func configure(c *cli.Context) error {
 		stackConfig.Stack.Repository = "https://github.com/gimlet-io/gimlet-stack-reference.git"
 	}
 
-	locked, err := IsVersionLocked(stackConfig)
+	locked, err := stack.IsVersionLocked(stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot check version: %s", err.Error())
 	}
 	if !locked {
-		latestTag, _ := LatestVersion(stackConfig.Stack.Repository)
+		latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
 		if latestTag != "" {
 			stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?tag=" + latestTag
 		}
@@ -101,7 +103,7 @@ func configure(c *cli.Context) error {
 		}
 		stackDefinitionYaml = string(stackDefinitionYamlBytes)
 	} else {
-		stackDefinitionYaml, err = StackDefinitionFromRepo(stackConfig.Stack.Repository)
+		stackDefinitionYaml, err = stack.StackDefinitionFromRepo(stackConfig.Stack.Repository)
 		if err != nil {
 			return fmt.Errorf("cannot get stack definition: %s", err.Error())
 		}
@@ -161,19 +163,10 @@ type StackDefinition struct {
 	Message     string        `json:"message,omitempty" yaml:"message"`
 }
 
-func StackDefinitionFromRepo(repoUrl string) (string, error) {
-	stackTemplates, err := cloneStackFromRepo(repoUrl)
-	if err != nil {
-		return "", err
-	}
-
-	return stackTemplates["stack-definition.yaml"], nil
-}
-
 var values map[string]interface{}
 var written bool
 
-func Configure(stackDefinition StackDefinition, existingStackConfig StackConfig) (StackConfig, bool, error) {
+func Configure(stackDefinition StackDefinition, existingStackConfig dx.StackConfig) (dx.StackConfig, bool, error) {
 	stackDefinitionJson, err := json.Marshal(stackDefinition)
 	if err != nil {
 		panic(err)

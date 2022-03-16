@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,10 +12,11 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	helper "github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
-	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -71,9 +73,9 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branch := headBranch(repo)
+	branch := helper.HeadBranch(repo)
 
-	files, err := remoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
 			w.WriteHeader(http.StatusOK)
@@ -117,57 +119,6 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(configsPerEnvJson))
 }
 
-func remoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, path string) (map[string]string, error) {
-	files := map[string]string{}
-
-	head := branchHeadHash(repo, branch)
-	headCommit, err := repo.CommitObject(head)
-	if err != nil {
-		return files, fmt.Errorf("cannot get head commit: %s", err)
-	}
-
-	t, err := headCommit.Tree()
-	if err != nil {
-		return files, fmt.Errorf("cannot get head tree: %s", err)
-	}
-
-	subTree, err := t.Tree(".gimlet")
-	if err != nil {
-		return files, fmt.Errorf("cannot get .gimlet tree: %s", err)
-	}
-
-	for _, entry := range subTree.Entries {
-		f, err := subTree.File(entry.Name)
-		if err != nil {
-			return files, fmt.Errorf("cannot get file: %s", err)
-		}
-		contents, err := f.Contents()
-		if err != nil {
-			return files, fmt.Errorf("cannot get file: %s", err)
-		}
-		files[entry.Name] = contents
-	}
-
-	return files, nil
-}
-
-func branchHeadHash(repo *git.Repository, branch string) plumbing.Hash {
-	var head plumbing.Hash
-	refIter, _ := repo.References()
-	refIter.ForEach(func(r *plumbing.Reference) error {
-		if r.Name().IsRemote() {
-			remoteBranch := r.Name().Short()
-			remoteBranch = strings.TrimPrefix(remoteBranch, "origin/")
-			if remoteBranch == branch {
-				head = r.Hash()
-			}
-		}
-		return nil
-	})
-
-	return head
-}
-
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	var values map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&values)
@@ -194,7 +145,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files, err := helper.Folder(repo, ".gimlet")
+	headBranch := helper.HeadBranch(repo)
+	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
 	if err != nil {
 		if !strings.Contains(err.Error(), "no such file or directory") {
 			logrus.Errorf("cannot list files in .gimlet/: %s", err)
@@ -229,7 +181,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
-	branch := headBranch(repo)
+	branch := helper.HeadBranch(repo)
 
 	_, blobID, err := goScm.Content(token, repoPath, fileUpdatePath, branch)
 	if err != nil {
@@ -312,26 +264,38 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func branchList(repo *git.Repository) []string {
-	branches := []string{}
-	refIter, _ := repo.References()
-	refIter.ForEach(func(r *plumbing.Reference) error {
-		if r.Name().IsRemote() {
-			branch := r.Name().Short()
-			branches = append(branches, strings.TrimPrefix(branch, "origin/"))
-		}
-		return nil
-	})
+func getOrgRepos(dao *store.Store) ([]string, error) {
+	var orgRepos []string
+	orgReposJson, err := dao.KeyValue(model.OrgRepos)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if orgReposJson.Value == "" {
+		orgReposJson.Value = "[]"
+	}
 
-	return branches
+	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
+	if err != nil {
+		return nil, err
+	}
+
+	return orgRepos, nil
 }
 
-func headBranch(repo *git.Repository) string {
-	branches := branchList(repo)
-	for _, b := range branches {
-		if b == "main" {
-			return "main"
+func hasRepo(orgRepos []string, repo string) bool {
+	for _, orgRepo := range orgRepos {
+		if orgRepo == repo {
+			return true
 		}
 	}
-	return "master"
+	return false
+}
+
+func folderExists(gitopsRepoContent []string, envName string) bool {
+	for _, content := range gitopsRepoContent {
+		if content == envName {
+			return true
+		}
+	}
+	return false
 }

@@ -1,9 +1,7 @@
 import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
 import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
-import {
-    ACTION_TYPE_ENVS
-} from "../../redux/redux";
+import { ACTION_TYPE_ENVS } from "../../redux/redux";
 
 class Environments extends Component {
     constructor(props) {
@@ -17,48 +15,52 @@ class Environments extends Component {
             hasRequestError: false,
             saveButtonTriggered: false,
             hasSameEnvNameError: false,
+            user: reduxState.user,
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
 
             this.setState({
                 connectedAgents: reduxState.connectedAgents,
-                envs: reduxState.envs
+                envs: reduxState.envs,
+                user: reduxState.user,
             });
         });
+
+        this.refreshEnvs = this.refreshEnvs.bind(this)
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        if (prevState.envs.length !== this.state.envs.length) {
-            this.props.gimletClient.getEnvs()
-                .then(data => {
-                    this.props.store.dispatch({
-                        type: ACTION_TYPE_ENVS,
-                        payload: data
-                    });
-                }, () => {/* Generic error handler deals with it */
+    refreshEnvs() {
+        this.props.gimletClient.getEnvs()
+            .then(data => {
+                this.props.store.dispatch({
+                    type: ACTION_TYPE_ENVS,
+                    payload: data
                 });
-        }
+            }, () => {/* Generic error handler deals with it */
+            });
     }
 
     getEnvironmentCards() {
         const { connectedAgents, envs } = this.state;
-        const envsArray = Object.keys(connectedAgents).map(agent => connectedAgents[agent]);
-        const sortedEnvArrayByStatus = this.sortingEnvByStatus(envsArray, envs)
+        const sortedEnvs = this.sortingByName(envs);
 
         return (
-            sortedEnvArrayByStatus.map(env => (<EnvironmentCard
-                singleEnv={env}
+            sortedEnvs.map(env => (<EnvironmentCard
+                key={env.name}
+                store={this.props.store}
+                env={env}
                 deleteEnv={() => this.delete(env.name)}
-                isOnline={this.isOnline(this.state.connectedAgents, env)}
+                isOnline={this.isOnline(connectedAgents, env)}
+                gimletClient={this.props.gimletClient}
+                refreshEnvs={this.refreshEnvs}
             />))
         )
     }
 
-    sortingEnvByStatus(connectedAgents, envs) {
-        return connectedAgents.concat(envs
-            .filter(agent => !connectedAgents
-                .some(env => agent.name === env.name)));
+    sortingByName(envs) {
+        const envsCopy = [...envs]
+        return envsCopy.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     isOnline(onlineEnvs, singleEnv) {
@@ -85,10 +87,15 @@ class Environments extends Component {
             this.props.gimletClient.saveEnvToDB(this.state.input)
                 .then(() => {
                     this.setState({
-                        envs: [...this.state.envs, { name: this.state.input }],
+                        envs: [...this.state.envs, {
+                            name: this.state.input,
+                            infraRepo: "",
+                            appsRepo: ""
+                        }],
                         input: "",
                         saveButtonTriggered: false
                     });
+                    this.refreshEnvs();
                 }, () => {
                     this.setState({ hasRequestError: true });
                     this.setTimeOutForButtonTriggered();
@@ -103,6 +110,7 @@ class Environments extends Component {
         this.props.gimletClient.deleteEnvFromDB(envName)
             .then(() => {
                 this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
+                this.refreshEnvs();
             }, () => {
                 this.setState({ hasRequestError: true });
                 this.setTimeOutForButtonTriggered();

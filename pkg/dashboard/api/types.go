@@ -14,6 +14,8 @@
 
 package api
 
+import "github.com/gimlet-io/gimlet-cli/pkg/dx"
+
 type Service struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
@@ -49,9 +51,24 @@ type Ingress struct {
 	URL       string `json:"url"`
 }
 
-type Env struct {
+type ConnectedAgent struct {
 	Name   string   `json:"name"`
 	Stacks []*Stack `json:"stacks"`
+}
+
+type GitopsEnv struct {
+	Name            string                 `json:"name"`
+	InfraRepo       string                 `json:"infraRepo"`
+	AppsRepo        string                 `json:"appsRepo"`
+	StackConfig     *dx.StackConfig        `json:"stackConfig"`
+	StackDefinition map[string]interface{} `json:"stackDefinition"`
+}
+
+type GitopsBootstrapConfig struct {
+	EnvName    string `json:"envName"`
+	RepoPerEnv bool   `json:"repoPerEnv"`
+	InfraRepo  string `json:"infraRepo"`
+	AppsRepo   string `json:"appsRepo"`
 }
 
 type Stack struct {

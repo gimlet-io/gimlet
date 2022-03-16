@@ -8,6 +8,8 @@ import (
 
 	markdown "github.com/MichaelMure/go-term-markdown"
 	"github.com/enescakir/emoji"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -43,7 +45,7 @@ func update(c *cli.Context) error {
 		return fmt.Errorf("cannot read stack config file: %s", err.Error())
 	}
 
-	var stackConfig StackConfig
+	var stackConfig dx.StackConfig
 	err = yaml.Unmarshal(stackConfigYaml, &stackConfig)
 	if err != nil {
 		return fmt.Errorf("cannot parse stack config file: %s", err.Error())
@@ -51,12 +53,12 @@ func update(c *cli.Context) error {
 
 	check := c.Bool("check")
 
-	currentTagString := CurrentVersion(stackConfig.Stack.Repository)
-	latestTag, _ := LatestVersion(stackConfig.Stack.Repository)
+	currentTagString := stack.CurrentVersion(stackConfig.Stack.Repository)
+	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
 	if latestTag == "" {
 		fmt.Printf("%v  cannot find latest version\n", emoji.CrossMark)
 	}
-	versionsSince, err := VersionsSince(stackConfig.Stack.Repository, currentTagString)
+	versionsSince, err := stack.VersionsSince(stackConfig.Stack.Repository, currentTagString)
 	if err != nil {
 		fmt.Printf("\n%v  Cannot check for updates \n\n", emoji.Warning)
 	}
@@ -105,8 +107,8 @@ func update(c *cli.Context) error {
 		}
 	} else {
 		fmt.Printf("%v  Stack version is updating to %s... \n\n", emoji.HourglassNotDone, latestTag)
-		stackConfig.Stack.Repository = RepoUrlWithoutVersion(stackConfig.Stack.Repository) + "?tag=" + latestTag
-		err = writeStackConfig(stackConfig, stackConfigPath)
+		stackConfig.Stack.Repository = stack.RepoUrlWithoutVersion(stackConfig.Stack.Repository) + "?tag=" + latestTag
+		err = stack.WriteStackConfig(stackConfig, stackConfigPath)
 		if err != nil {
 			return fmt.Errorf("cannot write stack file %s", err)
 		}
@@ -123,25 +125,15 @@ func update(c *cli.Context) error {
 	return nil
 }
 
-func writeStackConfig(stackConfig StackConfig, stackConfigPath string) error {
-	updatedStackConfigBuffer := bytes.NewBufferString("")
-	e := yaml.NewEncoder(updatedStackConfigBuffer)
-	e.SetIndent(2)
-	e.Encode(stackConfig)
-
-	updatedStackConfigString := "---\n" + updatedStackConfigBuffer.String()
-	return ioutil.WriteFile(stackConfigPath, []byte(updatedStackConfigString), 0666)
-}
-
-func printChangeLog(stackConfig StackConfig, versions []string) error {
+func printChangeLog(stackConfig dx.StackConfig, versions []string) error {
 	for _, version := range versions {
 		fmt.Printf("   - %s \n", version)
 
 		repoUrl := stackConfig.Stack.Repository
-		repoUrl = RepoUrlWithoutVersion(repoUrl)
+		repoUrl = stack.RepoUrlWithoutVersion(repoUrl)
 		repoUrl = repoUrl + "?tag=" + version
 
-		stackDefinitionYaml, err := StackDefinitionFromRepo(repoUrl)
+		stackDefinitionYaml, err := stack.StackDefinitionFromRepo(repoUrl)
 		if err != nil {
 			return fmt.Errorf("cannot get stack definition: %s", err.Error())
 		}

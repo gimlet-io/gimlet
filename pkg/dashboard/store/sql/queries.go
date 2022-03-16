@@ -18,6 +18,7 @@ const Dummy = "dummy"
 const SelectUserByLogin = "select-user-by-login"
 const SelectCommitsByRepo = "select-commits-by-repo"
 const SelectKeyValue = "select-key-value"
+const SelectEnvironments = "select-environments"
 const SelectEnvironment = "select-environment"
 const DeleteEnvironment = "delete-environment"
 
@@ -42,9 +43,15 @@ SELECT id, key, value
 FROM key_values
 WHERE key = $1;
 `,
+		SelectEnvironments: `
+SELECT id, name, infra_repo, apps_repo, repo_per_env
+FROM environments
+ORDER BY name asc;
+`,
 		SelectEnvironment: `
-SELECT id, name
-FROM environments;
+SELECT id, name, infra_repo, apps_repo, repo_per_env
+FROM environments
+WHERE name = $1;
 `,
 		DeleteEnvironment: `
 DELETE FROM environments
@@ -71,9 +78,15 @@ SELECT id, key, value
 FROM key_values
 WHERE key = $1;
 `,
+		SelectEnvironments: `
+SELECT id, name, infra_repo, apps_repo, repo_per_env
+FROM environments
+ORDER BY name asc;
+`,
 		SelectEnvironment: `
-SELECT id, name
-FROM environments;
+SELECT id, name, infra_repo, apps_repo, repo_per_env
+FROM environments
+WHERE name = $1;
 `,
 		DeleteEnvironment: `
 DELETE FROM environments

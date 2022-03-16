@@ -12,6 +12,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
@@ -36,10 +37,10 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if branch == "" {
-		branch = headBranch(repo)
+		branch = helper.HeadBranch(repo)
 	}
 
-	head := branchHeadHash(repo, branch)
+	head := helper.BranchHeadHash(repo, branch)
 	commitWalker, err := repo.Log(&git.LogOptions{
 		From: head,
 	})
@@ -112,7 +113,7 @@ type DeployTarget struct {
 // Commit represents a Github commit
 type Commit struct {
 	SHA           string               `json:"sha"`
-	URL           string               `json:"url""`
+	URL           string               `json:"url"`
 	Author        string               `json:"author"`
 	AuthorName    string               `json:"authorName"`
 	AuthorPic     string               `json:"author_pic"`

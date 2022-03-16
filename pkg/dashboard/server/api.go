@@ -5,18 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 func user(w http.ResponseWriter, r *http.Request) {
@@ -34,19 +40,16 @@ func user(w http.ResponseWriter, r *http.Request) {
 }
 
 func envs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	config := ctx.Value("config").(*config.Config)
 
-	connectedAgents := []*api.Env{
-		// {
-		// 	Name:   "staging",
-		// 	Stacks: []*api.Stack{},
-		// },
-	}
+	connectedAgents := []*api.ConnectedAgent{}
 	for _, a := range agentHub.Agents {
 		for _, stack := range a.Stacks {
 			stack.Env = a.Name
 		}
-		connectedAgents = append(connectedAgents, &api.Env{
+		connectedAgents = append(connectedAgents, &api.ConnectedAgent{
 			Name:   a.Name,
 			Stacks: a.Stacks,
 		})
@@ -60,10 +63,62 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value("store").(*store.Store)
-	envs, err := db.GetEnvironments()
+	envsFromDB, err := db.GetEnvironments()
 	if err != nil {
 		logrus.Errorf("cannot get all environments from database: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+
+	envs := []*api.GitopsEnv{}
+	for _, env := range envsFromDB {
+		repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
+		if err != nil {
+			if strings.Contains(err.Error(), "repository not found") ||
+				strings.Contains(err.Error(), "repo name is mandatory") {
+				envs = append(envs, &api.GitopsEnv{
+					Name: env.Name,
+				})
+				continue
+			} else {
+				logrus.Errorf("cannot get repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		var stackConfig *dx.StackConfig
+		if env.RepoPerEnv {
+			stackConfig, err = stackYaml(repo, "stack.yaml")
+			if err != nil && !strings.Contains(err.Error(), "file not found") {
+				logrus.Errorf("cannot get stack yaml from repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
+			if err != nil && !strings.Contains(err.Error(), "file not found") {
+				logrus.Errorf("cannot get stack yaml from %s repo for env %s: %s", env.InfraRepo, env.Name, err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		stackDefinition, err := loadStackDefinition(stackConfig, config.DefaultStackUrl)
+		if err != nil && !strings.Contains(err.Error(), "file not found") {
+			logrus.Errorf("cannot get stack definition: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		envs = append(envs, &api.GitopsEnv{
+			Name:            env.Name,
+			InfraRepo:       env.InfraRepo,
+			AppsRepo:        env.AppsRepo,
+			StackConfig:     stackConfig,
+			StackDefinition: stackDefinition,
+		})
 	}
 
 	allEnvs := map[string]interface{}{}
@@ -84,10 +139,41 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
+func loadStackDefinition(stackConfig *dx.StackConfig, defaultStackUrl string) (map[string]interface{}, error) {
+	url := defaultStackUrl
+	if stackConfig != nil {
+		url = stackConfig.Stack.Repository
+	}
+
+	stackDefinitionYaml, err := stack.StackDefinitionFromRepo(url)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get stack definition: %s", err.Error())
+	}
+
+	var stackDefinition map[string]interface{}
+	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
+	return stackDefinition, err
+}
+
+func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
+	var stackConfig dx.StackConfig
+	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, helper.HeadBranch(repo), path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal([]byte(yamlString), &stackConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stackConfig, nil
+}
+
 func agents(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
-	agents := []string{} //[]string{"staging"}
+	agents := []string{}
 	for _, a := range agentHub.Agents {
 		agents = append(agents, a.Name)
 	}
@@ -105,7 +191,7 @@ func agents(w http.ResponseWriter, r *http.Request) {
 	w.Write(agentsString)
 }
 
-func decorateDeployments(ctx context.Context, envs []*api.Env) error {
+func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
@@ -122,15 +208,6 @@ func decorateDeployments(ctx context.Context, envs []*api.Env) error {
 		}
 	}
 	return nil
-}
-
-func switchToBranch(repo *git.Repository, branch string) error {
-	b := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-	return worktree.Checkout(&git.CheckoutOptions{Create: false, Force: false, Branch: b})
 }
 
 func chartSchema(w http.ResponseWriter, r *http.Request) {
@@ -261,7 +338,6 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value("store").(*store.Store)
-
 	err = db.DeleteEnvironment(envNameToDelete)
 	if err != nil {
 		logrus.Errorf("cannot delete environment to database: %s", err)

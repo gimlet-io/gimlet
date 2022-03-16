@@ -2,13 +2,14 @@ package worker
 
 import (
 	"fmt"
+	"path/filepath"
+	"time"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"path/filepath"
-	"time"
 )
 
 type ReleaseStateWorker struct {

@@ -29,6 +29,11 @@ const defaultValueForRepos = "defaultValueForRepos"
 const defaultValueForFavoriteRepos = "defaultValueForFavoriteRepos"
 const defaultValueForFavoriteServices = "defaultValueForFavoriteServices"
 const createTableKeyValues = "create-table-key-values"
+const addInfrarepoColumnToEnvironmentsTable = "addInfrarepoColumnToEnvironmentsTable"
+const addAppsrepoColumnToEnvironmentsTable = "addAppsrepoColumnToEnvironmentsTable"
+const defaultValueForGitopsRepos = "defaultValueForGitopsRepos"
+const addRepoPerEnvColumnToEnvironmentsTable = "addRepoPerEnvColumnToEnvironmentsTable"
+const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 
 type migration struct {
 	name string
@@ -133,6 +138,26 @@ CREATE TABLE IF NOT EXISTS key_values (
 	);
 `,
 		},
+		{
+			name: addInfrarepoColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN infra_repo TEXT;`,
+		},
+		{
+			name: addAppsrepoColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN apps_repo TEXT;`,
+		},
+		{
+			name: defaultValueForGitopsRepos,
+			stmt: `update environments set infra_repo='', apps_repo='' where infra_repo is null and apps_repo is null;`,
+		},
+		{
+			name: addRepoPerEnvColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN repo_per_env TEXT;`,
+		},
+		{
+			name: defaultValueForRepoPerEnv,
+			stmt: `update environments set repo_per_env=false where repo_per_env is null;`,
+		},
 	},
 	"postgres": {
 		{
@@ -229,7 +254,26 @@ CREATE TABLE IF NOT EXISTS key_values (
 	value     TEXT,
 	UNIQUE(key)
 	);
-`,
+`},
+		{
+			name: addInfrarepoColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN infra_repo TEXT;`,
+		},
+		{
+			name: addAppsrepoColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN apps_repo TEXT;`,
+		},
+		{
+			name: defaultValueForGitopsRepos,
+			stmt: `update environments set infra_repo='', apps_repo='' where infra_repo is null and apps_repo is null;`,
+		},
+		{
+			name: addRepoPerEnvColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN repo_per_env TEXT;`,
+		},
+		{
+			name: defaultValueForRepoPerEnv,
+			stmt: `update environments set repo_per_env=false where repo_per_env is null;`,
 		},
 	},
 }
