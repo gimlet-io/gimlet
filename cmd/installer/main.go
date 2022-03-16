@@ -63,6 +63,7 @@ type data struct {
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Clean(r.URL.Path)
+	fmt.Println("Serving " + path)
 	if path == "/" {
 		path = "index.html"
 	} else if !strings.HasSuffix(path, ".html") {
@@ -72,9 +73,9 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles(fp)
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(http.StatusText(http.StatusNotFound)))
-		fmt.Println(err.Error())
 		return
 	}
 
@@ -89,6 +90,7 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 		"org":          data.org,
 	})
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
@@ -266,11 +268,11 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		appsRepo = filepath.Join(data.org, appsRepo)
 	}
 
-	err = server.AssureRepoExists(repos, infraRepo, data.accessToken)
+	_, err = server.AssureRepoExists(repos, infraRepo, data.accessToken)
 	if err != nil {
 		panic(err)
 	}
-	err = server.AssureRepoExists(repos, appsRepo, data.accessToken)
+	_, err = server.AssureRepoExists(repos, appsRepo, data.accessToken)
 	if err != nil {
 		panic(err)
 	}
@@ -293,11 +295,11 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	go gitRepoCache.Run()
 	data.repoCache = gitRepoCache
 
-	err = server.BootstrapEnv(gitRepoCache, envName, infraRepo, repoPerEnv, tokenString)
+	_, _, _, err = server.BootstrapEnv(gitRepoCache, envName, infraRepo, repoPerEnv, tokenString)
 	if err != nil {
 		panic(err)
 	}
-	err = server.BootstrapEnv(gitRepoCache, envName, appsRepo, repoPerEnv, tokenString)
+	_, _, _, err = server.BootstrapEnv(gitRepoCache, envName, appsRepo, repoPerEnv, tokenString)
 	if err != nil {
 		panic(err)
 	}
