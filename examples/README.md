@@ -91,4 +91,4 @@ spec:
               memory: 200Mi
 ```
 
-Bootstrap gitops automation CLI with https://github.com/gimlet-io/gimlet-cli#installation
+Install Gimlet CLI with https://github.com/gimlet-io/gimlet-cli#installation
