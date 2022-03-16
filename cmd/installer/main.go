@@ -42,7 +42,7 @@ func main() {
 	r.HandleFunc("/*", serveTemplate)
 
 	// http.ListenAndServe(":3333", r)
-	err := http.ListenAndServeTLS(":443", "server.crt", "server.key", nil)
+	err := http.ListenAndServeTLS(":443", "server.crt", "server.key", r)
 	fmt.Println(err)
 }
 
@@ -63,7 +63,6 @@ type data struct {
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Clean(r.URL.Path)
-	fmt.Println("Serving " + path)
 	if path == "/" {
 		path = "index.html"
 	} else if !strings.HasSuffix(path, ".html") {
@@ -73,7 +72,6 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles(fp)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(http.StatusText(http.StatusNotFound)))
 		return
@@ -90,7 +88,6 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 		"org":          data.org,
 	})
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}

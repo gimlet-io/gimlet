@@ -4,6 +4,7 @@ LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg.ve
 .PHONY: format test 
 .PHONY: build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli
 .PHONY: build-gimletd dist-gilmetd
+.PHONY: build-installer
 
 format:
 	@gofmt -w ${GOFILES}
