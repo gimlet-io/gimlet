@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func generateKeyPair() ([]byte, []byte) {
+func GenerateKeyPair() ([]byte, []byte) {
 	bitSize := 4096
 
 	privateKey, err := generatePrivateKey(bitSize)

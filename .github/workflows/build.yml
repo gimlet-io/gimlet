@@ -122,3 +122,21 @@ jobs:
         fetch-depth: 5
     - name: 🏗️ Build dashboard frontend
       run: make build-dashboard-frontend
+
+  installer:
+    name: 🏗️ Build Installer
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+    - name: ⬇️ Check out code into the Go module directory
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 5
+    - name: 🏗️ Build Installer
+      run: make build-installer
+      env:
+        VERSION: "ci-build"

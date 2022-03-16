@@ -4,6 +4,7 @@ LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg.ve
 .PHONY: format test 
 .PHONY: build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli
 .PHONY: build-gimletd dist-gilmetd
+.PHONY: build-installer dist-installer
 
 format:
 	@gofmt -w ${GOFILES}
@@ -39,6 +40,8 @@ build-agent:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
 build-dashboard:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
+build-installer:
+	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-installer github.com/gimlet-io/gimlet-cli/cmd/installer
 
 dist-gimletd:
 	mkdir -p bin
@@ -59,6 +62,9 @@ fast-dist-cli:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-arm64 github.com/gimlet-io/gimlet-cli/cmd/cli
+dist-installer:
+	mkdir -p bin
+	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-installer-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/installer
 
 build-cli-frontend:
 	(cd web/cli; npm install; npm run build)

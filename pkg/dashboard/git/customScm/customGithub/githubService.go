@@ -343,3 +343,21 @@ func (c *GithubClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context
 
 	return *appinfo.Name, *appinfo.HTMLURL, *installation.HTMLURL, err
 }
+
+func (c *GithubClient) GetAppOwner(appToken string) (string, error) {
+	client := github.NewClient(
+		&http.Client{
+			Transport: &transport{
+				underlyingTransport: http.DefaultTransport,
+				token:               appToken,
+			},
+		},
+	)
+
+	appinfo, _, err := client.Apps.Get(context.Background(), "")
+	if err != nil {
+		return "", fmt.Errorf("cannot get info from App : %s", err)
+	}
+
+	return *appinfo.Owner.Login, err
+}

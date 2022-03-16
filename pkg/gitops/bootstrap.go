@@ -144,7 +144,7 @@ func ParseRepoURL(url string) (string, string, string) {
 }
 
 func generateDeployKey(host string, name string) (string, []byte, error) {
-	privateKeyBytes, publicKeyBytes := generateKeyPair()
+	privateKeyBytes, publicKeyBytes := GenerateKeyPair()
 
 	hostKey, err := ssh.ScanHostKey(host+":22", 30*time.Second)
 	if err != nil {
