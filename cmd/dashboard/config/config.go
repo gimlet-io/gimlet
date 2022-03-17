@@ -58,6 +58,7 @@ type Config struct {
 	WebhookSecret           string `envconfig:"WEBHOOK_SECRET"`
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
 	DefaultStackUrl         string `envconfig:"DEFAULT_STACK_URL"`
+	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
 }
 
 // Logging provides the logging configuration.

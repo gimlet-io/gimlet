@@ -3,14 +3,18 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -50,6 +54,11 @@ func main() {
 	go clientHub.Run()
 
 	store := store.New(config.Database.Driver, config.Database.Config)
+
+	err = bootstrapEnvs(config.BootstrapEnv, store)
+	if err != nil {
+		panic(err)
+	}
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
@@ -119,4 +128,65 @@ func initLogger(c *config.Config) {
 	if c.Logging.Trace {
 		log.SetLevel(log.TraceLevel)
 	}
+}
+
+func parseEnvs(envString string) ([]*model.Environment, error) {
+	var envs []*model.Environment
+	splitEnvString := strings.Split(envString, ";")
+
+	for _, envString := range splitEnvString {
+		parsedEnvString, err := url.ParseQuery(envString)
+		if err != nil {
+			return nil, err
+		}
+		repoPerEnv, err := strconv.ParseBool(parsedEnvString.Get("repoPerEnv"))
+		if err != nil {
+			return nil, err
+		}
+
+		env := &model.Environment{
+			Name: parsedEnvString.Get("name"),
+			RepoPerEnv: repoPerEnv,
+			InfraRepo: parsedEnvString.Get("infraRepo"),
+			AppsRepo: parsedEnvString.Get("appsRepo"),
+		}
+		envs = append(envs, env)
+	}
+	return envs, nil
+}
+
+func bootstrapEnvs(envString string, store *store.Store) error {
+	envsInDB, err := store.GetEnvironments()
+	if err != nil {
+		return err
+	}
+
+	envsToBootstrap, err := parseEnvs(envString)
+	if err != nil {
+		return err
+	}
+
+	for _, envToBootstrap := range envsToBootstrap {
+		if !envExists(envsInDB, envToBootstrap.Name) {
+			if envToBootstrap.Name == "" || envToBootstrap.InfraRepo == "" || envToBootstrap.AppsRepo == "" {
+				return fmt.Errorf("name, infraRepo, and appsRepo are mandatory for environments")
+			}
+			err := store.CreateEnvironment(envToBootstrap)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func envExists(envsInDB []*model.Environment, envName string) bool {
+	for _, env := range envsInDB {
+		if env.Name == envName {
+			return true
+		}
+	}
+
+	return false
 }
