@@ -13,7 +13,7 @@ echo "TODO print context name"
 echo "TODO print namespace name"
 echo "TODO ask for confirmation"
 
-kubectl run gimlet-installer --image=ghcr.io/gimlet-io/installer:latest
+kubectl run gimlet-installer --image=ghcr.io/gimlet-io/installer:v0.2.0
 
 echo "TODO print host file edit script"
 echo "TODO then visit $HOST"

@@ -21,5 +21,5 @@ USER gimlet-installer
 RUN git config --global user.name "gimlet-installer"
 RUN git config --global user.email "gimlet-installer@gimlet.io"
 
-EXPOSE 8888
+EXPOSE 4443
 CMD ["/bin/gimlet-installer"]

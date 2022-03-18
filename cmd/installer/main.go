@@ -41,24 +41,36 @@ func main() {
 	r.Post("/bootstrap", bootstrap)
 	r.HandleFunc("/*", serveTemplate)
 
-	// http.ListenAndServe(":3333", r)
-	err := http.ListenAndServeTLS(":443", "server.crt", "server.key", r)
+	// err := http.ListenAndServe(":4443", r)
+	err := http.ListenAndServeTLS(":4443", "server.crt", "server.key", r)
 	fmt.Println(err)
 }
 
 type data struct {
-	id               string
-	slug             string
-	clientId         string
-	clientSecret     string
-	pem              string
-	org              string
-	installationId   string
-	tokenManager     *customGithub.GithubOrgTokenManager
-	accessToken      string
-	refreshToken     string
-	repoCache        *nativeGit.RepoCache
-	gimletdPublicKey string
+	id                      string
+	slug                    string
+	clientId                string
+	clientSecret            string
+	pem                     string
+	org                     string
+	installationId          string
+	tokenManager            *customGithub.GithubOrgTokenManager
+	accessToken             string
+	refreshToken            string
+	repoCache               *nativeGit.RepoCache
+	gimletdPublicKey        string
+	isNewInfraRepo          bool
+	isNewAppsRepo           bool
+	infraGitopsRepoFileName string
+	infraPublicKey          string
+	infraSecretFileName     string
+	appsGitopsRepoFileName  string
+	appsPublicKey           string
+	appsSecretFileName      string
+	infraRepo               string
+	appsRepo                string
+	repoPerEnv              bool
+	envName                 string
 }
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
@@ -81,11 +93,24 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	data := ctx.Value("data").(*data)
 
 	err = tmpl.Execute(w, map[string]interface{}{
-		"appId":        data.id,
-		"clientId":     data.clientId,
-		"clientSecret": data.clientSecret,
-		"pem":          data.pem,
-		"org":          data.org,
+		"appId":                   data.id,
+		"clientId":                data.clientId,
+		"clientSecret":            data.clientSecret,
+		"pem":                     data.pem,
+		"org":                     data.org,
+		"gimletdPublicKey":        data.gimletdPublicKey,
+		"isNewInfraRepo":          data.isNewInfraRepo,
+		"isNewAppsRepo":           data.isNewAppsRepo,
+		"infraGitopsRepoFileName": data.infraGitopsRepoFileName,
+		"infraPublicKey":          data.infraPublicKey,
+		"infraSecretFileName":     data.infraSecretFileName,
+		"appsGitopsRepoFileName":  data.appsGitopsRepoFileName,
+		"appsPublicKey":           data.appsPublicKey,
+		"appsSecretFileName":      data.appsSecretFileName,
+		"infraRepo":               data.infraRepo,
+		"appsRepo":                data.appsRepo,
+		"repoPerEnv":              data.repoPerEnv,
+		"envName":                 data.envName,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -265,14 +290,21 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		appsRepo = filepath.Join(data.org, appsRepo)
 	}
 
-	_, err = server.AssureRepoExists(repos, infraRepo, data.accessToken)
+	data.infraRepo = infraRepo
+	data.appsRepo = appsRepo
+	data.repoPerEnv = repoPerEnv
+	data.envName = envName
+
+	isNewInfraRepo, err := server.AssureRepoExists(repos, infraRepo, data.accessToken)
 	if err != nil {
 		panic(err)
 	}
-	_, err = server.AssureRepoExists(repos, appsRepo, data.accessToken)
+	isNewAppsRepo, err := server.AssureRepoExists(repos, appsRepo, data.accessToken)
 	if err != nil {
 		panic(err)
 	}
+	data.isNewInfraRepo = isNewInfraRepo
+	data.isNewAppsRepo = isNewAppsRepo
 
 	repoCachePath, err := ioutil.TempDir("", "cache")
 	if err != nil {
@@ -292,14 +324,22 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	go gitRepoCache.Run()
 	data.repoCache = gitRepoCache
 
-	_, _, _, err = server.BootstrapEnv(gitRepoCache, envName, infraRepo, repoPerEnv, tokenString)
+	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := server.BootstrapEnv(gitRepoCache, envName, infraRepo, repoPerEnv, tokenString)
 	if err != nil {
 		panic(err)
 	}
-	_, _, _, err = server.BootstrapEnv(gitRepoCache, envName, appsRepo, repoPerEnv, tokenString)
+	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := server.BootstrapEnv(gitRepoCache, envName, appsRepo, repoPerEnv, tokenString)
 	if err != nil {
 		panic(err)
 	}
+
+	data.infraGitopsRepoFileName = infraGitopsRepoFileName
+	data.infraPublicKey = infraPublicKey
+	data.infraSecretFileName = infraSecretFileName
+
+	data.appsGitopsRepoFileName = appsGitopsRepoFileName
+	data.appsPublicKey = appsPublicKey
+	data.appsSecretFileName = appsSecretFileName
 
 	jwtSecret, _ := randomHex(32)
 	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)

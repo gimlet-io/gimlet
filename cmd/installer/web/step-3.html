@@ -101,14 +101,161 @@
         </div>
       </div>
       {{ end }}
-      <div class="mt-8 text-sm">
-        go checkout the gitops infra repo
-        bootstrap applies
-        gimletd deploy key
-      </div>
+      <div class="text-sm">
+        <h3 class="text-2xl font-bold pt-16">Your gitops repositories are now prepared</h3>
+        <div class="pt-4">
+          <p>
+            Go checkout the repo for your infrastructure components: <br />
+            👉 <a href="https://github.com/{{ .infraRepo }}" class="text-blue-600" target="_blank">https://github.com/{{
+              .infraRepo
+              }}</a>
+          </p>
+          <p class="mt-2">
+            Don't forget to check the repo for your own applications: <br />
+            👉 <a href="https://github.com/{{ .appsRepo }}" class="text-blue-600" target="_blank">https://github.com/{{
+              .appsRepo }}</a>
+          </p>
+        </div>
 
+        <h3 class="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
+        <h4 class="text-xl font-bold pt-2 text-gray-600">The infrastructure repo</h3>
+          <div class="mt-4">
+            {{ if .isNewInfraRepo }}
+            <ul>
+              <li>👉 Clone the Gitops repository</li>
+              <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">git clone
+                git@github.com:{{ .infraRepo }}.git</li>
+              <li class="mt-2">👉 Add the following deploy key to your Git provider</li>
+              <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">{{
+                .infraPublicKey
+                }}</li>
+              <li class="mt-2">👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+              <ul class="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">
+                <li>
+                  {{ if .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/flux/flux.yaml
+                  {{ end }}
+                  {{ if not .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/flux.yaml
+                  {{ end }}
+                </li>
+                <li>
+                  {{ if .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/flux/{{ .infraSecretFileName }}
+                  {{ end }}
+                  {{ if not .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/{{ .infraSecretFileName }}
+                  {{ end }}
+                </li>
+                <li>kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io
+                </li>
+                <li>kubectl wait --for condition=established --timeout=60s
+                  crd/kustomizations.kustomize.toolkit.fluxcd.io
+                </li>
+                <li>
+                  {{ if .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/flux/${{ .infraGitopsRepoFileName }}
+                  {{ end }}
+                  {{ if not .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/${{ .infraGitopsRepoFileName }}
+                  {{ end }}
+                </li>
+              </ul>
+            </ul>
+            {{ end }}
+            {{ if not .isNewInfraRepo }}
+            <ul>
+              <li>👉 Clone the Gitops repository</li>
+              <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">git clone
+                git@github.com:{{ .infraRepo }}.git</li>
+              <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+              <ul class="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
+                <li>
+                  {{ if .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/flux/${{ .infraGitopsRepoFileName }}
+                  {{ end }}
+                  {{ if not .repoPerEnv }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/${{ .infraGitopsRepoFileName }}
+                  {{ end }}
+                </li>
+              </ul>
+            </ul>
+            {{ end }}
+
+            <h4 class="text-xl font-bold mt-8 text-gray-600">The application repo</h3>
+              <div class="mt-4">
+                {{ if .isNewAppsRepo }}
+                <ul>
+                  <li>👉 Clone the Gitops repository</li>
+                  <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">git clone
+                    git@github.com:{{ .appsRepo }}.git</li>
+                  <li class="mt-2">👉 Add the following deploy key to your Git provider as a read-only key</li>
+                  <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">{{
+                    .infraPublicKey
+                    }}</li>
+                  <li class="mt-2">👉 Add the following deploy key to your Git provider as a read-write key</li>
+                  <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">{{
+                    .gimletdPublicKey
+                    }}</li>
+                  <li class="mt-2">👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+                  <ul class="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded mt-1">
+                    <li>
+                      {{ if .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/flux/flux.yaml
+                      {{ end }}
+                      {{ if not .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/flux.yaml
+                      {{ end }}
+                    </li>
+                    <li>
+                      {{ if .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/flux/{{ .appsSecretFileName }}
+                      {{ end }}
+                      {{ if not .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/{{ .appsSecretFileName }}
+                      {{ end }}
+                    </li>
+                    <li>kubectl wait --for condition=established --timeout=60s
+                      crd/gitrepositories.source.toolkit.fluxcd.io
+                    </li>
+                    <li>kubectl wait --for condition=established --timeout=60s
+                      crd/kustomizations.kustomize.toolkit.fluxcd.io
+                    </li>
+                    <li>
+                      {{ if .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/flux/${{ .appsGitopsRepoFileName }}
+                      {{ end }}
+                      {{ if not .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/${{ .appsGitopsRepoFileName }}
+                      {{ end }}
+                    </li>
+                  </ul>
+                </ul>
+                {{ end }}
+                {{ if not .isNewAppsRepo }}
+                <ul>
+                  <li>👉 Clone the Gitops repository</li>
+                  <li class="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">git clone
+                    git@github.com:{{ .appsRepo }}.git</li>
+                  <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+                  <ul class="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
+                    <li>
+                      {{ if .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/flux/${{ .appsGitopsRepoFileName }}
+                      {{ end }}
+                      {{ if not .repoPerEnv }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/${{ .appsGitopsRepoFileName }}
+                      {{ end }}
+                    </li>
+                  </ul>
+                </ul>
+                {{ end }}
+              </div>
+              <h3 class="text-xl font-bold my-32 text-pink-600">Happy Gitopsing🎊</h3>
+          </div>
+
+      </div>
     </div>
-  </div>
 
 </body>
 

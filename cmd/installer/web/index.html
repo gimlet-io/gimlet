@@ -89,16 +89,19 @@
   </div>
 
   <script>
+    let url = window.location.href;
+    url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
+
     input = document.getElementById("manifest")
     input.value = JSON.stringify({
       "name": "Gimlet Dashboard",
-      "url": window.location.href,
-      "callback_url": window.location.href + '/auth',
+      "url": url,
+      "callback_url": url + '/auth',
       "hook_attributes": {
-        "url": window.location.href + '/hook'
+        "url": url + '/hook'
       },
-      "redirect_url": window.location.href + '/created',
-      "setup_url": window.location.href + '/installed',
+      "redirect_url": url + '/created',
+      "setup_url": url + '/installed',
       "public": false,
       "default_permissions": {
         "administration": "write",
