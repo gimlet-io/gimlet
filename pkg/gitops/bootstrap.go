@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/enescakir/emoji"
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops/sync"
@@ -75,11 +74,25 @@ func GenerateManifests(
 			)
 		}
 		gitopsRepoFileName = gitopsRepoName + ".yaml"
+
+		secretName := fmt.Sprintf("deploy-key-%s-%s-%s",
+			strings.ToLower(owner),
+			strings.ToLower(repoName),
+			strings.ToLower(env),
+		)
+		if singleEnv {
+			secretName = fmt.Sprintf("deploy-key-%s-%s",
+				strings.ToLower(owner),
+				strings.ToLower(repoName),
+			)
+		}
+		secretFileName = secretName + ".yaml"
+
 		syncOpts := sync.Options{
 			Interval:     15 * time.Second,
 			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
 			Name:         gitopsRepoName,
-			Secret:       gitopsRepoName,
+			Secret:       secretName,
 			Namespace:    "flux-system",
 			Branch:       branch,
 			ManifestFile: gitopsRepoFileName,
@@ -100,20 +113,6 @@ func GenerateManifests(
 		}
 
 		if shouldGenerateDeployKey {
-			fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-			secretName := fmt.Sprintf("deploy-key-%s-%s-%s",
-				strings.ToLower(owner),
-				strings.ToLower(repoName),
-				strings.ToLower(env),
-			)
-			if singleEnv {
-				secretName = fmt.Sprintf("deploy-key-%s-%s",
-					strings.ToLower(owner),
-					strings.ToLower(repoName),
-				)
-			}
-			secretFileName = secretName + ".yaml"
-
 			pKey, deployKeySecret, err := generateDeployKey(host, secretName)
 			publicKey = pKey
 			if err != nil {
