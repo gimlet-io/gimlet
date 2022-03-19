@@ -12,12 +12,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -346,8 +346,11 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 
 	webhookSecret, _ := randomHex(32)
-	privateKeyBytes, publicKeyBytes := gitops.GenerateKeyPair()
-	data.gimletdPublicKey = string(publicKeyBytes)
+	keyPair, err := ssh.NewEd25519Generator().Generate()
+	if err != nil {
+		panic(err)
+	}
+	data.gimletdPublicKey = string(keyPair.PublicKey)
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
@@ -361,7 +364,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			"gimletd": map[string]interface{}{
 				"enabled":    true,
 				"gitopsRepo": appsRepo,
-				"deployKey":  string(privateKeyBytes),
+				"deployKey":  string(keyPair.PrivateKey),
 			},
 			"gimletAgent": map[string]interface{}{
 				"enabled":     true,
