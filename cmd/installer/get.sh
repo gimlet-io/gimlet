@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 HOST=$1
-VERSION="v0.2.1"
+VERSION="v0.2.2"
 
 if [ -z "$HOST" ]
   then
