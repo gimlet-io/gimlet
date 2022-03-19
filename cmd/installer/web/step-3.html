@@ -157,7 +157,7 @@
                   kubectl apply -f {{ .infraRepo }}/flux/${{ .infraGitopsRepoFileName }}
                   {{ end }}
                   {{ if not .repoPerEnv }}
-                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/${{ .infraGitopsRepoFileName }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/{{ .infraGitopsRepoFileName }}
                   {{ end }}
                 </li>
               </ul>
@@ -175,7 +175,7 @@
                   kubectl apply -f {{ .infraRepo }}/flux/${{ .infraGitopsRepoFileName }}
                   {{ end }}
                   {{ if not .repoPerEnv }}
-                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/${{ .infraGitopsRepoFileName }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/{{ .infraGitopsRepoFileName }}
                   {{ end }}
                 </li>
               </ul>
@@ -226,7 +226,7 @@
                       kubectl apply -f {{ .appsRepo }}/flux/${{ .appsGitopsRepoFileName }}
                       {{ end }}
                       {{ if not .repoPerEnv }}
-                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/${{ .appsGitopsRepoFileName }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/{{ .appsGitopsRepoFileName }}
                       {{ end }}
                     </li>
                   </ul>
@@ -244,7 +244,7 @@
                       kubectl apply -f {{ .appsRepo }}/flux/${{ .appsGitopsRepoFileName }}
                       {{ end }}
                       {{ if not .repoPerEnv }}
-                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/${{ .appsGitopsRepoFileName }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/{{ .appsGitopsRepoFileName }}
                       {{ end }}
                     </li>
                   </ul>
