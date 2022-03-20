@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -22,6 +23,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
@@ -352,6 +354,18 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 	data.gimletdPublicKey = string(keyPair.PublicKey)
 
+	gimletdAdminToken := base32.StdEncoding.EncodeToString(
+		securecookie.GenerateRandomKey(32),
+	)
+
+	bootstrapEnv := fmt.Sprintf(
+		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",
+		data.envName,
+		data.repoPerEnv,
+		data.infraRepo,
+		data.appsRepo,
+	)
+
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
 			Repository: "https://github.com/gimlet-io/gimlet-stack-reference.git?branch=gimlet-in-stack",
@@ -365,6 +379,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"enabled":    true,
 				"gitopsRepo": appsRepo,
 				"deployKey":  string(keyPair.PrivateKey),
+				"adminToken": gimletdAdminToken,
 			},
 			"gimletAgent": map[string]interface{}{
 				"enabled":     true,
@@ -372,15 +387,17 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"agentKey":    agentToken,
 			},
 			"gimletDashboard": map[string]interface{}{
-				"enabled":            true,
-				"jwtSecret":          jwtSecret,
-				"githubOrg":          data.org,
-				"gimletdToken":       "TODO",
-				"githubAppId":        data.id,
-				"githubPrivateKey":   data.pem,
-				"githubClientId":     data.clientId,
-				"githubClientSecret": data.clientSecret,
-				"webhookSecret":      webhookSecret,
+				"enabled":              true,
+				"jwtSecret":            jwtSecret,
+				"githubOrg":            data.org,
+				"gimletdToken":         gimletdAdminToken,
+				"githubAppId":          data.id,
+				"githubPrivateKey":     data.pem,
+				"githubClientId":       data.clientId,
+				"githubClientSecret":   data.clientSecret,
+				"webhookSecret":        webhookSecret,
+				"githubInstallationId": data.installationId,
+				"bootstrapEnv":         bootstrapEnv,
 			},
 		},
 	}
