@@ -373,7 +373,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		Config: map[string]interface{}{
 			"nginx": map[string]interface{}{
 				"enabled": true,
-				"host":    r.Host,
+				"host":    os.Getenv("HOST"),
 			},
 			"gimletd": map[string]interface{}{
 				"enabled":    true,
