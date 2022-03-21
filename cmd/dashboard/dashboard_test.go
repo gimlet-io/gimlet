@@ -22,6 +22,12 @@ func TestParseEnvs(t *testing.T) {
 	assert.Equal(t, "gitops-apps", envs[0].AppsRepo)
 }
 
+func TestParseEnvs_Empty(t *testing.T) {
+	input := ""
+	_, err := parseEnvs(input)
+	assert.Nil(t, err)
+}
+
 func TestBootstrapEnvs(t *testing.T) {
 	s := store.NewTest()
 	defer func() {
@@ -35,17 +41,17 @@ func TestBootstrapEnvs(t *testing.T) {
 	expectedErrorMessage := "name, infraRepo, and appsRepo are mandatory for environments"
 
 	environmentStaging := model.Environment{
-		Name: "staging",
+		Name:       "staging",
 		RepoPerEnv: true,
-		InfraRepo: "infra-repo",
-		AppsRepo: "apps-repo",
+		InfraRepo:  "infra-repo",
+		AppsRepo:   "apps-repo",
 	}
 
 	environmentProduction := model.Environment{
-		Name: "production",
+		Name:       "production",
 		RepoPerEnv: false,
-		InfraRepo: "infra-repo",
-		AppsRepo: "apps-repo",
+		InfraRepo:  "infra-repo",
+		AppsRepo:   "apps-repo",
 	}
 
 	errCreateEnvStaging := s.CreateEnvironment(&environmentStaging)

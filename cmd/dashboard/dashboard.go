@@ -135,20 +135,23 @@ func parseEnvs(envString string) ([]*model.Environment, error) {
 	splitEnvString := strings.Split(envString, ";")
 
 	for _, envString := range splitEnvString {
+		if envString == "" {
+			continue
+		}
 		parsedEnvString, err := url.ParseQuery(envString)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid env format: %s", err)
 		}
 		repoPerEnv, err := strconv.ParseBool(parsedEnvString.Get("repoPerEnv"))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid env format: %s", err)
 		}
 
 		env := &model.Environment{
-			Name: parsedEnvString.Get("name"),
+			Name:       parsedEnvString.Get("name"),
 			RepoPerEnv: repoPerEnv,
-			InfraRepo: parsedEnvString.Get("infraRepo"),
-			AppsRepo: parsedEnvString.Get("appsRepo"),
+			InfraRepo:  parsedEnvString.Get("infraRepo"),
+			AppsRepo:   parsedEnvString.Get("appsRepo"),
 		}
 		envs = append(envs, env)
 	}
