@@ -154,10 +154,10 @@
                 </li>
                 <li>
                   {{ if .repoPerEnv }}
-                  kubectl apply -f {{ .infraRepo }}/flux/${{ .infraGitopsRepoFileName }}
+                  kubectl apply -f {{ .infraRepo }}/flux/{{ .infraGitopsRepoFileName }}
                   {{ end }}
                   {{ if not .repoPerEnv }}
-                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/${{ .infraGitopsRepoFileName }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/{{ .infraGitopsRepoFileName }}
                   {{ end }}
                 </li>
               </ul>
@@ -172,10 +172,10 @@
               <ul class="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
                 <li>
                   {{ if .repoPerEnv }}
-                  kubectl apply -f {{ .infraRepo }}/flux/${{ .infraGitopsRepoFileName }}
+                  kubectl apply -f {{ .infraRepo }}/flux/{{ .infraGitopsRepoFileName }}
                   {{ end }}
                   {{ if not .repoPerEnv }}
-                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/${{ .infraGitopsRepoFileName }}
+                  kubectl apply -f {{ .infraRepo }}/{{ .envName }}/flux/{{ .infraGitopsRepoFileName }}
                   {{ end }}
                 </li>
               </ul>
@@ -223,10 +223,10 @@
                     </li>
                     <li>
                       {{ if .repoPerEnv }}
-                      kubectl apply -f {{ .appsRepo }}/flux/${{ .appsGitopsRepoFileName }}
+                      kubectl apply -f {{ .appsRepo }}/flux/{{ .appsGitopsRepoFileName }}
                       {{ end }}
                       {{ if not .repoPerEnv }}
-                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/${{ .appsGitopsRepoFileName }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/{{ .appsGitopsRepoFileName }}
                       {{ end }}
                     </li>
                   </ul>
@@ -241,10 +241,10 @@
                   <ul class="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
                     <li>
                       {{ if .repoPerEnv }}
-                      kubectl apply -f {{ .appsRepo }}/flux/${{ .appsGitopsRepoFileName }}
+                      kubectl apply -f {{ .appsRepo }}/flux/{{ .appsGitopsRepoFileName }}
                       {{ end }}
                       {{ if not .repoPerEnv }}
-                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/${{ .appsGitopsRepoFileName }}
+                      kubectl apply -f {{ .appsRepo }}/{{ .envName }}/flux/{{ .appsGitopsRepoFileName }}
                       {{ end }}
                     </li>
                   </ul>

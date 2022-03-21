@@ -8,13 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/enescakir/emoji"
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops/sync"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func GenerateManifests(
@@ -75,11 +74,25 @@ func GenerateManifests(
 			)
 		}
 		gitopsRepoFileName = gitopsRepoName + ".yaml"
+
+		secretName := fmt.Sprintf("deploy-key-%s-%s-%s",
+			strings.ToLower(owner),
+			strings.ToLower(repoName),
+			strings.ToLower(env),
+		)
+		if singleEnv {
+			secretName = fmt.Sprintf("deploy-key-%s-%s",
+				strings.ToLower(owner),
+				strings.ToLower(repoName),
+			)
+		}
+		secretFileName = secretName + ".yaml"
+
 		syncOpts := sync.Options{
 			Interval:     15 * time.Second,
 			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
 			Name:         gitopsRepoName,
-			Secret:       gitopsRepoName,
+			Secret:       secretName,
 			Namespace:    "flux-system",
 			Branch:       branch,
 			ManifestFile: gitopsRepoFileName,
@@ -100,20 +113,6 @@ func GenerateManifests(
 		}
 
 		if shouldGenerateDeployKey {
-			fmt.Fprintf(os.Stderr, "%v Generating deploy key\n", emoji.HourglassNotDone)
-			secretName := fmt.Sprintf("deploy-key-%s-%s-%s",
-				strings.ToLower(owner),
-				strings.ToLower(repoName),
-				strings.ToLower(env),
-			)
-			if singleEnv {
-				secretName = fmt.Sprintf("deploy-key-%s-%s",
-					strings.ToLower(owner),
-					strings.ToLower(repoName),
-				)
-			}
-			secretFileName = secretName + ".yaml"
-
 			pKey, deployKeySecret, err := generateDeployKey(host, secretName)
 			publicKey = pKey
 			if err != nil {
@@ -144,7 +143,10 @@ func ParseRepoURL(url string) (string, string, string) {
 }
 
 func generateDeployKey(host string, name string) (string, []byte, error) {
-	privateKeyBytes, publicKeyBytes := GenerateKeyPair()
+	keyPair, err := ssh.NewEd25519Generator().Generate()
+	if err != nil {
+		return "", []byte(""), err
+	}
 
 	hostKey, err := ssh.ScanHostKey(host+":22", 30*time.Second)
 	if err != nil {
@@ -161,12 +163,12 @@ func generateDeployKey(host string, name string) (string, []byte, error) {
 			Namespace: "flux-system",
 		},
 		StringData: map[string]string{
-			"identity":     string(privateKeyBytes),
-			"identity.pub": string(publicKeyBytes),
+			"identity":     string(keyPair.PrivateKey),
+			"identity.pub": string(keyPair.PublicKey),
 			"known_hosts":  string(hostKey),
 		},
 	}
 
 	yamlString, err := yaml.Marshal(secret)
-	return string(publicKeyBytes), yamlString, err
+	return string(keyPair.PublicKey), yamlString, err
 }

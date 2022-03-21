@@ -19,7 +19,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v0.18.1
 	github.com/fluxcd/pkg/apis/meta v0.10.2
 	github.com/fluxcd/pkg/runtime v0.12.3
-	github.com/fluxcd/pkg/ssh v0.2.0
+	github.com/fluxcd/pkg/ssh v0.3.2
 	github.com/fluxcd/source-controller v0.21.2
 	github.com/fluxcd/source-controller/api v0.21.2
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
@@ -58,10 +58,10 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
-	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
+	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	helm.sh/helm/v3 v3.7.2

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -12,16 +13,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
@@ -346,8 +348,23 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 
 	webhookSecret, _ := randomHex(32)
-	privateKeyBytes, publicKeyBytes := gitops.GenerateKeyPair()
-	data.gimletdPublicKey = string(publicKeyBytes)
+	keyPair, err := ssh.NewEd25519Generator().Generate()
+	if err != nil {
+		panic(err)
+	}
+	data.gimletdPublicKey = string(keyPair.PublicKey)
+
+	gimletdAdminToken := base32.StdEncoding.EncodeToString(
+		securecookie.GenerateRandomKey(32),
+	)
+
+	bootstrapEnv := fmt.Sprintf(
+		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",
+		data.envName,
+		data.repoPerEnv,
+		data.infraRepo,
+		data.appsRepo,
+	)
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
@@ -356,12 +373,13 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		Config: map[string]interface{}{
 			"nginx": map[string]interface{}{
 				"enabled": true,
-				"host":    r.Host,
+				"host":    os.Getenv("HOST"),
 			},
 			"gimletd": map[string]interface{}{
 				"enabled":    true,
 				"gitopsRepo": appsRepo,
-				"deployKey":  string(privateKeyBytes),
+				"deployKey":  string(keyPair.PrivateKey),
+				"adminToken": gimletdAdminToken,
 			},
 			"gimletAgent": map[string]interface{}{
 				"enabled":     true,
@@ -369,15 +387,17 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"agentKey":    agentToken,
 			},
 			"gimletDashboard": map[string]interface{}{
-				"enabled":            true,
-				"jwtSecret":          jwtSecret,
-				"githubOrg":          data.org,
-				"gimletdToken":       "TODO",
-				"githubAppId":        data.id,
-				"githubPrivateKey":   data.pem,
-				"githubClientId":     data.clientId,
-				"githubClientSecret": data.clientSecret,
-				"webhookSecret":      webhookSecret,
+				"enabled":              true,
+				"jwtSecret":            jwtSecret,
+				"githubOrg":            data.org,
+				"gimletdToken":         gimletdAdminToken,
+				"githubAppId":          data.id,
+				"githubPrivateKey":     data.pem,
+				"githubClientId":       data.clientId,
+				"githubClientSecret":   data.clientSecret,
+				"webhookSecret":        webhookSecret,
+				"githubInstallationId": data.installationId,
+				"bootstrapEnv":         bootstrapEnv,
 			},
 		},
 	}
