@@ -1,5 +1,5 @@
 GOFILES = $(shell find . -type f -name '*.go' -not -path "./.git/*")
-LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg.version.Version='${VERSION}
+LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg/version.Version='${VERSION}
 
 .PHONY: format test 
 .PHONY: build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli
