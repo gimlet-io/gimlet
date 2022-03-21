@@ -56,14 +56,3 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         asset_paths: '["./bin/gimlet*"]'
-
-    - name: Update README on main branch with new version
-      env:
-        VERSION: ${{ steps.version.outputs.version }}
-      run: |
-       git config --global user.email "action@github.com"
-       git config --global user.name "Github Action"
-       git checkout main
-       sed -i "s/v[0-9]\.[0-9]\.[0-9]\+/v${VERSION}/" README.md
-       git commit -am "Update README with ${VERSION}"
-       git push origin main
