@@ -354,9 +354,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 	data.gimletdPublicKey = string(keyPair.PublicKey)
 
-	gimletdAdminToken := base32.StdEncoding.EncodeToString(
-		securecookie.GenerateRandomKey(32),
-	)
+	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
 
 	bootstrapEnv := fmt.Sprintf(
 		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",
@@ -365,6 +363,49 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		data.infraRepo,
 		data.appsRepo,
 	)
+
+	useExistingPostgres, err := strconv.ParseBool(formValues.Get("useExistingPostgres"))
+	if err != nil {
+		panic(err)
+	}
+
+	var dashboardPostgresConfig map[string]interface{}
+	var gimletdPostgresConfig map[string]interface{}
+	if useExistingPostgres {
+		dashboardPostgresConfig = map[string]interface{}{
+			"hostAndPort": formValues.Get("hostAndPort"),
+			"db":          formValues.Get("dashboardDb"),
+			"user":        formValues.Get("dashboardUsername"),
+			"password":    formValues.Get("dashboardPassword"),
+		}
+		gimletdPostgresConfig = map[string]interface{}{
+			"hostAndPort": formValues.Get("hostAndPort"),
+			"db":          formValues.Get("gimletdDb"),
+			"user":        formValues.Get("gimletdUsername"),
+			"password":    formValues.Get("gimletdPassword"),
+		}
+	} else {
+		postgresPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+		dashboardPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+		gimletdPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+
+		dashboardPostgresConfig = map[string]interface{}{
+			"install":          true,
+			"hostAndPort":      "postgres:5432",
+			"postgresPassword": postgresPassword,
+			"db":               "gimlet_dashboard",
+			"user":             "gimlet_dashboard",
+			"password":         dashboardPassword,
+		}
+		gimletdPostgresConfig = map[string]interface{}{
+			"install":          true,
+			"hostAndPort":      "postgres:5432",
+			"postgresPassword": postgresPassword,
+			"db":               "gimletd",
+			"user":             "gimletd",
+			"password":         gimletdPassword,
+		}
+	}
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
@@ -380,6 +421,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"gitopsRepo": appsRepo,
 				"deployKey":  string(keyPair.PrivateKey),
 				"adminToken": gimletdAdminToken,
+				"postgresql": gimletdPostgresConfig,
 			},
 			"gimletAgent": map[string]interface{}{
 				"enabled":     true,
@@ -398,6 +440,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"webhookSecret":        webhookSecret,
 				"githubInstallationId": data.installationId,
 				"bootstrapEnv":         bootstrapEnv,
+				"postgresql":           dashboardPostgresConfig,
 			},
 		},
 	}
