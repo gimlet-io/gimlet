@@ -391,7 +391,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 
 		dashboardPostgresConfig = map[string]interface{}{
 			"install":          true,
-			"hostAndPort":      "postgres:5432",
+			"hostAndPort":      "postgresql:5432",
 			"postgresPassword": postgresPassword,
 			"db":               "gimlet_dashboard",
 			"user":             "gimlet_dashboard",
@@ -399,7 +399,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		}
 		gimletdPostgresConfig = map[string]interface{}{
 			"install":          true,
-			"hostAndPort":      "postgres:5432",
+			"hostAndPort":      "postgresql:5432",
 			"postgresPassword": postgresPassword,
 			"db":               "gimletd",
 			"user":             "gimletd",
