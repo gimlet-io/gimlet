@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
@@ -9,16 +10,22 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
+	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/enescakir/emoji"
 	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -27,8 +34,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	"crypto/rand"
 	"encoding/hex"
+	"math/rand"
 )
 
 func main() {
@@ -42,6 +49,9 @@ func main() {
 	r.Get("/installed", installed)
 	r.Post("/bootstrap", bootstrap)
 	r.HandleFunc("/*", serveTemplate)
+
+	openBrowserInInstaller(r)
+	return
 
 	// err := http.ListenAndServe(":4443", r)
 	err := http.ListenAndServeTLS(":4443", "server.crt", "server.key", r)
@@ -76,13 +86,21 @@ type data struct {
 }
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
+	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
+	if err != nil {
+		panic(err)
+	}
+
+	writeTempFiles(workDir)
+	defer removeTempFiles(workDir)
+
 	path := filepath.Clean(r.URL.Path)
 	if path == "/" {
 		path = "index.html"
 	} else if !strings.HasSuffix(path, ".html") {
 		path = path + ".html"
 	}
-	fp := filepath.Join("web", path)
+	fp := filepath.Join(workDir, path)
 
 	tmpl, err := template.ParseFiles(fp)
 	if err != nil {
@@ -495,4 +513,58 @@ func randomHex(n int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+func openBrowserInInstaller(r *chi.Mux) {
+	port := randomPort()
+	srv := http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
+	browserClosed := make(chan int, 1)
+
+	ctrlC := make(chan os.Signal, 1)
+	signal.Notify(ctrlC, os.Interrupt)
+
+	go srv.ListenAndServe()
+	fmt.Fprintf(os.Stderr, "%v Configure on http://127.0.0.1:%d\n", emoji.WomanTechnologist, port)
+	fmt.Fprintf(os.Stderr, "%v Close the browser when you are done\n", emoji.WomanTechnologist)
+	openBrowser(fmt.Sprintf("http://127.0.0.1:%d", port))
+
+	select {
+	case <-ctrlC:
+	case <-browserClosed:
+	}
+
+	fmt.Fprintf(os.Stderr, "%v Generating values..\n\n", emoji.FileFolder)
+	srv.Shutdown(context.TODO())
+}
+
+func randomPort() int {
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	return r1.Intn(10000) + 20000
+}
+
+func openBrowser(url string) error {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	return err
+}
+
+func writeTempFiles(workDir string) {
+	ioutil.WriteFile(filepath.Join(workDir, "index.html"), web.IndexHtml, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "step-2.html"), web.Step2Html, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "step-3.html"), web.Step3Html, 0666)
+}
+
+func removeTempFiles(workDir string) {
+	os.Remove(workDir)
 }

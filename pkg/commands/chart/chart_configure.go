@@ -258,10 +258,6 @@ func setupRouter(workDir string, browserClosed chan int) *chi.Mux {
 }
 
 func randomPort() int {
-	if version.String() == "idea" {
-		return 28000
-	}
-
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	return r1.Intn(10000) + 20000
