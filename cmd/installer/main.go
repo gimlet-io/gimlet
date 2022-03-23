@@ -16,7 +16,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/enescakir/emoji"
 	"github.com/fluxcd/pkg/ssh"
@@ -516,17 +515,30 @@ func randomHex(n int) (string, error) {
 }
 
 func openBrowserInInstaller(r *chi.Mux) {
-	port := randomPort()
-	srv := http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
+	srv := http.Server{Addr: ":443", Handler: r}
 	browserClosed := make(chan int, 1)
 
 	ctrlC := make(chan os.Signal, 1)
 	signal.Notify(ctrlC, os.Interrupt)
 
-	go srv.ListenAndServe()
-	fmt.Fprintf(os.Stderr, "%v Configure on http://127.0.0.1:%d\n", emoji.WomanTechnologist, port)
+	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
+	if err != nil {
+		panic(err)
+	}
+
+	writeTempFiles(workDir)
+	defer removeTempFiles(workDir)
+
+	go func() {
+		err := srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	fmt.Fprintf(os.Stderr, "%v Configure on https://127.0.0.1\n", emoji.WomanTechnologist)
 	fmt.Fprintf(os.Stderr, "%v Close the browser when you are done\n", emoji.WomanTechnologist)
-	openBrowser(fmt.Sprintf("http://127.0.0.1:%d", port))
+	openBrowser("https://127.0.0.1")
 
 	select {
 	case <-ctrlC:
@@ -535,12 +547,6 @@ func openBrowserInInstaller(r *chi.Mux) {
 
 	fmt.Fprintf(os.Stderr, "%v Generating values..\n\n", emoji.FileFolder)
 	srv.Shutdown(context.TODO())
-}
-
-func randomPort() int {
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
-	return r1.Intn(10000) + 20000
 }
 
 func openBrowser(url string) error {
@@ -563,6 +569,8 @@ func writeTempFiles(workDir string) {
 	ioutil.WriteFile(filepath.Join(workDir, "index.html"), web.IndexHtml, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "step-2.html"), web.Step2Html, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "step-3.html"), web.Step3Html, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "server.crt"), web.ServerCrt, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "server.key"), web.ServerKey, 0666)
 }
 
 func removeTempFiles(workDir string) {

@@ -10,3 +10,9 @@ var Step2Html []byte
 
 //go:embed step-3.html
 var Step3Html []byte
+
+//go:embed server.crt
+var ServerCrt []byte
+
+//go:embed server.key
+var ServerKey []byte
