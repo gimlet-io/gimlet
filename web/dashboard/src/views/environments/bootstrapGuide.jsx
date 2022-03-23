@@ -9,34 +9,45 @@ const BootstrapGuide = ({ envName, repoPath, repoPerEnv, publicKey, secretFileNa
     }
 
     const renderBootstrapGuideText = (isNewRepo) => {
-        return isNewRepo ? (
+        return (
             <>
                 <li>👉 Clone the Gitops repository</li>
-                <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">git clone git@github.com:{repoPath}.git</li>
-                <li>👉 Add the following deploy key to your Git provider</li>
-                <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{publicKey}</li>
-                <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
                 <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
-                    <li>{repoPerEnv ? `kubectl apply -f ${repoName}/flux/flux.yaml` : `kubectl apply -f ${repoName}/${envName}/flux/flux.yaml`}</li>
-                    <li>{repoPerEnv ? `kubectl apply -f ${repoName}/flux/${secretFileName}` : `kubectl apply -f ${repoName}/${envName}/flux/${secretFileName}`}</li>
-                    <li>kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io</li>
-                    <li>kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io</li>
-                    <li>{repoPerEnv ? `kubectl apply -f ${repoName}/flux/${gitopsRepoFileName}` : `kubectl apply -f ${repoName}/${envName}/flux/${gitopsRepoFileName}`}</li>
+                    <li>git clone git@github.com:{repoPath}.git</li>
+                    <li>cd {repoName}</li>
                 </ul>
+                {isNewRepo ? (
+                    <>
+                        <li>👉 Add the following deploy key to your Git provider to the <span className="font-medium">{repoName}</span> repository</li>
+                        <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{publicKey}</li>
+                        <li>( Don't know how to do it?
+                            <a
+                                target="_blank"
+                                rel="noreferrer"
+                                className="hover:text-blue-900 mx-1 hover:underline"
+                                href="https://gimlet.io/docs/make-kubernetes-an-application-platform-with-gimlet-stack/#authorize-flux-to-fetch-your-gitops-repository">
+                                click here
+                            </a>)
+                        </li>
+                        <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+                        <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
+                            <li>{repoPerEnv ? `kubectl apply -f flux/flux.yaml` : `kubectl apply -f ${envName}/flux/flux.yaml`}</li>
+                            <li>{repoPerEnv ? `kubectl apply -f flux/${secretFileName}` : `kubectl apply -f ${envName}/flux/${secretFileName}`}</li>
+                            <li>kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io</li>
+                            <li>kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io</li>
+                            <li>{repoPerEnv ? `kubectl apply -f flux/${gitopsRepoFileName}` : `kubectl apply -f ${envName}/flux/${gitopsRepoFileName}`}</li>
+                        </ul>
+                    </>
+                ) : (
+                    <>
+                        <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+                        <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
+                            <li>{repoPerEnv ? `kubectl apply -f flux/${gitopsRepoFileName}` : `kubectl apply -f ${envName}/flux/${gitopsRepoFileName}`}</li>
+                        </ul>
+                    </>
+                )}
                 <li>Happy Gitopsing🎊</li>
-            </>
-        ) : (
-            <>
-                <li>👉 Clone the Gitops repository</li>
-                <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">git clone git@github.com:{repoPath}.git</li>
-                <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
-                <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
-                    <li>{repoPerEnv ? `kubectl apply -f ${repoName}/flux/${gitopsRepoFileName}` : `kubectl apply -f ${repoName}/${envName}/flux/${gitopsRepoFileName}`}</li>
-                </ul>
-                <li>Happy Gitopsing🎊</li>
-            </>
-        )
-
+            </>)
     };
 
     return (
