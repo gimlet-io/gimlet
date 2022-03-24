@@ -5,15 +5,15 @@ import StepTwo from "./stepTwo";
 import StepThree from "./stepThree";
 
 const App = () => {
-const getContext = async () => {
-  try {
+  const getContext = async () => {
+    try {
       const resp = await axios.get('/context');
       return await resp.data;
-  } catch (err) {
+    } catch (err) {
       // Handle Error Here
-      console.error(err);
-  }
-};
+      console.error(`Error: ${err}`);
+    }
+  };
 
   return (
     <Router>
@@ -25,13 +25,13 @@ const getContext = async () => {
 
         <Route path="/step-2">
           <StepTwo
-          getContext={getContext}
+            getContext={getContext}
           />
         </Route>
 
         <Route path="/step-3">
           <StepThree
-          getContext={getContext}
+            getContext={getContext}
           />
         </Route>
       </Switch>
