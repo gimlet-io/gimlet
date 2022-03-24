@@ -16,6 +16,11 @@ test-prep:
 	touch pkg/commands/chart/bundle.js
 	touch pkg/commands/chart/bundle.js.LICENSE.txt
 	touch pkg/commands/chart/index.html
+	touch cmd/installer/web/main.js
+	touch cmd/installer/web/1.chunk.js
+	touch cmd/installer/web/main.css
+	touch cmd/installer/web/index.html
+	touch cmd/installer/web/favicon.ico
 	git config --global user.email "git@gimlet.io"
 	git config --global user.name "Github Actions"
 
