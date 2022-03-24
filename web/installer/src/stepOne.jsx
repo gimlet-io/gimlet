@@ -1,4 +1,34 @@
 const StepOne = () => {
+  let url = window.location.href;
+  url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
+
+  const manifest = JSON.stringify({
+    "name": "Gimlet Dashboard",
+    "url": url,
+    "callback_url": url + '/auth',
+    "hook_attributes": {
+      "url": url + '/hook'
+    },
+    "redirect_url": url + '/created',
+    "setup_url": url + '/installed',
+    "public": false,
+    "default_permissions": {
+      "administration": "write",
+      "checks": "read",
+      "contents": "write",
+      "repository_hooks": "write",
+      "statuses": "read",
+      "members": "read"
+    },
+    "default_events": [
+      "create",
+      "push",
+      "delete",
+      "status",
+      "check_run"
+    ]
+  })
+
     return (
         <div class="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto">
@@ -71,7 +101,7 @@ const StepOne = () => {
             <p class="pt-8">Please note that this application will be owned by you, thus you don't give access to any third party or the makers of Gimlet.</p>
   
             <form action="https://github.com/settings/apps/new" method="post">
-              <input type="hidden" name="manifest" id="manifest"></input><br />
+              <input type="hidden" name="manifest" id="manifest" value={manifest}></input><br />
               <input type="submit" value="Create Github app"
                 class="cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
               </input>

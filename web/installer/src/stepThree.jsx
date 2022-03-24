@@ -1,4 +1,4 @@
-import BootstrapGuide from "./bootstrapGuide"
+import { BootstrapGuide } from 'shared-components';
 
 const StepThree = ({ appId, infraRepo, appsRepo, bootstrapMessage }) => {
 

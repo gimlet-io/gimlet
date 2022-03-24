@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import StepOne from "./stepOne";
 import StepTwo from "./stepTwo";
 import StepThree from "./stepThree";
@@ -21,23 +21,20 @@ const App = () => {
 
   return (
     <Router>
-      <Route exact path="/">
-        <Redirect to="/step-one" />
-      </Route>
 
       <Switch>
-        <Route path="/step-one">
+        <Route exact path="/">
           <StepOne />
         </Route>
 
-        <Route path="/step-two">
+        <Route path="/step-2">
           <StepTwo
           appId={""}
           repoPerEnv={true}
           />
         </Route>
 
-        <Route path="/step-three">
+        <Route path="/step-3">
           <StepThree
           appId={""}
           infraRepo={"staging-infra"}
