@@ -32,6 +32,8 @@ jobs:
         else
             echo "::set-output name=version::$GITHUB_SHA"
         fi
+    - name: 🏗️ Build installer frontend
+      run: make build-installer-frontend
     - name: Dist
       run: make dist-installer
       env:

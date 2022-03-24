@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 HOST=$1
-VERSION="v0.2.5"
+VERSION="v0.3.0"
 
 if [ -z "$HOST" ]
   then
@@ -31,7 +31,10 @@ echo ""
 sudo ./gimlet-installer $HOST
 
 echo ""
-echo "👉 Once done, remove the host file entry"
+echo "👉 Remove the host file entry now"
 echo ""
-echo "👉 And add to your DNS the LB IP: kubectl get svc -n infrastructure"
+echo "👉 Add gimlet.$HOST to your DNS server"
+echo "Point it to the External IP of the ingress-nginx service"
 echo ""
+
+kubectl get svc -n infrastructure
