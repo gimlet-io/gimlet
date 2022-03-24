@@ -562,6 +562,7 @@ func writeTempFiles(workDir string) {
 	ioutil.WriteFile(filepath.Join(workDir, "main.js"), web.MainJs, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "main.css"), web.MainCSS, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "1.chunk.js"), web.ChunkJs, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "favicon.ico"), web.Favicon, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "server.crt"), web.ServerCrt, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "server.key"), web.ServerKey, 0666)
 }

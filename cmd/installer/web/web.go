@@ -14,6 +14,9 @@ var IndexHtml []byte
 //go:embed 1.chunk.js
 var ChunkJs []byte
 
+//go:embed favicon.ico
+var Favicon []byte
+
 //go:embed server.crt
 var ServerCrt []byte
 

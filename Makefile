@@ -86,6 +86,7 @@ build-installer-frontend:
 	@cp web/installer/build/1.chunk.js cmd/installer/web/
 	@cp web/installer/build/main.css cmd/installer/web/
 	@cp web/installer/build/index.html cmd/installer/web/
+	@cp web/installer/public/favicon.ico cmd/installer/web/
 
 start-local-env:
 	docker-compose -f fixtures/k3s/docker-compose.yml up -d
