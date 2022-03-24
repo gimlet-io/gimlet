@@ -2,14 +2,17 @@ package web
 
 import _ "embed"
 
+//go:embed main.js
+var MainJs []byte
+
+//go:embed main.css
+var MainCSS []byte
+
 //go:embed index.html
 var IndexHtml []byte
 
-//go:embed step-2.html
-var Step2Html []byte
-
-//go:embed step-3.html
-var Step3Html []byte
+//go:embed 1.chunk.js
+var ChunkJs []byte
 
 //go:embed server.crt
 var ServerCrt []byte
