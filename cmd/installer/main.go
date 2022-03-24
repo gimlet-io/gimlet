@@ -43,6 +43,7 @@ func main() {
 
 	r.Use(middleware.WithValue("data", &data{}))
 
+	r.Get("/context", getContext)
 	r.Get("/created", created)
 	r.Get("/auth", auth)
 	r.Get("/installed", installed)
@@ -131,6 +132,40 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
+}
+
+func getContext(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	data := ctx.Value("data").(*data)
+
+	context := map[string]interface{}{
+		"appId":                   data.id,
+		"clientId":                data.clientId,
+		"clientSecret":            data.clientSecret,
+		"pem":                     data.pem,
+		"org":                     data.org,
+		"gimletdPublicKey":        data.gimletdPublicKey,
+		"isNewInfraRepo":          data.isNewInfraRepo,
+		"isNewAppsRepo":           data.isNewAppsRepo,
+		"infraGitopsRepoFileName": data.infraGitopsRepoFileName,
+		"infraPublicKey":          data.infraPublicKey,
+		"infraSecretFileName":     data.infraSecretFileName,
+		"appsGitopsRepoFileName":  data.appsGitopsRepoFileName,
+		"appsPublicKey":           data.appsPublicKey,
+		"appsSecretFileName":      data.appsSecretFileName,
+		"infraRepo":               data.infraRepo,
+		"appsRepo":                data.appsRepo,
+		"repoPerEnv":              data.repoPerEnv,
+		"envName":                 data.envName,
+	}
+
+	contextString, err := json.Marshal(context)
+	if err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(contextString)
 }
 
 func created(w http.ResponseWriter, r *http.Request) {
