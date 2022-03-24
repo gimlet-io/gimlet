@@ -11,19 +11,28 @@ if [ -z "$HOST" ]
 fi
 
 echo ""
-echo "⏳ Starting Gimlet installer pod.."
-kubectl run gimlet-installer --image=ghcr.io/gimlet-io/installer:$VERSION --env="HOST=$HOST"
+echo "⏳ Downloading Gimlet installer.."
+curl -L https://github.com/gimlet-io/gimlet/releases/download/installer-$(version)/gimlet-installer-$(uname)-$(uname -m) -o gimlet-installer
+chmod +x gimlet-installer
 
 echo ""
 echo "👉 Point $HOST to localhost temporarily with:"
-echo "sudo echo "127.0.0.1 gimlet.$HOST" >> /etc/hosts"
-echo ""
-echo "👉 Forward the installer to gimlet.$HOST with:"
-echo "sudo KUBECONFIG=$HOME/.kube/config kubectl port-forward pod/gimlet-installer 443:4443"
-echo ""
-echo "👉 visit https://gimlet.$HOST to access the installer"
+echo "sudo sh -c 'echo 127.0.0.1 gimlet.$HOST >> /etc/hosts'"
 echo ""
 
+read -p "⏳ Are you ready? " -n 1 -r
+echo # (optional) move to a new line
+if ! [[ $REPLY =~ ^[Yy]$ ]]
+then
+    echo ""
+    echo "Stopping.."
+    exit -1
+fi
+
+echo ""
+./gimlet-installer $HOST
+
+echo ""
 echo "👉 Once done, remove the host file entry"
 echo ""
 echo "👉 And add to your DNS the LB IP: kubectl get svc -n infrastructure"
