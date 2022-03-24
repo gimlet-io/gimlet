@@ -128,7 +128,6 @@ const StepThree = ({ getContext }) => {
                         <h3 className="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
                         <BootstrapGuide
                             envName={context.envName}
-                            repoLink={`https://github.com/${context.infraRepo}`}
                             repoPath={context.infraRepo}
                             repoPerEnv={context.repoPerEnv}
                             publicKey={context.infraPublicKey}
@@ -138,7 +137,6 @@ const StepThree = ({ getContext }) => {
                         />
                         <BootstrapGuide
                             envName={context.envName}
-                            repoLink={`https://github.com/${context.appsRepo}`}
                             repoPath={context.appsRepo}
                             repoPerEnv={context.repoPerEnv}
                             publicKey={context.appsPublicKey}

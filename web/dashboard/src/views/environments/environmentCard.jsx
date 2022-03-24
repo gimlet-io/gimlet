@@ -316,7 +316,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 <h3 className="text-2xl font-bold p-2 mt-4 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
-                  repoLink={`https://github.com/${env.infraRepo}`}
                   repoPath={bootstrapMessage.infraRepo}
                   repoPerEnv={bootstrapMessage.repoPerEnv}
                   publicKey={bootstrapMessage.infraPublicKey}
@@ -326,7 +325,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 />
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
-                  repoLink={`https://github.com/${env.appsRepo}`}
                   repoPath={bootstrapMessage.appsRepo}
                   repoPerEnv={bootstrapMessage.repoPerEnv}
                   publicKey={bootstrapMessage.appsPublicKey}
