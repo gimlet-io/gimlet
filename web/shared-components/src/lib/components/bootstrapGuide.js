@@ -1,6 +1,6 @@
 import React from 'react'
 
-const BootstrapGuide = ({ envName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, isNewRepo }) => {
+const BootstrapGuide = ({ envName, repoLink, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, isNewRepo }) => {
     const repoName = parseRepoName(repoPath);
     let type = "";
 
@@ -20,7 +20,7 @@ const BootstrapGuide = ({ envName, repoPath, repoPerEnv, publicKey, secretFileNa
                 </ul>
                 {isNewRepo ? (
                     <>
-                        <li>👉 Add the following deploy key to your Git provider to the <span className="font-medium">{repoName}</span> repository</li>
+                        <li>👉 Add the following deploy key to your Git provider to the <a href={repoLink} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{repoName}</a> repository</li>
                         <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{publicKey}</li>
                         <li>( Don't know how to do it?
                             <a
@@ -48,7 +48,6 @@ const BootstrapGuide = ({ envName, repoPath, repoPerEnv, publicKey, secretFileNa
                         </ul>
                     </>
                 )}
-                <li>Happy Gitopsing🎊</li>
             </>)
     };
 

@@ -18,6 +18,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const BootstrapGuide = _ref => {
   let {
     envName,
+    repoLink,
     repoPath,
     repoPerEnv,
     publicKey,
@@ -37,8 +38,11 @@ const BootstrapGuide = _ref => {
   const renderBootstrapGuideText = isNewRepo => {
     return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Clone the Gitops repository"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
-    }, /*#__PURE__*/_react.default.createElement("li", null, "git clone git@github.com:", repoPath, ".git"), /*#__PURE__*/_react.default.createElement("li", null, "cd ", repoName)), isNewRepo ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Add the following deploy key to your Git provider to the ", /*#__PURE__*/_react.default.createElement("span", {
-      className: "font-medium"
+    }, /*#__PURE__*/_react.default.createElement("li", null, "git clone git@github.com:", repoPath, ".git"), /*#__PURE__*/_react.default.createElement("li", null, "cd ", repoName)), isNewRepo ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Add the following deploy key to your Git provider to the ", /*#__PURE__*/_react.default.createElement("a", {
+      href: repoLink,
+      rel: "noreferrer",
+      target: "_blank",
+      className: "font-medium hover:text-blue-900"
     }, repoName), " repository"), /*#__PURE__*/_react.default.createElement("li", {
       className: "text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
     }, publicKey), /*#__PURE__*/_react.default.createElement("li", null, "( Don't know how to do it?", /*#__PURE__*/_react.default.createElement("a", {
@@ -50,7 +54,7 @@ const BootstrapGuide = _ref => {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
     }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/flux.yaml" : "kubectl apply -f ".concat(envName, "/flux/flux.yaml")), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(secretFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(secretFileName)), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Apply the gitops manifests on the cluster to start the gitops loop:"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
-    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)))), /*#__PURE__*/_react.default.createElement("li", null, "Happy Gitopsing\uD83C\uDF8A"));
+    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)))));
   };
 
   return /*#__PURE__*/_react.default.createElement("div", {
