@@ -3,6 +3,10 @@ import { BootstrapGuide } from 'shared-components';
 
 const StepThree = ({ getContext }) => {
     const [context, setContext] = useState(null);
+    
+    const parseRepoName = (repo) => {
+        return repo.split("/")[1];
+    };
 
     useEffect(() => {
         getContext().then(data => setContext(data))
@@ -124,6 +128,7 @@ const StepThree = ({ getContext }) => {
                         <h3 className="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
                         <BootstrapGuide
                             envName={context.envName}
+                            repoLink={`https://github.com/${context.infraRepo}`}
                             repoPath={context.infraRepo}
                             repoPerEnv={context.repoPerEnv}
                             publicKey={context.infraPublicKey}
@@ -133,6 +138,7 @@ const StepThree = ({ getContext }) => {
                         />
                         <BootstrapGuide
                             envName={context.envName}
+                            repoLink={`https://github.com/${context.appsRepo}`}
                             repoPath={context.appsRepo}
                             repoPerEnv={context.repoPerEnv}
                             publicKey={context.appsPublicKey}
@@ -140,6 +146,13 @@ const StepThree = ({ getContext }) => {
                             gitopsRepoFileName={context.appsGitopsRepoFileName}
                             isNewRepo={context.isNewAppsRepo}
                         />
+                        <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
+                            <ul className="break-all text-sm text-blue-700 space-y-2">
+                                <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${parseRepoName(context.appsRepo)}`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository</li>
+                                <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{context.gimletdPublicKey}</li>
+                            </ul>
+                        </div>
+                        <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
                     </div>)}
                 <div className="p-0 flow-root my-8">
                     <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
