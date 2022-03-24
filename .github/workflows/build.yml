@@ -136,6 +136,8 @@ jobs:
       uses: actions/checkout@v1
       with:
         fetch-depth: 5
+    - name: 🏗️ Build installer frontend
+      run: make build-installer-frontend
     - name: 🏗️ Build Installer
       run: make build-installer
       env:
