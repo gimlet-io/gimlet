@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
@@ -11,13 +10,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 
-	"github.com/enescakir/emoji"
 	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
@@ -43,13 +40,34 @@ func main() {
 
 	r.Use(middleware.WithValue("data", &data{}))
 
+	r.Get("/context", getContext)
 	r.Get("/created", created)
 	r.Get("/auth", auth)
 	r.Get("/installed", installed)
 	r.Post("/bootstrap", bootstrap)
-	r.HandleFunc("/*", serveTemplate)
+	r.Post("/done", done)
 
-	openInstallerInBrowser(r)
+	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
+	if err != nil {
+		panic(err)
+	}
+	writeTempFiles(workDir)
+	defer removeTempFiles(workDir)
+
+	fs := http.FileServer(http.Dir(workDir))
+	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := os.Stat(workDir + r.RequestURI); os.IsNotExist(err) {
+			http.StripPrefix(r.RequestURI, fs).ServeHTTP(w, r)
+		} else {
+			fs.ServeHTTP(w, r)
+		}
+	})
+
+	srv := http.Server{Addr: ":443", Handler: r}
+	err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
+	if err != nil {
+		panic(err)
+	}
 }
 
 type data struct {
@@ -89,10 +107,8 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	defer removeTempFiles(workDir)
 
 	path := filepath.Clean(r.URL.Path)
-	if path == "/" {
+	if path == "/" || path == "/step-2" || path == "/step-3" {
 		path = "index.html"
-	} else if !strings.HasSuffix(path, ".html") {
-		path = path + ".html"
 	}
 	fp := filepath.Join(workDir, path)
 
@@ -103,10 +119,18 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = tmpl.Execute(w, map[string]interface{}{})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+}
+
+func getContext(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
-	err = tmpl.Execute(w, map[string]interface{}{
+	context := map[string]interface{}{
 		"appId":                   data.id,
 		"clientId":                data.clientId,
 		"clientSecret":            data.clientSecret,
@@ -125,11 +149,15 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 		"appsRepo":                data.appsRepo,
 		"repoPerEnv":              data.repoPerEnv,
 		"envName":                 data.envName,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
 	}
+
+	contextString, err := json.Marshal(context)
+	if err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(contextString)
 }
 
 func created(w http.ResponseWriter, r *http.Request) {
@@ -513,41 +541,6 @@ func randomHex(n int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func openInstallerInBrowser(r *chi.Mux) {
-	srv := http.Server{Addr: ":443", Handler: r}
-	browserClosed := make(chan int, 1)
-
-	ctrlC := make(chan os.Signal, 1)
-	signal.Notify(ctrlC, os.Interrupt)
-
-	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
-	if err != nil {
-		panic(err)
-	}
-
-	writeTempFiles(workDir)
-	defer removeTempFiles(workDir)
-
-	go func() {
-		err := srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	fmt.Fprintf(os.Stderr, "%v Configure on https://127.0.0.1\n", emoji.WomanTechnologist)
-	fmt.Fprintf(os.Stderr, "%v Close the browser when you are done\n", emoji.WomanTechnologist)
-	openBrowser("https://127.0.0.1")
-
-	select {
-	case <-ctrlC:
-	case <-browserClosed:
-	}
-
-	fmt.Fprintf(os.Stderr, "%v Generating values..\n\n", emoji.FileFolder)
-	srv.Shutdown(context.TODO())
-}
-
 func openBrowser(url string) error {
 	var err error
 
@@ -566,12 +559,18 @@ func openBrowser(url string) error {
 
 func writeTempFiles(workDir string) {
 	ioutil.WriteFile(filepath.Join(workDir, "index.html"), web.IndexHtml, 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "step-2.html"), web.Step2Html, 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "step-3.html"), web.Step3Html, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "main.js"), web.MainJs, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "main.css"), web.MainCSS, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "1.chunk.js"), web.ChunkJs, 0666)
+	ioutil.WriteFile(filepath.Join(workDir, "favicon.ico"), web.Favicon, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "server.crt"), web.ServerCrt, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "server.key"), web.ServerKey, 0666)
 }
 
 func removeTempFiles(workDir string) {
 	os.Remove(workDir)
+}
+
+func done(w http.ResponseWriter, r *http.Request) {
+	os.Exit(0)
 }

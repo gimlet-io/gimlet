@@ -1,3 +1,5 @@
+import React from 'react'
+
 const BootstrapGuide = ({ envName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, isNewRepo }) => {
     const repoName = parseRepoName(repoPath);
     let type = "";

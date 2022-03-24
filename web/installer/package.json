@@ -1,5 +1,5 @@
 {
-  "name": "gimlet-dashboard",
+  "name": "gimlet-installer",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -55,10 +55,10 @@
     ]
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.4.1",
     "autoprefixer": "^9.8.6",
     "postcss": "^7.0.35",
-    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.2",
-    "@tailwindcss/typography": "^0.4.1"
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.2"
   },
-  "proxy": "http://127.0.0.1:9000"
+  "proxy": "https://127.0.0.1"
 }

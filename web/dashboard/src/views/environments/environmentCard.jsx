@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { Switch } from '@headlessui/react'
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
-import BootstrapGuide from './bootstrapGuide';
-import { StackUI } from 'stack-ui';
+import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
@@ -226,71 +224,22 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             </div>
           </div>
         </div>
-        <div className="text-gray-700">
-          <div className="flex mt-4">
-            <div className="font-medium self-center">Separate environments by git repositories</div>
-            <div className="max-w-lg flex rounded-md ml-4">
-              <Switch
-                checked={repoPerEnv}
-                onChange={setRepoPerEnv}
-                className={(
-                  repoPerEnv ? "bg-indigo-600" : "bg-gray-200") +
-                  " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
-                }
-              >
-                <span className="sr-only">Use setting</span>
-                <span
-                  aria-hidden="true"
-                  className={(
-                    repoPerEnv ? "translate-x-5" : "translate-x-0") +
-                    " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
-                  }
-                />
-              </Switch>
-            </div>
-          </div>
-          <div className="text-sm text-gray-500 leading-loose">Manifests will be placed in environment specific repositories</div>
-          {repoPerEnv &&
-            <div className="ml-8">
-              <div className="flex mt-4">
-                <div className="font-medium self-center">Infrastructure git repository</div>
-                <div className="max-w-lg flex rounded-md ml-4">
-                  <div className="max-w-lg w-full lg:max-w-xs">
-                    <input id="infra" name="infra"
-                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      type="text"
-                      value={infraRepo}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500 leading-loose">Infrastructure manifests will be placed in the root of the specified repository</div>
-              <div className="flex mt-4">
-                <div className="font-medium self-center">Application git repository</div>
-                <div className="max-w-lg flex rounded-md ml-4">
-                  <div className="max-w-lg w-full lg:max-w-xs">
-                    <input id="apps" name="apps"
-                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      type="text"
-                      value={appsRepo}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500 leading-loose">Application manifests will be placed in the root of the specified repository</div>
-            </div>
-          }
-          <div className="p-0 flow-root mt-8">
-            <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
-              <button
-                onClick={() => bootstrapGitops(env.name, repoPerEnv)}
-                disabled={popupWindow.visible}
-                className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
-              >
-                Bootstrap gitops repository
-              </button>
-            </span>
-          </div>
+        <SeparateEnvironments
+          repoPerEnv={repoPerEnv}
+          setRepoPerEnv={setRepoPerEnv}
+          infraRepo={infraRepo}
+          appsRepo={appsRepo}
+        />
+        <div className="p-0 flow-root mt-8">
+          <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+            <button
+              onClick={() => bootstrapGitops(env.name, repoPerEnv)}
+              disabled={popupWindow.visible}
+              className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+            >
+              Bootstrap gitops repository
+            </button>
+          </span>
         </div>
       </>
     )
@@ -363,28 +312,28 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </select>
             </div>
             {bootstrapMessage &&
-          <>
-            <h3 className="text-2xl font-bold p-2 mt-4 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
-            <BootstrapGuide
-              envName={bootstrapMessage.envName}
-              repoPath={bootstrapMessage.infraRepo}
-              repoPerEnv={bootstrapMessage.repoPerEnv}
-              publicKey={bootstrapMessage.infraPublicKey}
-              secretFileName={bootstrapMessage.infraSecretFileName}
-              gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
-              isNewRepo={bootstrapMessage.isNewInfraRepo}
-            />
-            <BootstrapGuide
-              envName={bootstrapMessage.envName}
-              repoPath={bootstrapMessage.appsRepo}
-              repoPerEnv={bootstrapMessage.repoPerEnv}
-              publicKey={bootstrapMessage.appsPublicKey}
-              secretFileName={bootstrapMessage.appsSecretFileName}
-              gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
-              isNewRepo={bootstrapMessage.isNewAppsRepo}
-            />
-          </>
-        }
+              <>
+                <h3 className="text-2xl font-bold p-2 mt-4 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
+                <BootstrapGuide
+                  envName={bootstrapMessage.envName}
+                  repoPath={bootstrapMessage.infraRepo}
+                  repoPerEnv={bootstrapMessage.repoPerEnv}
+                  publicKey={bootstrapMessage.infraPublicKey}
+                  secretFileName={bootstrapMessage.infraSecretFileName}
+                  gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
+                  isNewRepo={bootstrapMessage.isNewInfraRepo}
+                />
+                <BootstrapGuide
+                  envName={bootstrapMessage.envName}
+                  repoPath={bootstrapMessage.appsRepo}
+                  repoPerEnv={bootstrapMessage.repoPerEnv}
+                  publicKey={bootstrapMessage.appsPublicKey}
+                  secretFileName={bootstrapMessage.appsSecretFileName}
+                  gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
+                  isNewRepo={bootstrapMessage.isNewAppsRepo}
+                />
+              </>
+            }
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">

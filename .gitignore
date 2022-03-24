@@ -17,6 +17,9 @@ web/stack/dist
 web/dashboard/node_modules
 web/dashboard/dist
 
+web/installer/node_modules
+web/installer/dist
+
 pkg/commands/chart/bundle.js
 pkg/commands/chart/bundle.js.LICENSE.txt
 pkg/commands/chart/index.html
@@ -39,3 +42,9 @@ gimletd.sqlite
 gimlet-dashboard.sqlite
 
 __debug_bin
+
+cmd/installer/web/main.js
+cmd/installer/web/1.chunk.js
+cmd/installer/web/main.css
+cmd/installer/web/index.html
+cmd/installer/web/favicon.ico

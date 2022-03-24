@@ -80,6 +80,7 @@ func SetupRouter(
 	fileServer(r, "/services", filesDir)
 	fileServer(r, "/profile", filesDir)
 	fileServer(r, "/repo", filesDir)
+	fileServer(r, "/environments", filesDir)
 	return r
 }
 

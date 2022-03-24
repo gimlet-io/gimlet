@@ -80,6 +80,13 @@ build-stack-frontend:
 	@cp web/stack/dist/index.html pkg/commands/stack/web/
 build-dashboard-frontend:
 	(cd web/dashboard; npm install; npm run build)
+build-installer-frontend:
+	(cd web/installer; npm install; npm run build)
+	@cp web/installer/build/main.js cmd/installer/web/
+	@cp web/installer/build/1.chunk.js cmd/installer/web/
+	@cp web/installer/build/main.css cmd/installer/web/
+	@cp web/installer/build/index.html cmd/installer/web/
+	@cp web/installer/public/favicon.ico cmd/installer/web/
 
 start-local-env:
 	docker-compose -f fixtures/k3s/docker-compose.yml up -d
