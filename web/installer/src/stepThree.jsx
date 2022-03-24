@@ -1,6 +1,12 @@
+import { useState, useEffect } from 'react';
 import { BootstrapGuide } from 'shared-components';
 
-const StepThree = ({ appId, infraRepo, appsRepo, bootstrapMessage }) => {
+const StepThree = ({ getContext }) => {
+    const [context, setContext] = useState(null);
+
+    useEffect(() => {
+        getContext().then(data => {setContext(data); console.log(data) })
+      }, []) 
 
     return (
         <div class="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,7 +83,7 @@ const StepThree = ({ appId, infraRepo, appsRepo, bootstrapMessage }) => {
                     </ol>
                 </nav>
 
-                {appId === "" &&
+                {context.appId === "" &&
                     <div class="rounded-md bg-red-50 p-4 my-8">
                         <div class="flex">
                             <div class="flex-shrink-0">
@@ -101,31 +107,31 @@ const StepThree = ({ appId, infraRepo, appsRepo, bootstrapMessage }) => {
                     <div class="pt-4">
                         <p>
                             Go checkout the repo for your infrastructure components: <br />
-                            👉 <a href={`https://github.com/${infraRepo}`} class="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{infraRepo}</a>
+                            👉 <a href={`https://github.com/${context.infraRepo}`} class="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.infraRepo}</a>
                         </p>
                         <p class="mt-2">
                             Don't forget to check the repo for your own applications: <br />
-                            👉 <a href={`https://github.com/${appsRepo}`} class="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{appsRepo}</a>
+                            👉 <a href={`https://github.com/${context.appsRepo}`} class="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.appsRepo}</a>
                         </p>
                     </div>
                     <h3 class="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
                     <BootstrapGuide
-                        envName={bootstrapMessage.envName}
-                        repoPath={bootstrapMessage.infraRepo}
-                        repoPerEnv={bootstrapMessage.repoPerEnv}
-                        publicKey={bootstrapMessage.infraPublicKey}
-                        secretFileName={bootstrapMessage.infraSecretFileName}
-                        gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
-                        isNewRepo={bootstrapMessage.isNewInfraRepo}
+                        envName={context.envName}
+                        repoPath={context.infraRepo}
+                        repoPerEnv={context.repoPerEnv}
+                        publicKey={context.infraPublicKey}
+                        secretFileName={context.infraSecretFileName}
+                        gitopsRepoFileName={context.infraGitopsRepoFileName}
+                        isNewRepo={context.isNewInfraRepo}
                     />
                     <BootstrapGuide
-                        envName={bootstrapMessage.envName}
-                        repoPath={bootstrapMessage.appsRepo}
-                        repoPerEnv={bootstrapMessage.repoPerEnv}
-                        publicKey={bootstrapMessage.appsPublicKey}
-                        secretFileName={bootstrapMessage.appsSecretFileName}
-                        gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
-                        isNewRepo={bootstrapMessage.isNewAppsRepo}
+                        envName={context.envName}
+                        repoPath={context.appsRepo}
+                        repoPerEnv={context.repoPerEnv}
+                        publicKey={context.appsPublicKey}
+                        secretFileName={context.appsSecretFileName}
+                        gitopsRepoFileName={context.appsGitopsRepoFileName}
+                        isNewRepo={context.isNewAppsRepo}
                     />
                 </div>
                 <div class="p-0 flow-root my-8">

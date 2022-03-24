@@ -3,7 +3,8 @@ import { InformationCircleIcon } from '@heroicons/react/solid';
 import { Switch } from '@headlessui/react'
 import { SeparateEnvironments } from 'shared-components';
 
-const StepTwo = ({ appId }) => {
+const StepTwo = ({ getContext }) => {
+  const [context, setContext] = useState(null);
   const [env, setEnv] = useState('production');
   const [repoPerEnv, setRepoPerEnv] = useState(false);
   const [useExistingPostgres, setUseExistingPostgres] = useState(false);
@@ -17,6 +18,9 @@ const StepTwo = ({ appId }) => {
   const [infra, setInfra] = useState('gitops-infra');
   const [apps, setApps] = useState('gitops-apps');
 
+  getContext().then(data => setContext(data))
+    .catch(err => { console.error(err) });
+
   useEffect(() => {
     if (repoPerEnv) {
       setInfra(`gitops-${env}-infra`);
@@ -26,6 +30,8 @@ const StepTwo = ({ appId }) => {
       setApps(`gitops-apps`);
     }
   }, [repoPerEnv, env]);
+
+  console.log(context)
 
   return (
     <div class="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,7 +103,7 @@ const StepTwo = ({ appId }) => {
           </ol>
         </nav>
 
-        {appId === "" &&
+        {context.addId === "" &&
           <div class="rounded-md bg-red-50 p-4 my-8">
             <div class="flex">
               <div class="flex-shrink-0">
