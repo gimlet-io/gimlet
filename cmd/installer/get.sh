@@ -12,7 +12,7 @@ fi
 
 echo ""
 echo "⏳ Downloading Gimlet installer.."
-curl -L https://github.com/gimlet-io/gimlet/releases/download/installer-$(version)/gimlet-installer-$(uname)-$(uname -m) -o gimlet-installer
+curl -L https://github.com/gimlet-io/gimlet/releases/download/installer-$VERSION/gimlet-installer-$(uname)-$(uname -m) -o gimlet-installer
 chmod +x gimlet-installer
 
 echo ""
@@ -28,7 +28,7 @@ echo "👉 Once started, open https://gimlet.$HOST and follow the installer step
 echo ""
 
 echo ""
-sudo ./gimlet-installer $HOST
+sudo HOST=$HOST ./gimlet-installer
 
 echo ""
 echo "👉 Remove the host file entry now"
