@@ -428,6 +428,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"enabled": true,
 				"host":    os.Getenv("HOST"),
 			},
+			"certManager": map[string]interface{}{
+				"enabled": true,
+				"email":   "todo",
+			},
 			"gimletd": map[string]interface{}{
 				"enabled":    true,
 				"gitopsRepo": appsRepo,

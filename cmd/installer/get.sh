@@ -23,3 +23,8 @@ echo "sudo KUBECONFIG=$HOME/.kube/config kubectl port-forward pod/gimlet-install
 echo ""
 echo "👉 visit https://gimlet.$HOST to access the installer"
 echo ""
+
+echo "👉 Once done, remove the host file entry"
+echo ""
+echo "👉 And add to your DNS the LB IP: kubectl get svc -n infrastructure"
+echo ""
