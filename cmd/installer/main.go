@@ -20,11 +20,11 @@ import (
 	"github.com/enescakir/emoji"
 	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -49,12 +49,7 @@ func main() {
 	r.Post("/bootstrap", bootstrap)
 	r.HandleFunc("/*", serveTemplate)
 
-	openBrowserInInstaller(r)
-	return
-
-	// err := http.ListenAndServe(":4443", r)
-	err := http.ListenAndServeTLS(":4443", "server.crt", "server.key", r)
-	fmt.Println(err)
+	openInstallerInBrowser(r)
 }
 
 type data struct {
@@ -514,7 +509,7 @@ func randomHex(n int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func openBrowserInInstaller(r *chi.Mux) {
+func openInstallerInBrowser(r *chi.Mux) {
 	srv := http.Server{Addr: ":443", Handler: r}
 	browserClosed := make(chan int, 1)
 
