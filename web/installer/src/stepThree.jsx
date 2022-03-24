@@ -108,7 +108,6 @@ const StepThree = ({ appId, infraRepo, appsRepo, bootstrapMessage }) => {
                             👉 <a href={`https://github.com/${appsRepo}`} class="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{appsRepo}</a>
                         </p>
                     </div>
-
                     <h3 class="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
                     <BootstrapGuide
                         envName={bootstrapMessage.envName}
@@ -128,7 +127,16 @@ const StepThree = ({ appId, infraRepo, appsRepo, bootstrapMessage }) => {
                         gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
                         isNewRepo={bootstrapMessage.isNewAppsRepo}
                     />
-
+                </div>
+                <div class="p-0 flow-root my-8">
+                    <span class="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+                        <button
+                            class="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
+                            // eslint-disable-next-line no-restricted-globals
+                            onClick={close()}>
+                            I am done
+                        </button>
+                    </span>
                 </div>
             </div>
         </div>
