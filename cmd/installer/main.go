@@ -47,6 +47,7 @@ func main() {
 	r.Get("/auth", auth)
 	r.Get("/installed", installed)
 	r.Post("/bootstrap", bootstrap)
+	r.Post("/done", done)
 	r.HandleFunc("/*", serveTemplate)
 
 	openInstallerInBrowser(r)
@@ -574,4 +575,8 @@ func writeTempFiles(workDir string) {
 
 func removeTempFiles(workDir string) {
 	os.Remove(workDir)
+}
+
+func done(w http.ResponseWriter, r *http.Request) {
+	os.Exit(0)
 }
