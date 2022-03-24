@@ -8,7 +8,6 @@ const App = () => {
 const getContext = async () => {
   try {
       const resp = await axios.get('/context');
-      console.log(resp.data);
       return await resp.data;
   } catch (err) {
       // Handle Error Here

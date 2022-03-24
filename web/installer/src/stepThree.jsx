@@ -5,8 +5,15 @@ const StepThree = ({ getContext }) => {
     const [context, setContext] = useState(null);
 
     useEffect(() => {
-        getContext().then(data => {setContext(data); console.log(data) })
-      }, []) 
+        getContext().then(data => setContext(data))
+            .catch(err => { console.error(err) });
+    }, [getContext])
+
+    console.log(context)
+
+    if (!context) {
+        return null;
+    }
 
     return (
         <div class="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,8 +90,8 @@ const StepThree = ({ getContext }) => {
                     </ol>
                 </nav>
 
-                {context.appId === "" &&
-                    <div class="rounded-md bg-red-50 p-4 my-8">
+                {context.appId === "" ?
+                    (<div class="rounded-md bg-red-50 p-4 my-8">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 {/* <!-- Heroicon name: solid/x-circle --> */}
@@ -100,9 +107,9 @@ const StepThree = ({ getContext }) => {
                                     to <a href="/" class="font-bold">Step One</a> to create it.</h3>
                             </div>
                         </div>
-                    </div>
-                }
-                <div class="text-sm">
+                    </div>)
+                :
+                (<div class="text-sm">
                     <h3 class="text-2xl font-bold pt-16">Your gitops repositories are now prepared</h3>
                     <div class="pt-4">
                         <p>
@@ -133,7 +140,7 @@ const StepThree = ({ getContext }) => {
                         gitopsRepoFileName={context.appsGitopsRepoFileName}
                         isNewRepo={context.isNewAppsRepo}
                     />
-                </div>
+                </div>)}
                 <div class="p-0 flow-root my-8">
                     <span class="inline-flex rounded-md shadow-sm gap-x-3 float-right">
                         <button

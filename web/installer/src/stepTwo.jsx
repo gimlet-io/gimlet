@@ -18,8 +18,12 @@ const StepTwo = ({ getContext }) => {
   const [infra, setInfra] = useState('gitops-infra');
   const [apps, setApps] = useState('gitops-apps');
 
-  getContext().then(data => setContext(data))
-    .catch(err => { console.error(err) });
+  useEffect(() => {
+    getContext().then(data => setContext(data))
+      .catch(err => { console.error(err) });
+  }, [getContext])
+
+  console.log(context)
 
   useEffect(() => {
     if (repoPerEnv) {
@@ -32,6 +36,10 @@ const StepTwo = ({ getContext }) => {
   }, [repoPerEnv, env]);
 
   console.log(context)
+
+  if (!context) {
+    return null;
+  }
 
   return (
     <div class="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -103,7 +111,7 @@ const StepTwo = ({ getContext }) => {
           </ol>
         </nav>
 
-        {context.addId === "" &&
+        {context.appId === "" &&
           <div class="rounded-md bg-red-50 p-4 my-8">
             <div class="flex">
               <div class="flex-shrink-0">
