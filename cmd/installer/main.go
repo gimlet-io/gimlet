@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -64,20 +63,11 @@ func main() {
 		}
 	})
 
-	ctrlC := make(chan os.Signal, 1)
-	signal.Notify(ctrlC, os.Interrupt)
-
-	srv := http.Server{Addr: ":4443", Handler: r}
-	go func() {
-		err := srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	openBrowser("https://127.0.0.1")
-
-	<-ctrlC
+	srv := http.Server{Addr: ":443", Handler: r}
+	err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
+	if err != nil {
+		panic(err)
+	}
 }
 
 type data struct {

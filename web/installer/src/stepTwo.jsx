@@ -173,6 +173,7 @@ const StepTwo = ({ getContext }) => {
               infraRepo={infra}
               appsRepo={apps}
             />
+            <input type="hidden" name="repoPerEnv" value={repoPerEnv} />
             <div className="flex mt-4">
               <div className="font-medium self-center">Use my existing Postgresql database</div>
               <div className="max-w-lg flex rounded-md ml-4">
