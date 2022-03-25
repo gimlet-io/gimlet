@@ -6,6 +6,7 @@ import { SeparateEnvironments } from 'shared-components';
 const StepTwo = ({ getContext }) => {
   const [context, setContext] = useState(null);
   const [env, setEnv] = useState('production');
+  const [email, setEmail] = useState('');
   const [repoPerEnv, setRepoPerEnv] = useState(false);
   const [useExistingPostgres, setUseExistingPostgres] = useState(false);
   const [hostAndPort, setHostAndPort] = useState('postgresql:5432');
@@ -160,6 +161,18 @@ const StepTwo = ({ getContext }) => {
                     <input id="apps" name="env"
                       value={env}
                       onChange={e => setEnv(e.target.value)}
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="text" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex mt-4">
+                <div className="font-medium self-center">Administrator email</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="apps" name="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
                       className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       type="text" />
                   </div>
