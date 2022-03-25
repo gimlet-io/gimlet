@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
@@ -56,25 +55,13 @@ func Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	repo, err := git.PlainOpen(gitopsRepoPath)
-	if err == git.ErrRepositoryNotExists {
-		return fmt.Errorf("%s is not a git repo\n", gitopsRepoPath)
-	}
-	branch, _ := branchName(err, repo, gitopsRepoPath)
-	if branch == "" {
-		_, err = nativeGit.Commit(repo, "Initial commit")
-		if err != nil {
-			return err
-		}
-		branch, _ = branchName(err, repo, gitopsRepoPath)
-	}
+	repo, _ := git.PlainOpen(gitopsRepoPath)
 
-	empty, err := nativeGit.NothingToCommit(repo)
-	if err != nil {
-		return err
-	}
-	if !empty {
-		return fmt.Errorf("there are changes in the gitops repo. Commit them first then try again")
+	var branch string
+	if repo == nil {
+		branch = "main"
+	} else {
+		branch, _ = branchName(err, repo, gitopsRepoPath)
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
@@ -92,28 +79,6 @@ func Bootstrap(c *cli.Context) error {
 		c.String("gitops-repo-url"),
 		branch,
 	)
-	if err != nil {
-		return err
-	}
-
-	err = nativeGit.StageFolder(repo, filepath.Join(env, "flux"))
-	if err != nil {
-		return err
-	}
-
-	empty, err = nativeGit.NothingToCommit(repo)
-	if err != nil {
-		return err
-	}
-	if empty {
-		return nil
-	}
-
-	gitMessage := fmt.Sprintf("[Gimlet CLI] Bootstrapping %s", env)
-	if singleEnv {
-		gitMessage = "[Gimlet CLI] Bootstrapping"
-	}
-	_, err = nativeGit.Commit(repo, gitMessage)
 	if err != nil {
 		return err
 	}
