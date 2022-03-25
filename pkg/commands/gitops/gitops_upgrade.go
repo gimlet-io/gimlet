@@ -61,18 +61,8 @@ func Upgrade(c *cli.Context) error {
 		return err
 	}
 
-	repo, err := git.PlainOpen(gitopsRepoPath)
-	if err == git.ErrRepositoryNotExists {
-		return fmt.Errorf("%s is not a git repo\n", gitopsRepoPath)
-	}
-	branch, _ := branchName(err, repo, gitopsRepoPath)
-	if branch == "" {
-		_, err = nativeGit.Commit(repo, "Initial commit")
-		if err != nil {
-			return err
-		}
-		branch, _ = branchName(err, repo, gitopsRepoPath)
-	}
+	repo, _ := git.PlainOpen(gitopsRepoPath)
+	branch, _ := branchName(repo, gitopsRepoPath)
 
 	empty, err := nativeGit.NothingToCommit(repo)
 	if err != nil {

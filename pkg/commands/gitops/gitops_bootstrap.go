@@ -56,13 +56,7 @@ func Bootstrap(c *cli.Context) error {
 	}
 
 	repo, _ := git.PlainOpen(gitopsRepoPath)
-
-	var branch string
-	if repo == nil {
-		branch = "main"
-	} else {
-		branch, _ = branchName(repo, gitopsRepoPath)
-	}
+	branch, _ := branchName(repo, gitopsRepoPath)
 
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
 
@@ -91,13 +85,17 @@ func Bootstrap(c *cli.Context) error {
 }
 
 func branchName(repo *git.Repository, gitopsRepoPath string) (string, error) {
+	if repo == nil {
+		return "main", nil
+	}
+
 	ref, err := repo.Head()
 	if err != nil {
 		return "", err
 	}
 
 	if !ref.Name().IsBranch() {
-		return "", fmt.Errorf("%s is in a detached state, checkout a branch\n", gitopsRepoPath)
+		return "", fmt.Errorf("%s is in a detached state, checkout a branch", gitopsRepoPath)
 	}
 
 	return ref.Name().Short(), nil
