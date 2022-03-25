@@ -28,6 +28,7 @@ import (
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1beta2"
 	"github.com/fluxcd/pkg/apis/meta"
+	"github.com/fluxcd/pkg/runtime/dependency"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 
 	"github.com/fluxcd/flux2/pkg/manifestgen"
@@ -66,6 +67,34 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 	}
 
 	gvk = kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
+	kustomizationDependencies := kustomizev1.Kustomization{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       gvk.Kind,
+			APIVersion: gvk.GroupVersion().String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s", options.Name, "dependencies"),
+			Namespace: options.Namespace,
+		},
+		Spec: kustomizev1.KustomizationSpec{
+			Interval: metav1.Duration{
+				Duration: 24 * time.Hour,
+			},
+			Path:  DependenciesPath(options.TargetPath),
+			Prune: true,
+			SourceRef: kustomizev1.CrossNamespaceSourceReference{
+				Kind: sourcev1.GitRepositoryKind,
+				Name: options.Name,
+			},
+			Validation: "client",
+		},
+	}
+
+	ksDepData, err := yaml.Marshal(kustomizationDependencies)
+	if err != nil {
+		return nil, err
+	}
+
 	kustomization := kustomizev1.Kustomization{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       gvk.Kind,
@@ -86,6 +115,11 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 				Name: options.Name,
 			},
 			Validation: "client",
+			DependsOn: []dependency.CrossNamespaceDependencyReference{
+				{
+					Name: fmt.Sprintf("%s-%s", options.Name, "dependencies"),
+				},
+			},
 		},
 	}
 
@@ -96,7 +130,7 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 
 	return &manifestgen.Manifest{
 		Path:    path.Join(options.TargetPath, options.Namespace, options.ManifestFile),
-		Content: fmt.Sprintf("---\n%s---\n%s", resourceToString(gitData), resourceToString(ksData)),
+		Content: fmt.Sprintf("---\n%s---\n%s---\n%s", resourceToString(gitData), resourceToString(ksDepData), resourceToString(ksData)),
 	}, nil
 }
 
@@ -104,4 +138,12 @@ func resourceToString(data []byte) string {
 	data = bytes.Replace(data, []byte("  creationTimestamp: null\n"), []byte(""), 1)
 	data = bytes.Replace(data, []byte("status: {}\n"), []byte(""), 1)
 	return string(data)
+}
+
+func DependenciesPath(targetPath string) string {
+	if targetPath == "" {
+		return fmt.Sprintf("./%sdependencies", strings.TrimPrefix(targetPath, "./"))
+	} else {
+		return fmt.Sprintf("./%s/dependencies", strings.TrimPrefix(targetPath, "./"))
+	}
 }
