@@ -170,9 +170,9 @@ func Test_DependenciesPathWithTargetPath(t *testing.T) {
 	assert.Equal(t, dependenciesPath, "./staging/dependencies", "The dependencies path should be './staging/dependencies'")
 }
 
-func Test_DependenciesPathWithouzTargetPath(t *testing.T) {
+func Test_DependenciesPathWithoutTargetPath(t *testing.T) {
 	targetPath := ""
 	dependenciesPath := sync.DependenciesPath(targetPath)
 
-	assert.Equal(t, dependenciesPath, "./dependenccies", "The path should be './dependencies'")
+	assert.Equal(t, dependenciesPath, "./dependencies", "The path should be './dependencies'")
 }
