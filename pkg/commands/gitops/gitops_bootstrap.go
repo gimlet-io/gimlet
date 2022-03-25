@@ -61,7 +61,7 @@ func Bootstrap(c *cli.Context) error {
 	if repo == nil {
 		branch = "main"
 	} else {
-		branch, _ = branchName(err, repo, gitopsRepoPath)
+		branch, _ = branchName(repo, gitopsRepoPath)
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
@@ -90,7 +90,7 @@ func Bootstrap(c *cli.Context) error {
 	return nil
 }
 
-func branchName(err error, repo *git.Repository, gitopsRepoPath string) (string, error) {
+func branchName(repo *git.Repository, gitopsRepoPath string) (string, error) {
 	ref, err := repo.Head()
 	if err != nil {
 		return "", err
