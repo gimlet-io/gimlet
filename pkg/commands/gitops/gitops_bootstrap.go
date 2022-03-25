@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
@@ -56,25 +55,13 @@ func Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	repo, err := git.PlainOpen(gitopsRepoPath)
-	if err == git.ErrRepositoryNotExists {
-		return fmt.Errorf("%s is not a git repo\n", gitopsRepoPath)
-	}
-	branch, _ := branchName(err, repo, gitopsRepoPath)
-	if branch == "" {
-		_, err = nativeGit.Commit(repo, "Initial commit")
-		if err != nil {
-			return err
-		}
-		branch, _ = branchName(err, repo, gitopsRepoPath)
-	}
+	repo, _ := git.PlainOpen(gitopsRepoPath)
 
-	empty, err := nativeGit.NothingToCommit(repo)
-	if err != nil {
-		return err
-	}
-	if !empty {
-		return fmt.Errorf("there are changes in the gitops repo. Commit them first then try again")
+	var branch string
+	if repo == nil {
+		branch = "main"
+	} else {
+		branch, _ = branchName(repo, gitopsRepoPath)
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
@@ -96,28 +83,6 @@ func Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	err = nativeGit.StageFolder(repo, filepath.Join(env, "flux"))
-	if err != nil {
-		return err
-	}
-
-	empty, err = nativeGit.NothingToCommit(repo)
-	if err != nil {
-		return err
-	}
-	if empty {
-		return nil
-	}
-
-	gitMessage := fmt.Sprintf("[Gimlet CLI] Bootstrapping %s", env)
-	if singleEnv {
-		gitMessage = "[Gimlet CLI] Bootstrapping"
-	}
-	_, err = nativeGit.Commit(repo, gitMessage)
-	if err != nil {
-		return err
-	}
-
 	guidingTextFMTPrint := guidingText(gitopsRepoPath, env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
 	fmt.Print(guidingTextFMTPrint)
@@ -125,7 +90,7 @@ func Bootstrap(c *cli.Context) error {
 	return nil
 }
 
-func branchName(err error, repo *git.Repository, gitopsRepoPath string) (string, error) {
+func branchName(repo *git.Repository, gitopsRepoPath string) (string, error) {
 	ref, err := repo.Head()
 	if err != nil {
 		return "", err
@@ -151,7 +116,7 @@ func guidingText(
 		fmt.Sprintf("%v GitOps configuration written to %s\n\n\n", emoji.CheckMark, filepath.Join(gitopsRepoPath, env, "flux")),
 	)
 	stringBuilder.WriteString(
-		fmt.Sprintf("%v 1) Push the configuration to git\n", emoji.BackhandIndexPointingRight),
+		fmt.Sprintf("%v 1) Inspect the configuration files, then commit and push the configuration to git\n", emoji.BackhandIndexPointingRight),
 	)
 	stringBuilder.WriteString(
 		fmt.Sprintf("%v 2) Add the following deploy key to your Git provider\n", emoji.BackhandIndexPointingRight),
