@@ -320,6 +320,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	infraRepo := formValues.Get("infra")
 	appsRepo := formValues.Get("apps")
 	envName := formValues.Get("env")
+	email := formValues.Get("email")
 	repoPerEnv, err := strconv.ParseBool(formValues.Get("repoPerEnv"))
 	if err != nil {
 		panic(err)
@@ -458,7 +459,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			},
 			"certManager": map[string]interface{}{
 				"enabled": true,
-				"email":   "todo",
+				"email":   email,
 			},
 			"gimletd": map[string]interface{}{
 				"enabled":    true,
