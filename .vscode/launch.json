@@ -6,8 +6,11 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "cmd",
-            "args": ["artifact", "list"],
+            "program": "cmd/cli",
+            "args": [
+                "artifact",
+                "list"
+            ],
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -15,8 +18,12 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "cmd",
-            "args": ["release", "track", "c3e857ce-0e4e-402a-8cbb-0325c06532be"],
+            "program": "cmd/cli",
+            "args": [
+                "release",
+                "track",
+                "c3e857ce-0e4e-402a-8cbb-0325c06532be"
+            ],
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -42,6 +49,24 @@
             "mode": "auto",
             "program": "cmd/installer",
             "envFile": "${workspaceFolder}/.env"
-        }
+        },
+        {
+            "name": "bootstrap",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd/cli",
+            "args": [
+                "gitops",
+                "bootstrap",
+                "--env",
+                "live",
+                "--gitops-repo-url",
+                "git@github.com:szabogabor91/gitops-infra.git",
+                "--gitops-repo-path",
+                "/Users/szabogabor/gitops-infra"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
     ]
 }
