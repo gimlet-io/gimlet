@@ -116,7 +116,7 @@ func guidingText(
 		fmt.Sprintf("%v GitOps configuration written to %s\n\n\n", emoji.CheckMark, filepath.Join(gitopsRepoPath, env, "flux")),
 	)
 	stringBuilder.WriteString(
-		fmt.Sprintf("%v 1) Push the configuration to git\n", emoji.BackhandIndexPointingRight),
+		fmt.Sprintf("%v 1) Inspect the configuration files, then commit and push the configuration to git\n", emoji.BackhandIndexPointingRight),
 	)
 	stringBuilder.WriteString(
 		fmt.Sprintf("%v 2) Add the following deploy key to your Git provider\n", emoji.BackhandIndexPointingRight),
