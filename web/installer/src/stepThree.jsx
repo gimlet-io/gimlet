@@ -5,7 +5,7 @@ import GimletCLIClient from './client';
 
 const StepThree = ({ getContext }) => {
     const [context, setContext] = useState(null);
-    
+
     const parseRepoName = (repo) => {
         return repo.split("/")[1];
     };
@@ -160,7 +160,10 @@ const StepThree = ({ getContext }) => {
                                     <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{context.gimletdPublicKey}</li>
                                 </ul>
                             </div>
-                            <h2 className='text-gray-900 mt-16 mb-32'>Happy Gitopsing🎊</h2>
+                            <div className='text-gray-900 mt-16 mb-32'>
+                                <h2 className=''>Happy Gitopsing🎊</h2>
+                                <h2 className=''>Now you can close this browser tab, and return to the Terminal to finalize the install.</h2>
+                            </div>
                         </div>)}
                 </div>
             </div>
