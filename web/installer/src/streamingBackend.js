@@ -5,7 +5,7 @@ export default class StreamingBackend extends Component {
         super(props)
 
         this.state = {
-            URL: this.props.client.URL().replace('https', 'wss').replace('http', 'ws') + '/ws',
+            URL: this.props.client.URL().replace('https', 'wss').replace('http', 'ws').replace(':3000', ':4443') + '/ws',
             ws: null
         }
 
