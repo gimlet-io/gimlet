@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -40,6 +42,11 @@ func main() {
 
 	r.Use(middleware.WithValue("data", &data{}))
 
+	browserClosed := make(chan int, 1)
+
+	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWs(browserClosed, w, r)
+	})
 	r.Get("/context", getContext)
 	r.Get("/created", created)
 	r.Get("/auth", auth)
@@ -63,11 +70,25 @@ func main() {
 		}
 	})
 
-	srv := http.Server{Addr: ":443", Handler: r}
-	err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
-	if err != nil {
-		panic(err)
+	ctrlC := make(chan os.Signal, 1)
+	signal.Notify(ctrlC, os.Interrupt)
+
+	srv := http.Server{Addr: ":4443", Handler: r}
+	go func() {
+		err = srv.ListenAndServe()
+		//err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
+		if err != nil && err.Error() != "http: Server closed" {
+			panic(err)
+		}
+	}()
+
+	select {
+	case <-ctrlC:
+		os.Exit(-1)
+	case <-browserClosed:
 	}
+
+	srv.Shutdown(context.TODO())
 }
 
 type data struct {
