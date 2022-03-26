@@ -135,8 +135,7 @@ const StepThree = ({ getContext }) => {
                                     👉 <a href={`https://github.com/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.appsRepo}</a>
                                 </p>
                             </div>
-                        </div>
-                    </div>)
+                        </div>)}
                     :
                     (<div className="text-sm">
                         <h3 className="text-2xl font-bold pt-16">Your gitops repositories are now prepared</h3>
@@ -176,20 +175,10 @@ const StepThree = ({ getContext }) => {
                             </ul>
                         </div>
                         <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
-                    </div>)}
-                <div className="p-0 flow-root my-8">
-                    <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
-                        <button
-                            className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
-                            // eslint-disable-next-line no-restricted-globals
-                            onClick={close()}>
-                            I am done
-                        </button>
-                    </span>
+                    </div>)
                 </div>
             </div>
         </>
-
     );
 };
 
