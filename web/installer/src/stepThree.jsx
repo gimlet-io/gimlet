@@ -135,47 +135,33 @@ const StepThree = ({ getContext }) => {
                                     👉 <a href={`https://github.com/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.appsRepo}</a>
                                 </p>
                             </div>
+                            <h3 className="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
+                            <BootstrapGuide
+                                envName={context.envName}
+                                repoPath={context.infraRepo}
+                                repoPerEnv={context.repoPerEnv}
+                                publicKey={context.infraPublicKey}
+                                secretFileName={context.infraSecretFileName}
+                                gitopsRepoFileName={context.infraGitopsRepoFileName}
+                                isNewRepo={context.isNewInfraRepo}
+                            />
+                            <BootstrapGuide
+                                envName={context.envName}
+                                repoPath={context.appsRepo}
+                                repoPerEnv={context.repoPerEnv}
+                                publicKey={context.appsPublicKey}
+                                secretFileName={context.appsSecretFileName}
+                                gitopsRepoFileName={context.appsGitopsRepoFileName}
+                                isNewRepo={context.isNewAppsRepo}
+                            />
+                            <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
+                                <ul className="break-all text-sm text-blue-700 space-y-2">
+                                    <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${parseRepoName(context.appsRepo)}`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository</li>
+                                    <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{context.gimletdPublicKey}</li>
+                                </ul>
+                            </div>
+                            <h2 className='text-gray-900 mt-16 mb-32'>Happy Gitopsing🎊</h2>
                         </div>)}
-                    :
-                    (<div className="text-sm">
-                        <h3 className="text-2xl font-bold pt-16">Your gitops repositories are now prepared</h3>
-                        <div className="pt-4">
-                            <p>
-                                Go checkout the repo for your infrastructure components: <br />
-                                👉 <a href={`https://github.com/${context.infraRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.infraRepo}</a>
-                            </p>
-                            <p className="mt-2">
-                                Don't forget to check the repo for your own applications: <br />
-                                👉 <a href={`https://github.com/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.appsRepo}</a>
-                            </p>
-                        </div>
-                        <h3 className="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
-                        <BootstrapGuide
-                            envName={context.envName}
-                            repoPath={context.infraRepo}
-                            repoPerEnv={context.repoPerEnv}
-                            publicKey={context.infraPublicKey}
-                            secretFileName={context.infraSecretFileName}
-                            gitopsRepoFileName={context.infraGitopsRepoFileName}
-                            isNewRepo={context.isNewInfraRepo}
-                        />
-                        <BootstrapGuide
-                            envName={context.envName}
-                            repoPath={context.appsRepo}
-                            repoPerEnv={context.repoPerEnv}
-                            publicKey={context.appsPublicKey}
-                            secretFileName={context.appsSecretFileName}
-                            gitopsRepoFileName={context.appsGitopsRepoFileName}
-                            isNewRepo={context.isNewAppsRepo}
-                        />
-                        <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
-                            <ul className="break-all text-sm text-blue-700 space-y-2">
-                                <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${parseRepoName(context.appsRepo)}`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository</li>
-                                <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{context.gimletdPublicKey}</li>
-                            </ul>
-                        </div>
-                        <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
-                    </div>)
                 </div>
             </div>
         </>
