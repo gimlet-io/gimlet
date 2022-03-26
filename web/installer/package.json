@@ -60,5 +60,5 @@
     "postcss": "^7.0.35",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.2"
   },
-  "proxy": "https://127.0.0.1"
+  "proxy": "http://127.0.0.1:443"
 }
