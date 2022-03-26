@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops/sync"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_guidingTextWithoutController(t *testing.T) {
@@ -159,4 +161,18 @@ func Test_guidingTextWithController(t *testing.T) {
 	if !strings.Contains(guidingTextString, guidingTextWithoutControllerText) {
 		t.Errorf("Should contain line about flux.yaml creation")
 	}
+}
+
+func Test_DependenciesPathWithTargetPath(t *testing.T) {
+	targetPath := "staging"
+	dependenciesPath := sync.DependenciesPath(targetPath)
+
+	assert.Equal(t, dependenciesPath, "./staging/dependencies", "The dependencies path should be './staging/dependencies'")
+}
+
+func Test_DependenciesPathWithoutTargetPath(t *testing.T) {
+	targetPath := ""
+	dependenciesPath := sync.DependenciesPath(targetPath)
+
+	assert.Equal(t, dependenciesPath, "./dependencies", "The path should be './dependencies'")
 }
