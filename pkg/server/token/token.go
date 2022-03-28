@@ -38,7 +38,19 @@ type gimletClaims struct {
 	Subject   string `json:"sub,omitempty"`
 }
 
-func (c gimletClaims) Valid() error { return nil }
+func (c gimletClaims) Valid() error {
+	registeredClaim := jwt.RegisteredClaims{
+		ExpiresAt: &jwt.NumericDate{
+			time.Unix(c.ExpiresAt, 0),
+		},
+		IssuedAt: &jwt.NumericDate{
+			time.Unix(c.IssuedAt, 0),
+		},
+		Subject: c.Subject,
+	}
+
+	return registeredClaim.Valid()
+}
 
 // SignerAlgo is the default algorithm used to sign JWT tokens.
 const SignerAlgo = "HS256"
