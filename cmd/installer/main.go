@@ -471,7 +471,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
-			Repository: "https://github.com/gimlet-io/gimlet-stack-reference.git?branch=gimlet-in-stack",
+			Repository: "https://github.com/gimlet-io/gimlet-stack-reference.git",
 		},
 		Config: map[string]interface{}{
 			"nginx": map[string]interface{}{
@@ -509,6 +509,11 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"postgresql":           dashboardPostgresConfig,
 			},
 		},
+	}
+
+	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
+	if latestTag != "" {
+		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?tag=" + latestTag
 	}
 
 	stackConfigBuff := bytes.NewBufferString("")
