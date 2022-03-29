@@ -41,10 +41,10 @@ type gimletClaims struct {
 func (c gimletClaims) Valid() error {
 	registeredClaim := jwt.RegisteredClaims{
 		ExpiresAt: &jwt.NumericDate{
-			time.Unix(c.ExpiresAt, 0),
+			Time: time.Unix(c.ExpiresAt, 0),
 		},
 		IssuedAt: &jwt.NumericDate{
-			time.Unix(c.IssuedAt, 0),
+			Time: time.Unix(c.IssuedAt, 0),
 		},
 		Subject: c.Subject,
 	}
