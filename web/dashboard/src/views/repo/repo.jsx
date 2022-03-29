@@ -384,7 +384,7 @@ function stacks(connectedAgents, envName) {
   return [];
 }
 
-function envsForRepoFilteredBySearchFilter(envs, connectedAgents,  repoName, searchFilter) {
+function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, searchFilter) {
   let filteredEnvs = {};
 
   // iterate through all Kubernetes envs
