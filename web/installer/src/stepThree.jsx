@@ -162,7 +162,7 @@ const StepThree = ({ getContext }) => {
                             </div>
                             <div className='text-gray-900 mt-16 mb-32'>
                                 <h2 className=''>Happy Gitopsing🎊</h2>
-                                <h2 className=''>Now you can close this browser tab, and return to the Terminal to finalize the install.</h2>
+                                <h2 className='mt-16 font-bold'>Now you can close this browser tab, and return to the Terminal to finalize the install.</h2>
                             </div>
                         </div>)}
                 </div>

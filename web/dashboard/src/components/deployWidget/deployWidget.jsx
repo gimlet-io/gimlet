@@ -7,7 +7,7 @@ export default function DeployWidget(props) {
   if (!deployTargets) {
     return (
       // eslint-disable-next-line
-      <a href="https://gimlet.io/gimletd/on-demand-releases/" target="_blank"
+      <a href="https://gimlet.io/docs/automatically-deploy-your-application-to-staging/" target="_blank"
          className="text-xs text-gray-400 cursor-pointer">
         Want to deploy this version?
       </a>
