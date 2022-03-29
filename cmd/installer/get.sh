@@ -20,8 +20,8 @@ echo "👉 Point $HOST to localhost temporarily with:"
 echo "sudo sh -c 'echo 127.0.0.1 gimlet.$HOST >> /etc/hosts'"
 echo ""
 
-read -p "Press 'y' when you are ready with the host file change " -n 1 -r
-echo    # (optional) move to a new line
+read -p "Press 'y' when you are ready with the host file change " REPLY < /dev/tty
+echo ""
 if ! [[ $REPLY =~ ^[Yy]$ ]]
 then
   echo "Aborted"
