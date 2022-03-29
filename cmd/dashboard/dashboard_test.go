@@ -86,12 +86,12 @@ func TestBootstrapEnvs(t *testing.T) {
 
 func TestJWTexpiryWithExpiredToken(t *testing.T) {
 	secret := "mySecretString"
-	twelveHours, _ := time.ParseDuration("-12h")
-	exp := time.Now().Add(twelveHours).Unix()
+	subtractTwelveHours, _ := time.ParseDuration("-12h")
+	exp := time.Now().Add(subtractTwelveHours).Unix()
 	expiredJWT := token.New("sess", "test")
 	expiredJWTStr, err := expiredJWT.SignExpires(secret, exp)
 	if err != nil {
-		t.Errorf("Cannot sign token expires: %s", err)
+		t.Errorf("Cannot sign token expiration time: %s", err)
 	}
 
 	_, err = token.Parse(expiredJWTStr, func(t *token.Token) (string, error) {
@@ -113,7 +113,7 @@ func TestJWTexpiryWithValidToken(t *testing.T) {
 	validJWT := token.New("sess", "test")
 	validJWTStr, err := validJWT.SignExpires(secret, exp)
 	if err != nil {
-		t.Errorf("Cannot sign token expires: %s", err)
+		t.Errorf("Cannot sign token expiration time: %s", err)
 	}
 
 	_, err = token.Parse(validJWTStr, func(t *token.Token) (string, error) {
