@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/dgrijalva/jwt-go"
 )
 
 type SecretFunc func(*Token) (string, error)
@@ -38,19 +38,7 @@ type gimletClaims struct {
 	Subject   string `json:"sub,omitempty"`
 }
 
-func (c gimletClaims) Valid() error {
-	registeredClaim := jwt.RegisteredClaims{
-		ExpiresAt: &jwt.NumericDate{
-			Time: time.Unix(c.ExpiresAt, 0),
-		},
-		IssuedAt: &jwt.NumericDate{
-			Time: time.Unix(c.IssuedAt, 0),
-		},
-		Subject: c.Subject,
-	}
-
-	return registeredClaim.Valid()
-}
+func (c gimletClaims) Valid() error { return nil }
 
 // SignerAlgo is the default algorithm used to sign JWT tokens.
 const SignerAlgo = "HS256"

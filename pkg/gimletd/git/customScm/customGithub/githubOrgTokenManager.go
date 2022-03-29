@@ -3,14 +3,13 @@ package customGithub
 import (
 	"context"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
+	"github.com/google/go-github/v37/github"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/go-github/v37/github"
-	"github.com/sirupsen/logrus"
 )
 
 // GithubOrgTokenManager maintains a valid git org/non-impersonated token
