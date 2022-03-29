@@ -1,10 +1,13 @@
 package main
 
 import (
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,4 +82,44 @@ func TestBootstrapEnvs(t *testing.T) {
 	assert.EqualError(t, bootstrapEnvs(inputWithoutName, s), expectedErrorMessage)
 	assert.EqualError(t, bootstrapEnvs(inputWithoutInfraRepo, s), expectedErrorMessage)
 	assert.EqualError(t, bootstrapEnvs(inputWithoutAppsRepo, s), expectedErrorMessage)
+}
+
+func TestJWTexpiryWithExpiredToken(t *testing.T) {
+	secret := "mySecretString"
+	subtractTwelveHours, _ := time.ParseDuration("-12h")
+	exp := time.Now().Add(subtractTwelveHours).Unix()
+	expiredJWT := token.New("sess", "test")
+	expiredJWTStr, err := expiredJWT.SignExpires(secret, exp)
+	if err != nil {
+		t.Errorf("Cannot sign token expiration time: %s", err)
+	}
+
+	_, err = token.Parse(expiredJWTStr, func(t *token.Token) (string, error) {
+		return secret, nil
+	})
+	if err != nil {
+		if !strings.Contains(err.Error(), "expired") {
+			t.Errorf("Token must return expired: %s", err)
+		}
+	} else {
+		t.Error("Token must return expired")
+	}
+}
+
+func TestJWTexpiryWithValidToken(t *testing.T) {
+	secret := "mySecretString"
+	twelveHours, _ := time.ParseDuration("12h")
+	exp := time.Now().Add(twelveHours).Unix()
+	validJWT := token.New("sess", "test")
+	validJWTStr, err := validJWT.SignExpires(secret, exp)
+	if err != nil {
+		t.Errorf("Cannot sign token expiration time: %s", err)
+	}
+
+	_, err = token.Parse(validJWTStr, func(t *token.Token) (string, error) {
+		return secret, nil
+	})
+	if err != nil {
+		t.Errorf("Token must return valid: %s", err)
+	}
 }
