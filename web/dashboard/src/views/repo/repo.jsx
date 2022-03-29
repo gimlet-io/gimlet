@@ -380,8 +380,8 @@ function stacks(connectedAgents, envName) {
     if (agentName === envName) {
       return agent.stacks;
     }
-    return [];
   }
+  return [];
 }
 
 function envsForRepoFilteredBySearchFilter(envs, connectedAgents,  repoName, searchFilter) {
