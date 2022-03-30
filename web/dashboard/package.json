@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.4.1",
+    "@tailwindcss/forms": "^0.3.2",
     "autoprefixer": "^9.8.6",
     "postcss": "^7.0.35",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.2"
