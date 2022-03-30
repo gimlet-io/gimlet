@@ -217,7 +217,7 @@ class EnvConfig extends Component {
             <button
               type="button"
               disabled={!hasChange || !this.state.namespace || this.state.saveButtonTriggered}
-              className={(hasChange && !this.state.saveButtonTriggered && this.state.namespace ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              className={(hasChange && this.state.namespace && !this.state.saveButtonTriggered ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
