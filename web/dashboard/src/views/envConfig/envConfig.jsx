@@ -137,8 +137,9 @@ class EnvConfig extends Component {
     const repoName = `${owner}/${repo}`
 
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
-    const hasChange = nonDefaultValuesString !== '{ }' &&
-      nonDefaultValuesString !== JSON.stringify(this.state.defaultState);
+    const hasChange = (nonDefaultValuesString !== '{ }' &&
+      nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
+      this.state.namespace !== env;
 
     if (!this.state.chartSchema) {
       return null;
@@ -208,6 +209,7 @@ class EnvConfig extends Component {
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
+                this.setState({ namespace: env })
               }}
             >
               Reset
