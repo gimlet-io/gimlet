@@ -169,6 +169,19 @@ class EnvConfig extends Component {
           &laquo; back
         </button>
         <div className="container mx-auto m-8">
+          <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} block text-sm font-medium`}>
+            Namespace*
+          </label>
+          <div className="mt-1 mb-4">
+            <input
+              type="text"
+              name="namespace"
+              id="namespace"
+              value={this.state.namespace}
+              onChange={e => { this.setState({ namespace: e.target.value }) }}
+              className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full border-gray-300 rounded-md"
+            />
+          </div>
           <HelmUI
             schema={this.state.chartSchema}
             config={this.state.chartUISchema}
