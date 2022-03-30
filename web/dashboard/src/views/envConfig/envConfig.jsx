@@ -29,6 +29,7 @@ class EnvConfig extends Component {
       errorMessage: "",
       isTimedOut: false,
       timeoutTimer: {},
+      namespace: env,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
