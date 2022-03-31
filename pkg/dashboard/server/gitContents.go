@@ -119,12 +119,12 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(configsPerEnvJson))
 }
 
-func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
-	type envConfig struct {
-		FormData	map[string]interface{}
-		Namespace	string
-	}
+type envConfig struct {
+	Values	map[string]interface{}
+	Namespace	string
+}
 
+func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	envConfigData := &envConfig{}
 	err := json.NewDecoder(r.Body).Decode(&envConfigData)
 	if err != nil {
@@ -201,7 +201,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 					Version:    "0.32.0",
 				},
 				Namespace: envConfigData.Namespace,
-				Values:    envConfigData.FormData,
+				Values:    envConfigData.Values,
 			}
 
 			var toSaveBuffer bytes.Buffer
@@ -236,7 +236,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		toUpdate := existingEnvConfigs[fileToUpdate]
-		toUpdate.Values = envConfigData.FormData
+		toUpdate.Values = envConfigData.Values
 		toUpdate.Namespace = envConfigData.Namespace
 
 		var toUpdateBuffer bytes.Buffer
