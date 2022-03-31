@@ -39,6 +39,10 @@ type gimletClaims struct {
 }
 
 func (c gimletClaims) Valid() error {
+	if c.Type != "sess" {
+		return nil
+	}
+
 	registeredClaim := jwt.RegisteredClaims{
 		ExpiresAt: &jwt.NumericDate{
 			Time: time.Unix(c.ExpiresAt, 0),
