@@ -11,7 +11,6 @@ require (
 	github.com/btubbs/datetime v0.1.1
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/cenkalti/backoff/v4 v4.1.2
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
 	github.com/fatih/color v1.9.0
@@ -32,6 +31,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gobwas/glob v0.2.3
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/securecookie v1.1.1
@@ -58,7 +58,6 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
