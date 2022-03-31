@@ -174,7 +174,7 @@ class EnvConfig extends Component {
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} block text-sm font-medium`}>
             Namespace*
           </label>
-          <div className="mt-1 mb-4">
+          <div className="mt-1 mb-10">
             <input
               type="text"
               name="namespace"
