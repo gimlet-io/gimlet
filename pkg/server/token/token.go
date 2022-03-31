@@ -39,7 +39,8 @@ type gimletClaims struct {
 }
 
 func (c gimletClaims) Valid() error {
-	if c.Type != "sess" {
+	const session string = "sess"
+	if c.Type != session {
 		return nil
 	}
 
