@@ -170,20 +170,20 @@ class EnvConfig extends Component {
         <button className="text-gray-500 hover:text-gray-700 mt-8" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
-        <div className="container mx-auto m-8">
-          <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} block text-sm font-medium`}>
+        <div className="flex mt-4 mb-10 items-center">
+          <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
-          <div className="mt-1 mb-10">
-            <input
-              type="text"
-              name="namespace"
-              id="namespace"
-              value={this.state.namespace}
-              onChange={e => { this.setState({ namespace: e.target.value }) }}
-              className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full border-gray-300 rounded-md"
-            />
-          </div>
+          <input
+            type="text"
+            name="namespace"
+            id="namespace"
+            value={this.state.namespace}
+            onChange={e => { this.setState({ namespace: e.target.value }) }}
+            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+          />
+        </div>
+        <div className="container mx-auto m-8">
           <HelmUI
             schema={this.state.chartSchema}
             config={this.state.chartUISchema}
