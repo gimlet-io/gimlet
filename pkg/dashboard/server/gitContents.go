@@ -120,8 +120,13 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
-	var values map[string]interface{}
-	err := json.NewDecoder(r.Body).Decode(&values)
+	type envConfig struct {
+		FormData	map[string]interface{}
+		Namespace	string
+	}
+
+	envConfigData := &envConfig{}
+	err := json.NewDecoder(r.Body).Decode(&envConfigData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -195,8 +200,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 					Repository: "https://chart.onechart.dev",
 					Version:    "0.32.0",
 				},
-				Namespace: "staging",
-				Values:    values,
+				Namespace: envConfigData.Namespace,
+				Values:    envConfigData.FormData,
 			}
 
 			var toSaveBuffer bytes.Buffer
@@ -231,7 +236,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		toUpdate := existingEnvConfigs[fileToUpdate]
-		toUpdate.Values = values
+		toUpdate.Values = envConfigData.FormData
+		toUpdate.Namespace = envConfigData.Namespace
 
 		var toUpdateBuffer bytes.Buffer
 		yamlEncoder := yaml.NewEncoder(&toUpdateBuffer)

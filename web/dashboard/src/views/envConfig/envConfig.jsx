@@ -108,7 +108,7 @@ class EnvConfig extends Component {
     this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues)
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace)
       .then(data => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
