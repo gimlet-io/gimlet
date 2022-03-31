@@ -128,8 +128,8 @@ func getOrCreateUser(store *store.Store, scmUser *scm.User, token *login.Token) 
 }
 
 func setSessionCookie(w http.ResponseWriter, r *http.Request, user *model.User) error {
-	twelveHours, _ := time.ParseDuration("12h")
-	exp := time.Now().Add(twelveHours).Unix()
+	twentyFourHours, _ := time.ParseDuration("24h")
+	exp := time.Now().Add(twentyFourHours).Unix()
 	t := token.New(token.SessToken, user.Login)
 	tokenStr, err := t.SignExpires(user.Secret, exp)
 	if err != nil {
