@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.15.3
 
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
