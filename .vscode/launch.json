@@ -62,9 +62,7 @@
                 "--env",
                 "live",
                 "--gitops-repo-url",
-                "git@github.com:szabogabor91/gitops-infra.git",
-                "--gitops-repo-path",
-                "/Users/szabogabor/gitops-infra"
+                "git@github.com:somewhere/over-the-rainbow.git",
             ],
             "envFile": "${workspaceFolder}/.env"
         },

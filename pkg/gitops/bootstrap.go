@@ -112,6 +112,15 @@ func GenerateManifests(
 			return "", "", "", fmt.Errorf("cannot write git manifests %s", err)
 		}
 
+		err = os.MkdirAll(path.Join(gitopsRepoPath, env, "dependencies"), os.ModePerm)
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot create dependencies folder %s", err)
+		}
+		err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "dependencies", ".sourceignore"), []byte(""), os.ModePerm)
+		if err != nil {
+			return "", "", "", fmt.Errorf("cannot populate dependencies folder %s", err)
+		}
+
 		if shouldGenerateDeployKey {
 			pKey, deployKeySecret, err := generateDeployKey(host, secretName)
 			publicKey = pKey
