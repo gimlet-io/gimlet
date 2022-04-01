@@ -22,6 +22,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -418,6 +419,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 
 	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
 
+	token := token.New(token.UserToken, "admin")
+	gimletdSignedAdminToken, err := token.Sign(gimletdAdminToken)
+
 	bootstrapEnv := fmt.Sprintf(
 		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",
 		data.envName,
@@ -498,7 +502,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"enabled":              true,
 				"jwtSecret":            jwtSecret,
 				"githubOrg":            data.org,
-				"gimletdToken":         gimletdAdminToken,
+				"gimletdToken":         gimletdSignedAdminToken,
 				"githubAppId":          data.id,
 				"githubPrivateKey":     data.pem,
 				"githubClientId":       data.clientId,
