@@ -120,7 +120,7 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 type envConfig struct {
-	Values	map[string]interface{}
+	Values		map[string]interface{}
 	Namespace	string
 }
 
