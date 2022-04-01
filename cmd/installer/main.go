@@ -389,11 +389,25 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	go gitRepoCache.Run()
 	data.repoCache = gitRepoCache
 
-	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := server.BootstrapEnv(gitRepoCache, envName, infraRepo, repoPerEnv, tokenString)
+	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := server.BootstrapEnv(
+		gitRepoCache,
+		envName,
+		infraRepo,
+		repoPerEnv,
+		tokenString,
+		true,
+	)
 	if err != nil {
 		panic(err)
 	}
-	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := server.BootstrapEnv(gitRepoCache, envName, appsRepo, repoPerEnv, tokenString)
+	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := server.BootstrapEnv(
+		gitRepoCache,
+		envName,
+		appsRepo,
+		repoPerEnv,
+		tokenString,
+		false,
+	)
 	if err != nil {
 		panic(err)
 	}

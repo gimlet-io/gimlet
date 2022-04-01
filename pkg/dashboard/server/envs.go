@@ -202,7 +202,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		environment.Name,
 		environment.InfraRepo,
 		bootstrapConfig.RepoPerEnv,
-		token)
+		token,
+		true,
+	)
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -214,7 +216,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		environment.Name,
 		environment.AppsRepo,
 		bootstrapConfig.RepoPerEnv,
-		token)
+		token,
+		false,
+	)
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -254,6 +258,7 @@ func BootstrapEnv(
 	repoName string,
 	repoPerEnv bool,
 	token string,
+	shouldGenerateController bool,
 ) (string, string, string, error) {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
 	defer os.RemoveAll(tmpPath)
@@ -265,7 +270,7 @@ func BootstrapEnv(
 		envName = ""
 	}
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
-		true,
+		shouldGenerateController,
 		envName,
 		repoPerEnv,
 		tmpPath,
