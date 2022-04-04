@@ -31,7 +31,7 @@ class EnvConfig extends Component {
       isTimedOut: false,
       timeoutTimer: {},
       defaultNamespace: defaultNamespace,
-      namespace: "",
+      namespace: defaultNamespace,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
