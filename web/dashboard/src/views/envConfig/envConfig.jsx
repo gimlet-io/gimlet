@@ -47,7 +47,6 @@ class EnvConfig extends Component {
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
-        envConfigs: reduxState.envConfigs
       });
 
       if (!this.state.values) {
