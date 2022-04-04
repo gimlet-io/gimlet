@@ -6,7 +6,6 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,13 +14,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fluxcd/pkg/ssh"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi/v5"
@@ -117,35 +116,6 @@ type data struct {
 	appsRepo                string
 	repoPerEnv              bool
 	envName                 string
-}
-
-func serveTemplate(w http.ResponseWriter, r *http.Request) {
-	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
-	if err != nil {
-		panic(err)
-	}
-
-	writeTempFiles(workDir)
-	defer removeTempFiles(workDir)
-
-	path := filepath.Clean(r.URL.Path)
-	if path == "/" || path == "/step-2" || path == "/step-3" {
-		path = "index.html"
-	}
-	fp := filepath.Join(workDir, path)
-
-	tmpl, err := template.ParseFiles(fp)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(http.StatusText(http.StatusNotFound)))
-		return
-	}
-
-	err = tmpl.Execute(w, map[string]interface{}{})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-	}
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -425,16 +395,19 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 
 	webhookSecret, _ := randomHex(32)
-	keyPair, err := ssh.NewEd25519Generator().Generate()
+	privateKeyBytes, publicKeyBytes, err := gitops.GenerateEd25519()
 	if err != nil {
 		panic(err)
 	}
-	data.gimletdPublicKey = string(keyPair.PublicKey)
+	data.gimletdPublicKey = string(publicKeyBytes)
 
 	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
 
 	token := token.New(token.UserToken, "admin")
 	gimletdSignedAdminToken, err := token.Sign(gimletdAdminToken)
+	if err != nil {
+		panic(err)
+	}
 
 	bootstrapEnv := fmt.Sprintf(
 		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",
@@ -503,7 +476,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			"gimletd": map[string]interface{}{
 				"enabled":    true,
 				"gitopsRepo": appsRepo,
-				"deployKey":  string(keyPair.PrivateKey),
+				"deployKey":  string(privateKeyBytes),
 				"adminToken": gimletdAdminToken,
 				"postgresql": gimletdPostgresConfig,
 			},

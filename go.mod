@@ -10,6 +10,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
 	github.com/bwmarrin/discordgo v0.23.2
+	github.com/caarlos0/sshmarshal v0.0.0-20220308164159-9ddb9f83c6b3
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
@@ -58,6 +59,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect

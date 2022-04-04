@@ -152,7 +152,7 @@ func ParseRepoURL(url string) (string, string, string) {
 }
 
 func generateDeployKey(host string, name string) (string, []byte, error) {
-	keyPair, err := ssh.NewEd25519Generator().Generate()
+	privateKeyBytes, publicKeyBytes, err := GenerateEd25519()
 	if err != nil {
 		return "", []byte(""), err
 	}
@@ -172,12 +172,12 @@ func generateDeployKey(host string, name string) (string, []byte, error) {
 			Namespace: "flux-system",
 		},
 		StringData: map[string]string{
-			"identity":     string(keyPair.PrivateKey),
-			"identity.pub": string(keyPair.PublicKey),
+			"identity":     string(privateKeyBytes),
+			"identity.pub": string(publicKeyBytes),
 			"known_hosts":  string(hostKey),
 		},
 	}
 
 	yamlString, err := yaml.Marshal(secret)
-	return string(keyPair.PublicKey), yamlString, err
+	return string(publicKeyBytes), yamlString, err
 }
