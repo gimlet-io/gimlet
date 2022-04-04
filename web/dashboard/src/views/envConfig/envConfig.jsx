@@ -23,7 +23,6 @@ class EnvConfig extends Component {
     this.state = {
       chartSchema: reduxState.chartSchema,
       chartUISchema: reduxState.chartUISchema,
-      envConfigs: reduxState.envConfigs,
 
       saveButtonTriggered: false,
       hasAPIResponded: false,
@@ -63,7 +62,7 @@ class EnvConfig extends Component {
         this.setState({ namespace: defaultNamespace })
       }
 
-      if (!this.state.defaultNamspace) {
+      if (!this.state.defaultNamespace) {
         this.setState({ defaultNamespace: defaultNamespace })
       }
     });
@@ -279,15 +278,11 @@ function namespaceFromEnvConfigs(envConfigs, repoName, env, config) {
       const namespaceFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
       if (namespaceFromEnvConfigs.length > 0) {
         return namespaceFromEnvConfigs[0].namespace
-      } else {
-        return ""
       }
-    } else {
-      return ""
     }
-  } else {
-    return undefined
   }
+
+  return ""
 }
 
 function loadEnvConfig(gimletClient, store, owner, repo) {
