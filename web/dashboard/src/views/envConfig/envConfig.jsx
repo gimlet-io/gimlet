@@ -168,25 +168,6 @@ class EnvConfig extends Component {
       return null;
     }
 
-    // console.log("DEFAULT STATE")
-    // console.log(this.state.defaultState)
-    // console.log("NON DEFAULT VALUES")
-    // console.log(this.state.nonDefaultValues)
-    // console.log("HAS CHANGE STATUS")
-    // console.log(hasChange)
-    // console.log("NAMESAPCE")
-    // console.log(this.state.namespace)
-    // console.log("VALUES")
-    // console.log(this.state.values)
-    // console.log("NON DEFAULT VALUES")
-    // console.log(this.state.nonDefaultValues)
-    // console.log("DEFAULT STATE")
-    // console.log(this.state.defaultState)
-    console.log("ENV CONFIG NAMESPACE FROM GIT")
-    console.log(defaultNamespace)
-    console.log("NAMESPACE STATE")
-    console.log(this.state.namespace)
-
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}</h1>
