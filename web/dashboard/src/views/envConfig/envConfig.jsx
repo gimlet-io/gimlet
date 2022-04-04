@@ -31,7 +31,8 @@ class EnvConfig extends Component {
       errorMessage: "",
       isTimedOut: false,
       timeoutTimer: {},
-      namespace: defaultNamespace,
+      defaultNamespace: defaultNamespace,
+      namespace: "",
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -60,6 +61,10 @@ class EnvConfig extends Component {
 
       if (!this.state.namespace) {
         this.setState({ namespace: defaultNamespace })
+      }
+
+      if (!this.state.defaultNamspace) {
+        this.setState({ defaultNamespace: defaultNamespace })
       }
     });
 
@@ -127,7 +132,8 @@ class EnvConfig extends Component {
         clearTimeout(this.state.timeoutTimer);
         this.setState({
           hasAPIResponded: true,
-          defaultState: Object.assign({}, this.state.nonDefaultValues)
+          defaultState: Object.assign({}, this.state.nonDefaultValues),
+          defaultNamespace: this.state.namespace
         });
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
@@ -142,16 +148,13 @@ class EnvConfig extends Component {
   }
 
   render() {
-    let reduxState = this.props.store.getState();
     const { owner, repo, env, config } = this.props.match.params;
-    const { gimletClient, store } = this.props;
     const repoName = `${owner}/${repo}`
-    let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== defaultNamespace;
+      this.state.namespace !== this.state.defaultNamespace;
 
     if (!this.state.chartSchema) {
       return null;
@@ -238,10 +241,9 @@ class EnvConfig extends Component {
               disabled={!hasChange || this.state.saveButtonTriggered}
               className={(hasChange && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
-                loadEnvConfig(gimletClient, store, owner, repo)
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
-                this.setState({ namespace: defaultNamespace })
+                this.setState({ namespace: this.state.defaultNamespace })
               }}
             >
               Reset
