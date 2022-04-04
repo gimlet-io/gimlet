@@ -18,10 +18,12 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
     this.state = {
       chartSchema: reduxState.chartSchema,
       chartUISchema: reduxState.chartUISchema,
+      envConfigs: reduxState.envConfigs,
 
       saveButtonTriggered: false,
       hasAPIResponded: false,
@@ -29,7 +31,7 @@ class EnvConfig extends Component {
       errorMessage: "",
       isTimedOut: false,
       timeoutTimer: {},
-      namespace: env,
+      namespace: defaultNamespace,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -40,10 +42,12 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
+        envConfigs: reduxState.envConfigs
       });
 
       if (!this.state.values) {
@@ -52,6 +56,10 @@ class EnvConfig extends Component {
           nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
           defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
         });
+      }
+
+      if (!this.state.namespace) {
+        this.setState({ namespace: defaultNamespace })
       }
     });
 
@@ -62,6 +70,7 @@ class EnvConfig extends Component {
   componentDidMount() {
     const { owner, repo } = this.props.match.params;
     const { gimletClient, store } = this.props;
+
     if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
       loadEnvConfig(gimletClient, store, owner, repo)
     }
@@ -133,13 +142,16 @@ class EnvConfig extends Component {
   }
 
   render() {
+    let reduxState = this.props.store.getState();
     const { owner, repo, env, config } = this.props.match.params;
+    const { gimletClient, store } = this.props;
     const repoName = `${owner}/${repo}`
+    let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== env;
+      this.state.namespace !== defaultNamespace;
 
     if (!this.state.chartSchema) {
       return null;
@@ -152,6 +164,25 @@ class EnvConfig extends Component {
     if (!this.state.values) {
       return null;
     }
+
+    // console.log("DEFAULT STATE")
+    // console.log(this.state.defaultState)
+    // console.log("NON DEFAULT VALUES")
+    // console.log(this.state.nonDefaultValues)
+    // console.log("HAS CHANGE STATUS")
+    // console.log(hasChange)
+    // console.log("NAMESAPCE")
+    // console.log(this.state.namespace)
+    // console.log("VALUES")
+    // console.log(this.state.values)
+    // console.log("NON DEFAULT VALUES")
+    // console.log(this.state.nonDefaultValues)
+    // console.log("DEFAULT STATE")
+    // console.log(this.state.defaultState)
+    console.log("ENV CONFIG NAMESPACE FROM GIT")
+    console.log(defaultNamespace)
+    console.log("NAMESPACE STATE")
+    console.log(this.state.namespace)
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -207,9 +238,10 @@ class EnvConfig extends Component {
               disabled={!hasChange || this.state.saveButtonTriggered}
               className={(hasChange && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
+                loadEnvConfig(gimletClient, store, owner, repo)
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
-                this.setState({ namespace: env })
+                this.setState({ namespace: defaultNamespace })
               }}
             >
               Reset
@@ -254,6 +286,23 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
     }
   } else {
     // envConfigs not loaded, we shall wait for it to be loaded
+    return undefined
+  }
+}
+
+function namespaceFromEnvConfigs(envConfigs, repoName, env, config) {
+  if (envConfigs[repoName]) {
+    if (envConfigs[repoName][env]) {
+      const namespaceFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
+      if (namespaceFromEnvConfigs.length > 0) {
+        return namespaceFromEnvConfigs[0].namespace
+      } else {
+        return ""
+      }
+    } else {
+      return ""
+    }
+  } else {
     return undefined
   }
 }
