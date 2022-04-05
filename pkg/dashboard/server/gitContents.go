@@ -119,9 +119,14 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(configsPerEnvJson))
 }
 
+type envConfig struct {
+	Values		map[string]interface{}
+	Namespace	string
+}
+
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
-	var values map[string]interface{}
-	err := json.NewDecoder(r.Body).Decode(&values)
+	envConfigData := &envConfig{}
+	err := json.NewDecoder(r.Body).Decode(&envConfigData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -148,7 +153,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	headBranch := helper.HeadBranch(repo)
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
 	if err != nil {
-		if !strings.Contains(err.Error(), "no such file or directory") {
+		if !strings.Contains(err.Error(), "directory not found") {
 			logrus.Errorf("cannot list files in .gimlet/: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -195,8 +200,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 					Repository: "https://chart.onechart.dev",
 					Version:    "0.32.0",
 				},
-				Namespace: "staging",
-				Values:    values,
+				Namespace: envConfigData.Namespace,
+				Values:    envConfigData.Values,
 			}
 
 			var toSaveBuffer bytes.Buffer
@@ -231,7 +236,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		toUpdate := existingEnvConfigs[fileToUpdate]
-		toUpdate.Values = values
+		toUpdate.Values = envConfigData.Values
+		toUpdate.Namespace = envConfigData.Namespace
 
 		var toUpdateBuffer bytes.Buffer
 		yamlEncoder := yaml.NewEncoder(&toUpdateBuffer)
