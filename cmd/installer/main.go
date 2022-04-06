@@ -465,6 +465,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			Repository: "https://github.com/gimlet-io/gimlet-stack-reference.git",
 		},
 		Config: map[string]interface{}{
+			"civo": map[string]interface{}{
+				"enabled": true,
+			},
 			"nginx": map[string]interface{}{
 				"enabled": true,
 				"host":    os.Getenv("HOST"),
