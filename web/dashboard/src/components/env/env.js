@@ -138,7 +138,7 @@ function emptyStateDeployThisRepo(navigateToConfigEdit, envName, repoName) {
   return <div
     target="_blank"
     rel="noreferrer"
-    onClick={() => navigateToConfigEdit(envName, envName)}
+    onClick={() => navigateToConfigEdit(envName, repoName)}
     className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
   >
     <svg
