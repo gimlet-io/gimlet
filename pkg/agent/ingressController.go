@@ -3,7 +3,7 @@ package agent
 import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	v1 "k8s.io/api/core/v1"
-	ext_v1beta1 "k8s.io/api/extensions/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -14,11 +14,11 @@ const EventIngressUpdated = "ingressUpdated"
 const EventIngressDeleted = "ingressDeleted"
 
 func IngressController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Controller {
-	ingressListWatcher := cache.NewListWatchFromClient(kubeEnv.Client.ExtensionsV1beta1().RESTClient(), "ingresses", v1.NamespaceAll, fields.Everything())
+	ingressListWatcher := cache.NewListWatchFromClient(kubeEnv.Client.NetworkingV1().RESTClient(), "ingresses", v1.NamespaceAll, fields.Everything())
 	ingressController := NewController(
 		"ingress",
 		ingressListWatcher,
-		&ext_v1beta1.Ingress{},
+		&networking_v1.Ingress{},
 		func(informerEvent Event, objectMeta meta_v1.ObjectMeta, obj interface{}) error {
 			switch informerEvent.eventType {
 			case "create":
@@ -27,11 +27,11 @@ func IngressController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Co
 					return err
 				}
 
-				createdIngress := obj.(*ext_v1beta1.Ingress)
+				createdIngress := obj.(*networking_v1.Ingress)
 				for _, svc := range integratedServices {
 					for _, rule := range createdIngress.Spec.Rules {
 						for _, path := range rule.HTTP.Paths {
-							if path.Backend.ServiceName == svc.Name &&
+							if path.Backend.Service.Name == svc.Name &&
 								createdIngress.Namespace == svc.Namespace {
 								update := &api.StackUpdate{
 									Event:   EventIngressCreated,
@@ -53,11 +53,11 @@ func IngressController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Co
 					return err
 				}
 
-				ingress := obj.(*ext_v1beta1.Ingress)
+				ingress := obj.(*networking_v1.Ingress)
 				for _, svc := range integratedServices {
 					for _, rule := range ingress.Spec.Rules {
 						for _, path := range rule.HTTP.Paths {
-							if path.Backend.ServiceName == svc.Name {
+							if path.Backend.Service.Name == svc.Name {
 								update := &api.StackUpdate{
 									Event:   EventIngressUpdated,
 									Env:     kubeEnv.Name,

@@ -56,14 +56,14 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		}
 
 		var ingresses []*api.Ingress
-		i, err := e.Client.ExtensionsV1beta1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
+		i, err := e.Client.NetworkingV1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("could not get ingresses: %s", err)
 		}
 		for _, ingress := range i.Items {
 			for _, rule := range ingress.Spec.Rules {
 				for _, path := range rule.HTTP.Paths {
-					if path.Backend.ServiceName == service.Name {
+					if path.Backend.Service.Name == service.Name {
 						ingresses = append(ingresses, &api.Ingress{Name: ingress.Name, Namespace: ingress.Namespace, URL: rule.Host})
 					}
 				}
