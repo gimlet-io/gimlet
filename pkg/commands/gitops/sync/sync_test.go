@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1beta2"
+	notifv1 "github.com/fluxcd/notification-controller/api/v1beta1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 )
 
@@ -36,6 +37,33 @@ func TestGenerate(t *testing.T) {
 		if !strings.Contains(output.Content, apiVersion) {
 			t.Errorf("apiVersion '%s' not found", apiVersion)
 		}
+	}
+
+	fmt.Println(output.Content)
+}
+
+func TestGenerateNotificationProvider(t *testing.T) {
+	envName := "staging"
+	namespace := "flux"
+	gimletdUrl := "https://gimlet.test.io"
+	token := "secretToken123"
+	targetPath := ""
+	fileName := "notification-gitops-repo-gimlet-io-gitops-staging-infra.yaml"
+
+	output, err := GenerateProviderAndAlert(
+		envName,
+		namespace,
+		gimletdUrl,
+		token,
+		targetPath,
+		fileName,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(output.Content, notifv1.GroupVersion.String()) {
+		t.Errorf("apiVersion '%s' not found", notifv1.GroupVersion.String())
 	}
 
 	fmt.Println(output.Content)
