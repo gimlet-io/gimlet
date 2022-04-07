@@ -153,6 +153,7 @@ const StepThree = ({ getContext }) => {
                                 secretFileName={context.appsSecretFileName}
                                 gitopsRepoFileName={context.appsGitopsRepoFileName}
                                 isNewRepo={context.isNewAppsRepo}
+                                notificationsFileName={context.notificationsFileName}
                             />
                             <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
                                 <ul className="break-all text-sm text-blue-700 space-y-2">

@@ -1,6 +1,6 @@
 import React from 'react'
 
-const BootstrapGuide = ({ envName, repoLink, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, isNewRepo }) => {
+const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, isNewRepo }) => {
     const repoName = parseRepoName(repoPath);
     let type = "";
 
@@ -38,6 +38,7 @@ const BootstrapGuide = ({ envName, repoLink, repoPath, repoPerEnv, publicKey, se
                             <li>kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io</li>
                             <li>kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io</li>
                             <li>{repoPerEnv ? `kubectl apply -f flux/${gitopsRepoFileName}` : `kubectl apply -f ${envName}/flux/${gitopsRepoFileName}`}</li>
+                            {notificationsFileName && (<li>{repoPerEnv ? `kubectl apply -f flux/${notificationsFileName}` : `kubectl apply -f ${envName}/flux/${notificationsFileName}`}</li>)}
                         </ul>
                     </>
                 ) : (
@@ -45,6 +46,7 @@ const BootstrapGuide = ({ envName, repoLink, repoPath, repoPerEnv, publicKey, se
                         <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
                         <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
                             <li>{repoPerEnv ? `kubectl apply -f flux/${gitopsRepoFileName}` : `kubectl apply -f ${envName}/flux/${gitopsRepoFileName}`}</li>
+                            {notificationsFileName && (<li>{repoPerEnv ? `kubectl apply -f flux/${notificationsFileName}` : `kubectl apply -f ${envName}/flux/${notificationsFileName}`}</li>)}
                         </ul>
                     </>
                 )}
