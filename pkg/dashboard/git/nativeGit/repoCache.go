@@ -26,7 +26,7 @@ import (
 
 const Dir_RWX_RX_R = 0754
 
-var fetchRefSpec = []config.RefSpec{
+var FetchRefSpec = []config.RefSpec{
 	"refs/heads/*:refs/remotes/origin/*",
 }
 
@@ -125,7 +125,7 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 	repo := r.repos[repoName]
 
 	err = repo.Fetch(&git.FetchOptions{
-		RefSpecs: fetchRefSpec,
+		RefSpecs: FetchRefSpec,
 		Auth: &http.BasicAuth{
 			Username: user,
 			Password: token,
@@ -263,7 +263,7 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 	}
 
 	err = repo.Fetch(&git.FetchOptions{
-		RefSpecs: fetchRefSpec,
+		RefSpecs: FetchRefSpec,
 		Auth: &http.BasicAuth{
 			Username: user,
 			Password: token,
