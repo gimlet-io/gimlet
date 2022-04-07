@@ -17,6 +17,7 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/fluxcd/flux2 v0.24.0
 	github.com/fluxcd/kustomize-controller/api v0.18.1
+	github.com/fluxcd/notification-controller/api v0.19.0
 	github.com/fluxcd/pkg/apis/meta v0.10.2
 	github.com/fluxcd/pkg/runtime v0.12.3
 	github.com/fluxcd/pkg/ssh v0.3.2
