@@ -1,4 +1,7 @@
 import React, { Component } from 'react';
+import { convertCompilerOptionsFromJson } from 'typescript';
+import { ACTION_TYPE_USERS } from '../../redux/redux';
+import DefaultProfilePicture from './defaultProfilePicture.png'
 
 export default class Profile extends Component {
   constructor(props) {
@@ -9,7 +12,14 @@ export default class Profile extends Component {
     this.state = {
       user: reduxState.user,
       gimletd: reduxState.gimletd,
-      application: reduxState.application
+      application: reduxState.application,
+      users: reduxState.users,
+      input: "",
+      saveButtonTriggered: false,
+      hasSameUsernameError: false,
+      hasRequestError: false,
+      latestUser: "",
+      tokenOfLatestUser: ""
     }
 
     // handling API and streaming state changes
@@ -17,18 +27,80 @@ export default class Profile extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({ user: reduxState.user });
+      this.setState({ users: reduxState.users });
       this.setState({ gimletd: reduxState.gimletd });
       this.setState({ application: reduxState.application });
     });
   }
 
+  setTimeOutForButtonTriggered() {
+    setTimeout(() => {
+      this.setState({
+        saveButtonTriggered: false,
+        hasSameUsernameError: false
+      })
+    }, 3000);
+  }
+
+  save() {
+    this.setState({ saveButtonTriggered: true });
+    if (!this.state.users.some(user => user.login === this.state.input)) {
+      this.props.gimletClient.saveUser(this.state.input)
+        .then(saveUserResponse => {
+          this.setState({
+            users: [...this.state.users, {
+              login: this.state.input,
+              token: '',
+              admin: false,
+            }],
+            saveButtonTriggered: false,
+            input: "",
+            tokenOfLatestUser: saveUserResponse.token,
+            latestUser: saveUserResponse.login
+          });
+          this.refreshUsers()
+        }, () => {
+          this.setState({ hasRequestError: true });
+          this.setTimeOutForButtonTriggered();
+        })
+    } else {
+      this.setState({ hasSameUsernameError: true });
+      this.setTimeOutForButtonTriggered();
+    }
+  }
+
+  refreshUsers() {
+    this.props.gimletClient.getUsers()
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_USERS,
+          payload: data
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
+  }
+
+  sortAlphabetically(users) {
+    const copiedUsers = users;
+    return copiedUsers.sort((a, b) => a.login.localeCompare(b.login));
+  }
+
+  addDefaultProfilePicture(e) {
+    e.target.src = DefaultProfilePicture;
+  }
+
   render() {
-    const { user, gimletd } = this.state;
+    const { user, users, gimletd } = this.state
+
+    const sortedUsers = this.sortAlphabetically(users);
 
     const loggedIn = user !== undefined;
     if (!loggedIn) {
       return null;
     }
+
+    console.log("SORTED COPY");
+    console.log(sortedUsers);
 
     user.imageUrl = `https://github.com/${user.login}.png?size=128`
 
@@ -103,15 +175,61 @@ source ~/.gimlet/config`}
                   </div>
                 </div>
               }
+              {this.so}
+              {users &&
+                <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                  <div className="px-4 py-5 sm:px-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Users
+                    </h3>
+                  </div>
+                  <div className="px-4 py-5 sm:px-6">
+                    {sortedUsers.map(user => (
+                      <div className="flex my-4 justify-between">
+                        <div className="inline-flex items-center">
+                          <img className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900" src={`https://github.com/${user.login}.png?size=128`} onError={this.addDefaultProfilePicture} alt="" />
+                          <div className="ml-4">{user.login}</div>
+                        </div>
+                        <div className="inline-flex items-center cursor-pointer" onClick={() => { navigator.clipboard.writeText(user.login) }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              }
+              <div className="mt-12 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                <div className="px-4 py-5 sm:px-6">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
+                </div>
+                <div className="px-4 py-5 sm:px-6">
+                  <input
+                    onChange={e => this.setState({ input: e.target.value })}
+                    className="shadow appearance-none border rounded w-full my-4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="environment" type="text" value={this.state.input} placeholder="Please enter a username" />
+                  <div className="p-0 flow-root">
+                    <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+                      <button
+                        disabled={this.state.input === "" || this.state.saveButtonTriggered}
+                        onClick={() => this.save()}
+                        className={(this.state.input === "" || this.state.saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}>
+                        Create
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          {!gimletdIntegrationEnabled &&
+          {
+            !gimletdIntegrationEnabled &&
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 my-8">
               {integrateGimletD()}
             </div>
           }
-        </main>
-      </div>
+        </main >
+      </div >
     )
   }
 }

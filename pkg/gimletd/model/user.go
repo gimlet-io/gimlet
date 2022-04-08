@@ -11,7 +11,7 @@ type User struct {
 	Login string `json:"login"  meddler:"login"`
 
 	// Token is the user's api JWT token - not persisted
-	Token string `json:"token"  meddler:"-"'`
+	Token string `json:"token"  meddler:"-"`
 
 	// Secret is the key used to sign JWT and CSRF tokens
 	Secret string `json:"-" meddler:"secret"`

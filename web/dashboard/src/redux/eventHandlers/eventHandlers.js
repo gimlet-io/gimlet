@@ -75,6 +75,11 @@ export function user(state, user) {
   return state;
 }
 
+export function users(state, users) {
+  state.users = users;
+  return state;
+}
+
 export function application(state, application) {
   state.application = { name: application.appName, appSettingsURL: application.appSettingsURL, installationURL: application.installationURL };
   return state;
