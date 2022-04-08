@@ -151,7 +151,7 @@ func GenerateProviderAndAlert(
 			Kind:       gvk.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("gimletd-%s", envName),
+			Name:      notificationsName,
 			Namespace: namespace,
 		},
 		Spec: notifv1.ProviderSpec{
@@ -173,7 +173,7 @@ func GenerateProviderAndAlert(
 		},
 		Spec: notifv1.AlertSpec{
 			ProviderRef: meta.LocalObjectReference{
-				Name: fmt.Sprintf("gimletd-%s", envName),
+				Name: notificationsName,
 			},
 			EventSeverity: "info",
 			EventSources: []notifv1.CrossNamespaceObjectReference{
