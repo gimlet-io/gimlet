@@ -191,18 +191,26 @@ source ~/.gimlet/config`}
                           <div className="ml-4">{user.login}</div>
                         </div>
                         {user.login === this.state.latestUser &&
-                          <div className="rounded-md bg-blue-50 p-4">
-                            <div className="inline-flex items-center">
+                          <div className="rounded-md bg-blue-50 p-4 w-3/4">
+                            <div className="flex">
                               <div className="flex-shrink-0">
                                 <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
                               </div>
-                              <div className="ml-3 flex-1 md:flex md:justify-between">
-                                <p className="text-sm text-blue-700">User token: {this.state.tokenOfLatestUser.slice(0, 25)}...</p>
-                              </div>
-                              <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(this.state.tokenOfLatestUser) }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
+                              <div className="ml-3">
+                                <h3 className="text-sm font-medium text-blue-800">User token:</h3>
+                                <div className="mt-2 text-sm text-blue-700">
+                                  <div className="flex">
+                                    <ul className="list-disc pl-5 space-y-1 break-all">
+                                      <li>{this.state.tokenOfLatestUser}
+                                      </li>
+                                    </ul>
+                                    <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(this.state.tokenOfLatestUser) }}>
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
