@@ -10,7 +10,7 @@ import (
 
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops/sync"
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
