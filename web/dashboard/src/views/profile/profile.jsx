@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { convertCompilerOptionsFromJson } from 'typescript';
 import { ACTION_TYPE_USERS } from '../../redux/redux';
-import DefaultProfilePicture from './defaultProfilePicture.png'
+import DefaultProfilePicture from './defaultProfilePicture.png';
+import { InformationCircleIcon } from '@heroicons/react/solid';
 
 export default class Profile extends Component {
   constructor(props) {
@@ -190,11 +190,23 @@ source ~/.gimlet/config`}
                           <img className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900" src={`https://github.com/${user.login}.png?size=128`} onError={this.addDefaultProfilePicture} alt="" />
                           <div className="ml-4">{user.login}</div>
                         </div>
-                        <div className="inline-flex items-center cursor-pointer" onClick={() => { navigator.clipboard.writeText(user.login) }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </div>
+                        {user.login === this.state.latestUser &&
+                          <div className="rounded-md bg-blue-50 p-4">
+                            <div className="inline-flex items-center">
+                              <div className="flex-shrink-0">
+                                <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                              </div>
+                              <div className="ml-3 flex-1 md:flex md:justify-between">
+                                <p className="text-sm text-blue-700">User token: {this.state.tokenOfLatestUser.slice(0, 25)}...</p>
+                              </div>
+                              <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(this.state.tokenOfLatestUser) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        }
                       </div>
                     ))}
                   </div>
