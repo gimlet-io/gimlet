@@ -12,13 +12,12 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
+	commonGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
@@ -58,7 +57,6 @@ func (r *BranchDeleteEventWorker) Run() {
 		if err != nil && err != sql.ErrNoRows {
 			logrus.Warnf("could not load repos with cleanup policy: %s", err)
 		}
-
 		for _, repoName := range reposWithCleanupPolicy {
 			repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
 			if _, err := os.Stat(repoPath); err == nil { // repo exist
@@ -69,11 +67,6 @@ func (r *BranchDeleteEventWorker) Run() {
 					continue
 				}
 
-				copyOfOldState, err, oldStatePath := copyRepo(repoPath)
-				if oldStatePath != "" {
-					defer os.RemoveAll(oldStatePath)
-				}
-
 				deletedBranches, err := r.detectDeletedBranches(repo)
 				if err != nil {
 					logrus.Warnf("could not detect deleted branches in %s: %s", repoPath, err)
@@ -81,7 +74,7 @@ func (r *BranchDeleteEventWorker) Run() {
 					continue
 				}
 				for _, deletedBranch := range deletedBranches {
-					manifests, err := r.extractManifestsFromBranch(copyOfOldState, deletedBranch)
+					manifests, err := r.extractManifestsFromBranch(repo, deletedBranch)
 					if err != nil {
 						logrus.Warnf("could not extract manifests: %s", err)
 						continue
@@ -124,15 +117,7 @@ func (r *BranchDeleteEventWorker) Run() {
 }
 
 func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([]string, error) {
-	var prunedBranches, staleBranches []string
-
-	refIter, _ := repo.References()
-	refIter.ForEach(func(r *plumbing.Reference) error {
-		if r.Name().IsRemote() {
-			staleBranches = append(staleBranches, strings.TrimPrefix(r.Name().Short(), "origin/"))
-		}
-		return nil
-	})
+	staleBranches := commonGit.BranchList(repo)
 
 	token, user, err := r.tokenManager.Token()
 	if err != nil {
@@ -148,19 +133,11 @@ func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([
 		Tags:  git.NoTags,
 		Prune: true,
 	})
-	if err == git.NoErrAlreadyUpToDate {
-		//return []string{}
-	} else if err != nil {
+	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return []string{}, fmt.Errorf("could not fetch: %s", err)
 	}
 
-	refIter, _ = repo.References()
-	refIter.ForEach(func(r *plumbing.Reference) error {
-		if r.Name().IsRemote() {
-			prunedBranches = append(prunedBranches, strings.TrimPrefix(r.Name().Short(), "origin/"))
-		}
-		return nil
-	})
+	prunedBranches := commonGit.BranchList(repo)
 
 	return difference(staleBranches, prunedBranches), nil
 }
@@ -168,18 +145,7 @@ func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([
 func (r *BranchDeleteEventWorker) extractManifestsFromBranch(repo *git.Repository, branch string) ([]*dx.Manifest, error) {
 	var manifests []*dx.Manifest
 
-	head, err := repo.Head()
-	if err != nil {
-		return manifests, err
-	}
-	branchBkp := head.Name().Short()
-
-	err = nativeGit.Branch(repo, fmt.Sprintf("refs/remotes/origin/%s", branch))
-	if err != nil {
-		return manifests, err
-	}
-
-	files, err := nativeGit.Folder(repo, ".gimlet/")
+	files, err := commonGit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet/")
 	if err != nil {
 		return manifests, err
 	}
@@ -192,11 +158,6 @@ func (r *BranchDeleteEventWorker) extractManifestsFromBranch(repo *git.Repositor
 		}
 
 		manifests = append(manifests, &mf)
-	}
-
-	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", branchBkp))
-	if err != nil {
-		return manifests, err
 	}
 
 	return manifests, nil
