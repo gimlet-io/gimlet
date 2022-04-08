@@ -397,7 +397,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	notificationsFileName, err := server.BootstrapNotifications(
 		gitRepoCache,
 		gimletdUrl,
-		gimletdAdminToken,
+		gimletdSignedAdminToken,
 		envName,
 		appsRepo,
 		repoPerEnv,
