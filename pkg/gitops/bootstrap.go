@@ -62,30 +62,10 @@ func GenerateManifests(
 
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
-		gitopsRepoName = fmt.Sprintf("gitops-repo-%s-%s-%s",
-			strings.ToLower(owner),
-			strings.ToLower(repoName),
-			strings.ToLower(env),
-		)
-		if singleEnv {
-			gitopsRepoName = fmt.Sprintf("gitops-repo-%s-%s",
-				strings.ToLower(owner),
-				strings.ToLower(repoName),
-			)
-		}
-		gitopsRepoFileName = gitopsRepoName + ".yaml"
 
-		secretName := fmt.Sprintf("deploy-key-%s-%s-%s",
-			strings.ToLower(owner),
-			strings.ToLower(repoName),
-			strings.ToLower(env),
-		)
-		if singleEnv {
-			secretName = fmt.Sprintf("deploy-key-%s-%s",
-				strings.ToLower(owner),
-				strings.ToLower(repoName),
-			)
-		}
+		gitopsRepoName = fmt.Sprintf("gitops-repo-%s", uniqueName(singleEnv, owner, repoName, env))
+		gitopsRepoFileName = gitopsRepoName + ".yaml"
+		secretName := fmt.Sprintf("deploy-key-%s", uniqueName(singleEnv, owner, repoName, env))
 		secretFileName = secretName + ".yaml"
 
 		syncOpts := sync.Options{
@@ -137,6 +117,21 @@ func GenerateManifests(
 	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
+func uniqueName(singleEnv bool, owner string, repoName string, env string) string {
+	uniqueName := fmt.Sprintf("%s-%s-%s",
+		strings.ToLower(owner),
+		strings.ToLower(repoName),
+		strings.ToLower(env),
+	)
+	if singleEnv {
+		uniqueName = fmt.Sprintf("%s-%s",
+			strings.ToLower(owner),
+			strings.ToLower(repoName),
+		)
+	}
+	return uniqueName
+}
+
 func GenerateManifestProviderAndAlert(
 	env string,
 	targetPath string,
@@ -147,18 +142,18 @@ func GenerateManifestProviderAndAlert(
 	token string,
 ) (string, error) {
 	_, owner, repoName := ParseRepoURL(gitopsRepoUrl)
-	notificationsFileName := fmt.Sprintf("notifications-gitops-repo-%s-%s-%s.yaml",
-		strings.ToLower(owner),
-		strings.ToLower(repoName),
-		strings.ToLower(env),
-	)
+
+	kustomizationName := fmt.Sprintf("gitops-repo-%s", uniqueName(singleEnv, owner, repoName, env))
+	notificationsName := fmt.Sprintf("notifications-%s", uniqueName(singleEnv, owner, repoName, env))
+	notificationsFileName := notificationsName + ".yaml"
 
 	syncManifest, err := sync.GenerateProviderAndAlert(
 		env,
-		"flux",
 		gimletdUrl,
 		token,
 		targetPath,
+		kustomizationName,
+		notificationsName,
 		notificationsFileName,
 	)
 	if err != nil {

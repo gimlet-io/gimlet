@@ -384,7 +384,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gimletdUrl := "gimletd." + os.Getenv("HOST")
+	gimletdUrl := "https://gimletd." + os.Getenv("HOST")
 
 	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
 

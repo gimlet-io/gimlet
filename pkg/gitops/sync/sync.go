@@ -137,11 +137,13 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 
 func GenerateProviderAndAlert(
 	envName string,
-	namespace string,
 	gimletdUrl string,
 	token string,
 	targetPath string,
+	kustomizationName string,
+	notificationsName string,
 	fileName string) (*manifestgen.Manifest, error) {
+	namespace := "flux-system"
 	gvk := notifv1.GroupVersion.WithKind(notifv1.ProviderKind)
 	provider := notifv1.Provider{
 		TypeMeta: metav1.TypeMeta{
@@ -150,7 +152,7 @@ func GenerateProviderAndAlert(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("gimletd-%s", envName),
-			Namespace: fmt.Sprintf("%s-system", namespace),
+			Namespace: namespace,
 		},
 		Spec: notifv1.ProviderSpec{
 			Type:    "generic",
@@ -166,8 +168,8 @@ func GenerateProviderAndAlert(
 			Kind:       gvk.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "all-kustomization",
-			Namespace: fmt.Sprintf("%s-system", namespace),
+			Name:      notificationsName,
+			Namespace: namespace,
 		},
 		Spec: notifv1.AlertSpec{
 			ProviderRef: meta.LocalObjectReference{
@@ -177,8 +179,8 @@ func GenerateProviderAndAlert(
 			EventSources: []notifv1.CrossNamespaceObjectReference{
 				{
 					Kind:      kk.Kind,
-					Namespace: fmt.Sprintf("%s-system", namespace),
-					Name:      fmt.Sprintf("gitops-repo-%s", envName),
+					Namespace: namespace,
+					Name:      kustomizationName,
 				},
 			},
 			Suspend: false,

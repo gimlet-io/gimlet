@@ -44,19 +44,21 @@ func TestGenerate(t *testing.T) {
 
 func TestGenerateNotificationProvider(t *testing.T) {
 	envName := "staging"
-	namespace := "flux"
-	gimletdUrl := "https://gimlet.test.io"
+	gimletdUrl := "https://test.gimlet.io"
 	token := "secretToken123"
 	targetPath := ""
-	fileName := "notification-gitops-repo-gimlet-io-gitops-staging-infra.yaml"
+	kustomizationName := "gitops-repo-gimlet-io-gitops-staging-infra.yaml"
+	notificationsName := "notification-gimlet-io-gitops-staging-infra.yaml"
+	notificationsFileName := notificationsName + ".yaml"
 
 	output, err := GenerateProviderAndAlert(
 		envName,
-		namespace,
 		gimletdUrl,
 		token,
 		targetPath,
-		fileName,
+		kustomizationName,
+		notificationsName,
+		notificationsFileName,
 	)
 	if err != nil {
 		t.Fatal(err)
