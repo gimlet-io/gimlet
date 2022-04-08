@@ -228,3 +228,33 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 		t.Errorf("Should not generate deploy key")
 	}
 }
+
+func Test_generateManifestProviderAndAlert(t *testing.T) {
+	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
+	defer os.RemoveAll(dirToWrite)
+	if err != nil {
+		t.Errorf("Cannot create directory")
+		return
+	}
+
+	env := "staging"
+	targetPath := ""
+	singleEnv := false
+	gitOpsRepoURL := "git@github.com:gimlet-io/gitops-staging-infra.git"
+	gimletdUrl := "https://gimletd.test.io"
+	token := "mySecretToken123"
+
+	_, err = GenerateManifestProviderAndAlert(
+		env,
+		targetPath,
+		singleEnv,
+		dirToWrite,
+		gitOpsRepoURL,
+		gimletdUrl,
+		token,
+	)
+	if err != nil {
+		t.Errorf("Cannot generate manifest files, %s", err)
+		return
+	}
+}

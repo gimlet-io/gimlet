@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1beta2"
+	notifv1 "github.com/fluxcd/notification-controller/api/v1beta1"
 	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/dependency"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
@@ -131,6 +132,72 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 	return &manifestgen.Manifest{
 		Path:    path.Join(options.TargetPath, options.Namespace, options.ManifestFile),
 		Content: fmt.Sprintf("---\n%s---\n%s---\n%s", resourceToString(gitData), resourceToString(ksDepData), resourceToString(ksData)),
+	}, nil
+}
+
+func GenerateProviderAndAlert(
+	envName string,
+	namespace string,
+	gimletdUrl string,
+	token string,
+	targetPath string,
+	fileName string) (*manifestgen.Manifest, error) {
+	gvk := notifv1.GroupVersion.WithKind(notifv1.ProviderKind)
+	provider := notifv1.Provider{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: gvk.GroupVersion().String(),
+			Kind:       gvk.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("gimletd-%s", envName),
+			Namespace: fmt.Sprintf("%s-system", namespace),
+		},
+		Spec: notifv1.ProviderSpec{
+			Type:    "generic",
+			Address: fmt.Sprintf("%s/api/flux-events?access_token=%s&env=%s", gimletdUrl, token, envName),
+		},
+	}
+
+	gvk = notifv1.GroupVersion.WithKind(notifv1.AlertKind)
+	kk := kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
+	alert := notifv1.Alert{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: gvk.GroupVersion().String(),
+			Kind:       gvk.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "all-kustomization",
+			Namespace: fmt.Sprintf("%s-system", namespace),
+		},
+		Spec: notifv1.AlertSpec{
+			ProviderRef: meta.LocalObjectReference{
+				Name: fmt.Sprintf("gimletd-%s", envName),
+			},
+			EventSeverity: "info",
+			EventSources: []notifv1.CrossNamespaceObjectReference{
+				{
+					Kind:      kk.Kind,
+					Namespace: fmt.Sprintf("%s-system", namespace),
+					Name:      fmt.Sprintf("gitops-repo-%s", envName),
+				},
+			},
+			Suspend: false,
+		},
+	}
+
+	providerData, err := yaml.Marshal(provider)
+	if err != nil {
+		return nil, err
+	}
+
+	alertData, err := yaml.Marshal(alert)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manifestgen.Manifest{
+		Path:    path.Join(targetPath, namespace, fileName),
+		Content: fmt.Sprintf("%s---\n%s", resourceToString(providerData), resourceToString(alertData)),
 	}, nil
 }
 

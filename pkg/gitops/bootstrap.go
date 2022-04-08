@@ -137,6 +137,42 @@ func GenerateManifests(
 	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
+func GenerateManifestProviderAndAlert(
+	env string,
+	targetPath string,
+	singleEnv bool,
+	gitopsRepoPath string,
+	gitopsRepoUrl string,
+	gimletdUrl string,
+	token string,
+) (string, error) {
+	_, owner, repoName := ParseRepoURL(gitopsRepoUrl)
+	notificationsFileName := fmt.Sprintf("notifications-gitops-repo-%s-%s-%s.yaml",
+		strings.ToLower(owner),
+		strings.ToLower(repoName),
+		strings.ToLower(env),
+	)
+
+	syncManifest, err := sync.GenerateProviderAndAlert(
+		env,
+		"flux",
+		gimletdUrl,
+		token,
+		targetPath,
+		notificationsFileName,
+	)
+	if err != nil {
+		return "", fmt.Errorf("cannot generate git manifests %s", err)
+	}
+	syncManifest.Path = path.Join(targetPath, "flux", notificationsFileName)
+	_, err = syncManifest.WriteFile(gitopsRepoPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot write git manifests %s", err)
+	}
+
+	return notificationsFileName, nil
+}
+
 func ParseRepoURL(url string) (string, string, string) {
 	host := strings.Split(url, ":")[0]
 	host = strings.Split(host, "@")[1]

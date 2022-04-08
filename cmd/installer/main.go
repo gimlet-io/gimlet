@@ -112,6 +112,7 @@ type data struct {
 	appsGitopsRepoFileName  string
 	appsPublicKey           string
 	appsSecretFileName      string
+	notificationsFileName   string
 	infraRepo               string
 	appsRepo                string
 	repoPerEnv              bool
@@ -137,6 +138,7 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 		"appsGitopsRepoFileName":  data.appsGitopsRepoFileName,
 		"appsPublicKey":           data.appsPublicKey,
 		"appsSecretFileName":      data.appsSecretFileName,
+		"notificationsFileName":   data.notificationsFileName,
 		"infraRepo":               data.infraRepo,
 		"appsRepo":                data.appsRepo,
 		"repoPerEnv":              data.repoPerEnv,
@@ -298,7 +300,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
-	tokenString, _, err := data.tokenManager.Token()
+	tokenString, gitUser, err := data.tokenManager.Token()
 	if err != nil {
 		panic(err)
 	}
@@ -382,6 +384,30 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	gimletdUrl := "gimletd." + os.Getenv("HOST")
+
+	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+
+	token := token.New(token.UserToken, "admin")
+	gimletdSignedAdminToken, err := token.Sign(gimletdAdminToken)
+	if err != nil {
+		panic(err)
+	}
+
+	notificationsFileName, err := server.BootstrapNotifications(
+		gitRepoCache,
+		gimletdUrl,
+		gimletdAdminToken,
+		envName,
+		appsRepo,
+		repoPerEnv,
+		tokenString,
+		gitUser,
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	data.infraGitopsRepoFileName = infraGitopsRepoFileName
 	data.infraPublicKey = infraPublicKey
 	data.infraSecretFileName = infraSecretFileName
@@ -389,6 +415,8 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	data.appsGitopsRepoFileName = appsGitopsRepoFileName
 	data.appsPublicKey = appsPublicKey
 	data.appsSecretFileName = appsSecretFileName
+
+	data.notificationsFileName = notificationsFileName
 
 	jwtSecret, _ := randomHex(32)
 	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
@@ -400,14 +428,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	data.gimletdPublicKey = string(publicKeyBytes)
-
-	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
-
-	token := token.New(token.UserToken, "admin")
-	gimletdSignedAdminToken, err := token.Sign(gimletdAdminToken)
-	if err != nil {
-		panic(err)
-	}
 
 	bootstrapEnv := fmt.Sprintf(
 		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",

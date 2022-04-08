@@ -21,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-git/go-git/v5"
+	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -138,7 +139,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
+	token, gitUser, _ := tokenManager.Token()
 	org := config.Github.Org
 
 	db := r.Context().Value("store").(*store.Store)
@@ -225,6 +226,22 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	notificationsFileName, err := BootstrapNotifications(
+		gitRepoCache,
+		config.GimletD.URL,
+		config.GimletD.TOKEN,
+		environment.Name,
+		environment.AppsRepo,
+		bootstrapConfig.RepoPerEnv,
+		token,
+		gitUser,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	guidingTexts := map[string]interface{}{
 		"envName":                 bootstrapConfig.EnvName,
@@ -239,6 +256,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
 		"isNewInfraRepo":          isNewInfraRepo,
 		"isNewAppsRepo":           isNewAppsRepo,
+		"notificationsFileName":   notificationsFileName,
 	}
 
 	guidingTextsString, err := json.Marshal(guidingTexts)
@@ -291,6 +309,65 @@ func BootstrapEnv(
 	gitRepoCache.Invalidate(repoName)
 
 	return gitopsRepoFileName, publicKey, secretFileName, nil
+}
+
+func BootstrapNotifications(
+	gitRepoCache *dNativeGit.RepoCache,
+	gimletdUrl string,
+	gimletdToken string,
+	envName string,
+	repoName string,
+	repoPerEnv bool,
+	token string,
+	gitUser string,
+) (string, error) {
+	targetPath := envName
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot get repo: %s", err)
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		return "", err
+	}
+
+	w.Pull(&git.PullOptions{
+		Auth: &gitHttp.BasicAuth{
+			Username: gitUser,
+			Password: token,
+		},
+		RemoteName: "origin",
+	})
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return "", fmt.Errorf("could not fetch: %s", err)
+	}
+
+	if repoPerEnv {
+		targetPath = ""
+	}
+	notificationsFileName, err := gitops.GenerateManifestProviderAndAlert(
+		envName,
+		targetPath,
+		repoPerEnv,
+		tmpPath,
+		fmt.Sprintf("git@github.com:%s.git", repoName),
+		gimletdUrl,
+		gimletdToken,
+	)
+	if err != nil {
+		return "", fmt.Errorf("cannot generate manifest: %s", err)
+	}
+
+	err = StageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
+	if err != nil {
+		return "", fmt.Errorf("cannot stage commit and push: %s", err)
+	}
+
+	gitRepoCache.Invalidate(repoName)
+
+	return notificationsFileName, nil
 }
 
 func AssureRepoExists(orgRepos []string, repoName string, token string) (bool, error) {

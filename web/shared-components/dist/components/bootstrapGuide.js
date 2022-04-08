@@ -18,7 +18,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const BootstrapGuide = _ref => {
   let {
     envName,
-    repoLink,
+    notificationsFileName,
     repoPath,
     repoPerEnv,
     publicKey,
@@ -52,9 +52,9 @@ const BootstrapGuide = _ref => {
       href: "https://gimlet.io/docs/make-kubernetes-an-application-platform-with-gimlet-stack/#authorize-flux-to-fetch-your-gitops-repository"
     }, "click here"), ")"), /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Apply the gitops manifests on the cluster to start the gitops loop:"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
-    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/flux.yaml" : "kubectl apply -f ".concat(envName, "/flux/flux.yaml")), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(secretFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(secretFileName)), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Apply the gitops manifests on the cluster to start the gitops loop:"), /*#__PURE__*/_react.default.createElement("ul", {
+    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/flux.yaml" : "kubectl apply -f ".concat(envName, "/flux/flux.yaml")), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(secretFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(secretFileName)), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)), notificationsFileName && /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(notificationsFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(notificationsFileName)))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Apply the gitops manifests on the cluster to start the gitops loop:"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
-    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)))));
+    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)), notificationsFileName && /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(notificationsFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(notificationsFileName)))));
   };
 
   return /*#__PURE__*/_react.default.createElement("div", {

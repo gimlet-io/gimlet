@@ -331,6 +331,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   secretFileName={bootstrapMessage.appsSecretFileName}
                   gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
                   isNewRepo={bootstrapMessage.isNewAppsRepo}
+                  notificationsFileName={bootstrapMessage.notificationsFileName}
                 />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
               </>
