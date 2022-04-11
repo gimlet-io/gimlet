@@ -21,6 +21,20 @@ func (db *Store) GitopsCommit(sha string) (*model.GitopsCommit, error) {
 	return gitopsCommit, err
 }
 
+func (db *Store) GitopsCommits() ([]*model.GitopsCommit, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectGitopsCommits)
+	data := []*model.GitopsCommit{}
+	err := meddler.QueryAll(db, &data, stmt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return data, err
+}
+
 func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) error {
 	stmt := queries.Stmt(db.driver, queries.SelectGitopsCommitBySha)
 	savedGitopsCommit := new(model.GitopsCommit)

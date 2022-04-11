@@ -59,6 +59,7 @@ func SetupRouter(
 		r.Post("/api/delete", delete)
 		r.Get("/api/event", getEvent)
 		r.Post("/api/flux-events", fluxEvent)
+		r.Get("/api/gitopsCommits", getGitopsCommits)
 
 		r.Get("/api/gitopsRepo", func(w http.ResponseWriter, r *http.Request) {
 			gitopsRepo := r.Context().Value("gitopsRepo").(string)
