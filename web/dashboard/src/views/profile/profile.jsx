@@ -22,7 +22,6 @@ export default class Profile extends Component {
       users: reduxState.users,
       input: "",
       saveButtonTriggered: false,
-      hasRequestError: false,
       latestUser: "",
       tokenOfLatestUser: ""
     }
@@ -64,7 +63,6 @@ export default class Profile extends Component {
           });
           this.setTimeOutForButtonTriggeredAndPopupWindow();
         }, err => {
-          this.setState({ hasRequestError: true });
           this.setTimeOutForButtonTriggeredAndPopupWindow();
           this.props.store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
