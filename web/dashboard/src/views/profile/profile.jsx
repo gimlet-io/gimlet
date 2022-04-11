@@ -16,7 +16,6 @@ export default class Profile extends Component {
       users: reduxState.users,
       input: "",
       saveButtonTriggered: false,
-      hasSameUsernameError: false,
       hasRequestError: false,
       latestUser: "",
       tokenOfLatestUser: ""
@@ -37,7 +36,6 @@ export default class Profile extends Component {
     setTimeout(() => {
       this.setState({
         saveButtonTriggered: false,
-        hasSameUsernameError: false
       })
     }, 3000);
   }
@@ -64,7 +62,6 @@ export default class Profile extends Component {
           this.setTimeOutForButtonTriggered();
         })
     } else {
-      this.setState({ hasSameUsernameError: true });
       this.setTimeOutForButtonTriggered();
     }
   }
