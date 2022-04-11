@@ -99,9 +99,6 @@ export default class Profile extends Component {
       return null;
     }
 
-    console.log("SORTED COPY");
-    console.log(sortedUsers);
-
     user.imageUrl = `https://github.com/${user.login}.png?size=128`
 
     const gimletdIntegrationEnabled = gimletd !== undefined;
