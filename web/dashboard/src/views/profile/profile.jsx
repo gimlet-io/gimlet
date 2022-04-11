@@ -48,6 +48,7 @@ export default class Profile extends Component {
     if (!this.state.users.some(user => user.login === this.state.input)) {
       this.props.gimletClient.saveUser(this.state.input)
         .then(saveUserResponse => {
+          this.setTimeOutForButtonTriggeredAndPopupWindow();
           this.setState({
             input: "",
             tokenOfLatestUser: saveUserResponse.token,
@@ -60,7 +61,6 @@ export default class Profile extends Component {
               message: "User saved"
             }
           });
-          this.setTimeOutForButtonTriggeredAndPopupWindow();
         }, err => {
           this.setTimeOutForButtonTriggeredAndPopupWindow();
           this.props.store.dispatch({
