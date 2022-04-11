@@ -81,8 +81,7 @@ export default class Profile extends Component {
   }
 
   sortAlphabetically(users) {
-    const copiedUsers = users;
-    return copiedUsers.sort((a, b) => a.login.localeCompare(b.login));
+    return users.sort((a, b) => a.login.localeCompare(b.login));
   }
 
   render() {
