@@ -1,5 +1,11 @@
 import React, { Component } from 'react';
-import { ACTION_TYPE_USERS } from '../../redux/redux';
+import {
+  ACTION_TYPE_USERS,
+  ACTION_TYPE_POPUPWINDOWRESET,
+  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_POPUPWINDOWSUCCESS,
+  ACTION_TYPE_POPUPWINDOWERROR
+} from '../../redux/redux';
 import DefaultProfilePicture from './defaultProfilePicture.png';
 import { InformationCircleIcon } from '@heroicons/react/solid';
 
@@ -40,7 +46,21 @@ export default class Profile extends Component {
     }, 3000);
   }
 
+  resetPopupWindowAfterThreeSeconds() {
+    setTimeout(() => {
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
+    }, 3000);
+  };
+
   save() {
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+        header: "Saving..."
+      }
+    });
+
     this.setState({ saveButtonTriggered: true });
     if (!this.state.users.some(user => user.login === this.state.input)) {
       this.props.gimletClient.saveUser(this.state.input)
@@ -57,12 +77,33 @@ export default class Profile extends Component {
             latestUser: saveUserResponse.login
           });
           this.refreshUsers()
-        }, () => {
+          this.props.store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+              header: "Success",
+              message: "User saved"
+            }
+          });
+          this.resetPopupWindowAfterThreeSeconds()
+        }, err => {
           this.setState({ hasRequestError: true });
           this.setTimeOutForButtonTriggered();
+          this.props.store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+              header: "Error",
+              message: err.statusText
+            }
+          });
+          this.resetPopupWindowAfterThreeSeconds()
         })
     } else {
       this.setTimeOutForButtonTriggered();
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+          header: "Error",
+          message: "User already exists"
+        }
+      });
+      this.resetPopupWindowAfterThreeSeconds()
     }
   }
 
