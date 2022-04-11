@@ -59,11 +59,6 @@ export default class Profile extends Component {
       this.props.gimletClient.saveUser(this.state.input)
         .then(saveUserResponse => {
           this.setState({
-            users: [...this.state.users, {
-              login: this.state.input,
-              token: '',
-              admin: false,
-            }],
             saveButtonTriggered: false,
             input: "",
             tokenOfLatestUser: saveUserResponse.token,
