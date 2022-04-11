@@ -38,15 +38,6 @@ export default class Profile extends Component {
     });
   }
 
-  setTimeOutForButtonTriggeredAndPopupWindow() {
-    setTimeout(() => {
-      this.setState({ saveButtonTriggered: false })
-      this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
-    }, 3000);
-  }
-
   save() {
     this.props.store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
@@ -102,6 +93,15 @@ export default class Profile extends Component {
         });
       }, () => {/* Generic error handler deals with it */
       });
+  }
+
+  setTimeOutForButtonTriggeredAndPopupWindow() {
+    setTimeout(() => {
+      this.setState({ saveButtonTriggered: false })
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
+    }, 3000);
   }
 
   sortAlphabetically(users) {
