@@ -38,21 +38,14 @@ export default class Profile extends Component {
     });
   }
 
-  setTimeOutForButtonTriggered() {
+  setTimeOutForButtonTriggeredAndPopupWindow() {
     setTimeout(() => {
-      this.setState({
-        saveButtonTriggered: false,
-      })
-    }, 3000);
-  }
-
-  resetPopupWindowAfterThreeSeconds() {
-    setTimeout(() => {
+      this.setState({ saveButtonTriggered: false })
       this.props.store.dispatch({
         type: ACTION_TYPE_POPUPWINDOWRESET
       });
     }, 3000);
-  };
+  }
 
   save() {
     this.props.store.dispatch({
@@ -83,27 +76,25 @@ export default class Profile extends Component {
               message: "User saved"
             }
           });
-          this.resetPopupWindowAfterThreeSeconds()
+          this.setTimeOutForButtonTriggeredAndPopupWindow();
         }, err => {
           this.setState({ hasRequestError: true });
-          this.setTimeOutForButtonTriggered();
+          this.setTimeOutForButtonTriggeredAndPopupWindow();
           this.props.store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
               header: "Error",
               message: err.statusText
             }
           });
-          this.resetPopupWindowAfterThreeSeconds()
         })
     } else {
-      this.setTimeOutForButtonTriggered();
+      this.setTimeOutForButtonTriggeredAndPopupWindow();
       this.props.store.dispatch({
         type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
           header: "Error",
           message: "User already exists"
         }
       });
-      this.resetPopupWindowAfterThreeSeconds()
     }
   }
 
