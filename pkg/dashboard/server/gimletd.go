@@ -513,6 +513,40 @@ func deployStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write(releaseStatusString)
 }
 
+func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	if config.GimletD.URL == "" ||
+		config.GimletD.TOKEN == "" {
+		w.WriteHeader(http.StatusNotFound)
+	}
+	oauth2Config := new(oauth2.Config)
+	auth := oauth2Config.Client(
+		context.Background(),
+		&oauth2.Token{
+			AccessToken: config.GimletD.TOKEN,
+		},
+	)
+	client := client.NewClient(config.GimletD.URL, auth)
+
+	gitopsCommits, err := client.GitopsCommitsGet(config.GimletD.TOKEN)
+	if err != nil {
+		logrus.Errorf("cannot get gitops commits: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitopsCommitsString, err := json.Marshal(gitopsCommits)
+	if err != nil {
+		logrus.Errorf("cannot serialize gitopsCommits: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(gitopsCommitsString)
+}
+
 func decorateCommitsWithGimletArtifacts(commits []*Commit, config *config.Config) ([]*Commit, error) {
 	if config.GimletD.URL == "" ||
 		config.GimletD.TOKEN == "" {

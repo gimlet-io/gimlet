@@ -16,10 +16,11 @@
 package client
 
 import (
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"net/http"
 	"time"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 )
 
 // Client is used to communicate with a Drone server.
@@ -75,6 +76,9 @@ type Client interface {
 
 	// UsersGet returns all users
 	UsersGet() ([]*model.User, error)
+
+	// GitopsCommitsGet returns the recent 1§ gitops commits
+	GitopsCommitsGet(gimletdToken string) (*[]*model.GitopsCommit, error)
 
 	// UserPost creates a user
 	UserPost(user *model.User) (*model.User, error)
