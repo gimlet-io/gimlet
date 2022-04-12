@@ -1,7 +1,12 @@
 import { Component } from 'react';
 import EnvironmentCard from './environmentCard.jsx';
-import EnvironmentsPopUpWindow from './environmentPopUpWindow.jsx';
-import { ACTION_TYPE_ENVS } from "../../redux/redux";
+import {
+    ACTION_TYPE_ENVS,
+    ACTION_TYPE_POPUPWINDOWRESET,
+    ACTION_TYPE_POPUPWINDOWOPENED,
+    ACTION_TYPE_POPUPWINDOWSUCCESS,
+    ACTION_TYPE_POPUPWINDOWERROR
+} from "../../redux/redux";
 
 class Environments extends Component {
     constructor(props) {
@@ -12,9 +17,7 @@ class Environments extends Component {
             connectedAgents: reduxState.connectedAgents,
             envs: reduxState.envs,
             input: "",
-            hasRequestError: false,
             saveButtonTriggered: false,
-            hasSameEnvNameError: false,
             user: reduxState.user,
         };
         this.props.store.subscribe(() => {
@@ -71,21 +74,32 @@ class Environments extends Component {
             })
     };
 
-    setTimeOutForButtonTriggered() {
+    setTimeOutForButtonTriggeredAndPopupWindow() {
         setTimeout(() => {
-            this.setState({
-                saveButtonTriggered: false,
-                hasRequestError: false,
-                hasSameEnvNameError: false
-            })
+            this.setState({ saveButtonTriggered: false })
+            this.props.store.dispatch({
+                type: ACTION_TYPE_POPUPWINDOWRESET
+            });
         }, 3000);
     }
 
     save() {
+        this.props.store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+                header: "Saving..."
+            }
+        });
+        
         this.setState({ saveButtonTriggered: true });
         if (!this.state.envs.some(env => env.name === this.state.input)) {
             this.props.gimletClient.saveEnvToDB(this.state.input)
                 .then(() => {
+                    this.props.store.dispatch({
+                        type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+                            header: "Success",
+                            message: "Environment saved"
+                        }
+                    });
                     this.setState({
                         envs: [...this.state.envs, {
                             name: this.state.input,
@@ -96,24 +110,53 @@ class Environments extends Component {
                         saveButtonTriggered: false
                     });
                     this.refreshEnvs();
-                }, () => {
-                    this.setState({ hasRequestError: true });
-                    this.setTimeOutForButtonTriggered();
+                    this.setTimeOutForButtonTriggeredAndPopupWindow();
+                }, err => {
+                    this.props.store.dispatch({
+                        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+                            header: "Error",
+                            message: err.statusText
+                        }
+                    });
+                    this.setTimeOutForButtonTriggeredAndPopupWindow();
                 })
         } else {
-            this.setState({ hasSameEnvNameError: true });
-            this.setTimeOutForButtonTriggered();
+            this.props.store.dispatch({
+                type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+                    header: "Error",
+                    message: "Environment already exists"
+                }
+            });
+            this.setTimeOutForButtonTriggeredAndPopupWindow();
         }
     }
 
     delete(envName) {
+        this.props.store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+                header: "Deleting..."
+            }
+        });
+
         this.props.gimletClient.deleteEnvFromDB(envName)
             .then(() => {
+                this.props.store.dispatch({
+                    type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+                        header: "Success",
+                        message: "Environment deleted"
+                    }
+                });
                 this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
                 this.refreshEnvs();
-            }, () => {
-                this.setState({ hasRequestError: true });
-                this.setTimeOutForButtonTriggered();
+                this.setTimeOutForButtonTriggeredAndPopupWindow();
+            }, err => {
+                this.props.store.dispatch({
+                    type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+                        header: "Error",
+                        message: err.statusText
+                    }
+                });
+                this.setTimeOutForButtonTriggeredAndPopupWindow();
             });
     }
 
@@ -136,9 +179,6 @@ class Environments extends Component {
                 <main>
                     <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                         <div className="px-4 py-8 sm:px-0">
-                            {(this.state.hasRequestError || this.state.hasSameEnvNameError) &&
-                                <EnvironmentsPopUpWindow
-                                    hasRequestError={this.state.hasRequestError} />}
                             {this.getEnvironmentCards()}
                             <div className="mt-12 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                                 <div className="px-4 py-5 sm:px-6">
