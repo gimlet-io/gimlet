@@ -70,6 +70,11 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function gitopsCommits(state, gitopsCommits) {
+  state.gitopsCommits = gitopsCommits;
+  return state;
+}
+
 export function user(state, user) {
   state.user = user;
   return state;

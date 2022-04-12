@@ -19,8 +19,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -28,6 +26,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 )
 
 const (
@@ -41,6 +42,7 @@ const (
 	pathUser       = "%s/api/user"
 	pathUsers	   = "%s/api/users"
 	pathGitopsRepo = "%s/api/gitopsRepo"
+	pathGitopsCommits = "%s/api/gitopsCommits"
 )
 
 type client struct {
@@ -351,6 +353,19 @@ func (c *client) UsersGet() ([]*model.User, error) {
 	}
 
 	return users, nil
+}
+
+// GitopsCommitsGet returns the recent 20 gitops commits
+func (c *client) GitopsCommitsGet(gimletdToken string) (*[]*model.GitopsCommit, error) {
+	uri := fmt.Sprintf(pathGitopsCommits, c.addr)
+
+	result := new([]*model.GitopsCommit)
+	err := c.get(uri+"?="+gimletdToken, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // UserPost creates a user

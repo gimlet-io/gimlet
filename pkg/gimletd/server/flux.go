@@ -32,12 +32,6 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&event)
 	env := r.URL.Query().Get("env")
 
-	if val, ok := event.Metadata["commit_status"]; ok && val == "update" {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(""))
-		return
-	}
-
 	gitopsCommit, err := asGitopsCommit(event)
 	if err != nil {
 		log.Errorf("could not translate to gitops commit: %s", err)

@@ -19,6 +19,7 @@ export const ACTION_TYPE_DEPLOY = 'deploy';
 export const ACTION_TYPE_DEPLOY_STATUS = 'deployStatus';
 export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
+export const ACTION_TYPE_GITOPS_COMMITS = 'gitopsCommits';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
 export const ACTION_TYPE_POPUPWINDOWOPENED = 'popupWindowOpened';
@@ -62,6 +63,7 @@ export const initialState = {
   envConfigs: {},
   application: {},
   envs: [],
+  gitopsCommits: [],
   popupWindow: {
     visible: false,
     finished: false,
@@ -95,6 +97,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
+    case ACTION_TYPE_GITOPS_COMMITS:
+      return eventHandlers.gitopsCommits(state, action.payload)
     case ACTION_TYPE_USER:
       return eventHandlers.user(state, action.payload)
     case ACTION_TYPE_USERS:

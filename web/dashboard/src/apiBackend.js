@@ -4,6 +4,7 @@ import {
   ACTION_TYPE_ENVS,
   ACTION_TYPE_GIMLETD, ACTION_TYPE_GIT_REPOS,
   ACTION_TYPE_GITOPS_REPO,
+  ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_USER,
   ACTION_TYPE_USERS,
   ACTION_TYPE_CHARTSCHEMA,
@@ -42,6 +43,9 @@ export default class APIBackend extends Component {
       });
     this.props.gimletClient.getGimletD()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GIMLETD, payload: data }), () => {/* Generic error handler deals with it */
+      });
+      this.props.gimletClient.getGitopsCommits()
+      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_COMMITS, payload: data }), () => {/* Generic error handler deals with it */
       });
     this.props.gimletClient.getChartSchema()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_CHARTSCHEMA, payload: data }), () => {/* Generic error handler deals with it */

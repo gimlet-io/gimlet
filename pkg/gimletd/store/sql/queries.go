@@ -21,6 +21,7 @@ const DeleteUser = "deleteUser"
 const SelectUnprocessedEvents = "select-unprocessed-events"
 const UpdateEventStatus = "update-event-status"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
+const SelectGitopsCommits = "select-gitops-commits"
 const SelectKeyValue = "select-key-value"
 
 var queries = map[string]map[string]string{
@@ -52,6 +53,12 @@ UPDATE events SET status = $1, status_desc = $2, gitops_hashes = $3 WHERE id = $
 SELECT id, sha, status, status_desc
 FROM gitops_commits
 WHERE sha = $1;
+`,
+		SelectGitopsCommits: `
+SELECT id, sha, status, status_desc
+FROM gitops_commits
+ORDER BY id DESC
+LIMIT 20;
 `,
 		SelectKeyValue: `
 SELECT id, key, value
@@ -87,6 +94,12 @@ UPDATE events SET status = $1, status_desc = $2, gitops_hashes = $3 WHERE id = $
 SELECT id, sha, status, status_desc
 FROM gitops_commits
 WHERE sha = $1;
+`,
+		SelectGitopsCommits: `
+SELECT id, sha, status, status_desc
+FROM gitops_commits
+ORDER BY id DESC
+LIMIT 20;
 `,
 		SelectKeyValue: `
 SELECT id, key, value
