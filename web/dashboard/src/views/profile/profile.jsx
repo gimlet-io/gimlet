@@ -21,9 +21,7 @@ export default class Profile extends Component {
       application: reduxState.application,
       users: reduxState.users,
       input: "",
-      saveButtonTriggered: false,
-      latestUser: "",
-      tokenOfLatestUser: ""
+      saveButtonTriggered: false
     }
 
     // handling API and streaming state changes
@@ -49,12 +47,15 @@ export default class Profile extends Component {
       this.props.gimletClient.saveUser(this.state.input)
         .then(saveUserResponse => {
           this.setTimeOutForButtonTriggeredAndPopupWindow();
-          this.setState({
-            input: "",
-            tokenOfLatestUser: saveUserResponse.token,
-            latestUser: saveUserResponse.login
+          this.setState({ input: "" });
+          this.props.store.dispatch({
+            type: ACTION_TYPE_USERS,
+            payload: [...this.state.users, {
+              login: saveUserResponse.login,
+              token: saveUserResponse.token,
+              admin: false
+            }]
           });
-          this.refreshUsers()
           this.props.store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
               header: "Success",
@@ -79,17 +80,6 @@ export default class Profile extends Component {
         }
       });
     }
-  }
-
-  refreshUsers() {
-    this.props.gimletClient.getUsers()
-      .then(data => {
-        this.props.store.dispatch({
-          type: ACTION_TYPE_USERS,
-          payload: data
-        });
-      }, () => {/* Generic error handler deals with it */
-      });
   }
 
   setTimeOutForButtonTriggeredAndPopupWindow() {
@@ -190,7 +180,7 @@ source ~/.gimlet/config`}
               }
               {this.so}
               {users &&
-                userList(sortedUsers, this.state.latestUser, this.state.tokenOfLatestUser, DefaultProfilePicture)
+                userList(sortedUsers, DefaultProfilePicture)
               }
               <div className="mt-12 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                 <div className="px-4 py-5 sm:px-6">
@@ -282,7 +272,7 @@ function githubAppSettings(appName, appSettingsURL, installationURL) {
   )
 }
 
-function userList(sortedUsers, latestUser, tokenOfLatestUser, defaultProfilePicture) {
+function userList(sortedUsers, defaultProfilePicture) {
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
       <div className="px-4 py-5 sm:px-6">
@@ -301,7 +291,7 @@ function userList(sortedUsers, latestUser, tokenOfLatestUser, defaultProfilePict
                 alt="" />
               <div className="ml-4">{user.login}</div>
             </div>
-            {user.login === latestUser &&
+            {user.token &&
               <div className="rounded-md bg-blue-50 p-4 w-5/6">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -311,8 +301,8 @@ function userList(sortedUsers, latestUser, tokenOfLatestUser, defaultProfilePict
                     <h3 className="text-sm font-medium text-blue-800">User token:</h3>
                     <div className="mt-2 text-sm text-blue-700">
                       <div className="flex items-center">
-                        <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{tokenOfLatestUser}</span>
-                        <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(tokenOfLatestUser) }}>
+                        <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{user.token}</span>
+                        <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(user.token) }}>
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
