@@ -27,6 +27,8 @@ export default class GimletClient {
 
   getGimletD = () => this.get('/api/gimletd');
 
+  getGitopsCommits = () => this.getWithAxios("/api/gitopsCommits");
+
   getRolloutHistory = (owner, name) => this.get(`/api/repo/${owner}/${name}/rolloutHistory`);
 
   getCommits = (owner, name, branch) => this.get(`/api/repo/${owner}/${name}/commits?branch=${branch}`);
