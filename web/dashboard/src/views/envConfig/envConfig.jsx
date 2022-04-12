@@ -19,6 +19,7 @@ class EnvConfig extends Component {
 
     let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
     this.state = {
       chartSchema: reduxState.chartSchema,
@@ -33,6 +34,8 @@ class EnvConfig extends Component {
       defaultNamespace: defaultNamespace,
       namespace: defaultNamespace,
       hasFormValidationError: false,
+      defaultAppName: defaultAppName,
+      appName: defaultAppName,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -124,8 +127,8 @@ class EnvConfig extends Component {
     this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace)
-      .then(data => {
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, this.state.appName)
+      .then(() => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
           return
@@ -135,7 +138,8 @@ class EnvConfig extends Component {
         this.setState({
           hasAPIResponded: true,
           defaultState: Object.assign({}, this.state.nonDefaultValues),
-          defaultNamespace: this.state.namespace
+          defaultNamespace: this.state.namespace,
+          defaultAppName: this.state.appName
         });
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
@@ -187,7 +191,24 @@ class EnvConfig extends Component {
         <button className="text-gray-500 hover:text-gray-700 mt-8" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
-        <div className="flex mt-4 mb-10 items-center">
+        {!this.state.defaultAppName ?
+          <div className="flex my-4 items-center">
+            <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+              App name*
+            </label>
+            <input
+              type="text"
+              name="appName"
+              id="appName"
+              value={this.state.appName}
+              onChange={e => { this.setState({ appName: e.target.value }) }}
+              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+            />
+          </div>
+          :
+          <span className="text-gray-700 my-4 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
+        }
+        <div className="flex mb-10 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
@@ -233,8 +254,8 @@ class EnvConfig extends Component {
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered || this.state.hasFormValidationError}
+              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
@@ -281,6 +302,19 @@ function namespaceFromEnvConfigs(envConfigs, repoName, env, config) {
       const namespaceFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
       if (namespaceFromEnvConfigs.length > 0) {
         return namespaceFromEnvConfigs[0].namespace
+      }
+    }
+  }
+
+  return ""
+}
+
+function appNameFromEnvConfigs(envConfigs, repoName, env, config) {
+  if (envConfigs[repoName]) {
+    if (envConfigs[repoName][env]) {
+      const appNameFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
+      if (appNameFromEnvConfigs.length > 0) {
+        return appNameFromEnvConfigs[0].app
       }
     }
   }

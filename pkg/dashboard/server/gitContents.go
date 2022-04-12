@@ -122,6 +122,7 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 type envConfig struct {
 	Values		map[string]interface{}
 	Namespace	string
+	AppName		string
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +139,6 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
 
 	env := chi.URLParam(r, "env")
-	configName := chi.URLParam(r, "config")
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -174,7 +174,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	fileToUpdate := fmt.Sprintf("%s.yaml", env)
 	for fileName, existingEnvConfig := range existingEnvConfigs {
 		if existingEnvConfig.Env == env &&
-			existingEnvConfig.App == configName {
+			existingEnvConfig.App == envConfigData.AppName {
 			fileToUpdate = fileName
 			break
 		}
@@ -193,7 +193,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(err.Error(), "Not Found") {
 
 			toSave := &dx.Manifest{
-				App: configName,
+				App: envConfigData.AppName,
 				Env: env,
 				Chart: dx.Chart{
 					Name:       "onechart",
@@ -221,7 +221,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				fileUpdatePath,
 				toSaveBuffer.Bytes(),
 				branch,
-				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", env, configName),
+				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", env, envConfigData.AppName),
 			)
 			if err != nil {
 				logrus.Errorf("cannot create manifest: %s", err)
@@ -256,7 +256,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			toUpdateBuffer.Bytes(),
 			blobID,
 			branch,
-			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", env, configName),
+			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", env, envConfigData.AppName),
 		)
 		if err != nil {
 			logrus.Errorf("cannot update manifest: %s", err)
