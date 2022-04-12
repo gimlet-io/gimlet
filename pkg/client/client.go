@@ -39,6 +39,7 @@ const (
 	pathDelete     = "%s/api/delete"
 	pathEvent      = "%s/api/event"
 	pathUser       = "%s/api/user"
+	pathUsers	   = "%s/api/users"
 	pathGitopsRepo = "%s/api/gitopsRepo"
 )
 
@@ -336,6 +337,20 @@ func (c *client) UserGet(login string, withToken bool) (*model.User, error) {
 	}
 
 	return user, nil
+}
+
+// UsersGet returns all users
+func (c *client) UsersGet() ([]*model.User, error) {
+	uri := fmt.Sprintf(pathUsers, c.addr)
+
+	var users []*model.User
+
+	err := c.get(uri, &users)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // UserPost creates a user

@@ -11,6 +11,10 @@ export default class GimletClient {
 
   getUser = () => this.get('/api/user');
 
+  getUsers = () => this.get('/api/listUsers');
+
+  saveUser = (userName) => this.postWithAxios("/api/saveUser", JSON.stringify(userName));
+
   getGitopsRepo = () => this.get('/api/gitopsRepo');
 
   getAgents = () => this.get('/api/agents');

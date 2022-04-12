@@ -60,7 +60,7 @@ func gitopsRepo(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsRepoString)
 }
 
-func gimletd(w http.ResponseWriter, r *http.Request) {
+func gimletdBasicInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	config := ctx.Value("config").(*config.Config)
@@ -101,6 +101,86 @@ func gimletd(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(userString)
+}
+
+func saveUser(w http.ResponseWriter, r *http.Request) {
+	var usernameToSave string
+	err := json.NewDecoder(r.Body).Decode(&usernameToSave)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+
+	if config.GimletD.URL == "" ||
+		config.GimletD.TOKEN == "" {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	oauth2Config := new(oauth2.Config)
+	auth := oauth2Config.Client(
+		context.Background(),
+		&oauth2.Token{
+			AccessToken: config.GimletD.TOKEN,
+		},
+	)
+
+	client := client.NewClient(config.GimletD.URL, auth)
+	createdUser, err := client.UserPost(&gimletdModel.User{Login: usernameToSave})
+	if err != nil {
+		logrus.Errorf("cannot save GimletD user: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	createdUserString, err := json.Marshal(createdUser)
+	if err != nil {
+		logrus.Errorf("cannot serialize user: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write(createdUserString)
+}
+
+func listUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+
+	if config.GimletD.URL == "" ||
+		config.GimletD.TOKEN == "" {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	oauth2Config := new(oauth2.Config)
+	auth := oauth2Config.Client(
+		context.Background(),
+		&oauth2.Token{
+			AccessToken: config.GimletD.TOKEN,
+		},
+	)
+
+	client := client.NewClient(config.GimletD.URL, auth)
+	gimletdUsers, err := client.UsersGet()
+	if err != nil {
+		logrus.Errorf("cannot get GimletD users: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	usersString, err := json.Marshal(gimletdUsers)
+	if err != nil {
+		logrus.Errorf("cannot serialize users: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(usersString)
 }
 
 type App struct {

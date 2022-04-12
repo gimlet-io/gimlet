@@ -1,10 +1,10 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import './app.css';
 import Nav from "./components/nav/nav";
 import StreamingBackend from "./streamingBackend";
-import {createStore} from 'redux';
-import {rootReducer} from './redux/redux';
-import {BrowserRouter as Router, Redirect, Route, Switch, withRouter} from "react-router-dom";
+import { createStore } from 'redux';
+import { rootReducer } from './redux/redux';
+import { BrowserRouter as Router, Redirect, Route, Switch, withRouter } from "react-router-dom";
 import GimletClient from "./client/client";
 import Repositories from "./views/repositories/repositories";
 import APIBackend from "./apiBackend";
@@ -39,66 +39,67 @@ export default class App extends Component {
   }
 
   render() {
-    const {store, gimletClient} = this.state;
+    const { store, gimletClient } = this.state;
 
-    const NavBar = withRouter(props => <Nav {...props} store={store}/>);
+    const NavBar = withRouter(props => <Nav {...props} store={store} />);
     const APIBackendWithLocation = withRouter(
-      props => <APIBackend {...props} store={store} gimletClient={gimletClient}/>
+      props => <APIBackend {...props} store={store} gimletClient={gimletClient} />
     );
-    const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store}/>);
-    const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient}/>);
-    const ServicesWithRouting = withRouter(props => <Services {...props} store={store}/>);
-    const RepositoriesWithRouting = withRouter(props => <Repositories {...props} store={store} gimletClient={gimletClient}/>);
-    const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient}/>);
-    const ChartUIWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient}/>);
-    const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store}/>);
+    const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store} />);
+    const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient} />);
+    const ServicesWithRouting = withRouter(props => <Services {...props} store={store} />);
+    const RepositoriesWithRouting = withRouter(props => <Repositories {...props} store={store} gimletClient={gimletClient} />);
+    const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
+    const ChartUIWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
+    const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
+    const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
 
     return (
       <Router>
-        <StreamingBackendWithLocation/>
-        <APIBackendWithLocation/>
-        <PopUpWindowWithLocation/>
+        <StreamingBackendWithLocation />
+        <APIBackendWithLocation />
+        <PopUpWindowWithLocation />
 
         <Route exact path="/">
-          <Redirect to="/repositories"/>
+          <Redirect to="/repositories" />
         </Route>
 
         <div className="min-h-screen bg-gray-100">
-          <NavBar/>
+          <NavBar />
           <div className="py-10">
             <Switch>
               <Route path="/services">
-                <ServicesWithRouting/>
+                <ServicesWithRouting />
               </Route>
 
               <Route path="/repositories">
-                <RepositoriesWithRouting/>
+                <RepositoriesWithRouting />
               </Route>
 
               <Route path="/environments">
-                <EnvironmentsWithRouting/>
+                <EnvironmentsWithRouting />
               </Route>
 
               <Route path="/profile">
-                <Profile store={store}/>
+                <ProfileWithRouting store={store} />
               </Route>
 
               <Route path="/login">
-                <LoginPage/>
+                <LoginPage />
               </Route>
 
               <Route path="/repo/:owner/:repo/envs/:env/config/:config">
-                <ChartUIWithRouting/>
+                <ChartUIWithRouting />
               </Route>
-              
+
               <Route path="/repo/:owner/:repo">
-                <RepoWithRouting store={store}/>
+                <RepoWithRouting store={store} />
               </Route>
 
             </Switch>
           </div>
         </div>
-        <DeployStatus store={store}/>
+        <DeployStatus store={store} />
       </Router>
     )
   }

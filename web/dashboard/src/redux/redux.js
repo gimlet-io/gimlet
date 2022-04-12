@@ -6,6 +6,7 @@ import * as ingressEventHandlers from './eventHandlers/ingressEventHandlers';
 export const ACTION_TYPE_STREAMING = 'streaming';
 export const ACTION_TYPE_ENVS = 'envs';
 export const ACTION_TYPE_USER = 'user';
+export const ACTION_TYPE_USERS = 'users';
 export const ACTION_TYPE_APPLICATION = 'application';
 export const ACTION_TYPE_GIMLETD = 'gimletd';
 export const ACTION_TYPE_CHARTSCHEMA = 'chartSchema';
@@ -68,7 +69,8 @@ export const initialState = {
     header: "",
     message: "",
     errorList: null
-  }
+  },
+  users: []
 };
 
 export function rootReducer(state = initialState, action) {
@@ -86,7 +88,7 @@ export function rootReducer(state = initialState, action) {
     case ACTION_TYPE_POPUPWINDOWERROR:
       return eventHandlers.popupWindowError(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWERRORLIST:
-        return eventHandlers.popupWindowErrorList(state, action.payload);
+      return eventHandlers.popupWindowErrorList(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWSUCCESS:
       return eventHandlers.popupWindowSuccess(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWRESET:
@@ -95,6 +97,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_TYPE_USER:
       return eventHandlers.user(state, action.payload)
+    case ACTION_TYPE_USERS:
+      return eventHandlers.users(state, action.payload)
     case ACTION_TYPE_APPLICATION:
       return eventHandlers.application(state, action.payload)
     case ACTION_TYPE_GIMLETD:

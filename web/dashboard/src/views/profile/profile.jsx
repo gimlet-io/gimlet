@@ -1,4 +1,13 @@
 import React, { Component } from 'react';
+import {
+  ACTION_TYPE_USERS,
+  ACTION_TYPE_POPUPWINDOWRESET,
+  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_POPUPWINDOWSUCCESS,
+  ACTION_TYPE_POPUPWINDOWERROR
+} from '../../redux/redux';
+import DefaultProfilePicture from './defaultProfilePicture.png';
+import { InformationCircleIcon } from '@heroicons/react/solid';
 
 export default class Profile extends Component {
   constructor(props) {
@@ -9,7 +18,10 @@ export default class Profile extends Component {
     this.state = {
       user: reduxState.user,
       gimletd: reduxState.gimletd,
-      application: reduxState.application
+      application: reduxState.application,
+      users: reduxState.users,
+      input: "",
+      saveButtonTriggered: false
     }
 
     // handling API and streaming state changes
@@ -17,20 +29,83 @@ export default class Profile extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({ user: reduxState.user });
+      this.setState({ users: reduxState.users });
       this.setState({ gimletd: reduxState.gimletd });
       this.setState({ application: reduxState.application });
     });
   }
 
+  save() {
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+        header: "Saving..."
+      }
+    });
+
+    this.setState({ saveButtonTriggered: true });
+    if (!this.state.users.some(user => user.login === this.state.input)) {
+      this.props.gimletClient.saveUser(this.state.input)
+        .then(saveUserResponse => {
+          this.setTimeOutForButtonTriggeredAndPopupWindow();
+          this.setState({ input: "" });
+          this.props.store.dispatch({
+            type: ACTION_TYPE_USERS,
+            payload: [...this.state.users, {
+              login: saveUserResponse.login,
+              token: saveUserResponse.token,
+              admin: false
+            }]
+          });
+          this.props.store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+              header: "Success",
+              message: "User saved"
+            }
+          });
+        }, err => {
+          this.setTimeOutForButtonTriggeredAndPopupWindow();
+          this.props.store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+              header: "Error",
+              message: err.statusText
+            }
+          });
+        })
+    } else {
+      this.setTimeOutForButtonTriggeredAndPopupWindow();
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+          header: "Error",
+          message: "User already exists"
+        }
+      });
+    }
+  }
+
+  setTimeOutForButtonTriggeredAndPopupWindow() {
+    setTimeout(() => {
+      this.setState({ saveButtonTriggered: false })
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
+    }, 3000);
+  }
+
+  sortAlphabetically(users) {
+    return users.sort((a, b) => a.login.localeCompare(b.login));
+  }
+
   render() {
-    const { user, gimletd } = this.state;
+    const { user, users, gimletd } = this.state
+
+    const sortedUsers = this.sortAlphabetically(users);
 
     const loggedIn = user !== undefined;
     if (!loggedIn) {
       return null;
     }
 
-    user.imageUrl = `https://github.com/${user.login}.png?size=128`
+    user.imageUrl = `https://github.com/${user.login}.png?size=128`;
 
     const gimletdIntegrationEnabled = gimletd !== undefined;
 
@@ -103,15 +178,40 @@ source ~/.gimlet/config`}
                   </div>
                 </div>
               }
+              {this.so}
+              {users &&
+                userList(sortedUsers, DefaultProfilePicture)
+              }
+              <div className="mt-12 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                <div className="px-4 py-5 sm:px-6">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
+                </div>
+                <div className="px-4 py-5 sm:px-6">
+                  <input
+                    onChange={e => this.setState({ input: e.target.value })}
+                    className="shadow appearance-none border rounded w-full my-4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="environment" type="text" value={this.state.input} placeholder="Please enter a username" />
+                  <div className="p-0 flow-root">
+                    <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+                      <button
+                        disabled={this.state.input === "" || this.state.saveButtonTriggered}
+                        onClick={() => this.save()}
+                        className={(this.state.input === "" || this.state.saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}>
+                        Create
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          {!gimletdIntegrationEnabled &&
+          {
+            !gimletdIntegrationEnabled &&
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 my-8">
               {integrateGimletD()}
             </div>
           }
-        </main>
-      </div>
+        </main >
+      </div >
     )
   }
 }
@@ -167,6 +267,54 @@ function githubAppSettings(appName, appSettingsURL, installationURL) {
             </a>
           </span>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function userList(sortedUsers, defaultProfilePicture) {
+  return (
+    <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+      <div className="px-4 py-5 sm:px-6">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">
+          Users
+        </h3>
+      </div>
+      <div className="px-4 py-5 sm:px-6">
+        {sortedUsers.map(user => (
+          <div className="flex my-4 justify-between">
+            <div className="inline-flex items-center">
+              <img
+                className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900"
+                src={`https://github.com/${user.login}.png?size=128`}
+                onError={(e) => { e.target.src = defaultProfilePicture }}
+                alt="" />
+              <div className="ml-4">{user.login}</div>
+            </div>
+            {user.token &&
+              <div className="rounded-md bg-blue-50 p-4 w-5/6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">User token:</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <div className="flex items-center">
+                        <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{user.token}</span>
+                        <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(user.token) }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        ))}
       </div>
     </div>
   )
