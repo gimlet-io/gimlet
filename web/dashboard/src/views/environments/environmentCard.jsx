@@ -16,6 +16,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   const [appsRepo, setAppsRepo] = useState(env.appsRepo)
   /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "popupWindow" }]*/
   const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
+  const [gitopsCommits, setGitopsCommits] = useState(reduxState.gitopsCommits);
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
 
   if (repoPerEnv && infraRepo === "") {
@@ -28,11 +29,13 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   store.subscribe(() => {
     let reduxState = store.getState();
     setPopupWindow(reduxState.popupWindow);
+    setGitopsCommits(reduxState.gitopsCommits);
   });
 
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
-    { name: "Infrastructure components", current: false }
+    { name: "Infrastructure components", current: false },
+    { name: "Gitops Commits", current: false }
   ]);
 
   const hasGitopsRepo = env.infraRepo !== "";
@@ -172,6 +175,60 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             </a>
           </div>
         ))}
+      </div>
+    )
+  }
+
+  const gitopsCommitColorByStatus = (status) => {
+    return status.includes("Succeeded") ?
+      "green"
+      :
+      status.includes("Failed") ?
+        "red"
+        :
+        "yellow"
+  }
+
+  const gitopsCommitsTab = () => {
+    return (
+      <div className="flow-root">
+        <ul className="mt-4">
+          {gitopsCommits.map((gitopsCommit, idx, arr) => (
+             <li key={idx}
+             className={`bg-${gitopsCommitColorByStatus(gitopsCommit.status)}-100 hover:bg-${gitopsCommitColorByStatus(gitopsCommit.status)}-200 p-4 rounded`}
+           >
+             <div className="relative">
+               {idx !== arr.length -1 &&
+                 <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+               }
+               <div className="relative flex items-start space-x-3">
+                 <div className="relative">
+                   <img
+                     className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 bg-grey-100`}
+                     src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
+                     alt="triggerer" />
+                 </div>
+                 <div className="min-w-0 flex-1">
+                   <div>
+                     <div className="text-sm">
+                       <p href="#" className="font-medium text-gray-900">{gitopsCommit.status}</p>
+                     </div>
+                     <a
+                         href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
+                         target="_blank"
+                         rel="noopener noreferrer">
+                         {gitopsCommit.sha}
+                       </a>
+                     <p className="mt-0.5 text-sm text-gray-500">
+                       <span>{gitopsCommit.statusDesc}</span>
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </li>
+          ))}
+        </ul>
       </div>
     )
   }
@@ -360,7 +417,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             {tabs[0].current ?
               gitopsRepositoriesTab()
               :
-              infrastructureComponentsTab()
+              tabs[1].current ?
+                infrastructureComponentsTab()
+                :
+                gitopsCommitsTab()
             }
           </>
           :
