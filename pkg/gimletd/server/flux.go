@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +12,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -54,31 +52,6 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(""))
-}
-
-func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	store := ctx.Value("store").(*store.Store)
-
-	commits, err := store.GitopsCommits()
-	if err == sql.ErrNoRows {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	} else if err != nil {
-		logrus.Errorf("cannot get gitops commits: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	commitsString, err := json.Marshal(commits)
-	if err != nil {
-		log.Errorf("cannot serialize commits: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(commitsString)
 }
 
 func asGitopsCommit(event events.Event) (*model.GitopsCommit, error) {
