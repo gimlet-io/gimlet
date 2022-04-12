@@ -85,6 +85,7 @@ export default class DeployStatus extends Component {
         if (latestGitopsHashMetadata.status !== 'N/A') {
           appliedWidget = deploy.gitopsHashes.map(hashStatus => {
             if (hashStatus.status !== 'Progressing' &&
+              hashStatus.status !== 'DependencyNotReady' &&
               hashStatus.status !== 'N/A') {
               return (
                 <p key={hashStatus.hash} className="font-semibold text-red-500">
