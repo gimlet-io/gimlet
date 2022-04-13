@@ -206,7 +206,7 @@ class EnvConfig extends Component {
             />
           </div>
           :
-          <span className="mt-4 text-gray-700 my-4 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
+          <span className="my-4 text-gray-700 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
         }
         <div className="mb-8 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
