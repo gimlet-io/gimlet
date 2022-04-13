@@ -188,11 +188,11 @@ class EnvConfig extends Component {
             </svg>
           </a>
         </h2>
-        <button className="text-gray-500 hover:text-gray-700 mt-8" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
+        <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
         {!this.state.defaultAppName ?
-          <div className="flex my-4 items-center">
+          <div className="my-4 items-center">
             <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
               App name*
             </label>
