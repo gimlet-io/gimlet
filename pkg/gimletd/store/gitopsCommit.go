@@ -47,5 +47,6 @@ func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) erro
 
 	savedGitopsCommit.Status = gitopsCommit.Status
 	savedGitopsCommit.StatusDesc = gitopsCommit.StatusDesc
+	savedGitopsCommit.Created = gitopsCommit.Created
 	return meddler.Update(db, "gitops_commits", savedGitopsCommit)
 }

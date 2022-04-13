@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/fluxcd/pkg/runtime/events"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
@@ -66,6 +67,7 @@ func asGitopsCommit(event events.Event) (*model.GitopsCommit, error) {
 		Sha:        sha,
 		Status:     event.Reason,
 		StatusDesc: statusDesc,
+		Created:    time.Now().Unix(),
 	}, nil
 }
 

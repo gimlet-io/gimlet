@@ -73,6 +73,7 @@ id          INTEGER PRIMARY KEY AUTOINCREMENT,
 sha         TEXT,
 status      TEXT,
 status_desc TEXT,
+created     INTEGER,
 UNIQUE(id)
 );
 `,
@@ -136,6 +137,7 @@ id          SERIAL,
 sha         TEXT,
 status      TEXT,
 status_desc TEXT,
+created     INTEGER,
 UNIQUE(id)
 );
 `,

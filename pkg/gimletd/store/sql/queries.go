@@ -50,12 +50,12 @@ WHERE status='new' order by created ASC limit 10;
 UPDATE events SET status = $1, status_desc = $2, gitops_hashes = $3 WHERE id = $4;
 `,
 		SelectGitopsCommitBySha: `
-SELECT id, sha, status, status_desc
+SELECT id, sha, status, status_desc, created
 FROM gitops_commits
 WHERE sha = $1;
 `,
 		SelectGitopsCommits: `
-SELECT id, sha, status, status_desc
+SELECT id, sha, status, status_desc, created
 FROM gitops_commits
 ORDER BY id DESC
 LIMIT 20;
@@ -91,12 +91,12 @@ WHERE status='new' order by created ASC limit 10;
 UPDATE events SET status = $1, status_desc = $2, gitops_hashes = $3 WHERE id = $4;
 `,
 		SelectGitopsCommitBySha: `
-SELECT id, sha, status, status_desc
+SELECT id, sha, status, status_desc, created
 FROM gitops_commits
 WHERE sha = $1;
 `,
 		SelectGitopsCommits: `
-SELECT id, sha, status, status_desc
+SELECT id, sha, status, status_desc, created
 FROM gitops_commits
 ORDER BY id DESC
 LIMIT 20;
