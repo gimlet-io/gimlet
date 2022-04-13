@@ -70,6 +70,13 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function agentEnvsUpdated(state, connectedAgents) {
+  connectedAgents.forEach((agent) => {
+    state.connectedAgents[agent.name] = agent;
+  });
+  return state;
+}
+
 export function gitopsCommits(state, gitopsCommits) {
   state.gitopsCommits = gitopsCommits;
   return state;

@@ -140,7 +140,7 @@ function processStreamingEvent(state, event) {
     case EVENT_AGENT_DISCONNECTED:
       return eventHandlers.agentDisconnected(state, event);
     case EVENT_ENVS_UPDATED:
-      return eventHandlers.envsUpdated(state, event.envs);
+      return eventHandlers.agentEnvsUpdated(state, event.envs);
     case EVENT_POD_CREATED:
       return podEventHandlers.podCreated(state, event);
     case EVENT_POD_UPDATED:
