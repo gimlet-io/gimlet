@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { format, formatDistance } from "date-fns";
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
 import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
 import {
@@ -35,7 +36,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false },
-    { name: "Gitops Commits", current: false }
+    { name: "Gitops commits", current: false }
   ]);
 
   const hasGitopsRepo = env.infraRepo !== "";
@@ -193,41 +194,44 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     return (
       <div className="flow-root">
         <ul className="mt-4">
-          {gitopsCommits.map((gitopsCommit, idx, arr) => (
-             <li key={idx}
-             className={`bg-${gitopsCommitColorByStatus(gitopsCommit.status)}-100 hover:bg-${gitopsCommitColorByStatus(gitopsCommit.status)}-200 p-4 rounded`}
-           >
-             <div className="relative">
-               {idx !== arr.length -1 &&
-                 <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-               }
-               <div className="relative flex items-start space-x-3">
-                 <div className="relative">
-                   <img
-                     className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 bg-grey-100`}
-                     src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
-                     alt="triggerer" />
-                 </div>
-                 <div className="min-w-0 flex-1">
-                   <div>
-                     <div className="text-sm">
-                       <p href="#" className="font-medium text-gray-900">{gitopsCommit.status}</p>
-                     </div>
-                     <a
-                         href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
-                         target="_blank"
-                         rel="noopener noreferrer">
-                         {gitopsCommit.sha}
-                       </a>
-                     <p className="mt-0.5 text-sm text-gray-500">
-                       <span>{gitopsCommit.statusDesc}</span>
-                     </p>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           </li>
-          ))}
+          {gitopsCommits.map((gitopsCommit, idx, arr) => {
+            const gitopsCommitSha = gitopsCommit.sha.slice(0, 6);
+            const exactDate = format(gitopsCommit.created * 1000, 'h:mm:ss a, MMMM do yyyy');
+            const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
+            const gitopsCommitColor = gitopsCommitColorByStatus(gitopsCommit.status);
+            return (
+              (<li key={idx}
+                className={`bg-${gitopsCommitColor}-100 hover:bg-${gitopsCommitColor}-200 p-4 rounded`}
+              >
+                <div className="relative">
+                  {idx !== arr.length - 1 &&
+                    <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                  }
+                  <div className="relative flex items-start space-x-3">
+                    <img
+                      className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 bg-grey-100`}
+                      src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
+                      alt="triggerer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900">{gitopsCommit.status}</p>
+                      <a
+                        className="mt-2 text-sm text-gray-500 hover:text-gray-600"
+                        title={exactDate}
+                        href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        Commit {gitopsCommitSha} created {dateLabel} ago
+                      </a>
+                      <p className="ml-2 text-xs text-gray-500">
+                        <span>{gitopsCommit.statusDesc}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </li>)
+            )
+          })}
         </ul>
       </div>
     )
