@@ -202,13 +202,13 @@ class EnvConfig extends Component {
               id="appName"
               value={this.state.appName}
               onChange={e => { this.setState({ appName: e.target.value }) }}
-              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+              className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
             />
           </div>
           :
-          <span className="text-gray-700 my-4 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
+          <span className="mt-4 text-gray-700 my-4 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
         }
-        <div className="flex mb-10 items-center">
+        <div className="mb-8 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
@@ -218,7 +218,7 @@ class EnvConfig extends Component {
             id="namespace"
             value={this.state.namespace}
             onChange={e => { this.setState({ namespace: e.target.value }) }}
-            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+            className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
           />
         </div>
         <div className="container mx-auto m-8">
