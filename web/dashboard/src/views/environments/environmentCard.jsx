@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { format, formatDistance } from "date-fns";
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
 import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
 import {
@@ -6,7 +7,8 @@ import {
   ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWOPENED
+  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_GITOPS_COMMITS
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs }) => {
@@ -35,7 +37,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: true },
     { name: "Infrastructure components", current: false },
-    { name: "Gitops Commits", current: false }
+    { name: "Gitops commits", current: false }
   ]);
 
   const hasGitopsRepo = env.infraRepo !== "";
@@ -179,6 +181,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     )
   }
 
+  const refreshGitopsCommits = () => {
+    gimletClient.getGitopsCommits()
+      .then(data => store.dispatch({
+        type: ACTION_TYPE_GITOPS_COMMITS, payload:
+          data
+      }), () => {
+        /* Generic error handler deals with it */
+      });
+  }
+
   const gitopsCommitColorByStatus = (status) => {
     return status.includes("Succeeded") ?
       "green"
@@ -189,45 +201,56 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         "yellow"
   }
 
+  const renderGitopsCommit = (gitopsCommit, idx, arr) => {
+    const gitopsCommitSha = gitopsCommit.sha.slice(0, 6);
+    const exactDate = format(gitopsCommit.created * 1000, 'h:mm:ss a, MMMM do yyyy');
+    const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
+    const gitopsCommitColor = gitopsCommitColorByStatus(gitopsCommit.status);
+
+    return (<li key={idx}
+      className={`bg-${gitopsCommitColor}-100 hover:bg-${gitopsCommitColor}-200 p-4 rounded`}
+    >
+      <div className="relative">
+        {idx !== arr.length - 1 &&
+          <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-400" aria-hidden="true"></span>
+        }
+        <div className="relative flex items-start space-x-3">
+          <img
+            className={`h-8 w-8 rounded-full ring-gray-400 flex items-center justify-center ring-4`}
+            src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
+            alt="triggerer"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-gray-900">{gitopsCommit.status}</p>
+            <p className=" -mt-1">
+              <a
+                className="text-xs text-gray-500 hover:text-gray-600"
+                title={exactDate}
+                href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
+                target="_blank"
+                rel="noopener noreferrer">
+                <span className="font-mono">{gitopsCommitSha}</span> created {dateLabel} ago
+              </a>
+            </p>
+            <p className="text-gray-700 mt-2">
+              <span>{gitopsCommit.statusDesc}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </li>)
+  }
+
   const gitopsCommitsTab = () => {
     return (
       <div className="flow-root">
         <ul className="mt-4">
-          {gitopsCommits.map((gitopsCommit, idx, arr) => (
-             <li key={idx}
-             className={`bg-${gitopsCommitColorByStatus(gitopsCommit.status)}-100 hover:bg-${gitopsCommitColorByStatus(gitopsCommit.status)}-200 p-4 rounded`}
-           >
-             <div className="relative">
-               {idx !== arr.length -1 &&
-                 <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-               }
-               <div className="relative flex items-start space-x-3">
-                 <div className="relative">
-                   <img
-                     className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 bg-grey-100`}
-                     src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
-                     alt="triggerer" />
-                 </div>
-                 <div className="min-w-0 flex-1">
-                   <div>
-                     <div className="text-sm">
-                       <p href="#" className="font-medium text-gray-900">{gitopsCommit.status}</p>
-                     </div>
-                     <a
-                         href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
-                         target="_blank"
-                         rel="noopener noreferrer">
-                         {gitopsCommit.sha}
-                       </a>
-                     <p className="mt-0.5 text-sm text-gray-500">
-                       <span>{gitopsCommit.statusDesc}</span>
-                     </p>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           </li>
-          ))}
+          <div className="flow-root">
+            <svg onClick={() => refreshGitopsCommits()} xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+          {gitopsCommits.map((gitopsCommit, idx, arr) => renderGitopsCommit(gitopsCommit, idx, arr))}
         </ul>
       </div>
     )

@@ -66,6 +66,7 @@ func asGitopsCommit(event events.Event) (*model.GitopsCommit, error) {
 		Sha:        sha,
 		Status:     event.Reason,
 		StatusDesc: statusDesc,
+		Created:    event.Timestamp.Unix(),
 	}, nil
 }
 
