@@ -17,7 +17,8 @@ package ddl
 const createTableUsers = "create-table-users"
 const createTableEvents = "create-table-events"
 const addGitopsStatusColumnToEventsTable = "add-gitops_status-to-events-table"
-const createTableGitopsCommits = "create-table-gitopsCommits"
+const createTableGitopsCommits = "create-table-gitops_commits"
+const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops_commits-table"
 const createTableKeyValues = "create-table-key-values"
 
 type migration struct {
@@ -73,10 +74,13 @@ id          INTEGER PRIMARY KEY AUTOINCREMENT,
 sha         TEXT,
 status      TEXT,
 status_desc TEXT,
-created     INTEGER,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addCreatedColumnToGitopsCommitsTable,
+			stmt: `ALTER TABLE gitops_commits ADD COLUMN created INTEGER;`,
 		},
 		{
 			name: createTableKeyValues,
@@ -137,10 +141,13 @@ id          SERIAL,
 sha         TEXT,
 status      TEXT,
 status_desc TEXT,
-created     INTEGER,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addCreatedColumnToGitopsCommitsTable,
+			stmt: `ALTER TABLE gitops_commits ADD COLUMN created INTEGER;`,
 		},
 		{
 			name: createTableKeyValues,
