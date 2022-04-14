@@ -57,7 +57,7 @@ WHERE sha = $1;
 		SelectGitopsCommits: `
 SELECT id, sha, status, status_desc, created
 FROM gitops_commits
-ORDER BY id DESC
+ORDER BY created DESC
 LIMIT 20;
 `,
 		SelectKeyValue: `
@@ -98,7 +98,7 @@ WHERE sha = $1;
 		SelectGitopsCommits: `
 SELECT id, sha, status, status_desc, created
 FROM gitops_commits
-ORDER BY id DESC
+ORDER BY created DESC
 LIMIT 20;
 `,
 		SelectKeyValue: `
