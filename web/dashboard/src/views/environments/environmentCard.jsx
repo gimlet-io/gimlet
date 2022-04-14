@@ -7,7 +7,8 @@ import {
   ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWOPENED
+  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_GITOPS_COMMITS
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs }) => {
@@ -180,6 +181,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     )
   }
 
+  const refreshGitopsCommits = () => {
+    gimletClient.getGitopsCommits()
+      .then(data => store.dispatch({
+        type: ACTION_TYPE_GITOPS_COMMITS, payload:
+          data
+      }), () => {
+        /* Generic error handler deals with it */
+      });
+  }
+
   const gitopsCommitColorByStatus = (status) => {
     return status.includes("Succeeded") ?
       "green"
@@ -194,6 +205,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     return (
       <div className="flow-root">
         <ul className="mt-4">
+          <div className="flow-root">
+            <svg onClick={() => refreshGitopsCommits()} xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
           {gitopsCommits.map((gitopsCommit, idx, arr) => {
             const gitopsCommitSha = gitopsCommit.sha.slice(0, 6);
             const exactDate = format(gitopsCommit.created * 1000, 'h:mm:ss a, MMMM do yyyy');
@@ -205,11 +221,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               >
                 <div className="relative">
                   {idx !== arr.length - 1 &&
-                    <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                    <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-400" aria-hidden="true"></span>
                   }
                   <div className="relative flex items-start space-x-3">
                     <img
-                      className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 bg-grey-100`}
+                      className={`h-8 w-8 rounded-full ring-gray-400 flex items-center justify-center ring-4`}
                       src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
                       alt="triggerer"
                     />
