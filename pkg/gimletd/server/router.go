@@ -9,6 +9,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/session"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -22,6 +23,7 @@ func SetupRouter(
 	notificationsManager notifications.Manager,
 	repoCache *nativeGit.GitopsRepoCache,
 	perf *prometheus.HistogramVec,
+	eventSinkHub *streaming.EventSinkHub,
 ) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -37,6 +39,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitopsRepoDeployKeyPath", config.GitopsRepoDeployKeyPath))
 	r.Use(middleware.WithValue("gitopsRepoCache", repoCache))
 	r.Use(middleware.WithValue("perf", perf))
+	r.Use(middleware.WithValue("eventSinkHub", eventSinkHub))
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:8888", config.Host},
@@ -81,6 +84,8 @@ func SetupRouter(
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	r.Get("/sink/register", register)
 
 	return r
 }

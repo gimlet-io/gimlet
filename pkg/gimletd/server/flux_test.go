@@ -3,16 +3,18 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
 	"github.com/fluxcd/pkg/runtime/events"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
 )
 
 func Test_fluxEvent(t *testing.T) {
@@ -37,6 +39,8 @@ func Test_fluxEvent(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(event)
+
+	fmt.Println(string(body))
 
 	_, _, err := testPostEndpoint(fluxEvent, func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, "notificationsManager", notificationsManager)
