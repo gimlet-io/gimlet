@@ -231,15 +231,17 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-900">{gitopsCommit.status}</p>
-                      <a
-                        className="mt-2 text-sm text-gray-500 hover:text-gray-600"
-                        title={exactDate}
-                        href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
-                        target="_blank"
-                        rel="noopener noreferrer">
-                        Commit {gitopsCommitSha} created {dateLabel} ago
-                      </a>
-                      <p className="ml-2 text-xs text-gray-500">
+                      <p className=" -mt-1">
+                        <a
+                          className="text-xs text-gray-500 hover:text-gray-600"
+                          title={exactDate}
+                          href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
+                          target="_blank"
+                          rel="noopener noreferrer">
+                          <span className="font-mono">{gitopsCommitSha}</span> created {dateLabel} ago
+                        </a>
+                      </p>
+                      <p className="text-gray-700 mt-2">
                         <span>{gitopsCommit.statusDesc}</span>
                       </p>
                     </div>
