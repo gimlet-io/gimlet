@@ -17,8 +17,8 @@ package ddl
 const createTableUsers = "create-table-users"
 const createTableEvents = "create-table-events"
 const addGitopsStatusColumnToEventsTable = "add-gitops_status-to-events-table"
-const createTableGitopsCommits = "create-table-gitops_commits"
-const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops_commits-table"
+const createTableGitopsCommits = "create-table-gitopsCommits"
+const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops-commits-table"
 const createTableKeyValues = "create-table-key-values"
 
 type migration struct {
