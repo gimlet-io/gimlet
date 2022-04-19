@@ -8,6 +8,7 @@ const AgentConnectedEventString = "agentConnected"
 const AgentDisconnectedEventString = "agentDisconnected"
 const EnvsUpdatedEventString = "envsUpdated"
 const StaleRepoDataEventString = "staleRepoData"
+const EventStreamEventString = "eventSink"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -30,5 +31,10 @@ type EnvsUpdatedEvent struct {
 
 type StaleRepoDataEvent struct {
 	Repo string `json:"repo"`
+	StreamingEvent
+}
+
+type EventStreamEvent struct {
+	EventSink map[string]interface{} `json:"eventSink"`
 	StreamingEvent
 }

@@ -218,7 +218,10 @@ func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) 
 				e, more := <-events
 				if more {
 					log.Debugf("event received: %v", e)
-					jsonString, _ := json.Marshal(e)
+					jsonString, _ := json.Marshal(streaming.EventStreamEvent{
+						EventSink:      e,
+						StreamingEvent: streaming.StreamingEvent{Event: streaming.EventStreamEventString},
+					})
 					clientHub.Broadcast <- jsonString
 				} else {
 					log.Info("event stream closed")
