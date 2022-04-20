@@ -3,20 +3,26 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"github.com/fluxcd/pkg/runtime/events"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/fluxcd/pkg/runtime/events"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_fluxEvent(t *testing.T) {
 	notificationsManager := notifications.NewDummyManager()
+	config := config.Config{}
+	eventSinkHub := streaming.NewEventSinkHub(&config)
 
 	event := events.Event{
 		InvolvedObject: corev1.ObjectReference{
@@ -38,10 +44,13 @@ func Test_fluxEvent(t *testing.T) {
 
 	body, _ := json.Marshal(event)
 
+	fmt.Println(string(body))
+
 	_, _, err := testPostEndpoint(fluxEvent, func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, "notificationsManager", notificationsManager)
 		ctx = context.WithValue(ctx, "gitopsRepo", "my/gitops")
 		ctx = context.WithValue(ctx, "store", store.NewTest())
+		ctx = context.WithValue(ctx, "eventSinkHub", eventSinkHub)
 		return ctx
 	}, "/path", string(body))
 	assert.Nil(t, err)

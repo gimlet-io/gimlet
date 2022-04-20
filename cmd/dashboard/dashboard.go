@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -8,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
@@ -95,6 +97,10 @@ func main() {
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
+
+	go gimletdCommunication(*config, clientHub)
+
+	log.Info("Connected to Gimlet")
 
 	r := server.SetupRouter(
 		config,
@@ -192,4 +198,44 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 	}
 
 	return false
+}
+
+func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) {
+	for {
+		done := make(chan bool)
+
+		events, err := registerGimletdEventSink(config.GimletD.URL, config.GimletD.TOKEN)
+		if err != nil {
+			log.Errorf("could not connect to Gimletd: %s", err.Error())
+			time.Sleep(time.Second * 3)
+			continue
+		}
+
+		log.Info("Connected to Gimletd")
+
+		go func(events chan map[string]interface{}) {
+			for {
+				e, more := <-events
+				if more {
+					log.Debugf("event received: %v", e)
+
+					if e["type"] == "gitopsCommit" {
+						jsonString, _ := json.Marshal(streaming.GitopsEvent{
+							StreamingEvent: streaming.StreamingEvent{Event: streaming.GitopsCommitEventString},
+							GitopsCommit:   e["gitopsCommit"],
+						})
+						clientHub.Broadcast <- jsonString
+					}
+				} else {
+					log.Info("event stream closed")
+					done <- true
+					return
+				}
+			}
+		}(events)
+
+		<-done
+		time.Sleep(time.Second * 3)
+		log.Info("Disconnected from Gimletd")
+	}
 }

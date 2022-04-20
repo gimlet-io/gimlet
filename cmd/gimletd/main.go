@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
@@ -137,7 +138,10 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	r := server.SetupRouter(config, store, notificationsManager, repoCache, perf)
+	eventSinkHub := streaming.NewEventSinkHub(config)
+	go eventSinkHub.Run()
+
+	r := server.SetupRouter(config, store, notificationsManager, repoCache, perf, eventSinkHub)
 	go func() {
 		err = http.ListenAndServe(":8888", r)
 		if err != nil {
@@ -207,9 +211,9 @@ func setupAdminUser(config *config.Config, store *store.Store) error {
 
 	if err == sql.ErrNoRows {
 		admin := &model.User{
-			Login: "admin",
+			Login:  "admin",
 			Secret: adminToken(config),
-			Admin: true,
+			Admin:  true,
 		}
 		err = store.CreateUser(admin)
 		if err != nil {

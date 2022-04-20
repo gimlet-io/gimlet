@@ -82,6 +82,26 @@ export function gitopsCommits(state, gitopsCommits) {
   return state;
 }
 
+export function updateGitopsCommits(state, event) {
+  let isPresent = false;
+
+  state.gitopsCommits.forEach(gitopsCommit => {
+    if (gitopsCommit.sha === event.gitopsCommit.sha) {
+      gitopsCommit.created = event.gitopsCommit.created;
+      gitopsCommit.sha = event.gitopsCommit.sha;
+      gitopsCommit.status = event.gitopsCommit.status;
+      gitopsCommit.statusDesc = event.gitopsCommit.statusDesc;
+      isPresent = true;
+    };
+  });
+
+  if (!isPresent) {
+    state.gitopsCommits.unshift(event.gitopsCommit);
+  }
+
+  return state;
+}
+
 export function user(state, user) {
   state.user = user;
   return state;

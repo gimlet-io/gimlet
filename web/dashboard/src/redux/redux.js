@@ -33,6 +33,7 @@ export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
 export const EVENT_ENVS_UPDATED = 'envsUpdated';
 export const EVENT_STALE_REPO_DATA = 'staleRepoData';
+export const EVENT_GITOPS_COMMIT_EVENT = 'gitopsCommit';
 
 export const EVENT_POD_CREATED = 'podCreated';
 export const EVENT_POD_UPDATED = 'podUpdated';
@@ -161,6 +162,8 @@ function processStreamingEvent(state, event) {
       return ingressEventHandlers.ingressDeleted(state, event);
     case EVENT_STALE_REPO_DATA:
       return eventHandlers.staleRepoData(state, event);
+    case EVENT_GITOPS_COMMIT_EVENT:
+      return eventHandlers.updateGitopsCommits(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;
