@@ -8,7 +8,7 @@ const AgentConnectedEventString = "agentConnected"
 const AgentDisconnectedEventString = "agentDisconnected"
 const EnvsUpdatedEventString = "envsUpdated"
 const StaleRepoDataEventString = "staleRepoData"
-const EventStreamEventString = "eventSink"
+const GitopsCommitEventString = "gitopsCommit"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -34,7 +34,7 @@ type StaleRepoDataEvent struct {
 	StreamingEvent
 }
 
-type EventStreamEvent struct {
-	EventSink map[string]interface{} `json:"eventSink"`
+type GitopsEvent struct {
+	GitopsCommit interface{} `json:"gitopsCommit"`
 	StreamingEvent
 }

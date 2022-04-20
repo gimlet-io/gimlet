@@ -218,11 +218,14 @@ func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) 
 				e, more := <-events
 				if more {
 					log.Debugf("event received: %v", e)
-					jsonString, _ := json.Marshal(streaming.EventStreamEvent{
-						EventSink:      e,
-						StreamingEvent: streaming.StreamingEvent{Event: streaming.EventStreamEventString},
-					})
-					clientHub.Broadcast <- jsonString
+
+					if e["type"] == "gitopsCommit" {
+						jsonString, _ := json.Marshal(streaming.GitopsEvent{
+							StreamingEvent: streaming.StreamingEvent{Event: streaming.GitopsCommitEventString},
+							GitopsCommit:   e["gitopsCommit"],
+						})
+						clientHub.Broadcast <- jsonString
+					}
 				} else {
 					log.Info("event stream closed")
 					done <- true

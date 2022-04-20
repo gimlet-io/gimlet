@@ -86,17 +86,17 @@ export function updateGitopsCommits(state, event) {
   let isPresent = false;
 
   state.gitopsCommits.forEach(gitopsCommit => {
-    if (gitopsCommit.sha === event.eventSink.sha) {
-      gitopsCommit.created = event.eventSink.created;
-      gitopsCommit.sha = event.eventSink.sha;
-      gitopsCommit.status = event.eventSink.status;
-      gitopsCommit.statusDesc = event.eventSink.statusDesc;
+    if (gitopsCommit.sha === event.gitopsCommit.sha) {
+      gitopsCommit.created = event.gitopsCommit.created;
+      gitopsCommit.sha = event.gitopsCommit.sha;
+      gitopsCommit.status = event.gitopsCommit.status;
+      gitopsCommit.statusDesc = event.gitopsCommit.statusDesc;
       isPresent = true;
     };
   });
 
   if (!isPresent) {
-    state.gitopsCommits.unshift(event.eventSink);
+    state.gitopsCommits.unshift(event.gitopsCommit);
   }
 
   return state;

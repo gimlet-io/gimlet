@@ -43,8 +43,11 @@ func (h *EventSinkHub) Run() {
 	}
 }
 
-func (h *EventSinkHub) BoradcastEvent(gitopsCommit *model.GitopsCommit) {
+func (h *EventSinkHub) BroadcastEvent(gitopsCommit *model.GitopsCommit) {
 	for sink := range h.EventSinks {
-		sink.EventChannel <- gitopsCommit
+		sink.EventChannel <- map[string]interface{}{
+			"type":         "gitopsCommit",
+			"gitopsCommit": gitopsCommit,
+		}
 	}
 }

@@ -46,7 +46,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	notificationsManager.Broadcast(notifications.NewMessage(gitopsRepo, gitopsCommit, env))
 
 	eventSinkHub := ctx.Value("eventSinkHub").(*streaming.EventSinkHub)
-	eventSinkHub.BoradcastEvent(gitopsCommit)
+	eventSinkHub.BroadcastEvent(gitopsCommit)
 
 	store := ctx.Value("store").(*store.Store)
 	err = store.SaveOrUpdateGitopsCommit(gitopsCommit)
