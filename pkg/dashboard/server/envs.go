@@ -180,14 +180,25 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isNewInfraRepo, err := AssureRepoExists(orgRepos, environment.InfraRepo, user.AccessToken)
+	isNewInfraRepo, err := AssureRepoExists(
+		orgRepos,
+		environment.InfraRepo,
+		user.AccessToken,
+		token,
+		user.Login)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	isNewAppsRepo, err := AssureRepoExists(orgRepos, environment.AppsRepo, user.AccessToken)
+	isNewAppsRepo, err := AssureRepoExists(
+		orgRepos,
+		environment.AppsRepo,
+		user.AccessToken,
+		token,
+		user.Login,
+	)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -370,14 +381,27 @@ func BootstrapNotifications(
 	return notificationsFileName, nil
 }
 
-func AssureRepoExists(orgRepos []string, repoName string, token string) (bool, error) {
+func AssureRepoExists(orgRepos []string,
+	repoName string,
+	userToken string,
+	orgToken string,
+	loggedInUser string,
+) (bool, error) {
 	if hasRepo(orgRepos, repoName) {
 		return false, nil
 	}
 
+	org := ""
 	parts := strings.Split(repoName, "/")
 	if len(parts) == 2 {
+		org = parts[0]
 		repoName = parts[1]
+	}
+
+	token := orgToken
+	if org == loggedInUser {
+		org = "" // if the repo is not an org repo, but the logged in user's, the Github API doesn't need an org
+		token = userToken
 	}
 
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
@@ -395,7 +419,7 @@ func AssureRepoExists(orgRepos []string, repoName string, token string) (bool, e
 		Private:  &private,
 		AutoInit: &autoInit,
 	}
-	_, _, err := client.Repositories.Create(context.Background(), "", r)
+	_, _, err := client.Repositories.Create(context.Background(), org, r)
 
 	return true, err
 }

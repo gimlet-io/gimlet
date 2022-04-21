@@ -332,11 +332,23 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	data.repoPerEnv = repoPerEnv
 	data.envName = envName
 
-	isNewInfraRepo, err := server.AssureRepoExists(repos, infraRepo, data.accessToken)
+	isNewInfraRepo, err := server.AssureRepoExists(
+		repos,
+		infraRepo,
+		data.accessToken,
+		"",
+		data.org,
+	)
 	if err != nil {
 		panic(err)
 	}
-	isNewAppsRepo, err := server.AssureRepoExists(repos, appsRepo, data.accessToken)
+	isNewAppsRepo, err := server.AssureRepoExists(
+		repos,
+		appsRepo,
+		data.accessToken,
+		"",
+		data.org,
+	)
 	if err != nil {
 		panic(err)
 	}
