@@ -39,7 +39,7 @@ const BootstrapGuide = _ref => {
     return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Clone the Gitops repository"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
     }, /*#__PURE__*/_react.default.createElement("li", null, "git clone git@github.com:", repoPath, ".git"), /*#__PURE__*/_react.default.createElement("li", null, "cd ", repoName)), isNewRepo ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Add the following deploy key to your Git provider to the ", /*#__PURE__*/_react.default.createElement("a", {
-      href: "https://github.com/".concat(repoPath),
+      href: "https://github.com/".concat(repoPath, "/settings/keys"),
       rel: "noreferrer",
       target: "_blank",
       className: "font-medium hover:text-blue-900"

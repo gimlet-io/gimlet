@@ -20,7 +20,7 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
                 </ul>
                 {isNewRepo ? (
                     <>
-                        <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${repoPath}`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{repoName}</a> repository</li>
+                        <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${repoPath}/settings/keys`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{repoName}</a> repository</li>
                         <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{publicKey}</li>
                         <li>( Don't know how to do it?
                             <a

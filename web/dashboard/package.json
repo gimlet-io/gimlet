@@ -31,7 +31,7 @@
     "web-vitals": "^1.1.1"
   },
   "scripts": {
-    "start": "craco start --config craco.config.js",
+    "start": "PORT=3333 craco start --config craco.config.js",
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
@@ -55,8 +55,8 @@
     ]
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.4.1",
     "@tailwindcss/forms": "^0.3.2",
+    "@tailwindcss/typography": "^0.4.1",
     "autoprefixer": "^9.8.6",
     "postcss": "^7.0.35",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.2"
