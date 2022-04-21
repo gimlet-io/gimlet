@@ -73,10 +73,15 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	stackConfig, err = stackYaml(repo, stackYamlPath)
 	if err != nil {
 		if strings.Contains(err.Error(), "file not found") {
-			config := ctx.Value("config").(*config.Config)
+			url := stack.DefaultStackURL
+			latestTag, _ := stack.LatestVersion(url)
+			if latestTag != "" {
+				url = url + "?tag=" + latestTag
+			}
+
 			stackConfig = &dx.StackConfig{
 				Stack: dx.StackRef{
-					Repository: config.DefaultStackUrl,
+					Repository: url,
 				},
 			}
 		} else {

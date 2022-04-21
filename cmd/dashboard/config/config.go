@@ -35,9 +35,6 @@ func defaults(c *Config) {
 	if c.Chart.Path == "" {
 		c.Chart.Path = "charts/onechart"
 	}
-	if c.DefaultStackUrl == "" {
-		c.DefaultStackUrl = "https://github.com/gimlet-io/gimlet-stack-reference.git?tag=v0.11.0"
-	}
 }
 
 // String returns the configuration in string format.
@@ -57,7 +54,6 @@ type Config struct {
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
 	WebhookSecret           string `envconfig:"WEBHOOK_SECRET"`
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
-	DefaultStackUrl         string `envconfig:"DEFAULT_STACK_URL"`
 	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
 }
 

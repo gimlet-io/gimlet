@@ -42,7 +42,6 @@ func user(w http.ResponseWriter, r *http.Request) {
 func envs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	config := ctx.Value("config").(*config.Config)
 
 	connectedAgents := []*api.ConnectedAgent{}
 	for _, a := range agentHub.Agents {
@@ -105,7 +104,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		stackDefinition, err := loadStackDefinition(stackConfig, config.DefaultStackUrl)
+		stackDefinition, err := loadStackDefinition(stackConfig)
 		if err != nil && !strings.Contains(err.Error(), "file not found") {
 			logrus.Errorf("cannot get stack definition: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -139,10 +138,15 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
-func loadStackDefinition(stackConfig *dx.StackConfig, defaultStackUrl string) (map[string]interface{}, error) {
-	url := defaultStackUrl
+func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {
+	var url string
 	if stackConfig != nil {
 		url = stackConfig.Stack.Repository
+	} else {
+		latestTag, _ := stack.LatestVersion(stack.DefaultStackURL)
+		if latestTag != "" {
+			url = stack.DefaultStackURL + "?tag=" + latestTag
+		}
 	}
 
 	stackDefinitionYaml, err := stack.StackDefinitionFromRepo(url)

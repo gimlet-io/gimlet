@@ -494,7 +494,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
-			Repository: "https://github.com/gimlet-io/gimlet-stack-reference.git",
+			Repository: stack.DefaultStackURL,
 		},
 		Config: map[string]interface{}{
 			"civo": map[string]interface{}{
