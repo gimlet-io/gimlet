@@ -83,6 +83,7 @@ export function gitopsCommits(state, gitopsCommits) {
 }
 
 export function updateGitopsCommits(state, event) {
+  state.recentGitopsCommit = event.gitopsCommit
   let isPresent = false;
 
   state.gitopsCommits.forEach(gitopsCommit => {

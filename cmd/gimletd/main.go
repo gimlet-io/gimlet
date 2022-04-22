@@ -94,6 +94,9 @@ func main() {
 	go repoCache.Run()
 	logrus.Info("repo cache initialized")
 
+	eventSinkHub := streaming.NewEventSinkHub(config)
+	go eventSinkHub.Run()
+
 	if config.GitopsRepo != "" &&
 		config.GitopsRepoDeployKeyPath != "" {
 		gitopsWorker := worker.NewGitopsWorker(
@@ -104,6 +107,7 @@ func main() {
 			notificationsManager,
 			eventsProcessed,
 			repoCache,
+			eventSinkHub,
 		)
 		go gitopsWorker.Run()
 		logrus.Info("Gitops worker started")
@@ -137,9 +141,6 @@ func main() {
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
-
-	eventSinkHub := streaming.NewEventSinkHub(config)
-	go eventSinkHub.Run()
 
 	r := server.SetupRouter(config, store, notificationsManager, repoCache, perf, eventSinkHub)
 	go func() {

@@ -15,6 +15,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
 	"github.com/go-git/go-git/v5"
@@ -33,6 +34,7 @@ type GitopsWorker struct {
 	notificationsManager    notifications.Manager
 	eventsProcessed         prometheus.Counter
 	repoCache               *nativeGit.GitopsRepoCache
+	eventSinkHub            *streaming.EventSinkHub
 }
 
 func NewGitopsWorker(
@@ -43,6 +45,7 @@ func NewGitopsWorker(
 	notificationsManager notifications.Manager,
 	eventsProcessed prometheus.Counter,
 	repoCache *nativeGit.GitopsRepoCache,
+	eventSinkHub *streaming.EventSinkHub,
 ) *GitopsWorker {
 	return &GitopsWorker{
 		store:                   store,
@@ -52,6 +55,7 @@ func NewGitopsWorker(
 		tokenManager:            tokenManager,
 		eventsProcessed:         eventsProcessed,
 		repoCache:               repoCache,
+		eventSinkHub:            eventSinkHub,
 	}
 }
 
@@ -73,6 +77,7 @@ func (w *GitopsWorker) Run() {
 				event,
 				w.notificationsManager,
 				w.repoCache,
+				w.eventSinkHub,
 			)
 		}
 
@@ -88,6 +93,7 @@ func processEvent(
 	event *model.Event,
 	notificationsManager notifications.Manager,
 	repoCache *nativeGit.GitopsRepoCache,
+	eventSinkHub *streaming.EventSinkHub,
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
@@ -117,6 +123,7 @@ func processEvent(
 			gitopsRepoDeployKeyPath,
 			token,
 			event,
+			eventSinkHub,
 		)
 	case model.TypeRollback:
 		rollbackEvent, err = processRollbackEvent(
@@ -250,6 +257,7 @@ func processReleaseEvent(
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
+	eventSinkHub *streaming.EventSinkHub,
 ) ([]*events.DeployEvent, error) {
 	var deployEvents []*events.DeployEvent
 	var releaseRequest dx.ReleaseRequest
@@ -320,6 +328,22 @@ func processReleaseEvent(
 		}
 		deployEvent.GitopsRef = sha
 		deployEvents = append(deployEvents, deployEvent)
+	}
+
+	for _, deployEvent := range deployEvents {
+		gitopsCommitToSave := model.GitopsCommit{
+			Sha:        deployEvent.GitopsRef,
+			Status:     model.NotReconciled,
+			StatusDesc: deployEvent.StatusDesc,
+			Created:    event.Created,
+		}
+
+		eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
+
+		err = store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
+		if err != nil {
+			return deployEvents, fmt.Errorf("could not save or update gitops commit: %s", err)
+		}
 	}
 
 	return deployEvents, nil
