@@ -16,6 +16,7 @@ import LoginPage from './views/login/loginPage';
 import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
+import Footer from './views/footer/footer';
 
 export default class App extends Component {
   constructor(props) {
@@ -52,6 +53,7 @@ export default class App extends Component {
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
     const ChartUIWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
+    const FooterWithLocation = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
 
     return (
@@ -59,6 +61,7 @@ export default class App extends Component {
         <StreamingBackendWithLocation />
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
+        <FooterWithLocation />
 
         <Route exact path="/">
           <Redirect to="/repositories" />
