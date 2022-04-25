@@ -65,6 +65,7 @@ export const initialState = {
   application: {},
   envs: [],
   gitopsCommits: [],
+  recentGitopsCommit: undefined,
   popupWindow: {
     visible: false,
     finished: false,
