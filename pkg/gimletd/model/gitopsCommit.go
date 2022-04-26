@@ -13,4 +13,5 @@ type GitopsCommit struct {
 	Status     string `json:"status,omitempty"  meddler:"status"`
 	StatusDesc string `json:"statusDesc,omitempty"  meddler:"status_desc"`
 	Created    int64  `json:"created,omitempty"  meddler:"created"`
+	Env        string `json:"env,omitempty"  meddler:"env"`
 }
