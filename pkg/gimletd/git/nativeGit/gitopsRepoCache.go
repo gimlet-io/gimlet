@@ -21,6 +21,7 @@ type GitopsRepoCache struct {
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
+	cachePath				string
 	cachePaths              map[string]string
 	stopCh                  chan os.Signal
 	waitCh                  chan struct{}
@@ -35,6 +36,11 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
+	defaultCachePath, _, err := CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
 	cachePaths := map[string]string{}
 	repos := map[string]*git.Repository{}
 	for _, gitopsRepo := range parsedGitopsRepos {
@@ -54,6 +60,7 @@ func NewGitopsRepoCache(
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
+		cachePath:				 defaultCachePath,
 		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
 		waitCh:                  waitCh,
