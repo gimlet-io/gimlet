@@ -33,7 +33,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&event)
 	env := r.URL.Query().Get("env")
 
-	gitopsCommit, err := asGitopsCommit(event)
+	gitopsCommit, err := asGitopsCommit(event, env)
 	if err != nil {
 		log.Errorf("could not translate to gitops commit: %s", err)
 		w.WriteHeader(http.StatusOK)
@@ -58,7 +58,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(""))
 }
 
-func asGitopsCommit(event events.Event) (*model.GitopsCommit, error) {
+func asGitopsCommit(event events.Event, env string) (*model.GitopsCommit, error) {
 	if _, ok := event.Metadata["revision"]; !ok {
 		return nil, fmt.Errorf("could not extract gitops sha from Flux message: %s", event)
 	}
@@ -71,6 +71,7 @@ func asGitopsCommit(event events.Event) (*model.GitopsCommit, error) {
 		Status:     event.Reason,
 		StatusDesc: statusDesc,
 		Created:    event.Timestamp.Unix(),
+		Env:        env,
 	}, nil
 }
 

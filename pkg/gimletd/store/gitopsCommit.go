@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	queries "github.com/gimlet-io/gimlet-cli/pkg/gimletd/store/sql"
 	"github.com/russross/meddler"
@@ -48,5 +49,6 @@ func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) erro
 	savedGitopsCommit.Status = gitopsCommit.Status
 	savedGitopsCommit.StatusDesc = gitopsCommit.StatusDesc
 	savedGitopsCommit.Created = gitopsCommit.Created
+	savedGitopsCommit.Env = gitopsCommit.Env
 	return meddler.Update(db, "gitops_commits", savedGitopsCommit)
 }

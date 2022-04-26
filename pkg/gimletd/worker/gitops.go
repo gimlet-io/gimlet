@@ -114,6 +114,7 @@ func processEvent(
 			token,
 			event,
 			store,
+			eventSinkHub,
 		)
 	case model.TypeRelease:
 		deployEvents, err = processReleaseEvent(
@@ -131,6 +132,8 @@ func processEvent(
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
+			store,
+			eventSinkHub,
 		)
 		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
 		for _, sha := range rollbackEvent.GitopsRefs {
@@ -330,20 +333,9 @@ func processReleaseEvent(
 		deployEvents = append(deployEvents, deployEvent)
 	}
 
-	for _, deployEvent := range deployEvents {
-		gitopsCommitToSave := model.GitopsCommit{
-			Sha:        deployEvent.GitopsRef,
-			Status:     model.NotReconciled,
-			StatusDesc: deployEvent.StatusDesc,
-			Created:    event.Created,
-		}
-
-		eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
-
-		err = store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
-		if err != nil {
-			return deployEvents, fmt.Errorf("could not save or update gitops commit: %s", err)
-		}
+	err = saveAndBroadcastDeployEvents(deployEvents, event, store, eventSinkHub)
+	if err != nil {
+		return deployEvents, fmt.Errorf("could not save or update gitops commit: %s", err)
 	}
 
 	return deployEvents, nil
@@ -354,6 +346,9 @@ func processRollbackEvent(
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	event *model.Event,
+	store *store.Store,
+	eventSinkHub *streaming.EventSinkHub,
+
 ) (*events.RollbackEvent, error) {
 	var rollbackRequest dx.RollbackRequest
 	err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
@@ -409,6 +404,12 @@ func processRollbackEvent(
 
 	rollbackEvent.GitopsRefs = hashes
 	rollbackEvent.Status = events.Success
+
+	saveAndBroadcastRollbackEvent(rollbackEvent, event, store, eventSinkHub)
+	if err != nil {
+		return rollbackEvent, fmt.Errorf("could not save or update gitops commit: %s", err)
+	}
+
 	return rollbackEvent, nil
 }
 
@@ -442,6 +443,7 @@ func processArtifactEvent(
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
+	eventSinkHub *streaming.EventSinkHub,
 ) ([]*events.DeployEvent, error) {
 	var deployEvents []*events.DeployEvent
 	artifact, err := model.ToArtifact(event)
@@ -502,6 +504,11 @@ func processArtifactEvent(
 		}
 		deployEvent.GitopsRef = sha
 		deployEvents = append(deployEvents, deployEvent)
+	}
+
+	err = saveAndBroadcastDeployEvents(deployEvents, event, dao, eventSinkHub)
+	if err != nil {
+		return deployEvents, fmt.Errorf("could not save or update gitops commit: %s", err)
 	}
 
 	return deployEvents, nil
@@ -816,4 +823,49 @@ func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {
 	}
 
 	return false
+}
+
+func saveAndBroadcastDeployEvents(deployEvents []*events.DeployEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) error {
+	for _, deployEvent := range deployEvents {
+		gitopsCommitToSave := model.GitopsCommit{
+			Sha:        deployEvent.GitopsRef,
+			Status:     model.NotReconciled,
+			StatusDesc: deployEvent.StatusDesc,
+			Created:    event.Created,
+			Env:        deployEvent.Manifest.Env,
+		}
+
+		eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
+
+		err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
+		if err != nil {
+			return fmt.Errorf("could not save or update gitops commit: %s", err)
+		}
+	}
+	return nil
+}
+
+func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) error {
+	var rollbackStatus string
+	if rollbackEvent.Status == 0 {
+		rollbackStatus = model.ReconciliationSucceeded
+	} else {
+		rollbackStatus = model.ReconciliationFailed
+	}
+	gitopsCommitToSave := model.GitopsCommit{
+		Sha:        rollbackEvent.RollbackRequest.TargetSHA,
+		Status:     rollbackStatus,
+		StatusDesc: rollbackEvent.StatusDesc,
+		Created:    event.Created,
+		Env:        rollbackEvent.RollbackRequest.Env,
+	}
+
+	eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
+
+	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
+	if err != nil {
+		return fmt.Errorf("could not save or update gitops commit: %s", err)
+	}
+
+	return nil
 }

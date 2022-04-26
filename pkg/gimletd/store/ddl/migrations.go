@@ -19,6 +19,7 @@ const createTableEvents = "create-table-events"
 const addGitopsStatusColumnToEventsTable = "add-gitops_status-to-events-table"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops-commits-table"
+const addEnvColumnToGitopsCommitsTable = "add-env-to-gitops-commits-table"
 const createTableKeyValues = "create-table-key-values"
 
 type migration struct {
@@ -81,6 +82,10 @@ UNIQUE(id)
 		{
 			name: addCreatedColumnToGitopsCommitsTable,
 			stmt: `ALTER TABLE gitops_commits ADD COLUMN created INTEGER;`,
+		},
+		{
+			name: addEnvColumnToGitopsCommitsTable,
+			stmt: `ALTER TABLE gitops_commits ADD COLUMN env TEXT;`,
 		},
 		{
 			name: createTableKeyValues,
@@ -148,6 +153,10 @@ UNIQUE(id)
 		{
 			name: addCreatedColumnToGitopsCommitsTable,
 			stmt: `ALTER TABLE gitops_commits ADD COLUMN created INTEGER;`,
+		},
+		{
+			name: addEnvColumnToGitopsCommitsTable,
+			stmt: `ALTER TABLE gitops_commits ADD COLUMN env TEXT;`,
 		},
 		{
 			name: createTableKeyValues,
