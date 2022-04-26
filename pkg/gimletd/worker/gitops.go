@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
@@ -31,8 +30,9 @@ import (
 type GitopsWorker struct {
 	store                   *store.Store
 	gitopsRepo              string
-	gitopsRepoDeployKeyPath string
 	gitopsRepos             string
+	parsedGitopsRepos		[]*config.GitopsRepoConfig
+	gitopsRepoDeployKeyPath string
 	tokenManager            customScm.NonImpersonatedTokenManager
 	notificationsManager    notifications.Manager
 	eventsProcessed         prometheus.Counter
@@ -44,6 +44,7 @@ func NewGitopsWorker(
 	store *store.Store,
 	gitopsRepo string,
 	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	notificationsManager notifications.Manager,
@@ -55,6 +56,7 @@ func NewGitopsWorker(
 		store:                   store,
 		gitopsRepo:              gitopsRepo,
 		gitopsRepos:			 gitopsRepos,
+		parsedGitopsRepos:		 parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		notificationsManager:    notificationsManager,
 		tokenManager:            tokenManager,
@@ -77,8 +79,9 @@ func (w *GitopsWorker) Run() {
 			w.eventsProcessed.Inc()
 			processEvent(w.store,
 				w.gitopsRepo,
-				w.gitopsRepoDeployKeyPath,
 				w.gitopsRepos,
+				w.parsedGitopsRepos,
+				w.gitopsRepoDeployKeyPath,
 				w.tokenManager,
 				event,
 				w.notificationsManager,
@@ -94,8 +97,9 @@ func (w *GitopsWorker) Run() {
 func processEvent(
 	store *store.Store,
 	gitopsRepo string,
-	gitopsRepoDeployKeyPath string,
 	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
+	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	event *model.Event,
 	notificationsManager notifications.Manager,
@@ -116,9 +120,10 @@ func processEvent(
 	case model.TypeArtifact:
 		deployEvents, err = processArtifactEvent(
 			gitopsRepo,
+			gitopsRepos,
+			parsedGitopsRepos,
 			repoCache,
 			gitopsRepoDeployKeyPath,
-			gitopsRepos,
 			token,
 			event,
 			store,
@@ -127,9 +132,10 @@ func processEvent(
 		deployEvents, err = processReleaseEvent(
 			store,
 			gitopsRepo,
+			gitopsRepos,
+			parsedGitopsRepos,
 			repoCache,
 			gitopsRepoDeployKeyPath,
-			gitopsRepos,
 			token,
 			event,
 		)
@@ -137,6 +143,7 @@ func processEvent(
 		rollbackEvent, err = processRollbackEvent(
 			gitopsRepo,
 			gitopsRepos,
+			parsedGitopsRepos,
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
@@ -149,8 +156,9 @@ func processEvent(
 	case model.TypeBranchDeleted:
 		deleteEvents, err = processBranchDeletedEvent(
 			gitopsRepo,
-			gitopsRepoDeployKeyPath,
 			gitopsRepos,
+			parsedGitopsRepos,
+			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
 		)
@@ -191,8 +199,9 @@ func processEvent(
 
 func processBranchDeletedEvent(
 	gitopsRepo string,
-	gitopsRepoDeployKeyPath string,
 	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
+	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	event *model.Event,
 ) ([]*events.DeleteEvent, error) {
@@ -201,11 +210,6 @@ func processBranchDeletedEvent(
 	err := json.Unmarshal([]byte(event.Blob), &branchDeletedEvent)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse delete request with id: %s", event.ID)
-	}
-
-	parsedGitopsRepos, err := parseGitopsRepos(gitopsRepos)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse gitops repositories: %s", err)
 	}
 
 	for _, env := range branchDeletedEvent.Manifests {
@@ -276,9 +280,10 @@ func setGitopsHashOnEvent(event *model.Event, gitopsSha string) {
 func processReleaseEvent(
 	store *store.Store,
 	gitopsRepo string,
+	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
-	gitopsRepos,
 	githubChartAccessToken string,
 	event *model.Event,
 ) ([]*events.DeployEvent, error) {
@@ -303,11 +308,6 @@ func processReleaseEvent(
 		return deployEvents, err
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
-
-	parsedGitopsRepos, err := parseGitopsRepos(gitopsRepos)
-	if err != nil {
-		return deployEvents, fmt.Errorf("cannot parse gitops repositories %s", err.Error())
-	}
 
 	for _, manifest := range artifact.Environments {
 		repoToWrite, err := repoToWrite(parsedGitopsRepos, manifest.Env, gitopsRepo)
@@ -370,6 +370,7 @@ func processReleaseEvent(
 func processRollbackEvent(
 	gitopsRepo string,
 	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	event *model.Event,
@@ -378,11 +379,6 @@ func processRollbackEvent(
 	err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse release request with id: %s", event.ID)
-	}
-
-	parsedGitopsRepos, err := parseGitopsRepos(gitopsRepos)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse gitops repositories: %s", err)
 	}
 
 	repoToWrite, err := repoToWrite(parsedGitopsRepos, rollbackRequest.Env, gitopsRepo)
@@ -466,9 +462,10 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 
 func processArtifactEvent(
 	gitopsRepo string,
+	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
-	gitopsRepos string,
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
@@ -488,11 +485,6 @@ func processArtifactEvent(
 		return deployEvents, err
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
-
-	parsedGitopsRepos, err := parseGitopsRepos(gitopsRepos)
-	if err != nil {
-		return deployEvents, fmt.Errorf("cannot parse gitops repositories %s", err.Error())
-	}
 
 	for _, manifest := range artifact.Environments {
 		repoToWrite, err := repoToWrite(parsedGitopsRepos, manifest.Env, gitopsRepo)

@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -81,10 +83,16 @@ func main() {
 	signal.Notify(stopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Warnf("could not parse gitops repositories")
+	}
+
 	repoCache, err := nativeGit.NewGitopsRepoCache(
 		config.RepoCachePath,
 		config.GitopsRepo,
 		config.GitopsRepos,
+		parsedGitopsRepos,
 		config.GitopsRepoDeployKeyPath,
 		stopCh,
 		waitCh,
@@ -104,6 +112,7 @@ func main() {
 			store,
 			config.GitopsRepo,
 			config.GitopsRepos,
+			parsedGitopsRepos,
 			config.GitopsRepoDeployKeyPath,
 			tokenManager,
 			notificationsManager,
@@ -261,4 +270,33 @@ func adminToken(config *config.Config) string {
 	} else {
 		return config.AdminToken
 	}
+}
+
+func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, error) {
+	var gitopsRepos []*config.GitopsRepoConfig
+	splitGitopsRepos := strings.Split(gitopsReposString, ";")
+
+	for _, gitopsReposString := range splitGitopsRepos {
+		if gitopsReposString == "" {
+			continue
+		}
+		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+
+		singleGitopsRepo := &config.GitopsRepoConfig{
+			Env:           parsedGitopsReposString.Get("env"),
+			RepoPerEnv:    repoPerEnv,
+			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
+			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
+		}
+		gitopsRepos = append(gitopsRepos, singleGitopsRepo)
+	}
+
+	return gitopsRepos, nil
 }

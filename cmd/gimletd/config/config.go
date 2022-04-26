@@ -93,3 +93,10 @@ func (m *Multiline) Decode(value string) error {
 func (m *Multiline) String() string {
 	return string(*m)
 }
+
+type GitopsRepoConfig struct {
+	Env           string
+	RepoPerEnv    bool
+	GitopsRepo    string
+	DeployKeyPath string
+}

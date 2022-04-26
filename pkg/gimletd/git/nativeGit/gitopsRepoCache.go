@@ -3,12 +3,10 @@ package nativeGit
 import (
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/otiai10/copy"
@@ -20,6 +18,7 @@ type GitopsRepoCache struct {
 	cacheRoot               string
 	gitopsRepo              string
 	gitopsRepos             string
+	parsedGitopsRepos		[]*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
 	cachePath               string
@@ -31,25 +30,21 @@ func NewGitopsRepoCache(
 	cacheRoot string,
 	gitopsRepo string,
 	gitopsRepos string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
 	var cachePath string
 
-	parsedGitopsRepos, err := parseGitopsRepos(gitopsRepos)
-	if err != nil {
-		return nil, err
-	}
-
 	repos := map[string]*git.Repository{}
 	for _, gitopsRepo := range parsedGitopsRepos {
-		repoCachePath, repo, err := CloneToFs(cacheRoot, gitopsRepo.gitopsRepo, gitopsRepo.deployKeyPath)
+		repoCachePath, repo, err := CloneToFs(cacheRoot, gitopsRepo.GitopsRepo, gitopsRepo.DeployKeyPath)
 		if err != nil {
 			return nil, err
 		}
 
-		repos[gitopsRepo.env] = repo
+		repos[gitopsRepo.Env] = repo
 		cachePath = repoCachePath
 	}
 
@@ -57,6 +52,7 @@ func NewGitopsRepoCache(
 		cacheRoot:               cacheRoot,
 		gitopsRepo:              gitopsRepo,
 		gitopsRepos:			 gitopsRepos,
+		parsedGitopsRepos: 		 parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
 		cachePath:               cachePath,
@@ -86,15 +82,9 @@ func (r *GitopsRepoCache) Run() {
 func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 	var publicKeysString string
 
-	parsedGitopsRepos, err := parseGitopsRepos(r.gitopsRepos)
-	if err != nil {
-		logrus.Errorf("could not parse gitops repositories: %s", err)
-		return
-	}
-
-	for _, gitopsRepo := range parsedGitopsRepos {
-		if gitopsRepo.env == repoName {
-			publicKeysString = gitopsRepo.deployKeyPath
+	for _, gitopsRepo := range r.parsedGitopsRepos {
+		if gitopsRepo.Env == repoName {
+			publicKeysString = gitopsRepo.DeployKeyPath
 		} else {
 			publicKeysString = r.gitopsRepoDeployKeyPath
 		}
@@ -131,15 +121,10 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	var tmpDirName, deployKeyPath string
 	var err error
 
-	parsedGitopsRepos, err := parseGitopsRepos(r.gitopsRepos)
-	if err != nil {
-		errors.WithMessage(err, "couldn't parse gitops repositories")
-	}
-
-	for _, repo := range parsedGitopsRepos {
-		if repo.env == repoName {
+	for _, repo := range r.parsedGitopsRepos {
+		if repo.Env == repoName {
 			tmpDirName = repoName
-			deployKeyPath = repo.deployKeyPath
+			deployKeyPath = repo.DeployKeyPath
 		} else {
 			tmpDirName = r.cacheRoot
 			deployKeyPath = r.gitopsRepoDeployKeyPath
@@ -170,40 +155,4 @@ func (r *GitopsRepoCache) CleanupWrittenRepo(path string) error {
 
 func (r *GitopsRepoCache) Invalidate(repoName string) {
 	r.syncGitRepo(repoName)
-}
-
-type gitopsRepoConfig struct {
-	env           string
-	repoPerEnv    bool
-	gitopsRepo    string
-	deployKeyPath string
-}
-
-func parseGitopsRepos(gitopsReposString string) ([]*gitopsRepoConfig, error) {
-	var gitopsRepos []*gitopsRepoConfig
-	splitGitopsRepos := strings.Split(gitopsReposString, ";")
-
-	for _, gitopsReposString := range splitGitopsRepos {
-		if gitopsReposString == "" {
-			continue
-		}
-		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
-		if err != nil {
-			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
-		}
-		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
-		if err != nil {
-			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
-		}
-
-		singleGitopsRepo := &gitopsRepoConfig{
-			env:           parsedGitopsReposString.Get("env"),
-			repoPerEnv:    repoPerEnv,
-			gitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
-			deployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
-		}
-		gitopsRepos = append(gitopsRepos, singleGitopsRepo)
-	}
-
-	return gitopsRepos, nil
 }
