@@ -139,13 +139,17 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
 
-	for cachePathName, cachePath := range r.cachePaths {
+	cachePath := r.cachePath
+
+	for cachePathName, cachePathContent := range r.cachePaths {
 		if cachePathName == repoName {
-			err = copy.Copy(cachePath, tmpPath)
-			if err != nil {
-				errors.WithMessage(err, "could not make copy of repo")
-			}
+			cachePath = cachePathContent
 		}
+	}
+
+	err = copy.Copy(cachePath, tmpPath)
+	if err != nil {
+		errors.WithMessage(err, "could not make copy of repo")
 	}
 
 	copiedRepo, err := git.PlainOpen(tmpPath)
