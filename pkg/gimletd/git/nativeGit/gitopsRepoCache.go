@@ -80,14 +80,11 @@ func (r *GitopsRepoCache) Run() {
 }
 
 func (r *GitopsRepoCache) syncGitRepo(repoName string) {
-	var publicKeysString string
+	publicKeysString := r.gitopsRepoDeployKeyPath
 
 	for _, gitopsRepo := range r.parsedGitopsRepos {
 		if gitopsRepo.Env == repoName {
 			publicKeysString = gitopsRepo.DeployKeyPath
-			break
-		} else {
-			publicKeysString = r.gitopsRepoDeployKeyPath
 		}
 	}
 
@@ -119,17 +116,14 @@ func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
 }
 
 func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, string, string, error) {
-	var tmpDirName, deployKeyPath string
 	var err error
+	tmpDirName := r.cacheRoot
+	deployKeyPath := r.gitopsRepoDeployKeyPath
 
 	for _, repo := range r.parsedGitopsRepos {
 		if repo.Env == repoName {
 			tmpDirName = repoName
 			deployKeyPath = repo.DeployKeyPath
-			break
-		} else {
-			tmpDirName = r.cacheRoot
-			deployKeyPath = r.gitopsRepoDeployKeyPath
 		}
 	}
 
