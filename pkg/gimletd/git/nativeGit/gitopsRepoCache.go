@@ -126,6 +126,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	var err error
 	tmpDirName := r.cacheRoot
 	deployKeyPath := r.gitopsRepoDeployKeyPath
+	cachePath := r.cachePath
 
 	for _, repo := range r.parsedGitopsRepos {
 		if repo.Env == repoName {
@@ -138,8 +139,6 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	if err != nil {
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
-
-	cachePath := r.cachePath
 
 	for cachePathName, cachePathContent := range r.cachePaths {
 		if cachePathName == repoName {
