@@ -78,13 +78,13 @@ func (r *GitopsRepoCache) Run() {
 	}
 }
 
-
 func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 	var publicKeysString string
 
 	for _, gitopsRepo := range r.parsedGitopsRepos {
 		if gitopsRepo.Env == repoName {
 			publicKeysString = gitopsRepo.DeployKeyPath
+			break
 		} else {
 			publicKeysString = r.gitopsRepoDeployKeyPath
 		}
@@ -125,6 +125,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 		if repo.Env == repoName {
 			tmpDirName = repoName
 			deployKeyPath = repo.DeployKeyPath
+			break
 		} else {
 			tmpDirName = r.cacheRoot
 			deployKeyPath = r.gitopsRepoDeployKeyPath
