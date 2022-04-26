@@ -18,10 +18,10 @@ type GitopsRepoCache struct {
 	cacheRoot               string
 	gitopsRepo              string
 	gitopsRepos             string
-	parsedGitopsRepos		[]*config.GitopsRepoConfig
+	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
-	cachePath               string
+	cachePaths              map[string]string
 	stopCh                  chan os.Signal
 	waitCh                  chan struct{}
 }
@@ -35,8 +35,7 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
-	var cachePath string
-
+	cachePaths := map[string]string{}
 	repos := map[string]*git.Repository{}
 	for _, gitopsRepo := range parsedGitopsRepos {
 		repoCachePath, repo, err := CloneToFs(cacheRoot, gitopsRepo.GitopsRepo, gitopsRepo.DeployKeyPath)
@@ -45,17 +44,17 @@ func NewGitopsRepoCache(
 		}
 
 		repos[gitopsRepo.Env] = repo
-		cachePath = repoCachePath
+		cachePaths[gitopsRepo.Env] = repoCachePath
 	}
 
 	return &GitopsRepoCache{
 		cacheRoot:               cacheRoot,
 		gitopsRepo:              gitopsRepo,
-		gitopsRepos:			 gitopsRepos,
-		parsedGitopsRepos: 		 parsedGitopsRepos,
+		gitopsRepos:             gitopsRepos,
+		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
-		cachePath:               cachePath,
+		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
 		waitCh:                  waitCh,
 	}, nil
@@ -69,8 +68,10 @@ func (r *GitopsRepoCache) Run() {
 
 		select {
 		case <-r.stopCh:
-			logrus.Infof("cleaning up git repo cache at %s", r.cachePath)
-			TmpFsCleanup(r.cachePath)
+			for _, cachePath := range r.cachePaths {
+				logrus.Infof("cleaning up git repo cache at %s", cachePath)
+				TmpFsCleanup(cachePath)
+			}
 			r.waitCh <- struct{}{}
 			return
 		case <-time.After(30 * time.Second):
@@ -137,9 +138,13 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
 
-	err = copy.Copy(r.cachePath, tmpPath)
-	if err != nil {
-		errors.WithMessage(err, "could not make copy of repo")
+	for cachePathName, cachePath := range r.cachePaths {
+		if cachePathName == repoName {
+			err = copy.Copy(cachePath, tmpPath)
+			if err != nil {
+				errors.WithMessage(err, "could not make copy of repo")
+			}
+		}
 	}
 
 	copiedRepo, err := git.PlainOpen(tmpPath)
