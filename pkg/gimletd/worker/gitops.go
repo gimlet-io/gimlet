@@ -114,7 +114,6 @@ func processEvent(
 			token,
 			event,
 			store,
-			eventSinkHub,
 		)
 	case model.TypeRelease:
 		deployEvents, err = processReleaseEvent(
@@ -124,7 +123,6 @@ func processEvent(
 			gitopsRepoDeployKeyPath,
 			token,
 			event,
-			eventSinkHub,
 		)
 	case model.TypeRollback:
 		rollbackEvent, err = processRollbackEvent(
@@ -132,8 +130,6 @@ func processEvent(
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
-			store,
-			eventSinkHub,
 		)
 		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
 		for _, sha := range rollbackEvent.GitopsRefs {
@@ -151,6 +147,10 @@ func processEvent(
 			setGitopsHashOnEvent(event, deleteEvent.GitopsRef)
 		}
 	}
+
+	err = saveAndBroadcastRollbackEvent(rollbackEvent, event, store, eventSinkHub)
+
+	err = saveAndBroadcastDeployEvents(deployEvents, event, store, eventSinkHub)
 
 	// send out notifications based on gitops events
 	for _, deployEvent := range deployEvents {
@@ -260,7 +260,6 @@ func processReleaseEvent(
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
-	eventSinkHub *streaming.EventSinkHub,
 ) ([]*events.DeployEvent, error) {
 	var deployEvents []*events.DeployEvent
 	var releaseRequest dx.ReleaseRequest
@@ -333,11 +332,6 @@ func processReleaseEvent(
 		deployEvents = append(deployEvents, deployEvent)
 	}
 
-	err = saveAndBroadcastDeployEvents(deployEvents, event, store, eventSinkHub)
-	if err != nil {
-		return deployEvents, fmt.Errorf("could not save or update gitops commit: %s", err)
-	}
-
 	return deployEvents, nil
 }
 
@@ -346,9 +340,6 @@ func processRollbackEvent(
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	event *model.Event,
-	store *store.Store,
-	eventSinkHub *streaming.EventSinkHub,
-
 ) (*events.RollbackEvent, error) {
 	var rollbackRequest dx.RollbackRequest
 	err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
@@ -405,11 +396,6 @@ func processRollbackEvent(
 	rollbackEvent.GitopsRefs = hashes
 	rollbackEvent.Status = events.Success
 
-	saveAndBroadcastRollbackEvent(rollbackEvent, event, store, eventSinkHub)
-	if err != nil {
-		return rollbackEvent, fmt.Errorf("could not save or update gitops commit: %s", err)
-	}
-
 	return rollbackEvent, nil
 }
 
@@ -443,7 +429,6 @@ func processArtifactEvent(
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
-	eventSinkHub *streaming.EventSinkHub,
 ) ([]*events.DeployEvent, error) {
 	var deployEvents []*events.DeployEvent
 	artifact, err := model.ToArtifact(event)
@@ -504,11 +489,6 @@ func processArtifactEvent(
 		}
 		deployEvent.GitopsRef = sha
 		deployEvents = append(deployEvents, deployEvent)
-	}
-
-	err = saveAndBroadcastDeployEvents(deployEvents, event, dao, eventSinkHub)
-	if err != nil {
-		return deployEvents, fmt.Errorf("could not save or update gitops commit: %s", err)
 	}
 
 	return deployEvents, nil
