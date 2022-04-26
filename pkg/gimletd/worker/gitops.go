@@ -134,6 +134,7 @@ func processEvent(
 		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
 		for _, sha := range rollbackEvent.GitopsRefs {
 			setGitopsHashOnEvent(event, sha)
+			saveAndBroadcastRollbackEvent(rollbackEvent, sha, event, store, eventSinkHub)
 		}
 	case model.TypeBranchDeleted:
 		deleteEvents, err = processBranchDeletedEvent(
@@ -148,10 +149,6 @@ func processEvent(
 		}
 	}
 
-	err = saveAndBroadcastRollbackEvent(rollbackEvent, event, store, eventSinkHub)
-
-	err = saveAndBroadcastDeployEvents(deployEvents, event, store, eventSinkHub)
-
 	// send out notifications based on gitops events
 	for _, deployEvent := range deployEvents {
 		notificationsManager.Broadcast(notifications.MessageFromGitOpsEvent(deployEvent))
@@ -160,6 +157,7 @@ func processEvent(
 	// record gitops hashes on events
 	for _, deployEvent := range deployEvents {
 		setGitopsHashOnEvent(event, deployEvent.GitopsRef)
+		saveAndBroadcastDeployEvent(deployEvent, event, store, eventSinkHub)
 	}
 
 	// store event state
@@ -395,7 +393,6 @@ func processRollbackEvent(
 
 	rollbackEvent.GitopsRefs = hashes
 	rollbackEvent.Status = events.Success
-
 	return rollbackEvent, nil
 }
 
@@ -805,27 +802,24 @@ func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {
 	return false
 }
 
-func saveAndBroadcastDeployEvents(deployEvents []*events.DeployEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) error {
-	for _, deployEvent := range deployEvents {
-		gitopsCommitToSave := model.GitopsCommit{
-			Sha:        deployEvent.GitopsRef,
-			Status:     model.NotReconciled,
-			StatusDesc: deployEvent.StatusDesc,
-			Created:    event.Created,
-			Env:        deployEvent.Manifest.Env,
-		}
-
-		eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
-
-		err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
-		if err != nil {
-			return fmt.Errorf("could not save or update gitops commit: %s", err)
-		}
+func saveAndBroadcastDeployEvent(deployEvent *events.DeployEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
+	gitopsCommitToSave := model.GitopsCommit{
+		Sha:        deployEvent.GitopsRef,
+		Status:     model.NotReconciled,
+		StatusDesc: deployEvent.StatusDesc,
+		Created:    event.Created,
+		Env:        deployEvent.Manifest.Env,
 	}
-	return nil
+
+	eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
+
+	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
+	if err != nil {
+		logrus.Warnf("could not save or update gitops commit: %s", err)
+	}
 }
 
-func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) error {
+func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, sha string, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
 	var rollbackStatus string
 	if rollbackEvent.Status == 0 {
 		rollbackStatus = model.ReconciliationSucceeded
@@ -833,7 +827,7 @@ func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, event *m
 		rollbackStatus = model.ReconciliationFailed
 	}
 	gitopsCommitToSave := model.GitopsCommit{
-		Sha:        rollbackEvent.RollbackRequest.TargetSHA,
+		Sha:        sha,
 		Status:     rollbackStatus,
 		StatusDesc: rollbackEvent.StatusDesc,
 		Created:    event.Created,
@@ -844,8 +838,6 @@ func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, event *m
 
 	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
 	if err != nil {
-		return fmt.Errorf("could not save or update gitops commit: %s", err)
+		logrus.Warnf("could not save or update gitops commit: %s", err)
 	}
-
-	return nil
 }
