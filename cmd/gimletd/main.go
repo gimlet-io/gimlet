@@ -84,6 +84,7 @@ func main() {
 	repoCache, err := nativeGit.NewGitopsRepoCache(
 		config.RepoCachePath,
 		config.GitopsRepo,
+		config.GitopsRepos,
 		config.GitopsRepoDeployKeyPath,
 		stopCh,
 		waitCh,
@@ -102,6 +103,7 @@ func main() {
 		gitopsWorker := worker.NewGitopsWorker(
 			store,
 			config.GitopsRepo,
+			config.GitopsRepos,
 			config.GitopsRepoDeployKeyPath,
 			tokenManager,
 			notificationsManager,

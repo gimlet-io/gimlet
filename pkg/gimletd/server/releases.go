@@ -68,8 +68,8 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 
-	repo, pathToClanUp, err := gitopsRepoCache.InstanceForWrite() // using a copy of the repo to avoid concurrent map writes error
-	defer gitopsRepoCache.CleanupWrittenRepo(pathToClanUp)
+	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(env) // using a copy of the repo to avoid concurrent map writes error
+	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -117,7 +117,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
 
-	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(), app, env, perf)
+	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(env), app, env, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -259,7 +259,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
-	gitopsRepoDeployKeyPath := ctx.Value("gitopsRepoDeployKeyPath").(string)
+	// gitopsRepoDeployKeyPath := ctx.Value("gitopsRepoDeployKeyPath").(string)
 
 	params := r.URL.Query()
 	var env, app string
@@ -276,7 +276,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite()
+	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(env)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -308,10 +308,10 @@ func delete(w http.ResponseWriter, r *http.Request) {
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	err = nativeGit.NativePush(pathToCleanUp, gitopsRepoDeployKeyPath, head.Name().Short())
+	err = nativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
-	gitopsRepoCache.Invalidate()
+	gitopsRepoCache.Invalidate(env)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))

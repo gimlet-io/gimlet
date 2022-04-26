@@ -22,58 +22,60 @@ type ReleaseStateWorker struct {
 func (w *ReleaseStateWorker) Run() {
 	for {
 		t0 := time.Now()
-		repo := w.RepoCache.InstanceForRead()
-		w.Perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
+		for repo := range w.RepoCache.Repos {
+			repo := w.RepoCache.InstanceForRead(repo)
+			w.Perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
-		envs, err := nativeGit.Envs(repo)
-		if err != nil {
-			logrus.Errorf("cannot get envs: %s", err)
-			time.Sleep(30 * time.Second)
-			continue
-		}
-
-		w.Releases.Reset()
-		for _, env := range envs {
-			t1 := time.Now()
-			appReleases, err := nativeGit.Status(repo, "", env, w.Perf)
+			envs, err := nativeGit.Envs(repo)
 			if err != nil {
-				logrus.Errorf("cannot get status: %s", err)
+				logrus.Errorf("cannot get envs: %s", err)
 				time.Sleep(30 * time.Second)
 				continue
 			}
-			w.Perf.WithLabelValues("releaseState_appReleases").Observe(time.Since(t1).Seconds())
 
-			for app, release := range appReleases {
-				t2 := time.Now()
-				commit, err := lastCommitThatTouchedAFile(repo, filepath.Join(env, app))
+			w.Releases.Reset()
+			for _, env := range envs {
+				t1 := time.Now()
+				appReleases, err := nativeGit.Status(repo, "", env, w.Perf)
 				if err != nil {
-					logrus.Errorf("cannot find last commit: %s", err)
+					logrus.Errorf("cannot get status: %s", err)
 					time.Sleep(30 * time.Second)
 					continue
 				}
-				w.Perf.WithLabelValues("releaseState_appRelease").Observe(time.Since(t2).Seconds())
+				w.Perf.WithLabelValues("releaseState_appReleases").Observe(time.Since(t1).Seconds())
 
-				gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", w.GitopsRepo, commit.Hash.String())
-				created := commit.Committer.When
+				for app, release := range appReleases {
+					t2 := time.Now()
+					commit, err := lastCommitThatTouchedAFile(repo, filepath.Join(env, app))
+					if err != nil {
+						logrus.Errorf("cannot find last commit: %s", err)
+						time.Sleep(30 * time.Second)
+						continue
+					}
+					w.Perf.WithLabelValues("releaseState_appRelease").Observe(time.Since(t2).Seconds())
 
-				if release != nil {
-					w.Releases.WithLabelValues(
-						env,
-						app,
-						release.Version.URL,
-						release.Version.Message,
-						gitopsRef,
-						created.Format(time.RFC3339),
-					).Set(1.0)
-				} else {
-					w.Releases.WithLabelValues(
-						env,
-						app,
-						"",
-						"",
-						gitopsRef,
-						created.Format(time.RFC3339),
-					).Set(1.0)
+					gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", repo, commit.Hash.String())
+					created := commit.Committer.When
+
+					if release != nil {
+						w.Releases.WithLabelValues(
+							env,
+							app,
+							release.Version.URL,
+							release.Version.Message,
+							gitopsRef,
+							created.Format(time.RFC3339),
+						).Set(1.0)
+					} else {
+						w.Releases.WithLabelValues(
+							env,
+							app,
+							"",
+							"",
+							gitopsRef,
+							created.Format(time.RFC3339),
+						).Set(1.0)
+					}
 				}
 			}
 		}
