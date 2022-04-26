@@ -516,9 +516,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"postgresql": gimletdPostgresConfig,
 			},
 			"gimletAgent": map[string]interface{}{
-				"enabled":     true,
-				"environment": envName,
-				"agentKey":    agentToken,
+				"enabled":          true,
+				"environment":      envName,
+				"dashboardAddress": "https://gimlet." + os.Getenv("HOST"),
+				"agentKey":         agentToken,
 			},
 			"gimletDashboard": map[string]interface{}{
 				"enabled":              true,
