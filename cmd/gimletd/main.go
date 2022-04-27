@@ -111,7 +111,6 @@ func main() {
 		gitopsWorker := worker.NewGitopsWorker(
 			store,
 			config.GitopsRepo,
-			config.GitopsRepos,
 			parsedGitopsRepos,
 			config.GitopsRepoDeployKeyPath,
 			tokenManager,
