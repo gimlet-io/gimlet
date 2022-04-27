@@ -21,7 +21,7 @@ type GitopsRepoCache struct {
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
-	cachePath				string
+	cachePath               string
 	cachePaths              map[string]string
 	stopCh                  chan os.Signal
 	waitCh                  chan struct{}
@@ -60,7 +60,7 @@ func NewGitopsRepoCache(
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
-		cachePath:				 defaultCachePath,
+		cachePath:               defaultCachePath,
 		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
 		waitCh:                  waitCh,
