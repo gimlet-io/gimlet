@@ -90,7 +90,6 @@ func (r *GitopsRepoCache) Run() {
 
 func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 	publicKeysString := r.gitopsRepoDeployKeyPath
-
 	for _, gitopsRepo := range r.parsedGitopsRepos {
 		if gitopsRepo.Env == repoName {
 			publicKeysString = gitopsRepo.DeployKeyPath
