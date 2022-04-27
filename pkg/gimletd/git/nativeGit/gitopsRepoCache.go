@@ -124,23 +124,12 @@ func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
 }
 
 func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, string, string, error) {
-	var err error
-	tmpDirName := r.cacheRoot
-	deployKeyPath := r.gitopsRepoDeployKeyPath
-	cachePath := r.cachePath
-
-	for _, repo := range r.parsedGitopsRepos {
-		if repo.Env == repoName {
-			tmpDirName = repoName
-			deployKeyPath = repo.DeployKeyPath
-		}
-	}
-
-	tmpPath, err := ioutil.TempDir(tmpDirName, "gitops-cow-")
+	tmpPath, err := ioutil.TempDir(r.cacheRoot, "gitops-cow-")
 	if err != nil {
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
 
+	cachePath := r.cachePath
 	for cachePathName, cachePathContent := range r.cachePaths {
 		if cachePathName == repoName {
 			cachePath = cachePathContent
@@ -155,6 +144,13 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	copiedRepo, err := git.PlainOpen(tmpPath)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("cannot open git repository at %s: %s", tmpPath, err)
+	}
+
+	deployKeyPath := r.gitopsRepoDeployKeyPath
+	for _, repo := range r.parsedGitopsRepos {
+		if repo.Env == repoName {
+			deployKeyPath = repo.DeployKeyPath
+		}
 	}
 
 	return copiedRepo, tmpPath, deployKeyPath, nil
