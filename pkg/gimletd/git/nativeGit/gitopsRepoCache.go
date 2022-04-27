@@ -36,6 +36,10 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
+	if gitopsRepo == "" || gitopsRepoDeployKeyPath == "" {
+		logrus.Warn("GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH must be set")
+	}
+
 	defaultCachePath, _, err := CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
 	if err != nil {
 		return nil, err
