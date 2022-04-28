@@ -21,6 +21,8 @@ const createTableGitopsCommits = "create-table-gitopsCommits"
 const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops-commits-table"
 const addEnvColumnToGitopsCommitsTable = "add-env-to-gitops-commits-table"
 const createTableKeyValues = "create-table-key-values"
+const defaultValueForCreated = "default-value-for-created"
+const defaultValueForEnv = "default-value-for-env"
 
 type migration struct {
 	name string
@@ -86,6 +88,14 @@ UNIQUE(id)
 		{
 			name: addEnvColumnToGitopsCommitsTable,
 			stmt: `ALTER TABLE gitops_commits ADD COLUMN env TEXT;`,
+		},
+		{
+			name: defaultValueForCreated,
+			stmt: `update gitops_commits set created=0 where created is null;`,
+		},
+		{
+			name: defaultValueForEnv,
+			stmt: `update gitops_commits set env='' where env is null;`,
 		},
 		{
 			name: createTableKeyValues,
@@ -157,6 +167,14 @@ UNIQUE(id)
 		{
 			name: addEnvColumnToGitopsCommitsTable,
 			stmt: `ALTER TABLE gitops_commits ADD COLUMN env TEXT;`,
+		},
+		{
+			name: defaultValueForCreated,
+			stmt: `update gitops_commits set created=0 where created is null;`,
+		},
+		{
+			name: defaultValueForEnv,
+			stmt: `update gitops_commits set env='' where env is null;`,
 		},
 		{
 			name: createTableKeyValues,
