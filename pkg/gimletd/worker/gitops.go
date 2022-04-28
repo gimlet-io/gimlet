@@ -338,6 +338,7 @@ func processReleaseEvent(
 
 		sha, err := cloneTemplateWriteAndPush(
 			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
@@ -508,6 +509,7 @@ func processArtifactEvent(
 
 		sha, err := cloneTemplateWriteAndPush(
 			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
@@ -549,13 +551,19 @@ func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact)
 
 func cloneTemplateWriteAndPush(
 	gitopsRepo string,
+	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 ) (string, error) {
-	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(manifest.Env)
+	repoToWrite, err := repoToWrite(parsedGitopsRepos, manifest.Env, gitopsRepo)
+	if err != nil {
+		return "", err
+	}
+
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
