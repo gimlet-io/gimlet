@@ -83,7 +83,6 @@ export function gitopsCommits(state, gitopsCommits) {
 }
 
 export function updateGitopsCommits(state, event) {
-  state.recentGitopsCommit = event.gitopsCommit;
   let isPresent = false;
 
   state.gitopsCommits.forEach(gitopsCommit => {
@@ -92,6 +91,7 @@ export function updateGitopsCommits(state, event) {
       gitopsCommit.sha = event.gitopsCommit.sha;
       gitopsCommit.status = event.gitopsCommit.status;
       gitopsCommit.statusDesc = event.gitopsCommit.statusDesc;
+      gitopsCommit.env = event.gitopsCommit.env;
       isPresent = true;
     };
   });
