@@ -1,27 +1,26 @@
-import { React, useState, useEffect } from "react";
+import { Component } from 'react';
 import { formatDistance } from "date-fns";
 
-const Footer = ({ store }) => {
-    let reduxState = store.getState();
-    const [gitopsCommits, setGitopsCommits] = useState(reduxState.gitopsCommits);
-    const [envs, setEnvs] = useState(reduxState.envs);
-    // const [time, setTime] = useState(new Date());
-    /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "useEffect" }]*/
+export default class Footer extends Component {
+    constructor(props) {
+        super(props);
+        let reduxState = this.props.store.getState();
 
-    store.subscribe(() => {
-        let reduxState = store.getState();
-        setGitopsCommits(reduxState.gitopsCommits)
-        setEnvs(reduxState.envs)
-    });
+        this.state = {
+            gitopsCommits: reduxState.gitopsCommits,
+            envs: reduxState.envs
+        };
+        this.props.store.subscribe(() => {
+            let reduxState = this.props.store.getState();
 
-    // useEffect(() => {
-    //     const interval = setInterval(() => setTime(Date.now()), 1000);
-    //     return () => {
-    //         clearInterval(interval);
-    //     };
-    // }, []);
+            this.setState({
+                gitopsCommits: reduxState.gitopsCommits,
+                envs: reduxState.envs
+            });
+        });
+    }
 
-    const renderGitopsCommit = (gitopsCommit, idx) => {
+    renderGitopsCommit(gitopsCommit) {
         if (gitopsCommit === undefined) {
             return null
         }
@@ -48,7 +47,7 @@ const Footer = ({ store }) => {
                     "Trailing:";
 
         return (
-            <li key={idx} className="flex items-center w-full m-2">
+            <div className="flex items-center w-full m-2">
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}:`}</p>
                 <ul className="ml-4">
                     <li className="flex items-center cursor-pointer" title={gitopsCommit.statusDesc}>
@@ -62,30 +61,22 @@ const Footer = ({ store }) => {
                     {lastCommitStatus === "Trailing:" &&
                         <li>Flux is trailing</li>}
                 </ul>
-            </li>
+            </div>
         );
     }
 
-    const arrayWithFirstCommitOfEnvs = () => {
+    arrayWithFirstCommitOfEnvs() {
         let array = [];
-        envs.map((env) => array.push(gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env.name)[0]));
+        this.state.envs.map((env) => array.push(this.state.gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env.name)[0]));
         array.sort((a, b) => b.created - a.created)
+        console.log(array)
         return array;
     };
 
-    if (gitopsCommits.length === 0 ||
-        envs.length === 0) {
-        return null;
+    render() {
+        return (
+            <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full p-2 text-gray-100">
+                {this.arrayWithFirstCommitOfEnvs().slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
+            </div>)
     }
-
-    return (
-        (
-            <ul>
-                <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full p-2 text-gray-100">
-                    {arrayWithFirstCommitOfEnvs().slice(0, 3).map((gitopsCommit, idx) => renderGitopsCommit(gitopsCommit, idx))}
-                </div>
-            </ul>)
-    );
-};
-
-export default Footer;
+}
