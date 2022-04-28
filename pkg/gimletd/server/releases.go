@@ -259,7 +259,6 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
-	// gitopsRepoDeployKeyPath := ctx.Value("gitopsRepoDeployKeyPath").(string)
 
 	params := r.URL.Query()
 	var env, app string
