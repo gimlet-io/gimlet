@@ -90,7 +90,7 @@ func main() {
 
 	var repoCache *nativeGit.GitopsRepoCache
 	if config.GitopsRepo != "" && config.GitopsRepoDeployKeyPath != "" {
-		repoCache, err := nativeGit.NewGitopsRepoCache(
+		repoCache, err = nativeGit.NewGitopsRepoCache(
 			config.RepoCachePath,
 			config.GitopsRepo,
 			config.GitopsRepos,
