@@ -22,8 +22,8 @@ type ReleaseStateWorker struct {
 func (w *ReleaseStateWorker) Run() {
 	for {
 		t0 := time.Now()
-		for repo := range w.RepoCache.Repos {
-			repo := w.RepoCache.InstanceForRead(repo)
+		for repoName := range w.RepoCache.Repos {
+			repo := w.RepoCache.InstanceForRead(repoName)
 			w.Perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
 			envs, err := nativeGit.Envs(repo)
@@ -54,7 +54,7 @@ func (w *ReleaseStateWorker) Run() {
 					}
 					w.Perf.WithLabelValues("releaseState_appRelease").Observe(time.Since(t2).Seconds())
 
-					gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", repo, commit.Hash.String())
+					gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", repoName, commit.Hash.String())
 					created := commit.Committer.When
 
 					if release != nil {
