@@ -83,14 +83,16 @@ func main() {
 	signal.Notify(stopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
-	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	if err != nil {
-		logrus.Warnf("could not parse gitops repositories")
+	if config.GitopsRepo == "" && config.GitopsRepoDeployKeyPath == "" && config.GitopsRepos == "" {
+		logrus.Error("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
 	}
 
-	var repoCache *nativeGit.GitopsRepoCache
-	if config.GitopsRepo != "" && config.GitopsRepoDeployKeyPath != "" {
-		repoCache, err = nativeGit.NewGitopsRepoCache(
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Warn("could not parse gitops repositories")
+	}
+
+		repoCache, err := nativeGit.NewGitopsRepoCache(
 			config.RepoCachePath,
 			config.GitopsRepo,
 			parsedGitopsRepos,
@@ -103,9 +105,6 @@ func main() {
 		}
 		go repoCache.Run()
 		logrus.Info("repo cache initialized")
-	} else {
-		logrus.Warn("Not initializing GitOps repo cache. GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH must be set to initialize GitOps repo cache")
-	}
 
 	eventSinkHub := streaming.NewEventSinkHub(config)
 	go eventSinkHub.Run()

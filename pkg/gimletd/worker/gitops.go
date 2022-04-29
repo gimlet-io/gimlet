@@ -366,9 +366,15 @@ func processRollbackEvent(
 		GitopsRepo:      rollbackRequest.Env,
 	}
 
-	repoToWrite := repoToWrite(parsedGitopsRepos, rollbackEvent.RollbackRequest.Env, gitopsRepo)
+	repoName, err := repoName(parsedGitopsRepos, rollbackEvent.RollbackRequest.Env, gitopsRepo)
+	if err != nil {
+		rollbackEvent.Status = events.Failure
+		rollbackEvent.StatusDesc = err.Error()
+		return rollbackEvent, err
+	}
+
 	t0 := time.Now().UnixNano()
-	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
@@ -406,7 +412,7 @@ func processRollbackEvent(
 		rollbackEvent.StatusDesc = err.Error()
 		return rollbackEvent, err
 	}
-	gitopsRepoCache.Invalidate(repoToWrite)
+	gitopsRepoCache.Invalidate(repoName)
 
 	rollbackEvent.GitopsRefs = hashes
 	rollbackEvent.Status = events.Success
@@ -541,8 +547,12 @@ func cloneTemplateWriteAndPush(
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 ) (string, error) {
-	repoToWrite := repoToWrite(parsedGitopsRepos, manifest.Env, gitopsRepo)
-	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
+	repoName, err := repoName(parsedGitopsRepos, manifest.Env, gitopsRepo)
+	if err != nil {
+		return "", err
+	}
+
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
@@ -569,7 +579,7 @@ func cloneTemplateWriteAndPush(
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.Invalidate(repoToWrite)
+		gitopsRepoCache.Invalidate(repoName)
 	}
 
 	return sha, nil
@@ -585,8 +595,14 @@ func cloneTemplateDeleteAndPush(
 	triggeredBy string,
 	gitopsEvent *events.DeleteEvent,
 ) (*events.DeleteEvent, error) {
-	repoToWrite := repoToWrite(parsedGitopsRepos, gitopsEvent.Env, gitopsRepo)
-	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
+	repoName, err := repoName(parsedGitopsRepos, gitopsEvent.Env, gitopsRepo)
+	if err != nil {
+		gitopsEvent.Status = events.Failure
+		gitopsEvent.StatusDesc = err.Error()
+		return gitopsEvent, err
+	}
+
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		gitopsEvent.Status = events.Failure
@@ -621,7 +637,7 @@ func cloneTemplateDeleteAndPush(
 			gitopsEvent.StatusDesc = err.Error()
 			return gitopsEvent, err
 		}
-		gitopsRepoCache.Invalidate(repoToWrite)
+		gitopsRepoCache.Invalidate(repoName)
 
 		gitopsEvent.GitopsRef = sha
 	}

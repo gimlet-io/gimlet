@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -82,8 +83,12 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		logrus.Warnf("could not parse gitops repositories")
 	}
 
-	repoToWrite := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
-	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(repoToWrite) // using a copy of the repo to avoid concurrent map writes error
+	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
+	if err != nil {
+		logrus.Fatal("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository", env)
+	}
+
+	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -142,10 +147,13 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("could not parse gitops repositories")
 	}
+ 
+	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
+	if err != nil {
+		logrus.Fatal("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository", env)
+	}
 
-	repoToWrite := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
-
-	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(repoToWrite), app, env, perf)
+	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(repoName), app, env, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -314,8 +322,12 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		logrus.Warnf("could not parse gitops repositories")
 	}
 
-	repoToWrite := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
-	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
+	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
+	if err != nil {
+		logrus.Fatal("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository", env)
+	}
+
+	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -350,7 +362,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	err = nativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
-	gitopsRepoCache.Invalidate(repoToWrite)
+	gitopsRepoCache.Invalidate(repoName)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
@@ -439,13 +451,17 @@ func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, err
 	return gitopsRepos, nil
 }
 
-func repoToWrite(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string) {
-	repoToWrite := defaultGitopsRepo
+func repoName(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+	repoName := defaultGitopsRepo
 	for _, gitopsRepo := range parsedGitopsRepos {
 		if gitopsRepo.Env == env {
-			repoToWrite = gitopsRepo.GitopsRepo
+			repoName = gitopsRepo.GitopsRepo
 		}
 	}
 
-	return repoToWrite
+	if repoName == "" {
+        return "", errors.New("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository")
+    } else {
+		return repoName, nil
+	}
 }

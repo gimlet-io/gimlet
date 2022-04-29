@@ -18,7 +18,6 @@ type GitopsRepoCache struct {
 	cacheRoot               string
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
-	defaultRepo				*git.Repository
 	Repos                   map[string]*git.Repository
 	defaultCachePath		string
 	cachePaths              map[string]string
@@ -34,7 +33,7 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
-	defaultCachePath, defaultRepo, err := CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+	defaultCachePath, _, err := CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +54,6 @@ func NewGitopsRepoCache(
 		cacheRoot:               cacheRoot,
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
-		defaultRepo:			 defaultRepo,
 		Repos:                   repos,
 		defaultCachePath:		 defaultCachePath,
 		cachePaths:              cachePaths,
@@ -98,7 +96,7 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 		logrus.Errorf("cannot generate public key from private: %s", err.Error())
 	}
 
-	w, err := r.repoToUse(repoName).Worktree()
+	w, err := r.Repos[repoName].Worktree()
 	if err != nil {
 		logrus.Errorf("could not get worktree: %s", err)
 		return
@@ -117,7 +115,7 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 }
 
 func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
-	return r.repoToUse(repoName)
+	return r.Repos[repoName]
 }
 
 func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, string, string, error) {
@@ -159,15 +157,4 @@ func (r *GitopsRepoCache) CleanupWrittenRepo(path string) error {
 
 func (r *GitopsRepoCache) Invalidate(repoName string) {
 	r.syncGitRepo(repoName)
-}
-
-func (r *GitopsRepoCache) repoToUse(repoName string) *git.Repository {
-	repoToRead := r.defaultRepo
-	for repoistoryName, repository := range r.Repos {
-		if repoistoryName == repoName {
-			repoToRead = repository
-		}
-	}
-	
-	return repoToRead
 }
