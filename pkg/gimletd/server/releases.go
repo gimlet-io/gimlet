@@ -82,7 +82,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		logrus.Warnf("could not parse gitops repositories")
 	}
 
-	repoToWrite, err := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
+	repoToWrite := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
 	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(repoToWrite) // using a copy of the repo to avoid concurrent map writes error
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
@@ -143,7 +143,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 		logrus.Warnf("could not parse gitops repositories")
 	}
 
-	repoToWrite, err := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
+	repoToWrite := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
 
 	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(repoToWrite), app, env, perf)
 	if err != nil {
@@ -314,7 +314,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		logrus.Warnf("could not parse gitops repositories")
 	}
 
-	repoToWrite, err := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
+	repoToWrite := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
 	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
@@ -439,17 +439,13 @@ func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, err
 	return gitopsRepos, nil
 }
 
-func repoToWrite(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
-	var err error
+func repoToWrite(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string) {
 	repoToWrite := defaultGitopsRepo
 	for _, gitopsRepo := range parsedGitopsRepos {
 		if gitopsRepo.Env == env {
 			repoToWrite = gitopsRepo.GitopsRepo
 		}
 	}
-	if err != nil {
-		logrus.Errorf("cannot find repository to write: %s", err)
-	}
 
-	return repoToWrite, err
+	return repoToWrite
 }

@@ -366,7 +366,7 @@ func processRollbackEvent(
 		GitopsRepo:      rollbackRequest.Env,
 	}
 
-	repoToWrite, err := repoToWrite(parsedGitopsRepos, rollbackEvent.RollbackRequest.Env, gitopsRepo)
+	repoToWrite := repoToWrite(parsedGitopsRepos, rollbackEvent.RollbackRequest.Env, gitopsRepo)
 	t0 := time.Now().UnixNano()
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
@@ -541,7 +541,7 @@ func cloneTemplateWriteAndPush(
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 ) (string, error) {
-	repoToWrite, err := repoToWrite(parsedGitopsRepos, manifest.Env, gitopsRepo)
+	repoToWrite := repoToWrite(parsedGitopsRepos, manifest.Env, gitopsRepo)
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
@@ -585,7 +585,7 @@ func cloneTemplateDeleteAndPush(
 	triggeredBy string,
 	gitopsEvent *events.DeleteEvent,
 ) (*events.DeleteEvent, error) {
-	repoToWrite, err := repoToWrite(parsedGitopsRepos, gitopsEvent.Env, gitopsRepo)
+	repoToWrite := repoToWrite(parsedGitopsRepos, gitopsEvent.Env, gitopsRepo)
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
