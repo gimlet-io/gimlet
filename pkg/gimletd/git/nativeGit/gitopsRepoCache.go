@@ -19,7 +19,7 @@ type GitopsRepoCache struct {
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
-	cachePath     		    string
+	defaultCachePath		string
 	cachePaths              map[string]string
 	stopCh                  chan os.Signal
 	waitCh                  chan struct{}
@@ -55,7 +55,7 @@ func NewGitopsRepoCache(
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
-		cachePath:				 defaultCachePath,
+		defaultCachePath:		 defaultCachePath,
 		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
 		waitCh:                  waitCh,
@@ -70,8 +70,8 @@ func (r *GitopsRepoCache) Run() {
 
 		select {
 		case <-r.stopCh:
-			logrus.Infof("cleaning up git repo cache at %s", r.cachePath)
-			TmpFsCleanup(r.cachePath)
+			logrus.Infof("cleaning up git repo cache at %s", r.defaultCachePath)
+			TmpFsCleanup(r.defaultCachePath)
 			for _, cachePath := range r.cachePaths {
 				logrus.Infof("cleaning up git repo cache at %s", cachePath)
 				TmpFsCleanup(cachePath)
@@ -124,7 +124,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
  
-	cachePath := r.cachePath
+	cachePath := r.defaultCachePath
 	for cachePathName, cachePathContent := range r.cachePaths {
 		if cachePathName == repoName {
 			cachePath = cachePathContent
