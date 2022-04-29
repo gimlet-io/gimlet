@@ -93,7 +93,6 @@ func main() {
 		repoCache, err = nativeGit.NewGitopsRepoCache(
 			config.RepoCachePath,
 			config.GitopsRepo,
-			config.GitopsRepos,
 			parsedGitopsRepos,
 			config.GitopsRepoDeployKeyPath,
 			stopCh,

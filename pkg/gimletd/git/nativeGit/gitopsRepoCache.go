@@ -16,12 +16,10 @@ import (
 
 type GitopsRepoCache struct {
 	cacheRoot               string
-	gitopsRepo              string
-	gitopsRepos             string
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
-	cachePath               string
+	cachePath     		    string
 	cachePaths              map[string]string
 	stopCh                  chan os.Signal
 	waitCh                  chan struct{}
@@ -30,7 +28,6 @@ type GitopsRepoCache struct {
 func NewGitopsRepoCache(
 	cacheRoot string,
 	gitopsRepo string,
-	gitopsRepos string,
 	parsedGitopsRepos []*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	stopCh chan os.Signal,
@@ -55,12 +52,10 @@ func NewGitopsRepoCache(
 
 	return &GitopsRepoCache{
 		cacheRoot:               cacheRoot,
-		gitopsRepo:              gitopsRepo,
-		gitopsRepos:             gitopsRepos,
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
-		cachePath:               defaultCachePath,
+		cachePath:				 defaultCachePath,
 		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
 		waitCh:                  waitCh,
@@ -128,7 +123,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	if err != nil {
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
-
+ 
 	cachePath := r.cachePath
 	for cachePathName, cachePathContent := range r.cachePaths {
 		if cachePathName == repoName {
