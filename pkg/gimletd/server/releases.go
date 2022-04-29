@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 )
 
 func getReleases(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +147,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("could not parse gitops repositories")
 	}
- 
+
 	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
 	if err != nil {
 		logrus.Fatal("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository", env)
@@ -460,8 +460,8 @@ func repoName(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultG
 	}
 
 	if repoName == "" {
-        return "", errors.New("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository")
-    } else {
-		return repoName, nil
+		return "", errors.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a backup repository", env)
 	}
+
+	return repoName, nil
 }
