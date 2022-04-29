@@ -84,7 +84,7 @@ func main() {
 	waitCh := make(chan struct{})
 
 	if config.GitopsRepo == "" && config.GitopsRepoDeployKeyPath == "" && config.GitopsRepos == "" {
-		logrus.Error("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
+		logrus.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
 	}
 
 	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
