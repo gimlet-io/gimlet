@@ -881,3 +881,18 @@ func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, sha stri
 		logrus.Warnf("could not save or update gitops commit: %s", err)
 	}
 }
+
+func repoName(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+	repoName := defaultGitopsRepo
+	for _, gitopsRepo := range parsedGitopsRepos {
+		if gitopsRepo.Env == env {
+			repoName = gitopsRepo.GitopsRepo
+		}
+	}
+
+	if repoName == "" {
+		return "", errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a backup", env)
+	}
+
+	return repoName, nil
+}
