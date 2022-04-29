@@ -89,14 +89,9 @@ func (r *GitopsRepoCache) Run() {
 }
 
 func (r *GitopsRepoCache) syncGitRepo(repoName string) {
-	repoToWrite, err := repoToWrite(r.parsedGitopsRepos, repoName, r.gitopsRepo)
-	if err != nil {
-		errors.WithMessage(err, "couldn't find repository to write")
-	}
-	
 	publicKeysString := r.gitopsRepoDeployKeyPath
 	for _, gitopsRepo := range r.parsedGitopsRepos {
-		if gitopsRepo.GitopsRepo == repoToWrite {
+		if gitopsRepo.GitopsRepo == repoName {
 			publicKeysString = gitopsRepo.DeployKeyPath
 		}
 	}
@@ -106,7 +101,7 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 		logrus.Errorf("cannot generate public key from private: %s", err.Error())
 	}
 
-	w, err := r.Repos[repoToWrite].Worktree()
+	w, err := r.Repos[repoName].Worktree()
 	if err != nil {
 		logrus.Errorf("could not get worktree: %s", err)
 		return
@@ -125,20 +120,10 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 }
 
 func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
-	repoToWrite, err := repoToWrite(r.parsedGitopsRepos, repoName, r.gitopsRepo)
-	if err != nil {
-		errors.WithMessage(err, "couldn't find repository to write")
-	}
-
-	return r.Repos[repoToWrite]
+	return r.Repos[repoName]
 }
 
 func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, string, string, error) {
-	repoToWrite, err := repoToWrite(r.parsedGitopsRepos, repoName, r.gitopsRepo)
-	if err != nil {
-		errors.WithMessage(err, "couldn't find repository to write")
-	}
-
 	tmpPath, err := ioutil.TempDir(r.cacheRoot, "gitops-cow-")
 	if err != nil {
 		errors.WithMessage(err, "couldn't get temporary directory")
@@ -146,7 +131,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 
 	cachePath := r.cachePath
 	for cachePathName, cachePathContent := range r.cachePaths {
-		if cachePathName == repoToWrite {
+		if cachePathName == repoName {
 			cachePath = cachePathContent
 		}
 	}
@@ -163,7 +148,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 
 	deployKeyPath := r.gitopsRepoDeployKeyPath
 	for _, repo := range r.parsedGitopsRepos {
-		if repo.GitopsRepo == repoToWrite {
+		if repo.GitopsRepo == repoName {
 			deployKeyPath = repo.DeployKeyPath
 		}
 	}
@@ -176,21 +161,5 @@ func (r *GitopsRepoCache) CleanupWrittenRepo(path string) error {
 }
 
 func (r *GitopsRepoCache) Invalidate(repoName string) {
-	repoToWrite, err := repoToWrite(r.parsedGitopsRepos, repoName, r.gitopsRepo)
-	if err != nil {
-		errors.WithMessage(err, "couldn't find repository to write")
-	}
-
-	r.syncGitRepo(repoToWrite)
-}
-
-func repoToWrite(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
-	repoToWrite := defaultGitopsRepo
-	for _, gitopsRepo := range parsedGitopsRepos {
-		if gitopsRepo.Env == env {
-			repoToWrite = gitopsRepo.GitopsRepo
-		}
-	}
-
-	return repoToWrite, nil
+	r.syncGitRepo(repoName)
 }

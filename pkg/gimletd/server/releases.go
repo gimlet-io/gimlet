@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
@@ -68,7 +71,19 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 
-	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(env) // using a copy of the repo to avoid concurrent map writes error
+	config, err := config.Environ()
+	if err != nil {
+		logger := logrus.WithError(err)
+		logger.Fatalln("main: invalid configuration")
+	}
+
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Warnf("could not parse gitops repositories")
+	}
+
+	repoToWrite, err := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
+	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(repoToWrite) // using a copy of the repo to avoid concurrent map writes error
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -117,7 +132,20 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
 
-	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(env), app, env, perf)
+	config, err := config.Environ()
+	if err != nil {
+		logger := logrus.WithError(err)
+		logger.Fatalln("main: invalid configuration")
+	}
+
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Warnf("could not parse gitops repositories")
+	}
+
+	repoToWrite, err := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
+
+	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(repoToWrite), app, env, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -275,7 +303,19 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(env)
+	config, err := config.Environ()
+	if err != nil {
+		logger := logrus.WithError(err)
+		logger.Fatalln("main: invalid configuration")
+	}
+
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Warnf("could not parse gitops repositories")
+	}
+
+	repoToWrite, err := repoToWrite(parsedGitopsRepos, env, config.GitopsRepo)
+	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoToWrite)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -310,7 +350,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	err = nativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
-	gitopsRepoCache.Invalidate(env)
+	gitopsRepoCache.Invalidate(repoToWrite)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
@@ -368,4 +408,48 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(statusBytes)
+}
+
+func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, error) {
+	var gitopsRepos []*config.GitopsRepoConfig
+	splitGitopsRepos := strings.Split(gitopsReposString, ";")
+
+	for _, gitopsReposString := range splitGitopsRepos {
+		if gitopsReposString == "" {
+			continue
+		}
+		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+
+		singleGitopsRepo := &config.GitopsRepoConfig{
+			Env:           parsedGitopsReposString.Get("env"),
+			RepoPerEnv:    repoPerEnv,
+			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
+			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
+		}
+		gitopsRepos = append(gitopsRepos, singleGitopsRepo)
+	}
+
+	return gitopsRepos, nil
+}
+
+func repoToWrite(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+	var err error
+	repoToWrite := defaultGitopsRepo
+	for _, gitopsRepo := range parsedGitopsRepos {
+		if gitopsRepo.Env == env {
+			repoToWrite = gitopsRepo.GitopsRepo
+		}
+	}
+	if err != nil {
+		logrus.Errorf("cannot find repository to write: %s", err)
+	}
+
+	return repoToWrite, err
 }
