@@ -67,7 +67,7 @@ export default class App extends Component {
           <Redirect to="/repositories" />
         </Route>
 
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 pb-20">
           <NavBar />
           <div className="py-10">
             <Switch>

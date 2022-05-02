@@ -47,24 +47,30 @@ export default class Footer extends Component {
                     "Trailing:";
 
         return (
-            <div className="flex items-center w-full m-2">
+            <div className="flex items-center w-full truncate">
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}:`}</p>
-                <ul className="ml-4">
-                    <li className="flex items-center cursor-pointer"
+                <div className="ml-4">
+                    <p className="flex items-center cursor-pointer"
+                        title={gitopsCommit.statusDesc}
                         onClick={() => {
                             window.location.href = `/environments/${gitopsCommit.env}/gitops-commits`
                             return true
                         }}>
                         {lastCommitStatus}
                         <span className={(color === "yellow" && "animate-pulse") + ` h1 rounded-full p-2 mx-1 bg-${color}-400`} />
-                        {`${dateLabel} ago ${gitopsCommit.sha && gitopsCommit.sha.slice(0, 6)}`}
-                    </li>
+                        <p className="text-sm">
+                            {dateLabel} ago <span className="font-mono">{gitopsCommit.sha.slice(0, 6)}</span>
+                        </p>
+                    </p>
                     {lastCommitStatus.includes("failed")
                         &&
-                        <li>{gitopsCommit.statusDesc}</li>}
+                        <p class="overflow-ellipsis overflow-hidden w-60 text-md">
+                            {gitopsCommit.statusDesc}
+                        </p>
+                    }
                     {lastCommitStatus === "Trailing:" &&
-                        <li>Flux is trailing</li>}
-                </ul>
+                        <p>Flux is trailing</p>}
+                </div>
             </div>
         );
     }
@@ -77,8 +83,13 @@ export default class Footer extends Component {
     };
 
     render() {
+        if (this.state.gitopsCommits.length === 0 ||
+            this.state.envs.length === 0) {
+            return null;
+        }
+
         return (
-            <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full p-2 text-gray-100">
+            <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full h-24 p-4 text-gray-100">
                 {this.arrayWithFirstCommitOfEnvs().slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
             </div>)
     }
