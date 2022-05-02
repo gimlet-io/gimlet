@@ -109,8 +109,9 @@ func main() {
 	eventSinkHub := streaming.NewEventSinkHub(config)
 	go eventSinkHub.Run()
 
-	if config.GitopsRepo != "" &&
-		config.GitopsRepoDeployKeyPath != "" {
+	if (config.GitopsRepo != "" &&
+		config.GitopsRepoDeployKeyPath != "") ||
+		config.GitopsRepos != "" {
 		gitopsWorker := worker.NewGitopsWorker(
 			store,
 			config.GitopsRepo,
@@ -125,7 +126,7 @@ func main() {
 		go gitopsWorker.Run()
 		logrus.Info("Gitops worker started")
 	} else {
-		logrus.Warn("Not starting GitOps worker. GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH must be set to start GitOps worker")
+		logrus.Warn("Not starting GitOps worker. Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set to start GitOps worker")
 	}
 
 	if config.ReleaseStats == "enabled" {
