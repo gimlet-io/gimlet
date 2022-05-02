@@ -89,7 +89,7 @@ func main() {
 
 	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
 	if err != nil {
-		logrus.Warn("could not parse gitops repositories")
+		logrus.Fatal("could not parse gitops repositories")
 	}
 
 	repoCache, err := nativeGit.NewGitopsRepoCache(
