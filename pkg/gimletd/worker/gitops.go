@@ -891,7 +891,7 @@ func repoName(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultG
 	}
 
 	if repoName == "" {
-		return "", errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a backup", env)
+		return "", errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
 	}
 
 	return repoName, nil
