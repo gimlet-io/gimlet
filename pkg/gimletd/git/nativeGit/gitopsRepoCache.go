@@ -18,6 +18,8 @@ type GitopsRepoCache struct {
 	cacheRoot               string
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
+	defaultRepo             *git.Repository
+	defaultRepoName         string
 	Repos                   map[string]*git.Repository
 	defaultCachePath        string
 	cachePaths              map[string]string
@@ -33,10 +35,11 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
+	var defaultRepo *git.Repository
 	var defaultCachePath string
 	var err error
 	if gitopsRepo != "" && gitopsRepoDeployKeyPath != "" {
-		defaultCachePath, _, err = CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+		defaultCachePath, defaultRepo, err = CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
 		if err != nil {
 			return nil, err
 		}
@@ -58,6 +61,8 @@ func NewGitopsRepoCache(
 		cacheRoot:               cacheRoot,
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
+		defaultRepo:             defaultRepo,
+		defaultRepoName:         gitopsRepo,
 		Repos:                   repos,
 		defaultCachePath:        defaultCachePath,
 		cachePaths:              cachePaths,
@@ -68,8 +73,12 @@ func NewGitopsRepoCache(
 
 func (r *GitopsRepoCache) Run() {
 	for {
-		for repoName := range r.Repos {
-			r.syncGitRepo(repoName)
+		if len(r.Repos) == 0 {
+			r.syncGitRepo(r.defaultRepoName)
+		} else {
+			for repoName := range r.Repos {
+				r.syncGitRepo(repoName)
+			}
 		}
 
 		select {
@@ -102,10 +111,19 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 		logrus.Errorf("cannot generate public key from private: %s", err.Error())
 	}
 
-	w, err := r.Repos[repoName].Worktree()
-	if err != nil {
-		logrus.Errorf("could not get worktree: %s", err)
-		return
+	var w *git.Worktree
+	if len(r.Repos) == 0 {
+		w, err = r.defaultRepo.Worktree()
+		if err != nil {
+			logrus.Errorf("could not get worktree: %s", err)
+			return
+		}
+	} else {
+		w, err = r.Repos[repoName].Worktree()
+		if err != nil {
+			logrus.Errorf("could not get worktree: %s", err)
+			return
+		}
 	}
 
 	w.Pull(&git.PullOptions{
@@ -121,7 +139,11 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 }
 
 func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
-	return r.Repos[repoName]
+	if len(r.Repos) == 0 {
+		return r.defaultRepo
+	} else {
+		return r.Repos[repoName]
+	}
 }
 
 func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, string, string, error) {
