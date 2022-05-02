@@ -33,9 +33,13 @@ func NewGitopsRepoCache(
 	stopCh chan os.Signal,
 	waitCh chan struct{},
 ) (*GitopsRepoCache, error) {
-	defaultCachePath, _, err := CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
-	if err != nil {
-		return nil, err
+	var defaultCachePath string
+	var err error
+	if gitopsRepo != "" && gitopsRepoDeployKeyPath != "" {
+		defaultCachePath, _, err = CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	cachePaths := map[string]string{}
