@@ -323,6 +323,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           setRepoPerEnv={setRepoPerEnv}
           infraRepo={infraRepo}
           appsRepo={appsRepo}
+          setInfraRepo={setInfraRepo}
+          setAppsRepo={setAppsRepo}
         />
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">

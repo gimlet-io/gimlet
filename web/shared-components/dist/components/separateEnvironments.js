@@ -16,7 +16,9 @@ const SeparateEnvironments = _ref => {
     repoPerEnv,
     setRepoPerEnv,
     infraRepo,
-    appsRepo
+    appsRepo,
+    setInfraRepo,
+    setAppsRepo
   } = _ref;
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "text-gray-700"
@@ -37,7 +39,7 @@ const SeparateEnvironments = _ref => {
     className: (repoPerEnv ? "translate-x-5" : "translate-x-0") + " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
   })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "text-sm text-gray-500 leading-loose"
-  }, "Manifests will be placed in environment specific repositories"), repoPerEnv && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Manifests will be placed in environment specific repositories"), /*#__PURE__*/_react.default.createElement("div", {
     className: "ml-8"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flex mt-4"
@@ -52,7 +54,8 @@ const SeparateEnvironments = _ref => {
     name: "infra",
     className: "block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm",
     type: "text",
-    value: infraRepo
+    value: infraRepo,
+    onChange: e => setInfraRepo(e.target.value)
   })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "text-sm text-gray-500 leading-loose"
   }, "Infrastructure manifests will be placed in the root of the specified repository"), /*#__PURE__*/_react.default.createElement("div", {
@@ -68,7 +71,8 @@ const SeparateEnvironments = _ref => {
     name: "apps",
     className: "block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm",
     type: "text",
-    value: appsRepo
+    value: appsRepo,
+    onChange: e => setAppsRepo(e.target.value)
   })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "text-sm text-gray-500 leading-loose"
   }, "Application manifests will be placed in the root of the specified repository")));

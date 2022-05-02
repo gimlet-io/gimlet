@@ -1,7 +1,7 @@
 import React from 'react'
 import { Switch } from '@headlessui/react'
 
-const SeparateEnvironments = ({ repoPerEnv, setRepoPerEnv, infraRepo, appsRepo }) => {
+const SeparateEnvironments = ({ repoPerEnv, setRepoPerEnv, infraRepo, appsRepo, setInfraRepo, setAppsRepo }) => {
     return (
         <div className="text-gray-700">
             <div className="flex mt-4">
@@ -27,7 +27,6 @@ const SeparateEnvironments = ({ repoPerEnv, setRepoPerEnv, infraRepo, appsRepo }
                 </div>
             </div>
             <div className="text-sm text-gray-500 leading-loose">Manifests will be placed in environment specific repositories</div>
-            {repoPerEnv &&
                 <div className="ml-8">
                     <div className="flex mt-4">
                         <div className="font-medium self-center">Infrastructure git repository</div>
@@ -37,6 +36,7 @@ const SeparateEnvironments = ({ repoPerEnv, setRepoPerEnv, infraRepo, appsRepo }
                                     className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     type="text"
                                     value={infraRepo}
+                                    onChange={e => setInfraRepo(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -50,13 +50,13 @@ const SeparateEnvironments = ({ repoPerEnv, setRepoPerEnv, infraRepo, appsRepo }
                                     className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     type="text"
                                     value={appsRepo}
+                                    onChange={e => setAppsRepo(e.target.value)}
                                 />
                             </div>
                         </div>
                     </div>
                     <div className="text-sm text-gray-500 leading-loose">Application manifests will be placed in the root of the specified repository</div>
                 </div>
-            }
         </div>
     );
 };
