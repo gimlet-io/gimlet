@@ -79,7 +79,7 @@ export default class App extends Component {
                 <RepositoriesWithRouting />
               </Route>
 
-              <Route path="/environments">
+              <Route path="/environments/:environment?/:tab?">
                 <EnvironmentsWithRouting />
               </Route>
 

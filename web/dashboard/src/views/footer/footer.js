@@ -50,7 +50,11 @@ export default class Footer extends Component {
             <div className="flex items-center w-full m-2">
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}:`}</p>
                 <ul className="ml-4">
-                    <li className="flex items-center cursor-pointer" title={gitopsCommit.statusDesc}>
+                    <li className="flex items-center cursor-pointer"
+                        onClick={() => {
+                            window.location.href = `/environments/${gitopsCommit.env}/gitops-commits`
+                            return true
+                        }}>
                         {lastCommitStatus}
                         <span className={(color === "yellow" && "animate-pulse") + ` h1 rounded-full p-2 mx-1 bg-${color}-400`} />
                         {`${dateLabel} ago ${gitopsCommit.sha && gitopsCommit.sha.slice(0, 6)}`}
@@ -69,7 +73,6 @@ export default class Footer extends Component {
         let array = [];
         this.state.envs.map((env) => array.push(this.state.gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env.name)[0]));
         array.sort((a, b) => b.created - a.created)
-        console.log(array)
         return array;
     };
 

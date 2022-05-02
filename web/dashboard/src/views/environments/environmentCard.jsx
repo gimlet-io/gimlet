@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { format, formatDistance } from "date-fns";
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
 import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
@@ -11,7 +11,7 @@ import {
   ACTION_TYPE_GITOPS_COMMITS
 } from "../../redux/redux";
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams }) => {
   let reduxState = store.getState();
   const [repoPerEnv, setRepoPerEnv] = useState(false)
   const [infraRepo, setInfraRepo] = useState(env.infraRepo)
@@ -20,6 +20,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
   const [gitopsCommits, setGitopsCommits] = useState(reduxState.gitopsCommits);
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
+  const ref = useRef();
 
   if (repoPerEnv && infraRepo === "") {
     setInfraRepo(`gitops-${env.name}-infra`);
@@ -34,10 +35,23 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     setGitopsCommits(reduxState.gitopsCommits);
   });
 
+  function scrollTo(ref) {
+    if (!ref.current) return;
+    ref.current.scrollIntoView({ behavior: "smooth" });
+  }
+
+  if (!tab || envFromParams !== env.name) {
+    tab = "";
+  }
+
+  if (envFromParams === env.name) {
+    scrollTo(ref)
+  }
+
   const [tabs, setTabs] = useState([
-    { name: "Gitops repositories", current: true },
-    { name: "Infrastructure components", current: false },
-    { name: "Gitops commits", current: false }
+    { name: "Gitops repositories", current: tab === "" },
+    { name: "Infrastructure components", current: tab === "components" },
+    { name: "Gitops commits", current: tab === "gitops-commits" }
   ]);
 
   const hasGitopsRepo = env.infraRepo !== "";
@@ -329,7 +343,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-      <div className="px-4 py-5 sm:px-6">
+      <div ref={ref} className="px-4 py-5 sm:px-6">
         <div className="flex justify-between">
           <div className="inline-flex">
             <h3 className="text-lg leading-6 font-medium text-gray-900 pr-1">
