@@ -74,8 +74,10 @@ func (r *GitopsRepoCache) Run() {
 
 		select {
 		case <-r.stopCh:
-			logrus.Infof("cleaning up git repo cache at %s", r.defaultCachePath)
-			TmpFsCleanup(r.defaultCachePath)
+			if r.defaultCachePath != "" {
+				logrus.Infof("cleaning up git repo cache at %s", r.defaultCachePath)
+				TmpFsCleanup(r.defaultCachePath)
+			}
 			for _, cachePath := range r.cachePaths {
 				logrus.Infof("cleaning up git repo cache at %s", cachePath)
 				TmpFsCleanup(cachePath)
