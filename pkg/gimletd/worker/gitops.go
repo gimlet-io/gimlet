@@ -207,12 +207,17 @@ func processBranchDeletedEvent(
 			continue
 		}
 
+		repoName, err := repoName(parsedGitopsRepos, env.Env, gitopsRepo)
+		if err != nil {
+			return nil, fmt.Errorf("cannot find repository to write")
+		}
+
 		gitopsEvent := &events.DeleteEvent{
 			Env:         env.Env,
 			App:         env.Cleanup.AppToCleanup,
 			TriggeredBy: "policy",
 			Status:      events.Success,
-			GitopsRepo:  env.Env,
+			GitopsRepo:  repoName,
 
 			BranchDeletedEvent: branchDeletedEvent,
 		}
@@ -296,12 +301,17 @@ func processReleaseEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
+		repoName, err := repoName(parsedGitopsRepos, manifest.Env, gitopsRepo)
+		if err != nil {
+			return deployEvents, err
+		}
+
 		deployEvent := &events.DeployEvent{
 			Manifest:    manifest,
 			Artifact:    artifact,
 			TriggeredBy: releaseRequest.TriggeredBy,
 			Status:      events.Success,
-			GitopsRepo:  manifest.Env,
+			GitopsRepo:  repoName,
 		}
 
 		err = manifest.ResolveVars(artifact.Vars())
@@ -361,20 +371,18 @@ func processRollbackEvent(
 		return nil, fmt.Errorf("cannot parse release request with id: %s", event.ID)
 	}
 
-	rollbackEvent := &events.RollbackEvent{
-		RollbackRequest: &rollbackRequest,
-		GitopsRepo:      rollbackRequest.Env,
+	repoName, err := repoName(parsedGitopsRepos, rollbackRequest.Env, gitopsRepo)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find repository to write")
 	}
 
-	repoName, err := repoName(parsedGitopsRepos, rollbackEvent.RollbackRequest.Env, gitopsRepo)
-	if err != nil {
-		rollbackEvent.Status = events.Failure
-		rollbackEvent.StatusDesc = err.Error()
-		return rollbackEvent, err
+	rollbackEvent := &events.RollbackEvent{
+		RollbackRequest: &rollbackRequest,
+		GitopsRepo:      repoName,
 	}
 
 	t0 := time.Now().UnixNano()
-	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(rollbackEvent.GitopsRepo)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
@@ -468,12 +476,17 @@ func processArtifactEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
+		repoName, err := repoName(parsedGitopsRepos, manifest.Env, gitopsRepo)
+		if err != nil {
+			return deployEvents, err
+		}
+
 		deployEvent := &events.DeployEvent{
 			Manifest:    manifest,
 			Artifact:    artifact,
 			TriggeredBy: "policy",
 			Status:      events.Success,
-			GitopsRepo:  manifest.Env,
+			GitopsRepo:  repoName,
 		}
 
 		err = manifest.ResolveVars(artifact.Vars())
