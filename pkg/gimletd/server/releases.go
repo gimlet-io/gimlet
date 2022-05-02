@@ -86,8 +86,8 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
-        http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-        return
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
@@ -153,8 +153,8 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
-        http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-        return
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(repoName), app, env, perf)
@@ -329,8 +329,8 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
-        http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-        return
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
