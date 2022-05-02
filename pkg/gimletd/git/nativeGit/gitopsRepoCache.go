@@ -19,7 +19,7 @@ type GitopsRepoCache struct {
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	Repos                   map[string]*git.Repository
-	defaultCachePath		string
+	defaultCachePath        string
 	cachePaths              map[string]string
 	stopCh                  chan os.Signal
 	waitCh                  chan struct{}
@@ -55,7 +55,7 @@ func NewGitopsRepoCache(
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		Repos:                   repos,
-		defaultCachePath:		 defaultCachePath,
+		defaultCachePath:        defaultCachePath,
 		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
 		waitCh:                  waitCh,
@@ -123,7 +123,7 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	if err != nil {
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
- 
+
 	cachePath := r.defaultCachePath
 	for cachePathName, cachePathContent := range r.cachePaths {
 		if cachePathName == repoName {

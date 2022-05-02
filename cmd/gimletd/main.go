@@ -92,19 +92,19 @@ func main() {
 		logrus.Warn("could not parse gitops repositories")
 	}
 
-		repoCache, err := nativeGit.NewGitopsRepoCache(
-			config.RepoCachePath,
-			config.GitopsRepo,
-			parsedGitopsRepos,
-			config.GitopsRepoDeployKeyPath,
-			stopCh,
-			waitCh,
-		)
-		if err != nil {
-			panic(err)
-		}
-		go repoCache.Run()
-		logrus.Info("repo cache initialized")
+	repoCache, err := nativeGit.NewGitopsRepoCache(
+		config.RepoCachePath,
+		config.GitopsRepo,
+		parsedGitopsRepos,
+		config.GitopsRepoDeployKeyPath,
+		stopCh,
+		waitCh,
+	)
+	if err != nil {
+		panic(err)
+	}
+	go repoCache.Run()
+	logrus.Info("repo cache initialized")
 
 	eventSinkHub := streaming.NewEventSinkHub(config)
 	go eventSinkHub.Run()

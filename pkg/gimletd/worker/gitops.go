@@ -30,7 +30,7 @@ import (
 type GitopsWorker struct {
 	store                   *store.Store
 	gitopsRepo              string
-	parsedGitopsRepos		[]*config.GitopsRepoConfig
+	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	tokenManager            customScm.NonImpersonatedTokenManager
 	notificationsManager    notifications.Manager
@@ -53,7 +53,7 @@ func NewGitopsWorker(
 	return &GitopsWorker{
 		store:                   store,
 		gitopsRepo:              gitopsRepo,
-		parsedGitopsRepos:		 parsedGitopsRepos,
+		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		notificationsManager:    notificationsManager,
 		tokenManager:            tokenManager,
