@@ -40,8 +40,6 @@ const SeparateEnvironments = _ref => {
   })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "text-sm text-gray-500 leading-loose"
   }, "Manifests will be placed in environment specific repositories"), /*#__PURE__*/_react.default.createElement("div", {
-    className: "ml-8"
-  }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flex mt-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "font-medium self-center"
@@ -75,7 +73,7 @@ const SeparateEnvironments = _ref => {
     onChange: e => setAppsRepo(e.target.value)
   })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "text-sm text-gray-500 leading-loose"
-  }, "Application manifests will be placed in the root of the specified repository")));
+  }, "Application manifests will be placed in the root of the specified repository"));
 };
 
 var _default = SeparateEnvironments;
