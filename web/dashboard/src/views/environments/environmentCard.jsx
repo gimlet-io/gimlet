@@ -14,19 +14,25 @@ import {
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams }) => {
   let reduxState = store.getState();
   const [repoPerEnv, setRepoPerEnv] = useState(false)
-  const [infraRepo, setInfraRepo] = useState(env.infraRepo)
-  const [appsRepo, setAppsRepo] = useState(env.appsRepo)
+  const [infraRepo, setInfraRepo] = useState("gitops-infra")
+  const [appsRepo, setAppsRepo] = useState("gitops-apps")
   /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "popupWindow" }]*/
   const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
   const [gitopsCommits, setGitopsCommits] = useState(reduxState.gitopsCommits);
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
   const ref = useRef();
 
-  if (repoPerEnv && infraRepo === "") {
+  if (repoPerEnv && infraRepo === "gitops-infra") {
     setInfraRepo(`gitops-${env.name}-infra`);
   }
-  if (repoPerEnv && appsRepo === "") {
+  if (repoPerEnv && appsRepo === "gitops-apps") {
     setAppsRepo(`gitops-${env.name}-apps`);
+  }
+  if (!repoPerEnv && infraRepo === `gitops-${env.name}-infra`) {
+    setInfraRepo("gitops-infra");
+  }
+  if (!repoPerEnv && appsRepo === `gitops-${env.name}-apps`) {
+    setAppsRepo("gitops-apps");
   }
 
   store.subscribe(() => {
@@ -323,6 +329,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           setRepoPerEnv={setRepoPerEnv}
           infraRepo={infraRepo}
           appsRepo={appsRepo}
+          setInfraRepo={setInfraRepo}
+          setAppsRepo={setAppsRepo}
         />
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">

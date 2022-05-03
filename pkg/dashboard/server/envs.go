@@ -155,18 +155,13 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bootstrapConfig.RepoPerEnv {
-		environment.InfraRepo = bootstrapConfig.InfraRepo
-		environment.AppsRepo = bootstrapConfig.AppsRepo
-		if !strings.Contains(environment.InfraRepo, "/") {
-			environment.InfraRepo = filepath.Join(org, environment.InfraRepo)
-		}
-		if !strings.Contains(environment.AppsRepo, "/") {
-			environment.AppsRepo = filepath.Join(org, environment.AppsRepo)
-		}
-	} else {
-		environment.InfraRepo = filepath.Join(org, "gitops-infra")
-		environment.AppsRepo = filepath.Join(org, "gitops-apps")
+	environment.InfraRepo = bootstrapConfig.InfraRepo
+	environment.AppsRepo = bootstrapConfig.AppsRepo
+	if !strings.Contains(environment.InfraRepo, "/") {
+		environment.InfraRepo = filepath.Join(org, environment.InfraRepo)
+	}
+	if !strings.Contains(environment.AppsRepo, "/") {
+		environment.AppsRepo = filepath.Join(org, environment.AppsRepo)
 	}
 
 	environment.RepoPerEnv = bootstrapConfig.RepoPerEnv
