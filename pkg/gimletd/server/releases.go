@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
@@ -71,19 +69,9 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
+	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
 
-	config, err := config.Environ()
-	if err != nil {
-		logger := logrus.WithError(err)
-		logger.Fatalln("main: invalid configuration")
-	}
-
-	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	if err != nil {
-		logrus.Warnf("could not parse gitops repositories")
-	}
-
-	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
+	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -138,19 +126,9 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
+	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
 
-	config, err := config.Environ()
-	if err != nil {
-		logger := logrus.WithError(err)
-		logger.Fatalln("main: invalid configuration")
-	}
-
-	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	if err != nil {
-		logrus.Warnf("could not parse gitops repositories")
-	}
-
-	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
+	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -299,6 +277,8 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
+	gitopsRepo := ctx.Value("gitopsRepo").(string)
+	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
 
 	params := r.URL.Query()
 	var env, app string
@@ -315,18 +295,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config, err := config.Environ()
-	if err != nil {
-		logger := logrus.WithError(err)
-		logger.Fatalln("main: invalid configuration")
-	}
-
-	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	if err != nil {
-		logrus.Warnf("could not parse gitops repositories")
-	}
-
-	repoName, err := repoName(parsedGitopsRepos, env, config.GitopsRepo)
+	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -428,38 +397,9 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write(statusBytes)
 }
 
-func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, error) {
-	var gitopsRepos []*config.GitopsRepoConfig
-	splitGitopsRepos := strings.Split(gitopsReposString, ";")
-
-	for _, gitopsReposString := range splitGitopsRepos {
-		if gitopsReposString == "" {
-			continue
-		}
-		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
-		if err != nil {
-			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
-		}
-		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
-		if err != nil {
-			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
-		}
-
-		singleGitopsRepo := &config.GitopsRepoConfig{
-			Env:           parsedGitopsReposString.Get("env"),
-			RepoPerEnv:    repoPerEnv,
-			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
-			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
-		}
-		gitopsRepos = append(gitopsRepos, singleGitopsRepo)
-	}
-
-	return gitopsRepos, nil
-}
-
-func repoName(parsedGitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+func repoName(gitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
 	repoName := defaultGitopsRepo
-	for _, gitopsRepo := range parsedGitopsRepos {
+	for _, gitopsRepo := range gitopsRepos {
 		if gitopsRepo.Env == env {
 			repoName = gitopsRepo.GitopsRepo
 		}

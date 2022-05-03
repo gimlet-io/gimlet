@@ -150,7 +150,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	r := server.SetupRouter(config, store, notificationsManager, repoCache, perf, eventSinkHub)
+	r := server.SetupRouter(config, store, notificationsManager, parsedGitopsRepos, repoCache, perf, eventSinkHub)
 	go func() {
 		err = http.ListenAndServe(":8888", r)
 		if err != nil {
