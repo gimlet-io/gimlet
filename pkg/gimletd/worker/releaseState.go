@@ -54,6 +54,9 @@ func (w *ReleaseStateWorker) Run() {
 					}
 					w.Perf.WithLabelValues("releaseState_appRelease").Observe(time.Since(t2).Seconds())
 
+					if repoName == "" {
+						repoName = w.RepoCache.DefaultRepoName
+					}
 					gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", repoName, commit.Hash.String())
 					created := commit.Committer.When
 

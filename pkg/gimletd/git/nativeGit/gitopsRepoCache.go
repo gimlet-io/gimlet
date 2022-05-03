@@ -19,7 +19,7 @@ type GitopsRepoCache struct {
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	defaultRepo             *git.Repository
-	defaultRepoName         string
+	DefaultRepoName         string
 	Repos                   map[string]*git.Repository
 	defaultCachePath        string
 	cachePaths              map[string]string
@@ -62,7 +62,7 @@ func NewGitopsRepoCache(
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		defaultRepo:             defaultRepo,
-		defaultRepoName:         gitopsRepo,
+		DefaultRepoName:         gitopsRepo,
 		Repos:                   repos,
 		defaultCachePath:        defaultCachePath,
 		cachePaths:              cachePaths,
@@ -74,7 +74,7 @@ func NewGitopsRepoCache(
 func (r *GitopsRepoCache) Run() {
 	for {
 		if len(r.Repos) == 0 {
-			r.syncGitRepo(r.defaultRepoName)
+			r.syncGitRepo(r.DefaultRepoName)
 		} else {
 			for repoName := range r.Repos {
 				r.syncGitRepo(repoName)
