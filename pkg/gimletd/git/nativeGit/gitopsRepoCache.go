@@ -151,9 +151,9 @@ func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, st
 	}
 
 	cachePath := r.defaultCachePath
-	for cachePathName, cachePathContent := range r.cachePaths {
-		if cachePathName == repoName {
-			cachePath = cachePathContent
+	for gitopsRepo, gitopsRepoCachePath := range r.cachePaths {
+		if gitopsRepo == repoName {
+			cachePath = gitopsRepoCachePath
 		}
 	}
 
