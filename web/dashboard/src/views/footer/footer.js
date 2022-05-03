@@ -26,60 +26,62 @@ export default class Footer extends Component {
         }
 
         const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
+        let color = "yellow";
+        let lastCommitStatus = "Trailing:";
 
-        const color = gitopsCommit.status.includes("Succeeded") ?
-            "green"
-            :
-            gitopsCommit.status.includes("Failed") ?
-                "red"
-                :
-                "yellow";
-
-        const lastCommitStatus = gitopsCommit.status.includes("Succeeded") ?
-            "Applied:"
-            :
-            gitopsCommit.status.includes("NotReady") ?
-                "Applying:"
-                :
-                gitopsCommit.status.includes("Failed") ?
-                    "Apply failed:"
-                    :
-                    "Trailing:";
+        if (gitopsCommit.status.includes("NotReady")) {
+            lastCommitStatus = "Applying:";
+        } else if (gitopsCommit.status.includes("Succeeded")) {
+            color = "green";
+            lastCommitStatus = "Applied:";
+        } else if (gitopsCommit.status.includes("Failed")) {
+            color = "red";
+            lastCommitStatus = "Apply failed:";
+        }
 
         return (
             <div className="flex items-center w-full truncate">
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}:`}</p>
-                <div className="ml-4">
-                    <p className="flex items-center cursor-pointer"
+                <div className="w-72 m-2 truncate">
+                    <span
+                        className="cursor-pointer"
                         title={gitopsCommit.statusDesc}
                         onClick={() => {
                             window.location.href = `/environments/${gitopsCommit.env}/gitops-commits`
                             return true
                         }}>
                         {lastCommitStatus}
-                        <span className={(color === "yellow" && "animate-pulse") + ` h1 rounded-full p-2 mx-1 bg-${color}-400`} />
-                        <p className="text-sm">
+                        <span className={(color === "yellow" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 inline-block bg-${color}-400`} />
+                        <span className="text-sm">
                             {dateLabel} ago <span className="font-mono">{gitopsCommit.sha.slice(0, 6)}</span>
-                        </p>
-                    </p>
+                        </span>
+                    </span>
                     {lastCommitStatus.includes("failed")
                         &&
-                        <p class="overflow-ellipsis overflow-hidden w-60 text-md">
+                        <p class="w-64 truncate">
                             {gitopsCommit.statusDesc}
+                        </p>}
+                    {lastCommitStatus === "Trailing:" &&
+                        <p>
+                            Flux is trailing
                         </p>
                     }
-                    {lastCommitStatus === "Trailing:" &&
-                        <p>Flux is trailing</p>}
                 </div>
             </div>
         );
     }
 
     arrayWithFirstCommitOfEnvs() {
-        let array = [];
-        this.state.envs.map((env) => array.push(this.state.gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env.name)[0]));
-        array.sort((a, b) => b.created - a.created)
-        return array;
+        let firstCommitOfEnvs = [];
+
+        for (let env of this.state.envs) {
+            firstCommitOfEnvs.push(this.state.gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env.name)[0]);
+        }
+
+        firstCommitOfEnvs = firstCommitOfEnvs.filter(commit => commit !== undefined);
+
+        firstCommitOfEnvs.sort((a, b) => b.created - a.created);
+        return firstCommitOfEnvs;
     };
 
     render() {
