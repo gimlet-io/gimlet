@@ -111,19 +111,17 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 		logrus.Errorf("cannot generate public key from private: %s", err.Error())
 	}
 
-	var w *git.Worktree
-	if len(r.Repos) == 0 {
-		w, err = r.defaultRepo.Worktree()
-		if err != nil {
-			logrus.Errorf("could not get worktree: %s", err)
-			return
-		}
+	var repo *git.Repository
+	if repoInMap, exists := r.Repos[repoName]; exists {
+		repo = repoInMap
 	} else {
-		w, err = r.Repos[repoName].Worktree()
-		if err != nil {
-			logrus.Errorf("could not get worktree: %s", err)
-			return
-		}
+		repo = r.defaultRepo
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		logrus.Errorf("could not get worktree: %s", err)
+		return
 	}
 
 	w.Pull(&git.PullOptions{
@@ -139,10 +137,10 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 }
 
 func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
-	if len(r.Repos) == 0 {
-		return r.defaultRepo
+	if repoInMap, exists := r.Repos[repoName]; exists {
+		return repoInMap
 	} else {
-		return r.Repos[repoName]
+		return r.defaultRepo
 	}
 }
 
