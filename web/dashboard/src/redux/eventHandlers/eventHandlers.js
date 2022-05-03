@@ -91,6 +91,7 @@ export function updateGitopsCommits(state, event) {
       gitopsCommit.sha = event.gitopsCommit.sha;
       gitopsCommit.status = event.gitopsCommit.status;
       gitopsCommit.statusDesc = event.gitopsCommit.statusDesc;
+      gitopsCommit.env = event.gitopsCommit.env;
       isPresent = true;
     };
   });

@@ -46,6 +46,7 @@ class Environments extends Component {
 
     getEnvironmentCards() {
         const { connectedAgents, envs } = this.state;
+        const { environment, tab } = this.props.match.params;
         const sortedEnvs = this.sortingByName(envs);
 
         return (
@@ -57,6 +58,8 @@ class Environments extends Component {
                 isOnline={this.isOnline(connectedAgents, env)}
                 gimletClient={this.props.gimletClient}
                 refreshEnvs={this.refreshEnvs}
+                tab={tab}
+                envFromParams={environment}
             />))
         )
     }
