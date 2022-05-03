@@ -21,6 +21,7 @@ import (
 
 func Test_fluxEvent(t *testing.T) {
 	notificationsManager := notifications.NewDummyManager()
+	gitopsRepos := []*config.GitopsRepoConfig{{}}
 	config := config.Config{}
 	eventSinkHub := streaming.NewEventSinkHub(&config)
 
@@ -49,6 +50,7 @@ func Test_fluxEvent(t *testing.T) {
 	_, _, err := testPostEndpoint(fluxEvent, func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, "notificationsManager", notificationsManager)
 		ctx = context.WithValue(ctx, "gitopsRepo", "my/gitops")
+		ctx = context.WithValue(ctx, "gitopsRepos", gitopsRepos)
 		ctx = context.WithValue(ctx, "store", store.NewTest())
 		ctx = context.WithValue(ctx, "eventSinkHub", eventSinkHub)
 		return ctx
