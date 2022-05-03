@@ -83,7 +83,7 @@ func main() {
 	signal.Notify(stopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
-	if (config.GitopsRepo == "" && config.GitopsRepoDeployKeyPath == "") || config.GitopsRepos == "" {
+	if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
 		logrus.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
 	}
 
