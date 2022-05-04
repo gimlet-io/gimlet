@@ -29,7 +29,6 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1beta2"
 	notifv1 "github.com/fluxcd/notification-controller/api/v1beta1"
 	"github.com/fluxcd/pkg/apis/meta"
-	"github.com/fluxcd/pkg/runtime/dependency"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 
 	"github.com/fluxcd/flux2/pkg/manifestgen"
@@ -116,7 +115,7 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 				Name: options.Name,
 			},
 			Validation: "client",
-			DependsOn: []dependency.CrossNamespaceDependencyReference{
+			DependsOn: []meta.NamespacedObjectReference{
 				{
 					Name: fmt.Sprintf("%s-%s", options.Name, "dependencies"),
 				},
