@@ -401,18 +401,17 @@ func Releases(
 	var path string
 	if env == "" {
 		return nil, fmt.Errorf("env is mandatory")
+	}
+
+	envPath := env
+	if repoPerEnv {
+		envPath = ""
+	}
+
+	if app != "" {
+		path = filepath.Join(envPath, app)
 	} else {
-		if app != "" {
-			path = filepath.Join(env, app)
-			if repoPerEnv {
-				path = app
-			}
-		} else {
-			path = env
-			if repoPerEnv {
-				path = ""
-			}
-		}
+		path = envPath
 	}
 
 	commits, err := repo.Log(
@@ -435,9 +434,9 @@ func Releases(
 			return nil
 		}
 
-		releaseFile, err := c.File(env + "/release.json")
+		releaseFile, err := c.File(filepath.Join(envPath, "release.json"))
 		if err != nil {
-			releaseFile, err = c.File(path + "/release.json")
+			releaseFile, err = c.File(filepath.Join(path, "release.json"))
 			if err != nil {
 				logrus.Debugf("no release file for %s: %s", c.Hash.String(), err)
 				return nil

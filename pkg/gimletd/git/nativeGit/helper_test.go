@@ -17,6 +17,10 @@ func Test_Releases(t *testing.T) {
 	releases, err := Releases(repo, "my-app", "staging", false, nil, nil, 10, "")
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(releases), "should get all releases")
+
+	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, 10, "")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(releases), "should get all releases")
 }
 
 func Test_ReleasesLimit(t *testing.T) {
@@ -34,6 +38,11 @@ func Test_ReleasesGitRepo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get the commit from the gitrepo")
 	assert.Equal(t, "xxx", releases[0].App, "should get the commit from the gitrepo")
+
+	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, -1, "laszlocph/gimletd-test3")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(releases), "should get the commit from the gitrepo")
+	assert.Equal(t, "fosdem-2024", releases[0].App, "should get the commit from the gitrepo")
 }
 
 func Test_Status(t *testing.T) {
@@ -45,6 +54,10 @@ func Test_Status(t *testing.T) {
 	}, []string{"function"})
 
 	status, err := Status(repo, "my-app", "staging", false, perf)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(status), "should get release status for app")
+
+	status, err = Status(repo, "my-app3", "staging", true, perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(status), "should get release status for app")
 
@@ -111,6 +124,17 @@ func initHistory() *git.Repository {
 		false,
 		"3rd commit",
 		`{"app":"fosdem-2023","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
+	)
+	CommitFilesToGit(
+		repo,
+		map[string]string{
+			"file": `5`,
+		},
+		"staging",
+		"my-app3",
+		true,
+		"4th commit",
+		`{"app":"fosdem-2024","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test3","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
 
 	return repo

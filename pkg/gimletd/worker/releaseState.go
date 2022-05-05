@@ -68,9 +68,15 @@ func processRepo(
 	repo := repoCache.InstanceForRead(repoName)
 	perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
-	envs, err := nativeGit.Envs(repo)
-	if err != nil {
-		return fmt.Errorf("cannot get envs: %s", err)
+	var envs []string
+	var err error
+	if repoPerEnv {
+		envs = []string{""}
+	} else {
+		envs, err = nativeGit.Envs(repo)
+		if err != nil {
+			return fmt.Errorf("cannot get envs: %s", err)
+		}
 	}
 
 	releases.Reset()
@@ -84,9 +90,14 @@ func processRepo(
 		}
 		perf.WithLabelValues("releaseState_appReleases").Observe(time.Since(t1).Seconds())
 
+		envPath := env
+		if repoPerEnv {
+			envPath = ""
+		}
+
 		for app, release := range appReleases {
 			t2 := time.Now()
-			commit, err := lastCommitThatTouchedAFile(repo, filepath.Join(env, app))
+			commit, err := lastCommitThatTouchedAFile(repo, filepath.Join(envPath, app))
 			if err != nil {
 				logrus.Errorf("cannot find last commit: %s", err)
 				time.Sleep(30 * time.Second)

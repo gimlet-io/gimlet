@@ -94,15 +94,27 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 `), &a)
 
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
-	_, err := repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
+	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 
 	repoPerEnv := false
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
+	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
+	assert.True(t, len(content) > 100)
+	content, _ = nativeGit.Content(repo, "staging/my-app/release.json")
+	assert.True(t, len(content) > 1)
+	content, _ = nativeGit.Content(repo, "staging/release.json")
+	assert.True(t, len(content) > 1)
 
 	repoPerEnv = true
 	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
+	content, _ = nativeGit.Content(repo, "my-app/deployment.yaml")
+	assert.True(t, len(content) > 100)
+	content, _ = nativeGit.Content(repo, "my-app/release.json")
+	assert.True(t, len(content) > 1)
+	content, _ = nativeGit.Content(repo, "release.json")
+	assert.True(t, len(content) > 1)
 }
 
 func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
@@ -150,17 +162,16 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 
 	json.Unmarshal([]byte(withVolume), &a)
 
-	repoPerEnv := false
+	repoPerEnv := true
 	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
 
-	repoPerEnv = true
 	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
 
-	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
+	content, _ := nativeGit.Content(repo, "my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
-	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
+	content, _ = nativeGit.Content(repo, "my-app/pvc.yaml")
 	assert.True(t, len(content) > 100)
 
 	withoutVolume := `
