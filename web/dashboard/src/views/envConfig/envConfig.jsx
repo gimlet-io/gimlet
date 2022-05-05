@@ -35,7 +35,7 @@ class EnvConfig extends Component {
       namespace: defaultNamespace,
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
-      appName: defaultAppName,
+      appName: repo,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
