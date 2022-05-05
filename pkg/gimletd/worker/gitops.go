@@ -301,6 +301,10 @@ func processReleaseEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
+		if manifest.Env != releaseRequest.Env {
+			continue
+		}
+
 		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 		if err != nil {
 			return deployEvents, err
@@ -322,9 +326,6 @@ func processReleaseEvent(
 			continue
 		}
 
-		if manifest.Env != releaseRequest.Env {
-			continue
-		}
 		if releaseRequest.App != "" &&
 			manifest.App != releaseRequest.App {
 			continue
