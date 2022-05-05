@@ -565,19 +565,19 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	//repoConfig := parsedGitopsRepos[manifest.Env]
-
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
 
+	repoConfig := parsedGitopsRepos[manifest.Env]
 	sha, err := gitopsTemplateAndWrite(
 		repo,
 		manifest,
 		releaseMeta,
 		githubChartAccessToken,
+		repoConfig.RepoPerEnv,
 	)
 	if err != nil {
 		return "", err
@@ -709,6 +709,7 @@ func gitopsTemplateAndWrite(
 	manifest *dx.Manifest,
 	release *dx.Release,
 	tokenForChartClone string,
+	repoPerEnv bool,
 ) (string, error) {
 	if strings.HasPrefix(manifest.Chart.Name, "git@") {
 		return "", fmt.Errorf("only HTTPS git repo urls supported in GimletD for git based charts")

@@ -96,13 +96,18 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
 	_, err := repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "")
+	repoPerEnv := false
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
+	assert.Nil(t, err)
+
+	repoPerEnv = true
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
 }
 
 func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
-	_, err := repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
+	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 	var a dx.Artifact
 
 	withVolume := `
@@ -144,7 +149,13 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 `
 
 	json.Unmarshal([]byte(withVolume), &a)
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "")
+
+	repoPerEnv := false
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
+	assert.Nil(t, err)
+
+	repoPerEnv = true
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
 
 	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
@@ -181,8 +192,8 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 `
 
 	var b dx.Artifact
-	err = json.Unmarshal([]byte(withoutVolume), &b)
-	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "")
+	json.Unmarshal([]byte(withoutVolume), &b)
+	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false)
 	assert.Nil(t, err)
 
 	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
