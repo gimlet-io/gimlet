@@ -44,7 +44,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
-	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
 	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {

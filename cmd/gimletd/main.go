@@ -269,8 +269,8 @@ func adminToken(config *config.Config) string {
 	}
 }
 
-func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, error) {
-	var gitopsRepos []*config.GitopsRepoConfig
+func parseGitopsRepos(gitopsReposString string) (map[string]*config.GitopsRepoConfig, error) {
+	gitopsRepos := map[string]*config.GitopsRepoConfig{}
 	splitGitopsRepos := strings.Split(gitopsReposString, ";")
 
 	for _, gitopsReposString := range splitGitopsRepos {
@@ -292,7 +292,7 @@ func parseGitopsRepos(gitopsReposString string) ([]*config.GitopsRepoConfig, err
 			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
 			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
 		}
-		gitopsRepos = append(gitopsRepos, singleGitopsRepo)
+		gitopsRepos[singleGitopsRepo.Env] = singleGitopsRepo
 	}
 
 	return gitopsRepos, nil

@@ -16,7 +16,7 @@ import (
 
 type GitopsRepoCache struct {
 	cacheRoot               string
-	parsedGitopsRepos       []*config.GitopsRepoConfig
+	parsedGitopsRepos       map[string]*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	defaultRepo             *git.Repository
 	defaultRepoName         string
@@ -30,7 +30,7 @@ type GitopsRepoCache struct {
 func NewGitopsRepoCache(
 	cacheRoot string,
 	gitopsRepo string,
-	parsedGitopsRepos []*config.GitopsRepoConfig,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	stopCh chan os.Signal,
 	waitCh chan struct{},

@@ -21,7 +21,7 @@ import (
 
 func Test_fluxEvent(t *testing.T) {
 	notificationsManager := notifications.NewDummyManager()
-	gitopsRepos := []*config.GitopsRepoConfig{}
+	gitopsRepos := map[string]*config.GitopsRepoConfig{}
 	config := config.Config{}
 	eventSinkHub := streaming.NewEventSinkHub(&config)
 

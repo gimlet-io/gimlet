@@ -69,7 +69,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
-	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
 	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {
@@ -126,7 +126,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
-	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
 	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {
@@ -278,7 +278,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	user := ctx.Value("user").(*model.User)
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
-	gitopsRepos := ctx.Value("gitopsRepos").([]*config.GitopsRepoConfig)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
 	params := r.URL.Query()
 	var env, app string
@@ -397,16 +397,15 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write(statusBytes)
 }
 
-func repoName(gitopsRepos []*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+func repoName(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
 	repoName := defaultGitopsRepo
-	for _, gitopsRepo := range gitopsRepos {
-		if gitopsRepo.Env == env {
-			repoName = gitopsRepo.GitopsRepo
-		}
+
+	if repoConfig, ok := parsedGitopsRepos[env]; ok {
+		repoName = repoConfig.GitopsRepo
 	}
 
 	if repoName == "" {
-		return "", errors.New("error")
+		return "", errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
 	}
 
 	return repoName, nil

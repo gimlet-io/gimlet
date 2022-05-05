@@ -35,13 +35,12 @@ func TestParseGitopsRepos(t *testing.T) {
 	}
 
 	assert.Equal(t, 2, len(gitopsRepos))
-	assert.Equal(t, "staging", gitopsRepos[0].Env)
-	assert.Equal(t, false, gitopsRepos[0].RepoPerEnv)
-	assert.Equal(t, "gitops-staging-infra", gitopsRepos[0].GitopsRepo)
-	assert.Equal(t, "/deploykey/staging.key", gitopsRepos[0].DeployKeyPath)
-	assert.Equal(t, "production", gitopsRepos[1].Env)
-	assert.Equal(t, true, gitopsRepos[1].RepoPerEnv)
-	assert.Equal(t, "gitops-production-infra", gitopsRepos[1].GitopsRepo)
-	assert.Equal(t, "/deploykey/production.key", gitopsRepos[1].DeployKeyPath)
+	assert.Equal(t, "staging", gitopsRepos["staging"].Env)
+	assert.Equal(t, false, gitopsRepos["staging"].RepoPerEnv)
+	assert.Equal(t, "gitops-staging-infra", gitopsRepos["staging"].GitopsRepo)
+	assert.Equal(t, "/deploykey/staging.key", gitopsRepos["staging"].DeployKeyPath)
+	assert.Equal(t, "production", gitopsRepos["production"].Env)
+	assert.Equal(t, true, gitopsRepos["production"].RepoPerEnv)
+	assert.Equal(t, "gitops-production-infra", gitopsRepos["production"].GitopsRepo)
+	assert.Equal(t, "/deploykey/production.key", gitopsRepos["production"].DeployKeyPath)
 }
-

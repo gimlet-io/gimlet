@@ -21,7 +21,7 @@ func SetupRouter(
 	config *config.Config,
 	store *store.Store,
 	notificationsManager notifications.Manager,
-	parsedGitopsRepos []*config.GitopsRepoConfig,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	repoCache *nativeGit.GitopsRepoCache,
 	perf *prometheus.HistogramVec,
 	eventSinkHub *streaming.EventSinkHub,
