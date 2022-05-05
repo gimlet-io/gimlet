@@ -418,6 +418,7 @@ func Test_revertTo(t *testing.T) {
 	err := revertTo(
 		"staging",
 		"my-app",
+		false,
 		repo,
 		path,
 		SHAs[2],
@@ -437,6 +438,7 @@ func Test_revertTo(t *testing.T) {
 	err = revertTo(
 		"staging",
 		"my-app",
+		false,
 		repo,
 		path,
 		SHAs[4],
@@ -448,6 +450,7 @@ func Test_revertTo(t *testing.T) {
 	err = revertTo(
 		"staging",
 		"my-app",
+		false,
 		repo,
 		path,
 		SHAs[5],
@@ -465,6 +468,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"0st commit",
 		"",
 	)
@@ -476,6 +480,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"1st commit",
 		"",
 	)
@@ -487,6 +492,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"2nd commit",
 		"",
 	)
@@ -498,6 +504,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"3rd commit",
 		"",
 	)

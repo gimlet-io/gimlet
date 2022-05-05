@@ -226,6 +226,7 @@ func CommitFilesToGit(
 	files map[string]string,
 	env string,
 	app string,
+	repoPerEnv bool,
 	message string,
 	releaseString string,
 ) (string, error) {
@@ -242,13 +243,18 @@ func CommitFilesToGit(
 		return "", fmt.Errorf("cannot get worktree %s", err)
 	}
 
+	rootPath := filepath.Join(env, app)
+	if repoPerEnv {
+		rootPath = app
+	}
+
 	// first delete, then recreate app dir
 	// to remove stale template files
-	err = DelDir(repo, filepath.Join(env, app))
+	err = DelDir(repo, rootPath)
 	if err != nil {
 		return "", fmt.Errorf("cannot del dir: %s", err)
 	}
-	err = w.Filesystem.MkdirAll(filepath.Join(env, app), Dir_RWX_RX_R)
+	err = w.Filesystem.MkdirAll(rootPath, Dir_RWX_RX_R)
 	if err != nil {
 		return "", fmt.Errorf("cannot create dir %s", err)
 	}
@@ -258,7 +264,7 @@ func CommitFilesToGit(
 			content = content + "\n"
 		}
 
-		err = stageFile(w, content, filepath.Join(env, app, filepath.Base(path)))
+		err = stageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
@@ -268,11 +274,17 @@ func CommitFilesToGit(
 		if !strings.HasSuffix(releaseString, "\n") {
 			releaseString = releaseString + "\n"
 		}
-		err = stageFile(w, releaseString, filepath.Join(env, "release.json"))
+
+		envReleaseJsonPath := env
+		if repoPerEnv {
+			envReleaseJsonPath = ""
+		}
+
+		err = stageFile(w, releaseString, filepath.Join(envReleaseJsonPath, "release.json"))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
-		err = stageFile(w, releaseString, filepath.Join(env, app, "release.json"))
+		err = stageFile(w, releaseString, filepath.Join(rootPath, "release.json"))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
@@ -379,6 +391,7 @@ func Folder(repo *git.Repository, path string) (map[string]string, error) {
 func Releases(
 	repo *git.Repository,
 	app, env string,
+	repoPerEnv bool,
 	since, until *time.Time,
 	limit int,
 	gitRepo string,
@@ -390,9 +403,15 @@ func Releases(
 		return nil, fmt.Errorf("env is mandatory")
 	} else {
 		if app != "" {
-			path = fmt.Sprintf("%s/%s", env, app)
+			path = filepath.Join(env, app)
+			if repoPerEnv {
+				path = app
+			}
 		} else {
 			path = env
+			if repoPerEnv {
+				path = ""
+			}
 		}
 	}
 
@@ -454,7 +473,7 @@ func Releases(
 		release.Created = c.Committer.When.Unix()
 		release.GitopsRef = c.Hash.String()
 
-		rolledBack, err := HasBeenReverted(repo, c, env, app)
+		rolledBack, err := HasBeenReverted(repo, c, env, app, repoPerEnv)
 		if err != nil {
 			logrus.Warnf("cannot determine if commit was rolled back %s: %s", c.Hash.String(), err)
 			releases = append(releases, releaseFromCommit(c, app, env))
@@ -476,6 +495,7 @@ func Releases(
 func Status(
 	repo *git.Repository,
 	app, env string,
+	repoPerEnv bool,
 	perf *prometheus.HistogramVec,
 ) (map[string]*dx.Release, error) {
 	t0 := time.Now()
@@ -492,6 +512,9 @@ func Status(
 	} else {
 		if app != "" {
 			path := filepath.Join(env, app)
+			if repoPerEnv {
+				path = app
+			}
 			release, err := readAppStatus(fs, path)
 			if err != nil {
 				return nil, fmt.Errorf("cannot read app status %s: %s", path, err)
@@ -499,7 +522,11 @@ func Status(
 
 			appReleases[app] = release
 		} else {
-			paths, err := fs.ReadDir(env)
+			envPath := env
+			if repoPerEnv {
+				envPath = ""
+			}
+			paths, err := fs.ReadDir(envPath)
 			if err != nil {
 				return nil, fmt.Errorf("cannot list files: %s", err)
 			}
@@ -508,7 +535,7 @@ func Status(
 				if !fileInfo.IsDir() {
 					continue
 				}
-				path := filepath.Join(env, fileInfo.Name())
+				path := filepath.Join(envPath, fileInfo.Name())
 
 				release, err := readAppStatus(fs, path)
 				if err != nil {
@@ -579,12 +606,24 @@ func DeleteCommit(c *object.Commit) bool {
 	return strings.Contains(c.Message, "[GimletD delete]")
 }
 
-func HasBeenReverted(repo *git.Repository, commit *object.Commit, env string, app string) (bool, error) {
+func HasBeenReverted(
+	repo *git.Repository,
+	commit *object.Commit,
+	env string,
+	app string,
+	repoPerEnv bool,
+) (bool, error) {
 	var path string
 	if app != "" {
-		path = fmt.Sprintf("%s/%s", env, app)
+		path = filepath.Join(env, app)
+		if repoPerEnv {
+			path = app
+		}
 	} else {
 		path = env
+		if repoPerEnv {
+			path = ""
+		}
 	}
 
 	commits, err := repo.Log(

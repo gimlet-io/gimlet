@@ -31,6 +31,7 @@ func (w *ReleaseStateWorker) Run() {
 				w.Releases,
 				w.Perf,
 				w.RepoCache,
+				repoConfig.RepoPerEnv,
 			)
 			if err != nil {
 				logrus.Warnf("could not process state of %s gitops repo: %s", repoConfig.GitopsRepo, err)
@@ -45,6 +46,7 @@ func (w *ReleaseStateWorker) Run() {
 				w.Releases,
 				w.Perf,
 				w.RepoCache,
+				false,
 			)
 			if err != nil {
 				logrus.Warnf("could not process state of %s gitops repo", w.defaultRepoName)
@@ -60,6 +62,7 @@ func processRepo(
 	releases *prometheus.GaugeVec,
 	perf *prometheus.HistogramVec,
 	repoCache *nativeGit.GitopsRepoCache,
+	repoPerEnv bool,
 ) error {
 	t0 := time.Now()
 	repo := repoCache.InstanceForRead(repoName)
@@ -73,7 +76,7 @@ func processRepo(
 	releases.Reset()
 	for _, env := range envs {
 		t1 := time.Now()
-		appReleases, err := nativeGit.Status(repo, "", env, perf)
+		appReleases, err := nativeGit.Status(repo, "", env, repoPerEnv, perf)
 		if err != nil {
 			logrus.Errorf("cannot get status: %s", err)
 			time.Sleep(30 * time.Second)

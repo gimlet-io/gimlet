@@ -86,7 +86,8 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	releases, err := nativeGit.Releases(repo, app, env, since, until, limit, gitRepo)
+	repoConfig := gitopsRepos[env]
+	releases, err := nativeGit.Releases(repo, app, env, repoConfig.RepoPerEnv, since, until, limit, gitRepo)
 	if err != nil {
 		logrus.Errorf("cannot get releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -135,7 +136,9 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(repoName), app, env, perf)
+	repo := gitopsRepoCache.InstanceForRead(repoName)
+	repoConfig := gitopsRepos[env]
+	appReleases, err := nativeGit.Status(repo, app, env, repoConfig.RepoPerEnv, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -310,7 +313,13 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = nativeGit.DelDir(repo, filepath.Join(env, app))
+	repoConfig := gitopsRepos[env]
+	path := filepath.Join(env, app)
+	if repoConfig.RepoPerEnv {
+		path = app
+	}
+
+	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		logrus.Errorf("cannot delete release: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

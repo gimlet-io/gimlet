@@ -392,10 +392,12 @@ func processRollbackEvent(
 	}
 
 	headSha, _ := repo.Head()
+	repoConfig := parsedGitopsRepos[rollbackRequest.Env]
 
 	err = revertTo(
 		rollbackRequest.Env,
 		rollbackRequest.App,
+		repoConfig.RepoPerEnv,
 		repo,
 		repoTmpPath,
 		rollbackRequest.TargetSHA,
@@ -610,7 +612,7 @@ func cloneTemplateDeleteAndPush(
 	triggeredBy string,
 	gitopsEvent *events.DeleteEvent,
 ) (*events.DeleteEvent, error) {
-	repoName, err := repoName(parsedGitopsRepos, gitopsEvent.Env, gitopsRepo)
+	repoName, err := repoName(parsedGitopsRepos, env, gitopsRepo)
 	if err != nil {
 		gitopsEvent.Status = events.Failure
 		gitopsEvent.StatusDesc = err.Error()
@@ -625,7 +627,13 @@ func cloneTemplateDeleteAndPush(
 		return gitopsEvent, err
 	}
 
-	err = nativeGit.DelDir(repo, filepath.Join(env, cleanupPolicy.AppToCleanup))
+	repoConfig := parsedGitopsRepos[env]
+	path := filepath.Join(env, cleanupPolicy.AppToCleanup)
+	if repoConfig.RepoPerEnv {
+		path = cleanupPolicy.AppToCleanup
+	}
+
+	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		gitopsEvent.Status = events.Failure
 		gitopsEvent.StatusDesc = err.Error()
@@ -660,8 +668,19 @@ func cloneTemplateDeleteAndPush(
 	return gitopsEvent, nil
 }
 
-func revertTo(env string, app string, repo *git.Repository, repoTmpPath string, sha string) error {
-	path := fmt.Sprintf("%s/%s", env, app)
+func revertTo(
+	env string,
+	app string,
+	repoPerEnv bool,
+	repo *git.Repository,
+	repoTmpPath string,
+	sha string) error {
+
+	path := filepath.Join(env, app)
+	if repoPerEnv {
+		path = app
+	}
+
 	commits, err := repo.Log(&git.LogOptions{})
 	if err != nil {
 		return errors.WithMessage(err, "could not walk commits")
@@ -684,7 +703,7 @@ func revertTo(env string, app string, repo *git.Repository, repoTmpPath string, 
 	}
 
 	for _, commit := range commitsToRevert {
-		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app)
+		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app, repoPerEnv)
 		if !hasBeenReverted {
 			logrus.Infof("reverting %s", commit.Hash.String())
 			err = nativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
@@ -739,7 +758,14 @@ func gitopsTemplateAndWrite(
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
 	}
 
-	sha, err := nativeGit.CommitFilesToGit(repo, files, manifest.Env, manifest.App, "automated deploy", string(releaseString))
+	sha, err := nativeGit.CommitFilesToGit(
+		repo,
+		files,
+		manifest.Env,
+		manifest.App,
+		repoPerEnv,
+		"automated deploy",
+		string(releaseString))
 	if err != nil {
 		return "", fmt.Errorf("cannot write to git: %s", err.Error())
 	}
