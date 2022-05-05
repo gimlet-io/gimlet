@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -81,9 +83,19 @@ func main() {
 	signal.Notify(stopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
+	if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
+		logrus.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
+	}
+
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Fatal("could not parse gitops repositories")
+	}
+
 	repoCache, err := nativeGit.NewGitopsRepoCache(
 		config.RepoCachePath,
 		config.GitopsRepo,
+		parsedGitopsRepos,
 		config.GitopsRepoDeployKeyPath,
 		stopCh,
 		waitCh,
@@ -97,23 +109,19 @@ func main() {
 	eventSinkHub := streaming.NewEventSinkHub(config)
 	go eventSinkHub.Run()
 
-	if config.GitopsRepo != "" &&
-		config.GitopsRepoDeployKeyPath != "" {
-		gitopsWorker := worker.NewGitopsWorker(
-			store,
-			config.GitopsRepo,
-			config.GitopsRepoDeployKeyPath,
-			tokenManager,
-			notificationsManager,
-			eventsProcessed,
-			repoCache,
-			eventSinkHub,
-		)
-		go gitopsWorker.Run()
-		logrus.Info("Gitops worker started")
-	} else {
-		logrus.Warn("Not starting GitOps worker. GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH must be set to start GitOps worker")
-	}
+	gitopsWorker := worker.NewGitopsWorker(
+		store,
+		config.GitopsRepo,
+		parsedGitopsRepos,
+		config.GitopsRepoDeployKeyPath,
+		tokenManager,
+		notificationsManager,
+		eventsProcessed,
+		repoCache,
+		eventSinkHub,
+	)
+	go gitopsWorker.Run()
+	logrus.Info("Gitops worker started")
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
@@ -142,7 +150,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	r := server.SetupRouter(config, store, notificationsManager, repoCache, perf, eventSinkHub)
+	r := server.SetupRouter(config, store, notificationsManager, parsedGitopsRepos, repoCache, perf, eventSinkHub)
 	go func() {
 		err = http.ListenAndServe(":8888", r)
 		if err != nil {
@@ -259,4 +267,33 @@ func adminToken(config *config.Config) string {
 	} else {
 		return config.AdminToken
 	}
+}
+
+func parseGitopsRepos(gitopsReposString string) (map[string]*config.GitopsRepoConfig, error) {
+	gitopsRepos := map[string]*config.GitopsRepoConfig{}
+	splitGitopsRepos := strings.Split(gitopsReposString, ";")
+
+	for _, gitopsReposString := range splitGitopsRepos {
+		if gitopsReposString == "" {
+			continue
+		}
+		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+
+		singleGitopsRepo := &config.GitopsRepoConfig{
+			Env:           parsedGitopsReposString.Get("env"),
+			RepoPerEnv:    repoPerEnv,
+			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
+			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
+		}
+		gitopsRepos[singleGitopsRepo.Env] = singleGitopsRepo
+	}
+
+	return gitopsRepos, nil
 }

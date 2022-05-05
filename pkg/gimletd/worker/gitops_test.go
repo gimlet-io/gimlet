@@ -94,15 +94,32 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 `), &a)
 
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
-	_, err := repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
+	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "")
+	repoPerEnv := false
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
+	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
+	assert.True(t, len(content) > 100)
+	content, _ = nativeGit.Content(repo, "staging/my-app/release.json")
+	assert.True(t, len(content) > 1)
+	content, _ = nativeGit.Content(repo, "staging/release.json")
+	assert.True(t, len(content) > 1)
+
+	repoPerEnv = true
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
+	assert.Nil(t, err)
+	content, _ = nativeGit.Content(repo, "my-app/deployment.yaml")
+	assert.True(t, len(content) > 100)
+	content, _ = nativeGit.Content(repo, "my-app/release.json")
+	assert.True(t, len(content) > 1)
+	content, _ = nativeGit.Content(repo, "release.json")
+	assert.True(t, len(content) > 1)
 }
 
 func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
-	_, err := repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
+	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 	var a dx.Artifact
 
 	withVolume := `
@@ -144,12 +161,17 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 `
 
 	json.Unmarshal([]byte(withVolume), &a)
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "")
+
+	repoPerEnv := true
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
 	assert.Nil(t, err)
 
-	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv)
+	assert.Nil(t, err)
+
+	content, _ := nativeGit.Content(repo, "my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
-	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
+	content, _ = nativeGit.Content(repo, "my-app/pvc.yaml")
 	assert.True(t, len(content) > 100)
 
 	withoutVolume := `
@@ -181,8 +203,8 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 `
 
 	var b dx.Artifact
-	err = json.Unmarshal([]byte(withoutVolume), &b)
-	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "")
+	json.Unmarshal([]byte(withoutVolume), &b)
+	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false)
 	assert.Nil(t, err)
 
 	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
@@ -407,6 +429,7 @@ func Test_revertTo(t *testing.T) {
 	err := revertTo(
 		"staging",
 		"my-app",
+		false,
 		repo,
 		path,
 		SHAs[2],
@@ -426,6 +449,7 @@ func Test_revertTo(t *testing.T) {
 	err = revertTo(
 		"staging",
 		"my-app",
+		false,
 		repo,
 		path,
 		SHAs[4],
@@ -437,6 +461,7 @@ func Test_revertTo(t *testing.T) {
 	err = revertTo(
 		"staging",
 		"my-app",
+		false,
 		repo,
 		path,
 		SHAs[5],
@@ -454,6 +479,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"0st commit",
 		"",
 	)
@@ -465,6 +491,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"1st commit",
 		"",
 	)
@@ -476,6 +503,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"2nd commit",
 		"",
 	)
@@ -487,6 +515,7 @@ func initHistory(repo *git.Repository) {
 		},
 		"staging",
 		"my-app",
+		false,
 		"3rd commit",
 		"",
 	)

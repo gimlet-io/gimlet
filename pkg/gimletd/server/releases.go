@@ -11,10 +11,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -67,16 +69,24 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
-	repo, pathToClanUp, err := gitopsRepoCache.InstanceForWrite() // using a copy of the repo to avoid concurrent map writes error
-	defer gitopsRepoCache.CleanupWrittenRepo(pathToClanUp)
+	repoName, repoPerEnv, err := repoInfo(gitopsRepos, env, gitopsRepo)
+	if err != nil {
+		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	repo, pathToCleanUp, _, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
+	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	releases, err := nativeGit.Releases(repo, app, env, since, until, limit, gitRepo)
+	releases, err := nativeGit.Releases(repo, app, env, repoPerEnv, since, until, limit, gitRepo)
 	if err != nil {
 		logrus.Errorf("cannot get releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -116,8 +126,17 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
-	appReleases, err := nativeGit.Status(gitopsRepoCache.InstanceForRead(), app, env, perf)
+	repoName, repoPerEnv, err := repoInfo(gitopsRepos, env, gitopsRepo)
+	if err != nil {
+		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	repo := gitopsRepoCache.InstanceForRead(repoName)
+	appReleases, err := nativeGit.Status(repo, app, env, repoPerEnv, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -259,7 +278,8 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
-	gitopsRepoDeployKeyPath := ctx.Value("gitopsRepoDeployKeyPath").(string)
+	gitopsRepo := ctx.Value("gitopsRepo").(string)
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
 	params := r.URL.Query()
 	var env, app string
@@ -276,7 +296,14 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite()
+	repoName, repoPerEnv, err := repoInfo(gitopsRepos, env, gitopsRepo)
+	if err != nil {
+		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	repo, pathToCleanUp, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -284,7 +311,12 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = nativeGit.DelDir(repo, filepath.Join(env, app))
+	path := filepath.Join(env, app)
+	if repoPerEnv {
+		path = app
+	}
+
+	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		logrus.Errorf("cannot delete release: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -308,10 +340,10 @@ func delete(w http.ResponseWriter, r *http.Request) {
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	err = nativeGit.NativePush(pathToCleanUp, gitopsRepoDeployKeyPath, head.Name().Short())
+	err = nativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
-	gitopsRepoCache.Invalidate()
+	gitopsRepoCache.Invalidate(repoName)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
@@ -369,4 +401,20 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(statusBytes)
+}
+
+func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, bool, error) {
+	repoName := defaultGitopsRepo
+	repoPerEnv := false
+
+	if repoConfig, ok := parsedGitopsRepos[env]; ok {
+		repoName = repoConfig.GitopsRepo
+		repoPerEnv = repoConfig.RepoPerEnv
+	}
+
+	if repoName == "" {
+		return "", false, errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
+	}
+
+	return repoName, repoPerEnv, nil
 }

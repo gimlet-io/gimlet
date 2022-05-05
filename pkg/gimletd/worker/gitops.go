@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
@@ -29,6 +30,7 @@ import (
 type GitopsWorker struct {
 	store                   *store.Store
 	gitopsRepo              string
+	parsedGitopsRepos       map[string]*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	tokenManager            customScm.NonImpersonatedTokenManager
 	notificationsManager    notifications.Manager
@@ -40,6 +42,7 @@ type GitopsWorker struct {
 func NewGitopsWorker(
 	store *store.Store,
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	notificationsManager notifications.Manager,
@@ -50,6 +53,7 @@ func NewGitopsWorker(
 	return &GitopsWorker{
 		store:                   store,
 		gitopsRepo:              gitopsRepo,
+		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		notificationsManager:    notificationsManager,
 		tokenManager:            tokenManager,
@@ -72,6 +76,7 @@ func (w *GitopsWorker) Run() {
 			w.eventsProcessed.Inc()
 			processEvent(w.store,
 				w.gitopsRepo,
+				w.parsedGitopsRepos,
 				w.gitopsRepoDeployKeyPath,
 				w.tokenManager,
 				event,
@@ -88,6 +93,7 @@ func (w *GitopsWorker) Run() {
 func processEvent(
 	store *store.Store,
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	event *model.Event,
@@ -109,6 +115,7 @@ func processEvent(
 	case model.TypeArtifact:
 		deployEvents, err = processArtifactEvent(
 			gitopsRepo,
+			parsedGitopsRepos,
 			repoCache,
 			gitopsRepoDeployKeyPath,
 			token,
@@ -119,6 +126,7 @@ func processEvent(
 		deployEvents, err = processReleaseEvent(
 			store,
 			gitopsRepo,
+			parsedGitopsRepos,
 			repoCache,
 			gitopsRepoDeployKeyPath,
 			token,
@@ -127,6 +135,7 @@ func processEvent(
 	case model.TypeRollback:
 		rollbackEvent, err = processRollbackEvent(
 			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
@@ -139,6 +148,7 @@ func processEvent(
 	case model.TypeBranchDeleted:
 		deleteEvents, err = processBranchDeletedEvent(
 			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
@@ -180,6 +190,7 @@ func processEvent(
 
 func processBranchDeletedEvent(
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	event *model.Event,
@@ -196,17 +207,22 @@ func processBranchDeletedEvent(
 			continue
 		}
 
+		repoName, _, err := repoInfo(parsedGitopsRepos, env.Env, gitopsRepo)
+		if err != nil {
+			return nil, fmt.Errorf("cannot find repository to write")
+		}
+
 		gitopsEvent := &events.DeleteEvent{
 			Env:         env.Env,
 			App:         env.Cleanup.AppToCleanup,
 			TriggeredBy: "policy",
 			Status:      events.Success,
-			GitopsRepo:  gitopsRepo,
+			GitopsRepo:  repoName,
 
 			BranchDeletedEvent: branchDeletedEvent,
 		}
 
-		err := env.Cleanup.ResolveVars(map[string]string{
+		err = env.Cleanup.ResolveVars(map[string]string{
 			"BRANCH": branchDeletedEvent.Branch,
 		})
 		if err != nil {
@@ -221,6 +237,8 @@ func processBranchDeletedEvent(
 		}
 
 		gitopsEvent, err = cloneTemplateDeleteAndPush(
+			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			env.Cleanup,
@@ -254,6 +272,7 @@ func setGitopsHashOnEvent(event *model.Event, gitopsSha string) {
 func processReleaseEvent(
 	store *store.Store,
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
@@ -282,15 +301,20 @@ func processReleaseEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
+		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
+		if err != nil {
+			return deployEvents, err
+		}
+
 		deployEvent := &events.DeployEvent{
 			Manifest:    manifest,
 			Artifact:    artifact,
 			TriggeredBy: releaseRequest.TriggeredBy,
 			Status:      events.Success,
-			GitopsRepo:  gitopsRepo,
+			GitopsRepo:  repoName,
 		}
 
-		err := manifest.ResolveVars(artifact.Vars())
+		err = manifest.ResolveVars(artifact.Vars())
 		if err != nil {
 			deployEvent.Status = events.Failure
 			deployEvent.StatusDesc = err.Error()
@@ -316,6 +340,7 @@ func processReleaseEvent(
 
 		sha, err := cloneTemplateWriteAndPush(
 			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
@@ -335,6 +360,7 @@ func processReleaseEvent(
 
 func processRollbackEvent(
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	event *model.Event,
@@ -345,13 +371,18 @@ func processRollbackEvent(
 		return nil, fmt.Errorf("cannot parse release request with id: %s", event.ID)
 	}
 
+	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, rollbackRequest.Env, gitopsRepo)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find repository to write")
+	}
+
 	rollbackEvent := &events.RollbackEvent{
 		RollbackRequest: &rollbackRequest,
-		GitopsRepo:      gitopsRepo,
+		GitopsRepo:      repoName,
 	}
 
 	t0 := time.Now().UnixNano()
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite()
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(rollbackEvent.GitopsRepo)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
@@ -365,6 +396,7 @@ func processRollbackEvent(
 	err = revertTo(
 		rollbackRequest.Env,
 		rollbackRequest.App,
+		repoPerEnv,
 		repo,
 		repoTmpPath,
 		rollbackRequest.TargetSHA,
@@ -383,13 +415,13 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = nativeGit.NativePush(repoTmpPath, gitopsRepoDeployKeyPath, head.Name().Short())
+	err = nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 	if err != nil {
 		rollbackEvent.Status = events.Failure
 		rollbackEvent.StatusDesc = err.Error()
 		return rollbackEvent, err
 	}
-	gitopsRepoCache.Invalidate()
+	gitopsRepoCache.Invalidate(repoName)
 
 	rollbackEvent.GitopsRefs = hashes
 	rollbackEvent.Status = events.Success
@@ -421,6 +453,7 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 
 func processArtifactEvent(
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
@@ -444,15 +477,20 @@ func processArtifactEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
+		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
+		if err != nil {
+			return deployEvents, err
+		}
+
 		deployEvent := &events.DeployEvent{
 			Manifest:    manifest,
 			Artifact:    artifact,
 			TriggeredBy: "policy",
 			Status:      events.Success,
-			GitopsRepo:  gitopsRepo,
+			GitopsRepo:  repoName,
 		}
 
-		err := manifest.ResolveVars(artifact.Vars())
+		err = manifest.ResolveVars(artifact.Vars())
 		if err != nil {
 			deployEvent.Status = events.Failure
 			deployEvent.StatusDesc = err.Error()
@@ -474,6 +512,7 @@ func processArtifactEvent(
 
 		sha, err := cloneTemplateWriteAndPush(
 			gitopsRepo,
+			parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
@@ -515,13 +554,19 @@ func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact)
 
 func cloneTemplateWriteAndPush(
 	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 ) (string, error) {
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite()
+	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
+	if err != nil {
+		return "", err
+	}
+
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
@@ -532,6 +577,7 @@ func cloneTemplateWriteAndPush(
 		manifest,
 		releaseMeta,
 		githubChartAccessToken,
+		repoPerEnv,
 	)
 	if err != nil {
 		return "", err
@@ -541,20 +587,22 @@ func cloneTemplateWriteAndPush(
 		head, _ := repo.Head()
 
 		operation := func() error {
-			return nativeGit.NativePush(repoTmpPath, gitopsRepoDeployKeyPath, head.Name().Short())
+			return nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.Invalidate()
+		gitopsRepoCache.Invalidate(repoName)
 	}
 
 	return sha, nil
 }
 
 func cloneTemplateDeleteAndPush(
+	gitopsRepo string,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	cleanupPolicy *dx.Cleanup,
@@ -562,7 +610,14 @@ func cloneTemplateDeleteAndPush(
 	triggeredBy string,
 	gitopsEvent *events.DeleteEvent,
 ) (*events.DeleteEvent, error) {
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite()
+	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, env, gitopsRepo)
+	if err != nil {
+		gitopsEvent.Status = events.Failure
+		gitopsEvent.StatusDesc = err.Error()
+		return gitopsEvent, err
+	}
+
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		gitopsEvent.Status = events.Failure
@@ -570,7 +625,12 @@ func cloneTemplateDeleteAndPush(
 		return gitopsEvent, err
 	}
 
-	err = nativeGit.DelDir(repo, filepath.Join(env, cleanupPolicy.AppToCleanup))
+	path := filepath.Join(env, cleanupPolicy.AppToCleanup)
+	if repoPerEnv {
+		path = cleanupPolicy.AppToCleanup
+	}
+
+	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		gitopsEvent.Status = events.Failure
 		gitopsEvent.StatusDesc = err.Error()
@@ -591,13 +651,13 @@ func cloneTemplateDeleteAndPush(
 	sha, err := nativeGit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
-		err = nativeGit.Push(repo, gitopsRepoDeployKeyPath)
+		err = nativeGit.Push(repo, deployKeyPath)
 		if err != nil {
 			gitopsEvent.Status = events.Failure
 			gitopsEvent.StatusDesc = err.Error()
 			return gitopsEvent, err
 		}
-		gitopsRepoCache.Invalidate()
+		gitopsRepoCache.Invalidate(repoName)
 
 		gitopsEvent.GitopsRef = sha
 	}
@@ -605,8 +665,19 @@ func cloneTemplateDeleteAndPush(
 	return gitopsEvent, nil
 }
 
-func revertTo(env string, app string, repo *git.Repository, repoTmpPath string, sha string) error {
-	path := fmt.Sprintf("%s/%s", env, app)
+func revertTo(
+	env string,
+	app string,
+	repoPerEnv bool,
+	repo *git.Repository,
+	repoTmpPath string,
+	sha string) error {
+
+	path := filepath.Join(env, app)
+	if repoPerEnv {
+		path = app
+	}
+
 	commits, err := repo.Log(&git.LogOptions{})
 	if err != nil {
 		return errors.WithMessage(err, "could not walk commits")
@@ -629,7 +700,7 @@ func revertTo(env string, app string, repo *git.Repository, repoTmpPath string, 
 	}
 
 	for _, commit := range commitsToRevert {
-		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app)
+		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app, repoPerEnv)
 		if !hasBeenReverted {
 			logrus.Infof("reverting %s", commit.Hash.String())
 			err = nativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
@@ -654,6 +725,7 @@ func gitopsTemplateAndWrite(
 	manifest *dx.Manifest,
 	release *dx.Release,
 	tokenForChartClone string,
+	repoPerEnv bool,
 ) (string, error) {
 	if strings.HasPrefix(manifest.Chart.Name, "git@") {
 		return "", fmt.Errorf("only HTTPS git repo urls supported in GimletD for git based charts")
@@ -683,7 +755,14 @@ func gitopsTemplateAndWrite(
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
 	}
 
-	sha, err := nativeGit.CommitFilesToGit(repo, files, manifest.Env, manifest.App, "automated deploy", string(releaseString))
+	sha, err := nativeGit.CommitFilesToGit(
+		repo,
+		files,
+		manifest.Env,
+		manifest.App,
+		repoPerEnv,
+		"automated deploy",
+		string(releaseString))
 	if err != nil {
 		return "", fmt.Errorf("cannot write to git: %s", err.Error())
 	}
@@ -840,4 +919,20 @@ func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, sha stri
 	if err != nil {
 		logrus.Warnf("could not save or update gitops commit: %s", err)
 	}
+}
+
+func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, bool, error) {
+	repoName := defaultGitopsRepo
+	repoPerEnv := false
+
+	if repoConfig, ok := parsedGitopsRepos[env]; ok {
+		repoName = repoConfig.GitopsRepo
+		repoPerEnv = repoConfig.RepoPerEnv
+	}
+
+	if repoName == "" {
+		return "", false, errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
+	}
+
+	return repoName, repoPerEnv, nil
 }

@@ -43,6 +43,7 @@ type Config struct {
 	Host                    string		`envconfig:"HOST"`
 	Database                Database
 	GitopsRepo              string		`envconfig:"GITOPS_REPO"`
+	GitopsRepos             string		`envconfig:"GITOPS_REPOS"`
 	GitopsRepoDeployKeyPath string		`envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
 	RepoCachePath           string		`envconfig:"REPO_CACHE_PATH"`
 	Notifications           Notifications
@@ -91,4 +92,11 @@ func (m *Multiline) Decode(value string) error {
 
 func (m *Multiline) String() string {
 	return string(*m)
+}
+
+type GitopsRepoConfig struct {
+	Env           string
+	RepoPerEnv    bool
+	GitopsRepo    string
+	DeployKeyPath string
 }

@@ -21,6 +21,7 @@ func SetupRouter(
 	config *config.Config,
 	store *store.Store,
 	notificationsManager notifications.Manager,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	repoCache *nativeGit.GitopsRepoCache,
 	perf *prometheus.HistogramVec,
 	eventSinkHub *streaming.EventSinkHub,
@@ -36,7 +37,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("store", store))
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
-	r.Use(middleware.WithValue("gitopsRepoDeployKeyPath", config.GitopsRepoDeployKeyPath))
+	r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
 	r.Use(middleware.WithValue("gitopsRepoCache", repoCache))
 	r.Use(middleware.WithValue("perf", perf))
 	r.Use(middleware.WithValue("eventSinkHub", eventSinkHub))

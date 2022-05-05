@@ -46,6 +46,10 @@ var gitopsWriteCmd = cli.Command{
 			Aliases: []string{"m"},
 			Usage:   "gitops commit message",
 		},
+		&cli.BoolFlag{
+			Name:  "repoPerEnv",
+			Usage: "if you use distinct git repos for your gitops envs",
+		},
 	},
 }
 
@@ -67,6 +71,7 @@ func write(c *cli.Context) error {
 	env := c.String("env")
 	app := c.String("app")
 	file := c.String("file")
+	repoPerEnv := c.Bool("repoPerEnv")
 	message := c.String("message")
 
 	files, err := commands.InputFiles(file)
@@ -75,6 +80,6 @@ func write(c *cli.Context) error {
 	}
 	files = dx.SplitHelmOutput(files)
 
-	_, err = nativeGit.CommitFilesToGit(repo, files, env, app, message, "")
+	_, err = nativeGit.CommitFilesToGit(repo, files, env, app, repoPerEnv, message, "")
 	return err
 }

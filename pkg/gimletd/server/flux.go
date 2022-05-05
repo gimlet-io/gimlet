@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fluxcd/pkg/runtime/events"
+	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
@@ -43,7 +44,13 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
-	notificationsManager.Broadcast(notifications.NewMessage(gitopsRepo, gitopsCommit, env))
+	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
+
+	repoName, _, err := repoInfo(gitopsRepos, env, gitopsRepo)
+	if err != nil {
+		log.Warnf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
+		notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
+	}
 
 	eventSinkHub := ctx.Value("eventSinkHub").(*streaming.EventSinkHub)
 	eventSinkHub.BroadcastEvent(gitopsCommit)
