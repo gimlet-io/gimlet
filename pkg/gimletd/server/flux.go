@@ -48,9 +48,9 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
 	if err != nil {
-		log.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
+		log.Warnf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
+		notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
 	}
-	notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
 
 	eventSinkHub := ctx.Value("eventSinkHub").(*streaming.EventSinkHub)
 	eventSinkHub.BroadcastEvent(gitopsCommit)

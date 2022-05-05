@@ -37,7 +37,6 @@ func SetupRouter(
 	r.Use(middleware.WithValue("store", store))
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
-	r.Use(middleware.WithValue("gitopsRepoDeployKeyPath", config.GitopsRepoDeployKeyPath))
 	r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
 	r.Use(middleware.WithValue("gitopsRepoCache", repoCache))
 	r.Use(middleware.WithValue("perf", perf))

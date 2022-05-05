@@ -19,8 +19,8 @@ type GitopsRepoCache struct {
 	parsedGitopsRepos       []*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	defaultRepo             *git.Repository
-	DefaultRepoName         string
-	Repos                   map[string]*git.Repository
+	defaultRepoName         string
+	repos                   map[string]*git.Repository
 	defaultCachePath        string
 	cachePaths              map[string]string
 	stopCh                  chan os.Signal
@@ -62,8 +62,8 @@ func NewGitopsRepoCache(
 		parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		defaultRepo:             defaultRepo,
-		DefaultRepoName:         gitopsRepo,
-		Repos:                   repos,
+		defaultRepoName:         gitopsRepo,
+		repos:                   repos,
 		defaultCachePath:        defaultCachePath,
 		cachePaths:              cachePaths,
 		stopCh:                  stopCh,
@@ -73,12 +73,11 @@ func NewGitopsRepoCache(
 
 func (r *GitopsRepoCache) Run() {
 	for {
-		if len(r.Repos) == 0 {
-			r.syncGitRepo(r.DefaultRepoName)
-		} else {
-			for repoName := range r.Repos {
-				r.syncGitRepo(repoName)
-			}
+		if r.defaultRepoName != "" {
+			r.syncGitRepo(r.defaultRepoName)
+		}
+		for repoName := range r.repos {
+			r.syncGitRepo(repoName)
 		}
 
 		select {
@@ -112,7 +111,7 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 	}
 
 	var repo *git.Repository
-	if repoInMap, exists := r.Repos[repoName]; exists {
+	if repoInMap, exists := r.repos[repoName]; exists {
 		repo = repoInMap
 	} else {
 		repo = r.defaultRepo
@@ -137,11 +136,11 @@ func (r *GitopsRepoCache) syncGitRepo(repoName string) {
 }
 
 func (r *GitopsRepoCache) InstanceForRead(repoName string) *git.Repository {
-	if repoInMap, exists := r.Repos[repoName]; exists {
+	if repoInMap, exists := r.repos[repoName]; exists {
 		return repoInMap
-	} else {
-		return r.defaultRepo
 	}
+
+	return r.defaultRepo
 }
 
 func (r *GitopsRepoCache) InstanceForWrite(repoName string) (*git.Repository, string, string, error) {
