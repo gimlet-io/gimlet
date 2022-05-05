@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -118,7 +119,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	err = StageCommitAndPush(repo, token, "[Gimlet Dashboard] Updating components")
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -312,7 +313,7 @@ func BootstrapEnv(
 		return "", "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = StageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
 		return "", "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -371,7 +372,7 @@ func BootstrapNotifications(
 		return "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = StageCommitAndPush(repo, token, "[Gimlet Dashboard] Bootstrapping")
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
 		return "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -424,7 +425,7 @@ func AssureRepoExists(orgRepos []string,
 	return true, err
 }
 
-func StageCommitAndPush(repo *git.Repository, token string, msg string) error {
+func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg string) error {
 	worktree, err := repo.Worktree()
 	if err != nil {
 		return err
@@ -433,6 +434,16 @@ func StageCommitAndPush(repo *git.Repository, token string, msg string) error {
 	err = worktree.AddWithOptions(&git.AddOptions{
 		All: true,
 	})
+	if err != nil {
+		return err
+	}
+
+	// Temporarily staging deleted files to git with a simple CLI command until the
+	// following issue is not solved:
+	// https://github.com/go-git/go-git/issues/223
+	cmd := exec.Command("git", "add", ".")
+	cmd.Dir = tmpPath
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}
