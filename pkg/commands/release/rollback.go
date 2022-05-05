@@ -76,7 +76,7 @@ func rollback(c *cli.Context) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Your rollback request is now added to the release queue with ID %s\n", emoji.WomanGesturingOk, trackingID)
-	fmt.Fprintf(os.Stderr, "Track it with:\ngimlet track %s\n\n", trackingID)
+	fmt.Fprintf(os.Stderr, "Track it with:\ngimlet release track %s\n\n", trackingID)
 
 	return nil
 }

@@ -207,7 +207,7 @@ func processBranchDeletedEvent(
 			continue
 		}
 
-		repoName, err := repoName(parsedGitopsRepos, env.Env, gitopsRepo)
+		repoName, _, err := repoInfo(parsedGitopsRepos, env.Env, gitopsRepo)
 		if err != nil {
 			return nil, fmt.Errorf("cannot find repository to write")
 		}
@@ -301,7 +301,7 @@ func processReleaseEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
-		repoName, err := repoName(parsedGitopsRepos, manifest.Env, gitopsRepo)
+		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 		if err != nil {
 			return deployEvents, err
 		}
@@ -371,7 +371,7 @@ func processRollbackEvent(
 		return nil, fmt.Errorf("cannot parse release request with id: %s", event.ID)
 	}
 
-	repoName, err := repoName(parsedGitopsRepos, rollbackRequest.Env, gitopsRepo)
+	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, rollbackRequest.Env, gitopsRepo)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find repository to write")
 	}
@@ -392,12 +392,11 @@ func processRollbackEvent(
 	}
 
 	headSha, _ := repo.Head()
-	repoConfig := parsedGitopsRepos[rollbackRequest.Env]
 
 	err = revertTo(
 		rollbackRequest.Env,
 		rollbackRequest.App,
-		repoConfig.RepoPerEnv,
+		repoPerEnv,
 		repo,
 		repoTmpPath,
 		rollbackRequest.TargetSHA,
@@ -478,7 +477,7 @@ func processArtifactEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	for _, manifest := range artifact.Environments {
-		repoName, err := repoName(parsedGitopsRepos, manifest.Env, gitopsRepo)
+		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 		if err != nil {
 			return deployEvents, err
 		}
@@ -562,7 +561,7 @@ func cloneTemplateWriteAndPush(
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 ) (string, error) {
-	repoName, err := repoName(parsedGitopsRepos, manifest.Env, gitopsRepo)
+	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 	if err != nil {
 		return "", err
 	}
@@ -573,13 +572,12 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	repoConfig := parsedGitopsRepos[manifest.Env]
 	sha, err := gitopsTemplateAndWrite(
 		repo,
 		manifest,
 		releaseMeta,
 		githubChartAccessToken,
-		repoConfig.RepoPerEnv,
+		repoPerEnv,
 	)
 	if err != nil {
 		return "", err
@@ -612,7 +610,7 @@ func cloneTemplateDeleteAndPush(
 	triggeredBy string,
 	gitopsEvent *events.DeleteEvent,
 ) (*events.DeleteEvent, error) {
-	repoName, err := repoName(parsedGitopsRepos, env, gitopsRepo)
+	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, env, gitopsRepo)
 	if err != nil {
 		gitopsEvent.Status = events.Failure
 		gitopsEvent.StatusDesc = err.Error()
@@ -627,9 +625,8 @@ func cloneTemplateDeleteAndPush(
 		return gitopsEvent, err
 	}
 
-	repoConfig := parsedGitopsRepos[env]
 	path := filepath.Join(env, cleanupPolicy.AppToCleanup)
-	if repoConfig.RepoPerEnv {
+	if repoPerEnv {
 		path = cleanupPolicy.AppToCleanup
 	}
 
@@ -924,16 +921,18 @@ func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, sha stri
 	}
 }
 
-func repoName(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, bool, error) {
 	repoName := defaultGitopsRepo
+	repoPerEnv := false
 
 	if repoConfig, ok := parsedGitopsRepos[env]; ok {
 		repoName = repoConfig.GitopsRepo
+		repoPerEnv = repoConfig.RepoPerEnv
 	}
 
 	if repoName == "" {
-		return "", errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
+		return "", false, errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
 	}
 
-	return repoName, nil
+	return repoName, repoPerEnv, nil
 }

@@ -71,7 +71,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
-	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
+	repoName, repoPerEnv, err := repoInfo(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -86,8 +86,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoConfig := gitopsRepos[env]
-	releases, err := nativeGit.Releases(repo, app, env, repoConfig.RepoPerEnv, since, until, limit, gitRepo)
+	releases, err := nativeGit.Releases(repo, app, env, repoPerEnv, since, until, limit, gitRepo)
 	if err != nil {
 		logrus.Errorf("cannot get releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -129,7 +128,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
 	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
-	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
+	repoName, repoPerEnv, err := repoInfo(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -137,8 +136,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	repo := gitopsRepoCache.InstanceForRead(repoName)
-	repoConfig := gitopsRepos[env]
-	appReleases, err := nativeGit.Status(repo, app, env, repoConfig.RepoPerEnv, perf)
+	appReleases, err := nativeGit.Status(repo, app, env, repoPerEnv, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -298,7 +296,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
+	repoName, repoPerEnv, err := repoInfo(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		logrus.Errorf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -313,9 +311,8 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoConfig := gitopsRepos[env]
 	path := filepath.Join(env, app)
-	if repoConfig.RepoPerEnv {
+	if repoPerEnv {
 		path = app
 	}
 
@@ -406,16 +403,18 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write(statusBytes)
 }
 
-func repoName(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, error) {
+func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, bool, error) {
 	repoName := defaultGitopsRepo
+	repoPerEnv := false
 
 	if repoConfig, ok := parsedGitopsRepos[env]; ok {
 		repoName = repoConfig.GitopsRepo
+		repoPerEnv = repoConfig.RepoPerEnv
 	}
 
 	if repoName == "" {
-		return "", errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
+		return "", false, errors.Errorf("could not find repository for %s environment and GITOPS_REPO did not provide a default repository", env)
 	}
 
-	return repoName, nil
+	return repoName, repoPerEnv, nil
 }

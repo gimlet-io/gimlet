@@ -46,7 +46,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
-	repoName, err := repoName(gitopsRepos, env, gitopsRepo)
+	repoName, _, err := repoInfo(gitopsRepos, env, gitopsRepo)
 	if err != nil {
 		log.Warnf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
 		notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
