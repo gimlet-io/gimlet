@@ -145,7 +145,7 @@ func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([
 func (r *BranchDeleteEventWorker) extractManifestsFromBranch(repo *git.Repository, branch string) ([]*dx.Manifest, error) {
 	var manifests []*dx.Manifest
 
-	files, err := commonGit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet/")
+	files, err := commonGit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		return manifests, err
 	}
