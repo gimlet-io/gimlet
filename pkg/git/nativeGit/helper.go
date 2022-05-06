@@ -182,9 +182,9 @@ func RemoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, pa
 		return files, fmt.Errorf("cannot get head tree: %s", err)
 	}
 
-	subTree, err := t.Tree(".gimlet")
+	subTree, err := t.Tree(path)
 	if err != nil {
-		return files, fmt.Errorf("cannot get .gimlet tree: %s", err)
+		return files, fmt.Errorf("cannot get %s tree: %s", path, err)
 	}
 
 	for _, entry := range subTree.Entries {
