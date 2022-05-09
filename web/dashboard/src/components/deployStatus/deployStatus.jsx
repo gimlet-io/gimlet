@@ -171,7 +171,7 @@ export default class DeployStatus extends Component {
                       {gitopsWidget}
                       <div className='pl-2 mt-4'>{appliedWidget}</div>
                     </div>
-                    <div className="ml-4 flex-shrink-0 flex">
+                    <div className="ml-4 flex-shrink-0 flex items-start">
                       <button
                         className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
                         onClick={() => {
