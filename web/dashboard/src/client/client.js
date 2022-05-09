@@ -39,6 +39,8 @@ export default class GimletClient {
 
   saveEnvConfig = (owner, name, env, configName, values, namespace, appName) => this.postWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${configName}`, JSON.stringify({ values, namespace, appName }));
 
+  getGitRepoMetas = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/gitRepoMetas`);
+
   bootstrapGitops = (envName, repoPerEnv, infraRepo, appsRepo) => this.postWithAxios('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, infraRepo, appsRepo }));
 
   saveEnvToDB = (envName) => this.postWithAxios("/api/saveEnvToDB", JSON.stringify(envName));
