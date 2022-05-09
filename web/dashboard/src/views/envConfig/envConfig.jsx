@@ -39,7 +39,7 @@ class EnvConfig extends Component {
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-      defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
+      defaultState: Object.assign({}, envConfig),
     };
 
     this.props.store.subscribe(() => {
@@ -76,10 +76,56 @@ class EnvConfig extends Component {
 
   componentDidMount() {
     const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
     const { gimletClient, store } = this.props;
 
     if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
       loadEnvConfig(gimletClient, store, owner, repo)
+    }
+
+    if (!this.state.defaultState.gitSha) {
+      this.props.gimletClient.getGitRepoMetas(owner, repo)
+        .then(data => {
+          if (data.GithubActions) {
+            this.setState(prevState => ({
+              values: {
+                ...prevState.values,
+                gitSha: "{{ .GITHUB_SHA }}"
+              },
+              nonDefaultValues: {
+                ...prevState.nonDefaultValues,
+                gitSha: "{{ .GITHUB_SHA }}"
+              },
+            }))
+          }
+
+          if (data.CircleCi) {
+            this.setState(prevState => ({
+              values: {
+                ...prevState.values,
+                gitSha: "{{ .CIRCLE_SHA1 }}"
+              },
+              nonDefaultValues: {
+                ...prevState.nonDefaultValues,
+                gitSha: "{{ .CIRCLE_SHA1 }}"
+              },
+            }))
+          }
+        }, () => {/* Generic error handler deals with it */
+        });
+    }
+
+    if (!this.state.defaultState.gitRepository) {
+      this.setState(prevState => ({
+        values: {
+          ...prevState.values,
+          gitRepository: repoName
+        },
+        nonDefaultValues: {
+          ...prevState.nonDefaultValues,
+          gitRepository: repoName
+        },
+      }))
     }
   }
 

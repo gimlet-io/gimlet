@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -56,6 +57,72 @@ func branches(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(branchesString)
+}
+
+func gitRepoMetas(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+
+	ctx := r.Context()
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+
+	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
+	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	branch := helper.HeadBranch(repo)
+
+	githubWorkflows := filepath.Join(".github", "workflows")
+	var hasGithubActionFiles bool
+	githubActionFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, githubWorkflows)
+	if err != nil {
+		if !strings.Contains(err.Error(), "directory not found") {
+			logrus.Errorf("cannot list files in %s/: %s", githubWorkflows, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if len(githubActionFiles) > 0 {
+		hasGithubActionFiles = true
+	}
+
+	var hasCircleCiFiles bool
+	circleCiFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".circleci")
+	if err != nil {
+		if !strings.Contains(err.Error(), "directory not found") {
+			logrus.Errorf("cannot list files in .circleci/: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if len(circleCiFiles) > 0 {
+		hasCircleCiFiles = true
+	}
+
+	repoMeta := repoMeta{
+		GithubActions: hasGithubActionFiles,
+		CircleCi:      hasCircleCiFiles,
+	}
+
+	repoMetaString, err := json.Marshal(repoMeta)
+	if err != nil {
+		logrus.Errorf("cannot serialize repo meta: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(repoMetaString)
+}
+
+type repoMeta struct {
+	GithubActions bool
+	CircleCi      bool
 }
 
 // envConfig fetches all environment configs from source control for a repo
@@ -120,9 +187,9 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 type envConfig struct {
-	Values		map[string]interface{}
-	Namespace	string
-	AppName		string
+	Values    map[string]interface{}
+	Namespace string
+	AppName   string
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
