@@ -87,46 +87,45 @@ class EnvConfig extends Component {
       this.props.gimletClient.getGitRepoMetas(owner, repo)
         .then(data => {
           if (data.GithubActions) {
-            this.setState(prevState => ({
-              values: {
-                ...prevState.values,
-                gitSha: "{{ .GITHUB_SHA }}"
-              },
-              nonDefaultValues: {
-                ...prevState.nonDefaultValues,
-                gitSha: "{{ .GITHUB_SHA }}"
-              },
-            }))
+            this.setGitSha("{{ .GITHUB_SHA }}");
           }
 
           if (data.CircleCi) {
-            this.setState(prevState => ({
-              values: {
-                ...prevState.values,
-                gitSha: "{{ .CIRCLE_SHA1 }}"
-              },
-              nonDefaultValues: {
-                ...prevState.nonDefaultValues,
-                gitSha: "{{ .CIRCLE_SHA1 }}"
-              },
-            }))
+            this.setGitSha("{{ .CIRCLE_SHA1 }}");
           }
         }, () => {/* Generic error handler deals with it */
         });
     }
 
     if (!this.state.defaultState.gitRepository) {
-      this.setState(prevState => ({
-        values: {
-          ...prevState.values,
-          gitRepository: repoName
-        },
-        nonDefaultValues: {
-          ...prevState.nonDefaultValues,
-          gitRepository: repoName
-        },
-      }))
+      this.setGitRepository(repoName);
     }
+  }
+
+  setGitSha(gitSha) {
+    this.setState(prevState => ({
+      values: {
+        ...prevState.values,
+        gitSha: gitSha
+      },
+      nonDefaultValues: {
+        ...prevState.nonDefaultValues,
+        gitSha: gitSha
+      },
+    }));
+  }
+
+  setGitRepository(repoName) {
+    this.setState(prevState => ({
+      values: {
+        ...prevState.values,
+        gitRepository: repoName
+      },
+      nonDefaultValues: {
+        ...prevState.nonDefaultValues,
+        gitRepository: repoName
+      },
+    }))
   }
 
   validationCallback = (errors) => {
