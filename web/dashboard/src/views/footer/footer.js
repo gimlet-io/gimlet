@@ -27,31 +27,31 @@ export default class Footer extends Component {
 
         const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
         let color = "yellow";
-        let lastCommitStatus = "Trailing:";
+        let lastCommitStatus = "Trailing";
 
         if (gitopsCommit.status.includes("NotReady")) {
-            lastCommitStatus = "Applying:";
+            lastCommitStatus = "Applying";
         } else if (gitopsCommit.status.includes("Succeeded")) {
             color = "green";
-            lastCommitStatus = "Applied:";
+            lastCommitStatus = "Applied";
         } else if (gitopsCommit.status.includes("Failed")) {
             color = "red";
-            lastCommitStatus = "Apply failed:";
+            lastCommitStatus = "Apply failed";
         }
 
         return (
             <div className="flex items-center w-full truncate">
-                <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}:`}</p>
-                <div className="w-72 m-2 cursor-pointer truncate"
+                <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}:</p>
+                <div className="w-72 ml-2 cursor-pointer truncate text-sm"
                     title={gitopsCommit.statusDesc}>
                     <span
                         onClick={() => {
                             window.location.href = `/environments/${gitopsCommit.env}/gitops-commits`
                             return true
                         }}>
+                        <span className={(color === "yellow" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 relative top-1 inline-block bg-${color}-400`} />
                         {lastCommitStatus}
-                        <span className={(color === "yellow" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 inline-block bg-${color}-400`} />
-                        <span className="text-sm">
+                        <span className="ml-1">
                             {dateLabel} ago <span className="font-mono">{gitopsCommit.sha.slice(0, 6)}</span>
                         </span>
                     </span>
@@ -80,6 +80,7 @@ export default class Footer extends Component {
         firstCommitOfEnvs = firstCommitOfEnvs.filter(commit => commit !== undefined);
 
         firstCommitOfEnvs.sort((a, b) => b.created - a.created);
+
         return firstCommitOfEnvs;
     };
 
@@ -89,9 +90,14 @@ export default class Footer extends Component {
             return null;
         }
 
+        const firstCommitOfEnvs = this.arrayWithFirstCommitOfEnvs()
+        if (firstCommitOfEnvs.length === 0) {
+            return null;
+        }
+
         return (
-            <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full h-24 p-4 text-gray-100">
-                {this.arrayWithFirstCommitOfEnvs().slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
+            <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full px-4 py-2 text-gray-100">
+                {firstCommitOfEnvs.slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
             </div>)
     }
 }
