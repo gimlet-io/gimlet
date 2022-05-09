@@ -59,7 +59,7 @@ func branches(w http.ResponseWriter, r *http.Request) {
 	w.Write(branchesString)
 }
 
-func getGitRepoMetas(w http.ResponseWriter, r *http.Request) {
+func getMetas(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 
