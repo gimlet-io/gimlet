@@ -59,7 +59,7 @@ func branches(w http.ResponseWriter, r *http.Request) {
 	w.Write(branchesString)
 }
 
-func gitRepoMetas(w http.ResponseWriter, r *http.Request) {
+func getGitRepoMetas(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 
@@ -104,12 +104,12 @@ func gitRepoMetas(w http.ResponseWriter, r *http.Request) {
 		hasCircleCiFiles = true
 	}
 
-	repoMeta := repoMeta{
+	gitRepoM := gitRepoMetas{
 		GithubActions: hasGithubActionFiles,
 		CircleCi:      hasCircleCiFiles,
 	}
 
-	repoMetaString, err := json.Marshal(repoMeta)
+	gitRepoMString, err := json.Marshal(gitRepoM)
 	if err != nil {
 		logrus.Errorf("cannot serialize repo meta: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -117,10 +117,10 @@ func gitRepoMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(repoMetaString)
+	w.Write(gitRepoMString)
 }
 
-type repoMeta struct {
+type gitRepoMetas struct {
 	GithubActions bool
 	CircleCi      bool
 }
