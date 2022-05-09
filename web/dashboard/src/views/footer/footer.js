@@ -42,10 +42,9 @@ export default class Footer extends Component {
         return (
             <div className="flex items-center w-full truncate">
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}:`}</p>
-                <div className="w-72 m-2 truncate">
+                <div className="w-72 m-2 cursor-pointer truncate"
+                    title={gitopsCommit.statusDesc}>
                     <span
-                        className="cursor-pointer"
-                        title={gitopsCommit.statusDesc}
                         onClick={() => {
                             window.location.href = `/environments/${gitopsCommit.env}/gitops-commits`
                             return true
