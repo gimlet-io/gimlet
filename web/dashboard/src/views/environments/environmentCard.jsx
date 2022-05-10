@@ -62,6 +62,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
       scrollTo(ref);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [envFromParams, env.name]);
 
   const hasGitopsRepo = env.infraRepo !== "";
