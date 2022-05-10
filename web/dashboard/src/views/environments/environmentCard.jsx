@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
 import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
@@ -50,15 +50,19 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     tab = "";
   }
 
-  if (envFromParams === env.name) {
-    scrollTo(ref)
-  }
-
   const [tabs, setTabs] = useState([
     { name: "Gitops repositories", current: tab === "" },
     { name: "Infrastructure components", current: tab === "components" },
     { name: "Gitops commits", current: tab === "gitops-commits" }
   ]);
+
+  useEffect(() => {
+    if (envFromParams === env.name) {
+      switchTabHandler("Gitops commits");
+
+      scrollTo(ref);
+    }
+  }, [envFromParams, env.name]);
 
   const hasGitopsRepo = env.infraRepo !== "";
 

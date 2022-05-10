@@ -45,10 +45,7 @@ export default class Footer extends Component {
                 <div className="w-72 ml-2 cursor-pointer truncate text-sm"
                     title={gitopsCommit.statusDesc}>
                     <span
-                        onClick={() => {
-                            window.location.href = `/environments/${gitopsCommit.env}/gitops-commits`
-                            return true
-                        }}>
+                        onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}>
                         <span className={(color === "yellow" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 relative top-1 inline-block bg-${color}-400`} />
                         {lastCommitStatus}
                         <span className="ml-1">
