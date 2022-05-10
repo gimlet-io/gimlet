@@ -26,16 +26,16 @@ export default class Footer extends Component {
         }
 
         const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
-        let color = "yellow";
+        let color = "bg-yellow-400";
         let lastCommitStatus = "Trailing";
 
         if (gitopsCommit.status.includes("NotReady")) {
             lastCommitStatus = "Applying";
         } else if (gitopsCommit.status.includes("Succeeded")) {
-            color = "green";
+            color = "bg-green-400";
             lastCommitStatus = "Applied";
         } else if (gitopsCommit.status.includes("Failed")) {
-            color = "red";
+            color = "bg-red-400";
             lastCommitStatus = "Apply failed";
         }
 
@@ -46,7 +46,7 @@ export default class Footer extends Component {
                     title={gitopsCommit.statusDesc}>
                     <span
                         onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}>
-                        <span className={(color === "yellow" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 relative top-1 inline-block bg-${color}-400`} />
+                        <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 relative top-1 inline-block ${color}`} />
                         {lastCommitStatus}
                         <span className="ml-1">
                             {dateLabel} ago <span className="font-mono">{gitopsCommit.sha.slice(0, 6)}</span>
