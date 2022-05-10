@@ -21,6 +21,10 @@ func Test_Releases(t *testing.T) {
 	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, 10, "")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get all releases")
+
+	releases, err = Releases(repo, "", "staging", true, nil, nil, 10, "")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(releases), "should get all releases")
 }
 
 func Test_ReleasesLimit(t *testing.T) {

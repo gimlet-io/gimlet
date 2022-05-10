@@ -1,9 +1,10 @@
 package nativeGit
 
 import (
+	"io"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"io"
 
 	"github.com/go-git/go-git/v5/plumbing/storer"
 )
@@ -66,6 +67,10 @@ func (c *commitDirIter) getNextFileCommit() (*object.Commit, error) {
 			return nil, currTreeErr
 		}
 		limitedTree, limitedTreeErr := currentTree.Tree(c.dir)
+		if c.dir == "" {
+			limitedTree = currentTree
+			limitedTreeErr = nil
+		}
 
 		var found bool
 		var err error
@@ -112,6 +117,10 @@ func (c *commitDirIter) hasFileChanges(parentCommit *object.Commit, limitedTreeE
 		return false, parentTreeErr
 	}
 	limitedParentTree, limitedParentTreeErr := parentTree.Tree(c.dir)
+	if c.dir == "" {
+		limitedParentTree = parentTree
+		limitedParentTreeErr = nil
+	}
 
 	var found bool
 	if limitedTreeErr == object.ErrDirectoryNotFound &&
