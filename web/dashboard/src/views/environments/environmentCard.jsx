@@ -254,7 +254,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
                 target="_blank"
                 rel="noopener noreferrer">
-                <span className="font-mono">{gitopsCommitSha}</span> created {dateLabel} ago
+                <span className="font-mono">{gitopsCommitSha}</span> state recorded {dateLabel} ago
               </a>
             </p>
             <p className="text-gray-700 mt-2">
