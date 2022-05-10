@@ -11,7 +11,7 @@ export default class DeployStatus extends Component {
     let reduxState = this.props.store.getState();
     this.state = {
       runningDeploys: reduxState.runningDeploys,
-      settings: reduxState.settings
+      envs: reduxState.envs,
     }
 
     // handling API and streaming state changes
@@ -19,19 +19,19 @@ export default class DeployStatus extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({runningDeploys: reduxState.runningDeploys});
-      this.setState({settings: reduxState.settings});
+      this.setState({envs: reduxState.envs});
     });
   }
 
   render() {
-    const {runningDeploys, settings} = this.state;
-    const gitopsRepo = settings.gitopsRepo;
+    const {runningDeploys, envs} = this.state;
 
     if (runningDeploys.length === 0) {
       return null;
     }
 
     const deploy = runningDeploys[0];
+    const gitopsRepo = envs.find(env => env.name === deploy.env).appsRepo;
 
     let gitopsWidget = (
       <div className="mt-2">
