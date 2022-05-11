@@ -20,6 +20,15 @@ export default class Footer extends Component {
         });
     }
 
+    renderLastCommitStatusMessage(lastCommitStatus, lastCommitStatusMessage) {
+        if (lastCommitStatus === "Apply failed" || lastCommitStatus === "Trailing") {
+            return (
+                <p className="truncate">
+                    {lastCommitStatusMessage}
+                </p>);
+        }
+    }
+
     renderGitopsCommit(gitopsCommit) {
         if (gitopsCommit === undefined) {
             return null
@@ -28,6 +37,7 @@ export default class Footer extends Component {
         const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
         let color = "bg-yellow-400";
         let lastCommitStatus = "Trailing";
+        let lastCommitStatusMessage = "Flux is trailing";
 
         if (gitopsCommit.status.includes("NotReady")) {
             lastCommitStatus = "Applying";
@@ -37,31 +47,23 @@ export default class Footer extends Component {
         } else if (gitopsCommit.status.includes("Failed")) {
             color = "bg-red-400";
             lastCommitStatus = "Apply failed";
+            lastCommitStatusMessage = gitopsCommit.statusDesc;
         }
 
         return (
-            <div className="flex items-center w-full truncate">
+            <div className="flex items-center align-middle justify-center w-full truncate">
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}:</p>
                 <div className="w-72 ml-2 cursor-pointer truncate text-sm"
+                    onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}
                     title={gitopsCommit.statusDesc}>
-                    <span
-                        onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}>
-                        <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mx-1 relative top-1 inline-block ${color}`} />
+                    <span>
+                        <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
                         {lastCommitStatus}
                         <span className="ml-1">
                             {dateLabel} ago <span className="font-mono">{gitopsCommit.sha.slice(0, 6)}</span>
                         </span>
                     </span>
-                    {lastCommitStatus.includes("failed")
-                        &&
-                        <p class="w-64 truncate">
-                            {gitopsCommit.statusDesc}
-                        </p>}
-                    {lastCommitStatus === "Trailing:" &&
-                        <p>
-                            Flux is trailing
-                        </p>
-                    }
+                    {this.renderLastCommitStatusMessage(lastCommitStatus, lastCommitStatusMessage)}
                 </div>
             </div>
         );
@@ -93,7 +95,7 @@ export default class Footer extends Component {
         }
 
         return (
-            <div className="fixed flex justify-center float-left bottom-0 left-0 bg-gray-800 z-50 w-full px-4 py-2 text-gray-100">
+            <div className="grid grid-cols-3 fixed bottom-0 left-0 bg-gray-800 z-50 w-full px-4 py-2 text-gray-100">
                 {firstCommitOfEnvs.slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
             </div>)
     }
