@@ -86,11 +86,11 @@ class EnvConfig extends Component {
     if (!this.state.defaultState.gitSha) {
       this.props.gimletClient.getGitRepoMetas(owner, repo)
         .then(data => {
-          if (data.GithubActions) {
+          if (data.githubActions) {
             this.setGitSha("{{ .GITHUB_SHA }}");
           }
 
-          if (data.CircleCi) {
+          if (data.circleCi) {
             this.setGitSha("{{ .CIRCLE_SHA1 }}");
           }
         }, () => {/* Generic error handler deals with it */

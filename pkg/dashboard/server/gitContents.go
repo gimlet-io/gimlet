@@ -104,9 +104,24 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 		hasCircleCiFiles = true
 	}
 
+	var hasShipper bool
+	repoFiles, err := helper.RemoteContentOnBranchWithoutCheckout(repo, branch, "artifact.json")
+	if err != nil {
+		if !strings.Contains(err.Error(), "file not found") {
+			logrus.Errorf("cannot get file: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if repoFiles != "" {
+		hasShipper = true
+	}
+
 	gitRepoM := gitRepoMetas{
 		GithubActions: hasGithubActionFiles,
 		CircleCi:      hasCircleCiFiles,
+		HasShipper:    hasShipper,
 	}
 
 	gitRepoMString, err := json.Marshal(gitRepoM)
@@ -121,8 +136,9 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 }
 
 type gitRepoMetas struct {
-	GithubActions bool
-	CircleCi      bool
+	GithubActions bool `json:"githubActions"`
+	CircleCi      bool `json:"circleCi"`
+	HasShipper    bool `json:"hasShipper"`
 }
 
 // envConfig fetches all environment configs from source control for a repo
