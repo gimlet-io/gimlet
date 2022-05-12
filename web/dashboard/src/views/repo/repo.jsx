@@ -290,11 +290,49 @@ export default class Repo extends Component {
     this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${config}`);
   }
 
+  ciConfigAndShipperStatuses(repoName) {
+    const { repoMetas } = this.state;
+    let shipperColor = "text-gray-500";
+    let ciConfigColor = "text-gray-500";
+    let ciConfig = "";
+
+    if (repoMetas.githubActions) {
+      ciConfigColor = "text-green-500";
+      ciConfig = ".github/workflows"
+    } else if (repoMetas.circleCi) {
+      ciConfigColor = "text-green-500";
+      ciConfig = ".circleci"
+    }
+    if (repoMetas.hasShipper) {
+      shipperColor = "text-green-500";
+    }
+
+    return (
+      <div className='flex py-4 space-x-2'>
+        <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${shipperColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          <title>{repoMetas.hasShipper ? "This repository has shipper" : "This repository doesn't have shipper"}</title>
+        </svg>
+        <p>
+          <a className="cursor-pointer text-gray-500 hover:text-gray-700"
+            href={`https://github.com/${repoName}/tree/main/${ciConfig}`}
+            target="_blank"
+            rel="noopener noreferrer">
+            {ciConfig && "Edit CI config"}
+          </a>
+        </p>
+      </div>)
+  }
+
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     let { envs, connectedAgents, search, rolloutHistory, commits, agents } = this.state;
-    const { branches, selectedBranch, envConfigs, repoMetas } = this.state;
+    const { branches, selectedBranch, envConfigs } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
 
@@ -322,13 +360,10 @@ export default class Repo extends Component {
                 </svg>
               </a>
             </h1>
-            {repoMetas.hasShipper &&
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>}
             <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.goBack()}>
               &laquo; back
             </button>
+            {this.ciConfigAndShipperStatuses(repoName)}
           </div>
         </header>
         <main>
