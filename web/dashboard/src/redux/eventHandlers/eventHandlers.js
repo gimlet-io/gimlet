@@ -158,6 +158,11 @@ export function envConfigs(state, payload) {
   return state;
 }
 
+export function repoMetas(state, payload) {
+  state.repoMetas = payload.repoMetas;
+  return state;
+}
+
 export function deploy(state, payload) {
   state.runningDeploys = [payload];
   return state;
