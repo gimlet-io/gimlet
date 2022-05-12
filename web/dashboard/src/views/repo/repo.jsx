@@ -6,6 +6,7 @@ import {
   ACTION_TYPE_COMMITS,
   ACTION_TYPE_DEPLOY,
   ACTION_TYPE_DEPLOY_STATUS,
+  ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY
 } from "../../redux/redux";
 import { Commits } from "../../components/commits/commits";
@@ -32,7 +33,8 @@ export default class Repo extends Component {
       settings: reduxState.settings,
       refreshQueue: reduxState.repoRefreshQueue.filter(repo => repo === repoName).length,
       agents: reduxState.settings.agents,
-      envs: reduxState.envs
+      envs: reduxState.envs,
+      repoMetas: reduxState.repoMetas,
     }
 
     // handling API and streaming state changes
@@ -46,7 +48,8 @@ export default class Repo extends Component {
         commits: reduxState.commits,
         branches: reduxState.branches,
         envConfigs: reduxState.envConfigs[repoName],
-        envs: reduxState.envs
+        envs: reduxState.envs,
+        repoMetas: reduxState.repoMetas,
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -70,6 +73,16 @@ export default class Repo extends Component {
 
   componentDidMount() {
     const { owner, repo } = this.props.match.params;
+
+    this.props.gimletClient.getRepoMetas(owner, repo)
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_REPO_METAS, payload: {
+            repoMetas: data,
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
 
     this.props.gimletClient.getRolloutHistory(owner, repo)
       .then(data => {
@@ -281,7 +294,7 @@ export default class Repo extends Component {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     let { envs, connectedAgents, search, rolloutHistory, commits, agents } = this.state;
-    const { branches, selectedBranch, envConfigs } = this.state;
+    const { branches, selectedBranch, envConfigs, repoMetas } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
 
@@ -309,8 +322,10 @@ export default class Repo extends Component {
                 </svg>
               </a>
             </h1>
-            <h1>
-            </h1>
+            {repoMetas.hasShipper &&
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>}
             <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.goBack()}>
               &laquo; back
             </button>
