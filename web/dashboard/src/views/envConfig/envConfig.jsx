@@ -84,7 +84,7 @@ class EnvConfig extends Component {
     }
 
     if (!this.state.defaultState.gitSha) {
-      this.props.gimletClient.getGitRepoMetas(owner, repo)
+      this.props.gimletClient.getRepoMetas(owner, repo)
         .then(data => {
           if (data.githubActions) {
             this.setGitSha("{{ .GITHUB_SHA }}");
