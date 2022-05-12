@@ -394,6 +394,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         {hasGitopsRepo ?
           <>
             {!isOnline && !gimletAgentConfigured &&
+            <>
               <div className="rounded-md bg-red-50 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -402,7 +403,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-red-800">This environment is disconnected</h3>
                     <div className="mt-2 text-sm text-red-700">
-                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet</span><br />
+                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
                       Or use the <span
                         className="font-medium cursor-pointer"
                         onClick={(e) => {
@@ -415,6 +416,29 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   </div>
                 </div>
               </div>
+
+              <div className="rounded-md bg-red-50 p-4 mt-2">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Deployment automation is not configured for this environment</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    Configure Gimletd to be able to deploy to this environment under <span className="italic">Infrastructure components &gt; Gimletd</span><br />
+                    Or use the <span
+                      className="font-medium cursor-pointer"
+                      onClick={(e) => {
+                        // eslint-disable-next-line no-restricted-globals
+                        confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
+                          configureAgent(env.name, e);
+                      }}
+                    >1-click-config</span>.
+                  </div>
+                </div>
+              </div>
+            </div>
+            </>
             }
             <div className="sm:hidden">
               <label htmlFor="tabs" className="sr-only">
