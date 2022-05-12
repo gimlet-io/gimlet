@@ -216,6 +216,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       });
   }
 
+  const configureAgent = (envName) => {
+    console.log(envName)
+    console.log("will call a dedicated API endpoint here")
+  }
+
   const gitopsCommitColorByStatus = (status) => {
     return status.includes("Succeeded") ?
       "green"
@@ -397,7 +402,15 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-red-800">This environment is disconnected</h3>
                     <div className="mt-2 text-sm text-red-700">
-                      Configure the Gimlet Agent under <span className="font-medium">Infrastructure components &gt; Gimlet</span>
+                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet</span><br />
+                      Or use the <span
+                        className="font-medium cursor-pointer"
+                        onClick={(e) => {
+                          // eslint-disable-next-line no-restricted-globals
+                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
+                            configureAgent(env.name, e);
+                        }}
+                      >1-click-config</span>.
                     </div>
                   </div>
                 </div>
