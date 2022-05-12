@@ -308,24 +308,24 @@ export default class Repo extends Component {
     }
 
     return (
-      <div className='flex py-4 space-x-2'>
-        <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
-        </svg>
-        <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${shipperColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <>
+        {repoMetas.githubActions || repoMetas.circleCi ?
+          <a href={`https://github.com/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer">
+            <svg xmlns="http://www.w3.org/2000/svg" className={`inline h-4 w-4 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
+            </svg>
+          </a>
+          :
+          <svg xmlns="http://www.w3.org/2000/svg" className={`inline h-4 w-4 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
+          </svg>}
+        <svg xmlns="http://www.w3.org/2000/svg" className={`inline h-4 w-4 ${shipperColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
           <title>{repoMetas.hasShipper ? "This repository has shipper" : "This repository doesn't have shipper"}</title>
         </svg>
-        <p>
-          <a className="cursor-pointer text-gray-500 hover:text-gray-700"
-            href={`https://github.com/${repoName}/tree/main/${ciConfig}`}
-            target="_blank"
-            rel="noopener noreferrer">
-            {ciConfig && "Edit CI config"}
-          </a>
-        </p>
-      </div>)
+      </>)
   }
 
   render() {
@@ -359,11 +359,11 @@ export default class Repo extends Component {
                     d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                 </svg>
               </a>
+              {this.ciConfigAndShipperStatuses(repoName)}
             </h1>
             <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.goBack()}>
               &laquo; back
             </button>
-            {this.ciConfigAndShipperStatuses(repoName)}
           </div>
         </header>
         <main>
