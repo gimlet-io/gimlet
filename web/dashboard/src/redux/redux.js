@@ -15,6 +15,7 @@ export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
 export const ACTION_TYPE_COMMITS = 'commits';
 export const ACTION_TYPE_BRANCHES = 'branches';
 export const ACTION_TYPE_ENVCONFIGS = 'envConfigs';
+export const ACTION_TYPE_REPO_METAS = "repoMetas";
 export const ACTION_TYPE_DEPLOY = 'deploy';
 export const ACTION_TYPE_DEPLOY_STATUS = 'deployStatus';
 export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
@@ -63,6 +64,7 @@ export const initialState = {
   chartUISchema: undefined,
   envConfigs: {},
   application: {},
+  repoMetas: {},
   envs: [],
   gitopsCommits: [],
   popupWindow: {
@@ -120,6 +122,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.branches(state, action.payload)
     case ACTION_TYPE_ENVCONFIGS:
       return eventHandlers.envConfigs(state, action.payload)
+    case ACTION_TYPE_REPO_METAS:
+      return eventHandlers.repoMetas(state, action.payload)
     case ACTION_TYPE_DEPLOY:
       return eventHandlers.deploy(state, action.payload)
     case ACTION_TYPE_DEPLOY_STATUS:

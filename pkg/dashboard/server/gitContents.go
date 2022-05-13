@@ -18,6 +18,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -73,40 +74,28 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branch := helper.HeadBranch(repo)
-
-	githubWorkflows := filepath.Join(".github", "workflows")
-	var hasGithubActionFiles bool
-	githubActionFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, githubWorkflows)
+	githubActionsConfigPath := filepath.Join(".github", "workflows")
+	githubActionsShipperCommand := "gimlet-io/gimlet-artifact-shipper-action"
+	hasGithubActionsConfig, hasGithubActionsShipper, err := hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
 	if err != nil {
-		if !strings.Contains(err.Error(), "directory not found") {
-			logrus.Errorf("cannot list files in %s/: %s", githubWorkflows, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		logrus.Errorf("cannot determine ci status: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
-	if len(githubActionFiles) > 0 {
-		hasGithubActionFiles = true
-	}
-
-	var hasCircleCiFiles bool
-	circleCiFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".circleci")
+	circleCiConfigPath := ".circleci"
+	circleCiShipperCommand := "gimlet/gimlet-artifact-createn"
+	hasCircleCiConfig, hasCircleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
 	if err != nil {
-		if !strings.Contains(err.Error(), "directory not found") {
-			logrus.Errorf("cannot list files in .circleci/: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if len(circleCiFiles) > 0 {
-		hasCircleCiFiles = true
+		logrus.Errorf("cannot determine ci status: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	gitRepoM := gitRepoMetas{
-		GithubActions: hasGithubActionFiles,
-		CircleCi:      hasCircleCiFiles,
+		GithubActions: hasGithubActionsConfig,
+		CircleCi:      hasCircleCiConfig,
+		HasShipper:    hasGithubActionsShipper || hasCircleCiShipper,
 	}
 
 	gitRepoMString, err := json.Marshal(gitRepoM)
@@ -121,8 +110,9 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 }
 
 type gitRepoMetas struct {
-	GithubActions bool
-	CircleCi      bool
+	GithubActions bool `json:"githubActions"`
+	CircleCi      bool `json:"circleCi"`
+	HasShipper    bool `json:"hasShipper"`
 }
 
 // envConfig fetches all environment configs from source control for a repo
@@ -376,4 +366,29 @@ func folderExists(gitopsRepoContent []string, envName string) bool {
 		}
 	}
 	return false
+}
+
+func hasShipper(files map[string]string, shipperCommand string) bool {
+	for _, file := range files {
+		if strings.Contains(file, shipperCommand) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCommand string) (bool, bool, error) {
+	branch := helper.HeadBranch(repo)
+	ciConfigFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ciConfigPath)
+	if err != nil {
+		if !strings.Contains(err.Error(), "directory not found") {
+			return false, false, err
+		}
+	}
+
+	if len(ciConfigFiles) == 0 {
+		return false, false, nil
+	}
+
+	return true, hasShipper(ciConfigFiles, shipperCommand), nil
 }
