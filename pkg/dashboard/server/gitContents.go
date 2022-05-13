@@ -83,7 +83,7 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	circleCiConfigPath := filepath.Join(".github", "workflows")
+	circleCiConfigPath := ".circleci"
 	circleCiShipperCommand := "gimlet/gimlet-artifact-createn"
 	hasCircleCiConfig, hasCircleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
 	if err != nil {
