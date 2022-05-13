@@ -74,19 +74,28 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branch := helper.HeadBranch(repo)
-
-	hasGithubActionFiles, hasCircleCiFiles, hasShipper, err := checkIfRepoHasCiConfigAndShipper(repo, branch)
+	githubActionsConfigPath := filepath.Join(".github", "workflows")
+	githubActionsShipperCommand := "gimlet-io/gimlet-artifact-shipper-action"
+	hasGithubActionsConfig, hasGithubActionsShipper, err := hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
 	if err != nil {
-		logrus.Errorf("cannot list files in the repository: %s", err)
+		logrus.Errorf("cannot determine ci status: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	circleCiConfigPath := filepath.Join(".github", "workflows")
+	circleCiShipperCommand := "gimlet/gimlet-artifact-createn"
+	hasCircleCiConfig, hasCircleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
+	if err != nil {
+		logrus.Errorf("cannot determine ci status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	gitRepoM := gitRepoMetas{
-		GithubActions: hasGithubActionFiles,
-		CircleCi:      hasCircleCiFiles,
-		HasShipper:    hasShipper,
+		GithubActions: hasGithubActionsConfig,
+		CircleCi:      hasCircleCiConfig,
+		HasShipper:    hasGithubActionsShipper || hasCircleCiShipper,
 	}
 
 	gitRepoMString, err := json.Marshal(gitRepoM)
@@ -359,7 +368,7 @@ func folderExists(gitopsRepoContent []string, envName string) bool {
 	return false
 }
 
-func checkIfHasShipper(files map[string]string, shipperCommand string) bool {
+func hasShipper(files map[string]string, shipperCommand string) bool {
 	for _, file := range files {
 		if strings.Contains(file, shipperCommand) {
 			return true
@@ -368,39 +377,18 @@ func checkIfHasShipper(files map[string]string, shipperCommand string) bool {
 	return false
 }
 
-func checkIfRepoHasCiConfigAndShipper(repo *git.Repository, branch string) (bool, bool, bool, error) {
-	var hasGithubActionsFiles bool
-	var hasCircleCiFiles bool
-	var hasShipper bool
-	githubWorkflows := filepath.Join(".github", "workflows")
-
-	githubWorkflowsFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, githubWorkflows)
+func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCommand string) (bool, bool, error) {
+	branch := helper.HeadBranch(repo)
+	ciConfigFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ciConfigPath)
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
-			return hasGithubActionsFiles, hasCircleCiFiles, hasShipper, err
+			return false, false, err
 		}
 	}
 
-	if len(githubWorkflowsFiles) > 0 {
-		hasGithubActionsFiles = true
-		hasShipper = checkIfHasShipper(githubWorkflowsFiles, "gimlet-io/gimlet-artifact-shipper-action")
-
-		return hasGithubActionsFiles, hasCircleCiFiles, hasShipper, nil
+	if len(ciConfigFiles) == 0 {
+		return false, false, nil
 	}
 
-	circleCiFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".circleci")
-	if err != nil {
-		if !strings.Contains(err.Error(), "directory not found") {
-			return hasGithubActionsFiles, hasCircleCiFiles, hasShipper, err
-		}
-	}
-
-	if len(circleCiFiles) > 0 {
-		hasCircleCiFiles = true
-		hasShipper = checkIfHasShipper(circleCiFiles, "gimlet/gimlet-artifact-create")
-
-		return hasGithubActionsFiles, hasCircleCiFiles, hasShipper, nil
-	}
-
-	return hasGithubActionsFiles, hasCircleCiFiles, hasShipper, nil
+	return true, hasShipper(ciConfigFiles, shipperCommand), nil
 }
