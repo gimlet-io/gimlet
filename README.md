@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 
-<img src="https://raw.githubusercontent.com/gimlet-io/logos/main/Gimlet.svg?token=GHSAT0AAAAAABQITJ4YEEXMIO3CKHIUWHYGYUCAGHA" width="200"/>
+<img src="Gimlet.svg" width="200"/>
 
 ## Overview
 
@@ -87,9 +87,8 @@ Don't forget to star the project. Your support goes a long way 🙏
 curl -L -s https://get.gimlet.io | bash -s <<your-domain.com>>
 ```
 
-See the full installation on this captioned video
-<iframe width="560" height="315" src="https://www.youtube.com/embed/HFjv7_08oP0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[See the full installation on this captioned video](https://youtu.be/HFjv7_08oP0)
 
 ## Youtube playlist on building a full developer platform
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/HFjv7_08oP0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[Building a developer platform on CIVO Cloud with Gimlet and gitops](https://youtube.com/playlist?list=PLjJkiSWPwuPJeIEOn5BWMFdxSSpiQPQ4P)
