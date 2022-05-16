@@ -1,10 +1,10 @@
-import gimletHeader from "./gimletHeader.svg";
+// import gimletHeader from "./gimletHeader.svg";
 
 const LoginPage = () => {
   return (
     <>
       <div className="py-12">
-        <img className="h-16 mx-auto" src={gimletHeader} alt="gimlet-logo" />
+        <img className="h-16 mx-auto" src="" alt="gimlet-logo" />
         <div className="mt-8 mx-2 sm:mx-auto sm:max-w-md bg-white py-8 px-4 shadow sm:px-10">
           <button
             onClick={() => {

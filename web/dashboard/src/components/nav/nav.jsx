@@ -2,7 +2,7 @@ import React, {Component, Fragment} from 'react';
 import './nav.css';
 import {Disclosure, Menu, Transition} from '@headlessui/react'
 import {MenuIcon, XIcon} from '@heroicons/react/outline'
-import logo from './logo.svg';
+// import logo from '../../../public/logo.svg';
 import {ACTION_TYPE_SEARCH} from "../../redux/redux";
 
 const navigation = [
@@ -55,7 +55,7 @@ export default class Nav extends Component {
                   <div className="flex-shrink-0 flex items-center">
                     <img
                       className="h-8 w-auto"
-                      src={logo}
+                      src=""
                       alt="Workflow"
                     />
                   </div>
