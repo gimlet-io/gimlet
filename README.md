@@ -1,11 +1,11 @@
-# Gimlet CLI
+# Gimlet
 
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/gimlet-io/gimlet-cli)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gimlet-io/gimlet-cli)](https://goreportcard.com/report/github.com/gimlet-io/gimlet-cli)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 
-![Gimlet](https://raw.githubusercontent.com/gimlet-io/logos/main/Gimlet.svg?token=GHSAT0AAAAAABQITJ4YEEXMIO3CKHIUWHYGYUCAGHA | width=100)
+<img src="https://raw.githubusercontent.com/gimlet-io/logos/main/Gimlet.svg?token=GHSAT0AAAAAABQITJ4YEEXMIO3CKHIUWHYGYUCAGHA" width="200"/>
 
 ## Overview
 
