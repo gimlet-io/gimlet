@@ -73,7 +73,7 @@ gimlet manifest template -f staging.yaml -o manifests.yaml
 
 ### Tutorials
 
-- [https://gimlet.io/docs/deploy-your-app-to-kubernetes-without-the-boilerplate/](Deploy your app to Kubernetes without the boilerplate)
+- [Deploy your app to Kubernetes without the boilerplate](https://gimlet.io/docs/deploy-your-app-to-kubernetes-without-the-boilerplate/)
 - [Manage your staging application configuration](https://gimlet.io/docs/manage-your-staging-application-configuration/)
 - [Automatically deploy your application to staging](https://gimlet.io/docs/automatically-deploy-your-application-to-staging/)
 
