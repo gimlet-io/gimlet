@@ -227,7 +227,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const renderGitopsCommit = (gitopsCommit, idx, arr) => {
-    const gitopsCommitSha = gitopsCommit.sha.slice(0, 6);
     const exactDate = format(gitopsCommit.created * 1000, 'h:mm:ss a, MMMM do yyyy');
     const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
     const gitopsCommitColor = gitopsCommitColorByStatus(gitopsCommit.status);
@@ -254,7 +253,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
                 target="_blank"
                 rel="noopener noreferrer">
-                <span className="font-mono">{gitopsCommitSha}</span> state recorded {dateLabel} ago
+                <span className="font-mono">{gitopsCommit.sha?.slice(0, 6)}</span> state recorded {dateLabel} ago
               </a>
             </p>
             <p className="text-gray-700 mt-2">
