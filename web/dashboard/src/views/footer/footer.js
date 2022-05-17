@@ -60,7 +60,7 @@ export default class Footer extends Component {
                         <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
                         {lastCommitStatus}
                         <span className="ml-1">
-                            {dateLabel} ago <span className="font-mono">{gitopsCommit.sha.slice(0, 6)}</span>
+                            {dateLabel} ago <span className="font-mono">{gitopsCommit.sha?.slice(0, 6)}</span>
                         </span>
                     </span>
                     {this.renderLastCommitStatusMessage(lastCommitStatus, lastCommitStatusMessage)}
