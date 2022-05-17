@@ -1,4 +1,5 @@
-import gimletHeader from "./gimletHeader.svg";
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import gimletHeader from "!file-loader!./gimletHeader.svg";
 
 const LoginPage = () => {
   return (

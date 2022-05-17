@@ -2,7 +2,8 @@ import React, {Component, Fragment} from 'react';
 import './nav.css';
 import {Disclosure, Menu, Transition} from '@headlessui/react'
 import {MenuIcon, XIcon} from '@heroicons/react/outline'
-import logo from './logo.svg';
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import logo from "!file-loader!./logo.svg";
 import {ACTION_TYPE_SEARCH} from "../../redux/redux";
 
 const navigation = [
