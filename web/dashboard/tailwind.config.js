@@ -1,3 +1,5 @@
+const colors = require('tailwindcss/colors');
+
 module.exports = {
   content: [
     './src/**/*.{js,jsx,ts,tsx}',
@@ -8,7 +10,13 @@ module.exports = {
     './node_modules/shared-components/**/*.css'
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        green : colors.emerald,
+        yellow: colors.amber,
+        grey: colors.slate,
+      },
+    },
   },
   plugins: [
     require('@tailwindcss/typography'),
