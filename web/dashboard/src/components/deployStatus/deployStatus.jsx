@@ -12,14 +12,16 @@ export default class DeployStatus extends Component {
     this.state = {
       runningDeploys: reduxState.runningDeploys,
       envs: reduxState.envs,
+      gitopsCommits: reduxState.gitopsCommits
     }
 
     // handling API and streaming state changes
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
-      this.setState({runningDeploys: reduxState.runningDeploys});
-      this.setState({envs: reduxState.envs});
+      this.setState({ runningDeploys: reduxState.runningDeploys });
+      this.setState({ envs: reduxState.envs });
+      this.setState({ gitopsCommits: reduxState.gitopsCommits });
     });
   }
 
@@ -84,9 +86,11 @@ export default class DeployStatus extends Component {
         const latestGitopsHashMetadata = deploy.gitopsHashes[0];
         if (latestGitopsHashMetadata.status !== 'N/A') {
           appliedWidget = deploy.gitopsHashes.map(hashStatus => {
+            const lastCommitSucceeded = this.state.gitopsCommits[0].status.includes("Succeeded");
             if (hashStatus.status !== 'Progressing' &&
               hashStatus.status !== 'DependencyNotReady' &&
               hashStatus.status !== 'NotReconciled' &&
+              hashStatus.status !== 'ReconciliationSucceeded' &&
               hashStatus.status !== 'N/A') {
               return (
                 <p key={hashStatus.hash} className="font-semibold text-red-500">
@@ -103,8 +107,8 @@ export default class DeployStatus extends Component {
               )
             } else {
               return (
-                <p key={hashStatus.hash} className="font-semibold text-green-300">
-                  <span>✅</span>
+                <p key={hashStatus.hash} className={(lastCommitSucceeded ? "text-green-300" : "text-yellow-300") + " font-semibold"}>
+                  {lastCommitSucceeded ? <span>✅</span> : <span>🟡</span>}
                   <a
                     href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
                     target="_blank" rel="noopener noreferrer"
@@ -112,7 +116,7 @@ export default class DeployStatus extends Component {
                   >
                     {hashStatus.hash.slice(0, 6)}
                   </a>
-                  <span className='ml-1'>applied</span>
+                  <span className='ml-1'>{lastCommitSucceeded ? "applied" : "applying"}</span>
                 </p>
               )
             }
