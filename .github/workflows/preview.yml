@@ -1,4 +1,4 @@
-name: Preview
+name: 🧪 Preview
 on:
   push:
     branches:
@@ -42,7 +42,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/gimlet-io/gimlet-dashboard:xxx
+            ghcr.io/gimlet-io/gimlet-dashboard:${{ github.sha }}
       - name: Build and push Agent image
         uses: docker/build-push-action@v2
         with:
@@ -51,4 +51,12 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/gimlet-io/gimlet-dashboard:agent-xxx
+            ghcr.io/gimlet-io/gimlet-dashboard:agent-${{ github.sha }}
+      - name: Shipping release artifact
+        id: shipping
+        uses: gimlet-io/gimlet-artifact-shipper-action@v0.5.4
+        env:
+          GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
+          GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
+      - name: Artifact ID
+        run: echo "Artifact ID is ${{ steps.shipping.outputs.artifact-id }}"
