@@ -17,13 +17,6 @@ values:
   probe:
     enabled: true
     path: /health
-  volumes:
-    - name: data
-      path: /var/lib/gimlet-dashboard
-      size: 1Gi
-    - name: repo-cache
-      path: /tmp/gimlet-dashboard
-      size: 5Gi
   ingress:
     annotations:
       kubernetes.io/ingress.class: nginx
