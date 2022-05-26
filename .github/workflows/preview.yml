@@ -52,11 +52,3 @@ jobs:
           push: true
           tags: |
             ghcr.io/gimlet-io/gimlet-dashboard:agent-${{ github.sha }}
-      - name: Shipping release artifact
-        id: shipping
-        uses: gimlet-io/gimlet-artifact-shipper-action@v0.5.4
-        env:
-          GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
-          GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
-      - name: Artifact ID
-        run: echo "Artifact ID is ${{ steps.shipping.outputs.artifact-id }}"
