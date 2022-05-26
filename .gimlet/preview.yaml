@@ -1,4 +1,4 @@
-app: gimlet-dashboard-{{ .BRANCH }}
+app: gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}
 env: preview
 namespace: preview
 chart:
@@ -12,7 +12,7 @@ values:
   replicas: 1
   image:
     repository: ghcr.io/gimlet-io/gimlet-dashboard
-    tag: "{{ .GIT_SHA }}"
+    tag: "{{ .GITHUB_SHA }}"
     pullPolicy: Always
   probe:
     enabled: true
@@ -28,7 +28,7 @@ values:
     annotations:
       kubernetes.io/ingress.class: nginx
       cert-manager.io/cluster-issuer: letsencrypt
-    host: "gimlet-dashboard-{{ .BRANCH }}.preview.com"
+    host: "gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}.preview.com"
     tlsEnabled: true
   resources:
     requests:
