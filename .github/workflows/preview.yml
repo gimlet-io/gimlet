@@ -1,5 +1,4 @@
-name: 🚀 Preview Build
-
+name: Preview
 on:
   push:
     branches:
