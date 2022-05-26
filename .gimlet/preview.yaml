@@ -1,0 +1,42 @@
+app: gimlet-dashboard-{{ .BRANCH }}
+env: preview
+namespace: preview
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.35.0
+deploy:
+  branch: feature/*
+  event: push
+values:
+  replicas: 1
+  image:
+    repository: ghcr.io/gimlet-io/gimlet-dashboard
+    tag: "{{ .GIT_SHA }}"
+    pullPolicy: Always
+  probe:
+    enabled: true
+    path: /health
+  volumes:
+    - name: data
+      path: /var/lib/gimlet-dashboard
+      size: 1Gi
+    - name: repo-cache
+      path: /tmp/gimlet-dashboard
+      size: 5Gi
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt
+    host: "gimlet-dashboard-{{ .BRANCH }}.preview.com"
+    tlsEnabled: true
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "200Mi"
+    limits:
+      cpu: "500m"
+      memory: "500Mi"
+  podAnnotations:
+    prometheus.io/port: "9001"
+    prometheus.io/scrape: "true"
