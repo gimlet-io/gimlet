@@ -3,7 +3,7 @@ name: 🚀 Preview Build
 on:
   push:
     branches:
-      - "!main"
+      - "*"
 
 jobs:
   publish:
