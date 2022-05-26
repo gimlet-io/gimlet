@@ -2,10 +2,10 @@ name: Preview
 on:
   push:
     branches:
-      - "*"
+      - "!main"
 
 jobs:
-  publish:
+  preview-build:
     runs-on: ubuntu-latest
     steps:
       - name: 🛑 Cancel Previous Runs
