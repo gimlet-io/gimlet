@@ -2,7 +2,7 @@ name: 🧪 Preview
 on:
   push:
     branches:
-      - "!main"
+      - "*"
 
 jobs:
   preview-build:
