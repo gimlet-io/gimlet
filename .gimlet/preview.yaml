@@ -1,8 +1,6 @@
 app: gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}
 env: preview
 namespace: preview
-sealedSecrets:
-  JWT_SECRET: AgBpSxEWJDzfFXoLinm14ZZ5eXvvnR9DhXq43Ipg7HlXHv5CWGDBXJ/S8UTVjUKz13h6/ecAZB18jskzJcLKkgshnN4/PhgWzLFbMgJd0THUqhyBk8mB2AjvMH+Bh/wYtMEv2aFqzV8Nx6MZ3PgB14TaBR5PfQRkebKCZB5GwOzaSWs+/+mF6wZigGTg7rQ4xgcbjDvBmwHRCltDOtcT7WFn1fdHU8xCd7exEbXKPgmhIdy6g1DAwjPpcDEyDuyg1zohD/uHResegjj6ICQ9tTEklFKIHVkmJqpc9qdOoEOg41EOFiBK0k/L+cZB97f/IgyG0yPKJmL1sVAbDga4HvBFVsuDjJ0zS+4nFUjZ2HnPBo0E+LdtMM9YteOCyWasuIlamKxmZZvft7JgPRahQ4nLhlg3hoGXxlA1UK98I5YNNgJyLz84Hx7QYJAwXldXaT/GaUBH83xRqTP3BAf4My99SPppJIr6HOZqMTsDJsf3olSyk4htDy43J8nDWxxYnrNwiMjfEfl1d8uh4cOja/PIq4rkc+i/8qzM1552qoQmoC4+XuiTUfdFuLZDjNbjYjLgAE4YmR5sqBtKr5yvHCrBPvBYO7cD6/tQ+gC1qwBzJmMJJHUG+45j81VtxPJyUK3YWpeiQTaN7VXO9wCp3wtKQuy0nzSGxr43vtxRRWKwltF/ziM0QkXWo8kfqYSc66Ym6aPi2XXL0vnilJ/ZzC2/jxTSqK8l1So2W4GId2kRYUiB+noTQ3vUZXIrB7rj5BXSAUNd4Gl3rjNFSu4D+anxng==
 chart:
   repository: https://chart.onechart.dev
   name: onechart
@@ -35,8 +33,3 @@ values:
   podAnnotations:
     prometheus.io/port: "9001"
     prometheus.io/scrape: "true"
-  vars:
-    HOST: https://gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}.preview.com
-    GITHUB_ORG: gimlet-io
-    GIMLETD_URL: https://gimletd.staging.gimlet.io
- 
