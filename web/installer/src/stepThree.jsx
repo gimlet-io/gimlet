@@ -6,10 +6,6 @@ import GimletCLIClient from './client';
 const StepThree = ({ getContext }) => {
     const [context, setContext] = useState(null);
 
-    const parseRepoName = (repo) => {
-        return repo.split("/")[1];
-    };
-
     const client = new GimletCLIClient()
     client.onError = (response) => {
         console.log(response)
@@ -157,7 +153,7 @@ const StepThree = ({ getContext }) => {
                             />
                             <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
                                 <ul className="break-all text-sm text-blue-700 space-y-2">
-                                    <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${parseRepoName(context.appsRepo)}`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository</li>
+                                    <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${context.appsRepo}`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository</li>
                                     <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{context.gimletdPublicKey}</li>
                                 </ul>
                             </div>
