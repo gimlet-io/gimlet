@@ -25,6 +25,7 @@ export const ACTION_TYPE_AGENTS = 'agents';
 export const ACTION_TYPE_POPUPWINDOWOPENED = 'popupWindowOpened';
 export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
 export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
+export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
@@ -126,6 +127,9 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.deployStatus(state, action.payload)
     case ACTION_TYPE_CLEAR_DEPLOY_STATUS:
       return eventHandlers.clearDeployStatus(state)
+    case ACTION_TYPE_ENVUPDATED:
+      console.log(action)
+      return eventHandlers.envStackUpdated(state, action.name, action.payload)
     default:
       console.log('Could not process redux event: ' + JSON.stringify(action));
       return state;

@@ -70,6 +70,18 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function envStackUpdated(state, envName, payload) {
+  state.envs = state.envs.map((env) => {
+    if (env.name === envName) {
+      env.stackConfig = payload;
+    }
+
+    return env;
+  });
+
+  return state;
+}
+
 export function agentEnvsUpdated(state, connectedAgents) {
   connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;

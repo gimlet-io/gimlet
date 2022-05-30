@@ -8,7 +8,8 @@ import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWOPENED,
-  ACTION_TYPE_GITOPS_COMMITS
+  ACTION_TYPE_GITOPS_COMMITS,
+  ACTION_TYPE_ENVUPDATED
 } from "../../redux/redux";
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams }) => {
@@ -39,6 +40,9 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     let reduxState = store.getState();
     setPopupWindow(reduxState.popupWindow);
     setGitopsCommits(reduxState.gitopsCommits);
+    if (env.stackConfig) {
+      setStack(env.stackConfig.config);
+    }
   });
 
   function scrollTo(ref) {
@@ -134,18 +138,18 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     }
 
     gimletClient.saveInfrastructureComponents(env.name, stackNonDefaultValues)
-      .then(() => {
-        console.log("Components saved")
-        refreshEnvs();
+      .then((data) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
             message: "Component saved"
           }
         });
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data
+        });
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
-        console.log("Couldn't save components");
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
             header: "Error",
@@ -190,7 +194,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div className="mt-4">
         {gitopsRepositories.map((gitopsRepo) =>
         (
-          <div className="flex">
+          <div className="flex" key={gitopsRepo.href}>
             <a className="mb-1 font-mono text-sm text-gray-500 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}
               <svg xmlns="http://www.w3.org/2000/svg"
                 className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
@@ -217,8 +221,33 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const configureAgent = (envName) => {
-    console.log(envName)
-    console.log("will call a dedicated API endpoint here")
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+        header: "Configuring Agent..."
+      }
+    });
+
+    gimletClient.installAgent(envName)
+      .then((data) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Agent config was written to the gitops environment"
+          }
+        });
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data
+        });
+        resetPopupWindowAfterThreeSeconds()
+      }, (err) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+        resetPopupWindowAfterThreeSeconds()
+      })
   }
 
   const gitopsCommitColorByStatus = (status) => {

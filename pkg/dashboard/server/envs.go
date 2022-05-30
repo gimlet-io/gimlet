@@ -21,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/go-github/v37/github"
@@ -129,8 +130,15 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	gitRepoCache.Invalidate(env.InfraRepo)
 
+	stackConfigString, err := json.Marshal(stackConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	w.Write([]byte(stackConfigString))
 }
 
 func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
@@ -459,4 +467,110 @@ func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg 
 	}
 
 	return nil
+}
+
+func installAgent(w http.ResponseWriter, r *http.Request) {
+	envName := chi.URLParam(r, "env")
+
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	db := r.Context().Value("store").(*store.Store)
+
+	env, err := db.GetEnvironment(envName)
+	if err != nil {
+		logrus.Errorf("cannot get environment: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
+	if env.RepoPerEnv {
+		stackYamlPath = "stack.yaml"
+	}
+
+	stackConfig, err := stackYaml(repo, stackYamlPath)
+	if err != nil {
+		if strings.Contains(err.Error(), "file not found") {
+			url := stack.DefaultStackURL
+			latestTag, _ := stack.LatestVersion(url)
+			if latestTag != "" {
+				url = url + "?tag=" + latestTag
+			}
+
+			stackConfig = &dx.StackConfig{
+				Stack: dx.StackRef{
+					Repository: url,
+				},
+				Config: map[string]interface{}{},
+			}
+		} else {
+			logrus.Errorf("cannot get stack yaml from repo: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	agentKey := r.Context().Value("agentJWT").(string)
+	stackConfig.Config["gimletAgent"] = map[string]interface{}{
+		"enabled":          true,
+		"environment":      env.Name,
+		"agentKey":         agentKey,
+		"dashboardAddress": config.Host,
+	}
+
+	stackConfigBuff := bytes.NewBufferString("")
+	e := yaml.NewEncoder(stackConfigBuff)
+	e.SetIndent(2)
+	err = e.Encode(stackConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), dNativeGit.Dir_RWX_RX_R)
+	if err != nil {
+		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	if err != nil {
+		logrus.Errorf("cannot generate and write files: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
+	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache.Invalidate(env.InfraRepo)
+
+	stackConfigString, err := json.Marshal(stackConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(stackConfigString))
 }

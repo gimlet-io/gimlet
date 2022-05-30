@@ -100,8 +100,6 @@ func main() {
 
 	go gimletdCommunication(*config, clientHub)
 
-	log.Info("Connected to Gimlet")
-
 	r := server.SetupRouter(
 		config,
 		agentHub,

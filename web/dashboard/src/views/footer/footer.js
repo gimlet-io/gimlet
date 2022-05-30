@@ -51,7 +51,7 @@ export default class Footer extends Component {
         }
 
         return (
-            <div className="flex items-center align-middle justify-center w-full truncate">
+            <div className="flex items-center align-middle justify-center w-full truncate" key={gitopsCommit.sha}>
                 <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}:</p>
                 <div className="w-72 ml-2 cursor-pointer truncate text-sm"
                     onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}
