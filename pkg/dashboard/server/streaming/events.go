@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
 const AgentConnectedEventString = "agentConnected"
@@ -9,6 +10,7 @@ const AgentDisconnectedEventString = "agentDisconnected"
 const EnvsUpdatedEventString = "envsUpdated"
 const StaleRepoDataEventString = "staleRepoData"
 const GitopsCommitEventString = "gitopsCommit"
+const CommitStatusUpdatedEventString = "commitStatusUpdated"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -36,5 +38,10 @@ type StaleRepoDataEvent struct {
 
 type GitopsEvent struct {
 	GitopsCommit interface{} `json:"gitopsCommit"`
+	StreamingEvent
+}
+
+type CommitEvent struct {
+	CommitStatus map[string]*model.CombinedStatus `json:"commitStatus"`
 	StreamingEvent
 }
