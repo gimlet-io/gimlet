@@ -59,6 +59,8 @@ export default class GimletClient {
 
   saveInfrastructureComponents = (env, infrastructureComponents) => this.postWithAxios('/api/environments', JSON.stringify({ env, infrastructureComponents }));
 
+  installAgent = (envName) => this.postWithAxios(`/api/envs/${envName}/installAgent`, JSON.stringify({}));
+
   getWithAxios = async (path) => {
     try {
       const { data } = await axios.get(path, {

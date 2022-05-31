@@ -49,6 +49,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
+	r.Use(middleware.WithValue("agentJWT", tokenString))
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000"},
@@ -117,6 +118,7 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/deleteEnvFromDB"), deleteEnvFromDB)
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
+		r.Post(("/api/envs/{env}/installAgent"), installAgent)
 	})
 }
 

@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
@@ -99,8 +99,6 @@ func main() {
 	go http.ListenAndServe(":9001", metricsRouter)
 
 	go gimletdCommunication(*config, clientHub)
-
-	log.Info("Connected to Gimlet")
 
 	r := server.SetupRouter(
 		config,
@@ -201,14 +199,14 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 }
 
 func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) {
-	for {
+
+	operation := func() error {
 		done := make(chan bool)
 
 		events, err := registerGimletdEventSink(config.GimletD.URL, config.GimletD.TOKEN)
 		if err != nil {
 			log.Errorf("could not connect to Gimletd: %s", err.Error())
-			time.Sleep(time.Second * 3)
-			continue
+			return err
 		}
 
 		log.Info("Connected to Gimletd")
@@ -235,7 +233,13 @@ func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) 
 		}(events)
 
 		<-done
-		time.Sleep(time.Second * 3)
 		log.Info("Disconnected from Gimletd")
+
+		return fmt.Errorf("disconnected from Gimletd")
+	}
+	backoffStrategy := backoff.NewExponentialBackOff()
+	err := backoff.Retry(operation, backoffStrategy)
+	if err != nil {
+		log.Errorf("Gimletd communication stopped: %s", err)
 	}
 }
