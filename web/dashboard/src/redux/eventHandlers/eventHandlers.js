@@ -158,6 +158,18 @@ export function commits(state, payload) {
   return state;
 }
 
+export function updateCommitStatus(state, event) {
+  // eslint-disable-next-line
+  for (const [key, commits] of Object.entries(state.commits)) {
+    commits.forEach(commit => {
+      if (event.commitStatus[commit.sha]) {
+        Object.assign(commit.status, event.commitStatus[commit.sha]);
+      }
+    });
+  }
+  return state;
+}
+
 export function branches(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
   state.branches[repo] = payload.branches;
