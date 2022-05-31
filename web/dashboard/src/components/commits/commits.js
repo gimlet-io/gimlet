@@ -38,7 +38,7 @@ export class Commits extends Component {
                         {
                           commit.status && commit.status.statuses &&
                           commit.status.statuses.map(status => (
-                            <a key={status.createdAt} href={status.targetURL} target="_blank" rel="noopener noreferrer"
+                            <a key={status.context} href={status.targetURL} target="_blank" rel="noopener noreferrer"
                                title={status.context}>
                               <StatusIcon status={status}/>
                             </a>
