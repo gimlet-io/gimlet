@@ -239,6 +239,39 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       })
   }
 
+  const enableDeploymentAutomation = (envName) => {
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+        header: "Enabling deployment automation..."
+      }
+    });
+
+    gimletClient.enableDeploymentAutomation(envName)
+      .then((data) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Deployment automation config was written to the gitops environment"
+          }
+        });
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.config
+        });
+        console.log(data.publicKey)
+        setStack(data.config)
+        setStackNonDefaultValues(data.config)
+        resetPopupWindowAfterThreeSeconds()
+      }, (err) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+        resetPopupWindowAfterThreeSeconds()
+      })
+  }
+
   const gitopsCommitColorByStatus = (status) => {
     return status.includes("Succeeded") ?
       "green"
@@ -434,7 +467,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   </div>
                 </div>
 
-                {/* <div className="rounded-md bg-red-50 p-4 mt-2">
+                <div className="rounded-md bg-red-50 p-4 mt-2">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
@@ -448,13 +481,13 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                           onClick={(e) => {
                             // eslint-disable-next-line no-restricted-globals
                             confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
-                              configureAgent(env.name, e);
+                              enableDeploymentAutomation(env.name, e);
                           }}
                         >1-click-config</span>.
                       </div>
                     </div>
                   </div>
-                </div> */}
+                </div>
               </>
             }
             <div className="sm:hidden">
