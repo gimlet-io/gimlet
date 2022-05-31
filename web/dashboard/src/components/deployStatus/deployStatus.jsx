@@ -83,45 +83,46 @@ export default class DeployStatus extends Component {
     if (deploy.gitopsHashes) {
       const numberOfGitopsHashes = deploy.gitopsHashes.length;
       if (numberOfGitopsHashes > 0) {
-        const latestGitopsHashMetadata = deploy.gitopsHashes[0];
-        if (latestGitopsHashMetadata.status !== 'N/A') {
-          appliedWidget = deploy.gitopsHashes.map(hashStatus => {
-            const lastCommitSucceeded = this.state.gitopsCommits[0].status.includes("Succeeded");
-            if (hashStatus.status !== 'Progressing' &&
-              hashStatus.status !== 'DependencyNotReady' &&
-              hashStatus.status !== 'NotReconciled' &&
-              hashStatus.status !== 'ReconciliationSucceeded' &&
-              hashStatus.status !== 'N/A') {
-              return (
-                <p key={hashStatus.hash} className="font-semibold text-red-500">
-                  <span>❗</span>
-                  <a
-                    href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className='ml-1'
-                  >
-                    {hashStatus.hash.slice(0, 6)}
-                  </a>
-                  <span className='ml-1 block'>{hashStatus.statusDesc}</span>
-                </p>
-              )
-            } else {
-              return (
-                <p key={hashStatus.hash} className={(lastCommitSucceeded ? "text-green-300" : "text-yellow-300") + " font-semibold"}>
-                  {lastCommitSucceeded ? <span>✅</span> : <span>🟡</span>}
-                  <a
-                    href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className='ml-1'
-                  >
-                    {hashStatus.hash.slice(0, 6)}
-                  </a>
-                  <span className='ml-1'>{lastCommitSucceeded ? "applied" : "applying"}</span>
-                </p>
-              )
+        let deployCommits = [];
+        deploy.gitopsHashes.forEach(gitopsHash => {
+          this.state.gitopsCommits.forEach(gitopsCommit => {
+            if (gitopsHash.hash === gitopsCommit.sha) {
+              deployCommits.push(gitopsCommit);
             }
           })
-        }
+        })
+
+        appliedWidget = deployCommits.map(deployCommit => {
+          let color = "text-yellow-300";
+          let deployCommitStatus = "trailing";
+          let deployCommitStatusIcon = <span className="h-4 w-4 rounded-full relative top-1 inline-block bg-yellow-400" />;
+
+          if (deployCommit.status.includes("NotReady")) {
+            deployCommitStatus = "applying";
+          } else if (deployCommit.status.includes("Succeeded")) {
+            color = "text-green-300";
+            deployCommitStatus = "applied";
+            deployCommitStatusIcon = <span>✅</span>;
+          } else if (deployCommit.status.includes("Failed")) {
+            color = "text-red-500";
+            deployCommitStatus = deployCommit.statusDesc;
+            deployCommitStatusIcon = <span>❗</span>;
+          }
+
+          return (
+            <p key={deployCommit.sha} className={`font-semibold ${color}`}>
+              {deployCommitStatusIcon}
+              <a
+                href={`https://github.com/${gitopsRepo}/commit/${deployCommit.sha}`}
+                target="_blank" rel="noopener noreferrer"
+                className='ml-1'
+              >
+                {deployCommit.sha?.slice(0, 6)}
+              </a>
+              <span className='ml-1'>{deployCommitStatus}</span>
+            </p>
+          )
+        })
       }
     }
 
