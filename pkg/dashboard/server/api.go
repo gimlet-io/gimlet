@@ -145,6 +145,10 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {
 	for _, env := range envs {
+		if env.StackConfig == nil {
+			continue
+		}
+
 		if _, ok := env.StackConfig.Config["gimletd"]; !ok {
 			continue
 		}
