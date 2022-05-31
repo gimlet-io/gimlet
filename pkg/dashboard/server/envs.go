@@ -599,7 +599,7 @@ func enableDeploymentAutomation(w http.ResponseWriter, r *http.Request) {
 
 	envWithGimletd := env
 	if envNameWithGimletd != "" {
-		envWithGimletd, err = db.GetEnvironment(envName)
+		envWithGimletd, err = db.GetEnvironment(envNameWithGimletd)
 		if err != nil {
 			logrus.Errorf("cannot get environment: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
