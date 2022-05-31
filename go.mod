@@ -11,6 +11,7 @@ require (
 	github.com/btubbs/datetime v0.1.1
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/caarlos0/sshmarshal v0.0.0-20220308164159-9ddb9f83c6b3
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
