@@ -435,7 +435,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   </div>
                 </div>
 
-                <div className="rounded-md bg-red-50 p-4 mt-2">
+                {/* <div className="rounded-md bg-red-50 p-4 mt-2">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
@@ -455,7 +455,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </>
             }
             <div className="sm:hidden">
