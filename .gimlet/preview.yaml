@@ -21,11 +21,9 @@ values:
     - name: data
       path: /var/lib/gimlet-dashboard
       size: 1Gi
-      storageClass: local-path
     - name: repo-cache
       path: /tmp/gimlet-dashboard
       size: 5Gi
-      storageClass: local-path
   ingress:
     annotations:
       kubernetes.io/ingress.class: nginx
