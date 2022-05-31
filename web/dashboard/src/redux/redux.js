@@ -128,7 +128,6 @@ export function rootReducer(state = initialState, action) {
     case ACTION_TYPE_CLEAR_DEPLOY_STATUS:
       return eventHandlers.clearDeployStatus(state)
     case ACTION_TYPE_ENVUPDATED:
-      console.log(action)
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
     default:
       console.log('Could not process redux event: ' + JSON.stringify(action));
