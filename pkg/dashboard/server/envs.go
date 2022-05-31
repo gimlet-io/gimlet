@@ -589,7 +589,25 @@ func enableDeploymentAutomation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
+
+	envNameWithGimletd, err := envThatHasGimletd(db, gitRepoCache)
+	if err != nil {
+		logrus.Errorf("cannot find env with gimletd: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	envWithGimletd := env
+	if envNameWithGimletd != "" {
+		envWithGimletd, err = db.GetEnvironment(envName)
+		if err != nil {
+			logrus.Errorf("cannot get environment: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(envWithGimletd.InfraRepo)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		logrus.Errorf("cannot get repo: %s", err)
@@ -598,8 +616,8 @@ func enableDeploymentAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
-	if env.RepoPerEnv {
+	stackYamlPath := filepath.Join(envWithGimletd.Name, "stack.yaml")
+	if envWithGimletd.RepoPerEnv {
 		stackYamlPath = "stack.yaml"
 	}
 
@@ -690,7 +708,7 @@ func enableDeploymentAutomation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gitRepoCache.Invalidate(env.InfraRepo)
+	gitRepoCache.Invalidate(envWithGimletd.InfraRepo)
 
 	stackConfigString, err := json.Marshal(map[string]interface{}{
 		"config":    stackConfig,
@@ -704,4 +722,44 @@ func enableDeploymentAutomation(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(stackConfigString))
+}
+
+func envThatHasGimletd(db *store.Store, gitRepoCache *dNativeGit.RepoCache) (string, error) {
+	envs, err := db.GetEnvironments()
+	if err != nil {
+		return "", err
+	}
+
+	for _, env := range envs {
+		repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
+		if err != nil {
+			return "", err
+		}
+
+		stackYamlPath := filepath.Join(env.Name, "stack.yaml")
+		if env.RepoPerEnv {
+			stackYamlPath = "stack.yaml"
+		}
+
+		stackConfig, err := stackYaml(repo, stackYamlPath)
+		if err != nil {
+			if strings.Contains(err.Error(), "file not found") {
+				continue
+			} else {
+				return "", err
+			}
+		}
+
+		if existingConfig, ok := stackConfig.Config["gimletd"]; ok {
+			gimletdConfig := existingConfig.(map[string]interface{})
+			if enabled, ok := gimletdConfig["enabled"]; ok {
+				if enabled == true {
+					return env.Name, nil
+				}
+			}
+		}
+
+	}
+
+	return "", nil
 }

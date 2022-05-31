@@ -112,12 +112,17 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		envs = append(envs, &api.GitopsEnv{
-			Name:            env.Name,
-			InfraRepo:       env.InfraRepo,
-			AppsRepo:        env.AppsRepo,
-			StackConfig:     stackConfig,
-			StackDefinition: stackDefinition,
+			Name:                        env.Name,
+			InfraRepo:                   env.InfraRepo,
+			AppsRepo:                    env.AppsRepo,
+			StackConfig:                 stackConfig,
+			StackDefinition:             stackDefinition,
+			DeploymentAutomationEnabled: false,
 		})
+	}
+
+	for _, env := range envs {
+		env.DeploymentAutomationEnabled = deploymentAutomationEnabled(env.Name, envs)
 	}
 
 	allEnvs := map[string]interface{}{}
@@ -136,6 +141,26 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(50 * time.Millisecond) // there is a race condition in local dev: the refetch arrives sooner
 	go agentHub.ForceStateSend()
+}
+
+func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {
+	for _, env := range envs {
+		if _, ok := env.StackConfig.Config["gimletd"]; !ok {
+			continue
+		}
+
+		gimletdConfig := env.StackConfig.Config["gimletd"].(map[string]interface{})
+		if gimletdEnvs, ok := gimletdConfig["environments"]; ok {
+			for _, e := range gimletdEnvs.([]interface{}) {
+				envConfig := e.(map[string]interface{})
+				if envConfig["name"] == envName {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {
