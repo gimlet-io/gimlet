@@ -57,11 +57,12 @@ type ConnectedAgent struct {
 }
 
 type GitopsEnv struct {
-	Name            string                 `json:"name"`
-	InfraRepo       string                 `json:"infraRepo"`
-	AppsRepo        string                 `json:"appsRepo"`
-	StackConfig     *dx.StackConfig        `json:"stackConfig"`
-	StackDefinition map[string]interface{} `json:"stackDefinition"`
+	Name                        string                 `json:"name"`
+	InfraRepo                   string                 `json:"infraRepo"`
+	AppsRepo                    string                 `json:"appsRepo"`
+	StackConfig                 *dx.StackConfig        `json:"stackConfig"`
+	StackDefinition             map[string]interface{} `json:"stackDefinition"`
+	DeploymentAutomationEnabled bool                   `json:"deploymentAutomationEnabled"`
 }
 
 type GitopsBootstrapConfig struct {

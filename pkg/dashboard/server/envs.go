@@ -574,3 +574,192 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(stackConfigString))
 }
+
+func enableDeploymentAutomation(w http.ResponseWriter, r *http.Request) {
+	envName := chi.URLParam(r, "env")
+
+	ctx := r.Context()
+	db := r.Context().Value("store").(*store.Store)
+
+	env, err := db.GetEnvironment(envName)
+	if err != nil {
+		logrus.Errorf("cannot get environment: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
+
+	envNameWithGimletd, err := envThatHasGimletd(db, gitRepoCache)
+	if err != nil {
+		logrus.Errorf("cannot find env with gimletd: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	envWithGimletd := env
+	if envNameWithGimletd != "" {
+		envWithGimletd, err = db.GetEnvironment(envName)
+		if err != nil {
+			logrus.Errorf("cannot get environment: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(envWithGimletd.InfraRepo)
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	stackYamlPath := filepath.Join(envWithGimletd.Name, "stack.yaml")
+	if envWithGimletd.RepoPerEnv {
+		stackYamlPath = "stack.yaml"
+	}
+
+	stackConfig, err := stackYaml(repo, stackYamlPath)
+	if err != nil {
+		if strings.Contains(err.Error(), "file not found") {
+			url := stack.DefaultStackURL
+			latestTag, _ := stack.LatestVersion(url)
+			if latestTag != "" {
+				url = url + "?tag=" + latestTag
+			}
+
+			stackConfig = &dx.StackConfig{
+				Stack: dx.StackRef{
+					Repository: url,
+				},
+				Config: map[string]interface{}{},
+			}
+		} else {
+			logrus.Errorf("cannot get stack yaml from repo: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	privateKeyBytes, publicKeyBytes, err := gitops.GenerateEd25519()
+	if err != nil {
+		logrus.Errorf("cannot generate keypair: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gimletdConfig := map[string]interface{}{
+		"enabled": true,
+	}
+	if existingConfig, ok := stackConfig.Config["gimletd"]; ok {
+		gimletdConfig = existingConfig.(map[string]interface{})
+	}
+
+	environments := []map[string]interface{}{}
+	if existingEnvironments, ok := gimletdConfig["environments"]; ok {
+		for _, e := range existingEnvironments.([]interface{}) {
+			environments = append(environments, e.(map[string]interface{}))
+		}
+	}
+	environments = append(environments, map[string]interface{}{
+		"name":       env.Name,
+		"repoPerEnv": env.RepoPerEnv,
+		"gitopsRepo": env.AppsRepo,
+		"deployKey":  string(privateKeyBytes),
+	},
+	)
+
+	gimletdConfig["environments"] = environments
+	stackConfig.Config["gimletd"] = gimletdConfig
+
+	stackConfigBuff := bytes.NewBufferString("")
+	e := yaml.NewEncoder(stackConfigBuff)
+	e.SetIndent(2)
+	err = e.Encode(stackConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), dNativeGit.Dir_RWX_RX_R)
+	if err != nil {
+		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	if err != nil {
+		logrus.Errorf("cannot generate and write files: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
+	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache.Invalidate(envWithGimletd.InfraRepo)
+
+	stackConfigString, err := json.Marshal(map[string]interface{}{
+		"config":    stackConfig,
+		"publicKey": string(publicKeyBytes),
+	})
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(stackConfigString))
+}
+
+func envThatHasGimletd(db *store.Store, gitRepoCache *dNativeGit.RepoCache) (string, error) {
+	envs, err := db.GetEnvironments()
+	if err != nil {
+		return "", err
+	}
+
+	for _, env := range envs {
+		repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
+		if err != nil {
+			return "", err
+		}
+
+		stackYamlPath := filepath.Join(env.Name, "stack.yaml")
+		if env.RepoPerEnv {
+			stackYamlPath = "stack.yaml"
+		}
+
+		stackConfig, err := stackYaml(repo, stackYamlPath)
+		if err != nil {
+			if strings.Contains(err.Error(), "file not found") {
+				continue
+			} else {
+				return "", err
+			}
+		}
+
+		if existingConfig, ok := stackConfig.Config["gimletd"]; ok {
+			gimletdConfig := existingConfig.(map[string]interface{})
+			if enabled, ok := gimletdConfig["enabled"]; ok {
+				if enabled == true {
+					return env.Name, nil
+				}
+			}
+		}
+
+	}
+
+	return "", nil
+}

@@ -119,6 +119,7 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
 		r.Post(("/api/envs/{env}/installAgent"), installAgent)
+		r.Post(("/api/envs/{env}/enableDeploymentAutomation"), enableDeploymentAutomation)
 	})
 }
 
