@@ -159,14 +159,14 @@ export function commits(state, payload) {
 }
 
 export function updateCommitStatus(state, event) {
-  // eslint-disable-next-line
-  for (const [key, commits] of Object.entries(state.commits)) {
-    commits.forEach(commit => {
-      if (event.commitStatus[commit.sha]) {
-        Object.assign(commit.status, event.commitStatus[commit.sha]);
-      }
-    });
-  }
+  const repo = `${event.owner}/${event.repo}`;
+
+  state.commits[repo].forEach(commit => {
+    if (commit.sha === event.sha) {
+      Object.assign(commit.status, event.commitStatus);
+    }
+  });
+
   return state;
 }
 
