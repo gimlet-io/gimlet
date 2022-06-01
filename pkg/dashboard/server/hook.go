@@ -12,6 +12,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	goScmHelper := genericScm.NewGoScmHelper(config, nil)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
 
 	// duplicating request body as we exhaust it twice
 	buf, _ := ioutil.ReadAll(r.Body)
@@ -66,7 +68,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 				}
 
 				gitService := ctx.Value("gitService").(customScm.CustomGitService)
-				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao)
+				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
 
 				writer.WriteHeader(http.StatusOK)
 				return
@@ -92,7 +94,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		w := webhook.(*scm.StatusHook)
 
 		gitService := ctx.Value("gitService").(customScm.CustomGitService)
-		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao)
+		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao, clientHub)
 	case *scm.BranchHook:
 		processBranchHook(webhook, gitRepoCache)
 	}
@@ -118,6 +120,7 @@ func processStatusHook(
 	gitService customScm.CustomGitService,
 	token string,
 	dao *store.Store,
+	clientHub *streaming.ClientHub,
 ) {
 	repo := scm.Join(owner, name)
 	commits, err := gitService.FetchCommits(owner, name, token, []string{sha})
@@ -136,6 +139,8 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
+	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha])
+
 	if len(statusOnCommits) != 0 {
 		err = dao.SaveStatusesOnCommits(repo, statusOnCommits)
 		if err != nil {
@@ -145,6 +150,17 @@ func processStatusHook(
 	}
 
 	repoCache.Invalidate(scm.Join(owner, name))
+}
+
+func broadcastUpdateCommitStatusEvent(clientHub *streaming.ClientHub, owner string, name string, sha string, commitStatus *model.CombinedStatus) {
+	jsonString, _ := json.Marshal(streaming.CommitStatusUpdatedEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.CommitStatusUpdatedEventString},
+		CommitStatus:   commitStatus,
+		Owner:          owner,
+		RepoName:       name,
+		Sha:            sha,
+	})
+	clientHub.Broadcast <- jsonString
 }
 
 func processBranchHook(webhook scm.Webhook, repoCache *nativeGit.RepoCache) {
