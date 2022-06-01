@@ -139,7 +139,7 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	broadcastUpdateCommitStatusEvent(clientHub, statusOnCommits)
+	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha])
 
 	if len(statusOnCommits) != 0 {
 		err = dao.SaveStatusesOnCommits(repo, statusOnCommits)
@@ -152,10 +152,13 @@ func processStatusHook(
 	repoCache.Invalidate(scm.Join(owner, name))
 }
 
-func broadcastUpdateCommitStatusEvent(clientHub *streaming.ClientHub, commitStatus map[string]*model.CombinedStatus) {
+func broadcastUpdateCommitStatusEvent(clientHub *streaming.ClientHub, owner string, name string, sha string, commitStatus *model.CombinedStatus) {
 	jsonString, _ := json.Marshal(streaming.CommitEvent{
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.CommitStatusUpdatedEventString},
 		CommitStatus:   commitStatus,
+		Owner:          owner,
+		RepoName:       name,
+		Sha:            sha,
 	})
 	clientHub.Broadcast <- jsonString
 }
