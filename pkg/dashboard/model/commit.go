@@ -35,6 +35,12 @@ type CombinedStatus struct {
 	Contexts []Status `json:"statuses"`
 }
 
+type DeployTarget struct {
+	App        string `json:"app"`
+	Env        string `json:"env"`
+	ArtifactId string `json:"artifactId"`
+}
+
 type Status struct {
 	Context     string `json:"context"`
 	CreatedAt   string `json:"createdAt"`

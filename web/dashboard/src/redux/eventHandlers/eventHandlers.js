@@ -164,6 +164,10 @@ export function updateCommitStatus(state, event) {
   state.commits[repo].forEach(commit => {
     if (commit.sha === event.sha) {
       Object.assign(commit.status, event.commitStatus);
+
+      if (event.deployTargets.length > 0) {
+        commit.deployTargets = [...event.deployTargets];
+      }
     }
   });
 

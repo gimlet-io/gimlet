@@ -42,9 +42,10 @@ type GitopsEvent struct {
 }
 
 type CommitStatusUpdatedEvent struct {
-	CommitStatus *model.CombinedStatus `json:"commitStatus"`
-	Owner        string                `json:"owner"`
-	Sha          string                `json:"sha"`
-	RepoName     string                `json:"repo"`
+	CommitStatus  *model.CombinedStatus `json:"commitStatus"`
+	Owner         string                `json:"owner"`
+	Sha           string                `json:"sha"`
+	RepoName      string                `json:"repo"`
+	DeployTargets []*model.DeployTarget `json:"deployTargets"`
 	StreamingEvent
 }
