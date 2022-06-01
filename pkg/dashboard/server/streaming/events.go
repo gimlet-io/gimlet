@@ -41,7 +41,7 @@ type GitopsEvent struct {
 	StreamingEvent
 }
 
-type CommitEvent struct {
+type CommitStatusUpdatedEvent struct {
 	CommitStatus *model.CombinedStatus `json:"commitStatus"`
 	Owner        string                `json:"owner"`
 	Sha          string                `json:"sha"`

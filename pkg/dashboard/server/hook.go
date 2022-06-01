@@ -153,7 +153,7 @@ func processStatusHook(
 }
 
 func broadcastUpdateCommitStatusEvent(clientHub *streaming.ClientHub, owner string, name string, sha string, commitStatus *model.CombinedStatus) {
-	jsonString, _ := json.Marshal(streaming.CommitEvent{
+	jsonString, _ := json.Marshal(streaming.CommitStatusUpdatedEvent{
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.CommitStatusUpdatedEventString},
 		CommitStatus:   commitStatus,
 		Owner:          owner,
