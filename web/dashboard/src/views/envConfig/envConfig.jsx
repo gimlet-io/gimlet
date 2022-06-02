@@ -47,6 +47,7 @@ class EnvConfig extends Component {
 
       let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
       this.setState({
         chartSchema: reduxState.chartSchema,
@@ -67,6 +68,14 @@ class EnvConfig extends Component {
 
       if (!this.state.defaultNamespace) {
         this.setState({ defaultNamespace: defaultNamespace })
+      }
+
+      if (!this.state.appName) {
+        this.setState({ appName: defaultAppName })
+      }
+
+      if (!this.state.defaultAppName) {
+        this.setState({ defaultAppName: defaultAppName })
       }
     });
 
@@ -172,7 +181,9 @@ class EnvConfig extends Component {
     this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, this.state.appName)
+    const appNameToSave = this.state.defaultAppName === "" ? this.state.appName : this.state.defaultAppName;
+
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave)
       .then(() => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
