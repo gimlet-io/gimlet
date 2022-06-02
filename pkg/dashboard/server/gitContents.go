@@ -296,11 +296,6 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		toUpdate.Values = envConfigData.Values
 		toUpdate.Namespace = envConfigData.Namespace
 
-		if toUpdate.App != envConfigData.AppName {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
 		var toUpdateBuffer bytes.Buffer
 		yamlEncoder := yaml.NewEncoder(&toUpdateBuffer)
 		yamlEncoder.SetIndent(2)
