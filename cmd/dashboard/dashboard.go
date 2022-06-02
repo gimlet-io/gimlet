@@ -199,14 +199,24 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 }
 
 func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) {
-
-	operation := func() error {
+	for {
 		done := make(chan bool)
 
-		events, err := registerGimletdEventSink(config.GimletD.URL, config.GimletD.TOKEN)
+		var events chan map[string]interface{}
+		var err error
+		operation := func() error {
+			events, err = registerGimletdEventSink(config.GimletD.URL, config.GimletD.TOKEN)
+			if err != nil {
+				log.Errorf("could not connect to Gimletd: %s", err.Error())
+				return fmt.Errorf("could not connect to Gimletd: %s", err.Error())
+			}
+			return nil
+		}
+		backoffStrategy := backoff.NewExponentialBackOff()
+		err = backoff.Retry(operation, backoffStrategy)
 		if err != nil {
-			log.Errorf("could not connect to Gimletd: %s", err.Error())
-			return err
+			log.Errorf("resetting backoff: %s", err)
+			continue
 		}
 
 		log.Info("Connected to Gimletd")
@@ -234,12 +244,5 @@ func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) 
 
 		<-done
 		log.Info("Disconnected from Gimletd")
-
-		return fmt.Errorf("disconnected from Gimletd")
-	}
-	backoffStrategy := backoff.NewExponentialBackOff()
-	err := backoff.Retry(operation, backoffStrategy)
-	if err != nil {
-		log.Errorf("Gimletd communication stopped: %s", err)
 	}
 }
