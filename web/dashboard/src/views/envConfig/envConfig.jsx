@@ -35,7 +35,7 @@ class EnvConfig extends Component {
       namespace: defaultNamespace,
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
-      appName: repo,
+      appName: defaultAppName,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -71,7 +71,7 @@ class EnvConfig extends Component {
       }
 
       if (!this.state.appName) {
-        this.setState({ appName: defaultAppName })
+        this.setState({ appName: repo })
       }
 
       if (!this.state.defaultAppName) {
@@ -90,6 +90,10 @@ class EnvConfig extends Component {
 
     if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
       loadEnvConfig(gimletClient, store, owner, repo)
+    }
+
+    if (!this.state.appName) {
+      this.setState({ appName: repo })
     }
 
     if (!this.state.defaultState.gitSha) {
@@ -195,7 +199,7 @@ class EnvConfig extends Component {
           hasAPIResponded: true,
           defaultState: Object.assign({}, this.state.nonDefaultValues),
           defaultNamespace: this.state.namespace,
-          defaultAppName: this.state.appName
+          defaultAppName: appNameToSave
         });
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
