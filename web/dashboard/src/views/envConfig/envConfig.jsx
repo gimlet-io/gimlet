@@ -35,7 +35,7 @@ class EnvConfig extends Component {
       namespace: defaultNamespace,
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
-      appName: repo,
+      appName: defaultAppName,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -47,6 +47,7 @@ class EnvConfig extends Component {
 
       let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
       this.setState({
         chartSchema: reduxState.chartSchema,
@@ -68,6 +69,14 @@ class EnvConfig extends Component {
       if (!this.state.defaultNamespace) {
         this.setState({ defaultNamespace: defaultNamespace })
       }
+
+      if (!this.state.appName) {
+        this.setState({ appName: repo })
+      }
+
+      if (!this.state.defaultAppName) {
+        this.setState({ defaultAppName: defaultAppName })
+      }
     });
 
     this.setValues = this.setValues.bind(this);
@@ -81,6 +90,10 @@ class EnvConfig extends Component {
 
     if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
       loadEnvConfig(gimletClient, store, owner, repo)
+    }
+
+    if (!this.state.appName) {
+      this.setState({ appName: repo })
     }
 
     if (!this.state.defaultState.gitSha) {
@@ -172,7 +185,9 @@ class EnvConfig extends Component {
     this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, this.state.appName)
+    const appNameToSave = this.state.defaultAppName === "" ? this.state.appName : this.state.defaultAppName;
+
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave)
       .then(() => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
@@ -184,7 +199,7 @@ class EnvConfig extends Component {
           hasAPIResponded: true,
           defaultState: Object.assign({}, this.state.nonDefaultValues),
           defaultNamespace: this.state.namespace,
-          defaultAppName: this.state.appName
+          defaultAppName: appNameToSave
         });
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
