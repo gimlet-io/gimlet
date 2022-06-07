@@ -119,14 +119,14 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 	return tmpChartDir, nil
 }
 
-func ChartSchema(m *Manifest) (string, string, error) {
+func ChartSchema(m *Manifest) (string, []*chart.File, error) {
 	client, settings := helmClient(m)
 	chartFromManifest, err := loadChartFromManifest(m, client, settings)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
-	return string(chartFromManifest.Schema), "TODO", nil
+	return string(chartFromManifest.Schema), chartFromManifest.Files, nil
 }
 
 func templateChart(m *Manifest) (string, error) {
