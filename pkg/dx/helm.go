@@ -119,17 +119,17 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 	return tmpChartDir, nil
 }
 
-func ChartSchema(m *Manifest) (string, error) {
+func ChartSchema(m *Manifest) (string, string, error) {
 	client, settings := helmClient(m)
 	chartFromManifest, err := loadChartFromManifest(m, client, settings)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return string(chartFromManifest.Schema), nil
+	return string(chartFromManifest.Schema), "TODO", nil
 }
 
-func TemplateChart(m *Manifest) (string, error) {
+func templateChart(m *Manifest) (string, error) {
 	client, settings := helmClient(m)
 	chartFromManifest, err := loadChartFromManifest(m, client, settings)
 	if err != nil {
@@ -185,19 +185,4 @@ func helmClient(m *Manifest) (*action.Install, *helmCLI.EnvSettings) {
 
 	var settings = helmCLI.New()
 	return client, settings
-}
-
-func GetTemplatedManifests(m *Manifest) (string, error) {
-
-	templatedManifests, err := TemplateChart(m)
-	if err != nil {
-		return templatedManifests, fmt.Errorf("cannot template Helm chart %s", err)
-	}
-
-	templatedManifests += m.Manifests
-	if templatedManifests == "" {
-		return templatedManifests, fmt.Errorf("no chart or raw yaml has been found")
-	}
-	return templatedManifests, nil
-
 }
