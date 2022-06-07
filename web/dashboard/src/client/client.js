@@ -23,8 +23,6 @@ export default class GimletClient {
 
   getGitRepos = () => this.get('/api/gitRepos');
 
-  getChartSchema = () => this.get('/api/chartSchema');
-
   getGimletD = () => this.get('/api/gimletd');
 
   getGitopsCommits = () => this.getWithAxios("/api/gitopsCommits");
@@ -34,6 +32,8 @@ export default class GimletClient {
   getCommits = (owner, name, branch) => this.get(`/api/repo/${owner}/${name}/commits?branch=${branch}`);
 
   getBranches = (owner, name) => this.get(`/api/repo/${owner}/${name}/branches`);
+
+  getChartSchema = (owner, name, env) => this.get(`/api/repo/${owner}/${name}/env/${env}/chartSchema`);
 
   getEnvConfigs = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/envConfigs`);
 

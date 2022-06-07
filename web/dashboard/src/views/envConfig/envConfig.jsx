@@ -5,6 +5,7 @@ import PopUpWindow from "./popUpWindow";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
 import {
+  ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_ENVCONFIGS,
 } from "../../redux/redux";
 
@@ -84,9 +85,17 @@ class EnvConfig extends Component {
   }
 
   componentDidMount() {
-    const { owner, repo } = this.props.match.params;
+    const { owner, repo, env } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
     const { gimletClient, store } = this.props;
+
+    gimletClient.getChartSchema(owner, repo, env)
+    .then(data => {
+      store.dispatch({
+        type:  ACTION_TYPE_CHARTSCHEMA, payload: data
+      });
+    }, () => {/* Generic error handler deals with it */
+    });
 
     if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
       loadEnvConfig(gimletClient, store, owner, repo)
