@@ -29,11 +29,14 @@ func defaults(c *Config) {
 	if c.ReleaseHistorySinceDays == 0 {
 		c.ReleaseHistorySinceDays = 30
 	}
-	if c.Chart.Repo == "" {
-		c.Chart.Repo = "gimlet-io/onechart"
+	if c.Chart.Name == "" {
+		c.Chart.Name = "onechart"
 	}
-	if c.Chart.Path == "" {
-		c.Chart.Path = "charts/onechart"
+	if c.Chart.Repo == "" {
+		c.Chart.Repo = "https://chart.onechart.dev"
+	}
+	if c.Chart.Version == "" {
+		c.Chart.Version = "0.38.0"
 	}
 }
 
@@ -75,8 +78,9 @@ type Github struct {
 }
 
 type Chart struct {
-	Repo string `envconfig:"CHART_REPO"`
-	Path string `envconfig:"CHART_PATH"`
+	Name    string `envconfig:"CHART_NAME"`
+	Repo    string `envconfig:"CHART_REPO"`
+	Version string `envconfig:"CHART_VERSION"`
 }
 
 type Database struct {
