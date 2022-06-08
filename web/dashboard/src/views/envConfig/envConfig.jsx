@@ -55,7 +55,7 @@ class EnvConfig extends Component {
         chartUISchema: reduxState.chartUISchema,
       });
 
-      if (!this.state.values) {
+      if (!this.state.values || JSON.stringify(this.state.defaultState) === "{}") {
         this.setState({
           values: envConfig ? Object.assign({}, envConfig) : undefined,
           nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
