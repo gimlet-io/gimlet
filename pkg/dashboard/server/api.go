@@ -12,7 +12,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -20,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -245,27 +245,30 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 
 func chartSchema(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-
 	config := ctx.Value("config").(*config.Config)
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	env := chi.URLParam(r, "env")
 
-	repo := config.Chart.Repo
-	path := config.Chart.Path
-	valuesSchemaPath := fmt.Sprintf("%s/%s", path, "values.schema.json")
-	helmUISchemaPath := fmt.Sprintf("%s/%s", path, "helm-ui.json")
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	schemaString, _, err := goScm.Content(token, repo, valuesSchemaPath, "HEAD")
+	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
 	if err != nil {
-		logrus.Errorf("cannot fetch schema from github: %s", err)
+		logrus.Errorf("cannot get repo: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	schemaUIString, _, err := goScm.Content(token, repo, helmUISchemaPath, "HEAD")
+	m, err := getManifest(config, repo, env)
 	if err != nil {
-		logrus.Errorf("cannot fetch UI schema from github: %s", err)
+		logrus.Errorf("cannot get manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	schemaString, schemaUIString, err := dx.ChartSchema(m)
+	if err != nil {
+		logrus.Errorf("cannot get schema from manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -299,6 +302,45 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(schemasString))
+}
+
+func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.Manifest, error) {
+	defaultManifest := &dx.Manifest{
+		Chart: dx.Chart{
+			Repository: config.Chart.Repo,
+			Name:       config.Chart.Name,
+			Version:    config.Chart.Version,
+		},
+	}
+
+	branch := helper.HeadBranch(repo)
+	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	if err != nil {
+		if strings.Contains(err.Error(), "directory not found") {
+			return defaultManifest, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	envConfigs := []dx.Manifest{}
+	for _, content := range files {
+		var envConfig dx.Manifest
+		err = yaml.Unmarshal([]byte(content), &envConfig)
+		if err != nil {
+			logrus.Warnf("cannot parse env config string: %s", err)
+			continue
+		}
+		envConfigs = append(envConfigs, envConfig)
+	}
+
+	for _, envConfig := range envConfigs {
+		if envConfig.Env == env {
+			return &envConfig, nil
+		}
+	}
+
+	return defaultManifest, nil
 }
 
 func application(w http.ResponseWriter, r *http.Request) {

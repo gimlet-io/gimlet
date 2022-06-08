@@ -253,9 +253,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				App: envConfigData.AppName,
 				Env: env,
 				Chart: dx.Chart{
-					Name:       "onechart",
-					Repository: "https://chart.onechart.dev",
-					Version:    "0.37.0",
+					Name:       config.Chart.Name,
+					Repository: config.Chart.Repo,
+					Version:    config.Chart.Version,
 				},
 				Namespace: envConfigData.Namespace,
 				Values:    envConfigData.Values,

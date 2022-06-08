@@ -87,9 +87,19 @@ func (m *Manifest) ResolveVars(vars map[string]string) error {
 }
 
 func (m *Manifest) Render() (string, error) {
-	templatedManifests, err := GetTemplatedManifests(m)
-	if err != nil {
-		return "", fmt.Errorf("cannot get templates manifests %s", err.Error())
+	var templatedManifests string
+	var err error
+	if m.Chart.Name != "" {
+		templatedManifests, err = templateChart(m)
+		if err != nil {
+			return templatedManifests, fmt.Errorf("cannot template Helm chart %s", err)
+		}
+
+	}
+
+	templatedManifests += m.Manifests
+	if templatedManifests == "" {
+		return templatedManifests, fmt.Errorf("no chart or raw yaml has been found")
 	}
 
 	// Check for patches
