@@ -128,7 +128,7 @@ func ChartSchema(m *Manifest) (string, string, error) {
 
 	var schemaUI string
 	for _, file := range chartFromManifest.Files {
-		if strings.Contains(file.Name, "helm-ui") {
+		if file.Name == "helm-ui.json" {
 			schemaUI = string(file.Data)
 			break
 		}
