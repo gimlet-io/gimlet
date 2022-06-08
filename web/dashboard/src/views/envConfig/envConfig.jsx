@@ -4,6 +4,7 @@ import "./style.css";
 import PopUpWindow from "./popUpWindow";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
+import CopiableCodeSnippet from "./copiableCodeSnippet";
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_ENVCONFIGS,
@@ -342,6 +343,18 @@ class EnvConfig extends Component {
                   "& pre": { whiteSpace: "pre" }
                 }
               }} />
+          </div>
+          <h3 className="text-lg leading-6 text-gray-500">
+            Copy the code snippet to check the Kubernetes manifest in the CLI:
+          </h3>
+          <div className="w-full mb-16">
+            <CopiableCodeSnippet 
+            code={
+`cat << EOF > values.yaml
+${YAML.stringify(this.state.nonDefaultValues)}EOF
+
+helm template ${this.state.appName} onechart/onechart -f values.yaml`}
+            />
           </div>
         </div>
         <div className="p-0 flow-root">
