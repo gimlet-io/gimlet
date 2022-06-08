@@ -119,14 +119,22 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 	return tmpChartDir, nil
 }
 
-func ChartSchema(m *Manifest) (string, []*chart.File, error) {
+func ChartSchema(m *Manifest) (string, string, error) {
 	client, settings := helmClient(m)
 	chartFromManifest, err := loadChartFromManifest(m, client, settings)
 	if err != nil {
-		return "", nil, err
+		return "", "", err
 	}
 
-	return string(chartFromManifest.Schema), chartFromManifest.Files, nil
+	var schemaUI string
+	for _, file := range chartFromManifest.Files {
+		if strings.Contains(file.Name, "helm-ui") {
+			schemaUI = string(file.Data)
+			break
+		}
+	}
+
+	return string(chartFromManifest.Schema), schemaUI, nil
 }
 
 func templateChart(m *Manifest) (string, error) {

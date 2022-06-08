@@ -266,19 +266,11 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	schemaString, files, err := dx.ChartSchema(m)
+	schemaString, schemaUIString, err := dx.ChartSchema(m)
 	if err != nil {
 		logrus.Errorf("cannot get schema from manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
-	}
-
-	var schemaUIString []byte
-	for _, file := range files {
-		if strings.Contains(file.Name, "helm-ui") {
-			schemaUIString = file.Data
-			break
-		}
 	}
 
 	var schema interface{}
@@ -290,7 +282,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var schemaUI interface{}
-	err = json.Unmarshal(schemaUIString, &schemaUI)
+	err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
 	if err != nil {
 		logrus.Errorf("cannot parse UI schema: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
