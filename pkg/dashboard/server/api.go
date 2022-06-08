@@ -259,9 +259,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branch := helper.HeadBranch(repo)
-
-	m, err := getManifest(config, repo, branch, env)
+	m, err := getManifest(config, repo, env)
 	if err != nil {
 		logrus.Errorf("cannot get manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -314,7 +312,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(schemasString))
 }
 
-func getManifest(config *config.Config, repo *git.Repository, branch string, env string) (*dx.Manifest, error) {
+func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.Manifest, error) {
 	defaultManifest := &dx.Manifest{
 		Chart: dx.Chart{
 			Repository: config.Chart.Repo,
@@ -323,6 +321,7 @@ func getManifest(config *config.Config, repo *git.Repository, branch string, env
 		},
 	}
 
+	branch := helper.HeadBranch(repo)
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
