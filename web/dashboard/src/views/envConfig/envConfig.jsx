@@ -247,6 +247,8 @@ class EnvConfig extends Component {
   render() {
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`
+    const envConfigCopy = Object.assign({}, this.state.envConfig)
+    envConfigCopy.values = this.state.nonDefaultValues;
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -346,6 +348,8 @@ class EnvConfig extends Component {
                 }
               }} />
           </div>
+          {JSON.stringify(this.state.envConfig) !== "{}" &&
+          <>
           <h3 className="text-lg leading-6 text-gray-500">
             Copy the code snippet to check the Kubernetes manifest in the CLI:
           </h3>
@@ -353,11 +357,12 @@ class EnvConfig extends Component {
             <CopiableCodeSnippet 
             code={
 `cat << EOF > manifest.yaml
-${YAML.stringify(this.state.envConfig)}EOF
+${YAML.stringify(envConfigCopy)}EOF
 
 gimlet manifest template -f manifest.yaml`}
             />
           </div>
+          </>}
         </div>
         <div className="p-0 flow-root">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
