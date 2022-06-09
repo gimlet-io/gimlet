@@ -40,10 +40,11 @@ class EnvConfig extends Component {
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
       appName: defaultAppName,
+      envConfig: envConfig,
 
-      values: envConfig ? Object.assign({}, envConfig) : undefined,
-      nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-      defaultState: Object.assign({}, envConfig),
+      values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+      nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+      defaultState: Object.assign({}, envConfig.values),
     };
 
     this.props.store.subscribe(() => {
@@ -61,9 +62,9 @@ class EnvConfig extends Component {
 
       if (!this.state.values || JSON.stringify(this.state.defaultState) === "{}") {
         this.setState({
-          values: envConfig ? Object.assign({}, envConfig) : undefined,
-          nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-          defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
+          values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+          nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+          defaultState: Object.assign({}, envConfig.values),
         });
       }
 
@@ -350,10 +351,10 @@ class EnvConfig extends Component {
           <div className="w-full mb-16">
             <CopiableCodeSnippet 
             code={
-`cat << EOF > values.yaml
-${YAML.stringify(this.state.nonDefaultValues)}EOF
+`cat << EOF > manifest.yaml
+${YAML.stringify(this.state.envConfig)}EOF
 
-helm template ${this.state.appName} onechart/onechart -f values.yaml`}
+gimlet manifest template -f manifest.yaml`}
             />
           </div>
         </div>
@@ -400,7 +401,7 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
       const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
       if (configFromEnvConfigs.length > 0) {
         // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0].values
+        return configFromEnvConfigs[0]
       } else {
         // "envConfigs loaded, we have data for env, but we don't have config for app"
         return {}
