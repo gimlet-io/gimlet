@@ -42,9 +42,9 @@ class EnvConfig extends Component {
       appName: defaultAppName,
       envConfig: envConfig,
 
-      values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-      nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-      defaultState: Object.assign({}, envConfig.values),
+      values: envConfig ? Object.assign({}, envConfig) : undefined,
+      nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
+      defaultState: Object.assign({}, envConfig),
     };
 
     this.props.store.subscribe(() => {
@@ -62,9 +62,9 @@ class EnvConfig extends Component {
 
       if (!this.state.values || JSON.stringify(this.state.defaultState) === "{}") {
         this.setState({
-          values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-          nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-          defaultState: Object.assign({}, envConfig.values),
+          values: envConfig ? Object.assign({}, envConfig) : undefined,
+          nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
+          defaultState: Object.assign({}, envConfig),
         });
       }
 
@@ -401,7 +401,7 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
       const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
       if (configFromEnvConfigs.length > 0) {
         // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0]
+        return configFromEnvConfigs[0].values
       } else {
         // "envConfigs loaded, we have data for env, but we don't have config for app"
         return {}
