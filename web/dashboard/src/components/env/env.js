@@ -11,9 +11,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, repoName } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, owner, repoName } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName);
 
     return (
       <div>
@@ -58,7 +58,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName) {
   let services = [];
 
   let configsWeHave = [];
@@ -78,6 +78,8 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         rolloutHistory={appRolloutHistory(envName, stack.service.name, repoRolloutHistory)}
         rollback={rollback}
         envName={envName}
+        owner={owner}
+        repoName={repoName}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={configExists}
       />
@@ -98,6 +100,8 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         rolloutHistory={appRolloutHistory(envName, config, repoRolloutHistory)}
         rollback={rollback}
         envName={envName}
+        owner={owner}
+        repoName={repoName}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={true}
       />

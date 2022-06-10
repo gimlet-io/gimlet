@@ -385,6 +385,7 @@ export default class Repo extends Component {
                     envConfigs={envConfigs[envName]}
                     navigateToConfigEdit={this.navigateToConfigEdit}
                     rollback={this.rollback}
+                    owner={owner}
                     repoName={repo}
                   />
                 )
