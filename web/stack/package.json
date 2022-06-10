@@ -40,7 +40,7 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "remarkable": "^2.0.1",
-    "tailwindcss": "^2.1.2"
+    "tailwindcss": "^2.2.19"
   },
   "jest": {
     "moduleDirectories": [
