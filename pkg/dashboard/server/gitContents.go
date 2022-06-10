@@ -311,7 +311,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				fileUpdatePath,
 				toSaveBuffer.Bytes(),
 				branch,
-				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", env, envConfigData.AppName),
+				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
 			)
 			if err != nil {
 				logrus.Errorf("cannot create manifest: %s", err)
