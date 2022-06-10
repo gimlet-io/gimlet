@@ -29,7 +29,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "@graywolfai/react-heroicons": "^1.1.1",
+    "@graywolfai/react-heroicons": "^1.3.0",
     "@tailwindcss/ui": "^0.7.2",
     "and": "0.0.3",
     "helm-react-ui": "github:gimlet-io/helm-react-ui#master",
