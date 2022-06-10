@@ -49,8 +49,23 @@ export class Env extends Component {
         {this.state.isClosed ? null : (
           <div className="bg-white shadow divide-y divide-gray-200 p-4 sm:p-6 lg:p-8">
             {renderedServices.length > 0
-              ? renderedServices
+              ?
+              <>
+                <h4 className="text-xl mb-10">
+                  Add app config
+                  <span onClick={() => navigateToConfigEdit(envName, repoName)}>
+                    <svg
+                      className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1  h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </span>
+                </h4>
+                {renderedServices}
+              </>
               : emptyState(searchFilter, envConfigs, navigateToConfigEdit, envName, repoName)}
+
           </div>
         )}
       </div>
