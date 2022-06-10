@@ -261,7 +261,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		existingEnvConfigs[fileName] = envConfig
 	}
 
-	fileToUpdate := fmt.Sprintf("%s.yaml", env)
+	fileToUpdate := fmt.Sprintf("%s-%s.yaml", env, envConfigData.AppName)
 	for fileName, existingEnvConfig := range existingEnvConfigs {
 		if existingEnvConfig.Env == env &&
 			existingEnvConfig.App == envConfigData.AppName {
