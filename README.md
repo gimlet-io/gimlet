@@ -3,7 +3,6 @@
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/gimlet-io/gimlet-cli)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gimlet-io/gimlet-cli)](https://goreportcard.com/report/github.com/gimlet-io/gimlet-cli)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Known Vulnerabilities](https://snyk.io/test/github/gimlet-io/gimlet/badge.svg)](https://snyk.io/test/github/gimlet-io/gimlet)
 
 <img src="Gimlet.svg" width="200"/>
 
