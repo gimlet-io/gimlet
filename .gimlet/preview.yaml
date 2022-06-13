@@ -54,3 +54,4 @@ values:
     HOST: https://gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}.preview.com
     GITHUB_ORG: gimlet-io
     GIMLETD_URL: https://gimletd.staging.gimlet.io
+ 
