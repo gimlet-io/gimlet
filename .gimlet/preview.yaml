@@ -9,6 +9,8 @@ deploy:
   branch: feature/*
   event: push
 values:
+  gitRepository: "gimlet-io/gimlet"
+  gitSha: "{{ .GITHUB_SHA }}"
   containerPort: 9000
   replicas: 1
   image:
