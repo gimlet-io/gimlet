@@ -7,6 +7,7 @@ import YAML from "json-to-pretty-yaml";
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_ENVCONFIGS,
+  ACTION_TYPE_REPO_METAS,
 } from "../../redux/redux";
 
 class EnvConfig extends Component {
@@ -25,6 +26,7 @@ class EnvConfig extends Component {
     this.state = {
       chartSchema: reduxState.chartSchema,
       chartUISchema: reduxState.chartUISchema,
+      fileInfos: reduxState.fileInfos,
 
       saveButtonTriggered: false,
       hasAPIResponded: false,
@@ -53,6 +55,7 @@ class EnvConfig extends Component {
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
+        fileInfos: reduxState.fileInfos,
       });
 
       if (!this.state.values || JSON.stringify(this.state.defaultState) === "{}") {
@@ -90,12 +93,22 @@ class EnvConfig extends Component {
     const { gimletClient, store } = this.props;
 
     gimletClient.getChartSchema(owner, repo, env)
-    .then(data => {
-      store.dispatch({
-        type:  ACTION_TYPE_CHARTSCHEMA, payload: data
+      .then(data => {
+        store.dispatch({
+          type: ACTION_TYPE_CHARTSCHEMA, payload: data
+        });
+      }, () => {/* Generic error handler deals with it */
       });
-    }, () => {/* Generic error handler deals with it */
-    });
+
+    this.props.gimletClient.getRepoMetas(owner, repo)
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_REPO_METAS, payload: {
+            repoMetas: data,
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
 
     if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
       loadEnvConfig(gimletClient, store, owner, repo)
@@ -222,10 +235,19 @@ class EnvConfig extends Component {
       })
   }
 
+  findFileName(envName, appName) {
+    if (this.state.fileInfos) {
+      if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
+        return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
+      }
+    }
+  }
+
   render() {
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`
 
+    const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
@@ -246,7 +268,7 @@ class EnvConfig extends Component {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
-        <a href={`https://github.com/${owner}/${repo}/blob/main/.gimlet/${env}.yaml`} target="_blank" rel="noopener noreferrer">
+          <a href={`https://github.com/${owner}/${repo}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg"
               className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
               viewBox="0 0 24 24">
