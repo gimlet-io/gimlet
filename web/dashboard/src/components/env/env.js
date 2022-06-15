@@ -11,9 +11,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, owner, repoName } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, owner, repoName, fileInfos } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
 
     return (
       <div>
@@ -58,7 +58,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos) {
   let services = [];
 
   let configsWeHave = [];
@@ -80,6 +80,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         envName={envName}
         owner={owner}
         repoName={repoName}
+        fileName={fileName(fileInfos, stack.service.name)}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={configExists}
       />
@@ -102,6 +103,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         envName={envName}
         owner={owner}
         repoName={repoName}
+        fileName={fileName(fileInfos, config)}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={true}
       />
@@ -109,6 +111,12 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
     )
   )
   return services
+}
+
+function fileName(fileInfos, appName) {
+  if (fileInfos.find(fileInfo => fileInfo.appName === appName)) {
+    return fileInfos.find(fileInfo => fileInfo.appName === appName).fileName;
+  }
 }
 
 function appRolloutHistory(envName, appName, repoRolloutHistory) {

@@ -4,7 +4,7 @@ import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName } = props;
 
   return (
     <div className="w-full flex items-center justify-between space-x-6">
@@ -13,7 +13,7 @@ function ServiceDetail(props) {
           {stack.service.name}
           {configExists &&
             <>
-              <a href={`https://github.com/${owner}/${repoName}/blob/main/.gimlet/${envName}.yaml`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://github.com/${owner}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
                 <svg xmlns="http://www.w3.org/2000/svg"
                   className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
                   viewBox="0 0 24 24">
