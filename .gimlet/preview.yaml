@@ -9,6 +9,7 @@ deploy:
   branch: feature/*
   event: push
 values:
+  containerPort: 9000
   replicas: 1
   image:
     repository: ghcr.io/gimlet-io/gimlet-dashboard
