@@ -92,10 +92,36 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	branch := helper.HeadBranch(repo)
+	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	if err != nil {
+		if !strings.Contains(err.Error(), "directory not found") {
+			logrus.Errorf("cannot list files in .gimlet/: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fileInfos := []fileInfo{}
+	for fileName, content := range files {
+		var envConfig dx.Manifest
+		err = yaml.Unmarshal([]byte(content), &envConfig)
+		if err != nil {
+			logrus.Warnf("cannot parse env config string: %s", err)
+			continue
+		}
+		fileInfos = append(fileInfos, fileInfo{
+			AppName:  envConfig.App,
+			EnvName:  envConfig.Env,
+			FileName: fileName,
+		})
+	}
+
 	gitRepoM := gitRepoMetas{
 		GithubActions: hasGithubActionsConfig,
 		CircleCi:      hasCircleCiConfig,
 		HasShipper:    hasGithubActionsShipper || hasCircleCiShipper,
+		FileInfos:     fileInfos,
 	}
 
 	gitRepoMString, err := json.Marshal(gitRepoM)
@@ -109,10 +135,17 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitRepoMString)
 }
 
+type fileInfo struct {
+	EnvName  string `json:"envName"`
+	AppName  string `json:"appName"`
+	FileName string `json:"fileName"`
+}
+
 type gitRepoMetas struct {
-	GithubActions bool `json:"githubActions"`
-	CircleCi      bool `json:"circleCi"`
-	HasShipper    bool `json:"hasShipper"`
+	GithubActions bool       `json:"githubActions"`
+	CircleCi      bool       `json:"circleCi"`
+	HasShipper    bool       `json:"hasShipper"`
+	FileInfos     []fileInfo `json:"fileInfos"`
 }
 
 // envConfig fetches all environment configs from source control for a repo
