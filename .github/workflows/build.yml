@@ -1,8 +1,8 @@
 name: Build
 on:
   push:
-    branches-ignore:
-      - "main"
+    branches:
+      - '*'
 
 jobs:
   test:
@@ -48,8 +48,6 @@ jobs:
       with:
         fetch-depth: 5
 
-    - name: Get npm version
-      run: npm version
     - name: 🏗️ Build chart configure frontend
       run: make build-cli-frontend
     - name: 🏗️ Build stack frontend
