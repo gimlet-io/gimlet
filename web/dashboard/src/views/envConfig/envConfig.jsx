@@ -304,7 +304,14 @@ class EnvConfig extends Component {
               oldValue={YAML.stringify(this.state.defaultState)}
               newValue={YAML.stringify(this.state.nonDefaultValues)}
               splitView={false}
-              showDiffOnly={false} />
+              showDiffOnly={false}
+              styles={{
+                diffContainer: {
+                  overflowX: "auto",
+                  display: "block",
+                  "& pre": { whiteSpace: "pre" }
+                }
+              }} />
           </div>
         </div>
         <div className="p-0 flow-root">
