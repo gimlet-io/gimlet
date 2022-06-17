@@ -1,4 +1,4 @@
-app: gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}
+app: "{{ trunc 53 (printf \"gimlet-dashboard-%s\" .GITHUB_BRANCH | sanitizeDNSName) }}"
 env: preview
 namespace: preview
 chart:
