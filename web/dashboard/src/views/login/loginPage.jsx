@@ -9,7 +9,7 @@ const LoginPage = () => {
         <div className="mt-8 mx-2 sm:mx-auto sm:max-w-md bg-white py-8 px-4 shadow sm:px-10">
           <button
             onClick={() => {
-              window.location.replace("/auth");
+              window.location.replace(`/auth?appState=https://${window.location.hostname}/auth`);
             }}
             type="button"
             className="inline-flex items-center justify-center w-full px-6 py-3 rounded-md text-white
