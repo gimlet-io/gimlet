@@ -6,6 +6,7 @@ on:
 
 jobs:
   preview-build:
+    name: 🧪 Preview
     runs-on: ubuntu-latest
     steps:
       - name: 🛑 Cancel Previous Runs
