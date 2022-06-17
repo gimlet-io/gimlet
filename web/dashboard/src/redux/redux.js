@@ -67,6 +67,7 @@ export const initialState = {
   envConfigs: {},
   application: {},
   repoMetas: {},
+  fileInfos: [],
   envs: [],
   gitopsCommits: [],
   popupWindow: {

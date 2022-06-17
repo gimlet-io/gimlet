@@ -35,6 +35,7 @@ export default class Repo extends Component {
       agents: reduxState.settings.agents,
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
+      fileInfos: reduxState.fileInfos,
     }
 
     // handling API and streaming state changes
@@ -50,6 +51,7 @@ export default class Repo extends Component {
         envConfigs: reduxState.envConfigs[repoName],
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
+        fileInfos: reduxState.fileInfos,
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -328,6 +330,10 @@ export default class Repo extends Component {
       </>)
   }
 
+  fileMetasByEnv(envName) {
+    return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
+  }
+
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -385,7 +391,9 @@ export default class Repo extends Component {
                     envConfigs={envConfigs[envName]}
                     navigateToConfigEdit={this.navigateToConfigEdit}
                     rollback={this.rollback}
+                    owner={owner}
                     repoName={repo}
+                    fileInfos={this.fileMetasByEnv(envName)}
                   />
                 )
                 }
