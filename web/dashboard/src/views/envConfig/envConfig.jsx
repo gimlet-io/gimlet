@@ -351,7 +351,7 @@ class EnvConfig extends Component {
           {JSON.stringify(this.state.envConfig) !== "{}" &&
           <>
           <h3 className="text-lg leading-6 text-gray-500">
-            Copy the code snippet to check the Kubernetes manifest in the CLI:
+            Copy the code snippet to check the generated Kubernetes manifest on the command line:
           </h3>
           <div className="w-full mb-16">
             <CopiableCodeSnippet 
