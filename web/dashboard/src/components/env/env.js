@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { v4 as uuidv4 } from 'uuid';
 import ServiceDetail from "../serviceDetail/serviceDetail";
 
 export class Env extends Component {
@@ -47,10 +48,18 @@ export class Env extends Component {
           </svg>
         </h4>
         {this.state.isClosed ? null : (
-          <div className="bg-white shadow divide-y divide-gray-200 p-4 sm:p-6 lg:p-8">
+          <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
             {renderedServices.length > 0
-              ? renderedServices
+              ?
+              <>
+                {renderedServices}
+                <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
+                onClick={() => navigateToConfigEdit(envName, `${repoName}-${uuidv4().slice(0,8)}`)}>
+                  Add app config
+                </h4>
+              </>
               : emptyState(searchFilter, envConfigs, navigateToConfigEdit, envName, repoName)}
+
           </div>
         )}
       </div>
