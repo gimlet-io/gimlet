@@ -111,7 +111,6 @@ class EnvConfig extends Component {
 
   componentDidMount() {
     const { owner, repo, env, config } = this.props.match.params;
-    const repoName = `${owner}/${repo}`;
     const { gimletClient, store } = this.props;
 
     gimletClient.getChartSchema(owner, repo, env)
