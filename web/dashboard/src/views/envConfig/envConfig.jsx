@@ -21,7 +21,6 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let envConfigValues = configValuesFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
@@ -43,9 +42,9 @@ class EnvConfig extends Component {
       appName: defaultAppName,
       envConfig: envConfig,
 
-      values: envConfigValues ? Object.assign({}, envConfigValues) : undefined,
-      nonDefaultValues: envConfigValues ? Object.assign({}, envConfigValues) : undefined,
-      defaultState: Object.assign({}, envConfigValues),
+      values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+      nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+      defaultState: Object.assign({}, envConfig.values),
     };
 
     this.props.store.subscribe(() => {
@@ -398,27 +397,6 @@ gimlet manifest template -f manifest.yaml`}
         </div>
       </div>
     );
-  }
-}
-
-function configValuesFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) { // envConfigs are loaded
-    if (envConfigs[repoName][env]) { // we have env data
-      const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (configFromEnvConfigs.length > 0) {
-        // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0].values
-      } else {
-        // "envConfigs loaded, we have data for env, but we don't have config for app"
-        return {}
-      }
-    } else {
-      // "envConfigs loaded, but we don't have data for env"
-      return {}
-    }
-  } else {
-    // envConfigs not loaded, we shall wait for it to be loaded
-    return undefined
   }
 }
 
