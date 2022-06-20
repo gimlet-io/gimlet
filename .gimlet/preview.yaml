@@ -31,7 +31,7 @@ values:
     annotations:
       kubernetes.io/ingress.class: nginx
       cert-manager.io/cluster-issuer: letsencrypt
-    host: "gimlet-dashboard-{{ .GITHUB_BRANCH | sanitizeDNSName }}.preview.turbopizza.net"
+    host: "{{ trunc 53 (printf \"gimlet-dashboard-%s\" .GITHUB_BRANCH | sanitizeDNSName) }}.preview.turbopizza.net"
     tlsEnabled: true
   resources:
     requests:
