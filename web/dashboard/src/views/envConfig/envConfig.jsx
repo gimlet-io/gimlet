@@ -4,6 +4,7 @@ import "./style.css";
 import PopUpWindow from "./popUpWindow";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
+import CopiableCodeSnippet from "./copiableCodeSnippet";
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_ENVCONFIGS,
@@ -39,10 +40,11 @@ class EnvConfig extends Component {
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
       appName: defaultAppName,
+      envConfig: envConfig,
 
-      values: envConfig ? Object.assign({}, envConfig) : undefined,
-      nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-      defaultState: Object.assign({}, envConfig),
+      values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+      nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
+      defaultState: Object.assign({}, envConfig.values),
     };
 
     this.props.store.subscribe(() => {
@@ -62,7 +64,7 @@ class EnvConfig extends Component {
         this.setState({
           values: envConfig ? Object.assign({}, envConfig) : undefined,
           nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-          defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
+          defaultState: Object.assign({}, envConfig),
         });
       }
 
@@ -244,6 +246,8 @@ class EnvConfig extends Component {
   render() {
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`
+    const envConfigCopy = Object.assign({}, this.state.envConfig)
+    envConfigCopy.values = this.state.nonDefaultValues;
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -343,6 +347,21 @@ class EnvConfig extends Component {
                 }
               }} />
           </div>
+          {JSON.stringify(this.state.envConfig) !== "{}" &&
+          <>
+          <h3 className="text-lg leading-6 text-gray-500">
+            Copy the code snippet to check the generated Kubernetes manifest on the command line:
+          </h3>
+          <div className="w-full mb-16">
+            <CopiableCodeSnippet 
+            code={
+`cat << EOF > manifest.yaml
+${YAML.stringify(envConfigCopy)}EOF
+
+gimlet manifest template -f manifest.yaml`}
+            />
+          </div>
+          </>}
         </div>
         <div className="p-0 flow-root">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
@@ -387,7 +406,7 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
       const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
       if (configFromEnvConfigs.length > 0) {
         // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0].values
+        return configFromEnvConfigs[0]
       } else {
         // "envConfigs loaded, we have data for env, but we don't have config for app"
         return {}
