@@ -261,7 +261,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		existingEnvConfigs[fileName] = envConfig
 	}
 
-	fileToUpdate := fmt.Sprintf("%s.yaml", env)
+	fileToUpdate := fmt.Sprintf("%s-%s.yaml", env, envConfigData.AppName)
 	for fileName, existingEnvConfig := range existingEnvConfigs {
 		if existingEnvConfig.Env == env &&
 			existingEnvConfig.App == envConfigData.AppName {
@@ -311,7 +311,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				fileUpdatePath,
 				toSaveBuffer.Bytes(),
 				branch,
-				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", env, envConfigData.AppName),
+				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
 			)
 			if err != nil {
 				logrus.Errorf("cannot create manifest: %s", err)
