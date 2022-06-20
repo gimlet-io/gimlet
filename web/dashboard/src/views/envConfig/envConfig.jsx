@@ -90,7 +90,7 @@ class EnvConfig extends Component {
   }
 
   componentDidMount() {
-    const { owner, repo, env } = this.props.match.params;
+    const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
     const { gimletClient, store } = this.props;
 
@@ -117,7 +117,7 @@ class EnvConfig extends Component {
     }
 
     if (!this.state.appName) {
-      this.setState({ appName: repo })
+      this.setState({ appName: config })
     }
 
     if (!this.state.defaultState.gitSha) {

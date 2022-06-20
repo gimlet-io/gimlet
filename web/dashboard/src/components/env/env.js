@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { v4 as uuidv4 } from 'uuid';
 import ServiceDetail from "../serviceDetail/serviceDetail";
 
 export class Env extends Component {
@@ -53,7 +54,7 @@ export class Env extends Component {
               <>
                 {renderedServices}
                 <h4 className="text-sm cursor-pointer text-gray-500 hover:text-gray-700"
-                onClick={() => navigateToConfigEdit(envName, repoName)}>
+                onClick={() => navigateToConfigEdit(envName, `${repoName}-${uuidv4().slice(0,8)}`)}>
                   Add app config
                 </h4>
               </>
