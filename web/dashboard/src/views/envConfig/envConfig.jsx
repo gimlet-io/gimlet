@@ -46,9 +46,9 @@ class EnvConfig extends Component {
       envConfigsFromRedux: reduxState.envConfigs,
       envs: reduxState.envs,
 
-      values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-      nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-      defaultState: Object.assign({}, envConfig.values),
+      values: envConfig ? Object.assign({}, envConfig) : undefined,
+      nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
+      defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
     };
 
     this.props.store.subscribe(() => {
@@ -70,7 +70,7 @@ class EnvConfig extends Component {
         this.setState({
           values: envConfig ? Object.assign({}, envConfig) : undefined,
           nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-          defaultState: Object.assign({}, envConfig),
+          defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
         });
       }
 
@@ -450,7 +450,7 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
       const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
       if (configFromEnvConfigs.length > 0) {
         // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0]
+        return configFromEnvConfigs[0].values
       } else {
         // "envConfigs loaded, we have data for env, but we don't have config for app"
         return {}
