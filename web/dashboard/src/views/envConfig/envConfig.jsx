@@ -288,16 +288,15 @@ class EnvConfig extends Component {
                     d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                 </svg>
               </a>
-              <span className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
-                <button
-                  type="button"
-                  className="relative cursor-default inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
                 >
                   Replicate to..
-                </button>
-                <Menu as="span" className="-ml-px relative block">
+                </Menu.Button>
+                <span className="-ml-px relative block">
                   <Menu.Button
-                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
                     <span className="sr-only">Open options</span>
                     <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
                   </Menu.Button>
@@ -321,8 +320,8 @@ class EnvConfig extends Component {
                       ))}
                     </div>
                   </Menu.Items>
-                </Menu>
-              </span>
+                </span>
+              </Menu>
             </>}
         </h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
