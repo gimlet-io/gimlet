@@ -10,6 +10,8 @@ import {
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
 } from "../../redux/redux";
+import { Menu } from '@headlessui/react'
+import { ChevronDownIcon } from '@heroicons/react/solid'
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -41,6 +43,8 @@ class EnvConfig extends Component {
       defaultAppName: defaultAppName,
       appName: defaultAppName,
       envConfig: envConfig,
+      envConfigsFromRedux: reduxState.envConfigs,
+      envs: reduxState.envs,
 
       values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
       nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
@@ -58,6 +62,8 @@ class EnvConfig extends Component {
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
         fileInfos: reduxState.fileInfos,
+        envConfigsFromRedux: reduxState.envConfigs,
+        envs: reduxState.envs,
       });
 
       if (!this.state.values) {
@@ -271,15 +277,53 @@ class EnvConfig extends Component {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
-          {fileName && <a href={`https://github.com/${owner}/${repo}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
-            <svg xmlns="http://www.w3.org/2000/svg"
-              className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
-              viewBox="0 0 24 24">
-              <path d="M0 0h24v24H0z" fill="none" />
-              <path
-                d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-            </svg>
-          </a>}
+          {fileName &&
+            <>
+              <a href={`https://github.com/${owner}/${repo}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
+                  viewBox="0 0 24 24">
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path
+                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                </svg>
+              </a>
+              <span className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <button
+                  type="button"
+                  className="relative cursor-default inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Replicate to..
+                </button>
+                <Menu as="span" className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      {this.state.envs.map((env) => (
+                        <Menu.Item key={`${env.name}`}>
+                          {({ active }) => (
+                            <button
+                              onClick={() => this.props.history.push(`/repo/${owner}/${repo}/envs/${env.name}/copy-config/${config}`)}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {env.name}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </Menu>
+              </span>
+            </>}
         </h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
           <a href={`https://github.com/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
