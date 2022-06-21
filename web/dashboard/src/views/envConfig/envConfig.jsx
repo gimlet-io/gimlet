@@ -103,7 +103,7 @@ class EnvConfig extends Component {
       }
 
       if (!this.state.appName) {
-        this.setState({ appName: repo })
+        this.setState({ appName: config })
       }
 
       if (!this.state.defaultAppName) {
@@ -307,7 +307,7 @@ class EnvConfig extends Component {
                         <Menu.Item key={`${env.name}`}>
                           {({ active }) => (
                             <button
-                              onClick={() => this.props.history.push(`/repo/${owner}/${repo}/envs/${env.name}/copy-config/${config}`)}
+                              onClick={() => this.props.history.push(`/repo/${owner}/${repo}/envs/${env.name}/config/${config}-copy`)}
                               className={(
                                 active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
                                 ' block px-4 py-2 text-sm w-full text-left'
