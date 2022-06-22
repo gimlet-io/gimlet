@@ -23,6 +23,7 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
@@ -42,9 +43,7 @@ class EnvConfig extends Component {
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
       appName: defaultAppName,
-      envConfig: envConfig,
-      envConfigsFromRedux: reduxState.envConfigs,
-      envs: reduxState.envs,
+      configFile: configFileContent,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
       nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -55,6 +54,7 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
@@ -62,8 +62,7 @@ class EnvConfig extends Component {
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
         fileInfos: reduxState.fileInfos,
-        envConfigsFromRedux: reduxState.envConfigs,
-        envs: reduxState.envs,
+        configFile: configFileContent,
       });
 
       if (!this.state.values) {
@@ -253,8 +252,8 @@ class EnvConfig extends Component {
   render() {
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const envConfigCopy = Object.assign({}, this.state.envConfig)
-    envConfigCopy.values = this.state.nonDefaultValues;
+    const configFileCopy = Object.assign({}, this.state.configFile)
+    configFileCopy.values = this.state.nonDefaultValues;
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -400,7 +399,7 @@ class EnvConfig extends Component {
             <CopiableCodeSnippet 
             code={
 `cat << EOF > manifest.yaml
-${YAML.stringify(envConfigCopy)}EOF
+${YAML.stringify(configFileCopy)}EOF
 
 gimlet manifest template -f manifest.yaml`}
             />
@@ -463,6 +462,19 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
     // envConfigs not loaded, we shall wait for it to be loaded
     return undefined
   }
+}
+
+function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
+  if (envConfigs[repoName]) {
+    if (envConfigs[repoName][env]) {
+      const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
+      if (configFileContentFromEnvConfigs.length > 0) {
+        return configFileContentFromEnvConfigs[0]
+      }
+    }
+  }
+
+  return {}
 }
 
 function namespaceFromEnvConfigs(envConfigs, repoName, env, config) {
