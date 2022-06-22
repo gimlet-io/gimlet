@@ -9,6 +9,7 @@ import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
+  ACTION_TYPE_ADD_ENVCONFIG,
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -43,6 +44,7 @@ class EnvConfig extends Component {
       hasFormValidationError: false,
       defaultAppName: defaultAppName,
       appName: defaultAppName,
+      envs: reduxState.envs,
       configFile: configFileContent,
 
       values: envConfig ? Object.assign({}, envConfig) : undefined,
@@ -53,7 +55,7 @@ class EnvConfig extends Component {
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
-      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, this.props.match.params.config);
       let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
@@ -62,6 +64,7 @@ class EnvConfig extends Component {
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
         fileInfos: reduxState.fileInfos,
+        envs: reduxState.envs,
         configFile: configFileContent,
       });
 
@@ -278,7 +281,7 @@ class EnvConfig extends Component {
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
           {fileName &&
             <>
-              <a href={`https://github.com/${owner}/${repo}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://github.com/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
                 <svg xmlns="http://www.w3.org/2000/svg"
                   className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
                   viewBox="0 0 24 24">
@@ -306,7 +309,20 @@ class EnvConfig extends Component {
                         <Menu.Item key={`${env.name}`}>
                           {({ active }) => (
                             <button
-                              onClick={() => this.props.history.push(`/repo/${owner}/${repo}/envs/${env.name}/config/${config}-copy`)}
+                              onClick={() => {
+                                this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy`);
+                                this.props.store.dispatch({
+                                  type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
+                                    repo: repoName,
+                                    env: env.name,
+                                    envConfig: {
+                                      ...this.state.configFile,
+                                      app: `${this.state.configFile.app}-copy`,
+                                      env: env.name
+                                    },
+                                  }
+                                });
+                              }}
                               className={(
                                 active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
                                 ' block px-4 py-2 text-sm w-full text-left'
@@ -324,7 +340,7 @@ class EnvConfig extends Component {
             </>}
         </h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
-          <a href={`https://github.com/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
+          <a href={`https://github.com/${repoName}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg"
               className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
               viewBox="0 0 24 24">
