@@ -70,9 +70,9 @@ class Ingress extends Component {
     return (
       <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-gray-200 text-gray-500 relative">
         <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">ingress</span>
-        <div className="mb-1"><a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}</a>
+        <div className="mb-1 truncate "><a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}</a>
         </div>
-        <p className="text-xs">{ingress.namespace}/{ingress.name}</p>
+        <p className="text-xs truncate mb-6">{ingress.namespace}/{ingress.name}</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ class Deployment extends Component {
           <p className="text-xs italic"><a href={`https://github.com/${repo}/commit/${deployment.sha}`} target="_blank"
             rel="noopener noreferrer">{deployment.sha.slice(0, 6)}</a></p>
         </p>
-        <p className="text-xs">{deployment.namespace}/{deployment.name}</p>
+        <p className="text-xs truncate">{deployment.namespace}/{deployment.name}</p>
         {
           deployment.pods && deployment.pods.map((pod) => (
             <Pod key={pod.name} pod={pod} />
