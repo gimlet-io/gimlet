@@ -55,6 +55,9 @@ class EnvConfig extends Component {
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
+      console.log(this.props.history.location)
+      console.log(this.props.match.params)
+
       let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, this.props.match.params.config);
       let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
@@ -117,7 +120,30 @@ class EnvConfig extends Component {
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
   }
 
+  componentDidUpdate(prevProps) {
+    console.log(prevProps)
+    console.log(prevProps.match)
+    console.log("DID UPDATE")
+    console.log(this.props.history.location)
+    if (this.props.match.params.config !== prevProps.match.params.config) {
+      const { owner, repo, env, config } = this.props.match.params;
+      const repoName = `${owner}/${repo}`;
+      let reduxState = this.props.store.getState();
+      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, this.props.match.params.config);
+
+      this.setState({
+        values: envConfig ? Object.assign({}, envConfig) : undefined,
+        nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
+        defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
+        appName: config
+      });
+    }
+
+
+  };
+
   componentDidMount() {
+    console.log("DID MOUNT")
     const { owner, repo, env, config } = this.props.match.params;
     const { gimletClient, store } = this.props;
 
@@ -253,12 +279,16 @@ class EnvConfig extends Component {
   }
 
   render() {
+    console.log(this.props.history.location)
+    console.log(this.props.match.params)
+
+    console.log(this.props.store.getState().envConfigs)
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     const configFileCopy = Object.assign({}, this.state.configFile)
     configFileCopy.values = this.state.nonDefaultValues;
 
-    const fileName = this.findFileName(env, config)
+    const fileName = this.findFileName(env, config) //TODO
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
@@ -310,7 +340,9 @@ class EnvConfig extends Component {
                           {({ active }) => (
                             <button
                               onClick={() => {
+                                console.log(this.props.history.location)
                                 this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy`);
+                                console.log(this.props.history.location)
                                 this.props.store.dispatch({
                                   type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
                                     repo: repoName,
