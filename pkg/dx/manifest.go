@@ -152,8 +152,8 @@ func sanitizeDNSName(str string) string {
 	str = strings.ToLower(str)
 	r := regexp.MustCompile("[^0-9a-z]+")
 	str = r.ReplaceAllString(str, "-")
-	if len(str) > 63 {
-		str = str[0:63]
+	if len(str) > 53 {
+		str = str[0:53]
 	}
 	str = strings.TrimSuffix(str, "-")
 	str = strings.TrimPrefix(str, "-")
