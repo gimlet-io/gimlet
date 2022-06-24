@@ -40,8 +40,6 @@ class EnvConfig extends Component {
       repoMetas: reduxState.repoMetas,
     };
 
-    this.setLocalEnvConfigState(reduxState, repoName, env, config);
-
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
@@ -84,8 +82,20 @@ class EnvConfig extends Component {
     }
   }
 
+  componentDidUpdate(prevProps) {
+    const { owner, repo, env, config } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    if (prevProps.match.params.config !== config) {
+      let reduxState = this.props.store.getState();
+      this.setLocalEnvConfigState(reduxState, repoName, env, config);
+    }
+  }
+
   componentDidMount() {
     const { owner, repo, env, config } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
     const { gimletClient, store } = this.props;
 
     gimletClient.getChartSchema(owner, repo, env)
@@ -110,9 +120,8 @@ class EnvConfig extends Component {
       loadEnvConfig(gimletClient, store, owner, repo)
     }
 
-    if (!this.state.appName) {
-      this.setState({ appName: config })
-    }
+    let reduxState = this.props.store.getState();
+    this.setLocalEnvConfigState(reduxState, repoName, env, config);
   }
 
   ensureRepoAssociationExists(repoName, repoMetas) {
@@ -198,7 +207,8 @@ class EnvConfig extends Component {
   }
 
   save() {
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo, env, config, action } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
 
     this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
@@ -219,6 +229,9 @@ class EnvConfig extends Component {
           defaultNamespace: this.state.namespace,
           defaultAppName: appNameToSave
         });
+        if (action === "new") {
+          this.props.history.push(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`);
+        }
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
         clearTimeout(this.state.timeoutTimer);
@@ -238,11 +251,7 @@ class EnvConfig extends Component {
   }
 
   render() {
-    console.log(this.props.history.location)
-    console.log(this.props.match.params)
-
-    console.log(this.props.store.getState().envConfigs)
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     const configFileCopy = Object.assign({}, this.state.configFile)
     configFileCopy.values = this.state.nonDefaultValues;
@@ -251,7 +260,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace;
+      this.state.namespace !== this.state.defaultNamespace || action === "new";
 
     if (!this.state.chartSchema) {
       return null;
@@ -299,9 +308,7 @@ class EnvConfig extends Component {
                           {({ active }) => (
                             <button
                               onClick={() => {
-                                console.log(this.props.history.location)
-                                this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy`);
-                                console.log(this.props.history.location)
+                                this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`);
                                 this.props.store.dispatch({
                                   type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
                                     repo: repoName,
@@ -344,23 +351,20 @@ class EnvConfig extends Component {
         <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
-        {!this.state.defaultAppName ?
-          <div className="mt-8 mb-4 items-center">
-            <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
-              App name*
-            </label>
-            <input
-              type="text"
-              name="appName"
-              id="appName"
-              value={this.state.appName}
-              onChange={e => { this.setState({ appName: e.target.value }) }}
-              className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-            />
-          </div>
-          :
-          <span className="mt-8 mb-4 text-gray-700 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
-        }
+        <div className="mt-8 mb-4 items-center">
+          <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+            App name*
+          </label>
+          <input
+            type="text"
+            name="appName"
+            id="appName"
+            disabled={action !== "new"}
+            value={this.state.appName}
+            onChange={e => { this.setState({ appName: e.target.value }) }}
+            className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
+          />
+        </div>
         <div className="mb-8 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*

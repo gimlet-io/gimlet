@@ -12,7 +12,7 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, rollback, owner, repoName, fileInfos } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
 
@@ -54,7 +54,10 @@ export class Env extends Component {
               <>
                 {renderedServices}
                 <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
-                onClick={() => navigateToConfigEdit(envName, `${repoName}-${uuidv4().slice(0,8)}`)}>
+                onClick={() => {
+                  const newAppName = `${repoName}-${uuidv4().slice(0,4)}`
+                  newConfig(envName, newAppName)
+                }}>
                   Add app config
                 </h4>
               </>

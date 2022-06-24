@@ -91,11 +91,7 @@ export default class App extends Component {
                 <LoginPage />
               </Route>
 
-              <Route path="/repo/:owner/:repo/envs/:env/config/:config">
-                <ChartUIWithRouting />
-              </Route>
-
-              <Route path="/repo/:owner/:repo/envs/:env/copy-config/:config">
+              <Route path="/repo/:owner/:repo/envs/:env/config/:config/:action?">
                 <ChartUIWithRouting />
               </Route>
 
