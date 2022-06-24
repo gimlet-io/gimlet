@@ -23,11 +23,6 @@ class EnvConfig extends Component {
 
     let reduxState = this.props.store.getState();
 
-    let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let defaultNamespace = configFileContent.namespace ? configFileContent.namespace : "";
-    let defaultAppName = configFileContent.app ? configFileContent.app : "";
-
     this.state = {
       chartSchema: reduxState.chartSchema,
       chartUISchema: reduxState.chartUISchema,
@@ -39,77 +34,68 @@ class EnvConfig extends Component {
       errorMessage: "",
       isTimedOut: false,
       timeoutTimer: {},
-      defaultNamespace: defaultNamespace,
-      namespace: defaultNamespace,
       hasFormValidationError: false,
-      defaultAppName: defaultAppName,
-      appName: defaultAppName,
-      envs: reduxState.envs,
-      configFile: configFileContent,
 
-      values: envConfig ? Object.assign({}, envConfig) : undefined,
-      nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-      defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
+      envs: reduxState.envs,
+      repoMetas: reduxState.repoMetas,
     };
+
+    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
+      let envConfig = configFileContent.values;
+
+      this.state = {
+        ...this.state,
+
+        configFile: configFileContent,
+
+        appName: configFileContent.app,
+        namespace: configFileContent.namespace,
+
+        defaultAppName: configFileContent.app,
+        defaultNamespace: configFileContent.namespace,
+
+        values: Object.assign({}, envConfig),
+        nonDefaultValues: Object.assign({}, envConfig),
+        defaultState: Object.assign({}, envConfig),
+      };
+    }
 
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
-
-      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      let defaultNamespace = configFileContent.namespace ? configFileContent.namespace : "";
-      let defaultAppName = configFileContent.app ? configFileContent.app : "";
 
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
-        configFile: configFileContent,
+        repoMetas: reduxState.repoMetas,
       });
 
-      if (!this.state.values) {
-        this.setState({
-          values: envConfig ? Object.assign({}, envConfig) : undefined,
-          nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-          defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
-        });
-      }
+      this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
 
-      if (!!this.state.defaultState) {
-        if (!this.state.defaultState.gitSha) {
-          this.props.gimletClient.getRepoMetas(owner, repo)
-            .then(data => {
-              if (data.githubActions) {
-                this.setGitSha("{{ .GITHUB_SHA }}");
-              }
-    
-              if (data.circleCi) {
-                this.setGitSha("{{ .CIRCLE_SHA1 }}");
-              }
-            }, () => {/* Generic error handler deals with it */
-            });
+      let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this later
+        let envConfig = configFileContent.values;
+
+        if (!this.state.values) {
+          this.setState({
+            values: Object.assign({}, envConfig),
+            nonDefaultValues: Object.assign({}, envConfig),
+            defaultState: Object.assign({}, envConfig),
+          });
         }
-    
-        if (!this.state.defaultState.gitRepository) {
-          this.setGitRepository(repoName);
+
+        if (!this.state.appName) {
+          this.setState({ appName: configFileContent.app })
         }
-      }
 
-      if (!this.state.namespace) {
-        this.setState({ namespace: defaultNamespace })
-      }
+        if (!this.state.namespace) {
+          this.setState({ namespace: configFileContent.namespace })
+        }
 
-      if (!this.state.defaultNamespace) {
-        this.setState({ defaultNamespace: defaultNamespace })
-      }
-
-      if (!this.state.appName) {
-        this.setState({ appName: config })
-      }
-
-      if (!this.state.defaultAppName) {
-        this.setState({ defaultAppName: defaultAppName })
+        this.setState({ defaultNamespace: configFileContent.namespace })
+        this.setState({ defaultAppName: configFileContent.app })
       }
     });
 
@@ -145,6 +131,24 @@ class EnvConfig extends Component {
 
     if (!this.state.appName) {
       this.setState({ appName: config })
+    }
+  }
+
+  ensureRepoAssociationExists(repoName, repoMetas) {
+    if (this.state.defaultState && repoMetas) {
+      if (!this.state.defaultState.gitSha) {
+        if (repoMetas.githubActions) {
+          this.setGitSha("{{ .GITHUB_SHA }}");
+        }
+
+        if (repoMetas.circleCi) {
+          this.setGitSha("{{ .CIRCLE_SHA1 }}");
+        }
+      }
+
+      if (!this.state.defaultState.gitRepository) {
+        this.setGitRepository(repoName);
+      }
     }
   }
 
@@ -465,13 +469,12 @@ gimlet manifest template -f manifest.yaml`}
   }
 }
 
-function configFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) { // envConfigs are loaded
-    if (envConfigs[repoName][env]) { // we have env data
-      const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (configFromEnvConfigs.length > 0) {
-        // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0].values
+function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
+  if (envConfigs[repoName]) {
+    if (envConfigs[repoName][env]) {
+      const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
+      if (configFileContentFromEnvConfigs.length > 0) {
+        return configFileContentFromEnvConfigs[0]
       } else {
         // "envConfigs loaded, we have data for env, but we don't have config for app"
         return {}
@@ -481,22 +484,9 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
       return {}
     }
   } else {
-    // envConfigs not loaded, we shall wait for it to be loaded
-    return undefined
+      // envConfigs not loaded, we shall wait for it to be loaded
+      return undefined
   }
-}
-
-function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (configFileContentFromEnvConfigs.length > 0) {
-        return configFileContentFromEnvConfigs[0]
-      }
-    }
-  }
-
-  return {}
 }
 
 function loadEnvConfig(gimletClient, store, owner, repo) {
