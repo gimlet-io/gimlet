@@ -40,26 +40,7 @@ class EnvConfig extends Component {
       repoMetas: reduxState.repoMetas,
     };
 
-    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
-      let envConfig = configFileContent.values;
-
-      this.state = {
-        ...this.state,
-
-        configFile: configFileContent,
-
-        appName: configFileContent.app,
-        namespace: configFileContent.namespace,
-
-        defaultAppName: configFileContent.app,
-        defaultNamespace: configFileContent.namespace,
-
-        values: Object.assign({}, envConfig),
-        nonDefaultValues: Object.assign({}, envConfig),
-        defaultState: Object.assign({}, envConfig),
-      };
-    }
+    this.setLocalEnvConfigState(reduxState, repoName, env, config);
 
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
@@ -74,33 +55,33 @@ class EnvConfig extends Component {
 
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
 
-      let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this later
-        let envConfig = configFileContent.values;
-
-        if (!this.state.values) {
-          this.setState({
-            values: Object.assign({}, envConfig),
-            nonDefaultValues: Object.assign({}, envConfig),
-            defaultState: Object.assign({}, envConfig),
-          });
-        }
-
-        if (!this.state.appName) {
-          this.setState({ appName: configFileContent.app })
-        }
-
-        if (!this.state.namespace) {
-          this.setState({ namespace: configFileContent.namespace })
-        }
-
-        this.setState({ defaultNamespace: configFileContent.namespace })
-        this.setState({ defaultAppName: configFileContent.app })
+      if (!this.state.values) {
+        this.setLocalEnvConfigState(reduxState, repoName, env, config);
       }
     });
 
     this.setValues = this.setValues.bind(this);
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
+  }
+
+  setLocalEnvConfigState(reduxState, repoName, env, config) {
+    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
+      let envConfig = configFileContent.values;
+
+      this.setState({
+        configFile: configFileContent,
+
+        appName: configFileContent.app,
+        namespace: configFileContent.namespace,
+        defaultAppName: configFileContent.app,
+        defaultNamespace: configFileContent.namespace,
+
+        values: Object.assign({}, envConfig),
+        nonDefaultValues: Object.assign({}, envConfig),
+        defaultState: Object.assign({}, envConfig),
+      });
+    }
   }
 
   componentDidMount() {
@@ -266,7 +247,7 @@ class EnvConfig extends Component {
     const configFileCopy = Object.assign({}, this.state.configFile)
     configFileCopy.values = this.state.nonDefaultValues;
 
-    const fileName = this.findFileName(env, config) //TODO
+    const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
