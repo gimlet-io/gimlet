@@ -25,8 +25,8 @@ class EnvConfig extends Component {
 
     let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    let defaultNamespace = configFileContent.namespace ? configFileContent.namespace : "";
+    let defaultAppName = configFileContent.app ? configFileContent.app : "";
 
     this.state = {
       chartSchema: reduxState.chartSchema,
@@ -55,13 +55,10 @@ class EnvConfig extends Component {
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
-      console.log(this.props.history.location)
-      console.log(this.props.match.params)
-
-      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, this.props.match.params.config);
+      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
       let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+      let defaultNamespace = configFileContent.namespace ? configFileContent.namespace : "";
+      let defaultAppName = configFileContent.app ? configFileContent.app : "";
 
       this.setState({
         chartSchema: reduxState.chartSchema,
@@ -120,30 +117,7 @@ class EnvConfig extends Component {
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
   }
 
-  componentDidUpdate(prevProps) {
-    console.log(prevProps)
-    console.log(prevProps.match)
-    console.log("DID UPDATE")
-    console.log(this.props.history.location)
-    if (this.props.match.params.config !== prevProps.match.params.config) {
-      const { owner, repo, env, config } = this.props.match.params;
-      const repoName = `${owner}/${repo}`;
-      let reduxState = this.props.store.getState();
-      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, this.props.match.params.config);
-
-      this.setState({
-        values: envConfig ? Object.assign({}, envConfig) : undefined,
-        nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-        defaultState: envConfig ? Object.assign({}, envConfig) : undefined,
-        appName: config
-      });
-    }
-
-
-  };
-
   componentDidMount() {
-    console.log("DID MOUNT")
     const { owner, repo, env, config } = this.props.match.params;
     const { gimletClient, store } = this.props;
 
@@ -523,32 +497,6 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
   }
 
   return {}
-}
-
-function namespaceFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const namespaceFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (namespaceFromEnvConfigs.length > 0) {
-        return namespaceFromEnvConfigs[0].namespace
-      }
-    }
-  }
-
-  return ""
-}
-
-function appNameFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const appNameFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (appNameFromEnvConfigs.length > 0) {
-        return appNameFromEnvConfigs[0].app
-      }
-    }
-  }
-
-  return ""
 }
 
 function loadEnvConfig(gimletClient, store, owner, repo) {
