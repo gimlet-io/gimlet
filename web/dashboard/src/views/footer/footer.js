@@ -34,6 +34,10 @@ export default class Footer extends Component {
             return null
         }
 
+        if (gitopsCommit.sha === undefined) {
+            return null
+        }
+
         const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
         let color = "bg-yellow-400";
         let lastCommitStatus = "Trailing";
