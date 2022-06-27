@@ -67,7 +67,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.RedirectHandler("/"+token.AppState, http.StatusSeeOther).ServeHTTP(w, r)
+	http.RedirectHandler("/", http.StatusSeeOther).ServeHTTP(w, r)
 }
 
 func validateOrganizationMembership(orgList []*scm.Organization, org string, userName string) bool {
