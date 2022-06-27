@@ -318,6 +318,18 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
+
+			toSaveJson, err := json.Marshal(toSave)
+			if err != nil {
+				logrus.Errorf("cannot convert envconfig to json: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
+			gitRepoCache.Invalidate(repoPath)
+			w.WriteHeader(http.StatusOK)
+			w.Write(toSaveJson)
+			return
 		} else {
 			logrus.Errorf("cannot fetch envConfig from github: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -358,11 +370,20 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
 
-	gitRepoCache.Invalidate(repoPath)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+		toSaveJson, err := json.Marshal(toUpdate)
+		if err != nil {
+			logrus.Errorf("cannot convert envconfig to json: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		gitRepoCache.Invalidate(repoPath)
+		w.WriteHeader(http.StatusOK)
+		w.Write(toSaveJson)
+
+		return
+	}
 }
 
 func getOrgRepos(dao *store.Store) ([]string, error) {

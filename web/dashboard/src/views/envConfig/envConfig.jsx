@@ -216,7 +216,7 @@ class EnvConfig extends Component {
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
     this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave)
-      .then(() => {
+      .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
           return
@@ -226,9 +226,20 @@ class EnvConfig extends Component {
         this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
         this.setState({
           hasAPIResponded: true,
+
+          configFile: data,
+
+          appName: data.app,
+          namespace: data.namespace,
+          defaultAppName: data.app,
+          defaultNamespace: data.namespace,
+
+          values: Object.assign({}, data.values),
+          nonDefaultValues: Object.assign({}, data.values),
+          defaultState: Object.assign({}, data.values),
         });
         if (action === "new") {
-          this.props.history.push(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`);
+          this.props.history.replace(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`);
         }
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
