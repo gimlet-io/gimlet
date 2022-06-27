@@ -186,6 +186,13 @@ export function envConfigs(state, payload) {
   return state;
 }
 
+export function addEnvConfig(state, payload) {
+  state.envConfigs[payload.repo][payload.env].push(
+    payload.envConfig
+  )
+  return state;
+}
+
 export function repoMetas(state, payload) {
   state.repoMetas = payload.repoMetas;
   state.fileInfos = payload.repoMetas.fileInfos;

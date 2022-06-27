@@ -7,7 +7,8 @@ import {
   ACTION_TYPE_DEPLOY,
   ACTION_TYPE_DEPLOY_STATUS,
   ACTION_TYPE_REPO_METAS,
-  ACTION_TYPE_ROLLOUT_HISTORY
+  ACTION_TYPE_ROLLOUT_HISTORY,
+  ACTION_TYPE_ADD_ENVCONFIG,
 } from "../../redux/redux";
 import { Commits } from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
@@ -71,6 +72,7 @@ export default class Repo extends Component {
     this.rollback = this.rollback.bind(this)
     this.checkDeployStatus = this.checkDeployStatus.bind(this)
     this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
+    this.newConfig = this.newConfig.bind(this)
   }
 
   componentDidMount() {
@@ -292,6 +294,22 @@ export default class Repo extends Component {
     this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${config}`);
   }
 
+  newConfig(env, config) {
+    const { owner, repo } = this.props.match.params;
+
+    this.props.store.dispatch({
+      type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
+        repo: `${owner}/${repo}`,
+        env: env,
+        envConfig: {
+          app: config,
+          env: env
+        },
+      }
+    });
+    this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${config}/new`);
+  }
+
   ciConfigAndShipperStatuses(repoName) {
     const { repoMetas } = this.state;
     let shipperColor = "text-gray-500";
@@ -390,6 +408,7 @@ export default class Repo extends Component {
                     repoRolloutHistory={repoRolloutHistory}
                     envConfigs={envConfigs[envName]}
                     navigateToConfigEdit={this.navigateToConfigEdit}
+                    newConfig={this.newConfig}
                     rollback={this.rollback}
                     owner={owner}
                     repoName={repo}

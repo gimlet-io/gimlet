@@ -9,7 +9,10 @@ import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
+  ACTION_TYPE_ADD_ENVCONFIG,
 } from "../../redux/redux";
+import { Menu } from '@headlessui/react'
+import { ChevronDownIcon } from '@heroicons/react/solid'
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -19,10 +22,6 @@ class EnvConfig extends Component {
     const repoName = `${owner}/${repo}`;
 
     let reduxState = this.props.store.getState();
-
-    let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-    let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
 
     this.state = {
       chartSchema: reduxState.chartSchema,
@@ -35,73 +34,27 @@ class EnvConfig extends Component {
       errorMessage: "",
       isTimedOut: false,
       timeoutTimer: {},
-      defaultNamespace: defaultNamespace,
-      namespace: defaultNamespace,
       hasFormValidationError: false,
-      defaultAppName: defaultAppName,
-      appName: defaultAppName,
-      envConfig: envConfig,
 
-      values: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-      nonDefaultValues: envConfig.values ? Object.assign({}, envConfig.values) : undefined,
-      defaultState: Object.assign({}, envConfig.values),
+      envs: reduxState.envs,
+      repoMetas: reduxState.repoMetas,
     };
 
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
-      let envConfig = configFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      let defaultNamespace = namespaceFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-      let defaultAppName = appNameFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
-
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
         fileInfos: reduxState.fileInfos,
+        envs: reduxState.envs,
+        repoMetas: reduxState.repoMetas,
       });
 
+      this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
+
       if (!this.state.values) {
-        this.setState({
-          values: envConfig ? Object.assign({}, envConfig) : undefined,
-          nonDefaultValues: envConfig ? Object.assign({}, envConfig) : undefined,
-          defaultState: Object.assign({}, envConfig),
-        });
-      }
-
-      if (!!this.state.defaultState) {
-        if (!this.state.defaultState.gitSha) {
-          this.props.gimletClient.getRepoMetas(owner, repo)
-            .then(data => {
-              if (data.githubActions) {
-                this.setGitSha("{{ .GITHUB_SHA }}");
-              }
-    
-              if (data.circleCi) {
-                this.setGitSha("{{ .CIRCLE_SHA1 }}");
-              }
-            }, () => {/* Generic error handler deals with it */
-            });
-        }
-    
-        if (!this.state.defaultState.gitRepository) {
-          this.setGitRepository(repoName);
-        }
-      }
-
-      if (!this.state.namespace) {
-        this.setState({ namespace: defaultNamespace })
-      }
-
-      if (!this.state.defaultNamespace) {
-        this.setState({ defaultNamespace: defaultNamespace })
-      }
-
-      if (!this.state.appName) {
-        this.setState({ appName: repo })
-      }
-
-      if (!this.state.defaultAppName) {
-        this.setState({ defaultAppName: defaultAppName })
+        this.setLocalEnvConfigState(reduxState, repoName, env, config);
       }
     });
 
@@ -109,8 +62,40 @@ class EnvConfig extends Component {
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
   }
 
+  setLocalEnvConfigState(reduxState, repoName, env, config) {
+    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
+      let envConfig = configFileContent.values;
+
+      this.setState({
+        configFile: configFileContent,
+
+        appName: configFileContent.app,
+        namespace: configFileContent.namespace,
+        defaultAppName: configFileContent.app,
+        defaultNamespace: configFileContent.namespace,
+
+        values: Object.assign({}, envConfig),
+        nonDefaultValues: Object.assign({}, envConfig),
+        defaultState: Object.assign({}, envConfig),
+      });
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { owner, repo, env, config } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    if (prevProps.match.params.config !== config) {
+      let reduxState = this.props.store.getState();
+      this.setLocalEnvConfigState(reduxState, repoName, env, config);
+    }
+  }
+
   componentDidMount() {
     const { owner, repo, env, config } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
     const { gimletClient, store } = this.props;
 
     gimletClient.getChartSchema(owner, repo, env)
@@ -135,8 +120,25 @@ class EnvConfig extends Component {
       loadEnvConfig(gimletClient, store, owner, repo)
     }
 
-    if (!this.state.appName) {
-      this.setState({ appName: config })
+    let reduxState = this.props.store.getState();
+    this.setLocalEnvConfigState(reduxState, repoName, env, config);
+  }
+
+  ensureRepoAssociationExists(repoName, repoMetas) {
+    if (this.state.defaultState && repoMetas) {
+      if (!this.state.defaultState.gitSha) {
+        if (repoMetas.githubActions) {
+          this.setGitSha("{{ .GITHUB_SHA }}");
+        }
+
+        if (repoMetas.circleCi) {
+          this.setGitSha("{{ .CIRCLE_SHA1 }}");
+        }
+      }
+
+      if (!this.state.defaultState.gitRepository) {
+        this.setGitRepository(repoName);
+      }
     }
   }
 
@@ -205,27 +207,40 @@ class EnvConfig extends Component {
   }
 
   save() {
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo, env, config, action } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
 
     this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
 
-    const appNameToSave = this.state.defaultAppName === "" ? this.state.appName : this.state.defaultAppName;
+    const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
     this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave)
-      .then(() => {
+      .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
           return
         }
 
         clearTimeout(this.state.timeoutTimer);
+        this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
         this.setState({
           hasAPIResponded: true,
-          defaultState: Object.assign({}, this.state.nonDefaultValues),
-          defaultNamespace: this.state.namespace,
-          defaultAppName: appNameToSave
+
+          configFile: data,
+
+          appName: data.app,
+          namespace: data.namespace,
+          defaultAppName: data.app,
+          defaultNamespace: data.namespace,
+
+          values: Object.assign({}, data.values),
+          nonDefaultValues: Object.assign({}, data.values),
+          defaultState: Object.assign({}, data.values),
         });
+        if (action === "new") {
+          this.props.history.replace(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`);
+        }
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
         clearTimeout(this.state.timeoutTimer);
@@ -245,16 +260,16 @@ class EnvConfig extends Component {
   }
 
   render() {
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const envConfigCopy = Object.assign({}, this.state.envConfig)
-    envConfigCopy.values = this.state.nonDefaultValues;
+    const configFileCopy = Object.assign({}, this.state.configFile)
+    configFileCopy.values = this.state.nonDefaultValues;
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace;
+      this.state.namespace !== this.state.defaultNamespace || action === "new";
 
     if (!this.state.chartSchema) {
       return null;
@@ -271,18 +286,21 @@ class EnvConfig extends Component {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
-          {fileName && <a href={`https://github.com/${owner}/${repo}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
-            <svg xmlns="http://www.w3.org/2000/svg"
-              className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
-              viewBox="0 0 24 24">
-              <path d="M0 0h24v24H0z" fill="none" />
-              <path
-                d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-            </svg>
-          </a>}
+          {fileName &&
+            <>
+              <a href={`https://github.com/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
+                  viewBox="0 0 24 24">
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path
+                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                </svg>
+              </a>
+            </>}
         </h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
-          <a href={`https://github.com/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
+          <a href={`https://github.com/${repoName}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg"
               className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
               viewBox="0 0 24 24">
@@ -295,23 +313,20 @@ class EnvConfig extends Component {
         <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
-        {!this.state.defaultAppName ?
-          <div className="mt-8 mb-4 items-center">
-            <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
-              App name*
-            </label>
-            <input
-              type="text"
-              name="appName"
-              id="appName"
-              value={this.state.appName}
-              onChange={e => { this.setState({ appName: e.target.value }) }}
-              className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-            />
-          </div>
-          :
-          <span className="mt-8 mb-4 text-gray-700 block text-sm font-medium">App name: {this.state.defaultAppName}</span>
-        }
+        <div className="mt-8 mb-4 items-center">
+          <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+            App name*
+          </label>
+          <input
+            type="text"
+            name="appName"
+            id="appName"
+            disabled={action !== "new"}
+            value={this.state.appName}
+            onChange={e => { this.setState({ appName: e.target.value }) }}
+            className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
+          />
+        </div>
         <div className="mb-8 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
@@ -357,7 +372,7 @@ class EnvConfig extends Component {
             <CopiableCodeSnippet 
             code={
 `cat << EOF > manifest.yaml
-${YAML.stringify(envConfigCopy)}EOF
+${YAML.stringify(configFileCopy)}EOF
 
 gimlet manifest template -f manifest.yaml`}
             />
@@ -365,11 +380,58 @@ gimlet manifest template -f manifest.yaml`}
           </>}
         </div>
         <div className="p-0 flow-root">
-          <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+          <span className="inline-flex gap-x-3 float-right">
+            <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
+              <Menu.Button
+                className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+              >
+                Replicate to..
+              </Menu.Button>
+              <span className="-ml-px relative block">
+                <Menu.Button
+                  className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                  <span className="sr-only">Open options</span>
+                  <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                </Menu.Button>
+                <Menu.Items
+                  className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <div className="py-1">
+                    {this.state.envs.map((env) => (
+                      <Menu.Item key={`${env.name}`}>
+                        {({ active }) => (
+                          <button
+                            onClick={() => {
+                              this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`);
+                              this.props.store.dispatch({
+                                type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
+                                  repo: repoName,
+                                  env: env.name,
+                                  envConfig: {
+                                    ...this.state.configFile,
+                                    app: `${this.state.configFile.app}-copy`,
+                                    env: env.name
+                                  },
+                                }
+                              });
+                            }}
+                            className={(
+                              active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                              ' block px-4 py-2 text-sm w-full text-left'
+                            }
+                          >
+                            {env.name}
+                          </button>
+                        )}
+                      </Menu.Item>
+                    ))}
+                  </div>
+                </Menu.Items>
+              </span>
+            </Menu>
             <button
               type="button"
               disabled={!hasChange || this.state.saveButtonTriggered}
-              className={(hasChange && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              className={(hasChange && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
@@ -381,7 +443,7 @@ gimlet manifest template -f manifest.yaml`}
             <button
               type="button"
               disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
@@ -401,13 +463,12 @@ gimlet manifest template -f manifest.yaml`}
   }
 }
 
-function configFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) { // envConfigs are loaded
-    if (envConfigs[repoName][env]) { // we have env data
-      const configFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (configFromEnvConfigs.length > 0) {
-        // "envConfigs loaded, we have data for env, we have config for app"
-        return configFromEnvConfigs[0]
+function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
+  if (envConfigs[repoName]) {
+    if (envConfigs[repoName][env]) {
+      const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
+      if (configFileContentFromEnvConfigs.length > 0) {
+        return configFileContentFromEnvConfigs[0]
       } else {
         // "envConfigs loaded, we have data for env, but we don't have config for app"
         return {}
@@ -417,35 +478,9 @@ function configFromEnvConfigs(envConfigs, repoName, env, config) {
       return {}
     }
   } else {
-    // envConfigs not loaded, we shall wait for it to be loaded
-    return undefined
+      // envConfigs not loaded, we shall wait for it to be loaded
+      return undefined
   }
-}
-
-function namespaceFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const namespaceFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (namespaceFromEnvConfigs.length > 0) {
-        return namespaceFromEnvConfigs[0].namespace
-      }
-    }
-  }
-
-  return ""
-}
-
-function appNameFromEnvConfigs(envConfigs, repoName, env, config) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const appNameFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (appNameFromEnvConfigs.length > 0) {
-        return appNameFromEnvConfigs[0].app
-      }
-    }
-  }
-
-  return ""
 }
 
 function loadEnvConfig(gimletClient, store, owner, repo) {
