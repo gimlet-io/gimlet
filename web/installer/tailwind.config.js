@@ -1,16 +1,12 @@
 module.exports = {
-  purge: [
+  content: [
     './src/**/*.{js,jsx,ts,tsx}',
     './public/index.html',
     './src/**/*.css',
     './node_modules/helm-react-ui/src/**/*.js',
     './node_modules/shared-components/**/*.js'
   ],
-  darkMode: false, // or 'media' or 'class'
   theme: {
-    extend: {},
-  },
-  variants: {
     extend: {},
   },
   plugins: [
