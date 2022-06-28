@@ -38,7 +38,9 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	r.Use(middleware.WithValue("data", &data{}))
+	r.Use(middleware.WithValue("data", &data{
+		org: os.Getenv("ORG"),
+	}))
 
 	browserClosed := make(chan int, 1)
 
