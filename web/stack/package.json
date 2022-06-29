@@ -15,15 +15,19 @@
     "@babel/core": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-react": "^7.0.0",
+    "@tailwindcss/forms": "^0.5.2",
+    "@tailwindcss/typography": "^0.5.2",
+    "autoprefixer": "^10.4.7",
     "babel-jest": "^26.6.3",
     "babel-loader": "^8.0.2",
     "copy-webpack-plugin": "^6.3.1",
     "css-loader": "^1.0.0",
     "jest": "^26.6.3",
-    "postcss": "^8.2.14",
+    "postcss": "^8.4.14",
     "postcss-loader": "^4.0.4",
     "react-hot-loader": "^4.3.11",
     "style-loader": "^0.23.0",
+    "tailwindcss": "^3.1.2",
     "webpack": "^5.4.0",
     "webpack-cli": "^4.2.0",
     "webpack-dev-server": "^3.11.0"
@@ -31,16 +35,12 @@
   "dependencies": {
     "@graywolfai/react-heroicons": "^1.1.1",
     "@heroicons/react": "^1.0.1",
-    "@tailwindcss/forms": "^0.3.2",
-    "@tailwindcss/typography": "^0.4.1",
     "ajv": "^6.12.6",
     "and": "0.0.3",
-    "autoprefixer": "^10.2.5",
     "helm-react-ui": "github:gimlet-io/helm-react-ui",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
-    "remarkable": "^2.0.1",
-    "tailwindcss": "^2.1.2"
+    "remarkable": "^2.0.1"
   },
   "jest": {
     "moduleDirectories": [

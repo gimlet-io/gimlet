@@ -1,10 +1,12 @@
 module.exports = {
     style: {
         postcss: {
-            plugins: [
-                require('tailwindcss'),
-                require('autoprefixer'),
-            ],
+            plugins: {
+                'postcss-import': {},
+                'tailwindcss/nesting': {},
+                tailwindcss: {},
+                autoprefixer: {},
+            },
         },
     },
     devServer: {
@@ -14,15 +16,14 @@ module.exports = {
         configure: {
             output: {
                 filename: '[name].js',
-                chunkFilename: "[name].chunk.js"
+                chunkFilename: "1.chunk.js"
             },
             optimization: {
                 runtimeChunk: false,
                 splitChunks: {
-                    chunks: 'all',
+                    // chunks: 'all',
                     cacheGroups: {
                         default: false,
-                        vendors: false,
                         // vendor chunk
                     },
                 },
