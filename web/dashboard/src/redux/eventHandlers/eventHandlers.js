@@ -187,6 +187,10 @@ export function envConfigs(state, payload) {
 }
 
 export function addEnvConfig(state, payload) {
+  if (!state.envConfigs[payload.repo][payload.env]) {
+    state.envConfigs[payload.repo][payload.env] = []
+  }
+
   state.envConfigs[payload.repo][payload.env].push(
     payload.envConfig
   )
