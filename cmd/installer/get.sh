@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 HOST=$1
-VERSION="v0.3.10"
+ORG=$2
+VERSION="v0.3.11"
 
 if [ -z "$HOST" ]
   then
     echo "usage:"
-    echo "  curl -s https://get.gimlet.io | bash -s <<your-domain.com>>"
+    echo "  curl -s https://get.gimlet.io | bash -s <<your-domain.com>> [<<your-github-org>>]"
     exit -1
 fi
 
@@ -35,7 +36,7 @@ echo "We are going to need sudo to run it on port 443"
 echo ""
 echo "👉 Once started, open https://gimlet.$HOST and follow the installer steps"
 
-sudo HOST=$HOST ./gimlet-installer
+sudo HOST=$HOST ORG=$ORG ./gimlet-installer
 
 echo ""
 echo "👉 Remove the host file entry now with"
