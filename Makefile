@@ -18,7 +18,6 @@ test-prep:
 	touch pkg/commands/chart/index.html
 	touch cmd/installer/web/main.js
 	touch cmd/installer/web/1.chunk.js
-	touch cmd/installer/web/30.js
 	touch cmd/installer/web/main.css
 	touch cmd/installer/web/index.html
 	touch cmd/installer/web/favicon.ico
@@ -90,7 +89,6 @@ build-installer-frontend:
 	(cd web/installer; npm install; npm run build)
 	@cp web/installer/build/main.js cmd/installer/web/
 	@cp web/installer/build/1.chunk.js cmd/installer/web/
-	@cp web/installer/build/*.js cmd/installer/web/
 	@cp web/installer/build/main.css cmd/installer/web/
 	@cp web/installer/build/index.html cmd/installer/web/
 	@cp web/installer/public/favicon.ico cmd/installer/web/

@@ -21,10 +21,9 @@ module.exports = {
             optimization: {
                 runtimeChunk: false,
                 splitChunks: {
-                    chunks: 'all',
+                    // chunks: 'all',
                     cacheGroups: {
                         default: false,
-                        vendors: false,
                         // vendor chunk
                     },
                 },

@@ -44,7 +44,6 @@ gimlet-dashboard.sqlite
 __debug_bin
 
 cmd/installer/web/main.js
-cmd/installer/web/*.js
 cmd/installer/web/1.chunk.js
 cmd/installer/web/main.css
 cmd/installer/web/index.html
