@@ -16,7 +16,7 @@ module.exports = {
         configure: {
             output: {
                 filename: '[name].js',
-                chunkFilename: "[name].chunk.js"
+                chunkFilename: "1.chunk.js"
             },
             optimization: {
                 runtimeChunk: false,
