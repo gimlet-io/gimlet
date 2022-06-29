@@ -20,7 +20,9 @@ const App = () => {
 
       <Switch>
         <Route exact path="/">
-          <StepOne />
+          <StepOne
+            getContext={getContext}
+          />
         </Route>
 
         <Route path="/step-2">

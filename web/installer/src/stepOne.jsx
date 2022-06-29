@@ -1,4 +1,15 @@
-const StepOne = () => {
+import { useEffect, useState } from 'react';
+
+const StepOne = ({ getContext }) => {
+  const [context, setContext] = useState(null);
+
+  useEffect(() => {
+    getContext().then(data => setContext(data))
+      .catch(err => {
+        console.error(`Error: ${err}`);
+      });
+  }, [getContext]);
+
   let url = window.location.href;
   url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
 
@@ -28,6 +39,10 @@ const StepOne = () => {
       "check_run"
     ]
   })
+
+  if (!context) {
+    return null;
+  }
 
   return (
     <div className="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,7 +115,7 @@ const StepOne = () => {
 
           <p className="pt-8">Please note that this application will be owned by you, thus you don't give access to any third party or the makers of Gimlet.</p>
 
-          <form action="https://github.com/settings/apps/new" method="post">
+          <form action={context.org ? `https://github.com/organizations/${context.org}/settings/apps/new` : "https://github.com/settings/apps/new"} method="post">
             <input type="hidden" name="manifest" id="manifest" value={manifest}></input><br />
             <input type="submit" value="Create Github app"
               className="cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
