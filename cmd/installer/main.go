@@ -17,6 +17,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
@@ -104,6 +105,7 @@ type data struct {
 	tokenManager            *customGithub.GithubOrgTokenManager
 	accessToken             string
 	refreshToken            string
+	loggedInUser            string
 	repoCache               *nativeGit.RepoCache
 	gimletdPublicKey        string
 	isNewInfraRepo          bool
@@ -288,6 +290,18 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.accessToken = appInfo["access_token"].(string)
 	data.refreshToken = appInfo["refresh_token"].(string)
 
+	goScmHelper := genericScm.NewGoScmHelper(&config.Config{
+		Github: config.Github{
+			ClientID:     data.clientId,
+			ClientSecret: data.clientSecret,
+		},
+	}, nil)
+	scmUser, err := goScmHelper.User(data.accessToken, data.refreshToken)
+	if err != nil {
+		panic(err)
+	}
+	data.loggedInUser = scmUser.Login
+
 	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
 }
 
@@ -302,13 +316,13 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
-	tokenString, gitUser, err := data.tokenManager.Token()
+	installationToken, gitUser, err := data.tokenManager.Token()
 	if err != nil {
 		panic(err)
 	}
 
 	gitSvc := &customGithub.GithubClient{}
-	repos, err := gitSvc.OrgRepos(tokenString)
+	repos, err := gitSvc.OrgRepos(installationToken)
 	if err != nil {
 		panic(err)
 	}
@@ -338,8 +352,8 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repos,
 		infraRepo,
 		data.accessToken,
-		"",
-		data.org,
+		installationToken,
+		data.loggedInUser,
 	)
 	if err != nil {
 		panic(err)
@@ -348,8 +362,8 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repos,
 		appsRepo,
 		data.accessToken,
-		"",
-		data.org,
+		installationToken,
+		data.loggedInUser,
 	)
 	if err != nil {
 		panic(err)
@@ -380,7 +394,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		envName,
 		infraRepo,
 		repoPerEnv,
-		tokenString,
+		installationToken,
 		true,
 	)
 	if err != nil {
@@ -391,7 +405,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		envName,
 		appsRepo,
 		repoPerEnv,
-		tokenString,
+		installationToken,
 		false,
 	)
 	if err != nil {
@@ -415,7 +429,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		envName,
 		appsRepo,
 		repoPerEnv,
-		tokenString,
+		installationToken,
 		gitUser,
 	)
 	if err != nil {
@@ -578,7 +592,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = server.StageCommitAndPush(repo, tmpPath, tokenString, "[Gimlet Dashboard] Updating components")
+	err = server.StageCommitAndPush(repo, tmpPath, installationToken, "[Gimlet Dashboard] Updating components")
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
