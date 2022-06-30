@@ -61,7 +61,7 @@ export class Env extends Component {
                   Add app config
                 </h4>
               </>
-              : emptyState(searchFilter, envConfigs, navigateToConfigEdit, envName, repoName)}
+              : emptyState(searchFilter, envConfigs, newConfig, envName, repoName)}
 
           </div>
         )}
@@ -144,12 +144,12 @@ function appRolloutHistory(envName, appName, repoRolloutHistory) {
   return []
 }
 
-function emptyState(searchFilter, envConfigs, navigateToConfigEdit, envName, repoName) {
+function emptyState(searchFilter, envConfigs, newConfig, envName, repoName) {
   if (searchFilter !== '') {
     return emptyStateSearch()
   } else {
     if (!envConfigs) {
-      return emptyStateDeployThisRepo(navigateToConfigEdit, envName, repoName);
+      return emptyStateDeployThisRepo(newConfig, envName, repoName);
     }
   }
 }
@@ -158,11 +158,13 @@ function emptyStateSearch() {
   return <p className="text-xs text-gray-800">No service matches the search</p>
 }
 
-function emptyStateDeployThisRepo(navigateToConfigEdit, envName, repoName) {
+function emptyStateDeployThisRepo(newConfig, envName, repoName) {
   return <div
     target="_blank"
     rel="noreferrer"
-    onClick={() => navigateToConfigEdit(envName, repoName)}
+    onClick={() => {
+      newConfig(envName, repoName)
+    }}
     className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
   >
     <svg
