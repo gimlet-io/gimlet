@@ -167,7 +167,7 @@ func processEvent(
 	// record gitops hashes on events
 	for _, deployEvent := range deployEvents {
 		setGitopsHashOnEvent(event, deployEvent.GitopsRef)
-		saveAndBroadcastDeployEvent(deployEvent, event, store, eventSinkHub)
+		err = saveAndBroadcastDeployEvent(deployEvent, event, store, eventSinkHub)
 	}
 
 	// store event state
@@ -882,7 +882,11 @@ func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {
 	return false
 }
 
-func saveAndBroadcastDeployEvent(deployEvent *events.DeployEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
+func saveAndBroadcastDeployEvent(deployEvent *events.DeployEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) error {
+	if deployEvent.Status == events.Status(1) {
+		return fmt.Errorf(deployEvent.StatusDesc)
+	}
+
 	gitopsCommitToSave := model.GitopsCommit{
 		Sha:        deployEvent.GitopsRef,
 		Status:     model.NotReconciled,
@@ -897,6 +901,8 @@ func saveAndBroadcastDeployEvent(deployEvent *events.DeployEvent, event *model.E
 	if err != nil {
 		logrus.Warnf("could not save or update gitops commit: %s", err)
 	}
+
+	return nil
 }
 
 func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, sha string, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
