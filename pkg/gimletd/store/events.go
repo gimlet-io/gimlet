@@ -42,7 +42,7 @@ func (db *Store) Artifacts(
 	args := []interface{}{}
 
 	filters = addFilter(filters, "type = $1")
-	args = append(args, model.TypeArtifact)
+	args = append(args, model.ArtifactCreatedEvent)
 
 	if since != nil {
 		filters = addFilter(filters, fmt.Sprintf("created >= $%d", len(filters)+1))
@@ -121,7 +121,7 @@ WHERE artifact_id = $1;
 // Event returns an event by id
 func (db *Store) Event(id string) (*model.Event, error) {
 	query := fmt.Sprintf(`
-SELECT id, created, blob, status, status_desc, gitops_hashes
+SELECT id, created, blob, status, status_desc, gitops_hashes, results
 FROM events
 WHERE id = $1;
 `)
@@ -139,9 +139,9 @@ func (db *Store) UnprocessedEvents() (events []*model.Event, err error) {
 }
 
 // UpdateEventStatus updates an event status in the database
-func (db *Store) UpdateEventStatus(id string, status string, desc string, gitopsStatusString string) error {
+func (db *Store) UpdateEventStatus(id string, status string, desc string, gitopsStatusString string, results string) error {
 	stmt := sql.Stmt(db.driver, sql.UpdateEventStatus)
-	_, err := db.Exec(stmt, status, desc, gitopsStatusString, id)
+	_, err := db.Exec(stmt, status, desc, gitopsStatusString, results, id)
 	return err
 }
 
