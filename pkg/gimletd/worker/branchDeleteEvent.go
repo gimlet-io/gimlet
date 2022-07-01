@@ -92,7 +92,7 @@ func (r *BranchDeleteEventWorker) Run() {
 
 					// store branch deleted event
 					_, err = r.dao.CreateEvent(&model.Event{
-						Type:         model.TypeBranchDeleted,
+						Type:         model.BranchDeletedEvent,
 						Blob:         string(branchDeletedEventStr),
 						Repository:   repoName,
 						GitopsHashes: []string{},
