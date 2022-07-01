@@ -125,7 +125,6 @@ export default class Profile extends Component {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
                 <p className="text-sm font-medium text-gray-500">{user.login}</p>
-                <p className="text-sm font-medium text-gray-500">{`Dashboard version: ${this.state.application.dashboardVersion}`}</p>
               </div>
             </div>
           </div>
@@ -183,7 +182,7 @@ source ~/.gimlet/config`}
               {users &&
                 userList(sortedUsers, DefaultProfilePicture)
               }
-              <div className="mt-12 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+              <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                 <div className="px-4 py-5 sm:px-6">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
                 </div>
@@ -203,6 +202,7 @@ source ~/.gimlet/config`}
                   </div>
                 </div>
               </div>
+              {dashboardVersion(this.state.application)}
             </div>
           </div>
           {
@@ -266,6 +266,26 @@ function githubAppSettings(appName, appSettingsURL, installationURL) {
               className="mt-1 text-sm text-gray-500 hover:text-gray-600">
               Application installation
             </a>
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function dashboardVersion(application) {
+  return (
+    <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+      <div className="px-4 py-5 sm:px-6">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">
+          Dashboard version
+        </h3>
+      </div>
+      <div className="px-4 py-5 sm:px-6">
+        <div className="inline-grid">
+          <span
+            className="mt-1 text-sm text-gray-500">
+            {application.dashboardVersion}
           </span>
         </div>
       </div>
