@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -359,6 +360,9 @@ func VersionsSince(repoURL string, sinceString string) ([]string, error) {
 	if err != nil {
 		return []string{}, err
 	}
+
+	// After this, the versions are properly sorted
+	sort.Strings(tagsSince)
 
 	return tagsSince, nil
 }
