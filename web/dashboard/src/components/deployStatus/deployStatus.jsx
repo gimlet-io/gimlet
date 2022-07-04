@@ -56,7 +56,7 @@ export default class DeployStatus extends Component {
     }
 
     // Feature 'Add results to deploy status', gitopsHashes will be deprecated!
-    if (!deploy.results) {
+    if (deploy.results) {
       if (deploy.status === 'processed') {
         gitopsWidget = (
           <div className="mt-2">
