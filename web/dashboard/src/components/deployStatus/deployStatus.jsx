@@ -61,7 +61,7 @@ export default class DeployStatus extends Component {
           <p className="text-yellow-100 font-semibold">
             Manifests written to git
           </p>
-          {deploy.results.map(result => renderResult(result, gitopsRepo))}
+          {deploy.results?.map(result => renderResult(result, gitopsRepo))}
         </div>
       )
 
