@@ -55,26 +55,63 @@ export default class DeployStatus extends Component {
       )
     }
 
-    if (deploy.status === 'processed') {
-      gitopsWidget = (
-        <div className="mt-2">
-          <p className="text-yellow-100 font-semibold">
-            Manifests written to git
-          </p>
-          {deploy.results?.map(result => renderResult(result, gitopsRepo))}
-        </div>
-      )
+    // Feature 'Add results to deploy status', gitopsHashes will be deprecated!
+    if (!deploy.results) {
+      if (deploy.status === 'processed') {
+        gitopsWidget = (
+          <div className="mt-2">
+            <p className="text-yellow-100 font-semibold">
+              Manifests written to git
+            </p>
+            {deploy.results.map(result => renderResult(result, gitopsRepo))}
+          </div>
+        )
 
-      let deployCommits = [];
-      deploy.gitopsHashes.forEach(gitopsHash => {
-        this.state.gitopsCommits.forEach(gitopsCommit => {
-          if (gitopsHash.hash === gitopsCommit.sha) {
-            deployCommits.push(gitopsCommit);
-          }
+        let deployCommits = [];
+        deploy.results.forEach(result => {
+          this.state.gitopsCommits.forEach(gitopsCommit => {
+            if (result.hash === gitopsCommit.sha) {
+              deployCommits.push(gitopsCommit);
+            }
+          })
         })
-      })
 
-      appliedWidget = deployCommits.map(deployCommit => renderAppliedWidget(deployCommit, gitopsRepo))
+        appliedWidget = deployCommits.map(deployCommit => renderAppliedWidget(deployCommit, gitopsRepo))
+      }
+    } else {
+      const hasGitopsHashes = deploy.gitopsHashes && deploy.gitopsHashes.length !== 0;
+      if (deploy.status === 'processed' || hasGitopsHashes) {
+        gitopsWidget = (
+          <div className="mt-2">
+            <p className="text-yellow-100 font-semibold">
+              Manifests written to git
+            </p>
+            {deploy.gitopsHashes.map(hashStatus => (
+              <p key={hashStatus.hash} className="pl-2">
+                <span>📋</span>
+                <a
+                  href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className='ml-1'
+                >
+                  {hashStatus.hash.slice(0, 6)}
+                </a>
+              </p>
+            ))}
+          </div>
+        )
+
+        let deployCommits = [];
+        deploy.gitopsHashes.forEach(gitopsHash => {
+          this.state.gitopsCommits.forEach(gitopsCommit => {
+            if (gitopsHash.hash === gitopsCommit.sha) {
+              deployCommits.push(gitopsCommit);
+            }
+          })
+        })
+
+        appliedWidget = deployCommits.map(deployCommit => renderAppliedWidget(deployCommit, gitopsRepo))
+      }
     }
 
     return (
@@ -197,7 +234,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo) {
 function renderResult(result, gitopsRepo) {
   if (result.status === "success") {
     return (
-      <div className="mb-4">
+      <div className="pl-2 mb-2">
         <p className="font-semibold truncate mb-1" title={result.app}>
           {result.app}
           <span className='mx-1 align-middle'>✅</span>
@@ -211,10 +248,10 @@ function renderResult(result, gitopsRepo) {
       </div>)
   } else if (result.status === "failure") {
     return (
-      <div className="mb-4">
+      <div className="pl-2 mb-2">
         <div className="grid grid-cols-2">
           <div>
-            <p className="font-semibold text-base truncate mb-1" title={result.app}>{result.app}</p>
+            <p className="font-semibold truncate mb-1" title={result.app}>{result.app}</p>
           </div>
           <span className='mx-1 align-middle'>❌</span>
         </div>
