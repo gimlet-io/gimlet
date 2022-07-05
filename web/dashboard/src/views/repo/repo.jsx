@@ -211,6 +211,7 @@ export default class Repo extends Component {
         deployRequest.status = data.status;
         deployRequest.statusDesc = data.statusDesc;
         deployRequest.gitopsHashes = data.gitopsHashes;
+        deployRequest.results = data.results;
         this.props.store.dispatch({
           type: ACTION_TYPE_DEPLOY_STATUS, payload: deployRequest
         });

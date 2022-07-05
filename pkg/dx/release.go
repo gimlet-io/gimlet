@@ -40,8 +40,16 @@ type GitopsStatus struct {
 	StatusDesc string `json:"statusDesc,omitempty"`
 }
 
+type Result struct {
+	App        string `json:"app,omitempty"`
+	Hash       string `json:"hash,omitempty"`
+	Status     string `json:"status,omitempty"`
+	StatusDesc string `json:"statusDesc,omitempty"`
+}
+
 type ReleaseStatus struct {
 	Status       string         `json:"status"`
 	StatusDesc   string         `json:"statusDesc"`
 	GitopsHashes []GitopsStatus `json:"gitopsHashes"`
+	Results      []Result       `json:"results"`
 }

@@ -10,10 +10,40 @@ const StatusNew = "new"
 const StatusProcessed = "processed"
 const StatusError = "error"
 
-const TypeArtifact = "artifact"
-const TypeRelease = "release"
-const TypeRollback = "rollback"
-const TypeBranchDeleted = "branchDeleted"
+const ArtifactCreatedEvent = "artifact"
+const ReleaseRequestedEvent = "release"
+const RollbackRequestedEvent = "rollback"
+const BranchDeletedEvent = "branchDeleted"
+
+type Status int
+
+const (
+	Success Status = iota
+	Failure
+)
+
+func (s Status) String() string {
+	switch s {
+	case Success:
+		return "success"
+	case Failure:
+		return "failure"
+	default:
+		return fmt.Sprintf("%d", int(s))
+	}
+}
+
+type Result struct {
+	Manifest    *dx.Manifest
+	Artifact    *dx.Artifact
+	TriggeredBy string
+
+	Status     Status
+	StatusDesc string
+
+	GitopsRef  string
+	GitopsRepo string
+}
 
 type Event struct {
 	ID           string   `json:"id,omitempty"  meddler:"id"`
@@ -23,6 +53,7 @@ type Event struct {
 	Status       string   `json:"status"  meddler:"status"`
 	StatusDesc   string   `json:"statusDesc"  meddler:"status_desc"`
 	GitopsHashes []string `json:"gitopsHashes"  meddler:"gitops_hashes,json"`
+	Results      []Result `json:"results"  meddler:"results,json"`
 
 	// denormalized artifact fields
 	Repository   string      `json:"repository,omitempty"  meddler:"repository"`
@@ -42,7 +73,7 @@ func ToEvent(artifact dx.Artifact) (*Event, error) {
 	}
 
 	return &Event{
-		Type:         TypeArtifact,
+		Type:         ArtifactCreatedEvent,
 		Repository:   artifact.Version.RepositoryName,
 		Branch:       artifact.Version.Branch,
 		Event:        artifact.Version.Event,

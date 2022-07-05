@@ -108,11 +108,11 @@ func processEvent(
 
 	// process event based on type
 	var err error
-	var deployEvents []*events.DeployEvent
+	var deployEvents []model.Result
 	var rollbackEvent *events.RollbackEvent
 	var deleteEvents []*events.DeleteEvent
 	switch event.Type {
-	case model.TypeArtifact:
+	case model.ArtifactCreatedEvent:
 		deployEvents, err = processArtifactEvent(
 			gitopsRepo,
 			parsedGitopsRepos,
@@ -122,7 +122,7 @@ func processEvent(
 			event,
 			store,
 		)
-	case model.TypeRelease:
+	case model.ReleaseRequestedEvent:
 		deployEvents, err = processReleaseEvent(
 			store,
 			gitopsRepo,
@@ -132,7 +132,7 @@ func processEvent(
 			token,
 			event,
 		)
-	case model.TypeRollback:
+	case model.RollbackRequestedEvent:
 		rollbackEvent, err = processRollbackEvent(
 			gitopsRepo,
 			parsedGitopsRepos,
@@ -145,7 +145,7 @@ func processEvent(
 			setGitopsHashOnEvent(event, sha)
 			saveAndBroadcastRollbackEvent(rollbackEvent, sha, event, store, eventSinkHub)
 		}
-	case model.TypeBranchDeleted:
+	case model.BranchDeletedEvent:
 		deleteEvents, err = processBranchDeletedEvent(
 			gitopsRepo,
 			parsedGitopsRepos,
@@ -165,9 +165,11 @@ func processEvent(
 	}
 
 	// record gitops hashes on events
+	event.Results = []model.Result{}
 	for _, deployEvent := range deployEvents {
 		setGitopsHashOnEvent(event, deployEvent.GitopsRef)
-		saveAndBroadcastDeployEvent(deployEvent, event, store, eventSinkHub)
+		saveAndBroadcastGitopsCommit(deployEvent, event, store, eventSinkHub)
+		event.Results = append(event.Results, deployEvent)
 	}
 
 	// store event state
@@ -277,8 +279,8 @@ func processReleaseEvent(
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
-) ([]*events.DeployEvent, error) {
-	var deployEvents []*events.DeployEvent
+) ([]model.Result, error) {
+	var deployEvents []model.Result
 	var releaseRequest dx.ReleaseRequest
 	err := json.Unmarshal([]byte(event.Blob), &releaseRequest)
 	if err != nil {
@@ -310,17 +312,17 @@ func processReleaseEvent(
 			return deployEvents, err
 		}
 
-		deployEvent := &events.DeployEvent{
+		deployEvent := model.Result{
 			Manifest:    manifest,
 			Artifact:    artifact,
 			TriggeredBy: releaseRequest.TriggeredBy,
-			Status:      events.Success,
+			Status:      model.Success,
 			GitopsRepo:  repoName,
 		}
 
 		err = manifest.ResolveVars(artifact.Vars())
 		if err != nil {
-			deployEvent.Status = events.Failure
+			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
 			deployEvents = append(deployEvents, deployEvent)
 			continue
@@ -349,7 +351,7 @@ func processReleaseEvent(
 			releaseMeta,
 		)
 		if err != nil {
-			deployEvent.Status = events.Failure
+			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
 		}
 		deployEvent.GitopsRef = sha
@@ -460,8 +462,8 @@ func processArtifactEvent(
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
-) ([]*events.DeployEvent, error) {
-	var deployEvents []*events.DeployEvent
+) ([]model.Result, error) {
+	var deployEvents []model.Result
 	artifact, err := model.ToArtifact(event)
 	if err != nil {
 		return deployEvents, fmt.Errorf("cannot parse artifact %s", err.Error())
@@ -483,17 +485,17 @@ func processArtifactEvent(
 			return deployEvents, err
 		}
 
-		deployEvent := &events.DeployEvent{
+		deployEvent := model.Result{
 			Manifest:    manifest,
 			Artifact:    artifact,
 			TriggeredBy: "policy",
-			Status:      events.Success,
+			Status:      model.Success,
 			GitopsRepo:  repoName,
 		}
 
 		err = manifest.ResolveVars(artifact.Vars())
 		if err != nil {
-			deployEvent.Status = events.Failure
+			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
 			deployEvents = append(deployEvents, deployEvent)
 			continue
@@ -521,7 +523,7 @@ func processArtifactEvent(
 			releaseMeta,
 		)
 		if err != nil {
-			deployEvent.Status = events.Failure
+			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
 		}
 		deployEvent.GitopsRef = sha
@@ -718,7 +720,11 @@ func updateEvent(store *store.Store, event *model.Event) error {
 	if err != nil {
 		return err
 	}
-	return store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, string(gitopsHashesString))
+	resultsString, err := json.Marshal(event.Results)
+	if err != nil {
+		return err
+	}
+	return store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, string(gitopsHashesString), string(resultsString))
 }
 
 func gitopsTemplateAndWrite(
@@ -882,7 +888,11 @@ func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {
 	return false
 }
 
-func saveAndBroadcastDeployEvent(deployEvent *events.DeployEvent, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
+func saveAndBroadcastGitopsCommit(deployEvent model.Result, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
+	if deployEvent.GitopsRef == "" {
+		return
+	}
+
 	gitopsCommitToSave := model.GitopsCommit{
 		Sha:        deployEvent.GitopsRef,
 		Status:     model.NotReconciled,

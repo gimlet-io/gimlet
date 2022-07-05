@@ -17,6 +17,7 @@ package ddl
 const createTableUsers = "create-table-users"
 const createTableEvents = "create-table-events"
 const addGitopsStatusColumnToEventsTable = "add-gitops_status-to-events-table"
+const addResultsColumnToEventsTable = "add-results-to-events-table"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops-commits-table"
 const addEnvColumnToGitopsCommitsTable = "add-env-to-gitops-commits-table"
@@ -68,6 +69,10 @@ UNIQUE(id)
 		{
 			name: addGitopsStatusColumnToEventsTable,
 			stmt: `ALTER TABLE events ADD COLUMN gitops_hashes TEXT DEFAULT '[]';`,
+		},
+		{
+			name: addResultsColumnToEventsTable,
+			stmt: `ALTER TABLE events ADD COLUMN results TEXT DEFAULT '[]';`,
 		},
 		{
 			name: createTableGitopsCommits,
@@ -147,6 +152,10 @@ UNIQUE(id)
 		{
 			name: addGitopsStatusColumnToEventsTable,
 			stmt: `ALTER TABLE events ADD COLUMN gitops_hashes TEXT DEFAULT '[]';`,
+		},
+		{
+			name: addResultsColumnToEventsTable,
+			stmt: `ALTER TABLE events ADD COLUMN results TEXT DEFAULT '[]';`,
 		},
 		{
 			name: createTableGitopsCommits,
