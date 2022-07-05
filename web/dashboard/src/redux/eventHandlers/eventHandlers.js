@@ -126,7 +126,12 @@ export function users(state, users) {
 }
 
 export function application(state, application) {
-  state.application = { name: application.appName, appSettingsURL: application.appSettingsURL, installationURL: application.installationURL };
+  state.application = {
+    name: application.appName,
+    appSettingsURL: application.appSettingsURL,
+    installationURL: application.installationURL,
+    dashboardVersion: application.dashboardVersion,
+  };
   return state;
 }
 

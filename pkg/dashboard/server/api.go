@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
@@ -366,6 +367,7 @@ func application(w http.ResponseWriter, r *http.Request) {
 	appinfos["appName"] = appName
 	appinfos["installationURL"] = installationURL
 	appinfos["appSettingsURL"] = appSettingsURL
+	appinfos["dashboardVersion"] = version.String()
 
 	appinfosString, err := json.Marshal(appinfos)
 	if err != nil {
