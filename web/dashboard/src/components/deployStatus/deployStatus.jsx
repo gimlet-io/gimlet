@@ -201,7 +201,7 @@ function renderResult(result, gitopsRepo) {
           <span className='mx-1 align-middle'>✅</span>
           <a
             href={`https://github.com/${gitopsRepo}/commit/${result.hash}`}
-            target="_blank" rel="noopener noreferrer"
+            target="_blank" rel="noopener noreferrer" className="font-normal"
           >
             {result.hash.slice(0, 6)}
           </a>
@@ -216,7 +216,7 @@ function renderResult(result, gitopsRepo) {
           </div>
           <span className='mx-1 align-middle'>❌</span>
         </div>
-        <p className="break-words text-red-500 font-semibold">{`${result.status}: ${result.statusDesc}`}</p>
+        <p className="break-words text-red-500 font-normal">{`${result.status}: ${result.statusDesc}`}</p>
       </div>
     )
   }
