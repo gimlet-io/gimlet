@@ -21,6 +21,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"github.com/hashicorp/go-version"
 	giturl "github.com/whilp/git-urls"
 )
 
@@ -361,9 +362,13 @@ func VersionsSince(repoURL string, sinceString string) ([]string, error) {
 		return []string{}, err
 	}
 
-	sort.Strings(tagsSince)
+	versions := sortVersions(tagsSince)
+	versionsOriginal := []string{}
+	for _, version := range versions {
+		versionsOriginal = append(versionsOriginal, version.Original())
+	}
 
-	return tagsSince, nil
+	return versionsOriginal, nil
 }
 
 func CurrentVersion(repoURL string) string {
@@ -390,4 +395,15 @@ func RepoUrlWithoutVersion(repoURL string) string {
 	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
 
 	return gitUrl
+}
+
+func sortVersions(versionsRaw []string) []*version.Version {
+	versions := make([]*version.Version, len(versionsRaw))
+	for i, raw := range versionsRaw {
+		v, _ := version.NewVersion(raw)
+		versions[i] = v
+	}
+
+	sort.Sort(version.Collection(versions))
+	return versions
 }
