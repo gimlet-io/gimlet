@@ -224,8 +224,6 @@ function renderResult(result, gitopsRepo) {
 
 
 function gitopsWidgetFromResults(deploy, gitopsRepo) {
-  console.log("RESULTS")
-  console.log(gitopsRepo)
   if (deploy.status !== 'processed') {
     return (
       <div className="mt-2">
@@ -267,9 +265,6 @@ function gitopsWidgetFromGitopsHashes(deploy, gitopsRepo) {
 
 function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
   const firstCommitOfEnv = gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env)[0];
-
-  console.log("RESULTS")
-  console.log(gitopsRepo)
 
   let deployCommit = {};
   deploy.results.forEach(result => {
