@@ -35,6 +35,10 @@ export default class DeployStatus extends Component {
     const deploy = runningDeploys[0];
     const gitopsRepo = envs.find(env => env.name === deploy.env).appsRepo;
 
+    console.log("RENDER")
+    console.log(envs)
+    console.log(gitopsRepo)
+
     let gitopsWidget = (
       <div className="mt-2">
         <Loading/>
@@ -189,7 +193,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo) {
 }
 
 function renderResult(result, gitopsRepo) {
-  if (result.status === "success") {
+  if (result.hash && result.status === "success") {
     return (
       <div className="pl-2 mb-2">
         <p className="font-semibold truncate mb-1" title={result.app}>
@@ -220,6 +224,8 @@ function renderResult(result, gitopsRepo) {
 
 
 function gitopsWidgetFromResults(deploy, gitopsRepo) {
+  console.log("RESULTS")
+  console.log(gitopsRepo)
   if (deploy.status !== 'processed') {
     return (
       <div className="mt-2">
@@ -261,6 +267,9 @@ function gitopsWidgetFromGitopsHashes(deploy, gitopsRepo) {
 
 function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
   const firstCommitOfEnv = gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env)[0];
+
+  console.log("RESULTS")
+  console.log(gitopsRepo)
 
   let deployCommit = {};
   deploy.results.forEach(result => {
