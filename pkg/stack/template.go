@@ -408,11 +408,11 @@ func (s byNewest) Less(i, j int) bool {
 
 	v1, err := semver.Make(v1StringWithoutV)
 	if err != nil {
-		fmt.Printf("Cannot parse version number: %s", err)
+		return true
 	}
 	v2, err := semver.Make(v2StringWithoutV)
 	if err != nil {
-		fmt.Printf("Cannot parse version number: %s", err)
+		return true
 	}
 
 	return v1.LT(v2)
