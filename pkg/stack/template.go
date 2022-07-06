@@ -21,7 +21,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"github.com/hashicorp/go-version"
 	giturl "github.com/whilp/git-urls"
 )
 
@@ -362,13 +361,9 @@ func VersionsSince(repoURL string, sinceString string) ([]string, error) {
 		return []string{}, err
 	}
 
-	versions := sortVersions(tagsSince)
-	versionsOriginal := []string{}
-	for _, version := range versions {
-		versionsOriginal = append(versionsOriginal, version.Original())
-	}
+	sort.Sort(byNewest(tagsSince))
 
-	return versionsOriginal, nil
+	return tagsSince, nil
 }
 
 func CurrentVersion(repoURL string) string {
@@ -397,13 +392,28 @@ func RepoUrlWithoutVersion(repoURL string) string {
 	return gitUrl
 }
 
-func sortVersions(versionsRaw []string) []*version.Version {
-	versions := make([]*version.Version, len(versionsRaw))
-	for i, raw := range versionsRaw {
-		v, _ := version.NewVersion(raw)
-		versions[i] = v
+type byNewest []string
+
+func (s byNewest) Len() int {
+	return len(s)
+}
+
+func (s byNewest) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byNewest) Less(i, j int) bool {
+	iStringWithoutV := strings.TrimPrefix(s[i], "v")
+	jStringWithoutV := strings.TrimPrefix(s[j], "v")
+
+	vi, err := semver.Make(iStringWithoutV)
+	if err != nil {
+		fmt.Println("Cannot parse version number")
+	}
+	vj, err := semver.Make(jStringWithoutV)
+	if err != nil {
+		fmt.Println("Cannot parse version number")
 	}
 
-	sort.Sort(version.Collection(versions))
-	return versions
+	return vi.LT(vj)
 }
