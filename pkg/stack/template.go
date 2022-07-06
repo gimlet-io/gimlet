@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -360,6 +361,8 @@ func VersionsSince(repoURL string, sinceString string) ([]string, error) {
 		return []string{}, err
 	}
 
+	sort.Sort(byVersionNumber(tagsSince))
+
 	return tagsSince, nil
 }
 
@@ -387,4 +390,30 @@ func RepoUrlWithoutVersion(repoURL string) string {
 	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
 
 	return gitUrl
+}
+
+type byVersionNumber []string
+
+func (s byVersionNumber) Len() int {
+	return len(s)
+}
+
+func (s byVersionNumber) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byVersionNumber) Less(i, j int) bool {
+	v1StringWithoutV := strings.TrimPrefix(s[i], "v")
+	v2StringWithoutV := strings.TrimPrefix(s[j], "v")
+
+	v1, err := semver.Make(v1StringWithoutV)
+	if err != nil {
+		return true
+	}
+	v2, err := semver.Make(v2StringWithoutV)
+	if err != nil {
+		return true
+	}
+
+	return v1.LT(v2)
 }
