@@ -361,7 +361,7 @@ func VersionsSince(repoURL string, sinceString string) ([]string, error) {
 		return []string{}, err
 	}
 
-	sort.Sort(byNewest(tagsSince))
+	sort.Sort(byVersionNumber(tagsSince))
 
 	return tagsSince, nil
 }
@@ -392,17 +392,17 @@ func RepoUrlWithoutVersion(repoURL string) string {
 	return gitUrl
 }
 
-type byNewest []string
+type byVersionNumber []string
 
-func (s byNewest) Len() int {
+func (s byVersionNumber) Len() int {
 	return len(s)
 }
 
-func (s byNewest) Swap(i, j int) {
+func (s byVersionNumber) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (s byNewest) Less(i, j int) bool {
+func (s byVersionNumber) Less(i, j int) bool {
 	v1StringWithoutV := strings.TrimPrefix(s[i], "v")
 	v2StringWithoutV := strings.TrimPrefix(s[j], "v")
 
