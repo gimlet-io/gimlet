@@ -403,17 +403,17 @@ func (s byNewest) Swap(i, j int) {
 }
 
 func (s byNewest) Less(i, j int) bool {
-	iStringWithoutV := strings.TrimPrefix(s[i], "v")
-	jStringWithoutV := strings.TrimPrefix(s[j], "v")
+	v1StringWithoutV := strings.TrimPrefix(s[i], "v")
+	v2StringWithoutV := strings.TrimPrefix(s[j], "v")
 
-	vi, err := semver.Make(iStringWithoutV)
+	v1, err := semver.Make(v1StringWithoutV)
 	if err != nil {
 		fmt.Println("Cannot parse version number")
 	}
-	vj, err := semver.Make(jStringWithoutV)
+	v2, err := semver.Make(v2StringWithoutV)
 	if err != nil {
 		fmt.Println("Cannot parse version number")
 	}
 
-	return vi.LT(vj)
+	return v1.LT(v2)
 }
