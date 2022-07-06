@@ -406,14 +406,36 @@ func (s byNewest) Less(i, j int) bool {
 	v1StringWithoutV := strings.TrimPrefix(s[i], "v")
 	v2StringWithoutV := strings.TrimPrefix(s[j], "v")
 
-	v1, err := semver.Make(v1StringWithoutV)
-	if err != nil {
-		fmt.Println("Cannot parse version number")
-	}
-	v2, err := semver.Make(v2StringWithoutV)
-	if err != nil {
-		fmt.Println("Cannot parse version number")
-	}
+	v1, v2 := versionOrdinal(v1StringWithoutV), versionOrdinal(v2StringWithoutV)
 
-	return v1.LT(v2)
+	return v1 < v2
+}
+
+func versionOrdinal(version string) string {
+	// ISO/IEC 14651:2011
+	const maxByte = 1<<8 - 1
+	vo := make([]byte, 0, len(version)+8)
+	j := -1
+	for i := 0; i < len(version); i++ {
+		b := version[i]
+		if '0' > b || b > '9' {
+			vo = append(vo, b)
+			j = -1
+			continue
+		}
+		if j == -1 {
+			vo = append(vo, 0x00)
+			j = len(vo) - 1
+		}
+		if vo[j] == 1 && vo[j+1] == '0' {
+			vo[j+1] = b
+			continue
+		}
+		if vo[j]+1 > maxByte {
+			panic("VersionOrdinal: invalid version")
+		}
+		vo = append(vo, b)
+		vo[j]++
+	}
+	return string(vo)
 }
