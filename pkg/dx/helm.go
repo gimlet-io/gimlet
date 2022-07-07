@@ -119,9 +119,9 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 	return tmpChartDir, nil
 }
 
-func ChartSchema(m *Manifest) (string, string, error) {
+func ChartSchema(m *Manifest, installationToken string) (string, string, error) {
 	client, settings := helmClient(m)
-	chartFromManifest, err := loadChartFromManifest(m, client, settings)
+	chartFromManifest, err := loadChartFromManifest(m, client, settings, installationToken)
 	if err != nil {
 		return "", "", err
 	}
@@ -139,7 +139,7 @@ func ChartSchema(m *Manifest) (string, string, error) {
 
 func templateChart(m *Manifest) (string, error) {
 	client, settings := helmClient(m)
-	chartFromManifest, err := loadChartFromManifest(m, client, settings)
+	chartFromManifest, err := loadChartFromManifest(m, client, settings, "")
 	if err != nil {
 		return "", err
 	}
@@ -153,14 +153,14 @@ func templateChart(m *Manifest) (string, error) {
 
 }
 
-func loadChartFromManifest(m *Manifest, client *action.Install, settings *helmCLI.EnvSettings) (*chart.Chart, error) {
+func loadChartFromManifest(m *Manifest, client *action.Install, settings *helmCLI.EnvSettings, token string) (*chart.Chart, error) {
 	if m.Chart.Name == "" {
 		return nil, nil
 	}
 
 	if strings.HasPrefix(m.Chart.Name, "git@") ||
 		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
-		tmpChartDir, err := CloneChartFromRepo(m, "")
+		tmpChartDir, err := CloneChartFromRepo(m, token)
 		if err != nil {
 			return nil, fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
