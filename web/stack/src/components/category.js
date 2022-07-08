@@ -75,6 +75,7 @@ export class Category extends Component {
     const componentTitles = componentsForCategory.map(component => {
       return (
         <Tile
+          key={component.variable}
           category={category}
           component={component}
           componentConfig={stack[component.variable]}
