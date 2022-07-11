@@ -106,6 +106,7 @@ class App extends Component {
 
     const categories = stackDefinition.categories.map(category => {
       return <Category
+        key={category.id}
         category={category}
         stackDefinition={stackDefinition}
         stack={stack}

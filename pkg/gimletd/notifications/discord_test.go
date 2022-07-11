@@ -127,7 +127,7 @@ func TestSendingGitopsDeployMessage(t *testing.T) {
 	}
 
 	msgSendFailure := gitopsDeployMessage{
-		event: &events.DeployEvent{
+		event: model.Result{
 			Manifest: &dx.Manifest{
 				App: "myapp",
 				Env: "staging",
@@ -153,7 +153,7 @@ func TestSendingGitopsDeployMessage(t *testing.T) {
 	}
 
 	msgSendByGimlet := gitopsDeployMessage{
-		event: &events.DeployEvent{
+		event: model.Result{
 			Manifest: &dx.Manifest{
 				App: "myapp",
 				Env: "staging",

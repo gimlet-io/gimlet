@@ -202,7 +202,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	event, err := store.CreateEvent(&model.Event{
-		Type:         model.TypeRelease,
+		Type:         model.ReleaseRequestedEvent,
 		Blob:         string(releaseRequestStr),
 		Repository:   artifact.Repository,
 		GitopsHashes: []string{},
@@ -258,7 +258,7 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	event, err := store.CreateEvent(&model.Event{
-		Type: model.TypeRollback,
+		Type: model.RollbackRequestedEvent,
 		Blob: string(rollbackRequestStr),
 	})
 	if err != nil {
@@ -393,10 +393,21 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	results := []dx.Result{}
+	for _, result := range event.Results {
+		results = append(results, dx.Result{
+			App:        result.Manifest.App,
+			Hash:       result.GitopsRef,
+			Status:     result.Status.String(),
+			StatusDesc: result.StatusDesc,
+		})
+	}
+
 	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
 		Status:       event.Status,
 		StatusDesc:   event.StatusDesc,
 		GitopsHashes: gitopsStatus,
+		Results:      results,
 	})
 
 	w.WriteHeader(http.StatusOK)

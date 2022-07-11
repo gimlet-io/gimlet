@@ -35,6 +35,10 @@ export default class DeployStatus extends Component {
     const deploy = runningDeploys[0];
     const gitopsRepo = envs.find(env => env.name === deploy.env).appsRepo;
 
+    console.log("RENDER")
+    console.log(envs)
+    console.log(gitopsRepo)
+
     let gitopsWidget = (
       <div className="mt-2">
         <Loading/>
@@ -55,74 +59,15 @@ export default class DeployStatus extends Component {
       )
     }
 
-    if (deploy.gitopsHashes && deploy.gitopsHashes.length !== 0) {
-      gitopsWidget = (
-        <div className="mt-2">
-          <p className="text-yellow-100 font-semibold">
-            Manifests written to git
-          </p>
-          {deploy.gitopsHashes.map(hashStatus => (
-            <p key={hashStatus.hash} className="pl-2">
-              <span>📋</span>
-              <a
-                href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
-                target="_blank" rel="noopener noreferrer"
-                className='ml-1'
-              >
-                {hashStatus.hash.slice(0, 6)}
-              </a>
-            </p>
-          ))}
-        </div>
-      )
-      appliedWidget = (
-        <Loading/>
-      )
-    }
-
-    if (deploy.gitopsHashes) {
-      const numberOfGitopsHashes = deploy.gitopsHashes.length;
-      if (numberOfGitopsHashes > 0) {
-        let deployCommits = [];
-        deploy.gitopsHashes.forEach(gitopsHash => {
-          this.state.gitopsCommits.forEach(gitopsCommit => {
-            if (gitopsHash.hash === gitopsCommit.sha) {
-              deployCommits.push(gitopsCommit);
-            }
-          })
-        })
-
-        appliedWidget = deployCommits.map(deployCommit => {
-          let color = "text-yellow-300";
-          let deployCommitStatus = "trailing";
-          let deployCommitStatusIcon = <span className="h-4 w-4 rounded-full relative top-1 inline-block bg-yellow-400" />;
-
-          if (deployCommit.status.includes("NotReady")) {
-            deployCommitStatus = "applying";
-          } else if (deployCommit.status.includes("Succeeded")) {
-            color = "text-green-300";
-            deployCommitStatus = "applied";
-            deployCommitStatusIcon = <span>✅</span>;
-          } else if (deployCommit.status.includes("Failed")) {
-            color = "text-red-500";
-            deployCommitStatus = deployCommit.statusDesc;
-            deployCommitStatusIcon = <span>❗</span>;
-          }
-
-          return (
-            <p key={deployCommit.sha} className={`font-semibold ${color}`}>
-              {deployCommitStatusIcon}
-              <a
-                href={`https://github.com/${gitopsRepo}/commit/${deployCommit.sha}`}
-                target="_blank" rel="noopener noreferrer"
-                className='ml-1'
-              >
-                {deployCommit.sha?.slice(0, 6)}
-              </a>
-              <span className='ml-1'>{deployCommitStatus}</span>
-            </p>
-          )
-        })
+    // Feature 'Add results to deploy status', gitopsHashes is deprecated, will be removed!
+    if (deploy.results) {
+      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo);
+      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);
+    } else {
+      const hasGitopsHashes = deploy.gitopsHashes && deploy.gitopsHashes.length !== 0;
+      if (deploy.status === 'processed' || hasGitopsHashes) {
+        gitopsWidget = gitopsWidgetFromGitopsHashes(deploy, gitopsRepo);
+        appliedWidget = appliedWidgetFromGitopsHashes(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);
       }
     }
 
@@ -200,15 +145,146 @@ export default class DeployStatus extends Component {
   }
 }
 
-function
-
-Loading() {
+function Loading() {
   return (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-         viewBox="0 0 24 24">
+      viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4}></circle>
       <path className="opacity-75" fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
   )
+}
+
+function renderAppliedWidget(deployCommit, gitopsRepo) {
+  if (!deployCommit.sha) {
+    return null;
+  }
+
+  let color = "text-yellow-300";
+  let deployCommitStatus = "trailing";
+  let deployCommitStatusIcon = <span className="h-4 w-4 rounded-full relative top-1 inline-block bg-yellow-400" />;
+
+  if (deployCommit.status.includes("NotReady")) {
+    deployCommitStatus = "applying";
+  } else if (deployCommit.status.includes("Succeeded")) {
+    color = "text-green-300";
+    deployCommitStatus = "applied";
+    deployCommitStatusIcon = <span>✅</span>;
+  } else if (deployCommit.status.includes("Failed")) {
+    color = "text-red-500";
+    deployCommitStatus = deployCommit.statusDesc;
+    deployCommitStatusIcon = <span>❗</span>;
+  }
+
+  return (
+    <p key={deployCommit.sha} className={`font-semibold ${color}`}>
+      {deployCommitStatusIcon}
+      <a
+        href={`https://github.com/${gitopsRepo}/commit/${deployCommit.sha}`}
+        target="_blank" rel="noopener noreferrer"
+        className='ml-1'
+      >
+        {deployCommit.sha?.slice(0, 6)}
+      </a>
+      <span className='ml-1'>{deployCommitStatus}</span>
+    </p>
+  )
+}
+
+function renderResult(result, gitopsRepo) {
+  if (result.hash && result.status === "success") {
+    return (
+      <div className="pl-2 mb-2">
+        <p className="font-semibold truncate mb-1" title={result.app}>
+          {result.app}
+          <span className='mx-1 align-middle'>✅</span>
+          <a
+            href={`https://github.com/${gitopsRepo}/commit/${result.hash}`}
+            target="_blank" rel="noopener noreferrer" className="font-normal"
+          >
+            {result.hash.slice(0, 6)}
+          </a>
+        </p>
+      </div>)
+  } else if (result.status === "failure") {
+    return (
+      <div className="pl-2 mb-2">
+        <div className="grid grid-cols-2">
+          <div>
+            <p className="font-semibold truncate mb-1" title={result.app}>{result.app}</p>
+          </div>
+          <span className='mx-1 align-middle'>❌</span>
+        </div>
+        <p className="break-words text-red-500 font-normal">{`${result.status}: ${result.statusDesc}`}</p>
+      </div>
+    )
+  }
+}
+
+
+function gitopsWidgetFromResults(deploy, gitopsRepo) {
+  if (deploy.status !== 'processed') {
+    return (
+      <div className="mt-2">
+        <Loading />
+      </div>);
+  }
+
+  return (
+    <div className="mt-2">
+      <p className="text-yellow-100 font-semibold">
+        Manifests written to git
+      </p>
+      {deploy.results.map(result => renderResult(result, gitopsRepo))}
+    </div>
+  )
+}
+
+function gitopsWidgetFromGitopsHashes(deploy, gitopsRepo) {
+  return (
+    <div className="mt-2">
+      <p className="text-yellow-100 font-semibold">
+        Manifests written to git
+      </p>
+      {deploy.gitopsHashes.map(hashStatus => (
+        <p key={hashStatus.hash} className="pl-2">
+          <span>📋</span>
+          <a
+            href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
+            target="_blank" rel="noopener noreferrer"
+            className='ml-1'
+          >
+            {hashStatus.hash.slice(0, 6)}
+          </a>
+        </p>
+      ))}
+    </div>
+  )
+}
+
+function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
+  const firstCommitOfEnv = gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env)[0];
+
+  let deployCommit = {};
+  deploy.results.forEach(result => {
+    if (result.hash === firstCommitOfEnv.sha) {
+      deployCommit = Object.assign({}, firstCommitOfEnv);
+    }
+  })
+
+  return renderAppliedWidget(deployCommit, gitopsRepo);
+}
+
+function appliedWidgetFromGitopsHashes(deploy, gitopsCommits, env, gitopsRepo) {
+  const firstCommitOfEnv = gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env)[0];
+
+  let deployCommit = {};
+  deploy.gitopsHashes.forEach(gitopsHash => {
+    if (gitopsHash.hash === firstCommitOfEnv.sha) {
+      deployCommit = Object.assign({}, firstCommitOfEnv);
+    }
+  })
+
+  return renderAppliedWidget(deployCommit, gitopsRepo);
 }

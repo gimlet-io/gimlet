@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	githubLib "github.com/google/go-github/v37/github"
 )
 
@@ -14,7 +14,7 @@ const githubCommitLink = "https://github.com/%s/commit/%s"
 const contextFormat = "gitops/%s@%s"
 
 type gitopsDeployMessage struct {
-	event *events.DeployEvent
+	event model.Result
 }
 
 func (gm *gitopsDeployMessage) AsSlackMessage() (*slackMessage, error) {
@@ -23,7 +23,7 @@ func (gm *gitopsDeployMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	if gm.event.Status == events.Failure {
+	if gm.event.Status == model.Failure {
 		msg.Text = fmt.Sprintf("Failed to roll out %s of %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 		msg.Blocks = append(msg.Blocks,
 			Block{
@@ -99,7 +99,7 @@ func (gm *gitopsDeployMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
 	targetURL := fmt.Sprintf(githubCommitLink, gm.event.GitopsRepo, gm.event.GitopsRef)
 	targetURLPtr := &targetURL
 
-	if gm.event.Status == events.Failure {
+	if gm.event.Status == model.Failure {
 		state = "failure"
 		targetURLPtr = nil
 	}
@@ -123,7 +123,7 @@ func (gm *gitopsDeployMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	if gm.event.Status == events.Failure {
+	if gm.event.Status == model.Failure {
 		msg.Text = fmt.Sprintf("Failed to roll out %s of %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 
 		msg.Embed.Description += fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s\n", gm.event.StatusDesc)
@@ -151,7 +151,7 @@ func (gm *gitopsDeployMessage) AsDiscordMessage() (*discordMessage, error) {
 
 }
 
-func MessageFromGitOpsEvent(event *events.DeployEvent) Message {
+func MessageFromGitOpsEvent(event model.Result) Message {
 	return &gitopsDeployMessage{
 		event: event,
 	}

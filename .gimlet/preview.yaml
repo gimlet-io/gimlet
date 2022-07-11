@@ -8,6 +8,10 @@ chart:
 deploy:
   branch: feature/*
   event: push
+cleanup:
+  branch: !main
+  event: branchDeleted
+  app: "{{ printf \"gimlet-dashboard-%s\" .BRANCH | sanitizeDNSName }}"
 values:
   gitRepository: "gimlet-io/gimlet"
   gitSha: "{{ .GITHUB_SHA }}"

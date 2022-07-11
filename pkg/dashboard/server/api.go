@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
@@ -249,6 +250,8 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	installationToken, _, _ := tokenManager.Token()
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
@@ -266,7 +269,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	schemaString, schemaUIString, err := dx.ChartSchema(m)
+	schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
 	if err != nil {
 		logrus.Errorf("cannot get schema from manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -366,6 +369,7 @@ func application(w http.ResponseWriter, r *http.Request) {
 	appinfos["appName"] = appName
 	appinfos["installationURL"] = installationURL
 	appinfos["appSettingsURL"] = appSettingsURL
+	appinfos["dashboardVersion"] = version.String()
 
 	appinfosString, err := json.Marshal(appinfos)
 	if err != nil {
