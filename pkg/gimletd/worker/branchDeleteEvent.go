@@ -112,7 +112,7 @@ func (r *BranchDeleteEventWorker) Run() {
 			}
 		}
 
-		time.Sleep(30 * time.Second)
+		time.Sleep(5 * time.Minute)
 	}
 }
 
