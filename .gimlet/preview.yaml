@@ -9,7 +9,7 @@ deploy:
   branch: feature/*
   event: push
 cleanup:
-  branch: !main
+  branch: "!main"
   event: branchDeleted
   app: "{{ printf \"gimlet-dashboard-%s\" .BRANCH | sanitizeDNSName }}"
 values:
