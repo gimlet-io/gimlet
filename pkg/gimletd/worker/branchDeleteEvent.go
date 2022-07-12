@@ -67,6 +67,22 @@ func (r *BranchDeleteEventWorker) Run() {
 					continue
 				}
 
+				branchesWithManifests := map[string][]*dx.Manifest{}
+				branches := commonGit.BranchList(repo)
+				for _, branch := range branches {
+					manifests, err := r.extractManifestsFromBranch(repo, branch)
+					if err != nil {
+						logrus.Warnf("could not extract manifests: %s", err)
+						continue
+					}
+
+					if branchesWithManifests[branch] == nil {
+						branchesWithManifests[branch] = []*dx.Manifest{}
+					}
+
+					branchesWithManifests[branch] = manifests
+				}
+
 				deletedBranches, err := r.detectDeletedBranches(repo)
 				if err != nil {
 					logrus.Warnf("could not detect deleted branches in %s: %s", repoPath, err)
@@ -74,9 +90,9 @@ func (r *BranchDeleteEventWorker) Run() {
 					continue
 				}
 				for _, deletedBranch := range deletedBranches {
-					manifests, err := r.extractManifestsFromBranch(repo, deletedBranch)
-					if err != nil {
-						logrus.Warnf("could not extract manifests: %s", err)
+					manifests := branchesWithManifests[deletedBranch]
+					if len(manifests) == 0 {
+						logrus.Warn("could not extract manifests")
 						continue
 					}
 
