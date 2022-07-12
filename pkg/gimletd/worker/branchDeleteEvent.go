@@ -91,10 +91,6 @@ func (r *BranchDeleteEventWorker) Run() {
 				}
 				for _, deletedBranch := range deletedBranches {
 					manifests := branchesWithManifests[deletedBranch]
-					if len(manifests) == 0 {
-						logrus.Warn("could not extract manifests")
-						continue
-					}
 
 					branchDeletedEventStr, err := json.Marshal(events.BranchDeletedEvent{
 						Repo:      repoName,
