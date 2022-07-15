@@ -35,10 +35,6 @@ export default class DeployStatus extends Component {
     const deploy = runningDeploys[0];
     const gitopsRepo = envs.find(env => env.name === deploy.env).appsRepo;
 
-    console.log("RENDER")
-    console.log(envs)
-    console.log(gitopsRepo)
-
     let gitopsWidget = (
       <div className="mt-2">
         <Loading/>
