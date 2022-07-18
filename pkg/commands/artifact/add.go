@@ -94,6 +94,10 @@ func add(c *cli.Context) error {
 			a.Context = map[string]string{}
 		}
 		a.Context[k] = v
+		if a.Vars == nil {
+			a.Vars = map[string]string{}
+		}
+		a.Vars[k] = v
 	}
 
 	jsonString := bytes.NewBufferString("")
