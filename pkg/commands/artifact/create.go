@@ -135,6 +135,7 @@ func create(c *cli.Context) error {
 		Context:      map[string]string{},
 		Environments: []*dx.Manifest{},
 		Items:        []map[string]interface{}{},
+		Vars:         map[string]string{},
 	}
 
 	jsonString := bytes.NewBufferString("")
