@@ -193,6 +193,8 @@ func Test_add(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(len(a.Context) == 2).IsTrue("Should have 2 vars in context")
 			g.Assert(a.Context["KEY"] == "VALUE").IsTrue("Should add var")
+			g.Assert(len(a.Vars) == 2).IsTrue("Should have 2 variables in vars")
+			g.Assert(a.Vars["KEY"] == "VALUE").IsTrue("Should add variable to vars")
 		})
 		g.It("Should append context variable to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
@@ -206,7 +208,9 @@ func Test_add(t *testing.T) {
 			err = json.Unmarshal(content, &a)
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(len(a.Context) == 3).IsTrue("Should have 3 vars in context")
-			g.Assert(a.Context["KEY3"] == "VALUE3").IsTrue("Should append var")
+			g.Assert(a.Context["KEY3"] == "VALUE3").IsTrue("Should append var to context")
+			g.Assert(len(a.Vars) == 3).IsTrue("Should have 3 variables in vars")
+			g.Assert(a.Vars["KEY3"] == "VALUE3").IsTrue("Should append variable to var")
 		})
 		g.It("Should add vars variables to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
@@ -220,9 +224,9 @@ func Test_add(t *testing.T) {
 			var a dx.Artifact
 			err = json.Unmarshal(content, &a)
 			g.Assert(err == nil).IsTrue(err)
-			g.Assert(len(a.Context) == 5).IsTrue("Should have 5 vars in context")
-			g.Assert(a.Context["BRANCH"] == "TEST").IsTrue("Should add var")
-			g.Assert(a.Context["REPO"] == "TEST/TEST").IsTrue("Should add var")
+			g.Assert(len(a.Vars) == 5).IsTrue("Should have 5 vars in context")
+			g.Assert(a.Vars["BRANCH"] == "TEST").IsTrue("Should add var")
+			g.Assert(a.Vars["REPO"] == "TEST/TEST").IsTrue("Should add var")
 		})
 		g.It("Should append vars variable to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
