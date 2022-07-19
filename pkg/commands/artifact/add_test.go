@@ -89,6 +89,9 @@ func Test_add(t *testing.T) {
 			g.Assert(len(a.Items) == 1).IsTrue("Should have 1 item")
 			g.Assert(a.Items[0]["name"] == "CI").IsTrue("Should add CI item")
 			g.Assert(a.Items[0]["url"] == "https://jenkins.example.com/job/dev/84/display/redirect").IsTrue("Should add URL item")
+			g.Assert(len(a.Vars) == 2).IsTrue("Should have 2 vars")
+			g.Assert(a.Vars["name"] == "CI").IsTrue("Should add CI var")
+			g.Assert(a.Vars["url"] == "https://jenkins.example.com/job/dev/84/display/redirect").IsTrue("Should add URL var")
 		})
 		g.It("Should append custom field to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
@@ -126,6 +129,8 @@ func Test_add(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(len(a.Items) == 2).IsTrue("Should have 2 items")
 			g.Assert(a.Items[1]["custom"] == "myValue").IsTrue("Should add custom item")
+			g.Assert(len(a.Vars) == 3).IsTrue("Should have 3 vars")
+			g.Assert(a.Vars["custom"] == "myValue").IsTrue("Should add custom var")
 		})
 		g.It("Should add Gimlet environment to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
@@ -193,7 +198,7 @@ func Test_add(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(len(a.Context) == 2).IsTrue("Should have 2 vars in context")
 			g.Assert(a.Context["KEY"] == "VALUE").IsTrue("Should add var")
-			g.Assert(len(a.Vars) == 2).IsTrue("Should have 2 variables in vars")
+			g.Assert(len(a.Vars) == 5).IsTrue("Should have 5 variables in vars")
 			g.Assert(a.Vars["KEY"] == "VALUE").IsTrue("Should add variable to vars")
 		})
 		g.It("Should append context variable to artifact", func() {
@@ -209,7 +214,7 @@ func Test_add(t *testing.T) {
 			g.Assert(err == nil).IsTrue(err)
 			g.Assert(len(a.Context) == 3).IsTrue("Should have 3 vars in context")
 			g.Assert(a.Context["KEY3"] == "VALUE3").IsTrue("Should append var to context")
-			g.Assert(len(a.Vars) == 3).IsTrue("Should have 3 variables in vars")
+			g.Assert(len(a.Vars) == 6).IsTrue("Should have 6 variables in vars")
 			g.Assert(a.Vars["KEY3"] == "VALUE3").IsTrue("Should append variable to var")
 		})
 	})
