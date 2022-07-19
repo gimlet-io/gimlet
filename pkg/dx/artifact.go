@@ -75,6 +75,10 @@ func (a *Artifact) CollectVariables() map[string]string {
 			}
 		}
 	}
+
+	for k, v := range a.Vars {
+		vars[k] = v
+	}
 	return vars
 }
 
