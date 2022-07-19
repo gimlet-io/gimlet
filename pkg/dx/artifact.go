@@ -32,7 +32,9 @@ type Artifact struct {
 	// The releasable version
 	Version Version `json:"version,omitempty"`
 
-	// Context field in Artifact is deprecated, please use Vars instead
+	// Arbitrary environment variables from CI
+	//
+	//  Deprecated, please use Vars instead
 	Context map[string]string `json:"context,omitempty"`
 
 	// The complete set of Gimlet environments from the Gimlet environment files
@@ -41,10 +43,12 @@ type Artifact struct {
 	// The complete set of Gimlet environments from the Gimlet environment files
 	CueEnvironments []string `json:"cueEnvironments,omitempty"`
 
-	// Items field in Artifact is deprecated, please use Vars instead
+	// CI job information, test results, Docker image information, etc
+	//
+	// Deprecated, please use Vars instead
 	Items []map[string]interface{} `json:"items,omitempty"`
 
-	// CI job information, test results, Docker image information, arbitary environment variables from CI, etc
+	// CI context and arbitrary environment variables to pass along and to be used in manifest templating
 	Vars map[string]string `json:"vars,omitempty"`
 }
 
