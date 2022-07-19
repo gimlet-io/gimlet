@@ -174,7 +174,7 @@ func processStatusHook(
 	for _, c := range commits {
 		if artifact, ok := artifactsBySha[c.SHA]; ok {
 			for _, targetEnv := range artifact.Environments {
-				targetEnv.ResolveVars(artifact.Context)
+				targetEnv.ResolveVars(artifact.CollectVariables())
 				deployTargets = append(deployTargets, &model.DeployTarget{
 					App:        targetEnv.App,
 					Env:        targetEnv.Env,
