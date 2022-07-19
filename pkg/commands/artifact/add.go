@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"strings"
 )
 
 var artifactAddCmd = cli.Command{
@@ -59,6 +60,12 @@ func add(c *cli.Context) error {
 			return fmt.Errorf("--field should follow a key=value format")
 		}
 		item[keyValue[0]] = keyValue[1]
+
+		if a.Vars == nil {
+			a.Vars = map[string]string{}
+		}
+		a.Vars[keyValue[0]] = keyValue[1]
+
 	}
 	if len(item) != 0 {
 		a.Items = append(a.Items, item)
