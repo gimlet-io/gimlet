@@ -320,7 +320,7 @@ func processReleaseEvent(
 			GitopsRepo:  repoName,
 		}
 
-		err = manifest.ResolveVars(artifact.Vars())
+		err = manifest.ResolveVars(artifact.CollectVariables())
 		if err != nil {
 			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
@@ -493,7 +493,7 @@ func processArtifactEvent(
 			GitopsRepo:  repoName,
 		}
 
-		err = manifest.ResolveVars(artifact.Vars())
+		err = manifest.ResolveVars(artifact.CollectVariables())
 		if err != nil {
 			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()

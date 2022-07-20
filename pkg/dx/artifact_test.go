@@ -25,7 +25,7 @@ func Test_vars(t *testing.T) {
 }
 `), &a)
 
-	vars := a.Vars()
+	vars := a.CollectVariables()
 	assert.Equal(t, 3, len(vars))
 	assert.Equal(t, 1, len(a.Context))
 }

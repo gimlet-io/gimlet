@@ -33,6 +33,8 @@ type Artifact struct {
 	Version Version `json:"version,omitempty"`
 
 	// Arbitrary environment variables from CI
+	//
+	//  Deprecated, please use Vars instead
 	Context map[string]string `json:"context,omitempty"`
 
 	// The complete set of Gimlet environments from the Gimlet environment files
@@ -42,7 +44,12 @@ type Artifact struct {
 	CueEnvironments []string `json:"cueEnvironments,omitempty"`
 
 	// CI job information, test results, Docker image information, etc
+	//
+	// Deprecated, please use Vars instead
 	Items []map[string]interface{} `json:"items,omitempty"`
+
+	// CI context and arbitrary environment variables to pass along and to be used in manifest templating
+	Vars map[string]string `json:"vars,omitempty"`
 }
 
 func (a *Artifact) HasCleanupPolicy() bool {
@@ -54,7 +61,7 @@ func (a *Artifact) HasCleanupPolicy() bool {
 	return false
 }
 
-func (a *Artifact) Vars() map[string]string {
+func (a *Artifact) CollectVariables() map[string]string {
 	vars := map[string]string{}
 
 	for k, v := range a.Context {
@@ -67,6 +74,10 @@ func (a *Artifact) Vars() map[string]string {
 				vars[k] = w
 			}
 		}
+	}
+
+	for k, v := range a.Vars {
+		vars[k] = v
 	}
 	return vars
 }
