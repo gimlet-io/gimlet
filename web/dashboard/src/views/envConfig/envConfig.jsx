@@ -13,6 +13,7 @@ import {
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
+import EnvVarsTable from "./envVarsTable";
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -35,6 +36,8 @@ class EnvConfig extends Component {
       isTimedOut: false,
       timeoutTimer: {},
       hasFormValidationError: false,
+      environmentVariablesExpanded: false,
+      codeSnippetExpanded: false,
 
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
@@ -254,9 +257,9 @@ class EnvConfig extends Component {
   }
 
   findFileName(envName, appName) {
-      if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
-        return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
-      }
+    if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
+      return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
+    }
   }
 
   render() {
@@ -349,7 +352,7 @@ class EnvConfig extends Component {
             validate={true}
             validationCallback={this.validationCallback}
           />
-          <div className="w-full my-16">
+          <div className="w-full mt-16">
             <ReactDiffViewer
               oldValue={YAML.stringify(this.state.defaultState)}
               newValue={YAML.stringify(this.state.nonDefaultValues)}
@@ -363,21 +366,44 @@ class EnvConfig extends Component {
                 }
               }} />
           </div>
+          {!this.state.environmentVariablesExpanded ?
+            <Button
+              text={"Check the list of environment variables you can use in the Gimlet manifest"}
+              action={() => this.setState({ environmentVariablesExpanded: true })}
+            />
+            :
+            <div className="w-full my-16">
+              <EnvVarsTable />
+              <LinkToDefaultVariables
+                repoMetas={this.state.repoMetas}
+              />
+            </div>
+          }
           {JSON.stringify(this.state.envConfig) !== "{}" &&
-          <>
-          <h3 className="text-lg leading-6 text-gray-500">
-            Copy the code snippet to check the generated Kubernetes manifest on the command line:
-          </h3>
-          <div className="w-full mb-16">
-            <CopiableCodeSnippet 
-            code={
-`cat << EOF > manifest.yaml
+            <>
+              {!this.state.codeSnippetExpanded ?
+                <Button
+                  text={"Want to render the manifest locally? Click to see the Gimlet CLI command!"}
+                  action={() => this.setState({ codeSnippetExpanded: true })}
+                />
+                :
+                <div className="my-8">
+                  <h3 className="text-baseline leading-6 text-gray-500">
+                    Copy the code snippet to check the generated Kubernetes manifest on the command line:
+                  </h3>
+                  <div className="w-full mb-16">
+                    <CopiableCodeSnippet
+                      copiable={true}
+                      code={
+                        `cat << EOF > manifest.yaml
 ${YAML.stringify(configFileCopy)}EOF
 
 gimlet manifest template -f manifest.yaml`}
-            />
-          </div>
-          </>}
+                    />
+                  </div>
+                </div>
+              }
+            </>}
         </div>
         <div className="p-0 flow-root">
           <span className="inline-flex gap-x-3 float-right">
@@ -463,6 +489,44 @@ gimlet manifest template -f manifest.yaml`}
   }
 }
 
+function Button({ text, action }) {
+  return (
+    <div>
+      <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
+        onClick={action}
+      >
+        {text}
+      </button>
+    </div>)
+}
+
+function LinkToDefaultVariables({ repoMetas }) {
+  if (!repoMetas.githubActions && !repoMetas.circleCi) {
+    return null
+  }
+
+  let defaultVariablesUrl = "";
+
+  if (repoMetas.githubActions) {
+    defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
+  } else if (repoMetas.circleCi) {
+    defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
+  }
+
+  return (
+    <div className="mt-2">
+      <a
+        href={defaultVariablesUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="text-gray-500 hover:text-gray-700 text-xs"
+      >
+        Additionally you can use all built-in environment variables from CI
+      </a>
+    </div>
+  )
+}
+
 function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
   if (envConfigs[repoName]) {
     if (envConfigs[repoName][env]) {
@@ -478,8 +542,8 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
       return {}
     }
   } else {
-      // envConfigs not loaded, we shall wait for it to be loaded
-      return undefined
+    // envConfigs not loaded, we shall wait for it to be loaded
+    return undefined
   }
 }
 
