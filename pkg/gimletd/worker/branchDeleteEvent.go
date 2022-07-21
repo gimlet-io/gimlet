@@ -92,6 +92,8 @@ func (r *BranchDeleteEventWorker) Run() {
 				for _, deletedBranch := range deletedBranches {
 					manifests := branchesWithManifests[deletedBranch]
 
+					logrus.Infof("cleaning up %s", deletedBranch)
+
 					branchDeletedEventStr, err := json.Marshal(events.BranchDeletedEvent{
 						Repo:      repoName,
 						Branch:    deletedBranch,
@@ -124,6 +126,7 @@ func (r *BranchDeleteEventWorker) Run() {
 			}
 		}
 
+		logrus.Info("cleanup process finished succesfully")
 		time.Sleep(5 * time.Minute)
 	}
 }
