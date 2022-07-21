@@ -478,7 +478,7 @@ function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, sear
       return service.repo === repoName
     });
 
-    // applpy search box filter
+    // apply search box filter
     if (searchFilter !== '') {
       filteredEnvs[env.name].stacks = filteredEnvs[env.name].stacks.filter((service) => {
         return service.service.name.includes(searchFilter) ||
