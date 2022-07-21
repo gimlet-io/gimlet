@@ -257,9 +257,9 @@ class EnvConfig extends Component {
   }
 
   findFileName(envName, appName) {
-      if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
-        return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
-      }
+    if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
+      return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
+    }
   }
 
   render() {
@@ -352,7 +352,7 @@ class EnvConfig extends Component {
             validate={true}
             validationCallback={this.validationCallback}
           />
-          <div className="w-full my-16">
+          <div className="w-full mt-16">
             <ReactDiffViewer
               oldValue={YAML.stringify(this.state.defaultState)}
               newValue={YAML.stringify(this.state.nonDefaultValues)}
@@ -368,11 +368,11 @@ class EnvConfig extends Component {
           </div>
           {!this.state.environmentVariablesExpanded ?
             <Button
-              text={"Check the default environment variables"}
+              text={"Check the list of environment variables you can use in the Gimlet manifest"}
               action={() => this.setState({ environmentVariablesExpanded: true })}
             />
             :
-            <div className="w-full mb-16">
+            <div className="w-full my-16">
               <EnvVarsTable />
               <LinkToDefaultVariables
                 repoMetas={this.state.repoMetas}
@@ -383,12 +383,12 @@ class EnvConfig extends Component {
             <>
               {!this.state.codeSnippetExpanded ?
                 <Button
-                  text={"Want to try it locally? Click to expand!"}
+                  text={"Want to render the manifest locally? Click to see the Gimlet CLI command!"}
                   action={() => this.setState({ codeSnippetExpanded: true })}
                 />
                 :
-                <>
-                  <h3 className="text-lg leading-6 text-gray-500">
+                <div className="my-8">
+                  <h3 className="text-baseline leading-6 text-gray-500">
                     Copy the code snippet to check the generated Kubernetes manifest on the command line:
                   </h3>
                   <div className="w-full mb-16">
@@ -401,7 +401,7 @@ ${YAML.stringify(configFileCopy)}EOF
 gimlet manifest template -f manifest.yaml`}
                     />
                   </div>
-                </>
+                </div>
               }
             </>}
         </div>
@@ -491,13 +491,13 @@ gimlet manifest template -f manifest.yaml`}
 
 function Button({ text, action }) {
   return (
-    <h3 className="my-4">
-      <button className="cursor-pointer text-base leading-6 text-gray-500 hover:text-gray-700"
+    <div>
+      <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
         onClick={action}
       >
         {text}
       </button>
-    </h3>)
+    </div>)
 }
 
 function LinkToDefaultVariables({ repoMetas }) {
@@ -514,15 +514,15 @@ function LinkToDefaultVariables({ repoMetas }) {
   }
 
   return (
-    <div className="mt-4">
-    <a
-      href={defaultVariablesUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="text-gray-500 hover:text-gray-700 text-base"
-    >
-      Built-in environment variables from the CI
-    </a>
+    <div className="mt-2">
+      <a
+        href={defaultVariablesUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="text-gray-500 hover:text-gray-700 text-xs"
+      >
+        Additionally you can use all built-in environment variables from CI
+      </a>
     </div>
   )
 }
@@ -542,8 +542,8 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
       return {}
     }
   } else {
-      // envConfigs not loaded, we shall wait for it to be loaded
-      return undefined
+    // envConfigs not loaded, we shall wait for it to be loaded
+    return undefined
   }
 }
 
