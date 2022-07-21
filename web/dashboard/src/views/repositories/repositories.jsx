@@ -48,6 +48,10 @@ export default class Repositories extends Component {
       }
     }
 
+    if (!connectedAgents) {
+      return repositories;
+    }
+
     for (const envName of Object.keys(connectedAgents)) {
       const env = connectedAgents[envName];
 
