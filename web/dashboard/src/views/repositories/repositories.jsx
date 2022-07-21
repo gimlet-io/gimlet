@@ -48,15 +48,17 @@ export default class Repositories extends Component {
       }
     }
 
-    for (const envName of Object.keys(connectedAgents)) {
-      const env = connectedAgents[envName];
+    if (connectedAgents) {
+      for (const envName of Object.keys(connectedAgents)) {
+        const env = connectedAgents[envName];
 
-      for (const service of env.stacks) {
-        if (repositories[service.repo] === undefined) {
-          repositories[service.repo] = [];
+        for (const service of env.stacks) {
+          if (repositories[service.repo] === undefined) {
+            repositories[service.repo] = [];
+          }
+
+          repositories[service.repo].push(service);
         }
-
-        repositories[service.repo].push(service);
       }
     }
 
