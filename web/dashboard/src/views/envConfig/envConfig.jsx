@@ -38,6 +38,8 @@ class EnvConfig extends Component {
       hasFormValidationError: false,
       environmentVariablesExpanded: false,
       codeSnippetExpanded: false,
+      deployEvents: ["push", "tag", "pr"],
+      selectedDeployEvent: "push",
 
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
@@ -82,6 +84,15 @@ class EnvConfig extends Component {
         nonDefaultValues: Object.assign({}, envConfig),
         defaultState: Object.assign({}, envConfig),
       });
+
+      if (configFileContent.deploy) {
+        this.setState({
+          deployBranch: configFileContent.deploy.branch,
+          selectedDeployEvent: configFileContent.deploy.event,
+          defaultDeployBranch: configFileContent.deploy.branch,
+          defaultSelectedDeployEvent: configFileContent.deploy.event,
+        });
+      }
     }
   }
 
@@ -218,7 +229,7 @@ class EnvConfig extends Component {
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave)
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.deployBranch, this.state.selectedDeployEvent)
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
@@ -234,8 +245,12 @@ class EnvConfig extends Component {
 
           appName: data.app,
           namespace: data.namespace,
+          deployBranch: data.deploy.branch,
+          deployEvent: data.deploy.event,
           defaultAppName: data.app,
           defaultNamespace: data.namespace,
+          defaultDeployBranch: data.deploy.branch,
+          defaultDeployEvent: data.deploy.event,
 
           values: Object.assign({}, data.values),
           nonDefaultValues: Object.assign({}, data.values),
@@ -272,7 +287,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.deployEvent !== this.state.defaultDeployEvent || action === "new";
 
     if (!this.state.chartSchema) {
       return null;
@@ -330,7 +345,7 @@ class EnvConfig extends Component {
             className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
           />
         </div>
-        <div className="mb-8 items-center">
+        <div className="mb-4 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
@@ -342,6 +357,61 @@ class EnvConfig extends Component {
             onChange={e => { this.setState({ namespace: e.target.value }) }}
             className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
           />
+        </div>
+        <div className="mb-4 items-center">
+          <label htmlFor="deployBranch" className={`${!this.state.deployBranch ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+            Deploy branch*
+          </label>
+          <input
+            type="text"
+            name="deployBranch"
+            id="deployBranch"
+            value={this.state.deployBranch}
+            onChange={e => { this.setState({ deployBranch: e.target.value }) }}
+            className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+          />
+        </div>
+        <div className="mb-8 items-center">
+          <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
+            Deploy event*
+          </label>
+          <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+            <Menu.Button
+              className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+            >
+
+              {this.state.selectedDeployEvent}
+            </Menu.Button>
+            <span className="-ml-px relative block">
+              <Menu.Button
+                className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                <span className="sr-only">Open options</span>
+                <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+              </Menu.Button>
+              <Menu.Items
+                className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  {this.state.deployEvents.map((deployEvent) => (
+                    <Menu.Item key={`${deployEvent}`}>
+                      {({ active }) => (
+                        <button
+                          onClick={() => {
+                            this.setState({ selectedDeployEvent: deployEvent })
+                          }}
+                          className={(
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                            ' block px-4 py-2 text-sm w-full text-left'
+                          }
+                        >
+                          {deployEvent}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  ))}
+                </div>
+              </Menu.Items>
+            </span>
+          </Menu>
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
@@ -462,14 +532,16 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
                 this.setState({ namespace: this.state.defaultNamespace })
+                this.setState({ deployBranch: this.state.defaultDeployBranch })
+                this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
               }}
             >
               Reset
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || !this.state.namespace || !this.state.appName || !this.state.deployBranch || this.state.saveButtonTriggered || this.state.hasFormValidationError}
+              className={(hasChange && this.state.namespace && this.state.appName && this.state.deployBranch && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
