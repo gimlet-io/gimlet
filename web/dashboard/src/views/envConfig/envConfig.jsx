@@ -287,7 +287,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.deployEvent !== this.state.defaultDeployEvent || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || action === "new";
 
     if (!this.state.chartSchema) {
       return null;
