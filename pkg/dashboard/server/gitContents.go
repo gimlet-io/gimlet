@@ -210,9 +210,11 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 type envConfig struct {
-	Values    map[string]interface{}
-	Namespace string
-	AppName   string
+	Values       map[string]interface{}
+	Namespace    string
+	AppName      string
+	DeployBranch string
+	DeployEvent  string
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
@@ -278,6 +280,16 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	branch := helper.HeadBranch(repo)
 
+	var event dx.GitEvent
+
+	if envConfigData.DeployEvent == "tag" {
+		event = dx.Tag
+	} else if envConfigData.DeployEvent == "pr" {
+		event = dx.PR
+	} else {
+		event = dx.Push
+	}
+
 	_, blobID, err := goScm.Content(token, repoPath, fileUpdatePath, branch)
 	if err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
@@ -291,7 +303,11 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 					Version:    config.Chart.Version,
 				},
 				Namespace: envConfigData.Namespace,
-				Values:    envConfigData.Values,
+				Deploy: &dx.Deploy{
+					Branch: envConfigData.DeployBranch,
+					Event:  &event,
+				},
+				Values: envConfigData.Values,
 			}
 
 			var toSaveBuffer bytes.Buffer
@@ -340,6 +356,10 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		toUpdate := existingEnvConfigs[fileToUpdate]
 		toUpdate.Values = envConfigData.Values
 		toUpdate.Namespace = envConfigData.Namespace
+		toUpdate.Deploy = &dx.Deploy{
+			Branch: envConfigData.DeployBranch,
+			Event:  &event,
+		}
 
 		if toUpdate.App != envConfigData.AppName {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
