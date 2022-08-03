@@ -24,7 +24,7 @@
     "react-emoji-render": "^1.2.4",
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.0",
-    "redux": "^4.1.0",
+    "redux": "^4.2.0",
     "remarkable": "^2.0.1",
     "shared-components": "../shared-components/dist",
     "typescript": "^4.7.4",
