@@ -455,6 +455,10 @@ export default class Repo extends Component {
 function stacks(connectedAgents, envName) {
   for (const agentName of Object.keys(connectedAgents)) {
     const agent = connectedAgents[agentName];
+    if (!agent.stacks) {
+      return [];
+    }
+
     if (agentName === envName) {
       return agent.stacks;
     }
