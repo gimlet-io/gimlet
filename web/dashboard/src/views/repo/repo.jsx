@@ -456,7 +456,7 @@ function stacks(connectedAgents, envName) {
   for (const agentName of Object.keys(connectedAgents)) {
     const agent = connectedAgents[agentName];
     if (agentName === envName) {
-      return agent.stacks;
+      return agent.stacks ? agent.stacks : [];
     }
   }
   return [];
