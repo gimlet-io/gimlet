@@ -43,7 +43,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 		logrus.Debugf("agent disconnected: %s/%s", name, namespace)
 	}()
 
-	a := &streaming.ConnectedAgent{Name: name, Namespace: namespace, EventChannel: eventChannel}
+	a := &streaming.ConnectedAgent{
+		Name: name,
+		Namespace: namespace,
+		EventChannel: eventChannel,
+		Stacks: []*api.Stack{},
+	}
 
 	hub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	hub.Register <- a
