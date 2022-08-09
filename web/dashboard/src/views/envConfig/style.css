@@ -171,3 +171,31 @@
   box-shadow: 0 0 0 3px rgba(164, 202, 254, 0.45);
   border-color: #a4cafe;
 }
+
+h1 {
+    @apply text-2xl
+}
+
+h2 {
+    @apply text-xl
+}
+
+h3 {
+    @apply text-lg
+}
+
+h4 {
+    @apply text-base
+}
+
+h5 {
+    @apply text-sm
+}
+
+h6 {
+    @apply text-xs
+}
+
+blockquote {
+    @apply relative border-l-4 pl-4 border-gray-700
+}
