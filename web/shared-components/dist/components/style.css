@@ -135,3 +135,35 @@
 .errors {
     @apply hidden
 }
+
+.help-block h1 {
+    @apply text-2xl
+}
+
+.help-block h2 {
+    @apply text-xl
+}
+
+.help-block h3 {
+    @apply text-lg
+}
+
+.help-block h4 {
+    @apply text-base
+}
+
+.help-block h5 {
+    @apply text-sm
+}
+
+.help-block h6 {
+    @apply text-xs
+}
+
+.help-block blockquote {
+    @apply relative border-l-4 pl-4 border-gray-700
+}
+
+.help-block li {
+    @apply list-disc
+}
