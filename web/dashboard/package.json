@@ -15,7 +15,7 @@
     "@types/react-dom": "^17.0.17",
     "axios": "^0.27.2",
     "date-fns": "^2.28.0",
-    "helm-react-ui": "github:gimlet-io/helm-react-ui#enhancement/markdown-as-field-description",
+    "helm-react-ui": "github:gimlet-io/helm-react-ui#master",
     "json-to-pretty-yaml": "^1.2.2",
     "nanoid": "^3.2.0",
     "react": "^16.5.2",
