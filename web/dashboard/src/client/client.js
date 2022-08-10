@@ -37,7 +37,7 @@ export default class GimletClient {
 
   getEnvConfigs = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/envConfigs`);
 
-  saveEnvConfig = (owner, name, env, configName, values, namespace, appName, deployBranch, deployEvent) => this.postWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${configName}`, JSON.stringify({ values, namespace, appName, deployBranch, deployEvent }));
+  saveEnvConfig = (owner, name, env, configName, values, namespace, appName, useDeployPolicy, deployBranch, deployEvent) => this.postWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${configName}`, JSON.stringify({ values, namespace, appName, useDeployPolicy, deployBranch, deployEvent }));
 
   getRepoMetas = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/metas`);
 
