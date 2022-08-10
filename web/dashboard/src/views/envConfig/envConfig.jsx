@@ -584,6 +584,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
                 this.setState({ namespace: this.state.defaultNamespace })
+                this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
                 this.setState({ deployBranch: this.state.defaultDeployBranch })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
               }}
