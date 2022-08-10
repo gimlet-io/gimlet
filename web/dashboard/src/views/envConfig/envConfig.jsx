@@ -90,6 +90,7 @@ class EnvConfig extends Component {
       if (configFileContent.deploy) {
         this.setState({
           useDeployPolicy: true,
+          defaultUseDeployPolicy: true,
           deployBranch: configFileContent.deploy.branch,
           selectedDeployEvent: configFileContent.deploy.event,
           defaultDeployBranch: configFileContent.deploy.branch,
@@ -97,6 +98,7 @@ class EnvConfig extends Component {
         });
       } else {
         this.setState({
+          defaultUseDeployPolicy: false,
           defaultSelectedDeployEvent: this.state.selectedDeployEvent,
         });
       }
@@ -294,7 +296,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
     const hasDeployPolicyAndDeployBranch = !this.state.useDeployPolicy || (this.state.useDeployPolicy && this.state.deployBranch)
 
