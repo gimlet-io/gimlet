@@ -210,11 +210,12 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 type envConfig struct {
-	Values       map[string]interface{}
-	Namespace    string
-	AppName      string
-	DeployBranch string
-	DeployEvent  string
+	Values          map[string]interface{}
+	Namespace       string
+	AppName         string
+	UseDeployPolicy bool
+	DeployBranch    string
+	DeployEvent     string
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
@@ -303,11 +304,14 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 					Version:    config.Chart.Version,
 				},
 				Namespace: envConfigData.Namespace,
-				Deploy: &dx.Deploy{
+				Values:    envConfigData.Values,
+			}
+
+			if envConfigData.UseDeployPolicy {
+				toSave.Deploy = &dx.Deploy{
 					Branch: envConfigData.DeployBranch,
 					Event:  &event,
-				},
-				Values: envConfigData.Values,
+				}
 			}
 
 			var toSaveBuffer bytes.Buffer
@@ -356,9 +360,12 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		toUpdate := existingEnvConfigs[fileToUpdate]
 		toUpdate.Values = envConfigData.Values
 		toUpdate.Namespace = envConfigData.Namespace
-		toUpdate.Deploy = &dx.Deploy{
-			Branch: envConfigData.DeployBranch,
-			Event:  &event,
+
+		if envConfigData.UseDeployPolicy {
+			toUpdate.Deploy = &dx.Deploy{
+				Branch: envConfigData.DeployBranch,
+				Event:  &event,
+			}
 		}
 
 		if toUpdate.App != envConfigData.AppName {

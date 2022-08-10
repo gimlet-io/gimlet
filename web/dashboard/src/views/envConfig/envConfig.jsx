@@ -40,6 +40,7 @@ class EnvConfig extends Component {
       codeSnippetExpanded: false,
       deployEvents: ["push", "tag", "pr"],
       selectedDeployEvent: "push",
+      useDeployPolicy: false,
 
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
@@ -87,10 +88,15 @@ class EnvConfig extends Component {
 
       if (configFileContent.deploy) {
         this.setState({
+          useDeployPolicy: true,
           deployBranch: configFileContent.deploy.branch,
           selectedDeployEvent: configFileContent.deploy.event,
           defaultDeployBranch: configFileContent.deploy.branch,
           defaultSelectedDeployEvent: configFileContent.deploy.event,
+        });
+      } else {
+        this.setState({
+          defaultSelectedDeployEvent: this.state.selectedDeployEvent,
         });
       }
     }
@@ -229,7 +235,7 @@ class EnvConfig extends Component {
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.deployBranch, this.state.selectedDeployEvent)
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, this.state.deployBranch, this.state.selectedDeployEvent)
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
@@ -288,6 +294,8 @@ class EnvConfig extends Component {
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || action === "new";
+
+    const hasDeployPolicyAndDeployBranch = !this.state.useDeployPolicy || (this.state.useDeployPolicy && this.state.deployBranch)
 
     if (!this.state.chartSchema) {
       return null;
@@ -540,8 +548,8 @@ gimlet manifest template -f manifest.yaml`}
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || !this.state.deployBranch || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && this.state.deployBranch && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || !this.state.namespace || !this.state.appName || !hasDeployPolicyAndDeployBranch || this.state.saveButtonTriggered || this.state.hasFormValidationError}
+              className={(hasChange && this.state.namespace && this.state.appName && hasDeployPolicyAndDeployBranch && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
