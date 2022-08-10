@@ -245,6 +245,22 @@ class EnvConfig extends Component {
           return
         }
 
+        if (data.deploy) {
+          this.setState({
+            useDeployPolicy: true,
+            defaultUseDeployPolicy: true,
+            deployBranch: data.deploy.branch,
+            deployEvent: data.deploy.event,
+            defaultDeployBranch: data.deploy.branch,
+            defaultDeployEvent: data.deploy.event,
+          });
+        } else {
+          this.setState({
+            useDeployPolicy: false,
+            defaultUseDeployPolicy: false
+          });
+        }
+
         clearTimeout(this.state.timeoutTimer);
         this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
         this.setState({
@@ -254,12 +270,8 @@ class EnvConfig extends Component {
 
           appName: data.app,
           namespace: data.namespace,
-          deployBranch: data.deploy.branch,
-          deployEvent: data.deploy.event,
           defaultAppName: data.app,
           defaultNamespace: data.namespace,
-          defaultDeployBranch: data.deploy.branch,
-          defaultDeployEvent: data.deploy.event,
 
           values: Object.assign({}, data.values),
           nonDefaultValues: Object.assign({}, data.values),
@@ -372,7 +384,7 @@ class EnvConfig extends Component {
         <div className="mb-4 items-center">
           <div className="text-gray-700 block text-sm font-medium">Policy based releases</div>
           <div className="text-sm mb-4 text-gray-500 leading-loose">
-          You can automate releases to your staging or production environment.
+            You can automate releases to your staging or production environment.
           </div>
           <div className="max-w-lg flex rounded-md">
             <Switch
