@@ -14,6 +14,7 @@ import {
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
 import EnvVarsTable from "./envVarsTable";
+import { Switch } from '@headlessui/react'
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -367,60 +368,89 @@ class EnvConfig extends Component {
           />
         </div>
         <div className="mb-4 items-center">
-          <label htmlFor="deployBranch" className={`${!this.state.deployBranch ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
-            Deploy branch*
-          </label>
-          <input
-            type="text"
-            name="deployBranch"
-            id="deployBranch"
-            value={this.state.deployBranch}
-            onChange={e => { this.setState({ deployBranch: e.target.value }) }}
-            className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-          />
-        </div>
-        <div className="mb-8 items-center">
-          <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
-            Deploy event*
-          </label>
-          <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
-            <Menu.Button
-              className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+          <div className="text-gray-700 block text-sm font-medium">Policy based releases</div>
+          <div className="text-sm mb-4 text-gray-500 leading-loose">
+          You can automate releases to your staging or production environment.
+          </div>
+          <div className="max-w-lg flex rounded-md">
+            <Switch
+              checked={this.state.useDeployPolicy}
+              onChange={() => this.setState({ useDeployPolicy: !this.state.useDeployPolicy })}
+              className={(
+                this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
+                " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
+              }
             >
-
-              {this.state.selectedDeployEvent}
-            </Menu.Button>
-            <span className="-ml-px relative block">
-              <Menu.Button
-                className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
-                <span className="sr-only">Open options</span>
-                <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-              </Menu.Button>
-              <Menu.Items
-                className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  {this.state.deployEvents.map((deployEvent) => (
-                    <Menu.Item key={`${deployEvent}`}>
-                      {({ active }) => (
-                        <button
-                          onClick={() => {
-                            this.setState({ selectedDeployEvent: deployEvent })
-                          }}
-                          className={(
-                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                            ' block px-4 py-2 text-sm w-full text-left'
-                          }
-                        >
-                          {deployEvent}
-                        </button>
-                      )}
-                    </Menu.Item>
-                  ))}
-                </div>
-              </Menu.Items>
-            </span>
-          </Menu>
+              <span className="sr-only">Use setting</span>
+              <span
+                aria-hidden="true"
+                className={(
+                  this.state.useDeployPolicy ? "translate-x-5" : "translate-x-0") +
+                  " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
+                }
+              />
+            </Switch>
+          </div>
         </div>
+
+        {this.state.useDeployPolicy &&
+          <div className="ml-8">
+            <div className="mb-4 items-center">
+              <label htmlFor="deployBranch" className={`${!this.state.deployBranch ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                Deploy branch*
+              </label>
+              <input
+                type="text"
+                name="deployBranch"
+                id="deployBranch"
+                value={this.state.deployBranch}
+                onChange={e => { this.setState({ deployBranch: e.target.value }) }}
+                className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+              />
+            </div>
+            <div className="mb-8 items-center">
+              <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
+                Deploy event*
+              </label>
+              <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                >
+
+                  {this.state.selectedDeployEvent}
+                </Menu.Button>
+                <span className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      {this.state.deployEvents.map((deployEvent) => (
+                        <Menu.Item key={`${deployEvent}`}>
+                          {({ active }) => (
+                            <button
+                              onClick={() => {
+                                this.setState({ selectedDeployEvent: deployEvent })
+                              }}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {deployEvent}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </span>
+              </Menu>
+            </div>
+          </div>}
         <div className="container mx-auto m-8">
           <HelmUI
             schema={this.state.chartSchema}
