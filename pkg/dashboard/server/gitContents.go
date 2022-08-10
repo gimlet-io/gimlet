@@ -366,6 +366,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				Branch: envConfigData.DeployBranch,
 				Event:  &event,
 			}
+		} else {
+			toUpdate.Deploy = nil
 		}
 
 		if toUpdate.App != envConfigData.AppName {
