@@ -215,7 +215,7 @@ type envConfig struct {
 	AppName         string
 	UseDeployPolicy bool
 	DeployBranch    string
-	DeployEvent     string
+	DeployEvent     int
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
@@ -281,15 +281,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	branch := helper.HeadBranch(repo)
 
-	var event dx.GitEvent
-
-	if envConfigData.DeployEvent == "tag" {
-		event = dx.Tag
-	} else if envConfigData.DeployEvent == "pr" {
-		event = dx.PR
-	} else {
-		event = dx.Push
-	}
+	event := dx.GitEvent(envConfigData.DeployEvent)
 
 	_, blobID, err := goScm.Content(token, repoPath, fileUpdatePath, branch)
 	if err != nil {
