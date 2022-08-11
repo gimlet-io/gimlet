@@ -301,7 +301,7 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    const hasDeployPolicyAndDeployBranch = !this.state.useDeployPolicy || (this.state.useDeployPolicy && this.state.deployBranch)
+    const hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy = (this.state.useDeployPolicy && this.state.deployBranch) || !this.state.useDeployPolicy
 
     if (!this.state.chartSchema) {
       return null;
@@ -584,8 +584,8 @@ gimlet manifest template -f manifest.yaml`}
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || !hasDeployPolicyAndDeployBranch || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && hasDeployPolicyAndDeployBranch && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || !this.state.namespace || !this.state.appName || !hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy || this.state.saveButtonTriggered || this.state.hasFormValidationError}
+              className={(hasChange && this.state.namespace && this.state.appName && hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
