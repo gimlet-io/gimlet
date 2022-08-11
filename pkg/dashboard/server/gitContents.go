@@ -215,6 +215,7 @@ type envConfig struct {
 	AppName         string
 	UseDeployPolicy bool
 	DeployBranch    string
+	DeployTag       string
 	DeployEvent     int
 }
 
@@ -303,6 +304,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				toSave.Deploy = &dx.Deploy{
 					Branch: envConfigData.DeployBranch,
 					Event:  &event,
+					Tag:    envConfigData.DeployTag,
 				}
 			}
 
@@ -357,6 +359,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			toUpdate.Deploy = &dx.Deploy{
 				Branch: envConfigData.DeployBranch,
 				Event:  &event,
+				Tag:    envConfigData.DeployTag,
 			}
 		} else {
 			toUpdate.Deploy = nil

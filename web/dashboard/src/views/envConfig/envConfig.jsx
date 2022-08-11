@@ -182,9 +182,11 @@ class EnvConfig extends Component {
       this.setState({
         useDeployPolicy: true,
         deployBranch: deploy.branch,
+        deployTag: deploy.tag,
         selectedDeployEvent: deploy.event,
         defaultUseDeployPolicy: true,
         defaultDeployBranch: deploy.branch,
+        defaultDeployTag: deploy.tag,
         defaultSelectedDeployEvent: deploy.event,
       });
       return
@@ -243,7 +245,7 @@ class EnvConfig extends Component {
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, this.state.deployBranch, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, this.state.deployBranch, this.state.deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
@@ -299,7 +301,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.deployTag !== this.state.defaultDeployTag || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
     const hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy = (this.state.useDeployPolicy && this.state.deployBranch) || !this.state.useDeployPolicy
 
@@ -401,19 +403,6 @@ class EnvConfig extends Component {
         {this.state.useDeployPolicy &&
           <div className="ml-8">
             <div className="mb-4 items-center">
-              <label htmlFor="deployBranch" className={`${!this.state.deployBranch ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
-                Deploy branch*
-              </label>
-              <input
-                type="text"
-                name="deployBranch"
-                id="deployBranch"
-                value={this.state.deployBranch}
-                onChange={e => { this.setState({ deployBranch: e.target.value }) }}
-                className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-              />
-            </div>
-            <div className="mb-8 items-center">
               <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
                 Deploy event*
               </label>
@@ -455,6 +444,34 @@ class EnvConfig extends Component {
                 </span>
               </Menu>
             </div>
+            {this.state.selectedDeployEvent === "tag" ?
+              <div className="mb-8 items-center">
+                <label htmlFor="deployTag" className={`${!this.state.deployTag ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                  Deploy tag*
+                </label>
+                <input
+                  type="text"
+                  name="deployTag"
+                  id="deployTag"
+                  value={this.state.deployTag}
+                  onChange={e => { this.setState({ deployTag: e.target.value }) }}
+                  className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+                />
+              </div>
+              :
+              <div className="mb-8 items-center">
+                <label htmlFor="deployBranch" className={`${!this.state.deployBranch ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                  Deploy branch*
+                </label>
+                <input
+                  type="text"
+                  name="deployBranch"
+                  id="deployBranch"
+                  value={this.state.deployBranch}
+                  onChange={e => { this.setState({ deployBranch: e.target.value }) }}
+                  className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+                />
+              </div>}
           </div>}
         <div className="container mx-auto m-8">
           <HelmUI
@@ -577,6 +594,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ namespace: this.state.defaultNamespace })
                 this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
                 this.setState({ deployBranch: this.state.defaultDeployBranch })
+                this.setState({ deployTag: this.state.defaultDeployTag })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
               }}
             >
