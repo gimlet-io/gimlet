@@ -447,7 +447,7 @@ class EnvConfig extends Component {
               </Menu>
             </div>
             {this.state.selectedDeployEvent === "tag" ?
-              <div className="mb-8 items-center">
+              <div className="mb-4 items-center">
                 <label htmlFor="deployTag" className="text-gray-700 mr-4 block text-sm font-medium">
                   Deploy tag*
                 </label>
@@ -461,7 +461,7 @@ class EnvConfig extends Component {
                 />
               </div>
               :
-              <div className="mb-8 items-center">
+              <div className="mb-4 items-center">
                 <label htmlFor="deployBranch" className="text-gray-700 mr-4 block text-sm font-medium">
                   Deploy branch*
                 </label>
@@ -474,6 +474,9 @@ class EnvConfig extends Component {
                   className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
                 />
               </div>}
+              <div className="text-sm mb-8 text-gray-500 leading-loose">
+                Examples: tag: v*, branch: feature/*, branch: "!main"
+              </div>
           </div>}
         <div className="container mx-auto m-8">
           <HelmUI
