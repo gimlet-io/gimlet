@@ -87,21 +87,7 @@ class EnvConfig extends Component {
         defaultState: Object.assign({}, envConfig),
       });
 
-      if (configFileContent.deploy) {
-        this.setState({
-          useDeployPolicy: true,
-          defaultUseDeployPolicy: true,
-          deployBranch: configFileContent.deploy.branch,
-          selectedDeployEvent: configFileContent.deploy.event,
-          defaultDeployBranch: configFileContent.deploy.branch,
-          defaultSelectedDeployEvent: configFileContent.deploy.event,
-        });
-      } else {
-        this.setState({
-          defaultUseDeployPolicy: false,
-          defaultSelectedDeployEvent: this.state.selectedDeployEvent,
-        });
-      }
+      this.setDeployPolicy(configFileContent.deploy);
     }
   }
 
@@ -191,6 +177,25 @@ class EnvConfig extends Component {
     }))
   }
 
+  setDeployPolicy(deploy){
+    if (deploy) {
+      this.setState({
+        useDeployPolicy: true,
+        deployBranch: deploy.branch,
+        selectedDeployEvent: deploy.event,
+        defaultUseDeployPolicy: true,
+        defaultDeployBranch: deploy.branch,
+        defaultSelectedDeployEvent: deploy.event,
+      });
+      return
+    }
+
+    this.setState({
+      defaultUseDeployPolicy: false,
+      defaultSelectedDeployEvent: this.state.selectedDeployEvent,
+    });
+  }
+
   validationCallback = (errors) => {
     if (errors) {
       console.log(errors);
@@ -245,21 +250,7 @@ class EnvConfig extends Component {
           return
         }
 
-        if (data.deploy) {
-          this.setState({
-            useDeployPolicy: true,
-            defaultUseDeployPolicy: true,
-            deployBranch: data.deploy.branch,
-            deployEvent: data.deploy.event,
-            defaultDeployBranch: data.deploy.branch,
-            defaultDeployEvent: data.deploy.event,
-          });
-        } else {
-          this.setState({
-            useDeployPolicy: false,
-            defaultUseDeployPolicy: false
-          });
-        }
+        this.setDeployPolicy(data.deploy);
 
         clearTimeout(this.state.timeoutTimer);
         this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
