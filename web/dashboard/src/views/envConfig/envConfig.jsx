@@ -303,8 +303,6 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployBranch !== this.state.defaultDeployBranch || this.state.deployTag !== this.state.defaultDeployTag || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    const hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy = (this.state.useDeployPolicy && this.state.deployBranch) || !this.state.useDeployPolicy
-
     if (!this.state.chartSchema) {
       return null;
     }
@@ -427,7 +425,11 @@ class EnvConfig extends Component {
                           {({ active }) => (
                             <button
                               onClick={() => {
-                                this.setState({ selectedDeployEvent: deployEvent })
+                                this.setState({
+                                  selectedDeployEvent: deployEvent,
+                                  deployBranch: "",
+                                  deployTag: "",
+                                })
                               }}
                               className={(
                                 active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
@@ -446,7 +448,7 @@ class EnvConfig extends Component {
             </div>
             {this.state.selectedDeployEvent === "tag" ?
               <div className="mb-8 items-center">
-                <label htmlFor="deployTag" className={`${!this.state.deployTag ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                <label htmlFor="deployTag" className="text-gray-700 mr-4 block text-sm font-medium">
                   Deploy tag*
                 </label>
                 <input
@@ -460,7 +462,7 @@ class EnvConfig extends Component {
               </div>
               :
               <div className="mb-8 items-center">
-                <label htmlFor="deployBranch" className={`${!this.state.deployBranch ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                <label htmlFor="deployBranch" className="text-gray-700 mr-4 block text-sm font-medium">
                   Deploy branch*
                 </label>
                 <input
@@ -602,8 +604,8 @@ gimlet manifest template -f manifest.yaml`}
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || !hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && hasDeployPolicyAndDeployBranchOrNotUseDeployPolicy && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered || this.state.hasFormValidationError}
+              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
