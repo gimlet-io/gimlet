@@ -177,7 +177,7 @@ class EnvConfig extends Component {
     }))
   }
 
-  setDeployPolicy(deploy){
+  setDeployPolicy(deploy) {
     if (deploy) {
       this.setState({
         useDeployPolicy: true,
@@ -445,22 +445,51 @@ class EnvConfig extends Component {
                 </span>
               </Menu>
             </div>
-              <div className="mb-4 items-center">
-                <label htmlFor="deployPolicyInput" className="text-gray-700 mr-4 block text-sm font-medium">
-                  {`Deploy ${this.state.selectedDeployEvent === "tag" ? "tag" : "branch"}*`}
-                </label>
-                <input
-                  type="text"
-                  name="deployPolicyInput"
-                  id="deployPolicyInput"
-                  value={this.state.deployPolicyInput ?? ""}
-                  onChange={e => { this.setState({ deployPolicyInput: e.target.value }) }}
-                  className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-                />
-              </div>
-              <div className="text-sm mb-8 text-gray-500 leading-loose">
-                Examples: tag: v*, branch: feature/*, branch: "!main"
-              </div>
+            <div className="mb-4 items-center">
+              <label htmlFor="deployPolicyInput" className="text-gray-700 mr-4 block text-sm font-medium">
+                {`Deploy ${this.state.selectedDeployEvent === "tag" ? "tag" : "branch"}*`}
+              </label>
+              <input
+                type="text"
+                name="deployPolicyInput"
+                id="deployPolicyInput"
+                value={this.state.deployPolicyInput ?? ""}
+                onChange={e => { this.setState({ deployPolicyInput: e.target.value }) }}
+                className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+              />
+            </div>
+            <div className="text-sm mb-8 text-gray-500 leading-loose">
+              <ul className="list-none">
+                {this.state.selectedDeployEvent === "tag" ?
+                  <li>
+                    Tag pattern trigger example:
+                    <code className="mx-1">tag: v*</code>
+                    Triggers on v1, v2, v1.1 or any glob pattern that is supported by the {
+                      <a
+                        href="https://github.com/gobwas/glob"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-gray-700 hover:underline"
+                      >
+                        https://github.com/gobwas/glob
+                      </a>
+                    } project.
+                  </li>
+                  :
+                  <>
+                    <li>
+                      Branch pattern trigger example:
+                      <code className="mx-1">branch: feature/*</code>
+                      Triggers on any commit pushed to a branch that is prefixed with feature/.
+                    </li>
+                    <li>
+                      Negated branch trigger:
+                      <code className="mx-1">branch: "!main"</code>
+                      Triggers on any commit pushed to a branch that is not main.
+                    </li>
+                  </>}
+              </ul>
+            </div>
           </div>}
         <div className="container mx-auto m-8">
           <HelmUI
