@@ -14,6 +14,7 @@ import {
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
 import EnvVarsTable from "./envVarsTable";
+import { Switch } from '@headlessui/react'
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -38,6 +39,9 @@ class EnvConfig extends Component {
       hasFormValidationError: false,
       environmentVariablesExpanded: false,
       codeSnippetExpanded: false,
+      deployEvents: ["push", "tag", "pr"],
+      selectedDeployEvent: "push",
+      useDeployPolicy: false,
 
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
@@ -82,6 +86,8 @@ class EnvConfig extends Component {
         nonDefaultValues: Object.assign({}, envConfig),
         defaultState: Object.assign({}, envConfig),
       });
+
+      this.setDeployPolicy(configFileContent.deploy);
     }
   }
 
@@ -171,6 +177,25 @@ class EnvConfig extends Component {
     }))
   }
 
+  setDeployPolicy(deploy) {
+    if (deploy) {
+      this.setState({
+        useDeployPolicy: true,
+        deployFilterInput: deploy.branch ?? deploy.tag,
+        selectedDeployEvent: deploy.event,
+        defaultUseDeployPolicy: true,
+        defaultDeployFilterInput: deploy.branch ?? deploy.tag,
+        defaultSelectedDeployEvent: deploy.event,
+      });
+      return
+    }
+
+    this.setState({
+      defaultUseDeployPolicy: false,
+      defaultSelectedDeployEvent: this.state.selectedDeployEvent,
+    });
+  }
+
   validationCallback = (errors) => {
     if (errors) {
       console.log(errors);
@@ -218,12 +243,17 @@ class EnvConfig extends Component {
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave)
+    let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
+    let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
+
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
           return
         }
+
+        this.setDeployPolicy(data.deploy);
 
         clearTimeout(this.state.timeoutTimer);
         this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
@@ -272,7 +302,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
     if (!this.state.chartSchema) {
       return null;
@@ -316,6 +346,8 @@ class EnvConfig extends Component {
         <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
+
+        <div className="mt-8 mb-16">
         <div className="mt-8 mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
@@ -330,7 +362,7 @@ class EnvConfig extends Component {
             className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
           />
         </div>
-        <div className="mb-8 items-center">
+        <div className="mb-4 items-center">
           <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
@@ -342,6 +374,114 @@ class EnvConfig extends Component {
             onChange={e => { this.setState({ namespace: e.target.value }) }}
             className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
           />
+        </div>
+        <div className="mb-4 items-center">
+          <div className="text-gray-700 block text-sm font-medium">Policy based releases</div>
+          <div className="text-sm mb-4 text-gray-500 leading-loose">
+            You can automate releases to your staging or production environment.
+          </div>
+          <div className="max-w-lg flex rounded-md">
+            <Switch
+              checked={this.state.useDeployPolicy}
+              onChange={() => this.setState({ useDeployPolicy: !this.state.useDeployPolicy })}
+              className={(
+                this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
+                " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
+              }
+            >
+              <span className="sr-only">Use setting</span>
+              <span
+                aria-hidden="true"
+                className={(
+                  this.state.useDeployPolicy ? "translate-x-5" : "translate-x-0") +
+                  " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
+                }
+              />
+            </Switch>
+          </div>
+        </div>
+
+        {this.state.useDeployPolicy &&
+          <div className="ml-8 mb-8">
+            <div className="mb-4 items-center">
+              <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
+                Deploy event*
+              </label>
+              <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                >
+
+                  {this.state.selectedDeployEvent}
+                </Menu.Button>
+                <span className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      {this.state.deployEvents.map((deployEvent) => (
+                        <Menu.Item key={`${deployEvent}`}>
+                          {({ active }) => (
+                            <button
+                              onClick={() => {
+                                this.setState({
+                                  selectedDeployEvent: deployEvent,
+                                })
+                              }}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {deployEvent}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </span>
+              </Menu>
+            </div>
+            <div className="mb-4 items-center">
+              <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
+                {`${this.state.selectedDeployEvent === "tag" ? "Tag" : "Branch"} filter`}
+              </label>
+              <input
+                type="text"
+                name="deployFilterInput"
+                id="deployFilterInput"
+                value={this.state.deployFilterInput ?? ""}
+                onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
+                className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+              />
+              <ul className="list-none text-sm text-gray-500 mt-2">
+                {this.state.selectedDeployEvent === "tag" ?
+                  <>
+                    <li>
+                      Filter tags to deploy based on tag name patterns.
+                    </li>
+                    <li>
+                      Use glob patterns like <code>`v1.*`</code> or negated conditions like <code>`!v2.*`</code>.
+                    </li>
+                  </>
+                  :
+                  <>
+                    <li>
+                      Filter branches to deploy based on branch name patterns.
+                    </li>
+                    <li>
+                      Use glob patterns like <code>`feature/*`</code> or negated conditions like <code>`!main`</code>.
+                    </li>
+                  </>}
+              </ul>
+            </div>
+          </div>
+        }
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
@@ -462,6 +602,9 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
                 this.setState({ namespace: this.state.defaultNamespace })
+                this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
+                this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
+                this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
               }}
             >
               Reset
