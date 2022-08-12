@@ -346,6 +346,8 @@ class EnvConfig extends Component {
         <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
           &laquo; back
         </button>
+
+        <div className="mt-8 mb-16">
         <div className="mt-8 mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
@@ -400,7 +402,7 @@ class EnvConfig extends Component {
         </div>
 
         {this.state.useDeployPolicy &&
-          <div className="ml-8">
+          <div className="ml-8 mb-8">
             <div className="mb-4 items-center">
               <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
                 Deploy event*
@@ -457,40 +459,30 @@ class EnvConfig extends Component {
                 onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
                 className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
               />
-            </div>
-            <div className="text-sm mb-8 text-gray-500 leading-loose">
-              <ul className="list-none">
+              <ul className="list-none text-sm text-gray-500 mt-2">
                 {this.state.selectedDeployEvent === "tag" ?
-                  <li>
-                    Tag pattern trigger example:
-                    <code className="mx-1">tag: v*</code>
-                    Triggers on v1, v2, v1.1 or any glob pattern that is supported by the {
-                      <a
-                        href="https://github.com/gobwas/glob"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-gray-700 hover:underline"
-                      >
-                        https://github.com/gobwas/glob
-                      </a>
-                    } project.
-                  </li>
+                  <>
+                    <li>
+                      Filter tags to deploy based on a tag name patterns.
+                    </li>
+                    <li>
+                      Use glob patterns like <code>`v1.*`</code> or negated conditions like <code>`!v2.*`</code>.
+                    </li>
+                  </>
                   :
                   <>
                     <li>
-                      Branch pattern trigger example:
-                      <code className="mx-1">branch: feature/*</code>
-                      Triggers on any commit pushed to a branch that is prefixed with feature/.
+                      Filter branches to deploy based on a branch name patterns.
                     </li>
                     <li>
-                      Negated branch trigger:
-                      <code className="mx-1">branch: "!main"</code>
-                      Triggers on any commit pushed to a branch that is not main.
+                      Use glob patterns like <code>`feature/*`</code> or negated conditions like <code>`!main`</code>.
                     </li>
                   </>}
               </ul>
             </div>
-          </div>}
+          </div>
+        }
+        </div>
         <div className="container mx-auto m-8">
           <HelmUI
             schema={this.state.chartSchema}
