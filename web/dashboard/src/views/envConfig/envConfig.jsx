@@ -455,7 +455,7 @@ class EnvConfig extends Component {
                   type="text"
                   name="deployTag"
                   id="deployTag"
-                  value={this.state.deployTag}
+                  value={this.state.deployTag ?? ""}
                   onChange={e => { this.setState({ deployTag: e.target.value }) }}
                   className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
                 />
@@ -469,7 +469,7 @@ class EnvConfig extends Component {
                   type="text"
                   name="deployBranch"
                   id="deployBranch"
-                  value={this.state.deployBranch}
+                  value={this.state.deployBranch ?? ""}
                   onChange={e => { this.setState({ deployBranch: e.target.value }) }}
                   className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
                 />
