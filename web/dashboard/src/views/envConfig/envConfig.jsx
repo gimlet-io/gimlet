@@ -463,7 +463,7 @@ class EnvConfig extends Component {
                 {this.state.selectedDeployEvent === "tag" ?
                   <>
                     <li>
-                      Filter tags to deploy based on a tag name patterns.
+                      Filter tags to deploy based on tag name patterns.
                     </li>
                     <li>
                       Use glob patterns like <code>`v1.*`</code> or negated conditions like <code>`!v2.*`</code>.
@@ -472,7 +472,7 @@ class EnvConfig extends Component {
                   :
                   <>
                     <li>
-                      Filter branches to deploy based on a branch name patterns.
+                      Filter branches to deploy based on branch name patterns.
                     </li>
                     <li>
                       Use glob patterns like <code>`feature/*`</code> or negated conditions like <code>`!main`</code>.
