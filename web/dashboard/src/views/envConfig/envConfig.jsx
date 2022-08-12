@@ -181,10 +181,10 @@ class EnvConfig extends Component {
     if (deploy) {
       this.setState({
         useDeployPolicy: true,
-        deployPolicyInput: deploy.branch ?? deploy.tag,
+        deployFilterInput: deploy.branch ?? deploy.tag,
         selectedDeployEvent: deploy.event,
         defaultUseDeployPolicy: true,
-        defaultDeployPolicyInput: deploy.branch ?? deploy.tag,
+        defaultDeployFilterInput: deploy.branch ?? deploy.tag,
         defaultSelectedDeployEvent: deploy.event,
       });
       return
@@ -243,8 +243,8 @@ class EnvConfig extends Component {
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
 
-    let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployPolicyInput : undefined;
-    let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployPolicyInput : undefined;
+    let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
+    let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
     this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
@@ -302,7 +302,7 @@ class EnvConfig extends Component {
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
     const hasChange = (nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || this.state.deployPolicyInput !== this.state.defaultDeployPolicyInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
     if (!this.state.chartSchema) {
       return null;
@@ -446,15 +446,15 @@ class EnvConfig extends Component {
               </Menu>
             </div>
             <div className="mb-4 items-center">
-              <label htmlFor="deployPolicyInput" className="text-gray-700 mr-4 block text-sm font-medium">
-                {`Deploy ${this.state.selectedDeployEvent === "tag" ? "tag" : "branch"}*`}
+              <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
+                {`${this.state.selectedDeployEvent === "tag" ? "Tag" : "Branch"} filter`}
               </label>
               <input
                 type="text"
-                name="deployPolicyInput"
-                id="deployPolicyInput"
-                value={this.state.deployPolicyInput ?? ""}
-                onChange={e => { this.setState({ deployPolicyInput: e.target.value }) }}
+                name="deployFilterInput"
+                id="deployFilterInput"
+                value={this.state.deployFilterInput ?? ""}
+                onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
                 className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
               />
             </div>
@@ -611,7 +611,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
                 this.setState({ namespace: this.state.defaultNamespace })
                 this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
-                this.setState({ deployPolicyInput: this.state.defaultDeployPolicyInput })
+                this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
               }}
             >
