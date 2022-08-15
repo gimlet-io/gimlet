@@ -302,7 +302,10 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-
+    
+    if (!nonDefaultConfigFile.deploy) {
+      nonDefaultConfigFile.deploy = {}
+    }
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
