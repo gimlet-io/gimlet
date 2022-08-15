@@ -292,11 +292,38 @@ class EnvConfig extends Component {
     }
   }
 
+  updateNonDefaultConfigFile(configFile) {
+    if (!configFile) {
+      return null
+    }
+
+    const nonDefaultConfigFile = Object.assign({}, configFile);
+
+    nonDefaultConfigFile.app = this.state.appName;
+    nonDefaultConfigFile.namespace = this.state.namespace;
+    nonDefaultConfigFile.values = this.state.nonDefaultValues;
+
+
+    if (this.state.useDeployPolicy) {
+      if (this.state.selectedDeployEvent !== "tag") {
+        nonDefaultConfigFile.deploy = { event: "push", branch: this.state.deployFilterInput }
+      
+      }
+      if (this.state.selectedDeployEvent === "tag") {
+        nonDefaultConfigFile.deploy = { event: "tag", tag: this.state.deployFilterInput }
+      
+      }
+    } else {
+      delete nonDefaultConfigFile.deploy;
+    }
+
+    return nonDefaultConfigFile;
+  }
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const configFileCopy = Object.assign({}, this.state.configFile)
-    configFileCopy.values = this.state.nonDefaultValues;
+    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile);
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -536,7 +563,7 @@ class EnvConfig extends Component {
                       copiable={true}
                       code={
                         `cat << EOF > manifest.yaml
-${YAML.stringify(configFileCopy)}EOF
+${YAML.stringify(nonDefaultConfigFile)}EOF
 
 gimlet manifest template -f manifest.yaml`}
                     />
