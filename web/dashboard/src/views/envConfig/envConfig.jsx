@@ -306,13 +306,13 @@ class EnvConfig extends Component {
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
-        nonDefaultConfigFile.deploy = { event: this.state.selectedDeployEvent, branch: this.state.deployFilterInput }
-      
+        Object.assign(nonDefaultConfigFile.deploy, { branch: this.state.deployFilterInput });
       }
       if (this.state.selectedDeployEvent === "tag") {
-        nonDefaultConfigFile.deploy = { event: this.state.selectedDeployEvent, tag: this.state.deployFilterInput }
-      
+        Object.assign(nonDefaultConfigFile.deploy, { tag: this.state.deployFilterInput });
       }
+
+      Object.assign(nonDefaultConfigFile.deploy, { event: this.state.selectedDeployEvent });
     } else {
       delete nonDefaultConfigFile.deploy;
     }
