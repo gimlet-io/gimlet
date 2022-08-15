@@ -521,8 +521,8 @@ class EnvConfig extends Component {
           />
           <div className="w-full mt-16">
             <ReactDiffViewer
-              oldValue={YAML.stringify(this.state.defaultState)}
-              newValue={YAML.stringify(this.state.nonDefaultValues)}
+              oldValue={YAML.stringify(this.state.configFile)}
+              newValue={YAML.stringify(nonDefaultConfigFile)}
               splitView={false}
               showDiffOnly={false}
               styles={{
