@@ -302,20 +302,14 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    
-    if (!nonDefaultConfigFile.deploy) {
-      nonDefaultConfigFile.deploy = {}
-    }
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
-        Object.assign(nonDefaultConfigFile.deploy, { branch: this.state.deployFilterInput });
+        nonDefaultConfigFile.deploy = { branch: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
       }
       if (this.state.selectedDeployEvent === "tag") {
-        Object.assign(nonDefaultConfigFile.deploy, { tag: this.state.deployFilterInput });
+        nonDefaultConfigFile.deploy = { tag: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
       }
-
-      Object.assign(nonDefaultConfigFile.deploy, { event: this.state.selectedDeployEvent });
     } else {
       delete nonDefaultConfigFile.deploy;
     }
