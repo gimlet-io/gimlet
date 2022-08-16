@@ -70,13 +70,13 @@ class EnvConfig extends Component {
   }
 
   setLocalEnvConfigState(reduxState, repoName, env, config) {
+    const { action } = this.props.match.params;
     let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
       let envConfig = configFileContent.values;
 
       this.setState({
-        configFile: configFileContent,
-
+        configFile: (action === "new" ? {} : configFileContent),
         appName: configFileContent.app,
         namespace: configFileContent.namespace,
         defaultAppName: configFileContent.app,
