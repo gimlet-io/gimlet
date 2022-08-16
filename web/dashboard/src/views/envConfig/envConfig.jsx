@@ -28,7 +28,7 @@ class EnvConfig extends Component {
     this.state = {
       chartSchema: reduxState.chartSchema,
       chartUISchema: reduxState.chartUISchema,
-      chart: reduxState.chart,
+      defaultChart: reduxState.chart,
       fileInfos: reduxState.fileInfos,
 
       saveButtonTriggered: false,
@@ -54,7 +54,7 @@ class EnvConfig extends Component {
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
-        chart: reduxState.chart,
+        defaultChart: reduxState.chart,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -79,6 +79,7 @@ class EnvConfig extends Component {
 
       this.setState({
         configFile: (action === "new" ? {} : configFileContent),
+        chartOfConfig: configFileContent.chart,
         appName: configFileContent.app,
         namespace: configFileContent.namespace,
         defaultAppName: configFileContent.app,
@@ -306,7 +307,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = configFile.chart ?? this.state.chart;
+    nonDefaultConfigFile.chart = this.state.chartOfConfig ?? this.state.defaultChart;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
@@ -604,7 +605,8 @@ gimlet manifest template -f manifest.yaml`}
                                   envConfig: {
                                     ...this.state.configFile,
                                     app: `${this.state.configFile.app}-copy`,
-                                    env: env.name
+                                    env: env.name,
+                                    chart: this.state.configFile.chart,
                                   },
                                 }
                               });
