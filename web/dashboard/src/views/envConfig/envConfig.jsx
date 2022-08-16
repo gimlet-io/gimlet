@@ -28,6 +28,7 @@ class EnvConfig extends Component {
     this.state = {
       chartSchema: reduxState.chartSchema,
       chartUISchema: reduxState.chartUISchema,
+      chart: reduxState.chart,
       fileInfos: reduxState.fileInfos,
 
       saveButtonTriggered: false,
@@ -53,6 +54,7 @@ class EnvConfig extends Component {
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
+        chart: reduxState.chart,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -304,6 +306,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
+    nonDefaultConfigFile.chart = configFile.chart ?? this.state.chart;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
