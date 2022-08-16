@@ -297,8 +297,10 @@ class EnvConfig extends Component {
       return null
     }
 
+    const { env } = this.props.match.params;
     const nonDefaultConfigFile = Object.assign({}, configFile);
 
+    nonDefaultConfigFile.env = env;
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
