@@ -141,6 +141,7 @@ export function gimletd(state, gimletd) {
 }
 
 export function schemas(state, schemas) {
+  state.chart = schemas.chart;
   state.chartSchema = schemas.chartSchema;
   state.chartUISchema = schemas.uiSchema;
   return state;
