@@ -292,7 +292,8 @@ export default class Repo extends Component {
 
   navigateToConfigEdit(env, config) {
     const { owner, repo } = this.props.match.params;
-    this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${config}`);
+    const encodedConfig = encodeURIComponent(config);
+    this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${encodedConfig}`);
   }
 
   newConfig(env, config) {
