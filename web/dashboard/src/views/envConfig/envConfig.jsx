@@ -545,7 +545,7 @@ class EnvConfig extends Component {
               />
             </div>
           }
-          {JSON.stringify(this.state.envConfig) !== "{}" &&
+          {nonDefaultConfigFile.chart &&
             <>
               {!this.state.codeSnippetExpanded ?
                 <Button
