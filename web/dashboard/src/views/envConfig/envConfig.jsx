@@ -545,7 +545,7 @@ class EnvConfig extends Component {
               />
             </div>
           }
-          {nonDefaultConfigFile.chart &&
+          {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
             <>
               {!this.state.codeSnippetExpanded ?
                 <Button
