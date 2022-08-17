@@ -4,7 +4,7 @@ namespace: preview
 chart:
   repository: https://chart.onechart.dev
   name: onechart
-  version: 0.35.0
+  version: 0.39.0
 deploy:
   branch: feature/*
   event: push
