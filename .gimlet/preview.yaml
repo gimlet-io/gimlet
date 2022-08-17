@@ -4,7 +4,7 @@ namespace: preview
 chart:
   repository: https://chart.onechart.dev
   name: onechart
-  version: 0.35.0
+  version: 0.39.0
 deploy:
   branch: feature/*
   event: push
@@ -27,10 +27,10 @@ values:
   volumes:
     - name: data
       path: /var/lib/gimlet-dashboard
-      size: 1Gi
+      emptyDir: true
     - name: repo-cache
       path: /tmp/gimlet-dashboard
-      size: 5Gi
+      emptyDir: true
   ingress:
     annotations:
       kubernetes.io/ingress.class: nginx
