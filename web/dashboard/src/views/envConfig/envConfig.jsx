@@ -54,7 +54,7 @@ class EnvConfig extends Component {
       this.setState({
         chartSchema: reduxState.chartSchema,
         chartUISchema: reduxState.chartUISchema,
-        defaulthartFromApi: reduxState.helmChart,
+        defaultChartFromApi: reduxState.helmChart,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
