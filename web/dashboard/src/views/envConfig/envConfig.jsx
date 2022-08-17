@@ -26,9 +26,7 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     this.state = {
-      chartSchema: reduxState.chartSchema,
-      chartUISchema: reduxState.chartUISchema,
-      defaultChartFromApi: reduxState.helmChart,
+      defaultChart: reduxState.defaultChart,
       fileInfos: reduxState.fileInfos,
 
       saveButtonTriggered: false,
@@ -52,9 +50,7 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        chartSchema: reduxState.chartSchema,
-        chartUISchema: reduxState.chartUISchema,
-        defaultChartFromApi: reduxState.helmChart,
+        defaultChart: reduxState.defaultChart,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -296,7 +292,7 @@ class EnvConfig extends Component {
   }
 
   updateNonDefaultConfigFile(configFile) {
-    if (!configFile) {
+    if (!configFile || !this.state.defaultChart) {
       return null
     }
 
@@ -307,7 +303,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChartFromApi;
+    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
@@ -334,11 +330,7 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!this.state.chartSchema) {
-      return null;
-    }
-
-    if (!this.state.chartUISchema) {
+    if (!this.state.defaultChart) {
       return null;
     }
 
@@ -515,8 +507,8 @@ class EnvConfig extends Component {
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
-            schema={this.state.chartSchema}
-            config={this.state.chartUISchema}
+            schema={this.state.defaultChart.schema}
+            config={this.state.defaultChart.uiSchema}
             values={this.state.values}
             setValues={this.setValues}
             validate={true}

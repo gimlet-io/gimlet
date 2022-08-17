@@ -292,16 +292,16 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helmChart := dx.Chart{
+	chartReference := dx.Chart{
 		Name:       config.Chart.Name,
 		Repository: config.Chart.Repo,
 		Version:    config.Chart.Version,
 	}
 
 	schemas := map[string]interface{}{}
-	schemas["chartSchema"] = schema
+	schemas["schema"] = schema
 	schemas["uiSchema"] = schemaUI
-	schemas["helmChart"] = helmChart
+	schemas["reference"] = chartReference
 
 	schemasString, err := json.Marshal(schemas)
 	if err != nil {
