@@ -606,7 +606,7 @@ gimlet manifest template -f manifest.yaml`}
                                     ...this.state.configFile,
                                     app: `${this.state.configFile.app}-copy`,
                                     env: env.name,
-                                    chart: this.state.configFile.chart,
+                                    chart: this.state.chartFromConfigFile,
                                   },
                                 }
                               });
