@@ -26,8 +26,7 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     this.state = {
-      chartSchema: reduxState.chartSchema,
-      chartUISchema: reduxState.chartUISchema,
+      defaultChart: reduxState.defaultChart,
       fileInfos: reduxState.fileInfos,
 
       saveButtonTriggered: false,
@@ -51,8 +50,7 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        chartSchema: reduxState.chartSchema,
-        chartUISchema: reduxState.chartUISchema,
+        defaultChart: reduxState.defaultChart,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -70,13 +68,14 @@ class EnvConfig extends Component {
   }
 
   setLocalEnvConfigState(reduxState, repoName, env, config) {
+    const { action } = this.props.match.params;
     let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
     if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
       let envConfig = configFileContent.values;
 
       this.setState({
-        configFile: configFileContent,
-
+        configFile: (action === "new" ? {} : configFileContent),
+        chartFromConfigFile: configFileContent.chart,
         appName: configFileContent.app,
         namespace: configFileContent.namespace,
         defaultAppName: configFileContent.app,
@@ -292,11 +291,38 @@ class EnvConfig extends Component {
     }
   }
 
+  updateNonDefaultConfigFile(configFile) {
+    if (!configFile || !this.state.defaultChart) {
+      return null
+    }
+
+    const { env } = this.props.match.params;
+    const nonDefaultConfigFile = Object.assign({}, configFile);
+
+    nonDefaultConfigFile.env = env;
+    nonDefaultConfigFile.app = this.state.appName;
+    nonDefaultConfigFile.namespace = this.state.namespace;
+    nonDefaultConfigFile.values = this.state.nonDefaultValues;
+    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
+
+    if (this.state.useDeployPolicy) {
+      if (this.state.selectedDeployEvent !== "tag") {
+        nonDefaultConfigFile.deploy = { branch: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
+      }
+      if (this.state.selectedDeployEvent === "tag") {
+        nonDefaultConfigFile.deploy = { tag: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
+      }
+    } else {
+      delete nonDefaultConfigFile.deploy;
+    }
+
+    return nonDefaultConfigFile;
+  }
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const configFileCopy = Object.assign({}, this.state.configFile)
-    configFileCopy.values = this.state.nonDefaultValues;
+    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile);
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -304,11 +330,7 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!this.state.chartSchema) {
-      return null;
-    }
-
-    if (!this.state.chartUISchema) {
+    if (!this.state.defaultChart) {
       return null;
     }
 
@@ -485,8 +507,8 @@ class EnvConfig extends Component {
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
-            schema={this.state.chartSchema}
-            config={this.state.chartUISchema}
+            schema={this.state.defaultChart.schema}
+            config={this.state.defaultChart.uiSchema}
             values={this.state.values}
             setValues={this.setValues}
             validate={true}
@@ -494,8 +516,8 @@ class EnvConfig extends Component {
           />
           <div className="w-full mt-16">
             <ReactDiffViewer
-              oldValue={YAML.stringify(this.state.defaultState)}
-              newValue={YAML.stringify(this.state.nonDefaultValues)}
+              oldValue={YAML.stringify(this.state.configFile)}
+              newValue={YAML.stringify(nonDefaultConfigFile)}
               splitView={false}
               showDiffOnly={false}
               styles={{
@@ -519,7 +541,7 @@ class EnvConfig extends Component {
               />
             </div>
           }
-          {JSON.stringify(this.state.envConfig) !== "{}" &&
+          {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
             <>
               {!this.state.codeSnippetExpanded ?
                 <Button
@@ -536,7 +558,7 @@ class EnvConfig extends Component {
                       copiable={true}
                       code={
                         `cat << EOF > manifest.yaml
-${YAML.stringify(configFileCopy)}EOF
+${YAML.stringify(nonDefaultConfigFile)}EOF
 
 gimlet manifest template -f manifest.yaml`}
                     />
@@ -575,7 +597,8 @@ gimlet manifest template -f manifest.yaml`}
                                   envConfig: {
                                     ...this.state.configFile,
                                     app: `${this.state.configFile.app}-copy`,
-                                    env: env.name
+                                    env: env.name,
+                                    chart: this.state.chartFromConfigFile,
                                   },
                                 }
                               });
