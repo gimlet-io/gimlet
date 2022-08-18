@@ -116,7 +116,7 @@ func (helper *GoScmHelper) CreatePR(
 	repoPath string,
 	sourceBranch string,
 	targetBranch string,
-) error {
+) (*scm.PullRequest, *scm.Response, error) {
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,
 		Refresh: "",
@@ -131,9 +131,39 @@ func (helper *GoScmHelper) CreatePR(
 		Target: targetBranch,
 	}
 
-	_, _, err := helper.client.PullRequests.Create(ctx, repoPath, newPR)
+	pr, res, err := helper.client.PullRequests.Create(ctx, repoPath, newPR)
 
-	return err
+	return pr, res, err
+}
+
+func (helper *GoScmHelper) ListPR(accessToken string, repoPath string) ([]*scm.PullRequest, *scm.Response, error) {
+	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
+		Token:   accessToken,
+		Refresh: "",
+	})
+
+	prListOptions := scm.PullRequestListOptions{}
+
+	prList, res, err := helper.client.PullRequests.List(ctx, repoPath, prListOptions)
+
+	return prList, res, err
+}
+
+func (helper *GoScmHelper) CreateBranch(accessToken string, repoPath string, branchName string, sha string) (*scm.Response, error) {
+	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
+		Token:   accessToken,
+		Refresh: "",
+	})
+
+	params := scm.CreateBranch{
+		Name: branchName,
+		Sha:  sha,
+	}
+
+	resp, err := helper.client.Git.CreateBranch(ctx, repoPath, &params)
+
+	return resp, err
+
 }
 
 func (helper *GoScmHelper) Content(accessToken string, repo string, path string, branch string) (string, string, error) {
