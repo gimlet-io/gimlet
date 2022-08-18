@@ -3,6 +3,8 @@ package manifest
 import (
 	"bytes"
 	"fmt"
+	"strings"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -11,7 +13,6 @@ import (
 	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/helmpath"
 	"helm.sh/helm/v3/pkg/repo"
-	"strings"
 
 	"io/ioutil"
 )
@@ -21,7 +22,7 @@ var manifestCreateCmd = cli.Command{
 	Usage: "Creates a Gimlet manifest",
 	UsageText: `gimlet manifest create \
      -f values.yaml \
-     --chart onechart/onechart
+     --chart onechart/onechart \
      --env staging \
      --app myapp \
      --namespace my-team \

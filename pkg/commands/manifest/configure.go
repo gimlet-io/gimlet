@@ -17,7 +17,7 @@ import (
 var manifestConfigureCmd = cli.Command{
 	Name:      "configure",
 	Usage:     "Configures Helm chart values in a Gimlet manifest",
-	UsageText: `gimlet manifest configure - f .gimlet/staging.yaml`,
+	UsageText: `gimlet manifest configure -f .gimlet/staging.yaml`,
 	Action:    configure,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
