@@ -340,6 +340,11 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			err = goScm.CreatePR(token, repoPath, "pull-request", "main")
+			if err != nil {
+				fmt.Println(err)
+			}
+
 			gitRepoCache.Invalidate(repoPath)
 			w.WriteHeader(http.StatusOK)
 			w.Write(toSaveJson)
@@ -400,6 +405,11 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			logrus.Errorf("cannot convert envconfig to json: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
+		}
+
+		err = goScm.CreatePR(token, repoPath, "pull-request", "main")
+		if err != nil {
+			fmt.Println(err)
 		}
 
 		gitRepoCache.Invalidate(repoPath)

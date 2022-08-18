@@ -111,6 +111,31 @@ func (helper *GoScmHelper) Organizations(accessToken string, refreshToken string
 	return organizations, err
 }
 
+func (helper *GoScmHelper) CreatePR(
+	accessToken string,
+	repoPath string,
+	sourceBranch string,
+	targetBranch string,
+) error {
+	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
+		Token:   accessToken,
+		Refresh: "",
+	})
+
+	prSubject := "Title of the PR"
+	prDescription := "Description of the PR"
+	newPR := &scm.PullRequestInput{
+		Title:  prSubject,
+		Body:   prDescription,
+		Source: sourceBranch,
+		Target: targetBranch,
+	}
+
+	_, _, err := helper.client.PullRequests.Create(ctx, repoPath, newPR)
+
+	return err
+}
+
 func (helper *GoScmHelper) Content(accessToken string, repo string, path string, branch string) (string, string, error) {
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,
