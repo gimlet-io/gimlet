@@ -2,7 +2,9 @@ package server
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -282,6 +284,28 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	branch := helper.HeadBranch(repo)
 
+	rb := make([]byte, 32)
+	_, err = rand.Read(rb)
+	if err != nil {
+		fmt.Println(err)
+	}
+	rs := base64.URLEncoding.EncodeToString(rb)
+	sourceBranch := fmt.Sprintf("gimlet-config-update-%s", rs)
+
+	ref, err := repo.Head()
+	if err != nil {
+		logrus.Errorf("cannot get head: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = goScm.CreateBranch(token, repoPath, sourceBranch, ref.Hash().String())
+	if err != nil {
+		logrus.Errorf("cannot create branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	event := dx.GitEvent(envConfigData.DeployEvent)
 
 	_, blobID, err := goScm.Content(token, repoPath, fileUpdatePath, branch)
@@ -324,11 +348,18 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				repoPath,
 				fileUpdatePath,
 				toSaveBuffer.Bytes(),
-				branch,
+				sourceBranch,
 				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
 			)
 			if err != nil {
 				logrus.Errorf("cannot create manifest: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
+			_, _, err := goScm.CreatePR(token, repoPath, sourceBranch, branch)
+			if err != nil {
+				logrus.Errorf("cannot create pull request: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -338,11 +369,6 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				logrus.Errorf("cannot convert envconfig to json: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
-			}
-
-			err = goScm.CreatePR(token, repoPath, "pull-request", "main")
-			if err != nil {
-				fmt.Println(err)
 			}
 
 			gitRepoCache.Invalidate(repoPath)
@@ -391,7 +417,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			fileUpdatePath,
 			toUpdateBuffer.Bytes(),
 			blobID,
-			branch,
+			sourceBranch,
 			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", env, envConfigData.AppName),
 		)
 		if err != nil {
@@ -400,16 +426,18 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		_, _, err := goScm.CreatePR(token, repoPath, sourceBranch, branch)
+		if err != nil {
+			logrus.Errorf("cannot create pull request: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		toSaveJson, err := json.Marshal(toUpdate)
 		if err != nil {
 			logrus.Errorf("cannot convert envconfig to json: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
-		}
-
-		err = goScm.CreatePR(token, repoPath, "pull-request", "main")
-		if err != nil {
-			fmt.Println(err)
 		}
 
 		gitRepoCache.Invalidate(repoPath)
