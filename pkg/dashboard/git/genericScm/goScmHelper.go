@@ -136,19 +136,6 @@ func (helper *GoScmHelper) CreatePR(
 	return pr, res, err
 }
 
-func (helper *GoScmHelper) ListPR(accessToken string, repoPath string) ([]*scm.PullRequest, *scm.Response, error) {
-	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
-		Token:   accessToken,
-		Refresh: "",
-	})
-
-	prListOptions := scm.PullRequestListOptions{}
-
-	prList, res, err := helper.client.PullRequests.List(ctx, repoPath, prListOptions)
-
-	return prList, res, err
-}
-
 func (helper *GoScmHelper) CreateBranch(accessToken string, repoPath string, branchName string, headSha string) error {
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,
