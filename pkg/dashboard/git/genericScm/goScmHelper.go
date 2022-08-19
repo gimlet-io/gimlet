@@ -2,10 +2,7 @@ package genericScm
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/tls"
-	"encoding/hex"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"time"
@@ -152,25 +149,20 @@ func (helper *GoScmHelper) ListPR(accessToken string, repoPath string) ([]*scm.P
 	return prList, res, err
 }
 
-func (helper *GoScmHelper) CreateBranch(accessToken string, repoPath string, defaultBranchName string, sha string) (string, error) {
+func (helper *GoScmHelper) CreateBranch(accessToken string, repoPath string, branchName string, headSha string) error {
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,
 		Refresh: "",
 	})
 
-	branchName, err := generateBranchNameWithUniqueHash(defaultBranchName, 4)
-	if err != nil {
-		return "", nil
-	}
-
 	params := scm.CreateBranch{
 		Name: branchName,
-		Sha:  sha,
+		Sha:  headSha,
 	}
 
-	_, err = helper.client.Git.CreateBranch(ctx, repoPath, &params)
+	_, err := helper.client.Git.CreateBranch(ctx, repoPath, &params)
 
-	return branchName, err
+	return err
 }
 
 func (helper *GoScmHelper) Content(accessToken string, repo string, path string, branch string) (string, string, error) {
@@ -296,14 +288,4 @@ func (helper *GoScmHelper) RegisterWebhook(
 	}
 
 	return replaceHook(ctx, helper.client, scm.Join(owner, repo), hook)
-}
-
-func generateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {
-	b := make([]byte, uniqieHashlength)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s-%s", defaultBranchName, hex.EncodeToString(b)), nil
 }

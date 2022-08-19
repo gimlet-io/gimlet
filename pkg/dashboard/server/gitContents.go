@@ -2,7 +2,9 @@ package server
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -294,7 +296,6 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	_, blobID, err := goScm.Content(token, repoPath, fileUpdatePath, branch)
 	if err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
-
 			toSave := &dx.Manifest{
 				App: envConfigData.AppName,
 				Env: env,
@@ -315,48 +316,18 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			var toSaveBuffer bytes.Buffer
-			yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
-			yamlEncoder.SetIndent(2)
-			err = yamlEncoder.Encode(&toSave)
-
-			if err != nil {
-				logrus.Errorf("cannot marshal manifest: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			sourceBranch, err := goScm.CreateBranch(token, repoPath, "gimlet-config-create", ref.Hash().String())
-			if err != nil {
-				logrus.Errorf("cannot create branch: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			err = goScm.CreateContent(
+			toSaveJson, err := createConfig(
+				goScm,
+				toSave,
+				envConfigData.AppName,
+				env,
 				token,
 				repoPath,
+				ref,
 				fileUpdatePath,
-				toSaveBuffer.Bytes(),
-				sourceBranch,
-				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
-			)
+				branch)
 			if err != nil {
-				logrus.Errorf("cannot create manifest: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, branch, "[Gimlet Dashboard] Create config file", "Gimlet Dashboard has created this PR")
-			if err != nil {
-				logrus.Errorf("cannot create pull request: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			toSaveJson, err := json.Marshal(toSave)
-			if err != nil {
-				logrus.Errorf("cannot convert envconfig to json: %s", err)
+				logrus.Errorf("cannot create config: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -365,6 +336,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write(toSaveJson)
 			return
+
 		} else {
 			logrus.Errorf("cannot fetch envConfig from github: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -391,55 +363,27 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var toUpdateBuffer bytes.Buffer
-		yamlEncoder := yaml.NewEncoder(&toUpdateBuffer)
-		yamlEncoder.SetIndent(2)
-		err = yamlEncoder.Encode(&toUpdate)
-		if err != nil {
-			logrus.Errorf("cannot marshal manifest: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		sourceBranch, err := goScm.CreateBranch(token, repoPath, "gimlet-config-update", ref.Hash().String())
-		if err != nil {
-			logrus.Errorf("cannot create branch: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		err = goScm.UpdateContent(
+		toUpdateJson, err := updateConfig(
+			goScm,
+			&toUpdate,
+			envConfigData.AppName,
 			token,
 			repoPath,
+			ref,
 			fileUpdatePath,
-			toUpdateBuffer.Bytes(),
 			blobID,
-			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", env, envConfigData.AppName),
+			branch,
+			env,
 		)
 		if err != nil {
-			logrus.Errorf("cannot update manifest: %s", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, branch, "[Gimlet Dashboard] Update config file", "Gimlet Dashboard has created this PR")
-		if err != nil {
-			logrus.Errorf("cannot create pull request: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		toSaveJson, err := json.Marshal(toUpdate)
-		if err != nil {
-			logrus.Errorf("cannot convert envconfig to json: %s", err)
+			logrus.Errorf("cannot update config: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		gitRepoCache.Invalidate(repoPath)
 		w.WriteHeader(http.StatusOK)
-		w.Write(toSaveJson)
+		w.Write(toUpdateJson)
 
 		return
 	}
@@ -504,4 +448,124 @@ func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCom
 	}
 
 	return true, hasShipper(ciConfigFiles, shipperCommand), nil
+}
+
+func createConfig(
+	goScm *genericScm.GoScmHelper,
+	toSave *dx.Manifest,
+	appName string,
+	env string,
+	token string,
+	repoPath string,
+	ref *plumbing.Reference,
+	fileUpdatePath string,
+	branch string,
+) ([]byte, error) {
+	var toSaveBuffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(&toSave)
+
+	if err != nil {
+		return nil, err
+	}
+
+	sourceBranch, err := generateBranchNameWithUniqueHash("gimlet-config-create", 4)
+	if err != nil {
+		return nil, err
+	}
+
+	err = goScm.CreateBranch(token, repoPath, sourceBranch, ref.Hash().String())
+	if err != nil {
+		return nil, err
+	}
+
+	err = goScm.CreateContent(
+		token,
+		repoPath,
+		fileUpdatePath,
+		toSaveBuffer.Bytes(),
+		sourceBranch,
+		fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", appName, env),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, branch, "[Gimlet Dashboard] Create config file", "Gimlet Dashboard has created this PR")
+	if err != nil {
+		return nil, err
+	}
+
+	toSaveJson, err := json.Marshal(toSave)
+	if err != nil {
+		return nil, err
+	}
+
+	return toSaveJson, nil
+}
+
+func generateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {
+	b := make([]byte, uniqieHashlength)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s-%s", defaultBranchName, hex.EncodeToString(b)), nil
+}
+
+func updateConfig(
+	goScm *genericScm.GoScmHelper,
+	toUpdate *dx.Manifest,
+	appName string,
+	token string,
+	repoPath string,
+	ref *plumbing.Reference,
+	fileUpdatePath string,
+	blobID string,
+	branch string,
+	env string,
+) ([]byte, error) {
+	var toUpdateBuffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&toUpdateBuffer)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(&toUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	sourceBranch, err := generateBranchNameWithUniqueHash("gimlet-config-update", 4)
+	if err != nil {
+		return nil, err
+	}
+
+	err = goScm.CreateBranch(token, repoPath, sourceBranch, ref.Hash().String())
+	if err != nil {
+		return nil, err
+	}
+
+	err = goScm.UpdateContent(
+		token,
+		repoPath,
+		fileUpdatePath,
+		toUpdateBuffer.Bytes(),
+		blobID,
+		sourceBranch,
+		fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", env, appName),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, branch, "[Gimlet Dashboard] Update config file", "Gimlet Dashboard has created this PR")
+	if err != nil {
+		return nil, err
+	}
+
+	toUpdateJson, err := json.Marshal(toUpdate)
+	if err != nil {
+		return nil, err
+	}
+	return toUpdateJson, nil
 }
