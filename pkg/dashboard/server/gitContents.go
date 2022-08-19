@@ -470,7 +470,7 @@ func createConfig(
 		return nil, err
 	}
 
-	sourceBranch, err := generateBranchNameWithUniqueHash("gimlet-config-create", 4)
+	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-%s-config-create", env), 4)
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +535,7 @@ func updateConfig(
 		return nil, err
 	}
 
-	sourceBranch, err := generateBranchNameWithUniqueHash("gimlet-config-update", 4)
+	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-%s-config-update", env), 4)
 	if err != nil {
 		return nil, err
 	}
