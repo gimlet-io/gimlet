@@ -2,9 +2,7 @@ package server
 
 import (
 	"bytes"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -284,25 +282,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	branch := helper.HeadBranch(repo)
 
-	generatedHash, err := generateHash(4)
-	if err != nil {
-		logrus.Errorf("cannot generate token: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	sourceBranch := fmt.Sprintf("gimlet-config-update-%s", generatedHash)
-
 	ref, err := repo.Head()
 	if err != nil {
 		logrus.Errorf("cannot get head: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = goScm.CreateBranch(token, repoPath, sourceBranch, ref.Hash().String())
-	if err != nil {
-		logrus.Errorf("cannot create branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -344,6 +326,13 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			sourceBranch, err := goScm.CreateBranch(token, repoPath, "gimlet-config-create", ref.Hash().String())
+			if err != nil {
+				logrus.Errorf("cannot create branch: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
 			err = goScm.CreateContent(
 				token,
 				repoPath,
@@ -358,7 +347,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			_, _, err := goScm.CreatePR(token, repoPath, sourceBranch, branch)
+			_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, branch, "[Gimlet Dashboard] Create config file", "Gimlet Dashboard has created this PR")
 			if err != nil {
 				logrus.Errorf("cannot create pull request: %s", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -412,6 +401,13 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		sourceBranch, err := goScm.CreateBranch(token, repoPath, "gimlet-config-update", ref.Hash().String())
+		if err != nil {
+			logrus.Errorf("cannot create branch: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		err = goScm.UpdateContent(
 			token,
 			repoPath,
@@ -427,7 +423,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, _, err := goScm.CreatePR(token, repoPath, sourceBranch, branch)
+		_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, branch, "[Gimlet Dashboard] Update config file", "Gimlet Dashboard has created this PR")
 		if err != nil {
 			logrus.Errorf("cannot create pull request: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -508,14 +504,4 @@ func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCom
 	}
 
 	return true, hasShipper(ciConfigFiles, shipperCommand), nil
-}
-
-func generateHash(length int) (string, error) {
-	b := make([]byte, length)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(b), nil
 }
