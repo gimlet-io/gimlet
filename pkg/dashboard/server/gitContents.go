@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -284,13 +284,14 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	branch := helper.HeadBranch(repo)
 
-	rb := make([]byte, 32)
-	_, err = rand.Read(rb)
+	generatedHash, err := generateHash(4)
 	if err != nil {
-		fmt.Println(err)
+		logrus.Errorf("cannot generate token: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
-	rs := base64.URLEncoding.EncodeToString(rb)
-	sourceBranch := fmt.Sprintf("gimlet-config-update-%s", rs)
+
+	sourceBranch := fmt.Sprintf("gimlet-config-update-%s", generatedHash)
 
 	ref, err := repo.Head()
 	if err != nil {
@@ -507,4 +508,14 @@ func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCom
 	}
 
 	return true, hasShipper(ciConfigFiles, shipperCommand), nil
+}
+
+func generateHash(length int) (string, error) {
+	b := make([]byte, length)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b), nil
 }
