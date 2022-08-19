@@ -137,6 +137,35 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitRepoMString)
 }
 
+func getPullRequests(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
+
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	prList, err := goScm.ListOpenPRs(token, repoPath, 1, 10)
+	if err != nil {
+		logrus.Errorf("cannot list pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	prListString, err := json.Marshal(prList)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(prListString)
+}
+
 type fileInfo struct {
 	EnvName  string `json:"envName"`
 	AppName  string `json:"appName"`

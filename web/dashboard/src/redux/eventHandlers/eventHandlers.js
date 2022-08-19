@@ -201,6 +201,11 @@ export function addEnvConfig(state, payload) {
   return state;
 }
 
+export function pullRequests(state, payload) {
+  state.pullRequests = payload;
+  return state;
+}
+
 export function repoMetas(state, payload) {
   state.repoMetas = payload.repoMetas;
   state.fileInfos = payload.repoMetas.fileInfos;
