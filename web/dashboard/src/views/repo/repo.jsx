@@ -426,6 +426,7 @@ export default class Repo extends Component {
                     owner={owner}
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
+                    pullRequests={this.state.pullRequests}
                   />
                 )
                 }

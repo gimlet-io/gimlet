@@ -12,9 +12,23 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
+
+    const pullRequestByEnv = pullRequests.filter(pullRequest => pullRequest.Head.Name.includes(envName))
+
+    const renderEmptyPullRequests = (<p className="text-sm text-blue-500 hover:text-blue-700">
+      <span>There are no open pull requests for this environment</span>
+    </p>)
+
+    const renderPullRequests = pullRequestByEnv.map(pullRequest =>
+      <p className="text-sm text-blue-500 hover:text-blue-700">
+        <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer">
+          <span>{pullRequest.Title}</span>
+        </a>
+      </p>
+    )
 
     return (
       <div>
@@ -48,22 +62,27 @@ export class Env extends Component {
           </svg>
         </h4>
         {this.state.isClosed ? null : (
-          <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
-            {renderedServices.length > 0
-              ?
-              <>
-                {renderedServices}
-                <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
-                onClick={() => {
-                  const newAppName = `${repoName}-${uuidv4().slice(0,4)}`
-                  newConfig(envName, newAppName)
-                }}>
-                  Add app config
-                </h4>
-              </>
-              : emptyState(searchFilter, envConfigs, newConfig, envName, repoName)}
+          <>
+            <div className="rounded-md bg-blue-50 p-4 mb-2">
+              {pullRequestByEnv.length > 0 ? renderPullRequests : renderEmptyPullRequests}
+            </div>
+            <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
+              {renderedServices.length > 0
+                ?
+                <>
+                  {renderedServices}
+                  <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      const newAppName = `${repoName}-${uuidv4().slice(0, 4)}`
+                      newConfig(envName, newAppName)
+                    }}>
+                    Add app config
+                  </h4>
+                </>
+                : emptyState(searchFilter, envConfigs, newConfig, envName, repoName)}
 
-          </div>
+            </div>
+          </>
         )}
       </div>
     )
