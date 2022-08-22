@@ -287,7 +287,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			Values:    envConfigData.Values,
 		}
 	} else { // we are updating an existing manifest file
-		manifest := existingEnvConfigs[envConfigFileName]
+		manifest = existingEnvConfigs[envConfigFileName]
 		manifest.Values = envConfigData.Values
 		manifest.Namespace = envConfigData.Namespace
 	}
