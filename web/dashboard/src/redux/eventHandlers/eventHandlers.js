@@ -202,7 +202,7 @@ export function addEnvConfig(state, payload) {
 }
 
 export function pullRequests(state, payload) {
-  state.pullRequests = payload;
+  state.pullRequests[payload.repo] = payload.prList;
   return state;
 }
 

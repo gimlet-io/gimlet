@@ -365,15 +365,10 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  
-  pullRequestsByEnv(envName) {
-   return this.state.pullRequests.filter(pullRequest => pullRequest.Head.Name.includes(envName));
-  }
-
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, search, rolloutHistory, commits, agents } = this.state;
+    let { envs, connectedAgents, search, rolloutHistory, commits, agents, pullRequests } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
@@ -431,7 +426,7 @@ export default class Repo extends Component {
                     owner={owner}
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
-                    pullRequests={this.pullRequestsByEnv(envName)}
+                    pullRequests={pullRequests[repoName]}
                   />
                 )
                 }

@@ -148,14 +148,18 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
-	prList, err := goScm.ListOpenPRs(token, repoPath, 1, 10)
+	prList, err := goScm.ListOpenPRs(token, repoPath)
 	if err != nil {
 		logrus.Errorf("cannot list pull requests: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	prListString, err := json.Marshal(prList)
+	pullRequests := map[string]interface{}{}
+	pullRequests["repo"] = repoPath
+	pullRequests["prList"] = prList
+
+	pullRequestsString, err := json.Marshal(pullRequests)
 	if err != nil {
 		logrus.Errorf("cannot serialize pull requests: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -163,7 +167,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(prListString)
+	w.Write(pullRequestsString)
 }
 
 type fileInfo struct {

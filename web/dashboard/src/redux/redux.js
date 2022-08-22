@@ -64,7 +64,7 @@ export const initialState = {
   runningDeploys: [],
   repoRefreshQueue: [],
   gitRepos: [],
-  pullRequests: [],
+  pullRequests: {},
   defaultChart: undefined,
   envConfigs: {},
   application: {},
