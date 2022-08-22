@@ -27,6 +27,7 @@ const StepOne = ({ getContext }) => {
       "administration": "write",
       "checks": "read",
       "contents": "write",
+      "pull_requests": "write",
       "repository_hooks": "write",
       "statuses": "read",
       "members": "read"
