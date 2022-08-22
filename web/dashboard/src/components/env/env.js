@@ -18,17 +18,22 @@ export class Env extends Component {
 
     const pullRequestByEnv = pullRequests.filter(pullRequest => pullRequest.Head.Name.includes(envName))
 
-    const renderEmptyPullRequests = (<p className="text-sm text-blue-500 hover:text-blue-700">
-      <span>There are no open pull requests for this environment</span>
-    </p>)
+    const renderPullRequests = () => {
+      if ((pullRequestByEnv.length === 0)) {
+        return null
+      }
 
-    const renderPullRequests = pullRequestByEnv.map(pullRequest =>
-      <p className="text-sm text-blue-500 hover:text-blue-700">
-        <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer">
-          <span>{pullRequest.Title}</span>
-        </a>
-      </p>
-    )
+      return (
+        <div className="bg-indigo-600 rounded-t-lg">
+          <div className="inline-grid items-center rounded-t-lg bg-indigo-600 mx-auto py-3 px-3 sm:px-6 lg:px-8">
+            {pullRequestByEnv.map(pullRequest =>
+              <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer" className="text-sm text-white">
+                <span>{pullRequest.Title}</span>
+              </a>)}
+          </div>
+        </div>
+      )
+    }
 
     return (
       <div>
@@ -63,9 +68,7 @@ export class Env extends Component {
         </h4>
         {this.state.isClosed ? null : (
           <>
-            <div className="rounded-md bg-blue-50 p-4 mb-2">
-              {pullRequestByEnv.length > 0 ? renderPullRequests : renderEmptyPullRequests}
-            </div>
+            {renderPullRequests()}
             <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
               {renderedServices.length > 0
                 ?
