@@ -15,7 +15,6 @@ export class Env extends Component {
     const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
-    const filteredPullRequests = pullRequests?.filter(pullRequest => pullRequest.Head.Name.includes(envName));
 
     return (
       <div>
@@ -50,7 +49,7 @@ export class Env extends Component {
         </h4>
         {this.state.isClosed ? null : (
           <>
-            {renderPullRequests(filteredPullRequests)}
+            {renderPullRequests(pullRequests, envName)}
             <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
               {renderedServices.length > 0
                 ?
@@ -189,17 +188,19 @@ function emptyStateDeployThisRepo(newConfig, envName, repoName) {
   </div>
 }
 
-function renderPullRequests(pullRequests) {
+function renderPullRequests(pullRequests, envName) {
   if (!pullRequests || pullRequests.length === 0) {
     return null
   }
 
+  const filteredPullRequestsByEnvName = pullRequests.filter(pullRequest => pullRequest.Head.Name.includes(envName));
+
   return (
     <div className="bg-indigo-600 rounded-t-lg">
       <div className="inline-grid items-center rounded-t-lg bg-indigo-600 mx-auto py-3 px-3 sm:px-6 lg:px-8">
-        {pullRequests.map(pullRequest =>
+        {filteredPullRequestsByEnvName.map(pullRequest =>
           <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer" className="text-xs text-white">
-            <span>{pullRequest.Title}</span>
+            <span>{pullRequest.Title} to {pullRequest.Source}</span>
           </a>)}
       </div>
     </div>
