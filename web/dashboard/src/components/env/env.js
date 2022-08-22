@@ -16,17 +16,15 @@ export class Env extends Component {
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
 
-    const pullRequestByEnv = pullRequests.filter(pullRequest => pullRequest.Head.Name.includes(envName))
-
     const renderPullRequests = () => {
-      if ((pullRequestByEnv.length === 0)) {
+      if ((pullRequests.length === 0)) {
         return null
       }
 
       return (
         <div className="bg-indigo-600 rounded-t-lg">
           <div className="inline-grid items-center rounded-t-lg bg-indigo-600 mx-auto py-3 px-3 sm:px-6 lg:px-8">
-            {pullRequestByEnv.map(pullRequest =>
+            {pullRequests.map(pullRequest =>
               <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer" className="text-sm text-white">
                 <span>{pullRequest.Title}</span>
               </a>)}

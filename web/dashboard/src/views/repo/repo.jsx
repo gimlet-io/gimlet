@@ -365,6 +365,11 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
+  
+  pullRequestsByEnv(envName) {
+   return this.state.pullRequests.filter(pullRequest => pullRequest.Head.Name.includes(envName));
+  }
+
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -426,7 +431,7 @@ export default class Repo extends Component {
                     owner={owner}
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
-                    pullRequests={this.state.pullRequests}
+                    pullRequests={this.pullRequestsByEnv(envName)}
                   />
                 )
                 }
