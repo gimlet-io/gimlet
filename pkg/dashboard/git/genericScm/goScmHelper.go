@@ -111,6 +111,47 @@ func (helper *GoScmHelper) Organizations(accessToken string, refreshToken string
 	return organizations, err
 }
 
+func (helper *GoScmHelper) CreatePR(
+	accessToken string,
+	repoPath string,
+	sourceBranch string,
+	targetBranch string,
+	title string,
+	description string,
+) (*scm.PullRequest, *scm.Response, error) {
+	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
+		Token:   accessToken,
+		Refresh: "",
+	})
+
+	newPR := &scm.PullRequestInput{
+		Title:  title,
+		Body:   description,
+		Source: sourceBranch,
+		Target: targetBranch,
+	}
+
+	pr, res, err := helper.client.PullRequests.Create(ctx, repoPath, newPR)
+
+	return pr, res, err
+}
+
+func (helper *GoScmHelper) CreateBranch(accessToken string, repoPath string, branchName string, headSha string) error {
+	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
+		Token:   accessToken,
+		Refresh: "",
+	})
+
+	params := scm.CreateBranch{
+		Name: branchName,
+		Sha:  headSha,
+	}
+
+	_, err := helper.client.Git.CreateBranch(ctx, repoPath, &params)
+
+	return err
+}
+
 func (helper *GoScmHelper) Content(accessToken string, repo string, path string, branch string) (string, string, error) {
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,

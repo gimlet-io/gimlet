@@ -2,7 +2,9 @@ package server
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -231,11 +233,14 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
-
 	env := chi.URLParam(r, "env")
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
 
 	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
 	if err != nil {
@@ -245,16 +250,167 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	headBranch := helper.HeadBranch(repo)
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
+	existingEnvConfigs, err := existingEnvConfigs(repo, headBranch)
 	if err != nil {
-		if !strings.Contains(err.Error(), "directory not found") {
-			logrus.Errorf("cannot list files in .gimlet/: %s", err)
+		logrus.Errorf(err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	envConfigFileName := envConfigPath(env, envConfigData, existingEnvConfigs)
+	envConfigFilePath := fmt.Sprintf(".gimlet/%s", envConfigFileName)
+
+	createCase := false // indicates if we need to create the file, we update existing manifests on the default path
+	_, blobID, err := goScm.Content(token, repoPath, envConfigFilePath, headBranch)
+	if err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			createCase = true
+		} else {
+			logrus.Errorf("cannot fetch envConfig from github: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			w.Write([]byte("{}"))
+			return
+		}
+	}
+
+	var manifest *dx.Manifest
+	if createCase {
+		manifest = &dx.Manifest{
+			App: envConfigData.AppName,
+			Env: env,
+			Chart: dx.Chart{
+				Name:       config.Chart.Name,
+				Repository: config.Chart.Repo,
+				Version:    config.Chart.Version,
+			},
+			Namespace: envConfigData.Namespace,
+			Values:    envConfigData.Values,
+		}
+	} else { // we are updating an existing manifest file
+		manifest = existingEnvConfigs[envConfigFileName]
+		manifest.Values = envConfigData.Values
+		manifest.Namespace = envConfigData.Namespace
+	}
+
+	if !createCase && manifest.App != envConfigData.AppName { // we do not allow updating application names
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	event := dx.GitEvent(envConfigData.DeployEvent)
+	if envConfigData.UseDeployPolicy {
+		manifest.Deploy = &dx.Deploy{
+			Branch: envConfigData.DeployBranch,
+			Event:  &event,
+			Tag:    envConfigData.DeployTag,
+		}
+	} else {
+		manifest.Deploy = nil
+	}
+
+	// marshall and ident the manifest
+	var toSaveBuffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
+	yamlEncoder.SetIndent(2)
+	err = yamlEncoder.Encode(&manifest)
+	if err != nil {
+		logrus.Errorf("cannot marshal manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// create branch to write changes on
+	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+	if err != nil {
+		logrus.Errorf("cannot create branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	ref, err := repo.Head()
+	if err != nil {
+		logrus.Errorf("cannot get head: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	err = goScm.CreateBranch(token, repoPath, sourceBranch, ref.Hash().String())
+	if err != nil {
+		logrus.Errorf("cannot create branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	if createCase {
+		err = goScm.CreateContent(
+			token,
+			repoPath,
+			envConfigFilePath,
+			toSaveBuffer.Bytes(),
+			sourceBranch,
+			fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
+		)
+		if err != nil {
+			logrus.Errorf("cannot write git: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		err = goScm.UpdateContent(
+			token,
+			repoPath,
+			envConfigFilePath,
+			toSaveBuffer.Bytes(),
+			blobID,
+			sourceBranch,
+			fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
+		)
+		if err != nil {
+			logrus.Errorf("cannot write git: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	existingEnvConfigs := map[string]dx.Manifest{}
+	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Create config file", "Gimlet Dashboard has created this PR")
+	if err != nil {
+		logrus.Errorf("cannot create pr: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	manifestJson, err := json.Marshal(manifest)
+	if err != nil {
+		logrus.Errorf("cannot marshal manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache.Invalidate(repoPath)
+	w.WriteHeader(http.StatusOK)
+	w.Write(manifestJson)
+}
+
+// envConfigPath returns the envconfig file name based on convention, or the name of an existing file describing this env
+func envConfigPath(env string, envConfigData *envConfig, existingEnvConfigs map[string]*dx.Manifest) string {
+	envConfigFileName := fmt.Sprintf("%s-%s.yaml", env, envConfigData.AppName)
+	for fileName, existingEnvConfig := range existingEnvConfigs {
+		if existingEnvConfig.Env == env &&
+			existingEnvConfig.App == envConfigData.AppName {
+			envConfigFileName = fileName
+			break
+		}
+	}
+	return envConfigFileName
+}
+
+func existingEnvConfigs(repo *git.Repository, headBranch string) (map[string]*dx.Manifest, error) {
+	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
+	if err != nil {
+		if !strings.Contains(err.Error(), "directory not found") {
+			return nil, fmt.Errorf("cannot list files in .gimlet/: %s", err)
+		}
+	}
+
+	existingEnvConfigs := map[string]*dx.Manifest{}
 	for fileName, content := range files {
 		var envConfig dx.Manifest
 		err = yaml.Unmarshal([]byte(content), &envConfig)
@@ -262,152 +418,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			logrus.Warnf("cannot parse env config string: %s", err)
 			continue
 		}
-		existingEnvConfigs[fileName] = envConfig
+		existingEnvConfigs[fileName] = &envConfig
 	}
-
-	fileToUpdate := fmt.Sprintf("%s-%s.yaml", env, envConfigData.AppName)
-	for fileName, existingEnvConfig := range existingEnvConfigs {
-		if existingEnvConfig.Env == env &&
-			existingEnvConfig.App == envConfigData.AppName {
-			fileToUpdate = fileName
-			break
-		}
-	}
-	fileUpdatePath := fmt.Sprintf(".gimlet/%s", fileToUpdate)
-
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
-	goScm := genericScm.NewGoScmHelper(config, nil)
-
-	branch := helper.HeadBranch(repo)
-
-	event := dx.GitEvent(envConfigData.DeployEvent)
-
-	_, blobID, err := goScm.Content(token, repoPath, fileUpdatePath, branch)
-	if err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-
-			toSave := &dx.Manifest{
-				App: envConfigData.AppName,
-				Env: env,
-				Chart: dx.Chart{
-					Name:       config.Chart.Name,
-					Repository: config.Chart.Repo,
-					Version:    config.Chart.Version,
-				},
-				Namespace: envConfigData.Namespace,
-				Values:    envConfigData.Values,
-			}
-
-			if envConfigData.UseDeployPolicy {
-				toSave.Deploy = &dx.Deploy{
-					Branch: envConfigData.DeployBranch,
-					Event:  &event,
-					Tag:    envConfigData.DeployTag,
-				}
-			}
-
-			var toSaveBuffer bytes.Buffer
-			yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
-			yamlEncoder.SetIndent(2)
-			err = yamlEncoder.Encode(&toSave)
-
-			if err != nil {
-				logrus.Errorf("cannot marshal manifest: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			err = goScm.CreateContent(
-				token,
-				repoPath,
-				fileUpdatePath,
-				toSaveBuffer.Bytes(),
-				branch,
-				fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
-			)
-			if err != nil {
-				logrus.Errorf("cannot create manifest: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			toSaveJson, err := json.Marshal(toSave)
-			if err != nil {
-				logrus.Errorf("cannot convert envconfig to json: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			gitRepoCache.Invalidate(repoPath)
-			w.WriteHeader(http.StatusOK)
-			w.Write(toSaveJson)
-			return
-		} else {
-			logrus.Errorf("cannot fetch envConfig from github: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			w.Write([]byte("{}"))
-			return
-		}
-	} else {
-		toUpdate := existingEnvConfigs[fileToUpdate]
-		toUpdate.Values = envConfigData.Values
-		toUpdate.Namespace = envConfigData.Namespace
-
-		if envConfigData.UseDeployPolicy {
-			toUpdate.Deploy = &dx.Deploy{
-				Branch: envConfigData.DeployBranch,
-				Event:  &event,
-				Tag:    envConfigData.DeployTag,
-			}
-		} else {
-			toUpdate.Deploy = nil
-		}
-
-		if toUpdate.App != envConfigData.AppName {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		var toUpdateBuffer bytes.Buffer
-		yamlEncoder := yaml.NewEncoder(&toUpdateBuffer)
-		yamlEncoder.SetIndent(2)
-		err = yamlEncoder.Encode(&toUpdate)
-		if err != nil {
-			logrus.Errorf("cannot marshal manifest: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		err = goScm.UpdateContent(
-			token,
-			repoPath,
-			fileUpdatePath,
-			toUpdateBuffer.Bytes(),
-			blobID,
-			branch,
-			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", env, envConfigData.AppName),
-		)
-		if err != nil {
-			logrus.Errorf("cannot update manifest: %s", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		toSaveJson, err := json.Marshal(toUpdate)
-		if err != nil {
-			logrus.Errorf("cannot convert envconfig to json: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		gitRepoCache.Invalidate(repoPath)
-		w.WriteHeader(http.StatusOK)
-		w.Write(toSaveJson)
-
-		return
-	}
+	return existingEnvConfigs, nil
 }
 
 func getOrgRepos(dao *store.Store) ([]string, error) {
@@ -437,15 +450,6 @@ func hasRepo(orgRepos []string, repo string) bool {
 	return false
 }
 
-func folderExists(gitopsRepoContent []string, envName string) bool {
-	for _, content := range gitopsRepoContent {
-		if content == envName {
-			return true
-		}
-	}
-	return false
-}
-
 func hasShipper(files map[string]string, shipperCommand string) bool {
 	for _, file := range files {
 		if strings.Contains(file, shipperCommand) {
@@ -469,4 +473,14 @@ func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCom
 	}
 
 	return true, hasShipper(ciConfigFiles, shipperCommand), nil
+}
+
+func generateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {
+	b := make([]byte, uniqieHashlength)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s-%s", defaultBranchName, hex.EncodeToString(b)), nil
 }
