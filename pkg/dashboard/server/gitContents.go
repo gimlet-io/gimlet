@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -155,9 +156,16 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var prListCreatedByGimlet []*scm.PullRequest
+	for _, pullRequest := range prList {
+		if strings.Contains(pullRequest.Source, "gimlet-config-change") {
+			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
+		}
+	}
+
 	pullRequests := map[string]interface{}{}
 	pullRequests["repo"] = repoPath
-	pullRequests["prList"] = prList
+	pullRequests["prList"] = prListCreatedByGimlet
 
 	pullRequestsString, err := json.Marshal(pullRequests)
 	if err != nil {
