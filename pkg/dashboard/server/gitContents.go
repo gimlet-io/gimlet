@@ -403,7 +403,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Create config file", "Gimlet Dashboard has created this PR")
+	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Change config file", "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
