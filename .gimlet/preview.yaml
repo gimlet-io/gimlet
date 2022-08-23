@@ -1,6 +1,6 @@
 app: "{{ printf \"gimlet-dashboard-%s\" .GITHUB_BRANCH | sanitizeDNSName }}"
-env: preview
-namespace: preview
+env: tester
+namespace: tester
 chart:
   repository: https://chart.onechart.dev
   name: onechart
