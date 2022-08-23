@@ -108,13 +108,10 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createCase := false
 	headBranch := nativeGit.HeadBranch(repo)
 	_, blobID, err := goScm.Content(token, env.InfraRepo, stackYamlPath, headBranch)
 	if err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-			createCase = true
-		} else {
+		if !strings.Contains(err.Error(), "Not Found") {
 			logrus.Errorf("cannot fetch stack config from github: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			w.Write([]byte("{}"))
@@ -122,7 +119,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-config-change-%s", env.Name), 4)
+	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
 	if err != nil {
 		logrus.Errorf("cannot generate branch name: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -141,38 +138,22 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if createCase {
-		err = goScm.CreateContent(
-			token,
-			env.InfraRepo,
-			stackYamlPath,
-			stackConfigBuff.Bytes(),
-			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Updating infrastructure components for the %s env", env.Name),
-		)
-		if err != nil {
-			logrus.Errorf("cannot write git: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		err = goScm.UpdateContent(
-			token,
-			env.InfraRepo,
-			stackYamlPath,
-			stackConfigBuff.Bytes(),
-			blobID,
-			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Updating infrastructure components for the %s env", env.Name),
-		)
-		if err != nil {
-			logrus.Errorf("cannot write git: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+	err = goScm.UpdateContent(
+		token,
+		env.InfraRepo,
+		stackYamlPath,
+		stackConfigBuff.Bytes(),
+		blobID,
+		sourceBranch,
+		fmt.Sprintf("[Gimlet Dashboard] Updating infrastructure components for %s", env.Name),
+	)
+	if err != nil {
+		logrus.Errorf("cannot write git: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
-	_, _, err = goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, "[Gimlet Dashboard] Updating infrastructure components", "Gimlet Dashboard has created this PR")
+	_, _, err = goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, "[Gimlet Dashboard] Infrastructure components change", "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
