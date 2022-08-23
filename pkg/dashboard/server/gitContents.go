@@ -158,7 +158,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	var prListCreatedByGimlet []*scm.PullRequest
 	for _, pullRequest := range prList {
-		if strings.Contains(pullRequest.Source, "gimlet-config-change") {
+		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
 			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
 		}
 	}
@@ -402,7 +402,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			toSaveBuffer.Bytes(),
 			blobID,
 			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
+			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env),
 		)
 		if err != nil {
 			logrus.Errorf("cannot write git: %s", err)
@@ -411,7 +411,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Change config file", "Gimlet Dashboard has created this PR")
+	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Environment config change", "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
