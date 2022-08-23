@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -135,6 +136,46 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(gitRepoMString)
+}
+
+func getPullRequests(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
+
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	prList, err := goScm.ListOpenPRs(token, repoPath)
+	if err != nil {
+		logrus.Errorf("cannot list pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var prListCreatedByGimlet []*scm.PullRequest
+	for _, pullRequest := range prList {
+		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
+			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
+		}
+	}
+
+	pullRequests := map[string]interface{}{}
+	pullRequests["repo"] = repoPath
+	pullRequests["prList"] = prListCreatedByGimlet
+
+	pullRequestsString, err := json.Marshal(pullRequests)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(pullRequestsString)
 }
 
 type fileInfo struct {
@@ -361,7 +402,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			toSaveBuffer.Bytes(),
 			blobID,
 			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
+			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env),
 		)
 		if err != nil {
 			logrus.Errorf("cannot write git: %s", err)
@@ -370,7 +411,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Create config file", "Gimlet Dashboard has created this PR")
+	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Environment config change", "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

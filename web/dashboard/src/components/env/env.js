@@ -12,9 +12,10 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
+    const filteredPullRequestsByEnvName = pullRequests?.filter(pullRequest => pullRequest.Head.Name.includes(envName));
 
     return (
       <div>
@@ -48,22 +49,25 @@ export class Env extends Component {
           </svg>
         </h4>
         {this.state.isClosed ? null : (
-          <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
-            {renderedServices.length > 0
-              ?
-              <>
-                {renderedServices}
-                <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
-                onClick={() => {
-                  const newAppName = `${repoName}-${uuidv4().slice(0,4)}`
-                  newConfig(envName, newAppName)
-                }}>
-                  Add app config
-                </h4>
-              </>
-              : emptyState(searchFilter, envConfigs, newConfig, envName, repoName)}
+          <>
+            {renderPullRequests(filteredPullRequestsByEnvName)}
+            <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
+              {renderedServices.length > 0
+                ?
+                <>
+                  {renderedServices}
+                  <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      const newAppName = `${repoName}-${uuidv4().slice(0, 4)}`
+                      newConfig(envName, newAppName)
+                    }}>
+                    Add app config
+                  </h4>
+                </>
+                : emptyState(searchFilter, envConfigs, newConfig, envName, repoName)}
 
-          </div>
+            </div>
+          </>
         )}
       </div>
     )
@@ -184,3 +188,20 @@ function emptyStateDeployThisRepo(newConfig, envName, repoName) {
     </div>
   </div>
 }
+
+function renderPullRequests(pullRequests) {
+  if (!pullRequests || pullRequests.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="bg-indigo-600 rounded-t-lg">
+      <div className="inline-grid items-center rounded-t-lg bg-indigo-600 mx-auto py-3 px-3 sm:px-6 lg:px-8">
+        {pullRequests.map(pullRequest =>
+          <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer" className="text-xs text-white">
+            <span>{pullRequest.Title} to {pullRequest.Source}</span>
+          </a>)}
+      </div>
+    </div>
+  )
+};

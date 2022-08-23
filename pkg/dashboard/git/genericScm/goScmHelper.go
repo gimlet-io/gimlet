@@ -276,3 +276,19 @@ func (helper *GoScmHelper) RegisterWebhook(
 
 	return replaceHook(ctx, helper.client, scm.Join(owner, repo), hook)
 }
+
+func (helper *GoScmHelper) ListOpenPRs(accessToken string, repoPath string) ([]*scm.PullRequest, error) {
+	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
+		Token:   accessToken,
+		Refresh: "",
+	})
+
+	prListOptions := scm.PullRequestListOptions{
+		Open:   true,
+		Closed: false,
+	}
+
+	prList, _, err := helper.client.PullRequests.List(ctx, repoPath, prListOptions)
+
+	return prList, err
+}
