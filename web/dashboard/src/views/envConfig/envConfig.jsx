@@ -75,7 +75,7 @@ class EnvConfig extends Component {
 
       this.setState({
         configFile: (action === "new" ? {} : configFileContent),
-        chartFromConfigFile: configFileContent.chart,
+        chartFromConfigFile: configFileContent.chart ?? this.state.defaultChart.reference,
         appName: configFileContent.app,
         namespace: configFileContent.namespace,
         defaultAppName: configFileContent.app,
@@ -245,7 +245,7 @@ class EnvConfig extends Component {
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, this.state.chartFromConfigFile, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
