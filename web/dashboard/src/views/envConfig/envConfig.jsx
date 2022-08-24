@@ -303,7 +303,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
+    nonDefaultConfigFile.chart = this.state.chartFromConfigFile;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
