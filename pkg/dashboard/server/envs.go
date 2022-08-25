@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	dNativeGit "github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -47,6 +48,10 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	db := r.Context().Value("store").(*store.Store)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
 
 	env, err := db.GetEnvironment(req.Env)
 	if err != nil {
@@ -57,8 +62,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
-	defer os.RemoveAll(tmpPath)
+	repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
 	if err != nil {
 		logrus.Errorf("cannot get repo: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -104,26 +108,54 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), dNativeGit.Dir_RWX_RX_R)
+	headBranch := nativeGit.HeadBranch(repo)
+	_, blobID, err := goScm.Content(token, env.InfraRepo, stackYamlPath, headBranch)
 	if err != nil {
-		logrus.Errorf("cannot write file: %s", err)
+		if !strings.Contains(err.Error(), "Not Found") {
+			logrus.Errorf("cannot fetch stack config from github: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			w.Write([]byte("{}"))
+			return
+		}
+	}
+
+	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
+	if err != nil {
+		logrus.Errorf("cannot generate branch name: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	ref, err := repo.Head()
+	if err != nil {
+		logrus.Errorf("cannot get head: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	err = goScm.CreateBranch(token, env.InfraRepo, sourceBranch, ref.Hash().String())
+	if err != nil {
+		logrus.Errorf("cannot create branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	err = goScm.UpdateContent(
+		token,
+		env.InfraRepo,
+		stackYamlPath,
+		stackConfigBuff.Bytes(),
+		blobID,
+		sourceBranch,
+		fmt.Sprintf("[Gimlet Dashboard] Updating infrastructure components for %s", env.Name),
+	)
 	if err != nil {
-		logrus.Errorf("cannot generate and write files: %s", err)
+		logrus.Errorf("cannot write git: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
+	_, _, err = goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, "[Gimlet Dashboard] Infrastructure components change", "Gimlet Dashboard has created this PR")
 	if err != nil {
-		logrus.Errorf("cannot stage commit and push: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
