@@ -75,7 +75,7 @@ class EnvConfig extends Component {
 
       this.setState({
         configFile: (action === "new" ? {} : configFileContent),
-        chartFromConfigFile: configFileContent.chart,
+        chartFromConfigFile: configFileContent.chart ?? this.state.defaultChart.reference,
         appName: configFileContent.app,
         namespace: configFileContent.namespace,
         defaultAppName: configFileContent.app,
@@ -245,7 +245,7 @@ class EnvConfig extends Component {
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, this.state.chartFromConfigFile, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
@@ -303,7 +303,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
+    nonDefaultConfigFile.chart = this.state.chartFromConfigFile;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {

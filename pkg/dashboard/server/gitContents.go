@@ -255,11 +255,18 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 type envConfig struct {
 	Values          map[string]interface{}
 	Namespace       string
+	Chart           Chart
 	AppName         string
 	UseDeployPolicy bool
 	DeployBranch    string
 	DeployTag       string
 	DeployEvent     int
+}
+
+type Chart struct {
+	Repository string
+	Name       string
+	Version    string
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
@@ -320,9 +327,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			App: envConfigData.AppName,
 			Env: env,
 			Chart: dx.Chart{
-				Name:       config.Chart.Name,
-				Repository: config.Chart.Repo,
-				Version:    config.Chart.Version,
+				Name:       envConfigData.Chart.Name,
+				Repository: envConfigData.Chart.Repository,
+				Version:    envConfigData.Chart.Version,
 			},
 			Namespace: envConfigData.Namespace,
 			Values:    envConfigData.Values,
