@@ -42,6 +42,7 @@ class EnvConfig extends Component {
       deployEvents: ["push", "tag", "pr"],
       selectedDeployEvent: "push",
       useDeployPolicy: false,
+      popupWindow: reduxState.popupWindow,
 
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
@@ -55,6 +56,7 @@ class EnvConfig extends Component {
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
+        popupWindow: reduxState.popupWindow
       });
 
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
@@ -636,8 +638,8 @@ gimlet manifest template -f manifest.yaml`}
             </Menu>
             <button
               type="button"
-              disabled={!hasChange || this.state.saveButtonTriggered}
-              className={(hasChange && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              disabled={!hasChange || this.state.popupWindow.visible || this.state.saveButtonTriggered}
+              className={(hasChange && !this.state.popupWindow.visible && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
@@ -651,8 +653,8 @@ gimlet manifest template -f manifest.yaml`}
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered}
-              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || this.state.popupWindow.visible || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered}
+              className={(hasChange && !this.state.popupWindow.visible && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
