@@ -122,7 +122,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             errorList: errors
           }
         });
-        resetPopupWindowAfterThreeSeconds()
         return false
       }
     }
