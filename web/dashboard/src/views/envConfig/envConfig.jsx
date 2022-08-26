@@ -256,7 +256,8 @@ class EnvConfig extends Component {
         this.setDeployPolicy(data.deploy);
 
         clearTimeout(this.state.timeoutTimer);
-        this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
+        window.history.pushState(null, "", encodeURI(`/repo/${repoName}/envs/${env}/config/${encodeURIComponent(appNameToSave)}`));
+        this.props.history.replace(window.location.pathname);
         this.setState({
           hasAPIResponded: true,
 
@@ -272,7 +273,8 @@ class EnvConfig extends Component {
           defaultState: Object.assign({}, data.values),
         });
         if (action === "new") {
-          this.props.history.replace(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`);
+          window.history.pushState(null, "", encodeURI(`/repo/${repoName}/envs/${env}/config/${encodeURIComponent(appNameToSave)}`));
+          this.props.history.replace(window.location.pathname);
         }
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
@@ -590,7 +592,8 @@ gimlet manifest template -f manifest.yaml`}
                         {({ active }) => (
                           <button
                             onClick={() => {
-                              this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`);
+                              window.history.pushState(null, "", encodeURI(`/repo/${repoName}/envs/${env}/config/${encodeURIComponent(config)}-copy/new`));
+                              this.props.history.replace(window.location.pathname);
                               this.props.store.dispatch({
                                 type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
                                   repo: repoName,

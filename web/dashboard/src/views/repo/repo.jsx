@@ -303,8 +303,8 @@ export default class Repo extends Component {
 
   navigateToConfigEdit(env, config) {
     const { owner, repo } = this.props.match.params;
-    const encodedConfig = encodeURIComponent(config);
-    this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${encodedConfig}`);
+    window.history.pushState(null, "", encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${encodeURIComponent(config)}`));
+    this.props.history.push(window.location.pathname);
   }
 
   newConfig(env, config) {
@@ -320,7 +320,8 @@ export default class Repo extends Component {
         },
       }
     });
-    this.props.history.push(`/repo/${owner}/${repo}/envs/${env}/config/${config}/new`);
+    window.history.pushState(null, "", encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${encodeURIComponent(config)}/new`));
+    this.props.history.replace(window.location.pathname);
   }
 
   ciConfigAndShipperStatuses(repoName) {
