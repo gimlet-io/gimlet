@@ -32,7 +32,6 @@ class EnvConfig extends Component {
       defaultChart: reduxState.defaultChart,
       fileInfos: reduxState.fileInfos,
 
-      saveButtonTriggered: false,
       timeoutTimer: {},
       environmentVariablesExpanded: false,
       codeSnippetExpanded: false,
@@ -209,7 +208,6 @@ class EnvConfig extends Component {
 
   resetNotificationStateAfterThreeSeconds() {
     setTimeout(() => {
-      this.setState({ saveButtonTriggered: false });
       this.props.store.dispatch({
         type: ACTION_TYPE_POPUPWINDOWRESET
       });
@@ -218,7 +216,7 @@ class EnvConfig extends Component {
 
   startApiCallTimeOutHandler() {
     const timeoutTimer = setTimeout(() => {
-      if (this.state.saveButtonTriggered) {
+      if (this.state.popupWindow.visible) {
         this.props.store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
             header: "Error",
@@ -253,7 +251,6 @@ class EnvConfig extends Component {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    this.setState({ saveButtonTriggered: true });
     this.startApiCallTimeOutHandler();
 
     this.props.store.dispatch({
@@ -270,7 +267,7 @@ class EnvConfig extends Component {
 
     this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
-        if (!this.state.saveButtonTriggered) {
+        if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
           return
         }
