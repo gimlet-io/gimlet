@@ -321,7 +321,7 @@ export default class Repo extends Component {
       }
     });
     window.history.pushState(null, "", encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${encodeURIComponent(config)}/new`));
-    this.props.history.replace(window.location.pathname);
+    this.props.history.push(window.location.pathname);
   }
 
   ciConfigAndShipperStatuses(repoName) {

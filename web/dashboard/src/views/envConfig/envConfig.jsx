@@ -593,7 +593,7 @@ gimlet manifest template -f manifest.yaml`}
                           <button
                             onClick={() => {
                               window.history.pushState(null, "", encodeURI(`/repo/${repoName}/envs/${env}/config/${encodeURIComponent(config)}-copy/new`));
-                              this.props.history.replace(window.location.pathname);
+                              this.props.history.push(window.location.pathname);
                               this.props.store.dispatch({
                                 type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
                                   repo: repoName,
