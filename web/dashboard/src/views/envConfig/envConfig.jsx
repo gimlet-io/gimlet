@@ -10,6 +10,8 @@ import {
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ADD_ENVCONFIG,
+  ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWOPENED,
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -35,7 +37,6 @@ class EnvConfig extends Component {
       errorMessage: "",
       isTimedOut: false,
       timeoutTimer: {},
-      hasFormValidationError: false,
       environmentVariablesExpanded: false,
       codeSnippetExpanded: false,
       deployEvents: ["push", "tag", "pr"],
@@ -197,10 +198,9 @@ class EnvConfig extends Component {
 
   validationCallback = (errors) => {
     if (errors) {
-      console.log(errors);
-      this.setState({ hasFormValidationError: true })
+      this.setState({ errors: errors })
     } else {
-      this.setState({ hasFormValidationError: false })
+      this.setState({ errors: undefined })
     }
   }
 
@@ -234,6 +234,22 @@ class EnvConfig extends Component {
   }
 
   save() {
+    if (this.state.errors){
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+          header: ""
+        }
+      });
+  
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+          header: "Error",
+          message: this.state.errors[0].message
+        }
+      });
+      return
+    }
+
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
@@ -327,9 +343,9 @@ class EnvConfig extends Component {
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
-    const hasChange = (nonDefaultValuesString !== '{ }' &&
+    const hasChange = this.state.errors || ((nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
+      this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new");
 
     if (!this.state.defaultChart) {
       return null;
@@ -635,8 +651,8 @@ gimlet manifest template -f manifest.yaml`}
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered}
+              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
