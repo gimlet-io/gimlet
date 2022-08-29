@@ -25,7 +25,7 @@ export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GITOPS_COMMITS = 'gitopsCommits';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
 export const ACTION_TYPE_AGENTS = 'agents';
-export const ACTION_TYPE_POPUPWINDOWOPENED = 'popupWindowOpened';
+export const ACTION_TYPE_POPUPWINDOWPROGRESS = 'popupWindowProgress';
 export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
 export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
@@ -93,8 +93,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:
       return eventHandlers.agents(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWOPENED:
-      return eventHandlers.popupWindowOpened(state, action.payload);
+    case ACTION_TYPE_POPUPWINDOWPROGRESS:
+      return eventHandlers.popupWindowProgress(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWERROR:
       return eventHandlers.popupWindowError(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWERRORLIST:

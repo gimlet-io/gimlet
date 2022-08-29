@@ -7,7 +7,7 @@ import {
   ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_ENVUPDATED
 } from "../../redux/redux";
@@ -109,7 +109,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const saveComponents = () => {
     store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Saving components..."
       }
     });
@@ -151,7 +151,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const bootstrapGitops = (envName, repoPerEnv) => {
     store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Bootstrapping..."
       }
     });
@@ -211,7 +211,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const configureAgent = (envName) => {
     store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Configuring Agent..."
       }
     });
@@ -243,7 +243,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const enableDeploymentAutomation = (envName) => {
     store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Enabling deployment automation..."
       }
     });

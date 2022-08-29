@@ -12,7 +12,7 @@ import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_POPUPWINDOWERRORLIST
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
@@ -97,20 +97,6 @@ class EnvConfig extends Component {
     if (prevProps.match.params.config !== config) {
       let reduxState = this.props.store.getState();
       this.setLocalEnvConfigState(reduxState, repoName, env, config);
-    }
-
-    if (prevState.errors !== this.state.errors && this.state.errors) {
-      this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
-          header: ""
-        }
-      });
-      this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
-          header: "Error",
-          errorList: this.state.errors
-        }
-      });
     }
   }
 
@@ -213,9 +199,23 @@ class EnvConfig extends Component {
     if (errors) {
       console.log(errors);
       this.setState({ errors: errors });
+      this.displayErrors(errors);
     } else {
       this.setState({ errors: undefined });
+
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
     }
+  }
+
+  displayErrors(errors) {
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
+        header: "Error",
+        errorList: errors
+      }
+    });
   }
 
   setValues(values, nonDefaultValues) {
@@ -250,17 +250,7 @@ class EnvConfig extends Component {
 
   save() {
     if (this.state.errors) {
-      this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
-          header: ""
-        }
-      });
-      this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
-          header: "Error",
-          errorList: this.state.errors
-        }
-      });
+      this.displayErrors(this.state.errors);
       return
     }
 
@@ -270,7 +260,7 @@ class EnvConfig extends Component {
     this.startApiCallTimeOutHandler();
 
     this.props.store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Saving..."
       }
     });
