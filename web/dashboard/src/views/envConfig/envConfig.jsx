@@ -13,6 +13,7 @@ import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_POPUPWINDOWERRORLIST
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -240,9 +241,9 @@ class EnvConfig extends Component {
         }
       });
       this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+        type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
           header: "Error",
-          message: this.state.errors[0].message
+          errorList: this.state.errors
         }
       });
       return
