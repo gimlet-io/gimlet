@@ -211,9 +211,10 @@ class EnvConfig extends Component {
 
   validationCallback = (errors) => {
     if (errors) {
-      this.setState({ errors: errors })
+      console.log(errors);
+      this.setState({ errors: errors });
     } else {
-      this.setState({ errors: undefined })
+      this.setState({ errors: undefined });
     }
   }
 
