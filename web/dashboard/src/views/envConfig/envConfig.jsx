@@ -90,7 +90,7 @@ class EnvConfig extends Component {
     }
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
