@@ -257,13 +257,12 @@ class EnvConfig extends Component {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    this.startApiCallTimeOutHandler();
-
     this.props.store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Saving..."
       }
     });
+    this.startApiCallTimeOutHandler();
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
     const chartToSave = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
