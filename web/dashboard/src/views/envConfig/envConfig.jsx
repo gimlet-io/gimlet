@@ -90,13 +90,27 @@ class EnvConfig extends Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
     if (prevProps.match.params.config !== config) {
       let reduxState = this.props.store.getState();
       this.setLocalEnvConfigState(reduxState, repoName, env, config);
+    }
+
+    if (prevState.errors !== this.state.errors && this.state.errors) {
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+          header: ""
+        }
+      });
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
+          header: "Error",
+          errorList: this.state.errors
+        }
+      });
     }
   }
 
@@ -234,7 +248,7 @@ class EnvConfig extends Component {
   }
 
   save() {
-    if (this.state.errors){
+    if (this.state.errors) {
       this.props.store.dispatch({
         type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
           header: ""
@@ -351,7 +365,7 @@ class EnvConfig extends Component {
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
-    const hasChange = this.state.errors || ((nonDefaultValuesString !== '{ }' &&
+    const hasChange = ((nonDefaultValuesString !== '{ }' &&
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new");
 
