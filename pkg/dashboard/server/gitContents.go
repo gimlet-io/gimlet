@@ -308,6 +308,10 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	envConfigFileName := envConfigPath(env, envConfigData, existingEnvConfigs)
 	envConfigFilePath := fmt.Sprintf(".gimlet/%s", envConfigFileName)
 
+	// Temporary solution for some encoding problem (https://github.com/remix-run/history/issues/505), which fixed in https://github.com/remix-run/history/releases/tag/v5.0.0.
+	// Must update react-router-dom to v6 in the near future.
+	envConfigFilePath = strings.ReplaceAll(envConfigFilePath, "%", "%25")
+
 	createCase := false // indicates if we need to create the file, we update existing manifests on the default path
 	_, blobID, err := goScm.Content(token, repoPath, envConfigFilePath, headBranch)
 	if err != nil {

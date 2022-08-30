@@ -246,7 +246,7 @@ class EnvConfig extends Component {
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, config, this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
         if (!this.state.saveButtonTriggered) {
           // if no saving is in progress, practically it timed out
@@ -256,7 +256,7 @@ class EnvConfig extends Component {
         this.setDeployPolicy(data.deploy);
 
         clearTimeout(this.state.timeoutTimer);
-        this.props.history.replace(`/repo/${owner}/${repo}/envs/${env}/config/${appNameToSave}`);
+        this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
         this.setState({
           hasAPIResponded: true,
 
@@ -272,7 +272,7 @@ class EnvConfig extends Component {
           defaultState: Object.assign({}, data.values),
         });
         if (action === "new") {
-          this.props.history.replace(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`);
+          this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
         }
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
@@ -590,7 +590,7 @@ gimlet manifest template -f manifest.yaml`}
                         {({ active }) => (
                           <button
                             onClick={() => {
-                              this.props.history.push(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`);
+                              this.props.history.push(encodeURI(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`));
                               this.props.store.dispatch({
                                 type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
                                   repo: repoName,
