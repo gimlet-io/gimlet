@@ -189,7 +189,7 @@ function emptyStateDeployThisRepo(newConfig, envName, repoName) {
   </div>
 }
 
-function renderPullRequests(pullRequests) {
+export function renderPullRequests(pullRequests) {
   if (!pullRequests || pullRequests.length === 0) {
     return null
   }

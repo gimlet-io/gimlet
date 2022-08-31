@@ -11,8 +11,9 @@ import {
   ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_ENVUPDATED
 } from "../../redux/redux";
+import { renderPullRequests } from '../../components/env/env';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, gitopsCommits, popupWindow }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, gitopsCommits, popupWindow, pullRequests }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
@@ -412,8 +413,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
 
+  const filteredPullRequestsByEnvName = pullRequests?.filter(pullRequest => pullRequest.Head.Name.includes(env.name));
+
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+      {renderPullRequests(filteredPullRequestsByEnvName)}
       <div ref={ref} className="px-4 py-5 sm:px-6">
         <div className="flex justify-between">
           <div className="inline-flex">

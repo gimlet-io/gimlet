@@ -158,7 +158,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	var prListCreatedByGimlet []*scm.PullRequest
 	for _, pullRequest := range prList {
-		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
+		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") || strings.HasPrefix(pullRequest.Source, "gimlet-stack-change") {
 			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
 		}
 	}
