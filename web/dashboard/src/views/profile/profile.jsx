@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import {
   ACTION_TYPE_USERS,
   ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWOPENED,
+  ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWERROR
 } from '../../redux/redux';
@@ -37,7 +37,7 @@ export default class Profile extends Component {
 
   save() {
     this.props.store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Saving..."
       }
     });

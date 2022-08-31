@@ -3,7 +3,7 @@ import EnvironmentCard from './environmentCard.jsx';
 import {
     ACTION_TYPE_ENVS,
     ACTION_TYPE_POPUPWINDOWRESET,
-    ACTION_TYPE_POPUPWINDOWOPENED,
+    ACTION_TYPE_POPUPWINDOWPROGRESS,
     ACTION_TYPE_POPUPWINDOWSUCCESS,
     ACTION_TYPE_POPUPWINDOWERROR
 } from "../../redux/redux";
@@ -95,7 +95,7 @@ class Environments extends Component {
 
     save() {
         this.props.store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+            type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
                 header: "Saving..."
             }
         });
@@ -143,7 +143,7 @@ class Environments extends Component {
 
     delete(envName) {
         this.props.store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWOPENED, payload: {
+            type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
                 header: "Deleting..."
             }
         });

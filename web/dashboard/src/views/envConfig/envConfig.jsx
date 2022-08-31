@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import HelmUI from "helm-react-ui";
 import "./style.css";
-import PopUpWindow from "./popUpWindow";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
 import CopiableCodeSnippet from "./copiableCodeSnippet";
@@ -10,6 +9,11 @@ import {
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ADD_ENVCONFIG,
+  ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWRESET,
+  ACTION_TYPE_POPUPWINDOWSUCCESS,
+  ACTION_TYPE_POPUPWINDOWPROGRESS,
+  ACTION_TYPE_POPUPWINDOWERRORLIST
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -29,18 +33,13 @@ class EnvConfig extends Component {
       defaultChart: reduxState.defaultChart,
       fileInfos: reduxState.fileInfos,
 
-      saveButtonTriggered: false,
-      hasAPIResponded: false,
-      isError: false,
-      errorMessage: "",
-      isTimedOut: false,
       timeoutTimer: {},
-      hasFormValidationError: false,
       environmentVariablesExpanded: false,
       codeSnippetExpanded: false,
       deployEvents: ["push", "tag", "pr"],
       selectedDeployEvent: "push",
       useDeployPolicy: false,
+      popupWindow: reduxState.popupWindow,
 
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
@@ -54,6 +53,7 @@ class EnvConfig extends Component {
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
+        popupWindow: reduxState.popupWindow
       });
 
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
@@ -198,10 +198,24 @@ class EnvConfig extends Component {
   validationCallback = (errors) => {
     if (errors) {
       console.log(errors);
-      this.setState({ hasFormValidationError: true })
+      this.setState({ errors: errors });
+      this.displayErrors(errors);
     } else {
-      this.setState({ hasFormValidationError: false })
+      this.setState({ errors: undefined });
+
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
     }
+  }
+
+  displayErrors(errors) {
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
+        header: "Error",
+        errorList: errors
+      }
+    });
   }
 
   setValues(values, nonDefaultValues) {
@@ -210,20 +224,21 @@ class EnvConfig extends Component {
 
   resetNotificationStateAfterThreeSeconds() {
     setTimeout(() => {
-      this.setState({
-        saveButtonTriggered: false,
-        hasAPIResponded: false,
-        errorMessage: "",
-        isError: false,
-        isTimedOut: false
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
       });
     }, 3000);
   }
 
   startApiCallTimeOutHandler() {
     const timeoutTimer = setTimeout(() => {
-      if (this.state.saveButtonTriggered) {
-        this.setState({ isTimedOut: true, hasAPIResponded: true });
+      if (this.state.popupWindow.visible) {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: "Saving failed: The process has timed out."
+          }
+        });
         this.resetNotificationStateAfterThreeSeconds()
       }
     }, 15000);
@@ -234,10 +249,19 @@ class EnvConfig extends Component {
   }
 
   save() {
+    if (this.state.errors) {
+      this.displayErrors(this.state.errors);
+      return
+    }
+
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    this.setState({ saveButtonTriggered: true });
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Saving..."
+      }
+    });
     this.startApiCallTimeOutHandler();
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
@@ -248,20 +272,23 @@ class EnvConfig extends Component {
 
     this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
       .then((data) => {
-        if (!this.state.saveButtonTriggered) {
+        if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
           return
         }
 
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Config saved succesfully!"
+          }
+        });
         this.setDeployPolicy(data.deploy);
 
         clearTimeout(this.state.timeoutTimer);
         this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
         this.setState({
-          hasAPIResponded: true,
-
           configFile: data,
-
           appName: data.app,
           namespace: data.namespace,
           defaultAppName: data.app,
@@ -277,10 +304,11 @@ class EnvConfig extends Component {
         this.resetNotificationStateAfterThreeSeconds();
       }, err => {
         clearTimeout(this.state.timeoutTimer);
-        this.setState({
-          hasAPIResponded: true,
-          isError: true,
-          errorMessage: err.data?.message ?? err.statusText
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.data?.message ?? err.statusText
+          }
         });
         this.resetNotificationStateAfterThreeSeconds();
       })
@@ -620,8 +648,8 @@ gimlet manifest template -f manifest.yaml`}
             </Menu>
             <button
               type="button"
-              disabled={!hasChange || this.state.saveButtonTriggered}
-              className={(hasChange && !this.state.saveButtonTriggered ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              disabled={!hasChange || this.state.popupWindow.visible}
+              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
@@ -635,20 +663,12 @@ gimlet manifest template -f manifest.yaml`}
             </button>
             <button
               type="button"
-              disabled={!hasChange || !this.state.namespace || !this.state.appName || this.state.saveButtonTriggered || this.state.hasFormValidationError}
-              className={(hasChange && this.state.namespace && this.state.appName && !this.state.saveButtonTriggered && !this.state.hasFormValidationError ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || this.state.popupWindow.visible || !this.state.namespace || !this.state.appName}
+              className={(hasChange && !this.state.popupWindow.visible && this.state.namespace && this.state.appName ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => this.save()}
             >
               Save
             </button>
-            {this.state.saveButtonTriggered &&
-              <PopUpWindow
-                hasAPIResponded={this.state.hasAPIResponded}
-                errorMessage={this.state.errorMessage}
-                isError={this.state.isError}
-                isTimedOut={this.state.isTimedOut}
-              />
-            }
           </span>
         </div>
       </div>

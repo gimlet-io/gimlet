@@ -23,13 +23,14 @@ export function agents(state, event) {
   return state;
 }
 
-export function popupWindowOpened(state, payload) {
+export function popupWindowProgress(state, payload) {
   state.popupWindow.visible = true;
   state.popupWindow.header = payload.header;
   return state;
 }
 
 export function popupWindowError(state, payload) {
+  state.popupWindow.visible = true;
   state.popupWindow.finished = true;
   state.popupWindow.isError = true;
   state.popupWindow.header = payload.header;
@@ -38,6 +39,7 @@ export function popupWindowError(state, payload) {
 }
 
 export function popupWindowErrorList(state, payload) {
+  state.popupWindow.visible = true;
   state.popupWindow.finished = true;
   state.popupWindow.isError = true;
   state.popupWindow.header = payload.header;
@@ -46,6 +48,7 @@ export function popupWindowErrorList(state, payload) {
 }
 
 export function popupWindowSuccess(state, payload) {
+  state.popupWindow.visible = true;
   state.popupWindow.finished = true;
   state.popupWindow.header = payload.header;
   state.popupWindow.message = payload.message;

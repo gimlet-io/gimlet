@@ -79,6 +79,10 @@ export default class PopUpWindow extends Component {
     }
 
     renderErrorList() {
+        if (Array.isArray(this.state.popupWindow.errorList)) {
+            return this.state.popupWindow.errorList.map(error => (<li>{`${error.message}`}</li>))
+        }
+
         return Object.keys(this.state.popupWindow.errorList)
             .filter(variable => this.state.popupWindow.errorList[variable] !== null)
             .map(variable => this.state.popupWindow.errorList[variable]
