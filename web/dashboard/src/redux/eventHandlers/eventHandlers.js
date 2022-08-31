@@ -52,6 +52,7 @@ export function popupWindowSuccess(state, payload) {
   state.popupWindow.finished = true;
   state.popupWindow.header = payload.header;
   state.popupWindow.message = payload.message;
+  state.popupWindow.link = payload.link;
   return state;
 }
 
@@ -61,6 +62,7 @@ export function popupWindowReset(state) {
   state.popupWindow.finished = false;
   state.popupWindow.header = "";
   state.popupWindow.message = "";
+  state.popupWindow.link = "";
   state.popupWindow.errorList = null;
   return state;
 }

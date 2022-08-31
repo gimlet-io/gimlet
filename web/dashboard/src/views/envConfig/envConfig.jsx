@@ -280,23 +280,28 @@ class EnvConfig extends Component {
         this.props.store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
-            message: "Config saved succesfully!"
+            message: "Pull request was created",
+            link: data.createdPr.Link
           }
         });
-        this.setDeployPolicy(data.deploy);
+        // TODO update redux pr list
+        // this.props.store.dispatch({
+        //   type: ACTION_TYPE_UPDATEPRLIST, name: env.name, payload: data.stackConfig
+        // });
+        this.setDeployPolicy(data.manifest.deploy);
 
         clearTimeout(this.state.timeoutTimer);
         this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
         this.setState({
-          configFile: data,
-          appName: data.app,
-          namespace: data.namespace,
-          defaultAppName: data.app,
-          defaultNamespace: data.namespace,
+          configFile: data.manifest,
+          appName: data.manifest.app,
+          namespace: data.manifest.namespace,
+          defaultAppName: data.manifest.app,
+          defaultNamespace: data.manifest.namespace,
 
-          values: Object.assign({}, data.values),
-          nonDefaultValues: Object.assign({}, data.values),
-          defaultState: Object.assign({}, data.values),
+          values: Object.assign({}, data.manifest.values),
+          nonDefaultValues: Object.assign({}, data.manifest.values),
+          defaultState: Object.assign({}, data.manifest.values),
         });
         if (action === "new") {
           this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));

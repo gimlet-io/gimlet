@@ -153,7 +153,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _, err = goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, "[Gimlet Dashboard] Infrastructure components change", "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, "[Gimlet Dashboard] Infrastructure components change", "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -162,7 +162,11 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	gitRepoCache.Invalidate(env.InfraRepo)
 
-	stackConfigString, err := json.Marshal(stackConfig)
+	response := map[string]interface{}{}
+	response["createdPr"] = createdPR
+	response["stackConfig"] = stackConfig
+
+	responseString, err := json.Marshal(response)
 	if err != nil {
 		logrus.Errorf("cannot serialize stack config: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -170,7 +174,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(stackConfigString))
+	w.Write([]byte(responseString))
 }
 
 func bootstrapGitops(w http.ResponseWriter, r *http.Request) {

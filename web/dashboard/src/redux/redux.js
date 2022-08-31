@@ -78,6 +78,7 @@ export const initialState = {
     isError: false,
     header: "",
     message: "",
+    link: "",
     errorList: null
   },
   users: []

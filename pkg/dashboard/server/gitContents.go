@@ -422,14 +422,18 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Environment config change", "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Environment config change", "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	manifestJson, err := json.Marshal(manifest)
+	response := map[string]interface{}{}
+	response["createdPr"] = createdPR
+	response["manifest"] = manifest
+
+	responseJson, err := json.Marshal(response)
 	if err != nil {
 		logrus.Errorf("cannot marshal manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -438,7 +442,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	gitRepoCache.Invalidate(repoPath)
 	w.WriteHeader(http.StatusOK)
-	w.Write(manifestJson)
+	w.Write(responseJson)
 }
 
 // envConfigPath returns the envconfig file name based on convention, or the name of an existing file describing this env

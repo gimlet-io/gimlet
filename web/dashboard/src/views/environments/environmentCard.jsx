@@ -132,11 +132,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
-            message: "Component saved"
+            message: "Pull request was created",
+            link: data.createdPr.Link
           }
         });
+        // TODO update redux pr list
+        // store.dispatch({
+        //   type: ACTION_TYPE_UPDATE_PRLIST, name: env.name, payload: data.stackConfig
+        // });
         store.dispatch({
-          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data
+          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.stackConfig
         });
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
