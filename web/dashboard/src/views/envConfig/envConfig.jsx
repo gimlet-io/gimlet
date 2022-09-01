@@ -13,7 +13,8 @@ import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWERRORLIST
+  ACTION_TYPE_POPUPWINDOWERRORLIST,
+  ACTION_TYPE_UPDATEPULLREQUESTS
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -284,10 +285,12 @@ class EnvConfig extends Component {
             link: data.createdPr.Link
           }
         });
-        // TODO update redux pr list
-        // this.props.store.dispatch({
-        //   type: ACTION_TYPE_UPDATEPRLIST, name: env.name, payload: data.stackConfig
-        // });
+        this.props.store.dispatch({
+          type: ACTION_TYPE_UPDATEPULLREQUESTS, payload: {
+            repo: data.repo,
+            pullRequest: data.createdPr
+          }
+        });
         this.setDeployPolicy(data.manifest.deploy);
 
         clearTimeout(this.state.timeoutTimer);

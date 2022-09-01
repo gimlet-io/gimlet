@@ -163,6 +163,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache.Invalidate(env.InfraRepo)
 
 	response := map[string]interface{}{}
+	response["repo"] = env.InfraRepo
 	response["createdPr"] = createdPR
 	response["stackConfig"] = stackConfig
 

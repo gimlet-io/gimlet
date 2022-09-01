@@ -217,7 +217,10 @@ export function pullRequestsFromInfraRepos(state, payload) {
 }
 
 export function updatePullRequests(state, payload) {
-  state.pullRequests[payload.repo].push(payload.pullRequest)
+  if (!state.pullRequests[payload.repo]) {
+    state.pullRequests[payload.repo] = [];
+  }
+  state.pullRequests[payload.repo].push(payload.pullRequest);
   return state;
 }
 

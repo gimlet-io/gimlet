@@ -9,7 +9,8 @@ import {
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_GITOPS_COMMITS,
-  ACTION_TYPE_ENVUPDATED
+  ACTION_TYPE_ENVUPDATED,
+  ACTION_TYPE_UPDATEPULLREQUESTS
 } from "../../redux/redux";
 import { renderPullRequests } from '../../components/env/env';
 
@@ -136,10 +137,12 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             link: data.createdPr.Link
           }
         });
-        // TODO update redux pr list
-        // store.dispatch({
-        //   type: ACTION_TYPE_UPDATE_PRLIST, name: env.name, payload: data.stackConfig
-        // });
+        store.dispatch({
+          type: ACTION_TYPE_UPDATEPULLREQUESTS, payload: {
+            repo: data.repo,
+            pullRequest: data.createdPr
+          }
+        });
         store.dispatch({
           type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.stackConfig
         });

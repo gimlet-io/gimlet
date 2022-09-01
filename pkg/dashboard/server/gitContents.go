@@ -474,6 +474,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{}
+	response["repo"] = repoPath
 	response["createdPr"] = createdPR
 	response["manifest"] = manifest
 
