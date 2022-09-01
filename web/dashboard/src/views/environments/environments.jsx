@@ -5,7 +5,8 @@ import {
     ACTION_TYPE_POPUPWINDOWRESET,
     ACTION_TYPE_POPUPWINDOWPROGRESS,
     ACTION_TYPE_POPUPWINDOWSUCCESS,
-    ACTION_TYPE_POPUPWINDOWERROR
+    ACTION_TYPE_POPUPWINDOWERROR,
+    ACTION_TYPE_PULLREQUESTSFROMINFRAREPOS
 } from "../../redux/redux";
 
 class Environments extends Component {
@@ -20,7 +21,8 @@ class Environments extends Component {
             saveButtonTriggered: false,
             user: reduxState.user,
             gitopsCommits: reduxState.gitopsCommits,
-            popupWindow: reduxState.popupWindow
+            popupWindow: reduxState.popupWindow,
+            pullRequests: reduxState.pullRequests,
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -30,7 +32,8 @@ class Environments extends Component {
                 envs: reduxState.envs,
                 user: reduxState.user,
                 gitopsCommits: reduxState.gitopsCommits,
-                popupWindow: reduxState.popupWindow
+                popupWindow: reduxState.popupWindow,
+                pullRequests: reduxState.pullRequests
             });
         });
 
@@ -44,6 +47,16 @@ class Environments extends Component {
                     type: ACTION_TYPE_ENVS,
                     payload: data
                 });
+            }, () => {/* Generic error handler deals with it */
+            });
+    }
+
+    componentDidMount() {
+        this.props.gimletClient.getPullRequestsFromInfraRepo()
+            .then(data => {
+                this.props.store.dispatch({
+                    type: ACTION_TYPE_PULLREQUESTSFROMINFRAREPOS, payload: data
+                  });
             }, () => {/* Generic error handler deals with it */
             });
     }
@@ -67,6 +80,7 @@ class Environments extends Component {
                 envFromParams={environment}
                 gitopsCommits={gitopsCommits}
                 popupWindow={popupWindow}
+                pullRequests={this.state.pullRequests} // TODO this might be pullRequests[env.Name], because now receives every element, and sorting after that
             />))
         )
     }

@@ -418,7 +418,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
 
-  const filteredPullRequestsByEnvName = pullRequests?.filter(pullRequest => pullRequest.Head.Name.includes(env.name));
+  const filteredPullRequestsByEnvName = pullRequests[env.infraRepo]?.filter(pullRequest => pullRequest.Head.Name.includes(env.name));
 
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">

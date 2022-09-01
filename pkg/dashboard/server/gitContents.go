@@ -158,7 +158,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	var prListCreatedByGimlet []*scm.PullRequest
 	for _, pullRequest := range prList {
-		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") || strings.HasPrefix(pullRequest.Source, "gimlet-stack-change") {
+		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
 			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
 		}
 	}
@@ -176,6 +176,50 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(pullRequestsString)
+}
+
+func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	db := r.Context().Value("store").(*store.Store)
+	envsFromDB, err := db.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get all environments from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	infraRepoPullRequests := map[string]interface{}{}
+	for _, env := range envsFromDB {
+		prList, err := goScm.ListOpenPRs(token, env.InfraRepo)
+		if err != nil {
+			logrus.Errorf("cannot list pull requests: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		var prListCreatedByGimlet []*scm.PullRequest
+		for _, pullRequest := range prList {
+			if strings.HasPrefix(pullRequest.Source, "gimlet-stack-change") {
+				prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
+			}
+		}
+
+		infraRepoPullRequests[env.InfraRepo] = prListCreatedByGimlet
+	}
+
+	infraRepoPullRequestsString, err := json.Marshal(infraRepoPullRequests)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(infraRepoPullRequestsString)
 }
 
 type fileInfo struct {

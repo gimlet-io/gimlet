@@ -211,6 +211,16 @@ export function pullRequests(state, payload) {
   return state;
 }
 
+export function pullRequestsFromInfraRepos(state, payload) {
+  state.pullRequests = { ...state.pullRequests, ...payload };
+  return state;
+}
+
+export function updatePullRequests(state, payload) {
+  state.pullRequests[payload.repo].push(payload.pullRequest)
+  return state;
+}
+
 export function repoMetas(state, payload) {
   state.repoMetas = payload.repoMetas;
   state.fileInfos = payload.repoMetas.fileInfos;
