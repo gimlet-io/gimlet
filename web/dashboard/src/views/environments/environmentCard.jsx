@@ -421,11 +421,9 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
 
-  const filteredPullRequestsByEnvName = pullRequests[env.infraRepo]?.filter(pullRequest => pullRequest.Head.Name.includes(env.name));
-
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-      {renderPullRequests(filteredPullRequestsByEnvName)}
+      {renderPullRequests(pullRequests)}
       <div ref={ref} className="px-4 py-5 sm:px-6">
         <div className="flex justify-between">
           <div className="inline-flex">

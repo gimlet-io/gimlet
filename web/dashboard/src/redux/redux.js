@@ -16,8 +16,8 @@ export const ACTION_TYPE_COMMITS = 'commits';
 export const ACTION_TYPE_BRANCHES = 'branches';
 export const ACTION_TYPE_ENVCONFIGS = 'envConfigs';
 export const ACTION_TYPE_PULLREQUESTS = 'pullRequests';
-export const ACTION_TYPE_PULLREQUESTSFROMINFRAREPOS = 'pullRequestsFromInfraRepos';
 export const ACTION_TYPE_UPDATEPULLREQUESTS = 'updatePullRequests';
+export const ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED = 'envsPullRequestListUpdated';
 export const ACTION_TYPE_ADD_ENVCONFIG = 'addEnvConfig';
 export const ACTION_TYPE_REPO_METAS = "repoMetas";
 export const ACTION_TYPE_DEPLOY = 'deploy';
@@ -134,8 +134,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.addEnvConfig(state, action.payload)
     case ACTION_TYPE_PULLREQUESTS:
       return eventHandlers.pullRequests(state, action.payload)
-    case ACTION_TYPE_PULLREQUESTSFROMINFRAREPOS:
-      return eventHandlers.pullRequestsFromInfraRepos(state, action.payload)
+    case ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED:
+      return eventHandlers.envsPullRequestListUpdated(state, action.payload)
     case ACTION_TYPE_UPDATEPULLREQUESTS:
       return eventHandlers.updatePullRequests(state, action.payload)
     case ACTION_TYPE_REPO_METAS:

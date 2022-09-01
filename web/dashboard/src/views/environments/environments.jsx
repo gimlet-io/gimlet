@@ -6,7 +6,7 @@ import {
     ACTION_TYPE_POPUPWINDOWPROGRESS,
     ACTION_TYPE_POPUPWINDOWSUCCESS,
     ACTION_TYPE_POPUPWINDOWERROR,
-    ACTION_TYPE_PULLREQUESTSFROMINFRAREPOS
+    ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED
 } from "../../redux/redux";
 
 class Environments extends Component {
@@ -21,8 +21,7 @@ class Environments extends Component {
             saveButtonTriggered: false,
             user: reduxState.user,
             gitopsCommits: reduxState.gitopsCommits,
-            popupWindow: reduxState.popupWindow,
-            pullRequests: reduxState.pullRequests,
+            popupWindow: reduxState.popupWindow
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -32,8 +31,7 @@ class Environments extends Component {
                 envs: reduxState.envs,
                 user: reduxState.user,
                 gitopsCommits: reduxState.gitopsCommits,
-                popupWindow: reduxState.popupWindow,
-                pullRequests: reduxState.pullRequests
+                popupWindow: reduxState.popupWindow
             });
         });
 
@@ -54,8 +52,9 @@ class Environments extends Component {
     componentDidMount() {
         this.props.gimletClient.getPullRequestsFromInfraRepo()
             .then(data => {
+                console.log(data)
                 this.props.store.dispatch({
-                    type: ACTION_TYPE_PULLREQUESTSFROMINFRAREPOS, payload: data
+                    type: ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED, payload: data
                   });
             }, () => {/* Generic error handler deals with it */
             });
@@ -80,7 +79,7 @@ class Environments extends Component {
                 envFromParams={environment}
                 gitopsCommits={gitopsCommits}
                 popupWindow={popupWindow}
-                pullRequests={this.state.pullRequests} // TODO this might be pullRequests[env.Name], because now receives every element, and sorting after that
+                // pullRequests={env.pullRequestList}
             />))
         )
     }

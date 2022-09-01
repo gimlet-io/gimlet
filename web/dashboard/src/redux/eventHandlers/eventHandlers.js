@@ -87,6 +87,12 @@ export function envStackUpdated(state, envName, payload) {
   return state;
 }
 
+export function envsPullRequestListUpdated(state, payload) {
+  console.log(payload)
+
+  return state;
+}
+
 export function agentEnvsUpdated(state, connectedAgents) {
   connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;
@@ -208,11 +214,6 @@ export function addEnvConfig(state, payload) {
 
 export function pullRequests(state, payload) {
   state.pullRequests[payload.repo] = payload.prList;
-  return state;
-}
-
-export function pullRequestsFromInfraRepos(state, payload) {
-  state.pullRequests = { ...state.pullRequests, ...payload };
   return state;
 }
 
