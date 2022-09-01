@@ -198,7 +198,7 @@ export function renderPullRequests(pullRequests) {
     <div className="bg-indigo-600 rounded-t-lg">
       <div className="inline-grid items-center rounded-t-lg bg-indigo-600 mx-auto py-3 px-3 sm:px-6 lg:px-8">
         {pullRequests.map(pullRequest =>
-          <a href={pullRequest.Link} target="_blank" rel="noopener noreferrer" className="text-xs text-white">
+          <a key={pullRequest.Sha} href={pullRequest.Link} target="_blank" rel="noopener noreferrer" className="text-xs text-white">
             <span>{pullRequest.Title} to {pullRequest.Source}</span>
           </a>)}
       </div>

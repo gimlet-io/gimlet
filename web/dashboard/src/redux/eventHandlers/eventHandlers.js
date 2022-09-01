@@ -71,7 +71,12 @@ export function envsUpdated(state, allEnvs) {
   allEnvs.connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;
   });
-  state.envs = allEnvs.envs;
+  allEnvs.envs.forEach(env => {
+    let targetElement = state.envs.find(targetElement => {
+      return env["name"] === targetElement["name"];
+    })
+    targetElement ? Object.assign(targetElement, env) : state.envs.push(env);
+  });
   return state;
 }
 
@@ -88,7 +93,11 @@ export function envStackUpdated(state, envName, payload) {
 }
 
 export function envsPullRequestListUpdated(state, payload) {
-  console.log(payload)
+  let testArray = []
+  for (const [env, value] of Object.entries(payload)) {
+    testArray.push({ name: env, pullRequestList: value });
+  }
+  state.envs = testArray
 
   return state;
 }

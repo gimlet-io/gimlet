@@ -52,7 +52,6 @@ class Environments extends Component {
     componentDidMount() {
         this.props.gimletClient.getPullRequestsFromInfraRepo()
             .then(data => {
-                console.log(data)
                 this.props.store.dispatch({
                     type: ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED, payload: data
                   });
@@ -79,7 +78,7 @@ class Environments extends Component {
                 envFromParams={environment}
                 gitopsCommits={gitopsCommits}
                 popupWindow={popupWindow}
-                // pullRequests={env.pullRequestList}
+                pullRequests={env.pullRequestList}
             />))
         )
     }
