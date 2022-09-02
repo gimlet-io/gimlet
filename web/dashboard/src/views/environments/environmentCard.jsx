@@ -188,6 +188,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const gitopsRepositoriesTab = () => {
+    if (!env.infraRepo || !env.appsRepo) {
+      return null;
+    }
+
     return (
       <div className="mt-4">
         {gitopsRepositories.map((gitopsRepo) =>
