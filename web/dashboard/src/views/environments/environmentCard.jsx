@@ -139,8 +139,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         });
         store.dispatch({
           type: ACTION_TYPE_UPDATEPULLREQUESTS, payload: {
-            repo: data.repo,
-            pullRequest: data.createdPr
+            envName: data.envName,
+            createdPr: data.createdPr
           }
         });
         store.dispatch({

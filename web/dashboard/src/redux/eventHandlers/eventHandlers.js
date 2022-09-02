@@ -98,22 +98,17 @@ export function envStackUpdated(state, envName, payload) {
 }
 
 export function envsPullRequestListUpdated(state, payload) {
-  if (state.envs.length === 0) {
-    for (const [envName, pullRequests] of Object.entries(payload)) {
-      state.envs.push({name: envName, pullRequestList: pullRequests});
-    }
-
-    return state;
-  }
-
   for (const [envName, pullRequests] of Object.entries(payload)) {
-    state.envs.forEach(env => {
-      if (env.name === envName) {
-        env.pullRequestList = pullRequests;
-      }
-    });
+    if (!state.envs.some(env => env.name === envName)) {
+      state.envs.push({ name: envName, pullRequestList: pullRequests });
+    } else {
+      state.envs.forEach(env => {
+        if (env.name === envName) {
+          env.pullRequestList = pullRequests;
+        }
+      });
+    }
   }
-
   return state;
 }
 
@@ -242,10 +237,16 @@ export function pullRequests(state, payload) {
 }
 
 export function updatePullRequests(state, payload) {
-  if (!state.pullRequests[payload.repo]) {
-    state.pullRequests[payload.repo] = [];
-  }
-  state.pullRequests[payload.repo].push(payload.pullRequest);
+  state.envs.forEach(env => {
+    if (env.name === payload.envName) {
+      if (!env.pullRequestList) {
+        env.pullRequestList = [];
+      }
+      env.pullRequestList.push(payload.createdPr);
+      return state;
+    }
+  });
+
   return state;
 }
 
