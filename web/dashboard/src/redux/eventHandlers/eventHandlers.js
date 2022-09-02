@@ -236,6 +236,14 @@ export function pullRequests(state, payload) {
   return state;
 }
 
+export function updateConfigPullRequests(state, payload) {
+  if (!state.pullRequests[payload.repo]) {
+    state.pullRequests[payload.repo] = []
+  }
+  state.pullRequests[payload.repo].push(payload.createdPr);
+  return state;
+}
+
 export function updatePullRequests(state, payload) {
   state.envs.forEach(env => {
     if (env.name === payload.envName) {

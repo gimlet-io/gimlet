@@ -16,6 +16,7 @@ export const ACTION_TYPE_COMMITS = 'commits';
 export const ACTION_TYPE_BRANCHES = 'branches';
 export const ACTION_TYPE_ENVCONFIGS = 'envConfigs';
 export const ACTION_TYPE_PULLREQUESTS = 'pullRequests';
+export const ACTION_TYPE_UPDATECONFIGPULLREQUESTS = 'updateConfigPullRequests';
 export const ACTION_TYPE_UPDATEPULLREQUESTS = 'updatePullRequests';
 export const ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED = 'envsPullRequestListUpdated';
 export const ACTION_TYPE_ADD_ENVCONFIG = 'addEnvConfig';
@@ -138,6 +139,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.envsPullRequestListUpdated(state, action.payload)
     case ACTION_TYPE_UPDATEPULLREQUESTS:
       return eventHandlers.updatePullRequests(state, action.payload)
+    case ACTION_TYPE_UPDATECONFIGPULLREQUESTS:
+      return eventHandlers.updateConfigPullRequests(state, action.payload)
     case ACTION_TYPE_REPO_METAS:
       return eventHandlers.repoMetas(state, action.payload)
     case ACTION_TYPE_DEPLOY:
@@ -186,8 +189,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.staleRepoData(state, event);
     case EVENT_GITOPS_COMMIT_EVENT:
       return eventHandlers.updateGitopsCommits(state, event);
-      case EVENT_COMMIT_STATUS_UPDATED:
-        return eventHandlers.updateCommitStatus(state, event);
+    case EVENT_COMMIT_STATUS_UPDATED:
+      return eventHandlers.updateCommitStatus(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;
