@@ -149,6 +149,13 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
+	db := r.Context().Value("store").(*store.Store)
+	envsFromDB, err := db.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get all environments from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
 	prList, err := goScm.ListOpenPRs(token, repoPath)
 	if err != nil {
 		logrus.Errorf("cannot list pull requests: %s", err)
@@ -164,8 +171,16 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pullRequests := map[string]interface{}{}
-	pullRequests["repo"] = repoPath
-	pullRequests["prList"] = prListCreatedByGimlet
+	for _, env := range envsFromDB {
+		var pullRequestsByEnv []*scm.PullRequest
+		for _, pullRequest := range prListCreatedByGimlet {
+			if strings.Contains(pullRequest.Source, env.Name) {
+				pullRequestsByEnv = append(pullRequestsByEnv, pullRequest)
+			}
+		}
+
+		pullRequests[env.Name] = pullRequestsByEnv
+	}
 
 	pullRequestsString, err := json.Marshal(pullRequests)
 	if err != nil {

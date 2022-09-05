@@ -112,6 +112,20 @@ export function envsPullRequestListUpdated(state, payload) {
   return state;
 }
 
+export function updatePullRequestsOnSave(state, payload) {
+  state.envs.forEach(env => {
+    if (env.name === payload.envName) {
+      if (!env.pullRequestList) {
+        env.pullRequestList = [];
+      }
+      env.pullRequestList.push(payload.createdPr);
+      return state;
+    }
+  });
+
+  return state;
+}
+
 export function agentEnvsUpdated(state, connectedAgents) {
   connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;
@@ -228,33 +242,6 @@ export function addEnvConfig(state, payload) {
   state.envConfigs[payload.repo][payload.env].push(
     payload.envConfig
   )
-  return state;
-}
-
-export function pullRequests(state, payload) {
-  state.pullRequests[payload.repo] = payload.prList;
-  return state;
-}
-
-export function updateConfigPullRequests(state, payload) {
-  if (!state.pullRequests[payload.repo]) {
-    state.pullRequests[payload.repo] = []
-  }
-  state.pullRequests[payload.repo].push(payload.createdPr);
-  return state;
-}
-
-export function updatePullRequests(state, payload) {
-  state.envs.forEach(env => {
-    if (env.name === payload.envName) {
-      if (!env.pullRequestList) {
-        env.pullRequestList = [];
-      }
-      env.pullRequestList.push(payload.createdPr);
-      return state;
-    }
-  });
-
   return state;
 }
 

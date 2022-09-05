@@ -14,7 +14,7 @@ import {
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
-  ACTION_TYPE_UPDATECONFIGPULLREQUESTS
+  ACTION_TYPE_UPDATEPULLREQUESTSONSAVE
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -286,8 +286,8 @@ class EnvConfig extends Component {
           }
         });
         this.props.store.dispatch({
-          type: ACTION_TYPE_UPDATECONFIGPULLREQUESTS, payload: {
-            repo: data.repo,
+          type: ACTION_TYPE_UPDATEPULLREQUESTSONSAVE, payload: {
+            envName: data.envName,
             createdPr: data.createdPr
           }
         });

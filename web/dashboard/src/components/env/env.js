@@ -15,7 +15,6 @@ export class Env extends Component {
     const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
-    const filteredPullRequestsByEnvName = pullRequests?.filter(pullRequest => pullRequest.Head.Name.includes(envName));
 
     return (
       <div>
@@ -50,7 +49,7 @@ export class Env extends Component {
         </h4>
         {this.state.isClosed ? null : (
           <>
-            {renderPullRequests(filteredPullRequestsByEnvName)}
+            {renderPullRequests(pullRequests)}
             <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
               {renderedServices.length > 0
                 ?
