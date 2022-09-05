@@ -16,9 +16,3 @@ var ChunkJs []byte
 
 //go:embed favicon.ico
 var Favicon []byte
-
-//go:embed server.crt
-var ServerCrt []byte
-
-//go:embed server.key
-var ServerKey []byte

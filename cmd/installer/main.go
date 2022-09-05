@@ -74,10 +74,10 @@ func main() {
 	ctrlC := make(chan os.Signal, 1)
 	signal.Notify(ctrlC, os.Interrupt)
 
-	srv := http.Server{Addr: ":443", Handler: r}
+	srv := http.Server{Addr: ":14000", Handler: r}
 	go func() {
-		// err = srv.ListenAndServe()
-		err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
+		err = srv.ListenAndServe()
+		//err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
 		if err != nil && err.Error() != "http: Server closed" {
 			panic(err)
 		}
@@ -412,7 +412,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gimletdUrl := "https://gimletd." + os.Getenv("HOST")
+	gimletdUrl := "http://gimletd.infrastructure.svc.cluster.local:8888"
 
 	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
 
@@ -513,9 +513,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			Repository: stack.DefaultStackURL,
 		},
 		Config: map[string]interface{}{
-			"civo": map[string]interface{}{
-				"enabled": true,
-			},
 			"nginx": map[string]interface{}{
 				"enabled": true,
 				"host":    os.Getenv("HOST"),
@@ -525,16 +522,20 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"email":   email,
 			},
 			"gimletd": map[string]interface{}{
-				"enabled":    true,
-				"gitopsRepo": appsRepo,
-				"deployKey":  string(privateKeyBytes),
+				"enabled": true,
+				"environments": []map[string]interface{}{{
+					"name":       envName,
+					"repoPerEnv": repoPerEnv,
+					"gitopsRepo": appsRepo,
+					"deployKey":  string(privateKeyBytes),
+				}},
 				"adminToken": gimletdAdminToken,
 				"postgresql": gimletdPostgresConfig,
 			},
 			"gimletAgent": map[string]interface{}{
 				"enabled":          true,
 				"environment":      envName,
-				"dashboardAddress": "https://gimlet." + os.Getenv("HOST"),
+				"dashboardAddress": "http://gimlet-dashboard.infrastructure.svc.cluster.local:9000",
 				"agentKey":         agentToken,
 			},
 			"gimletDashboard": map[string]interface{}{
@@ -550,13 +551,15 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"githubInstallationId": data.installationId,
 				"bootstrapEnv":         bootstrapEnv,
 				"postgresql":           dashboardPostgresConfig,
+				"gimletdURL":           gimletdUrl,
+				"host":                 fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
 			},
 		},
 	}
 
 	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
 	if latestTag != "" {
-		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?tag=" + latestTag
+		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?branch=configurable-gimlet-url"
 	}
 
 	stackConfigBuff := bytes.NewBufferString("")
@@ -617,8 +620,6 @@ func writeTempFiles(workDir string) {
 	ioutil.WriteFile(filepath.Join(workDir, "main.css"), web.MainCSS, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "1.chunk.js"), web.ChunkJs, 0666)
 	ioutil.WriteFile(filepath.Join(workDir, "favicon.ico"), web.Favicon, 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "server.crt"), web.ServerCrt, 0666)
-	ioutil.WriteFile(filepath.Join(workDir, "server.key"), web.ServerKey, 0666)
 }
 
 func removeTempFiles(workDir string) {
