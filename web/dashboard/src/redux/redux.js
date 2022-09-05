@@ -15,8 +15,10 @@ export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
 export const ACTION_TYPE_COMMITS = 'commits';
 export const ACTION_TYPE_BRANCHES = 'branches';
 export const ACTION_TYPE_ENVCONFIGS = 'envConfigs';
-export const ACTION_TYPE_UPDATEPULLREQUESTSONSAVE = 'updatePullRequestsOnSave';
+export const ACTION_TYPE_UPDATEENVSPULLREQUESTSONSAVE = 'updateEnvsPullRequestsOnSave';
+export const ACTION_TYPE_UPDATEREPOSPULLREQUESTSONSAVE = 'updateReposPullRequestsOnSave';
 export const ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED = 'envsPullRequestListUpdated';
+export const ACTION_TYPE_REPOSPULLREQUESTLISTUPDATED = 'reposPullRequestListUpdated';
 export const ACTION_TYPE_ADD_ENVCONFIG = 'addEnvConfig';
 export const ACTION_TYPE_REPO_METAS = "repoMetas";
 export const ACTION_TYPE_DEPLOY = 'deploy';
@@ -71,6 +73,7 @@ export const initialState = {
   repoMetas: {},
   fileInfos: [],
   envs: [],
+  pullRequests: {},
   gitopsCommits: [],
   popupWindow: {
     visible: false,
@@ -132,8 +135,12 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.addEnvConfig(state, action.payload)
     case ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED:
       return eventHandlers.envsPullRequestListUpdated(state, action.payload)
-    case ACTION_TYPE_UPDATEPULLREQUESTSONSAVE:
-      return eventHandlers.updatePullRequestsOnSave(state, action.payload)
+    case ACTION_TYPE_REPOSPULLREQUESTLISTUPDATED:
+      return eventHandlers.reposPullRequestListUpdated(state, action.payload)
+    case ACTION_TYPE_UPDATEENVSPULLREQUESTSONSAVE:
+      return eventHandlers.updateEnvsPullRequestsOnSave(state, action.payload)
+    case ACTION_TYPE_UPDATEREPOSPULLREQUESTSONSAVE:
+      return eventHandlers.updateReposPullRequestsOnSave(state, action.payload)
     case ACTION_TYPE_REPO_METAS:
       return eventHandlers.repoMetas(state, action.payload)
     case ACTION_TYPE_DEPLOY:

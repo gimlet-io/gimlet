@@ -9,7 +9,7 @@ import {
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_ADD_ENVCONFIG,
-  ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED
+  ACTION_TYPE_REPOSPULLREQUESTLISTUPDATED
 } from "../../redux/redux";
 import { Commits } from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
@@ -38,6 +38,7 @@ export default class Repo extends Component {
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
+      pullRequests: reduxState.pullRequests[repoName]
     }
 
     // handling API and streaming state changes
@@ -54,6 +55,7 @@ export default class Repo extends Component {
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
+        pullRequests: reduxState.pullRequests[repoName]
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -92,7 +94,10 @@ export default class Repo extends Component {
       this.props.gimletClient.getPullRequests(owner, repo)
       .then(data => {
         this.props.store.dispatch({
-          type: ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED, payload: data
+          type: ACTION_TYPE_REPOSPULLREQUESTLISTUPDATED, payload: {
+            data: data,
+            repoName: `${owner}/${repo}`
+          }
         });
       }, () => {/* Generic error handler deals with it */
       });
@@ -362,15 +367,10 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  pullRequestsByEnv(envName) {
-    const env = this.state.envs.find(env => env.name === envName)
-    return env.pullRequestList
-  }
-
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, search, rolloutHistory, commits, agents } = this.state;
+    let { envs, connectedAgents, search, rolloutHistory, commits, agents, pullRequests } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
@@ -428,7 +428,7 @@ export default class Repo extends Component {
                     owner={owner}
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
-                    pullRequests={this.pullRequestsByEnv(envName)}
+                    pullRequests={pullRequests?.[envName]}
                   />
                 )
                 }

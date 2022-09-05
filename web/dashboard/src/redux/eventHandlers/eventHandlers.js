@@ -112,7 +112,12 @@ export function envsPullRequestListUpdated(state, payload) {
   return state;
 }
 
-export function updatePullRequestsOnSave(state, payload) {
+export function reposPullRequestListUpdated(state, payload) {
+  state.pullRequests[payload.repoName] = payload.data;
+  return state;
+}
+
+export function updateEnvsPullRequestsOnSave(state, payload) {
   state.envs.forEach(env => {
     if (env.name === payload.envName) {
       if (!env.pullRequestList) {
@@ -123,6 +128,14 @@ export function updatePullRequestsOnSave(state, payload) {
     }
   });
 
+  return state;
+}
+
+export function updateReposPullRequestsOnSave(state, payload) {
+  if (!state.pullRequests[payload.repoName][payload.envName]) {
+    state.pullRequests[payload.repoName][payload.envName] = [];
+  }
+  state.pullRequests[payload.repoName][payload.envName].push(payload.createdPr);
   return state;
 }
 
