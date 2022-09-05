@@ -13,10 +13,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
@@ -49,9 +49,9 @@ func main() {
 		serveWs(browserClosed, w, r)
 	})
 	r.Get("/context", getContext)
-	r.Get("/created", created)
-	r.Get("/auth", auth)
-	r.Get("/installed", installed)
+	// r.Get("/created", created)
+	// r.Get("/auth", auth)
+	// r.Get("/installed", installed)
 	r.Post("/bootstrap", bootstrap)
 	r.Post("/done", done)
 
@@ -74,10 +74,10 @@ func main() {
 	ctrlC := make(chan os.Signal, 1)
 	signal.Notify(ctrlC, os.Interrupt)
 
-	srv := http.Server{Addr: ":443", Handler: r}
+	srv := http.Server{Addr: ":9999", Handler: r}
 	go func() {
-		// err = srv.ListenAndServe()
-		err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
+		err = srv.ListenAndServe()
+		//err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
 		if err != nil && err.Error() != "http: Server closed" {
 			panic(err)
 		}
@@ -95,16 +95,16 @@ func main() {
 }
 
 type data struct {
-	id                      string
-	slug                    string
-	clientId                string
-	clientSecret            string
-	pem                     string
-	org                     string
-	installationId          string
-	tokenManager            *customGithub.GithubOrgTokenManager
-	accessToken             string
-	refreshToken            string
+	// id                      string
+	// slug                    string
+	// clientId                string
+	// clientSecret            string
+	// pem                     string
+	org string
+	// installationId          string
+	// tokenManager            *customGithub.GithubOrgTokenManager
+	accessToken string
+	// refreshToken            string
 	loggedInUser            string
 	repoCache               *nativeGit.RepoCache
 	gimletdPublicKey        string
@@ -128,10 +128,10 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 	data := ctx.Value("data").(*data)
 
 	context := map[string]interface{}{
-		"appId":                   data.id,
-		"clientId":                data.clientId,
-		"clientSecret":            data.clientSecret,
-		"pem":                     data.pem,
+		// "appId":                   data.id,
+		// "clientId":                data.clientId,
+		// "clientSecret":            data.clientSecret,
+		// "pem":                     data.pem,
 		"org":                     data.org,
 		"gimletdPublicKey":        data.gimletdPublicKey,
 		"isNewInfraRepo":          data.isNewInfraRepo,
@@ -158,151 +158,161 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 	w.Write(contextString)
 }
 
-func created(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println(err)
-	}
+// func created(w http.ResponseWriter, r *http.Request) {
+// 	err := r.ParseForm()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
 
-	url := "https://api.github.com/app-manifests/" + r.Form["code"][0] + "/conversions"
+// 	url := "https://api.github.com/app-manifests/" + r.Form["code"][0] + "/conversions"
 
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Accept", "application/vnd.github.fury-preview+json")
+// 	client := &http.Client{}
+// 	req, err := http.NewRequest("POST", url, nil)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	req.Header.Set("Accept", "application/vnd.github.fury-preview+json")
 
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	f, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		panic(err)
-	}
+// 	f, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = resp.Body.Close()
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	appInfo := map[string]interface{}{}
-	err = json.Unmarshal(f, &appInfo)
-	if err != nil {
-		panic(err)
-	}
+// 	appInfo := map[string]interface{}{}
+// 	err = json.Unmarshal(f, &appInfo)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	ctx := r.Context()
-	data := ctx.Value("data").(*data)
+// 	ctx := r.Context()
+// 	data := ctx.Value("data").(*data)
 
-	data.id = fmt.Sprintf("%.0f", appInfo["id"].(float64))
-	data.clientId = appInfo["client_id"].(string)
-	data.clientSecret = appInfo["client_secret"].(string)
-	data.pem = appInfo["pem"].(string)
-	data.slug = appInfo["slug"].(string)
+// 	data.id = fmt.Sprintf("%.0f", appInfo["id"].(float64))
+// 	data.clientId = appInfo["client_id"].(string)
+// 	data.clientSecret = appInfo["client_secret"].(string)
+// 	data.pem = appInfo["pem"].(string)
+// 	data.slug = appInfo["slug"].(string)
 
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/apps/%s/installations/new", data.slug), http.StatusSeeOther)
+// 	http.Redirect(w, r, fmt.Sprintf("https://github.com/apps/%s/installations/new", data.slug), http.StatusSeeOther)
+// }
+
+// func installed(w http.ResponseWriter, r *http.Request) {
+// 	err := r.ParseForm()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	formValues := r.Form
+// 	fmt.Println(formValues)
+
+// 	ctx := r.Context()
+// 	data := ctx.Value("data").(*data)
+// 	data.installationId = formValues.Get("installation_id")
+
+// 	tokenManager, err := customGithub.NewGithubOrgTokenManager(&config.Config{
+// 		Github: config.Github{
+// 			AppID:          data.id,
+// 			PrivateKey:     config.Multiline(data.pem),
+// 			InstallationID: data.installationId,
+// 		},
+// 	})
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	tokenString, err := tokenManager.AppToken()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	gitSvc := &customGithub.GithubClient{}
+// 	appOwner, err := gitSvc.GetAppOwner(tokenString)
+// 	if err != nil {
+// 		logrus.Errorf("cannot get app info: %s", err)
+// 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	data.org = appOwner
+// 	data.tokenManager = tokenManager
+
+// 	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", data.clientId), http.StatusSeeOther)
+// }
+
+// func auth(w http.ResponseWriter, r *http.Request) {
+// 	err := r.ParseForm()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+
+// 	ctx := r.Context()
+// 	data := ctx.Value("data").(*data)
+// 	url := fmt.Sprintf(
+// 		"https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s",
+// 		data.clientId,
+// 		data.clientSecret,
+// 		r.Form["code"][0],
+// 	)
+
+// 	client := &http.Client{}
+// 	req, err := http.NewRequest("POST", url, nil)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	req.Header.Set("Accept", "application/vnd.github.fury-preview+json")
+
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	f, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = resp.Body.Close()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	appInfo := map[string]interface{}{}
+// 	err = json.Unmarshal(f, &appInfo)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	data.accessToken = appInfo["access_token"].(string)
+// 	data.refreshToken = appInfo["refresh_token"].(string)
+
+// 	goScmHelper := genericScm.NewGoScmHelper(&config.Config{
+// 		Github: config.Github{
+// 			ClientID:     data.clientId,
+// 			ClientSecret: data.clientSecret,
+// 		},
+// 	}, nil)
+// 	scmUser, err := goScmHelper.User(data.accessToken, data.refreshToken)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	data.loggedInUser = scmUser.Login
+
+// 	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
+// }
+
+type patTokenManager struct{}
+
+func (tm *patTokenManager) Token() (string, string, error) {
+	return os.Getenv("PAT"), "abc123", nil
 }
 
-func installed(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println(err)
-	}
-	formValues := r.Form
-	fmt.Println(formValues)
-
-	ctx := r.Context()
-	data := ctx.Value("data").(*data)
-	data.installationId = formValues.Get("installation_id")
-
-	tokenManager, err := customGithub.NewGithubOrgTokenManager(&config.Config{
-		Github: config.Github{
-			AppID:          data.id,
-			PrivateKey:     config.Multiline(data.pem),
-			InstallationID: data.installationId,
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
-	tokenString, err := tokenManager.AppToken()
-	if err != nil {
-		panic(err)
-	}
-
-	gitSvc := &customGithub.GithubClient{}
-	appOwner, err := gitSvc.GetAppOwner(tokenString)
-	if err != nil {
-		logrus.Errorf("cannot get app info: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	data.org = appOwner
-	data.tokenManager = tokenManager
-
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", data.clientId), http.StatusSeeOther)
-}
-
-func auth(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	ctx := r.Context()
-	data := ctx.Value("data").(*data)
-	url := fmt.Sprintf(
-		"https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s",
-		data.clientId,
-		data.clientSecret,
-		r.Form["code"][0],
-	)
-
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Accept", "application/vnd.github.fury-preview+json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	f, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		panic(err)
-	}
-
-	appInfo := map[string]interface{}{}
-	err = json.Unmarshal(f, &appInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	data.accessToken = appInfo["access_token"].(string)
-	data.refreshToken = appInfo["refresh_token"].(string)
-
-	goScmHelper := genericScm.NewGoScmHelper(&config.Config{
-		Github: config.Github{
-			ClientID:     data.clientId,
-			ClientSecret: data.clientSecret,
-		},
-	}, nil)
-	scmUser, err := goScmHelper.User(data.accessToken, data.refreshToken)
-	if err != nil {
-		panic(err)
-	}
-	data.loggedInUser = scmUser.Login
-
-	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
+func (tm *patTokenManager) AppToken() (string, error) {
+	return "", nil
 }
 
 func bootstrap(w http.ResponseWriter, r *http.Request) {
@@ -316,16 +326,33 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
-	installationToken, gitUser, err := data.tokenManager.Token()
+	// installationToken, gitUser, err := data.tokenManager.Token()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	installationToken := os.Getenv("PAT")
+	data.accessToken = os.Getenv("PAT")
+
+	goScmHelper := genericScm.NewGoScmHelper(&config.Config{}, nil)
+
+	scmUser, err := goScmHelper.User(data.accessToken, "")
+	if err != nil {
+		panic(err)
+	}
+	data.loggedInUser = scmUser.Login
+	data.org = scmUser.Login
+
+	repos, err := goScmHelper.UserRepos(data.accessToken, "", time.Now().Add(5*time.Minute))
 	if err != nil {
 		panic(err)
 	}
 
-	gitSvc := &customGithub.GithubClient{}
-	repos, err := gitSvc.OrgRepos(installationToken)
-	if err != nil {
-		panic(err)
-	}
+	// gitSvc := &customGithub.GithubClient{}
+	// repos, err := gitSvc.OrgRepos(installationToken)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	infraRepo := formValues.Get("infra")
 	appsRepo := formValues.Get("apps")
@@ -376,7 +403,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	gitRepoCache, err := nativeGit.NewRepoCache(
-		data.tokenManager,
+		&patTokenManager{},
 		nil,
 		repoCachePath,
 		nil,
@@ -412,7 +439,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gimletdUrl := "https://gimletd." + os.Getenv("HOST")
+	// gimletdUrl := "https://gimletd." + os.Getenv("HOST")
 
 	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
 
@@ -422,19 +449,19 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	notificationsFileName, err := server.BootstrapNotifications(
-		gitRepoCache,
-		gimletdUrl,
-		gimletdSignedAdminToken,
-		envName,
-		appsRepo,
-		repoPerEnv,
-		installationToken,
-		gitUser,
-	)
-	if err != nil {
-		panic(err)
-	}
+	// notificationsFileName, err := server.BootstrapNotifications(
+	// 	gitRepoCache,
+	// 	gimletdUrl,
+	// 	gimletdSignedAdminToken,
+	// 	envName,
+	// 	appsRepo,
+	// 	repoPerEnv,
+	// 	installationToken,
+	// 	gitUser,
+	// )
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	data.infraGitopsRepoFileName = infraGitopsRepoFileName
 	data.infraPublicKey = infraPublicKey
@@ -444,7 +471,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	data.appsPublicKey = appsPublicKey
 	data.appsSecretFileName = appsSecretFileName
 
-	data.notificationsFileName = notificationsFileName
+	data.notificationsFileName = "todo" //notificationsFileName
 
 	jwtSecret, _ := randomHex(32)
 	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
@@ -514,7 +541,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		},
 		Config: map[string]interface{}{
 			"civo": map[string]interface{}{
-				"enabled": true,
+				"enabled": true, // :o
 			},
 			"nginx": map[string]interface{}{
 				"enabled": true,
@@ -542,12 +569,12 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"jwtSecret":            jwtSecret,
 				"githubOrg":            data.org,
 				"gimletdToken":         gimletdSignedAdminToken,
-				"githubAppId":          data.id,
-				"githubPrivateKey":     data.pem,
-				"githubClientId":       data.clientId,
-				"githubClientSecret":   data.clientSecret,
+				"githubAppId":          "todo",
+				"githubPrivateKey":     "todo",
+				"githubClientId":       "todo",
+				"githubClientSecret":   "todo",
 				"webhookSecret":        webhookSecret,
-				"githubInstallationId": data.installationId,
+				"githubInstallationId": "todo",
 				"bootstrapEnv":         bootstrapEnv,
 				"postgresql":           dashboardPostgresConfig,
 			},
