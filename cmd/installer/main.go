@@ -540,9 +540,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			Repository: stack.DefaultStackURL,
 		},
 		Config: map[string]interface{}{
-			"civo": map[string]interface{}{
-				"enabled": true, // :o
-			},
 			"nginx": map[string]interface{}{
 				"enabled": true,
 				"host":    os.Getenv("HOST"),
@@ -561,7 +558,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 			"gimletAgent": map[string]interface{}{
 				"enabled":          true,
 				"environment":      envName,
-				"dashboardAddress": "https://gimlet." + os.Getenv("HOST"),
+				"dashboardAddress": "http://gimlet.infrastructure.svc.cluster.local",
 				"agentKey":         agentToken,
 			},
 			"gimletDashboard": map[string]interface{}{
@@ -577,13 +574,14 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 				"githubInstallationId": "todo",
 				"bootstrapEnv":         bootstrapEnv,
 				"postgresql":           dashboardPostgresConfig,
+				"gimletdURL":           "http://gimletd.infrastructure.svc.cluster.local",
 			},
 		},
 	}
 
 	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
 	if latestTag != "" {
-		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?tag=" + latestTag
+		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?branch=configurable-gimlet-url"
 	}
 
 	stackConfigBuff := bytes.NewBufferString("")
