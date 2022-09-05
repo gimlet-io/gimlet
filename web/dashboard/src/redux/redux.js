@@ -64,6 +64,7 @@ export const initialState = {
   rolloutHistory: {},
   commits: {},
   branches: {},
+  pullRequests: {},
   runningDeploys: [],
   repoRefreshQueue: [],
   gitRepos: [],
@@ -73,7 +74,6 @@ export const initialState = {
   repoMetas: {},
   fileInfos: [],
   envs: [],
-  pullRequests: {},
   gitopsCommits: [],
   popupWindow: {
     visible: false,
