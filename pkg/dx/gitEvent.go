@@ -22,6 +22,10 @@ func (s GitEvent) String() string {
 	return toString[s]
 }
 
+func GitEventFromString(eventString string) GitEvent {
+	return toID[eventString]
+}
+
 var toString = map[GitEvent]string{
 	Push: "push",
 	Tag:  "tag",

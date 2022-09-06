@@ -338,7 +338,7 @@ type envConfig struct {
 	UseDeployPolicy bool
 	DeployBranch    string
 	DeployTag       string
-	DeployEvent     int
+	DeployEvent     string
 }
 
 type Chart struct {
@@ -427,7 +427,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event := dx.GitEvent(envConfigData.DeployEvent)
+	event := dx.GitEventFromString(envConfigData.DeployEvent)
 	if envConfigData.UseDeployPolicy {
 		manifest.Deploy = &dx.Deploy{
 			Branch: envConfigData.DeployBranch,
