@@ -282,7 +282,7 @@ class EnvConfig extends Component {
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
             message: "Pull request was created",
-            link: data.createdPr.Link
+            link: data.createdPr.link
           }
         });
         this.props.store.dispatch({

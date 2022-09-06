@@ -134,7 +134,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
             message: "Pull request was created",
-            link: data.createdPr.Link
+            link: data.createdPr.link
           }
         });
         store.dispatch({
