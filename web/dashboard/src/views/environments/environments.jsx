@@ -79,7 +79,7 @@ class Environments extends Component {
                 envFromParams={environment}
                 gitopsCommits={gitopsCommits}
                 popupWindow={popupWindow}
-                pullRequests={env.pullRequestList}
+                pullRequests={env.pullRequests}
             />))
         )
     }

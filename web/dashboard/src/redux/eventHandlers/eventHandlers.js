@@ -73,10 +73,10 @@ export function envsUpdated(state, allEnvs) {
   });
 
   allEnvs.envs.forEach(env => {
-    if (!env.pullRequestList) {
+    if (!env.pullRequests) {
       state.envs.forEach(stateEnv => {
         if (env.name === stateEnv.name) {
-          env.pullRequestList = stateEnv.pullRequestList
+          env.pullRequests = stateEnv.pullRequests
         }
       });
     }
@@ -100,11 +100,11 @@ export function envStackUpdated(state, envName, payload) {
 export function envPullRequests(state, payload) {
   for (const [envName, pullRequests] of Object.entries(payload)) {
     if (!state.envs.some(env => env.name === envName)) {
-      state.envs.push({ name: envName, pullRequestList: pullRequests });
+      state.envs.push({ name: envName, pullRequests: pullRequests });
     } else {
       state.envs.forEach(env => {
         if (env.name === envName) {
-          env.pullRequestList = pullRequests;
+          env.pullRequests = pullRequests;
         }
       });
     }
@@ -120,10 +120,10 @@ export function repoPullRequests(state, payload) {
 export function saveEnvPullRequest(state, payload) {
   state.envs.forEach(env => {
     if (env.name === payload.envName) {
-      if (!env.pullRequestList) {
-        env.pullRequestList = [];
+      if (!env.pullRequests) {
+        env.pullRequests = [];
       }
-      env.pullRequestList.push(payload.createdPr);
+      env.pullRequests.push(payload.createdPr);
       return state;
     }
   });
