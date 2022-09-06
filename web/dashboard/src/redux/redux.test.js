@@ -139,7 +139,7 @@ test('should save single infra PR', () => {
   state.envs = [
     {
       name: "staging",
-      pullRequestList: [
+      pullRequests: [
         {
           "sha": "abc123",
           "link": "http://doesnotexist"
