@@ -119,7 +119,7 @@ test('should set infra PR list', () => {
   let reduced = rootReducer(initialState, prListUpdated);
 
   expect(reduced.envs[0].name).toEqual("staging");
-  expect(reduced.envs[0].pullRequestList.length).toEqual(1);
+  expect(reduced.envs[0].pullRequests.length).toEqual(1);
 });
 
 test('should save single infra PR', () => {
@@ -153,7 +153,7 @@ test('should save single infra PR', () => {
 
   expect(reduced.envs[0].name).toEqual("staging");
   expect(reduced.envs[0].anotherField).toEqual("checking if it doesn't get lost");
-  expect(reduced.envs[0].pullRequestList.length).toEqual(2);
-  expect(reduced.envs[0].pullRequestList[1].link).toEqual("http://alsodoesnotexist");
+  expect(reduced.envs[0].pullRequests.length).toEqual(2);
+  expect(reduced.envs[0].pullRequests[1].link).toEqual("http://alsodoesnotexist");
 });
 
