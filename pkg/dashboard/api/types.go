@@ -108,3 +108,14 @@ type Tag struct {
 	SHA  string `json:"sha"`
 	Name string `json:"name"`
 }
+
+type PR struct {
+	Sha     string `json:"sha"`
+	Link    string `json:"link"`
+	Title   string `json:"title"`
+	Source  string `json:"source"`
+	Number  int    `json:"number"`
+	Author  string `json:"author"`
+	Created int    `json:"created"`
+	Updated int    `json:"updated"`
+}

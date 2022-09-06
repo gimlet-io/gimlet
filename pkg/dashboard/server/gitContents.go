@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
@@ -149,6 +150,13 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
+	db := r.Context().Value("store").(*store.Store)
+	envsFromDB, err := db.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get all environments from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
 	prList, err := goScm.ListOpenPRs(token, repoPath)
 	if err != nil {
 		logrus.Errorf("cannot list pull requests: %s", err)
@@ -164,8 +172,25 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pullRequests := map[string]interface{}{}
-	pullRequests["repo"] = repoPath
-	pullRequests["prList"] = prListCreatedByGimlet
+	for _, env := range envsFromDB {
+		var pullRequestsByEnv []*api.PR
+		for _, pullRequest := range prListCreatedByGimlet {
+			if strings.Contains(pullRequest.Source, env.Name) {
+				pullRequestsByEnv = append(pullRequestsByEnv, &api.PR{
+					Sha:     pullRequest.Sha,
+					Link:    pullRequest.Link,
+					Title:   pullRequest.Title,
+					Source:  pullRequest.Source,
+					Number:  pullRequest.Number,
+					Author:  pullRequest.Author.Login,
+					Created: int(pullRequest.Created.Unix()),
+					Updated: int(pullRequest.Updated.Unix()),
+				})
+			}
+		}
+
+		pullRequests[env.Name] = pullRequestsByEnv
+	}
 
 	pullRequestsString, err := json.Marshal(pullRequests)
 	if err != nil {
@@ -176,6 +201,59 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(pullRequestsString)
+}
+
+func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	goScm := genericScm.NewGoScmHelper(config, nil)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	db := r.Context().Value("store").(*store.Store)
+	envsFromDB, err := db.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get all environments from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	infraRepoPullRequests := map[string]interface{}{}
+	for _, env := range envsFromDB {
+		prList, err := goScm.ListOpenPRs(token, env.InfraRepo)
+		if err != nil {
+			logrus.Errorf("cannot list pull requests: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		var prListCreatedByGimlet []*api.PR
+		for _, pullRequest := range prList {
+			if strings.HasPrefix(pullRequest.Source, "gimlet-stack-change") && strings.Contains(pullRequest.Source, env.Name) {
+				prListCreatedByGimlet = append(prListCreatedByGimlet, &api.PR{
+					Sha:     pullRequest.Sha,
+					Link:    pullRequest.Link,
+					Title:   pullRequest.Title,
+					Source:  pullRequest.Source,
+					Number:  pullRequest.Number,
+					Author:  pullRequest.Author.Login,
+					Created: int(pullRequest.Created.Unix()),
+					Updated: int(pullRequest.Updated.Unix()),
+				})
+			}
+		}
+
+		infraRepoPullRequests[env.Name] = prListCreatedByGimlet
+	}
+
+	infraRepoPullRequestsString, err := json.Marshal(infraRepoPullRequests)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(infraRepoPullRequestsString)
 }
 
 type fileInfo struct {
@@ -422,14 +500,29 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, _, err = goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Environment config change", "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Environment config change on %s", env), "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	manifestJson, err := json.Marshal(manifest)
+	response := map[string]interface{}{
+		"envName": env,
+		"createdPr": &api.PR{
+			Sha:     createdPR.Sha,
+			Link:    createdPR.Link,
+			Title:   createdPR.Title,
+			Source:  createdPR.Source,
+			Number:  createdPR.Number,
+			Author:  createdPR.Author.Login,
+			Created: int(createdPR.Created.Unix()),
+			Updated: int(createdPR.Updated.Unix()),
+		},
+		"manifest": manifest,
+	}
+
+	responseJson, err := json.Marshal(response)
 	if err != nil {
 		logrus.Errorf("cannot marshal manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -438,7 +531,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	gitRepoCache.Invalidate(repoPath)
 	w.WriteHeader(http.StatusOK)
-	w.Write(manifestJson)
+	w.Write(responseJson)
 }
 
 // envConfigPath returns the envconfig file name based on convention, or the name of an existing file describing this env

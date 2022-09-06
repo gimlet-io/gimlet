@@ -33,6 +33,7 @@
     "start": "PORT=3333 craco start --config craco.config.js",
     "build": "craco build",
     "test": "craco test",
+    "test:coverage": "craco test --watchAll=false --coverage",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

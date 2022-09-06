@@ -9,10 +9,12 @@ import {
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_GITOPS_COMMITS,
-  ACTION_TYPE_ENVUPDATED
+  ACTION_TYPE_ENVUPDATED,
+  ACTION_TYPE_SAVE_ENV_PULLREQUEST
 } from "../../redux/redux";
+import { renderPullRequests } from '../../components/env/env';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, gitopsCommits, popupWindow }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, gitopsCommits, popupWindow, pullRequests }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
@@ -131,11 +133,18 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
-            message: "Component saved"
+            message: "Pull request was created",
+            link: data.createdPr.link
           }
         });
         store.dispatch({
-          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data
+          type: ACTION_TYPE_SAVE_ENV_PULLREQUEST, payload: {
+            envName: data.envName,
+            createdPr: data.createdPr
+          }
+        });
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.stackConfig
         });
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
@@ -179,6 +188,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const gitopsRepositoriesTab = () => {
+    if (!env.infraRepo || !env.appsRepo) {
+      return null;
+    }
+
     return (
       <div className="mt-4">
         {gitopsRepositories.map((gitopsRepo) =>
@@ -414,6 +427,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+      {renderPullRequests(pullRequests)}
       <div ref={ref} className="px-4 py-5 sm:px-6">
         <div className="flex justify-between">
           <div className="inline-flex">

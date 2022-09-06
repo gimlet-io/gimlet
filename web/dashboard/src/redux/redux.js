@@ -15,7 +15,10 @@ export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
 export const ACTION_TYPE_COMMITS = 'commits';
 export const ACTION_TYPE_BRANCHES = 'branches';
 export const ACTION_TYPE_ENVCONFIGS = 'envConfigs';
-export const ACTION_TYPE_PULLREQUESTS = 'pullRequests';
+export const ACTION_TYPE_SAVE_ENV_PULLREQUEST = 'updateEnvsPullRequestsOnSave';
+export const ACTION_TYPE_SAVE_REPO_PULLREQUEST = 'updateReposPullRequestsOnSave';
+export const ACTION_TYPE_ENV_PULLREQUESTS = 'envsPullRequestListUpdated';
+export const ACTION_TYPE_REPO_PULLREQUESTS = 'reposPullRequestListUpdated';
 export const ACTION_TYPE_ADD_ENVCONFIG = 'addEnvConfig';
 export const ACTION_TYPE_REPO_METAS = "repoMetas";
 export const ACTION_TYPE_DEPLOY = 'deploy';
@@ -61,10 +64,10 @@ export const initialState = {
   rolloutHistory: {},
   commits: {},
   branches: {},
+  pullRequests: {},
   runningDeploys: [],
   repoRefreshQueue: [],
   gitRepos: [],
-  pullRequests: {},
   defaultChart: undefined,
   envConfigs: {},
   application: {},
@@ -78,6 +81,7 @@ export const initialState = {
     isError: false,
     header: "",
     message: "",
+    link: "",
     errorList: null
   },
   users: []
@@ -129,8 +133,14 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.envConfigs(state, action.payload)
     case ACTION_TYPE_ADD_ENVCONFIG:
       return eventHandlers.addEnvConfig(state, action.payload)
-      case ACTION_TYPE_PULLREQUESTS:
-        return eventHandlers.pullRequests(state, action.payload)  
+    case ACTION_TYPE_ENV_PULLREQUESTS:
+      return eventHandlers.envPullRequests(state, action.payload)
+    case ACTION_TYPE_REPO_PULLREQUESTS:
+      return eventHandlers.repoPullRequests(state, action.payload)
+    case ACTION_TYPE_SAVE_ENV_PULLREQUEST:
+      return eventHandlers.saveEnvPullRequest(state, action.payload)
+    case ACTION_TYPE_SAVE_REPO_PULLREQUEST:
+      return eventHandlers.saveRepoPullRequest(state, action.payload)
     case ACTION_TYPE_REPO_METAS:
       return eventHandlers.repoMetas(state, action.payload)
     case ACTION_TYPE_DEPLOY:
@@ -179,8 +189,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.staleRepoData(state, event);
     case EVENT_GITOPS_COMMIT_EVENT:
       return eventHandlers.updateGitopsCommits(state, event);
-      case EVENT_COMMIT_STATUS_UPDATED:
-        return eventHandlers.updateCommitStatus(state, event);
+    case EVENT_COMMIT_STATUS_UPDATED:
+      return eventHandlers.updateCommitStatus(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;
