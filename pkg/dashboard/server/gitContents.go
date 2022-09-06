@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
@@ -172,10 +173,17 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	pullRequests := map[string]interface{}{}
 	for _, env := range envsFromDB {
-		var pullRequestsByEnv []*scm.PullRequest
+		var pullRequestsByEnv []*api.PR
 		for _, pullRequest := range prListCreatedByGimlet {
 			if strings.Contains(pullRequest.Source, env.Name) {
-				pullRequestsByEnv = append(pullRequestsByEnv, pullRequest)
+				pullRequestsByEnv = append(pullRequestsByEnv, &api.PR{
+					Sha:     pullRequest.Sha,
+					Link:    pullRequest.Link,
+					Title:   pullRequest.Title,
+					Author:  pullRequest.Author.Login,
+					Created: int(pullRequest.Created.Unix()),
+					Updated: int(pullRequest.Updated.Unix()),
+				})
 			}
 		}
 
@@ -216,10 +224,17 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var prListCreatedByGimlet []*scm.PullRequest
+		var prListCreatedByGimlet []*api.PR
 		for _, pullRequest := range prList {
 			if strings.HasPrefix(pullRequest.Source, "gimlet-stack-change") && strings.Contains(pullRequest.Source, env.Name) {
-				prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
+				prListCreatedByGimlet = append(prListCreatedByGimlet, &api.PR{
+					Sha:     pullRequest.Sha,
+					Link:    pullRequest.Link,
+					Title:   pullRequest.Title,
+					Author:  pullRequest.Author.Login,
+					Created: int(pullRequest.Created.Unix()),
+					Updated: int(pullRequest.Updated.Unix()),
+				})
 			}
 		}
 

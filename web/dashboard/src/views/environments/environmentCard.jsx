@@ -10,7 +10,7 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_ENVUPDATED,
-  ACTION_TYPE_UPDATEENVSPULLREQUESTSONSAVE
+  ACTION_TYPE_SAVE_ENV_PULLREQUEST
 } from "../../redux/redux";
 import { renderPullRequests } from '../../components/env/env';
 
@@ -138,7 +138,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           }
         });
         store.dispatch({
-          type: ACTION_TYPE_UPDATEENVSPULLREQUESTSONSAVE, payload: {
+          type: ACTION_TYPE_SAVE_ENV_PULLREQUEST, payload: {
             envName: data.envName,
             createdPr: data.createdPr
           }

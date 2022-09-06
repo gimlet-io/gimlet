@@ -50,3 +50,5 @@ cmd/installer/web/index.html
 cmd/installer/web/favicon.ico
 
 .DS_Store
+
+web/dashboard/coverage/

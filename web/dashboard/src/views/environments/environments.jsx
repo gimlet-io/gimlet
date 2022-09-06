@@ -6,7 +6,7 @@ import {
     ACTION_TYPE_POPUPWINDOWPROGRESS,
     ACTION_TYPE_POPUPWINDOWSUCCESS,
     ACTION_TYPE_POPUPWINDOWERROR,
-    ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED
+    ACTION_TYPE_ENV_PULLREQUESTS
 } from "../../redux/redux";
 
 class Environments extends Component {
@@ -53,7 +53,8 @@ class Environments extends Component {
         this.props.gimletClient.getPullRequestsFromInfraRepo()
             .then(data => {
                 this.props.store.dispatch({
-                    type: ACTION_TYPE_ENVSPULLREQUESTLISTUPDATED, payload: data
+                    type: ACTION_TYPE_ENV_PULLREQUESTS,
+                    payload: data
                   });
             }, () => {/* Generic error handler deals with it */
             });

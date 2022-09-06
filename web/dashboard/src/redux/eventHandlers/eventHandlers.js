@@ -97,7 +97,7 @@ export function envStackUpdated(state, envName, payload) {
   return state;
 }
 
-export function envsPullRequestListUpdated(state, payload) {
+export function envPullRequests(state, payload) {
   for (const [envName, pullRequests] of Object.entries(payload)) {
     if (!state.envs.some(env => env.name === envName)) {
       state.envs.push({ name: envName, pullRequestList: pullRequests });
@@ -112,12 +112,12 @@ export function envsPullRequestListUpdated(state, payload) {
   return state;
 }
 
-export function reposPullRequestListUpdated(state, payload) {
+export function repoPullRequests(state, payload) {
   state.pullRequests[payload.repoName] = payload.data;
   return state;
 }
 
-export function updateEnvsPullRequestsOnSave(state, payload) {
+export function saveEnvPullRequest(state, payload) {
   state.envs.forEach(env => {
     if (env.name === payload.envName) {
       if (!env.pullRequestList) {
@@ -131,7 +131,7 @@ export function updateEnvsPullRequestsOnSave(state, payload) {
   return state;
 }
 
-export function updateReposPullRequestsOnSave(state, payload) {
+export function saveRepoPullRequest(state, payload) {
   if (!state.pullRequests[payload.repoName][payload.envName]) {
     state.pullRequests[payload.repoName][payload.envName] = [];
   }

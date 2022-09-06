@@ -9,7 +9,7 @@ import {
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_ADD_ENVCONFIG,
-  ACTION_TYPE_REPOSPULLREQUESTLISTUPDATED
+  ACTION_TYPE_REPO_PULLREQUESTS
 } from "../../redux/redux";
 import { Commits } from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
@@ -94,7 +94,7 @@ export default class Repo extends Component {
       this.props.gimletClient.getPullRequests(owner, repo)
       .then(data => {
         this.props.store.dispatch({
-          type: ACTION_TYPE_REPOSPULLREQUESTLISTUPDATED, payload: {
+          type: ACTION_TYPE_REPO_PULLREQUESTS, payload: {
             data: data,
             repoName: `${owner}/${repo}`
           }

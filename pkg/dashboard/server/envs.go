@@ -162,10 +162,11 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	gitRepoCache.Invalidate(env.InfraRepo)
 
-	response := map[string]interface{}{}
-	response["envName"] = env.Name
-	response["createdPr"] = createdPR
-	response["stackConfig"] = stackConfig
+	response := map[string]interface{}{
+		"envName":     env.Name,
+		"createdPr":   createdPR,
+		"stackConfig": stackConfig,
+	}
 
 	responseString, err := json.Marshal(response)
 	if err != nil {
