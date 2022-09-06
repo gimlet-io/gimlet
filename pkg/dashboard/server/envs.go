@@ -153,7 +153,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, "[Gimlet Dashboard] Infrastructure components change", "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Infrastructure components change on %s", env.Name), "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -163,8 +163,17 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache.Invalidate(env.InfraRepo)
 
 	response := map[string]interface{}{
-		"envName":     env.Name,
-		"createdPr":   createdPR,
+		"envName": env.Name,
+		"createdPr": &api.PR{
+			Sha:     createdPR.Sha,
+			Link:    createdPR.Link,
+			Title:   createdPR.Title,
+			Source:  createdPR.Source,
+			Number:  createdPR.Number,
+			Author:  createdPR.Author.Login,
+			Created: int(createdPR.Created.Unix()),
+			Updated: int(createdPR.Updated.Unix()),
+		},
 		"stackConfig": stackConfig,
 	}
 

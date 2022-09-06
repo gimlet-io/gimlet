@@ -180,6 +180,8 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 					Sha:     pullRequest.Sha,
 					Link:    pullRequest.Link,
 					Title:   pullRequest.Title,
+					Source:  pullRequest.Source,
+					Number:  pullRequest.Number,
 					Author:  pullRequest.Author.Login,
 					Created: int(pullRequest.Created.Unix()),
 					Updated: int(pullRequest.Updated.Unix()),
@@ -231,6 +233,8 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 					Sha:     pullRequest.Sha,
 					Link:    pullRequest.Link,
 					Title:   pullRequest.Title,
+					Source:  pullRequest.Source,
+					Number:  pullRequest.Number,
 					Author:  pullRequest.Author.Login,
 					Created: int(pullRequest.Created.Unix()),
 					Updated: int(pullRequest.Updated.Unix()),
@@ -496,17 +500,27 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch, "[Gimlet Dashboard] Environment config change", "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Environment config change on %s", env), "Gimlet Dashboard has created this PR")
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	response := map[string]interface{}{}
-	response["envName"] = env
-	response["createdPr"] = createdPR
-	response["manifest"] = manifest
+	response := map[string]interface{}{
+		"envName": env,
+		"createdPr": &api.PR{
+			Sha:     createdPR.Sha,
+			Link:    createdPR.Link,
+			Title:   createdPR.Title,
+			Source:  createdPR.Source,
+			Number:  createdPR.Number,
+			Author:  createdPR.Author.Login,
+			Created: int(createdPR.Created.Unix()),
+			Updated: int(createdPR.Updated.Unix()),
+		},
+		"manifest": manifest,
+	}
 
 	responseJson, err := json.Marshal(response)
 	if err != nil {
