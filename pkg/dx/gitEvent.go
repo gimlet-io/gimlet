@@ -25,8 +25,8 @@ func (s GitEvent) String() string {
 }
 
 func GitEventFromString(eventString string) (GitEvent, error) {
-	if val, ok := toID[eventString]; ok {
-		return val, nil
+	if event, ok := toID[eventString]; ok {
+		return event, nil
 	}
 	return -1, errors.New("wrong input")
 }
