@@ -11,6 +11,7 @@ module.exports = {
     },
     devServer: {
         allowedHosts: ['localhost', '.gitpod.io', '.ws.workstation.laszlo.cloud'],
+        port: 5000
     },
     webpack: {
         configure: {

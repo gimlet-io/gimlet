@@ -35,6 +35,37 @@ import (
 	"math/rand"
 )
 
+type data struct {
+	id                      string
+	slug                    string
+	clientId                string
+	clientSecret            string
+	pem                     string
+	org                     string
+	installationId          string
+	tokenManager            *customGithub.GithubOrgTokenManager
+	accessToken             string
+	refreshToken            string
+	loggedInUser            string
+	repoCache               *nativeGit.RepoCache
+	gimletdPublicKey        string
+	isNewInfraRepo          bool
+	isNewAppsRepo           bool
+	infraGitopsRepoFileName string
+	infraPublicKey          string
+	infraSecretFileName     string
+	appsGitopsRepoFileName  string
+	appsPublicKey           string
+	appsSecretFileName      string
+	notificationsFileName   string
+	infraRepo               string
+	appsRepo                string
+	repoPerEnv              bool
+	envName                 string
+	stackConfig             *dx.StackConfig
+	stackDefinition         map[string]interface{}
+}
+
 func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -94,33 +125,101 @@ func main() {
 	srv.Shutdown(context.TODO())
 }
 
-type data struct {
-	id                      string
-	slug                    string
-	clientId                string
-	clientSecret            string
-	pem                     string
-	org                     string
-	installationId          string
-	tokenManager            *customGithub.GithubOrgTokenManager
-	accessToken             string
-	refreshToken            string
-	loggedInUser            string
-	repoCache               *nativeGit.RepoCache
-	gimletdPublicKey        string
-	isNewInfraRepo          bool
-	isNewAppsRepo           bool
-	infraGitopsRepoFileName string
-	infraPublicKey          string
-	infraSecretFileName     string
-	appsGitopsRepoFileName  string
-	appsPublicKey           string
-	appsSecretFileName      string
-	notificationsFileName   string
-	infraRepo               string
-	appsRepo                string
-	repoPerEnv              bool
-	envName                 string
+func initStackConfig(data *data) (*dx.StackConfig, string) {
+	jwtSecret, _ := randomHex(32)
+	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
+	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
+
+	webhookSecret, _ := randomHex(32)
+	privateKeyBytes, publicKeyBytes, err := gitops.GenerateEd25519()
+	if err != nil {
+		panic(err)
+	}
+	gimletdPublicKey := string(publicKeyBytes)
+
+	postgresPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+	dashboardPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+	gimletdPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+
+	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+	token := token.New(token.UserToken, "admin")
+	gimletdSignedAdminToken, err := token.Sign(gimletdAdminToken)
+	if err != nil {
+		panic(err)
+	}
+
+	dashboardPostgresConfig := map[string]interface{}{
+		"install":          true,
+		"hostAndPort":      "postgresql:5432",
+		"postgresPassword": postgresPassword,
+		"db":               "gimlet_dashboard",
+		"user":             "gimlet_dashboard",
+		"password":         dashboardPassword,
+	}
+	gimletdPostgresConfig := map[string]interface{}{
+		"install":          true,
+		"hostAndPort":      "postgresql:5432",
+		"postgresPassword": postgresPassword,
+		"db":               "gimletd",
+		"user":             "gimletd",
+		"password":         gimletdPassword,
+	}
+
+	stackConfig := &dx.StackConfig{
+		Stack: dx.StackRef{
+			Repository: stack.DefaultStackURL,
+		},
+		Config: map[string]interface{}{
+			"civo": map[string]interface{}{
+				"host": os.Getenv("HOST"),
+			},
+			"nginx": map[string]interface{}{
+				"enabled": true,
+				"host":    os.Getenv("HOST"),
+			},
+			"gimletd": map[string]interface{}{
+				"enabled": true,
+				"environments": []map[string]interface{}{{
+					"name":       "will be set from user input on the ui",
+					"repoPerEnv": "will be set from user input on the ui",
+					"gitopsRepo": "will be set from user input on the ui",
+					"deployKey":  string(privateKeyBytes),
+				},
+				},
+				"adminToken": gimletdAdminToken,
+				"postgresql": gimletdPostgresConfig,
+			},
+			"gimletAgent": map[string]interface{}{
+				"enabled":          true,
+				"environment":      "will be set from user input on the ui",
+				"dashboardAddress": "http://gimlet-dashboard.infrastructure.svc.cluster.local:9000",
+				"agentKey":         agentToken,
+			},
+			"gimletDashboard": map[string]interface{}{
+				"enabled":              true,
+				"jwtSecret":            jwtSecret,
+				"githubOrg":            data.org,
+				"gimletdToken":         gimletdSignedAdminToken,
+				"githubAppId":          data.id,
+				"githubPrivateKey":     data.pem,
+				"githubClientId":       data.clientId,
+				"githubClientSecret":   data.clientSecret,
+				"webhookSecret":        webhookSecret,
+				"githubInstallationId": data.installationId,
+				"bootstrapEnv":         "will be set right before bootstrap",
+				"postgresql":           dashboardPostgresConfig,
+				"gimletdURL":           "http://gimletd.infrastructure.svc.cluster.local:8888",
+				"host":                 fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
+			},
+		},
+	}
+
+	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
+	if latestTag != "" {
+		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?branch=configurable-gimlet-url"
+	}
+
+	return stackConfig, gimletdPublicKey
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -147,6 +246,8 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 		"appsRepo":                data.appsRepo,
 		"repoPerEnv":              data.repoPerEnv,
 		"envName":                 data.envName,
+		"stackDefinition":         data.stackDefinition,
+		"stackConfig":             data.stackConfig,
 	}
 
 	contextString, err := json.Marshal(context)
@@ -302,6 +403,16 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 	data.loggedInUser = scmUser.Login
 
+	stackConfig, gimletdPublicKey := initStackConfig(data)
+	stackDefinition, err := loadStackDefinition(stackConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	data.stackDefinition = stackDefinition
+	data.stackConfig = stackConfig
+	data.gimletdPublicKey = gimletdPublicKey
+
 	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
 }
 
@@ -330,17 +441,26 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	infraRepo := formValues.Get("infra")
 	appsRepo := formValues.Get("apps")
 	envName := formValues.Get("env")
-	email := formValues.Get("email")
+	stackConfigString := formValues.Get("stackConfig")
+	err = json.Unmarshal([]byte(stackConfigString), &data.stackConfig.Config)
+	if err != nil {
+		panic(err)
+	}
 	repoPerEnv, err := strconv.ParseBool(formValues.Get("repoPerEnv"))
 	if err != nil {
 		panic(err)
 	}
+
+	gimletdConfig := data.stackConfig.Config["gimletd"].(map[string]interface{})
+	environments := gimletdConfig["environments"].([]interface{})
+	envConfig := environments[0].(map[string]interface{})
 
 	if !strings.Contains(infraRepo, "/") {
 		infraRepo = filepath.Join(data.org, infraRepo)
 	}
 	if !strings.Contains(appsRepo, "/") {
 		appsRepo = filepath.Join(data.org, appsRepo)
+		envConfig["gitopsRepo"] = appsRepo
 	}
 
 	data.infraRepo = infraRepo
@@ -412,19 +532,13 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gimletdUrl := "http://gimletd.infrastructure.svc.cluster.local:8888"
-
-	gimletdAdminToken := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
-
-	token := token.New(token.UserToken, "admin")
-	gimletdSignedAdminToken, err := token.Sign(gimletdAdminToken)
-	if err != nil {
-		panic(err)
-	}
+	gimletDashboardConfig := data.stackConfig.Config["gimletDashboard"].(map[string]interface{})
+	gimletdURL := gimletDashboardConfig["gimletdURL"].(string)
+	gimletdSignedAdminToken := gimletDashboardConfig["gimletdToken"].(string)
 
 	notificationsFileName, err := server.BootstrapNotifications(
 		gitRepoCache,
-		gimletdUrl,
+		gimletdURL,
 		gimletdSignedAdminToken,
 		envName,
 		appsRepo,
@@ -436,6 +550,8 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	gimletDashboardConfig["bootstrapEnv"] = fmt.Sprintf("name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s", envName, repoPerEnv, infraRepo, appsRepo)
+
 	data.infraGitopsRepoFileName = infraGitopsRepoFileName
 	data.infraPublicKey = infraPublicKey
 	data.infraSecretFileName = infraSecretFileName
@@ -446,126 +562,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 
 	data.notificationsFileName = notificationsFileName
 
-	jwtSecret, _ := randomHex(32)
-	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
-	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
-
-	webhookSecret, _ := randomHex(32)
-	privateKeyBytes, publicKeyBytes, err := gitops.GenerateEd25519()
-	if err != nil {
-		panic(err)
-	}
-	data.gimletdPublicKey = string(publicKeyBytes)
-
-	bootstrapEnv := fmt.Sprintf(
-		"name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s",
-		data.envName,
-		data.repoPerEnv,
-		data.infraRepo,
-		data.appsRepo,
-	)
-
-	useExistingPostgres, err := strconv.ParseBool(formValues.Get("useExistingPostgres"))
-	if err != nil {
-		panic(err)
-	}
-
-	var dashboardPostgresConfig map[string]interface{}
-	var gimletdPostgresConfig map[string]interface{}
-	if useExistingPostgres {
-		dashboardPostgresConfig = map[string]interface{}{
-			"hostAndPort": formValues.Get("hostAndPort"),
-			"db":          formValues.Get("dashboardDb"),
-			"user":        formValues.Get("dashboardUsername"),
-			"password":    formValues.Get("dashboardPassword"),
-		}
-		gimletdPostgresConfig = map[string]interface{}{
-			"hostAndPort": formValues.Get("hostAndPort"),
-			"db":          formValues.Get("gimletdDb"),
-			"user":        formValues.Get("gimletdUsername"),
-			"password":    formValues.Get("gimletdPassword"),
-		}
-	} else {
-		postgresPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
-		dashboardPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
-		gimletdPassword := base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
-
-		dashboardPostgresConfig = map[string]interface{}{
-			"install":          true,
-			"hostAndPort":      "postgresql:5432",
-			"postgresPassword": postgresPassword,
-			"db":               "gimlet_dashboard",
-			"user":             "gimlet_dashboard",
-			"password":         dashboardPassword,
-		}
-		gimletdPostgresConfig = map[string]interface{}{
-			"install":          true,
-			"hostAndPort":      "postgresql:5432",
-			"postgresPassword": postgresPassword,
-			"db":               "gimletd",
-			"user":             "gimletd",
-			"password":         gimletdPassword,
-		}
-	}
-
-	stackConfig := &dx.StackConfig{
-		Stack: dx.StackRef{
-			Repository: stack.DefaultStackURL,
-		},
-		Config: map[string]interface{}{
-			"nginx": map[string]interface{}{
-				"enabled": true,
-				"host":    os.Getenv("HOST"),
-			},
-			"certManager": map[string]interface{}{
-				"enabled": true,
-				"email":   email,
-			},
-			"gimletd": map[string]interface{}{
-				"enabled": true,
-				"environments": []map[string]interface{}{{
-					"name":       envName,
-					"repoPerEnv": repoPerEnv,
-					"gitopsRepo": appsRepo,
-					"deployKey":  string(privateKeyBytes),
-				}},
-				"adminToken": gimletdAdminToken,
-				"postgresql": gimletdPostgresConfig,
-			},
-			"gimletAgent": map[string]interface{}{
-				"enabled":          true,
-				"environment":      envName,
-				"dashboardAddress": "http://gimlet-dashboard.infrastructure.svc.cluster.local:9000",
-				"agentKey":         agentToken,
-			},
-			"gimletDashboard": map[string]interface{}{
-				"enabled":              true,
-				"jwtSecret":            jwtSecret,
-				"githubOrg":            data.org,
-				"gimletdToken":         gimletdSignedAdminToken,
-				"githubAppId":          data.id,
-				"githubPrivateKey":     data.pem,
-				"githubClientId":       data.clientId,
-				"githubClientSecret":   data.clientSecret,
-				"webhookSecret":        webhookSecret,
-				"githubInstallationId": data.installationId,
-				"bootstrapEnv":         bootstrapEnv,
-				"postgresql":           dashboardPostgresConfig,
-				"gimletdURL":           gimletdUrl,
-				"host":                 fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
-			},
-		},
-	}
-
-	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
-	if latestTag != "" {
-		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?branch=configurable-gimlet-url"
-	}
-
 	stackConfigBuff := bytes.NewBufferString("")
 	e := yaml.NewEncoder(stackConfigBuff)
 	e.SetIndent(2)
-	err = e.Encode(stackConfig)
+	err = e.Encode(data.stackConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -588,7 +588,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	err = stack.GenerateAndWriteFiles(*data.stackConfig, filepath.Join(tmpPath, stackYamlPath))
 	if err != nil {
 		logrus.Errorf("cannot generate and write files: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -628,4 +628,15 @@ func removeTempFiles(workDir string) {
 
 func done(w http.ResponseWriter, r *http.Request) {
 	os.Exit(0)
+}
+
+func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {
+	stackDefinitionYaml, err := stack.StackDefinitionFromRepo(stackConfig.Stack.Repository)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get stack definition: %s", err.Error())
+	}
+
+	var stackDefinition map[string]interface{}
+	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
+	return stackDefinition, err
 }

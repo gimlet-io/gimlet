@@ -47,7 +47,8 @@ export class Category extends Component {
       stackDefinition,
       stack,
       genericComponentSaver,
-      genericValidationCallback
+      genericValidationCallback,
+      componentsToRender
     } = this.props;
 
     let selectedComponent = undefined;
@@ -73,6 +74,13 @@ export class Category extends Component {
 
     const componentsForCategory = stackDefinition.components.filter(component => component.category === category.id);
     const componentTitles = componentsForCategory.map(component => {
+      if (componentsToRender) {
+        const toRender = componentsToRender.find(c => component.variable === c);
+        if (!toRender) {
+          return null;
+        }
+      }
+
       return (
         <Tile
           category={category}
@@ -110,17 +118,17 @@ export class Category extends Component {
     const md = new Remarkable();
     const gettingStartedPanel = selectedComponentName === undefined ? null : (
       <div className="py-6 px-4 space-y-6 sm:p-6">
-        <div class="prose" dangerouslySetInnerHTML={{__html: md.render(selectedComponent.onePager)}}/>
+        <div className="prose" dangerouslySetInnerHTML={{__html: md.render(selectedComponent.onePager)}}/>
       </div>
     );
 
-    const notSelectedTabStyle = "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm";
-    const selectedTabStyle = "border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm";
+    const notSelectedTabStyle = "cursor-defaultborder-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm";
+    const selectedTabStyle = "cursor-default border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm";
     const tabState = this.state.tabState
 
     return (
-      <div class="my-8">
-        <h2 class="text-lg">{category.name}</h2>
+      <div className="my-8">
+        <h2 className="text-lg">{category.name}</h2>
         <div className="flex space-x-2 my-2">
           {componentTitles}
         </div>
@@ -128,41 +136,32 @@ export class Category extends Component {
           {selectedComponentName !== undefined &&
           <div className="px-8 py-4 shadow sm:rounded-md sm:overflow-hidden bg-white relative">
             <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
-              <button
-                type="button"
+              <span
                 className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 onClick={() => this.toggleComponent(category.id, selectedComponent.variable)}
               >
                 <span className="sr-only">Close</span>
                 <XIcon className="h-6 w-6" aria-hidden="true"/>
-              </button>
+              </span>
             </div>
             <div>
-              <div className="sm:hidden">
-                <label htmlFor="tabs" className="sr-only">Select a tab</label>
-                <select id="tabs" name="tabs"
-                        className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                  <option>Getting Started</option>
-                  <option selected>Config</option>
-                </select>
-              </div>
               <div className="hidden sm:block">
                 <div className="border-b border-gray-200">
                   <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
+                    <span
                        className={tabState[selectedComponentName] == 'getting-started' ? selectedTabStyle : notSelectedTabStyle}
                        aria-current={tabState[selectedComponentName] == 'getting-started' ? 'page' : undefined}
                        onClick={() => this.switchTab(selectedComponentName, 'getting-started')}
                     >
                       Getting Started
-                    </button>
-                    <button
+                    </span>
+                    <span
                        className={tabState[selectedComponentName] == 'config' ? selectedTabStyle : notSelectedTabStyle}
                        aria-current={tabState[selectedComponentName] == 'config' ? 'page' : undefined}
                        onClick={() => this.switchTab(selectedComponentName, 'config')}
                     >
                       Config
-                    </button>
+                    </span>
                   </nav>
                 </div>
               </div>

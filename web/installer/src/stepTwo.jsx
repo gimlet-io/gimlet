@@ -1,27 +1,38 @@
 import { useEffect, useState } from 'react';
-import { InformationCircleIcon } from '@heroicons/react/solid';
-import { Switch } from '@headlessui/react'
-import { SeparateEnvironments } from 'shared-components';
+import { StackUI, SeparateEnvironments } from 'shared-components';
 
 const StepTwo = ({ getContext }) => {
   const [context, setContext] = useState(null);
-  const [env, setEnv] = useState('production');
-  const [email, setEmail] = useState('');
-  const [repoPerEnv, setRepoPerEnv] = useState(false);
-  const [useExistingPostgres, setUseExistingPostgres] = useState(false);
-  const [hostAndPort, setHostAndPort] = useState('postgresql:5432');
-  const [dashboardDb, setDashboardDb] = useState('gimlet_dashboard');
-  const [dashboardUsername, setDashboardUsername] = useState('gimlet_dashboard');
-  const [dashboardPassword, setDashboardPassword] = useState('');
-  const [gimletdDb, setGimletdDb] = useState('gimletd');
-  const [gimletdUsername, setGimletdUsername] = useState('gimletd');
-  const [gimletdPassword, setGimletPassword] = useState('');
-  const [infra, setInfra] = useState('gitops-infra');
-  const [apps, setApps] = useState('gitops-apps');
+  const [env, setEnv] = useState('test');
+  const [repoPerEnv, setRepoPerEnv] = useState(true);
+  const [infra, setInfra] = useState('gitops-test-infra');
+  const [apps, setApps] = useState('gitops-test-apps');
 
   useEffect(() => {
-    getContext().then(data => setContext(data))
-      .catch(err => {
+    getContext().then(data => {
+      let environment = data.stackConfig.config.gimletd.environments[0]
+      environment.name = env
+      environment.repoPerEnv = repoPerEnv
+      environment.gitopsRepo = apps
+
+      setContext({
+        ...data,
+        stackConfig: {
+          ...data.stackConfig,
+          config: {
+            ...data.stackConfig.config,
+            gimletAgent: {
+              ...data.stackConfig.config.gimletAgent,
+              environment: env
+            },
+            gimletd: {
+              ...data.stackConfig.config.gimletd,
+              environments: [environment]
+            }
+          }
+        }
+      })
+    }).catch(err => {
         console.error(`Error: ${err}`);
       });
   }, [getContext]);
@@ -34,11 +45,60 @@ const StepTwo = ({ getContext }) => {
       setInfra(`gitops-infra`);
       setApps(`gitops-apps`);
     }
+    if(context) {
+      setUserValuesInStackConfig(context)
+    }
   }, [repoPerEnv, env]);
 
   if (!context) {
     return null;
   }
+
+  const setUserValuesInStackConfig = (data) => {
+    let environment = data.stackConfig.config.gimletd.environments[0]
+    environment.name = env
+    environment.repoPerEnv = repoPerEnv
+    environment.gitopsRepo = repoPerEnv ? `gitops-${env}-apps` : `gitops-apps`
+
+    setContext({
+      ...data,
+      stackConfig: {
+        ...data.stackConfig,
+        config: {
+          ...data.stackConfig.config,
+          gimletAgent: {
+            ...data.stackConfig.config.gimletAgent,
+            environment: env
+          },
+          gimletd: {
+            ...data.stackConfig.config.gimletd,
+            environments: [environment]
+          }
+        }
+      }
+    })
+  }
+
+  const setValues = (variable, values, nonDefaultValues) => {
+    setContext({
+      ...context,
+      stackConfig: {
+        ...context.stackConfig,
+        config: {
+          ...context.stackConfig.config,
+          [variable]: nonDefaultValues
+        }
+      }
+    })
+  }
+
+  const validationCallback = (variable, validationErrors) => {
+    if (validationErrors !== null) {
+      console.log(validationErrors)
+    }
+  }
+
+  console.log(context.stackConfig.config)
 
   return (
     <div className="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -131,27 +191,6 @@ const StepTwo = ({ getContext }) => {
         }
         <form action="/bootstrap" method="post">
           <div className="mt-8 text-sm">
-            <div className="mt-4 rounded-md bg-blue-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                </div>
-                <div className="ml-3 md:justify-between">
-                  <p className="text-sm text-blue-500">
-                    By default, infrastructure manifests of this environment will be placed in the <span
-                      className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env}</span>
-                    folder of the shared <span
-                      className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span>
-                    git repository,
-                    and application manifests will be placed in the <span
-                      className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env}</span>
-                    folder of the shared <span
-                      className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-apps</span>
-                    git repository
-                  </p>
-                </div>
-              </div>
-            </div>
 
             <div className="text-gray-700">
               <div className="flex mt-4">
@@ -166,20 +205,8 @@ const StepTwo = ({ getContext }) => {
                   </div>
                 </div>
               </div>
-              <div className="flex mt-4">
-                <div className="font-medium self-center">Administrator email</div>
-                <div className="max-w-lg flex rounded-md ml-4">
-                  <div className="max-w-lg w-full lg:max-w-xs">
-                    <input id="apps" name="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      type="text" />
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500 leading-loose"></div>
             </div>
+
             <SeparateEnvironments
               repoPerEnv={repoPerEnv}
               setRepoPerEnv={setRepoPerEnv}
@@ -187,123 +214,21 @@ const StepTwo = ({ getContext }) => {
               appsRepo={apps}
             />
             <input type="hidden" name="repoPerEnv" value={repoPerEnv} />
-            <div className="flex mt-4">
-              <div className="font-medium self-center">Use my existing Postgresql database</div>
-              <div className="max-w-lg flex rounded-md ml-4">
-                <Switch
-                  checked={useExistingPostgres}
-                  onChange={setUseExistingPostgres}
-                  className={(
-                    useExistingPostgres ? "bg-indigo-600" : "bg-gray-200") +
-                    " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
-                  }
-                >
-                  <span className="sr-only">Use setting</span>
-                  <span
-                    aria-hidden="true"
-                    className={(
-                      useExistingPostgres ? "translate-x-5" : "translate-x-0") +
-                      " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
-                    }
-                  />
-                </Switch>
-                <input id="useExistingPostgres" name="useExistingPostgres"
-                  value={useExistingPostgres}
-                  onChange={e => setUseExistingPostgres(e.target.value)}
-                  type="hidden" />
-              </div>
-            </div>
-            <div className="text-sm text-gray-500 leading-loose">By default, a Postgresql database will be installed to store the Gimlet data
-            </div>
 
-            {useExistingPostgres &&
-              <div className="ml-8">
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">Host and port</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="hostAndPort" name="hostAndPort"
-                        value={hostAndPort}
-                        onChange={e => setHostAndPort(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">Dashboard Database</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="dashboardDb" name="dashboardDb"
-                        value={dashboardDb}
-                        onChange={e => setDashboardDb(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">Dashboard Username</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="dashboardUsername" name="dashboardUsername"
-                        value={dashboardUsername}
-                        onChange={e => setDashboardUsername(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">Dashboard Password</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="dashboardPassword" name="dashboardPassword"
-                        value={dashboardPassword}
-                        onChange={e => setDashboardPassword(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">GimletD Database</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="gimletdDb" name="gimletdDb"
-                        value={gimletdDb}
-                        onChange={e => setGimletdDb(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">GimletD Username</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="gimletdUsername" name="gimletdUsername"
-                        value={gimletdUsername}
-                        onChange={e => setGimletdUsername(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex mt-4">
-                  <div className="font-medium self-center">GimletD Password</div>
-                  <div className="max-w-lg flex rounded-md ml-4">
-                    <div className="max-w-lg w-full lg:max-w-xs">
-                      <input id="gimletdPassword" name="gimletdPassword"
-                        value={gimletdPassword}
-                        onChange={e => setGimletPassword(e.target.value)}
-                        className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        type="text" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
+            <div className='mt-8 mb-16'>
+              {context.stackDefinition && context.stackConfig &&
+              <StackUI
+                stack={context.stackConfig.config}
+                stackDefinition={context.stackDefinition}
+                setValues={setValues}
+                validationCallback={validationCallback}
+                categoriesToRender={['cloud', 'ingress', 'gimlet']}
+                componentsToRender={['civo', 'nginx', 'gimletd', 'gimletAgent', 'gimletDashboard']}
+                hideTitle={true}
+              />
+              }
+            </div>
+            <input type="hidden" name="stackConfig" value={JSON.stringify(context.stackConfig.config)} />
 
             <div className="p-0 flow-root my-8">
               <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
