@@ -427,7 +427,13 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event := dx.GitEventFromString(envConfigData.DeployEvent)
+	event, err := dx.GitEventFromString(envConfigData.DeployEvent)
+	if err != nil {
+		logrus.Errorf("cannot convert deploy event from env config data: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	if envConfigData.UseDeployPolicy {
 		manifest.Deploy = &dx.Deploy{
 			Branch: envConfigData.DeployBranch,
