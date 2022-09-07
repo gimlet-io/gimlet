@@ -24,11 +24,11 @@ func (s GitEvent) String() string {
 	return toString[s]
 }
 
-func GitEventFromString(eventString string) (GitEvent, error) {
+func GitEventFromString(eventString string) (*GitEvent, error) {
 	if event, ok := toID[eventString]; ok {
-		return event, nil
+		return &event, nil
 	}
-	return -1, errors.New("wrong input")
+	return nil, errors.New("wrong input")
 }
 
 var toString = map[GitEvent]string{

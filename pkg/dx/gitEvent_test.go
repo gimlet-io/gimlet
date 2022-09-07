@@ -1,9 +1,10 @@
 package dx
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-	"testing"
 )
 
 func Test_GitEventYaml(t *testing.T) {
@@ -29,17 +30,17 @@ event: push
 func Test_GitEventFromString(t *testing.T) {
 	event, err := GitEventFromString("push")
 	assert.Nil(t, err)
-	assert.True(t, event == 0, "should be push event")
+	assert.True(t, *event == 0, "should be push event")
 	event, err = GitEventFromString("tag")
 	assert.Nil(t, err)
-	assert.True(t, event == 1, "should be tag event")
+	assert.True(t, *event == 1, "should be tag event")
 	event, err = GitEventFromString("pr")
 	assert.Nil(t, err)
-	assert.True(t, event == 2, "should be pr event")
+	assert.True(t, *event == 2, "should be pr event")
 }
 
 func Test_InvalidGitEventFromString(t *testing.T) {
 	event, err := GitEventFromString("invalidEventString")
 	assert.Equal(t, err.Error(), "wrong input")
-	assert.True(t, event == -1, "should return minus one")
+	assert.True(t, event == nil, "should be nil")
 }

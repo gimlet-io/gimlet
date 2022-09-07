@@ -437,7 +437,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	if envConfigData.UseDeployPolicy {
 		manifest.Deploy = &dx.Deploy{
 			Branch: envConfigData.DeployBranch,
-			Event:  &event,
+			Event:  event,
 			Tag:    envConfigData.DeployTag,
 		}
 	} else {
