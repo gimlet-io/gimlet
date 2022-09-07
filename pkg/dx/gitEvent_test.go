@@ -26,17 +26,20 @@ event: push
 `, string(marshalled))
 }
 
-func Test_PushEventFromString(t *testing.T) {
-	event := GitEventFromString("push")
+func Test_GitEventFromString(t *testing.T) {
+	event, err := GitEventFromString("push")
+	assert.Nil(t, err)
 	assert.True(t, event == 0, "should be push event")
-}
-
-func Test_TagEventFromString(t *testing.T) {
-	event := GitEventFromString("tag")
+	event, err = GitEventFromString("tag")
+	assert.Nil(t, err)
 	assert.True(t, event == 1, "should be tag event")
+	event, err = GitEventFromString("pr")
+	assert.Nil(t, err)
+	assert.True(t, event == 2, "should be pr event")
 }
 
-func Test_PrEventFromString(t *testing.T) {
-	event := GitEventFromString("pr")
-	assert.True(t, event == 2, "should be pr event")
+func Test_InvalidGitEventFromString(t *testing.T) {
+	event, err := GitEventFromString("invalidEventString")
+	assert.Equal(t, err.Error(), "wrong input")
+	assert.True(t, event == -1, "should return minus one")
 }
