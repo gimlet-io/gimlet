@@ -3,6 +3,8 @@ package dx
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+
 	"gopkg.in/yaml.v3"
 )
 
