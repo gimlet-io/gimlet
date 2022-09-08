@@ -221,9 +221,11 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	for _, env := range envsFromDB {
 		prList, err := goScm.ListOpenPRs(token, env.InfraRepo)
 		if err != nil {
-			logrus.Errorf("cannot list pull requests: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			if !strings.Contains(err.Error(), "Not Found") {
+				logrus.Errorf("cannot list pull requests: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
 		}
 
 		var prListCreatedByGimlet []*api.PR
