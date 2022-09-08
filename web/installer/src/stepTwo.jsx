@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { StackUI, SeparateEnvironments } from 'shared-components';
-import { convertToObject } from 'typescript';
 
 const StepTwo = ({ getContext }) => {
   const [context, setContext] = useState({
@@ -45,7 +44,7 @@ const StepTwo = ({ getContext }) => {
     }).catch(err => {
         console.error(`Error: ${err}`);
       });
-  }, [getContext]);
+  }, [getContext, apps, env, repoPerEnv, context, setUserValuesInStackConfig]);
 
   useEffect(() => {
     if (repoPerEnv) {
