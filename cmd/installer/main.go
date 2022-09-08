@@ -67,11 +67,49 @@ type data struct {
 }
 
 func main() {
+	fmt.Println("Installer init..")
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
+	stackUrl := stack.DefaultStackURL
+	latestTag, _ := stack.LatestVersion(stackUrl)
+	if latestTag != "" {
+		// stackUrl = stackUrl + "?tag=" + latestTag
+		stackUrl = stackUrl + "?branch=configurable-gimlet-url"
+	}
+
+	stackConfig := &dx.StackConfig{
+		Stack: dx.StackRef{
+			Repository: stackUrl,
+		},
+		Config: map[string]interface{}{
+			"k3s": map[string]interface{}{
+				"host": os.Getenv("HOST"),
+			},
+			"civo": map[string]interface{}{
+				"host": os.Getenv("HOST"),
+			},
+			"nginx": map[string]interface{}{
+				"enabled": true,
+				"host":    os.Getenv("HOST"),
+			},
+			"gimletd": map[string]interface{}{
+				"environments": []map[string]interface{}{
+					{},
+				},
+			},
+		},
+	}
+
+	stackDefinition, err := loadStackDefinition(stackConfig)
+	if err != nil {
+		panic(err)
+	}
+
 	r.Use(middleware.WithValue("data", &data{
-		org: os.Getenv("ORG"),
+		org:             os.Getenv("ORG"),
+		stackConfig:     stackConfig,
+		stackDefinition: stackDefinition,
 	}))
 
 	browserClosed := make(chan int, 1)
@@ -165,61 +203,44 @@ func initStackConfig(data *data) (*dx.StackConfig, string) {
 		"password":         gimletdPassword,
 	}
 
-	stackConfig := &dx.StackConfig{
-		Stack: dx.StackRef{
-			Repository: stack.DefaultStackURL,
+	data.stackConfig.Config["gimletd"] = map[string]interface{}{
+		"enabled": true,
+		"environments": []map[string]interface{}{{
+			"name":       "will be set from user input on the ui",
+			"repoPerEnv": "will be set from user input on the ui",
+			"gitopsRepo": "will be set from user input on the ui",
+			"deployKey":  string(privateKeyBytes),
 		},
-		Config: map[string]interface{}{
-			"civo": map[string]interface{}{
-				"host": os.Getenv("HOST"),
-			},
-			"nginx": map[string]interface{}{
-				"enabled": true,
-				"host":    os.Getenv("HOST"),
-			},
-			"gimletd": map[string]interface{}{
-				"enabled": true,
-				"environments": []map[string]interface{}{{
-					"name":       "will be set from user input on the ui",
-					"repoPerEnv": "will be set from user input on the ui",
-					"gitopsRepo": "will be set from user input on the ui",
-					"deployKey":  string(privateKeyBytes),
-				},
-				},
-				"adminToken": gimletdAdminToken,
-				"postgresql": gimletdPostgresConfig,
-			},
-			"gimletAgent": map[string]interface{}{
-				"enabled":          true,
-				"environment":      "will be set from user input on the ui",
-				"dashboardAddress": "http://gimlet-dashboard.infrastructure.svc.cluster.local:9000",
-				"agentKey":         agentToken,
-			},
-			"gimletDashboard": map[string]interface{}{
-				"enabled":              true,
-				"jwtSecret":            jwtSecret,
-				"githubOrg":            data.org,
-				"gimletdToken":         gimletdSignedAdminToken,
-				"githubAppId":          data.id,
-				"githubPrivateKey":     data.pem,
-				"githubClientId":       data.clientId,
-				"githubClientSecret":   data.clientSecret,
-				"webhookSecret":        webhookSecret,
-				"githubInstallationId": data.installationId,
-				"bootstrapEnv":         "will be set right before bootstrap",
-				"postgresql":           dashboardPostgresConfig,
-				"gimletdURL":           "http://gimletd.infrastructure.svc.cluster.local:8888",
-				"host":                 fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
-			},
 		},
+		"adminToken": gimletdAdminToken,
+		"postgresql": gimletdPostgresConfig,
 	}
 
-	latestTag, _ := stack.LatestVersion(stackConfig.Stack.Repository)
-	if latestTag != "" {
-		stackConfig.Stack.Repository = stackConfig.Stack.Repository + "?branch=configurable-gimlet-url"
+	data.stackConfig.Config["gimletAgent"] = map[string]interface{}{
+		"enabled":          true,
+		"environment":      "will be set from user input on the ui",
+		"dashboardAddress": "http://gimlet-dashboard:9000",
+		"agentKey":         agentToken,
 	}
 
-	return stackConfig, gimletdPublicKey
+	data.stackConfig.Config["gimletDashboard"] = map[string]interface{}{
+		"enabled":              true,
+		"jwtSecret":            jwtSecret,
+		"githubOrg":            data.org,
+		"gimletdToken":         gimletdSignedAdminToken,
+		"githubAppId":          data.id,
+		"githubPrivateKey":     data.pem,
+		"githubClientId":       data.clientId,
+		"githubClientSecret":   data.clientSecret,
+		"webhookSecret":        webhookSecret,
+		"githubInstallationId": data.installationId,
+		"bootstrapEnv":         "will be set right before bootstrap",
+		"postgresql":           dashboardPostgresConfig,
+		"gimletdURL":           "http://gimletd:8888",
+		"host":                 fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
+	}
+
+	return data.stackConfig, gimletdPublicKey
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -404,12 +425,6 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.loggedInUser = scmUser.Login
 
 	stackConfig, gimletdPublicKey := initStackConfig(data)
-	stackDefinition, err := loadStackDefinition(stackConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	data.stackDefinition = stackDefinition
 	data.stackConfig = stackConfig
 	data.gimletdPublicKey = gimletdPublicKey
 

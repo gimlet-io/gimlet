@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
 import { StackUI, SeparateEnvironments } from 'shared-components';
+import { convertToObject } from 'typescript';
 
 const StepTwo = ({ getContext }) => {
-  const [context, setContext] = useState(null);
+  const [context, setContext] = useState({
+    stackConfig: {
+      config: {
+        gimletd: {
+          environments: [{}]
+        },
+        gimletAgent: {},
+      }
+    }
+  });
   const [env, setEnv] = useState('test');
   const [repoPerEnv, setRepoPerEnv] = useState(true);
   const [infra, setInfra] = useState('gitops-test-infra');
@@ -79,14 +89,30 @@ const StepTwo = ({ getContext }) => {
     })
   }
 
+  const disableNginxIfK3s = (variable, values, nonDefaultValues) => {
+    if (variable === 'nginx') {
+      return nonDefaultValues
+    } else if (variable === 'k3s' && values.enabled) {
+      return {
+        ...context.stackConfig.config.nginx,
+        enabled: false
+      }
+    } else {
+      return context.stackConfig.config.nginx
+    }
+  }
+
   const setValues = (variable, values, nonDefaultValues) => {
+    const nginx = disableNginxIfK3s(variable, values, nonDefaultValues)
+
     setContext({
       ...context,
       stackConfig: {
         ...context.stackConfig,
         config: {
           ...context.stackConfig.config,
-          [variable]: nonDefaultValues
+          [variable]: nonDefaultValues,
+          nginx: nginx
         }
       }
     })
@@ -95,10 +121,9 @@ const StepTwo = ({ getContext }) => {
   const validationCallback = (variable, validationErrors) => {
     if (validationErrors !== null) {
       console.log(validationErrors)
+      alert(validationErrors)
     }
   }
-
-  console.log(context.stackConfig.config)
 
   return (
     <div className="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -223,7 +248,7 @@ const StepTwo = ({ getContext }) => {
                 setValues={setValues}
                 validationCallback={validationCallback}
                 categoriesToRender={['cloud', 'ingress', 'gimlet']}
-                componentsToRender={['civo', 'nginx', 'gimletd', 'gimletAgent', 'gimletDashboard']}
+                componentsToRender={['civo', 'k3s', 'nginx', 'gimletd', 'gimletAgent', 'gimletDashboard']}
                 hideTitle={true}
               />
               }
