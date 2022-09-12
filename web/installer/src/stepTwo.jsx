@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { StackUI, SeparateEnvironments } from 'shared-components';
 
 const StepTwo = ({ getContext }) => {
@@ -16,6 +16,31 @@ const StepTwo = ({ getContext }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true);
   const [infra, setInfra] = useState('gitops-test-infra');
   const [apps, setApps] = useState('gitops-test-apps');
+
+  const setUserValuesInStackConfig = useCallback((data) => {
+    let environment = data.stackConfig.config.gimletd.environments[0]
+    environment.name = env
+    environment.repoPerEnv = repoPerEnv
+    environment.gitopsRepo = repoPerEnv ? `gitops-${env}-apps` : `gitops-apps`
+
+    setContext({
+      ...data,
+      stackConfig: {
+        ...data.stackConfig,
+        config: {
+          ...data.stackConfig.config,
+          gimletAgent: {
+            ...data.stackConfig.config.gimletAgent,
+            environment: env
+          },
+          gimletd: {
+            ...data.stackConfig.config.gimletd,
+            environments: [environment]
+          }
+        }
+      }
+    })
+  }, [env, repoPerEnv])
 
   useEffect(() => {
     getContext().then(data => {
@@ -44,7 +69,7 @@ const StepTwo = ({ getContext }) => {
     }).catch(err => {
         console.error(`Error: ${err}`);
       });
-  }, [getContext, apps, env, repoPerEnv, context, setUserValuesInStackConfig]);
+  }, [getContext, apps, env, repoPerEnv]);
 
   useEffect(() => {
     if (repoPerEnv) {
@@ -57,35 +82,10 @@ const StepTwo = ({ getContext }) => {
     if(context) {
       setUserValuesInStackConfig(context)
     }
-  }, [repoPerEnv, env]);
+  }, [repoPerEnv, env, context, setUserValuesInStackConfig]);
 
   if (!context) {
     return null;
-  }
-
-  const setUserValuesInStackConfig = (data) => {
-    let environment = data.stackConfig.config.gimletd.environments[0]
-    environment.name = env
-    environment.repoPerEnv = repoPerEnv
-    environment.gitopsRepo = repoPerEnv ? `gitops-${env}-apps` : `gitops-apps`
-
-    setContext({
-      ...data,
-      stackConfig: {
-        ...data.stackConfig,
-        config: {
-          ...data.stackConfig.config,
-          gimletAgent: {
-            ...data.stackConfig.config.gimletAgent,
-            environment: env
-          },
-          gimletd: {
-            ...data.stackConfig.config.gimletd,
-            environments: [environment]
-          }
-        }
-      }
-    })
   }
 
   const disableNginxIfK3s = (variable, values, nonDefaultValues) => {
