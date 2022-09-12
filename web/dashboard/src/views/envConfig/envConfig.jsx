@@ -13,7 +13,8 @@ import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWERRORLIST
+  ACTION_TYPE_POPUPWINDOWERRORLIST,
+  ACTION_TYPE_SAVE_REPO_PULLREQUEST
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
@@ -270,7 +271,7 @@ class EnvConfig extends Component {
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.selectedDeployEvent)
       .then((data) => {
         if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
@@ -280,23 +281,32 @@ class EnvConfig extends Component {
         this.props.store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
-            message: "Config saved succesfully!"
+            message: "Pull request was created",
+            link: data.createdPr.link
           }
         });
-        this.setDeployPolicy(data.deploy);
+        this.props.store.dispatch({
+          type: ACTION_TYPE_SAVE_REPO_PULLREQUEST,
+          payload: {
+            repoName: repoName,
+            envName: data.envName,
+            createdPr: data.createdPr
+          }
+        });
+        this.setDeployPolicy(data.manifest.deploy);
 
         clearTimeout(this.state.timeoutTimer);
         this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
         this.setState({
-          configFile: data,
-          appName: data.app,
-          namespace: data.namespace,
-          defaultAppName: data.app,
-          defaultNamespace: data.namespace,
+          configFile: data.manifest,
+          appName: data.manifest.app,
+          namespace: data.manifest.namespace,
+          defaultAppName: data.manifest.app,
+          defaultNamespace: data.manifest.namespace,
 
-          values: Object.assign({}, data.values),
-          nonDefaultValues: Object.assign({}, data.values),
-          defaultState: Object.assign({}, data.values),
+          values: Object.assign({}, data.manifest.values),
+          nonDefaultValues: Object.assign({}, data.manifest.values),
+          defaultState: Object.assign({}, data.manifest.values),
         });
         if (action === "new") {
           this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));

@@ -9,7 +9,7 @@ import {
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_ADD_ENVCONFIG,
-  ACTION_TYPE_PULLREQUESTS
+  ACTION_TYPE_REPO_PULLREQUESTS
 } from "../../redux/redux";
 import { Commits } from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
@@ -38,7 +38,7 @@ export default class Repo extends Component {
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
-      pullRequests: reduxState.pullRequests,
+      pullRequests: reduxState.pullRequests[repoName]
     }
 
     // handling API and streaming state changes
@@ -55,7 +55,7 @@ export default class Repo extends Component {
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
-        pullRequests: reduxState.pullRequests,
+        pullRequests: reduxState.pullRequests[repoName]
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -94,7 +94,10 @@ export default class Repo extends Component {
       this.props.gimletClient.getPullRequests(owner, repo)
       .then(data => {
         this.props.store.dispatch({
-          type: ACTION_TYPE_PULLREQUESTS, payload: data
+          type: ACTION_TYPE_REPO_PULLREQUESTS, payload: {
+            data: data,
+            repoName: `${owner}/${repo}`
+          }
         });
       }, () => {/* Generic error handler deals with it */
       });
@@ -425,7 +428,7 @@ export default class Repo extends Component {
                     owner={owner}
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
-                    pullRequests={pullRequests[repoName]}
+                    pullRequests={pullRequests?.[envName]}
                   />
                 )
                 }

@@ -55,3 +55,5 @@ cmd/installer/web/favicon.ico
 cmd/installer/web/asset-manifest.json
 
 .DS_Store
+
+web/dashboard/coverage/

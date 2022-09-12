@@ -5,7 +5,8 @@ import {
     ACTION_TYPE_POPUPWINDOWRESET,
     ACTION_TYPE_POPUPWINDOWPROGRESS,
     ACTION_TYPE_POPUPWINDOWSUCCESS,
-    ACTION_TYPE_POPUPWINDOWERROR
+    ACTION_TYPE_POPUPWINDOWERROR,
+    ACTION_TYPE_ENV_PULLREQUESTS
 } from "../../redux/redux";
 
 class Environments extends Component {
@@ -48,6 +49,17 @@ class Environments extends Component {
             });
     }
 
+    componentDidMount() {
+        this.props.gimletClient.getPullRequestsFromInfraRepo()
+            .then(data => {
+                this.props.store.dispatch({
+                    type: ACTION_TYPE_ENV_PULLREQUESTS,
+                    payload: data
+                  });
+            }, () => {/* Generic error handler deals with it */
+            });
+    }
+
     getEnvironmentCards() {
         console.log("generating env cards")
         const { connectedAgents, envs, gitopsCommits, popupWindow } = this.state;
@@ -67,6 +79,7 @@ class Environments extends Component {
                 envFromParams={environment}
                 gitopsCommits={gitopsCommits}
                 popupWindow={popupWindow}
+                pullRequests={env.pullRequests}
             />))
         )
     }

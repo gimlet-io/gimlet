@@ -188,7 +188,7 @@ func generateDeployKey(host string, name string) (string, []byte, error) {
 		return "", []byte(""), err
 	}
 
-	hostKey, err := ssh.ScanHostKey(host+":22", 30*time.Second)
+	hostKey, err := ssh.ScanHostKey(host+":22", 30*time.Second, []string{}, false)
 	if err != nil {
 		return "", []byte(""), err
 	}

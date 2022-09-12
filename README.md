@@ -4,7 +4,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/gimlet-io/gimlet-cli)](https://goreportcard.com/report/github.com/gimlet-io/gimlet-cli)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-<img src="Gimlet.svg" width="200"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/gimlet-io/gimlet-documentation/blob/main/public/logo-dark.svg">
+  <img alt="Gimlet" src="https://github.com/gimlet-io/gimlet-documentation/blob/main/public/logo.svg" width="200">
+</picture>
 
 ## Overview
 

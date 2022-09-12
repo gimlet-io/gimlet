@@ -68,6 +68,13 @@ export default class PopUpWindow extends Component {
                     <h3 className="text-sm font-medium text-green-800">{this.state.popupWindow.header}</h3>
                     <div className="mt-2 text-sm text-green-700">
                         <p>{this.state.popupWindow.message}</p>
+                        <a
+                            href={this.state.popupWindow.link}
+                            rel="noreferrer"
+                            target="_blank"
+                            className="text-sm text-green-700 hover:text-green-800 underline">
+                            {this.state.popupWindow.link}
+                        </a>
                     </div>
                 </div>
             </div>

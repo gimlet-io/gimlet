@@ -52,6 +52,7 @@ export function popupWindowSuccess(state, payload) {
   state.popupWindow.finished = true;
   state.popupWindow.header = payload.header;
   state.popupWindow.message = payload.message;
+  state.popupWindow.link = payload.link;
   return state;
 }
 
@@ -61,6 +62,7 @@ export function popupWindowReset(state) {
   state.popupWindow.finished = false;
   state.popupWindow.header = "";
   state.popupWindow.message = "";
+  state.popupWindow.link = "";
   state.popupWindow.errorList = null;
   return state;
 }
@@ -69,7 +71,17 @@ export function envsUpdated(state, allEnvs) {
   allEnvs.connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;
   });
-  state.envs = allEnvs.envs;
+
+  allEnvs.envs.forEach(env => {
+    if (!env.pullRequests) {
+      state.envs.forEach(stateEnv => {
+        if (env.name === stateEnv.name) {
+          env.pullRequests = stateEnv.pullRequests
+        }
+      });
+    }
+  });
+  state.envs = allEnvs.envs
   return state;
 }
 
@@ -82,6 +94,48 @@ export function envStackUpdated(state, envName, payload) {
     return env;
   });
 
+  return state;
+}
+
+export function envPullRequests(state, payload) {
+  for (const [envName, pullRequests] of Object.entries(payload)) {
+    if (!state.envs.some(env => env.name === envName)) {
+      state.envs.push({ name: envName, pullRequests: pullRequests });
+    } else {
+      state.envs.forEach(env => {
+        if (env.name === envName) {
+          env.pullRequests = pullRequests;
+        }
+      });
+    }
+  }
+  return state;
+}
+
+export function repoPullRequests(state, payload) {
+  state.pullRequests[payload.repoName] = payload.data;
+  return state;
+}
+
+export function saveEnvPullRequest(state, payload) {
+  state.envs.forEach(env => {
+    if (env.name === payload.envName) {
+      if (!env.pullRequests) {
+        env.pullRequests = [];
+      }
+      env.pullRequests.push(payload.createdPr);
+      return state;
+    }
+  });
+
+  return state;
+}
+
+export function saveRepoPullRequest(state, payload) {
+  if (!state.pullRequests[payload.repoName][payload.envName]) {
+    state.pullRequests[payload.repoName][payload.envName] = [];
+  }
+  state.pullRequests[payload.repoName][payload.envName].push(payload.createdPr);
   return state;
 }
 
@@ -201,11 +255,6 @@ export function addEnvConfig(state, payload) {
   state.envConfigs[payload.repo][payload.env].push(
     payload.envConfig
   )
-  return state;
-}
-
-export function pullRequests(state, payload) {
-  state.pullRequests[payload.repo] = payload.prList;
   return state;
 }
 
