@@ -271,7 +271,7 @@ class EnvConfig extends Component {
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.deployEvents.indexOf(this.state.selectedDeployEvent))
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.selectedDeployEvent)
       .then((data) => {
         if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
