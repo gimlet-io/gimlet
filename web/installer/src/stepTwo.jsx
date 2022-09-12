@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { StackUI, SeparateEnvironments } from 'shared-components';
 
 const StepTwo = ({ getContext }) => {
@@ -12,35 +12,11 @@ const StepTwo = ({ getContext }) => {
       }
     }
   });
+
   const [env, setEnv] = useState('test');
   const [repoPerEnv, setRepoPerEnv] = useState(true);
   const [infra, setInfra] = useState('gitops-test-infra');
   const [apps, setApps] = useState('gitops-test-apps');
-
-  const setUserValuesInStackConfig = useCallback((data) => {
-    let environment = data.stackConfig.config.gimletd.environments[0]
-    environment.name = env
-    environment.repoPerEnv = repoPerEnv
-    environment.gitopsRepo = repoPerEnv ? `gitops-${env}-apps` : `gitops-apps`
-
-    setContext({
-      ...data,
-      stackConfig: {
-        ...data.stackConfig,
-        config: {
-          ...data.stackConfig.config,
-          gimletAgent: {
-            ...data.stackConfig.config.gimletAgent,
-            environment: env
-          },
-          gimletd: {
-            ...data.stackConfig.config.gimletd,
-            environments: [environment]
-          }
-        }
-      }
-    })
-  }, [env, repoPerEnv])
 
   useEffect(() => {
     getContext().then(data => {
@@ -79,10 +55,36 @@ const StepTwo = ({ getContext }) => {
       setInfra(`gitops-infra`);
       setApps(`gitops-apps`);
     }
-    if(context) {
-      setUserValuesInStackConfig(context)
-    }
-  }, [repoPerEnv, env, context, setUserValuesInStackConfig]);
+
+    setContext(oldContext => {
+      if (!oldContext) {
+        return null;
+      }
+
+      let environment = oldContext.stackConfig.config.gimletd.environments[0]
+      environment.name = env
+      environment.repoPerEnv = repoPerEnv
+      environment.gitopsRepo = repoPerEnv ? `gitops-${env}-apps` : `gitops-apps`
+
+      return {
+        ...oldContext,
+        stackConfig: {
+          ...oldContext.stackConfig,
+          config: {
+            ...oldContext.stackConfig.config,
+            gimletAgent: {
+              ...oldContext.stackConfig.config.gimletAgent,
+              environment: env
+            },
+            gimletd: {
+              ...oldContext.stackConfig.config.gimletd,
+              environments: [environment]
+            }
+          }
+        }
+      }
+    })
+  }, [repoPerEnv, env]);
 
   if (!context) {
     return null;

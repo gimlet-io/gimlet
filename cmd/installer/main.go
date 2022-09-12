@@ -143,7 +143,7 @@ func main() {
 	ctrlC := make(chan os.Signal, 1)
 	signal.Notify(ctrlC, os.Interrupt)
 
-	srv := http.Server{Addr: ":14000", Handler: r}
+	srv := http.Server{Addr: ":9000", Handler: r}
 	go func() {
 		err = srv.ListenAndServe()
 		//err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
