@@ -1,6 +1,7 @@
 package dx
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,20 +28,19 @@ event: push
 `, string(marshalled))
 }
 
-func Test_GitEventFromString(t *testing.T) {
-	event, err := GitEventFromString("push")
+func Test_GitEventJson(t *testing.T) {
+	jsonStr := `
+{
+	"branch": "main",
+	"event": "pr"
+}`
+	var deployTrigger Deploy
+	err := json.Unmarshal([]byte(jsonStr), &deployTrigger)
 	assert.Nil(t, err)
-	assert.True(t, *event == 0, "should be push event")
-	event, err = GitEventFromString("tag")
-	assert.Nil(t, err)
-	assert.True(t, *event == 1, "should be tag event")
-	event, err = GitEventFromString("pr")
-	assert.Nil(t, err)
-	assert.True(t, *event == 2, "should be pr event")
-}
+	assert.True(t, deployTrigger.Branch == "main", "should parse branch")
+	assert.True(t, *deployTrigger.Event == PR, "should parse event")
 
-func Test_InvalidGitEventFromString(t *testing.T) {
-	event, err := GitEventFromString("invalidEventString")
-	assert.Equal(t, err.Error(), "wrong input")
-	assert.True(t, event == nil, "should be nil")
+	marshalled, err := json.Marshal(Deploy{Branch: "main", Event: PRPtr()})
+	assert.Nil(t, err)
+	assert.Equal(t, `{"branch":"main","event":"pr"}`, string(marshalled))
 }

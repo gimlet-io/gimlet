@@ -338,7 +338,7 @@ type envConfig struct {
 	UseDeployPolicy bool
 	DeployBranch    string
 	DeployTag       string
-	DeployEvent     string
+	DeployEvent     *dx.GitEvent
 }
 
 type Chart struct {
@@ -427,17 +427,10 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := dx.GitEventFromString(envConfigData.DeployEvent)
-	if err != nil {
-		logrus.Errorf("cannot convert deploy event from env config data: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	if envConfigData.UseDeployPolicy {
 		manifest.Deploy = &dx.Deploy{
 			Branch: envConfigData.DeployBranch,
-			Event:  event,
+			Event:  envConfigData.DeployEvent,
 			Tag:    envConfigData.DeployTag,
 		}
 	} else {

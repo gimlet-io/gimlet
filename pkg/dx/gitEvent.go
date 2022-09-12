@@ -3,7 +3,6 @@ package dx
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,13 +21,6 @@ const (
 
 func (s GitEvent) String() string {
 	return toString[s]
-}
-
-func GitEventFromString(eventString string) (*GitEvent, error) {
-	if event, ok := toID[eventString]; ok {
-		return &event, nil
-	}
-	return nil, errors.New("wrong input")
 }
 
 var toString = map[GitEvent]string{
