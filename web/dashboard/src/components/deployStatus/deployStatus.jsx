@@ -260,7 +260,7 @@ function gitopsWidgetFromGitopsHashes(deploy, gitopsRepo) {
 }
 
 function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
-  const firstCommitOfEnv = gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env)[0];
+  const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
   deploy.results.forEach(result => {
@@ -273,7 +273,7 @@ function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
 }
 
 function appliedWidgetFromGitopsHashes(deploy, gitopsCommits, env, gitopsRepo) {
-  const firstCommitOfEnv = gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env)[0];
+  const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
   deploy.gitopsHashes.forEach(gitopsHash => {
