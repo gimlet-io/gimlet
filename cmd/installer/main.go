@@ -146,7 +146,6 @@ func main() {
 	srv := http.Server{Addr: ":9000", Handler: r}
 	go func() {
 		err = srv.ListenAndServe()
-		//err = srv.ListenAndServeTLS(filepath.Join(workDir, "server.crt"), filepath.Join(workDir, "server.key"))
 		if err != nil && err.Error() != "http: Server closed" {
 			panic(err)
 		}
