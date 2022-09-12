@@ -5,6 +5,14 @@ let URL = '';
 if (typeof window !== 'undefined') {
   let protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   URL = protocol + '://' + window.location.hostname;
+
+  let port = window.location.port
+  // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  //   port = 9000
+  // }
+  if (port && port !== '') {
+    URL = URL + ':' + port
+  }
 }
 
 export default class StreamingBackend extends Component {
@@ -12,6 +20,8 @@ export default class StreamingBackend extends Component {
     if (this.props.location.pathname === '/login') {
       return;
     }
+
+    console.log("Connecting to " + URL + '/ws/')
 
     this.ws = new WebSocket(URL + '/ws/');
     this.ws.onopen = this.onOpen;

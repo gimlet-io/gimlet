@@ -220,10 +220,6 @@ func Configure(stackDefinition StackDefinition, existingStackConfig dx.StackConf
 }
 
 func randomPort() int {
-	if version.String() == "idea" {
-		return 28000
-	}
-
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	return r1.Intn(10000) + 20000
@@ -248,7 +244,7 @@ func setupRouter(workDir string, browserClosed chan int) *chi.Mux {
 	}
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:28000", "http://127.0.0.1:28000"},
+		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST"},
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers

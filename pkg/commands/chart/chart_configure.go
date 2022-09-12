@@ -19,7 +19,6 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart/ws"
-	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/urfave/cli/v2"
@@ -226,12 +225,9 @@ func writeTempFiles(workDir string, schema string, helmUISchema string, existing
 
 func setupRouter(workDir string, browserClosed chan int) *chi.Mux {
 	r := chi.NewRouter()
-	if version.String() == "idea" {
-		//r.Use(middleware.Logger)
-	}
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:28000", "http://127.0.0.1:28000"},
+		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST"},
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
@@ -289,7 +285,7 @@ func fileServer(r chi.Router, path string, root http.FileSystem) {
 	}
 
 	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
 		path += "/"
 	}
 	path += "*"

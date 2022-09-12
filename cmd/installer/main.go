@@ -548,7 +548,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gimletDashboardConfig := data.stackConfig.Config["gimletDashboard"].(map[string]interface{})
-	gimletdURL := gimletDashboardConfig["gimletdURL"].(string)
+	gimletdURL := "http://gimletd.infrastructure.svc.cluster.local:8888"
 	gimletdSignedAdminToken := gimletDashboardConfig["gimletdToken"].(string)
 
 	notificationsFileName, err := server.BootstrapNotifications(
