@@ -74,8 +74,7 @@ func main() {
 	stackUrl := stack.DefaultStackURL
 	latestTag, _ := stack.LatestVersion(stackUrl)
 	if latestTag != "" {
-		// stackUrl = stackUrl + "?tag=" + latestTag
-		stackUrl = stackUrl + "?branch=configurable-gimlet-url"
+		stackUrl = stackUrl + "?tag=" + latestTag
 	}
 
 	stackConfig := &dx.StackConfig{
