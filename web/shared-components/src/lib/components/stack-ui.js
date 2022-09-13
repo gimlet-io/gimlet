@@ -12,27 +12,35 @@ class StackUI extends Component {
   }
 
   render() {
-    let {stack, stackDefinition, setValues, validationCallback} = this.props
+    let {stack, stackDefinition, setValues, validationCallback, categoriesToRender, componentsToRender, hideTitle} = this.props
 
     if (stackDefinition === undefined || stack === undefined) {
       return null;
     }
 
     const categories = stackDefinition.categories.map(category => {
+      if (categoriesToRender) {
+        const toRender = categoriesToRender.find(c => category.id === c);
+        if (!toRender) {
+          return null;
+        }
+      }
+
       return <Category
         category={category}
         stackDefinition={stackDefinition}
         stack={stack}
         genericComponentSaver={setValues}
         genericValidationCallback={validationCallback}
+        componentsToRender={componentsToRender}
       />
     })
 
     return (
       <div>
         <div>
-          <h1 class="text-2xl font-bold mb-4">{stackDefinition.name}
-            <span class="font-normal text-lg block">{stackDefinition.description}</span>
+          <h1 className={hideTitle ? "hidden" : "text-2xl font-bold mb-4"}>{stackDefinition.name}
+            <span className="font-normal text-lg block">{stackDefinition.description}</span>
           </h1>
           {categories}
         </div>

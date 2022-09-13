@@ -5,8 +5,10 @@
   "dependencies": {
     "@craco/craco": "7.0.0-alpha.3",
     "@headlessui/react": "^1.1.1",
-    "@testing-library/jest-dom": "^5.16.5",
     "@heroicons/react": "^1.0.6",
+    "@tailwindcss/forms": "^0.5.2",
+    "@tailwindcss/typography": "^0.5.2",
+    "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^12.8.3",
     "@types/jest": "^26.0.23",
@@ -55,13 +57,11 @@
     ]
   },
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.2",
-    "@tailwindcss/typography": "^0.5.2",
     "autoprefixer": "^10.4.7",
     "postcss": "^8.4.14",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-preset-env": "^7.7.2",
     "tailwindcss": "^3.1.4"
   },
-  "proxy": "https://127.0.0.1"
+  "proxy": "http://127.0.0.1:9000"
 }

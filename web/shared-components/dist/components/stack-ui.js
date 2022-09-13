@@ -32,7 +32,10 @@ class StackUI extends _react.Component {
       stack,
       stackDefinition,
       setValues,
-      validationCallback
+      validationCallback,
+      categoriesToRender,
+      componentsToRender,
+      hideTitle
     } = this.props;
 
     if (stackDefinition === undefined || stack === undefined) {
@@ -40,18 +43,27 @@ class StackUI extends _react.Component {
     }
 
     const categories = stackDefinition.categories.map(category => {
+      if (categoriesToRender) {
+        const toRender = categoriesToRender.find(c => category.id === c);
+
+        if (!toRender) {
+          return null;
+        }
+      }
+
       return /*#__PURE__*/_react.default.createElement(_category.Category, {
         category: category,
         stackDefinition: stackDefinition,
         stack: stack,
         genericComponentSaver: setValues,
-        genericValidationCallback: validationCallback
+        genericValidationCallback: validationCallback,
+        componentsToRender: componentsToRender
       });
     });
     return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("h1", {
-      class: "text-2xl font-bold mb-4"
+      className: hideTitle ? "hidden" : "text-2xl font-bold mb-4"
     }, stackDefinition.name, /*#__PURE__*/_react.default.createElement("span", {
-      class: "font-normal text-lg block"
+      className: "font-normal text-lg block"
     }, stackDefinition.description)), categories));
   }
 
