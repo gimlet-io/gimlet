@@ -323,7 +323,7 @@ function userList(sortedUsers, defaultProfilePicture) {
                     <div className="mt-2 text-sm text-blue-700">
                       <div className="flex items-center">
                         <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{user.token}</span>
-                        <div className="ml-3 cursor-pointer" onClick={() => { navigator.clipboard.writeText(user.token) }}>
+                        <div className="ml-3 cursor-pointer" onClick={() => { copyToClipboard(user.token) }}>
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
@@ -339,4 +339,27 @@ function userList(sortedUsers, defaultProfilePicture) {
       </div>
     </div>
   )
+}
+
+export function copyToClipboard(copyText) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(copyText);
+  } else {
+    unsecuredCopyToClipboard(copyText);
+  }
+}
+
+function unsecuredCopyToClipboard(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    document.execCommand('copy');
+  } catch (err) {
+    console.error('Unable to copy to clipboard', err);
+  }
+  document.body.removeChild(textArea);
 }
