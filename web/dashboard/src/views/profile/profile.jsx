@@ -352,12 +352,9 @@ export function copyToClipboard(copyText) {
 function unsecuredCopyToClipboard(text) {
   const textArea = document.createElement("textarea");
   textArea.value = text;
-  document.body.appendChild(textArea);
   textArea.style.position = "fixed";
-  textArea.style.left = "-999999px";
-  textArea.style.top = "-999999px";
+  textArea.style.opacity = "0";
   document.body.appendChild(textArea);
-  textArea.focus();
   textArea.select();
   try {
     document.execCommand('copy');
