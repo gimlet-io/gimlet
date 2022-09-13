@@ -2,7 +2,7 @@
 
 HOST=$1
 ORG=$2
-VERSION="v0.3.11"
+VERSION="v0.4.0-rc.1"
 
 if [ -z "$HOST" ]
   then
@@ -31,26 +31,42 @@ fi
 
 echo ""
 echo "⏳ Starting Gimlet installer.."
-echo "We are going to need sudo to run it on port 443"
 
 echo ""
-echo "👉 Once started, open https://gimlet.$HOST and follow the installer steps"
+echo "👉 Once started, open http://gimlet.$HOST:9000 and follow the installer steps"
 
-sudo HOST=$HOST ORG=$ORG ./gimlet-installer
+HOST=$HOST ORG=$ORG ./gimlet-installer
+
+echo " ✅ Installer stopped"
+
+until [ $(kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A | grep gitops-repo | grep True | wc -l) -eq 4 ]
+do
+  echo ""
+  echo " 🧐 Waiting for all four gitops kustomizations become ready, ctrl+c to abort"
+  echo ""
+  echo "$ kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A"
+  kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A | grep -w 'gitops-repo\|READY'
+  sleep 3
+done
 
 echo ""
-echo "👉 Remove the host file entry now with"
-echo "sudo nano /etc/hosts"
+echo " ✅ Gitops loop is healthy"
+echo ""
+
+until [ $(kubectl get pods -n infrastructure | grep gimlet | grep 1/1 | wc -l) -eq 3 ]
+do
+  echo ""
+  echo " 🧐 Waiting for Gimlet to start up in the cluster, ctrl+c to abort"
+  echo ""
+  echo "$ kubectl get pods -n infrastructure | grep gimlet"
+  kubectl get pods -n infrastructure | grep 'gimlet\|READY\|postgres'
+  sleep 3
+done
+
+echo ""
+echo " ✅ Gimlet is up"
 echo ""
 
 kubectl get svc -n infrastructure
-
-echo ""
-echo "👉 Add gimlet.$HOST to your DNS server"
-echo "Point it to the External IP of the ingress-nginx service"
-echo "kubectl get svc -n infrastructure"
-echo ""
-echo "👉 Visit https://gimlet.$HOST"
-echo ""
-
+kubectl get svc -n kube-system
 
