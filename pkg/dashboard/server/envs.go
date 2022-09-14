@@ -62,7 +62,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
-	repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
 	if err != nil {
 		logrus.Errorf("cannot get repo: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -109,15 +109,6 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	headBranch := nativeGit.HeadBranch(repo)
-	_, blobID, err := goScm.Content(token, env.InfraRepo, stackYamlPath, headBranch)
-	if err != nil {
-		if !strings.Contains(err.Error(), "Not Found") {
-			logrus.Errorf("cannot fetch stack config from github: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			w.Write([]byte("{}"))
-			return
-		}
-	}
 
 	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
 	if err != nil {
@@ -125,30 +116,32 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	ref, err := repo.Head()
-	if err != nil {
-		logrus.Errorf("cannot get head: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	err = goScm.CreateBranch(token, env.InfraRepo, sourceBranch, ref.Hash().String())
+
+	// TODO
+	err = nativeGit.Branch(repo, tmpPath, sourceBranch)
 	if err != nil {
 		logrus.Errorf("cannot create branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = goScm.UpdateContent(
-		token,
-		env.InfraRepo,
-		stackYamlPath,
-		stackConfigBuff.Bytes(),
-		blobID,
-		sourceBranch,
-		fmt.Sprintf("[Gimlet Dashboard] Updating infrastructure components for %s", env.Name),
-	)
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), dNativeGit.Dir_RWX_RX_R)
 	if err != nil {
-		logrus.Errorf("cannot write git: %s", err)
+		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	if err != nil {
+		logrus.Errorf("cannot generate and write files: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
+	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

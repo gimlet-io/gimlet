@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -370,7 +371,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
-	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(fmt.Sprintf("%s/%s", owner, repoName))
 	if err != nil {
 		logrus.Errorf("cannot get repo: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -393,7 +394,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	envConfigFilePath = strings.ReplaceAll(envConfigFilePath, "%", "%25")
 
 	createCase := false // indicates if we need to create the file, we update existing manifests on the default path
-	_, blobID, err := goScm.Content(token, repoPath, envConfigFilePath, headBranch)
+	_, _, err = goScm.Content(token, repoPath, envConfigFilePath, headBranch)
 	if err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
 			createCase = true
@@ -457,48 +458,32 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	ref, err := repo.Head()
-	if err != nil {
-		logrus.Errorf("cannot get head: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	err = goScm.CreateBranch(token, repoPath, sourceBranch, ref.Hash().String())
+
+	// TODO
+	err = helper.Branch(repo, tmpPath, sourceBranch)
 	if err != nil {
 		logrus.Errorf("cannot create branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
+	message := fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env)
 	if createCase {
-		err = goScm.CreateContent(
-			token,
-			repoPath,
-			envConfigFilePath,
-			toSaveBuffer.Bytes(),
-			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env),
-		)
-		if err != nil {
-			logrus.Errorf("cannot write git: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		err = goScm.UpdateContent(
-			token,
-			repoPath,
-			envConfigFilePath,
-			toSaveBuffer.Bytes(),
-			blobID,
-			sourceBranch,
-			fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env),
-		)
-		if err != nil {
-			logrus.Errorf("cannot write git: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		message = fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env)
+	}
+
+	err = os.WriteFile(filepath.Join(tmpPath, envConfigFilePath), toSaveBuffer.Bytes(), nativeGit.Dir_RWX_RX_R)
+	if err != nil {
+		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = StageCommitAndPush(repo, tmpPath, token, message)
+	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Environment config change on %s", env), "Gimlet Dashboard has created this PR")
