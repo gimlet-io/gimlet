@@ -63,14 +63,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const hasGitopsRepo = env.infraRepo !== "";
 
-  let initStack = {};
-  if (env.stackConfig) {
-    initStack = env.stackConfig.config;
-  }
-
-  const [stack, setStack] = useState(initStack);
-  const [stackNonDefaultValues, setStackNonDefaultValues] = useState(initStack);
+  const [stack, setStack] = useState({});
+  const [stackNonDefaultValues, setStackNonDefaultValues] = useState({});
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (env.stackConfig) {
+      setStack(env.stackConfig.config);
+      setStackNonDefaultValues(env.stackConfig.config);
+    }
+  }, [env.stackConfig]);
 
   const gitopsRepositories = [
     { name: env.infraRepo, href: `https://github.com/${env.infraRepo}` },
