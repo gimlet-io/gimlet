@@ -63,6 +63,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
+	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		logrus.Errorf("cannot get repo: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)

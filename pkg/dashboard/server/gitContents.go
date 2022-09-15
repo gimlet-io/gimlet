@@ -372,6 +372,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(fmt.Sprintf("%s/%s", owner, repoName))
+	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		logrus.Errorf("cannot get repo: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
