@@ -296,17 +296,13 @@ func BranchHeadHash(repo *git.Repository, branch string) plumbing.Hash {
 	return head
 }
 
-func Branch(repo *git.Repository, repoPath string, ref string) error {
-	// b := plumbing.ReferenceName(ref)
-	// w, err := repo.Worktree()
-	// if err != nil {
-	// 	return err
-	// }
-	// err = w.Checkout(&git.CheckoutOptions{Create: false, Force: false, Branch: b})
-	// if err != nil {
-	// 	return err
-	// }
-	err := execCommand(repoPath, "git", "checkout", "-b", ref)
+func Branch(repo *git.Repository, ref string) error {
+	b := plumbing.ReferenceName(ref)
+	w, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	err = w.Checkout(&git.CheckoutOptions{Create: true, Force: false, Branch: b})
 	if err != nil {
 		return err
 	}
