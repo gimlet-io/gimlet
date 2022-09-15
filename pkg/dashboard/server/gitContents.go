@@ -451,18 +451,17 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// create branch to write changes on
+	// generate branch name to write changes on
 	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
 	if err != nil {
-		logrus.Errorf("cannot create branch: %s", err)
+		logrus.Errorf("cannot generate branch name: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	// TODO
-	err = helper.Branch(repo, tmpPath, sourceBranch)
+	err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 	if err != nil {
-		logrus.Errorf("cannot create branch: %s", err)
+		logrus.Errorf("cannot checkout branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

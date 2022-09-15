@@ -117,10 +117,9 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
-	err = nativeGit.Branch(repo, tmpPath, sourceBranch)
+	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 	if err != nil {
-		logrus.Errorf("cannot create branch: %s", err)
+		logrus.Errorf("cannot checkout branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
