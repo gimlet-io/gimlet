@@ -1,7 +1,10 @@
 package release
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
 	"github.com/urfave/cli/v2"
@@ -13,7 +16,8 @@ var releaseTrackCmd = cli.Command{
 	Usage: "Track rollback and release requests",
 	UsageText: `gimlet release track <id>
      --server http://gimletd.mycompany.com
-     --token c012367f6e6f71de17ae4c6a7baac2e9`,
+     --token c012367f6e6f71de17ae4c6a7baac2e9
+	 --output json`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "server",
@@ -27,6 +31,11 @@ var releaseTrackCmd = cli.Command{
 			EnvVars:  []string{"GIMLET_TOKEN"},
 			Required: true,
 		},
+		&cli.StringFlag{
+			Name:    "output",
+			Aliases: []string{"o"},
+			Usage:   "Output format",
+		},
 	},
 	Action: track,
 }
@@ -34,6 +43,7 @@ var releaseTrackCmd = cli.Command{
 func track(c *cli.Context) error {
 	serverURL := c.String("server")
 	token := c.String("token")
+	output := c.String("output")
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -51,6 +61,17 @@ func track(c *cli.Context) error {
 		return err
 	}
 
+	if output == "json" {
+		jsonString := bytes.NewBufferString("")
+		e := json.NewEncoder(jsonString)
+		e.SetIndent("", "  ")
+		e.Encode(releaseStatus)
+
+		fmt.Println(jsonString.String())
+
+		return nil
+	}
+
 	fmt.Printf(
 		"%v Request (%s) is %s %s\n",
 		emoji.BackhandIndexPointingRight,
@@ -58,6 +79,14 @@ func track(c *cli.Context) error {
 		releaseStatus.Status,
 		releaseStatus.StatusDesc,
 	)
+
+	for _, gitopsHash := range releaseStatus.GitopsHashes {
+		fmt.Printf("\t%v Hash %s status is %s\n", emoji.Bookmark, gitopsHash.Hash, gitopsHash.Status)
+	}
+
+	for _, result := range releaseStatus.Results {
+		fmt.Printf("\t%v App %s on hash %s status is %s\n", emoji.Pager, result.App, result.Hash, result.Status)
+	}
 
 	return nil
 }
