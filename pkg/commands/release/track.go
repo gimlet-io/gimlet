@@ -66,6 +66,9 @@ func track(c *cli.Context) error {
 		e := json.NewEncoder(jsonString)
 		e.SetIndent("", "  ")
 		e.Encode(releaseStatus)
+		if err != nil {
+			return fmt.Errorf("cannot deserialize release status %s", err)
+		}
 
 		fmt.Println(jsonString.String())
 
