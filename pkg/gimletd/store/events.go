@@ -123,7 +123,7 @@ func (db *Store) Event(id string) (*model.Event, error) {
 	query := fmt.Sprintf(`
 SELECT id, created, blob, status, status_desc, gitops_hashes, results
 FROM events
-WHERE id = $1;
+WHERE artifact_id = $1;
 `)
 
 	var data model.Event

@@ -53,10 +53,10 @@ func track(c *cli.Context) error {
 		},
 	)
 
-	trackingID := c.Args().First()
+	artifactID := c.Args().First()
 
 	client := client.NewClient(serverURL, auth)
-	releaseStatus, err := client.TrackGet(trackingID)
+	releaseStatus, err := client.TrackGet(artifactID)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func track(c *cli.Context) error {
 	fmt.Printf(
 		"%v Request (%s) is %s %s\n",
 		emoji.BackhandIndexPointingRight,
-		trackingID,
+		artifactID,
 		releaseStatus.Status,
 		releaseStatus.StatusDesc,
 	)
