@@ -55,7 +55,9 @@ const StepTwo = ({ getContext }) => {
       setInfra(`gitops-infra`);
       setApps(`gitops-apps`);
     }
+  }, [repoPerEnv, env]);
 
+  useEffect(() => {
     setContext(oldContext => {
       if (!oldContext) {
         return null;
@@ -238,6 +240,8 @@ const StepTwo = ({ getContext }) => {
               setRepoPerEnv={setRepoPerEnv}
               infraRepo={infra}
               appsRepo={apps}
+              setInfraRepo={setInfra}
+              setAppsRepo={setApps}
             />
             <input type="hidden" name="repoPerEnv" value={repoPerEnv} />
 
