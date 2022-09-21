@@ -49,8 +49,6 @@ type data struct {
 	loggedInUser            string
 	repoCache               *nativeGit.RepoCache
 	gimletdPublicKey        string
-	isNewInfraRepo          bool
-	isNewAppsRepo           bool
 	infraGitopsRepoFileName string
 	infraPublicKey          string
 	infraSecretFileName     string
@@ -252,8 +250,6 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 		"pem":                     data.pem,
 		"org":                     data.org,
 		"gimletdPublicKey":        data.gimletdPublicKey,
-		"isNewInfraRepo":          data.isNewInfraRepo,
-		"isNewAppsRepo":           data.isNewAppsRepo,
 		"infraGitopsRepoFileName": data.infraGitopsRepoFileName,
 		"infraPublicKey":          data.infraPublicKey,
 		"infraSecretFileName":     data.infraSecretFileName,
@@ -481,7 +477,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	data.repoPerEnv = repoPerEnv
 	data.envName = envName
 
-	isNewInfraRepo, err := server.AssureRepoExists(
+	_, err = server.AssureRepoExists(
 		repos,
 		infraRepo,
 		data.accessToken,
@@ -491,7 +487,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	isNewAppsRepo, err := server.AssureRepoExists(
+	_, err = server.AssureRepoExists(
 		repos,
 		appsRepo,
 		data.accessToken,
@@ -501,8 +497,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	data.isNewInfraRepo = isNewInfraRepo
-	data.isNewAppsRepo = isNewAppsRepo
 
 	repoCachePath, err := ioutil.TempDir("", "cache")
 	if err != nil {
