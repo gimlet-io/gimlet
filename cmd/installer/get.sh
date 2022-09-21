@@ -2,7 +2,7 @@
 
 HOST=$1
 ORG=$2
-VERSION="v0.4.0"
+VERSION="v0.4.1"
 
 if [ -z "$HOST" ]
   then
