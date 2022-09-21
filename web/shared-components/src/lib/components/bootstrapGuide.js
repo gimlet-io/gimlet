@@ -1,6 +1,6 @@
 import React from 'react'
 
-const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName }) => {
+const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, controllerGenerated }) => {
     const repoName = parseRepoName(repoPath);
     let type = "";
 
@@ -10,7 +10,7 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
         type = "infra";
     }
 
-    const renderBootstrapGuideText = () => {
+    const renderBootstrapGuideText = (controllerGenerated) => {
         return (
             <>
                 <li>👉 Clone the Gitops repository</li>
@@ -32,10 +32,14 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
                 </li>
                 <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
                 <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
+                    {controllerGenerated &&
+                    <>
                     <li>{repoPerEnv ? `kubectl apply -f flux/flux.yaml` : `kubectl apply -f ${envName}/flux/flux.yaml`}</li>
-                    <li>{repoPerEnv ? `kubectl apply -f flux/${secretFileName}` : `kubectl apply -f ${envName}/flux/${secretFileName}`}</li>
                     <li>kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io</li>
                     <li>kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io</li>
+                    </>
+                    }
+                    <li>{repoPerEnv ? `kubectl apply -f flux/${secretFileName}` : `kubectl apply -f ${envName}/flux/${secretFileName}`}</li>
                     <li>{repoPerEnv ? `kubectl apply -f flux/${gitopsRepoFileName}` : `kubectl apply -f ${envName}/flux/${gitopsRepoFileName}`}</li>
                     {notificationsFileName && (<li>{repoPerEnv ? `kubectl apply -f flux/${notificationsFileName}` : `kubectl apply -f ${envName}/flux/${notificationsFileName}`}</li>)}
                 </ul>
@@ -47,7 +51,7 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
         <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
             <ul className="break-all text-sm text-blue-700 space-y-2">
                 <span className="text-lg font-bold text-blue-800">Gitops {type}</span>
-                {renderBootstrapGuideText()}
+                {renderBootstrapGuideText(controllerGenerated)}
             </ul>
         </div>
     );

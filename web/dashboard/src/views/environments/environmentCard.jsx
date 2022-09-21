@@ -543,6 +543,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   publicKey={bootstrapMessage.infraPublicKey}
                   secretFileName={bootstrapMessage.infraSecretFileName}
                   gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
+                  controllerGenerated={true}
                 />
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
@@ -552,6 +553,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   secretFileName={bootstrapMessage.appsSecretFileName}
                   gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
                   notificationsFileName={bootstrapMessage.notificationsFileName}
+                  controllerGenerated={false}
                 />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
               </>

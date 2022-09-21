@@ -23,7 +23,8 @@ const BootstrapGuide = _ref => {
     repoPerEnv,
     publicKey,
     secretFileName,
-    gitopsRepoFileName
+    gitopsRepoFileName,
+    controllerGenerated
   } = _ref;
   const repoName = parseRepoName(repoPath);
   let type = "";
@@ -34,7 +35,7 @@ const BootstrapGuide = _ref => {
     type = "infra";
   }
 
-  const renderBootstrapGuideText = () => {
+  const renderBootstrapGuideText = controllerGenerated => {
     return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Clone the Gitops repository"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
     }, /*#__PURE__*/_react.default.createElement("li", null, "git clone git@github.com:", repoPath, ".git"), /*#__PURE__*/_react.default.createElement("li", null, "cd ", repoName)), /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Add the following deploy key to your Git provider to the ", /*#__PURE__*/_react.default.createElement("a", {
@@ -51,7 +52,7 @@ const BootstrapGuide = _ref => {
       href: "https://gimlet.io/docs/make-kubernetes-an-application-platform-with-gimlet-stack/#authorize-flux-to-fetch-your-gitops-repository"
     }, "click here"), ")"), /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Apply the gitops manifests on the cluster to start the gitops loop:"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
-    }, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/flux.yaml" : "kubectl apply -f ".concat(envName, "/flux/flux.yaml")), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(secretFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(secretFileName)), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)), notificationsFileName && /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(notificationsFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(notificationsFileName))));
+    }, controllerGenerated && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/flux.yaml" : "kubectl apply -f ".concat(envName, "/flux/flux.yaml")), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io"), /*#__PURE__*/_react.default.createElement("li", null, "kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io")), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(secretFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(secretFileName)), /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(gitopsRepoFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(gitopsRepoFileName)), notificationsFileName && /*#__PURE__*/_react.default.createElement("li", null, repoPerEnv ? "kubectl apply -f flux/".concat(notificationsFileName) : "kubectl apply -f ".concat(envName, "/flux/").concat(notificationsFileName))));
   };
 
   return /*#__PURE__*/_react.default.createElement("div", {
@@ -60,7 +61,7 @@ const BootstrapGuide = _ref => {
     className: "break-all text-sm text-blue-700 space-y-2"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "text-lg font-bold text-blue-800"
-  }, "Gitops ", type), renderBootstrapGuideText()));
+  }, "Gitops ", type), renderBootstrapGuideText(controllerGenerated)));
 };
 
 const parseRepoName = repo => {
