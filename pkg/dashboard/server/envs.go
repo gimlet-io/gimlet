@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,6 +25,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
+	gitConfig "github.com/go-git/go-git/v5/config"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
@@ -341,7 +343,15 @@ func BootstrapEnv(
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
-		return "", "", "", fmt.Errorf("cannot get repo: %s", err)
+		if strings.Contains(err.Error(), "remote repository is empty") {
+			repo, tmpPath, err = initRepo(repoName)
+			defer os.RemoveAll(tmpPath)
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot init empty repo: %s", err)
+			}
+		} else {
+			return "", "", "", fmt.Errorf("cannot get repo: %s", err)
+		}
 	}
 
 	if repoPerEnv {
@@ -369,6 +379,23 @@ func BootstrapEnv(
 	gitRepoCache.Invalidate(repoName)
 
 	return gitopsRepoFileName, publicKey, secretFileName, nil
+}
+
+func initRepo(repoName string) (*git.Repository, string, error) {
+	tmpPath, _ := ioutil.TempDir("", "gitops-")
+	repo, err := git.PlainInit(tmpPath, false)
+	if err != nil {
+		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
+	}
+	_, err = repo.CreateRemote(&gitConfig.RemoteConfig{
+		Name: "origin",
+		URLs: []string{fmt.Sprintf("https://github.com/%s.git", repoName)},
+	})
+	if err != nil {
+		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
+	}
+
+	return repo, tmpPath, nil
 }
 
 func BootstrapNotifications(
