@@ -139,7 +139,6 @@ const StepThree = ({ getContext }) => {
                                 publicKey={context.infraPublicKey}
                                 secretFileName={context.infraSecretFileName}
                                 gitopsRepoFileName={context.infraGitopsRepoFileName}
-                                isNewRepo={context.isNewInfraRepo}
                             />
                             <BootstrapGuide
                                 envName={context.envName}
@@ -148,7 +147,6 @@ const StepThree = ({ getContext }) => {
                                 publicKey={context.appsPublicKey}
                                 secretFileName={context.appsSecretFileName}
                                 gitopsRepoFileName={context.appsGitopsRepoFileName}
-                                isNewRepo={context.isNewAppsRepo}
                                 notificationsFileName={context.notificationsFileName}
                             />
                             <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">

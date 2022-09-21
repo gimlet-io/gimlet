@@ -231,7 +231,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isNewInfraRepo, err := AssureRepoExists(
+	_, err = AssureRepoExists(
 		orgRepos,
 		environment.InfraRepo,
 		user.AccessToken,
@@ -243,7 +243,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	isNewAppsRepo, err := AssureRepoExists(
+	_, err = AssureRepoExists(
 		orgRepos,
 		environment.AppsRepo,
 		user.AccessToken,
@@ -316,8 +316,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		"appsPublicKey":           appsPublicKey,
 		"appsSecretFileName":      appsSecretFileName,
 		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
-		"isNewInfraRepo":          isNewInfraRepo,
-		"isNewAppsRepo":           isNewAppsRepo,
 		"notificationsFileName":   notificationsFileName,
 	}
 
