@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
@@ -37,6 +38,11 @@ var releaseTrackCmd = cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "Output format",
 		},
+		&cli.BoolFlag{
+			Name:    "watch",
+			Aliases: []string{"w"},
+			Usage:   "Updates the output every five seconds",
+		},
 	},
 	Action: track,
 }
@@ -45,6 +51,7 @@ func track(c *cli.Context) error {
 	serverURL := c.String("server")
 	token := c.String("token")
 	output := c.String("output")
+	watch := c.Bool("watch")
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -57,6 +64,30 @@ func track(c *cli.Context) error {
 	artifactID := c.Args().First()
 
 	client := client.NewClient(serverURL, auth)
+
+	if watch {
+		for {
+			err := releaseTrackMessage(client, artifactID, output)
+			if err != nil {
+				return err
+			}
+			time.Sleep(time.Second * 5)
+		}
+	} else {
+		err := releaseTrackMessage(client, artifactID, output)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func releaseTrackMessage(
+	client client.Client,
+	artifactID string,
+	output string,
+) error {
 	releaseStatus, err := client.TrackGet(artifactID)
 	if err != nil {
 		return err
