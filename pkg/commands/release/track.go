@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
@@ -83,12 +84,32 @@ func track(c *cli.Context) error {
 		releaseStatus.StatusDesc,
 	)
 
-	for _, gitopsHash := range releaseStatus.GitopsHashes {
-		fmt.Printf("\t%v Hash %s status is %s\n", emoji.Bookmark, gitopsHash.Hash, gitopsHash.Status)
-	}
+	if releaseStatus.Results != nil {
+		if len(releaseStatus.Results) == 0 {
+			fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
+			return nil
+		}
 
-	for _, result := range releaseStatus.Results {
-		fmt.Printf("\t%v App %s on hash %s status is %s\n", emoji.Pager, result.App, result.Hash, result.Status)
+		for _, result := range releaseStatus.Results {
+			if strings.Contains(result.Status, "fail") {
+				fmt.Printf("\t%v App %s on hash %s status is %s, %s\n", emoji.Pager, result.App, result.Hash, result.Status, result.StatusDesc)
+			} else {
+				fmt.Printf("\t%v App %s on hash %s status is %s\n", emoji.Pager, result.App, result.Hash, result.GitopsCommitStatus)
+			}
+		}
+	} else {
+		if len(releaseStatus.GitopsHashes) == 0 {
+			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
+			return nil
+		}
+
+		for _, gitopsHash := range releaseStatus.GitopsHashes {
+			if strings.Contains(gitopsHash.Status, "fail") {
+				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
+			} else {
+				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
+			}
+		}
 	}
 
 	return nil
