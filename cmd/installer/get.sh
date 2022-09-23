@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 HOST=$1
-ORG=$2
-VERSION="v0.4.1"
+VERSION="v0.4.2"
 
 if [ -z "$HOST" ]
   then
@@ -35,7 +34,7 @@ echo "⏳ Starting Gimlet installer.."
 echo ""
 echo "👉 Once started, open http://gimlet.$HOST:9000 and follow the installer steps"
 
-HOST=$HOST ORG=$ORG ./gimlet-installer
+HOST=$HOST ./gimlet-installer
 
 echo " ✅ Installer stopped"
 

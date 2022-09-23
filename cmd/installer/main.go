@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
@@ -20,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
@@ -27,6 +29,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -41,7 +44,7 @@ type data struct {
 	clientId                string
 	clientSecret            string
 	pem                     string
-	org                     string
+	appOwner                string
 	installationId          string
 	tokenManager            *customGithub.GithubOrgTokenManager
 	accessToken             string
@@ -62,6 +65,7 @@ type data struct {
 	envName                 string
 	stackConfig             *dx.StackConfig
 	stackDefinition         map[string]interface{}
+	securityToken           string
 }
 
 func main() {
@@ -104,7 +108,6 @@ func main() {
 	}
 
 	r.Use(middleware.WithValue("data", &data{
-		org:             os.Getenv("ORG"),
 		stackConfig:     stackConfig,
 		stackDefinition: stackDefinition,
 	}))
@@ -222,7 +225,7 @@ func initStackConfig(data *data) (*dx.StackConfig, string) {
 	data.stackConfig.Config["gimletDashboard"] = map[string]interface{}{
 		"enabled":              true,
 		"jwtSecret":            jwtSecret,
-		"githubOrg":            data.org,
+		"githubOrg":            data.appOwner,
 		"gimletdToken":         gimletdSignedAdminToken,
 		"githubAppId":          data.id,
 		"githubPrivateKey":     data.pem,
@@ -243,12 +246,20 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
+	_, err := token.ParseRequest(r, func(t *token.Token) (string, error) {
+		return data.securityToken, nil
+	})
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	context := map[string]interface{}{
 		"appId":                   data.id,
 		"clientId":                data.clientId,
 		"clientSecret":            data.clientSecret,
 		"pem":                     data.pem,
-		"org":                     data.org,
+		"org":                     data.appOwner,
 		"gimletdPublicKey":        data.gimletdPublicKey,
 		"infraGitopsRepoFileName": data.infraGitopsRepoFileName,
 		"infraPublicKey":          data.infraPublicKey,
@@ -355,7 +366,7 @@ func installed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	data.org = appOwner
+	data.appOwner = appOwner
 	data.tokenManager = tokenManager
 
 	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", data.clientId), http.StatusSeeOther)
@@ -422,7 +433,23 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.stackConfig = stackConfig
 	data.gimletdPublicKey = gimletdPublicKey
 
+	data.securityToken = uuid.New().String()
+	setSessionCookie(w, r, data.securityToken)
+
 	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
+}
+
+func setSessionCookie(w http.ResponseWriter, r *http.Request, securityToken string) error {
+	sixHours, _ := time.ParseDuration("6h")
+	exp := time.Now().Add(sixHours).Unix()
+	t := token.New(token.SessToken, securityToken)
+	tokenStr, err := t.SignExpires(securityToken, exp)
+	if err != nil {
+		return err
+	}
+
+	httputil.SetCookie(w, r, "user_sess", tokenStr)
+	return nil
 }
 
 func bootstrap(w http.ResponseWriter, r *http.Request) {
@@ -465,10 +492,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	envConfig := environments[0].(map[string]interface{})
 
 	if !strings.Contains(infraRepo, "/") {
-		infraRepo = filepath.Join(data.org, infraRepo)
+		infraRepo = filepath.Join(data.appOwner, infraRepo)
 	}
 	if !strings.Contains(appsRepo, "/") {
-		appsRepo = filepath.Join(data.org, appsRepo)
+		appsRepo = filepath.Join(data.appOwner, appsRepo)
 		envConfig["gitopsRepo"] = appsRepo
 	}
 
