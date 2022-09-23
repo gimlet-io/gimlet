@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const StepOne = ({ getContext }) => {
   const [org, setOrg] = useState(null);
