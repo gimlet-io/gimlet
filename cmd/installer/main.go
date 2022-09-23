@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
@@ -20,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
@@ -27,6 +29,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -62,6 +65,7 @@ type data struct {
 	envName                 string
 	stackConfig             *dx.StackConfig
 	stackDefinition         map[string]interface{}
+	securityToken           string
 }
 
 func main() {
@@ -242,6 +246,14 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
 
+	_, err := token.ParseRequest(r, func(t *token.Token) (string, error) {
+		return data.securityToken, nil
+	})
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	context := map[string]interface{}{
 		"appId":                   data.id,
 		"clientId":                data.clientId,
@@ -421,7 +433,23 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.stackConfig = stackConfig
 	data.gimletdPublicKey = gimletdPublicKey
 
+	data.securityToken = uuid.New().String()
+	setSessionCookie(w, r, data.securityToken)
+
 	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
+}
+
+func setSessionCookie(w http.ResponseWriter, r *http.Request, securityToken string) error {
+	sixHours, _ := time.ParseDuration("6h")
+	exp := time.Now().Add(sixHours).Unix()
+	t := token.New(token.SessToken, securityToken)
+	tokenStr, err := t.SignExpires(securityToken, exp)
+	if err != nil {
+		return err
+	}
+
+	httputil.SetCookie(w, r, "user_sess", tokenStr)
+	return nil
 }
 
 func bootstrap(w http.ResponseWriter, r *http.Request) {
