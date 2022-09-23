@@ -396,11 +396,19 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
+		gitopsCommit, err := store.GitopsCommit(result.GitopsRef)
+		if err != nil {
+			logrus.Warnf("cannot get gitops commit: %s", err)
+			continue
+		}
+
 		results = append(results, dx.Result{
-			App:        result.Manifest.App,
-			Hash:       result.GitopsRef,
-			Status:     result.Status.String(),
-			StatusDesc: result.StatusDesc,
+			App:                result.Manifest.App,
+			Hash:               result.GitopsRef,
+			Status:             result.Status.String(),
+			GitopsCommitStatus: gitopsCommit.Status,
+			Env:                gitopsCommit.Env,
+			StatusDesc:         result.StatusDesc,
 		})
 	}
 

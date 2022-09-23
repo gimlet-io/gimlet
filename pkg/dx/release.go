@@ -41,10 +41,12 @@ type GitopsStatus struct {
 }
 
 type Result struct {
-	App        string `json:"app,omitempty"`
-	Hash       string `json:"hash,omitempty"`
-	Status     string `json:"status,omitempty"`
-	StatusDesc string `json:"statusDesc,omitempty"`
+	App                string `json:"app,omitempty"`
+	Hash               string `json:"hash,omitempty"`
+	Status             string `json:"status,omitempty"`
+	GitopsCommitStatus string `json:"gitopsCommitStatus,omitempty"`
+	Env                string `json:"env,omitempty"`
+	StatusDesc         string `json:"statusDesc,omitempty"`
 }
 
 type ReleaseStatus struct {
