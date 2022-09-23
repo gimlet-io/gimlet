@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const StepOne = ({ getContext }) => {
-  const [context, setContext] = useState(null);
-
-  useEffect(() => {
-    getContext().then(data => setContext(data))
-      .catch(err => {
-        console.error(`Error: ${err}`);
-      });
-  }, [getContext]);
+  const [org, setOrg] = useState(null);
 
   let url = window.location.href;
   url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
@@ -40,10 +33,6 @@ const StepOne = ({ getContext }) => {
       "check_run"
     ]
   })
-
-  if (!context) {
-    return null;
-  }
 
   return (
     <div className="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -116,10 +105,25 @@ const StepOne = ({ getContext }) => {
 
           <p className="pt-8">Please note that this application will be owned by you, thus you don't give access to any third party or the makers of Gimlet.</p>
 
-          <form action={context.org ? `https://github.com/organizations/${context.org}/settings/apps/new` : "https://github.com/settings/apps/new"} method="post">
+          <form action={org ? `https://github.com/organizations/${org}/settings/apps/new` : "https://github.com/settings/apps/new"} method="post">
             <input type="hidden" name="manifest" id="manifest" value={manifest}></input><br />
+            <div className="text-gray-700">
+              <div className="flex mt-4">
+                <div className="font-medium self-center">Github organization</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="org" name="org"
+                      value={org}
+                      onChange={e => setOrg(e.target.value)}
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="text" />
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 leading-loose">Leave it empty to have your personal Github account own the Github Application. Leaving empty is best for Gimlet evaluation.</div>
+            </div>
             <input type="submit" value="Create Github app"
-              className="cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              className="mt-8 cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             </input>
           </form>
         </div>

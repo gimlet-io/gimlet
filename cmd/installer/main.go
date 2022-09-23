@@ -41,7 +41,7 @@ type data struct {
 	clientId                string
 	clientSecret            string
 	pem                     string
-	org                     string
+	appOwner                string
 	installationId          string
 	tokenManager            *customGithub.GithubOrgTokenManager
 	accessToken             string
@@ -104,7 +104,6 @@ func main() {
 	}
 
 	r.Use(middleware.WithValue("data", &data{
-		org:             os.Getenv("ORG"),
 		stackConfig:     stackConfig,
 		stackDefinition: stackDefinition,
 	}))
@@ -222,7 +221,7 @@ func initStackConfig(data *data) (*dx.StackConfig, string) {
 	data.stackConfig.Config["gimletDashboard"] = map[string]interface{}{
 		"enabled":              true,
 		"jwtSecret":            jwtSecret,
-		"githubOrg":            data.org,
+		"githubOrg":            data.appOwner,
 		"gimletdToken":         gimletdSignedAdminToken,
 		"githubAppId":          data.id,
 		"githubPrivateKey":     data.pem,
@@ -248,7 +247,7 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 		"clientId":                data.clientId,
 		"clientSecret":            data.clientSecret,
 		"pem":                     data.pem,
-		"org":                     data.org,
+		"org":                     data.appOwner,
 		"gimletdPublicKey":        data.gimletdPublicKey,
 		"infraGitopsRepoFileName": data.infraGitopsRepoFileName,
 		"infraPublicKey":          data.infraPublicKey,
@@ -355,7 +354,7 @@ func installed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	data.org = appOwner
+	data.appOwner = appOwner
 	data.tokenManager = tokenManager
 
 	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", data.clientId), http.StatusSeeOther)
@@ -465,10 +464,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	envConfig := environments[0].(map[string]interface{})
 
 	if !strings.Contains(infraRepo, "/") {
-		infraRepo = filepath.Join(data.org, infraRepo)
+		infraRepo = filepath.Join(data.appOwner, infraRepo)
 	}
 	if !strings.Contains(appsRepo, "/") {
-		appsRepo = filepath.Join(data.org, appsRepo)
+		appsRepo = filepath.Join(data.appOwner, appsRepo)
 		envConfig["gitopsRepo"] = appsRepo
 	}
 
