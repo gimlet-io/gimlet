@@ -395,6 +395,7 @@ func Releases(
 	since, until *time.Time,
 	limit int,
 	gitRepo string,
+	perf *prometheus.HistogramVec,
 ) ([]*dx.Release, error) {
 	releases := []*dx.Release{}
 
@@ -402,6 +403,8 @@ func Releases(
 	if env == "" {
 		return nil, fmt.Errorf("env is mandatory")
 	}
+
+	t0 := time.Now()
 
 	envPath := env
 	if repoPerEnv {
@@ -488,6 +491,7 @@ func Releases(
 		return nil, err
 	}
 
+	perf.WithLabelValues("githelper_releases").Observe(float64(time.Since(t0).Seconds()))
 	return releases, nil
 }
 
@@ -546,7 +550,7 @@ func Status(
 		}
 	}
 
-	perf.WithLabelValues("githelper_status").Observe(time.Since(t0).Seconds())
+	perf.WithLabelValues("githelper_status").Observe(float64(time.Since(t0).Seconds()))
 	return appReleases, nil
 }
 

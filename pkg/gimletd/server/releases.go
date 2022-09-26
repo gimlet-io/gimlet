@@ -86,7 +86,8 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	releases, err := nativeGit.Releases(repo, app, env, repoPerEnv, since, until, limit, gitRepo)
+	perf := ctx.Value("perf").(*prometheus.HistogramVec)
+	releases, err := nativeGit.Releases(repo, app, env, repoPerEnv, since, until, limit, gitRepo, perf)
 	if err != nil {
 		logrus.Errorf("cannot get releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
