@@ -126,10 +126,12 @@ func main() {
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			GitopsRepo: config.GitopsRepo,
-			RepoCache:  repoCache,
-			Releases:   releases,
-			Perf:       perf,
+			GitopsRepo:      config.GitopsRepo,
+			GitopsRepos:     parsedGitopsRepos,
+			DefaultRepoName: config.GitopsRepo,
+			RepoCache:       repoCache,
+			Releases:        releases,
+			Perf:            perf,
 		}
 		go releaseStateWorker.Run()
 	}

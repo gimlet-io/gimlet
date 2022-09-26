@@ -18,14 +18,14 @@ type ReleaseStateWorker struct {
 	RepoCache       *nativeGit.GitopsRepoCache
 	Releases        *prometheus.GaugeVec
 	Perf            *prometheus.HistogramVec
-	gitopsRepos     []*config.GitopsRepoConfig
-	defaultRepoName string
+	GitopsRepos     map[string]*config.GitopsRepoConfig
+	DefaultRepoName string
 }
 
 func (w *ReleaseStateWorker) Run() {
 	for {
 		t0 := time.Now()
-		for _, repoConfig := range w.gitopsRepos {
+		for _, repoConfig := range w.GitopsRepos {
 			err := processRepo(
 				repoConfig.GitopsRepo,
 				w.Releases,
@@ -40,16 +40,16 @@ func (w *ReleaseStateWorker) Run() {
 
 			}
 		}
-		if w.defaultRepoName != "" {
+		if w.DefaultRepoName != "" {
 			err := processRepo(
-				w.defaultRepoName,
+				w.DefaultRepoName,
 				w.Releases,
 				w.Perf,
 				w.RepoCache,
 				false,
 			)
 			if err != nil {
-				logrus.Warnf("could not process state of %s gitops repo", w.defaultRepoName)
+				logrus.Warnf("could not process state of %s gitops repo", w.DefaultRepoName)
 			}
 		}
 		w.Perf.WithLabelValues("releaseState_run").Observe(time.Since(t0).Seconds())
