@@ -37,6 +37,7 @@ type GitopsWorker struct {
 	eventsProcessed         prometheus.Counter
 	repoCache               *nativeGit.GitopsRepoCache
 	eventSinkHub            *streaming.EventSinkHub
+	perf                    *prometheus.HistogramVec
 }
 
 func NewGitopsWorker(
@@ -49,6 +50,7 @@ func NewGitopsWorker(
 	eventsProcessed prometheus.Counter,
 	repoCache *nativeGit.GitopsRepoCache,
 	eventSinkHub *streaming.EventSinkHub,
+	perf *prometheus.HistogramVec,
 ) *GitopsWorker {
 	return &GitopsWorker{
 		store:                   store,
@@ -60,6 +62,7 @@ func NewGitopsWorker(
 		eventsProcessed:         eventsProcessed,
 		repoCache:               repoCache,
 		eventSinkHub:            eventSinkHub,
+		perf:                    perf,
 	}
 }
 
@@ -83,6 +86,7 @@ func (w *GitopsWorker) Run() {
 				w.notificationsManager,
 				w.repoCache,
 				w.eventSinkHub,
+				w.perf,
 			)
 		}
 
@@ -100,6 +104,7 @@ func processEvent(
 	notificationsManager notifications.Manager,
 	repoCache *nativeGit.GitopsRepoCache,
 	eventSinkHub *streaming.EventSinkHub,
+	perf *prometheus.HistogramVec,
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
@@ -121,6 +126,7 @@ func processEvent(
 			token,
 			event,
 			store,
+			perf,
 		)
 	case model.ReleaseRequestedEvent:
 		deployEvents, err = processReleaseEvent(
@@ -131,6 +137,7 @@ func processEvent(
 			gitopsRepoDeployKeyPath,
 			token,
 			event,
+			perf,
 		)
 	case model.RollbackRequestedEvent:
 		rollbackEvent, err = processRollbackEvent(
@@ -279,6 +286,7 @@ func processReleaseEvent(
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
+	perf *prometheus.HistogramVec,
 ) ([]model.Result, error) {
 	var deployEvents []model.Result
 	var releaseRequest dx.ReleaseRequest
@@ -349,6 +357,7 @@ func processReleaseEvent(
 			githubChartAccessToken,
 			manifest,
 			releaseMeta,
+			perf,
 		)
 		if err != nil {
 			deployEvent.Status = model.Failure
@@ -462,6 +471,7 @@ func processArtifactEvent(
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
+	perf *prometheus.HistogramVec,
 ) ([]model.Result, error) {
 	var deployEvents []model.Result
 	artifact, err := model.ToArtifact(event)
@@ -521,6 +531,7 @@ func processArtifactEvent(
 			githubChartAccessToken,
 			manifest,
 			releaseMeta,
+			perf,
 		)
 		if err != nil {
 			deployEvent.Status = model.Failure
@@ -563,7 +574,9 @@ func cloneTemplateWriteAndPush(
 	githubChartAccessToken string,
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
+	perf *prometheus.HistogramVec,
 ) (string, error) {
+	t0 := time.Now()
 	repoName, repoPerEnv, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 	if err != nil {
 		return "", err
@@ -600,6 +613,7 @@ func cloneTemplateWriteAndPush(
 		gitopsRepoCache.Invalidate(repoName)
 	}
 
+	perf.WithLabelValues("gitops_cloneTemplateWriteAndPush").Observe(float64(time.Since(t0).Seconds()))
 	return sha, nil
 }
 

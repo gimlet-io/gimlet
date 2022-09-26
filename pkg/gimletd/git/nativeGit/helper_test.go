@@ -14,15 +14,20 @@ import (
 func Test_Releases(t *testing.T) {
 	repo := initHistory()
 
-	releases, err := Releases(repo, "my-app", "staging", false, nil, nil, 10, "")
+	perf := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "a",
+		Help: "a",
+	}, []string{"function"})
+
+	releases, err := Releases(repo, "my-app", "staging", false, nil, nil, 10, "", perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(releases), "should get all releases")
 
-	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, 10, "")
+	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, 10, "", perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get all releases")
 
-	releases, err = Releases(repo, "", "staging", true, nil, nil, 10, "")
+	releases, err = Releases(repo, "", "staging", true, nil, nil, 10, "", perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get all releases")
 }
@@ -30,7 +35,12 @@ func Test_Releases(t *testing.T) {
 func Test_ReleasesLimit(t *testing.T) {
 	repo := initHistory()
 
-	releases, err := Releases(repo, "my-app", "staging", false, nil, nil, 1, "")
+	perf := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "b",
+		Help: "b",
+	}, []string{"function"})
+
+	releases, err := Releases(repo, "my-app", "staging", false, nil, nil, 1, "", perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get only one release")
 }
@@ -38,12 +48,17 @@ func Test_ReleasesLimit(t *testing.T) {
 func Test_ReleasesGitRepo(t *testing.T) {
 	repo := initHistory()
 
-	releases, err := Releases(repo, "my-app2", "staging", false, nil, nil, -1, "laszlocph/gimletd-test2")
+	perf := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "c",
+		Help: "c",
+	}, []string{"function"})
+
+	releases, err := Releases(repo, "my-app2", "staging", false, nil, nil, -1, "laszlocph/gimletd-test2", perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get the commit from the gitrepo")
 	assert.Equal(t, "xxx", releases[0].App, "should get the commit from the gitrepo")
 
-	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, -1, "laszlocph/gimletd-test3")
+	releases, err = Releases(repo, "my-app3", "staging", true, nil, nil, -1, "laszlocph/gimletd-test3", perf)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(releases), "should get the commit from the gitrepo")
 	assert.Equal(t, "fosdem-2024", releases[0].App, "should get the commit from the gitrepo")

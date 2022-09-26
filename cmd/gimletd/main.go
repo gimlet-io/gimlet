@@ -119,6 +119,7 @@ func main() {
 		eventsProcessed,
 		repoCache,
 		eventSinkHub,
+		perf,
 	)
 	go gitopsWorker.Run()
 	logrus.Info("Gitops worker started")
