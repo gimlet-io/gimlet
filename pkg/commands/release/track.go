@@ -36,12 +36,12 @@ var releaseTrackCmd = cli.Command{
 		&cli.StringFlag{
 			Name:    "output",
 			Aliases: []string{"o"},
-			Usage:   "Output format",
+			Usage:   "Output format. Cannot use with --wait flag",
 		},
 		&cli.BoolFlag{
-			Name:    "watch",
+			Name:    "wait",
 			Aliases: []string{"w"},
-			Usage:   "Updates the output every five seconds",
+			Usage:   "Updates the output every five seconds. Runs until Artifact has error, at least one gitops hash has error or every gitops has has succeeded. Cannot use with --output flag",
 		},
 	},
 	Action: track,
@@ -51,7 +51,7 @@ func track(c *cli.Context) error {
 	serverURL := c.String("server")
 	token := c.String("token")
 	output := c.String("output")
-	watch := c.Bool("watch")
+	wait := c.Bool("wait")
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -65,16 +65,19 @@ func track(c *cli.Context) error {
 
 	client := client.NewClient(serverURL, auth)
 
-	if watch {
+	if wait {
 		for {
-			err := releaseTrackMessage(client, artifactID, output)
+			releaseStatus, hasFailed, everySucceeded, err := releaseTrackMessage(client, artifactID, output)
 			if err != nil {
 				return err
+			}
+			if (releaseStatus == "error" || hasFailed || everySucceeded) && releaseStatus != "new" {
+				break
 			}
 			time.Sleep(time.Second * 5)
 		}
 	} else {
-		err := releaseTrackMessage(client, artifactID, output)
+		_, _, _, err := releaseTrackMessage(client, artifactID, output)
 		if err != nil {
 			return err
 		}
@@ -87,10 +90,14 @@ func releaseTrackMessage(
 	client client.Client,
 	artifactID string,
 	output string,
-) error {
+) (string, bool, bool, error) {
+	var releaseResultCount int
+	var failedCount int
+	var succeededCount int
+
 	releaseStatus, err := client.TrackGet(artifactID)
 	if err != nil {
-		return err
+		return "", false, false, err
 	}
 
 	if output == "json" {
@@ -99,12 +106,12 @@ func releaseTrackMessage(
 		e.SetIndent("", "  ")
 		e.Encode(releaseStatus)
 		if err != nil {
-			return fmt.Errorf("cannot deserialize release status %s", err)
+			return "", false, false, fmt.Errorf("cannot deserialize release status %s", err)
 		}
 
 		fmt.Println(jsonString.String())
 
-		return nil
+		return "", false, true, nil
 	}
 
 	fmt.Printf(
@@ -118,30 +125,45 @@ func releaseTrackMessage(
 	if releaseStatus.Results != nil {
 		if len(releaseStatus.Results) == 0 {
 			fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
-			return nil
+
+			return "", false, false, nil
 		}
+
+		releaseResultCount = len(releaseStatus.Results)
 
 		for _, result := range releaseStatus.Results {
 			if strings.Contains(result.Status, "fail") {
+				failedCount++
 				fmt.Printf("\t%v App %s on hash %s status is %s, %s\n", emoji.Pager, result.App, result.Hash, result.Status, result.StatusDesc)
 			} else {
+				if strings.Contains(result.Status, "succeeded") {
+					succeededCount++
+				}
+
 				fmt.Printf("\t%v App %s on hash %s status is %s\n", emoji.Pager, result.App, result.Hash, result.GitopsCommitStatus)
 			}
 		}
 	} else {
 		if len(releaseStatus.GitopsHashes) == 0 {
 			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
-			return nil
+
+			return "", false, false, nil
 		}
+
+		releaseResultCount = len(releaseStatus.GitopsHashes)
 
 		for _, gitopsHash := range releaseStatus.GitopsHashes {
 			if strings.Contains(gitopsHash.Status, "fail") {
+				failedCount++
 				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 			} else {
+				if strings.Contains(gitopsHash.Status, "succeeded") {
+					succeededCount++
+				}
 				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
 			}
 		}
 	}
 
-	return nil
+	return releaseStatus.Status, failedCount > 0, succeededCount == releaseResultCount, nil
 }
