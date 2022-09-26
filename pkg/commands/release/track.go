@@ -9,6 +9,7 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
@@ -132,15 +133,15 @@ func releaseTrackMessage(
 		releaseResultCount = len(releaseStatus.Results)
 
 		for _, result := range releaseStatus.Results {
-			if strings.Contains(result.Status, "fail") {
+			if strings.Contains(result.Status, "Failed") {
 				failedCount++
-				fmt.Printf("\t%v App %s on hash %s status is %s, %s\n", emoji.Pager, result.App, result.Hash, result.Status, result.StatusDesc)
+				fmt.Printf("\t%v App %s on %s on hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 			} else {
-				if strings.Contains(result.Status, "succeeded") {
+				if result.Status == model.ReconciliationSucceeded {
 					succeededCount++
 				}
 
-				fmt.Printf("\t%v App %s on hash %s status is %s\n", emoji.Pager, result.App, result.Hash, result.GitopsCommitStatus)
+				fmt.Printf("\t%v App %s on %s on hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
 			}
 		}
 	} else {
@@ -153,11 +154,11 @@ func releaseTrackMessage(
 		releaseResultCount = len(releaseStatus.GitopsHashes)
 
 		for _, gitopsHash := range releaseStatus.GitopsHashes {
-			if strings.Contains(gitopsHash.Status, "fail") {
+			if strings.Contains(gitopsHash.Status, "Failed") {
 				failedCount++
 				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 			} else {
-				if strings.Contains(gitopsHash.Status, "succeeded") {
+				if gitopsHash.Status == model.ReconciliationSucceeded {
 					succeededCount++
 				}
 				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
