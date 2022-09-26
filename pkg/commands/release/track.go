@@ -133,15 +133,15 @@ func releaseTrackMessage(
 		releaseResultCount = len(releaseStatus.Results)
 
 		for _, result := range releaseStatus.Results {
-			if strings.Contains(result.Status, "Failed") {
+			if strings.Contains(result.GitopsCommitStatus, "Failed") {
 				failedCount++
-				fmt.Printf("\t%v App %s on %s on hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+				fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 			} else {
-				if result.Status == model.ReconciliationSucceeded {
+				if result.GitopsCommitStatus == model.ReconciliationSucceeded {
 					succeededCount++
 				}
 
-				fmt.Printf("\t%v App %s on %s on hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
+				fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
 			}
 		}
 	} else {
