@@ -27,11 +27,10 @@ func (w *ReleaseStateWorker) Run() {
 		t0 := time.Now()
 		for _, repoConfig := range w.GitopsRepos {
 			err := processRepo(
-				repoConfig.GitopsRepo,
+				repoConfig,
 				w.Releases,
 				w.Perf,
 				w.RepoCache,
-				repoConfig.RepoPerEnv,
 			)
 			if err != nil {
 				logrus.Warnf("could not process state of %s gitops repo: %s", repoConfig.GitopsRepo, err)
@@ -42,11 +41,13 @@ func (w *ReleaseStateWorker) Run() {
 		}
 		if w.DefaultRepoName != "" {
 			err := processRepo(
-				w.DefaultRepoName,
+				&config.GitopsRepoConfig{
+					GitopsRepo: w.DefaultRepoName,
+					RepoPerEnv: false,
+				},
 				w.Releases,
 				w.Perf,
 				w.RepoCache,
-				false,
 			)
 			if err != nil {
 				logrus.Warnf("could not process state of %s gitops repo", w.DefaultRepoName)
@@ -58,20 +59,19 @@ func (w *ReleaseStateWorker) Run() {
 }
 
 func processRepo(
-	repoName string,
+	gitopsRepoConfig *config.GitopsRepoConfig,
 	releases *prometheus.GaugeVec,
 	perf *prometheus.HistogramVec,
 	repoCache *nativeGit.GitopsRepoCache,
-	repoPerEnv bool,
 ) error {
 	t0 := time.Now()
-	repo := repoCache.InstanceForRead(repoName)
+	repo := repoCache.InstanceForRead(gitopsRepoConfig.GitopsRepo)
 	perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
 	var envs []string
 	var err error
-	if repoPerEnv {
-		envs = []string{""}
+	if gitopsRepoConfig.RepoPerEnv {
+		envs = []string{gitopsRepoConfig.Env}
 	} else {
 		envs, err = nativeGit.Envs(repo)
 		if err != nil {
@@ -82,7 +82,7 @@ func processRepo(
 	releases.Reset()
 	for _, env := range envs {
 		t1 := time.Now()
-		appReleases, err := nativeGit.Status(repo, "", env, repoPerEnv, perf)
+		appReleases, err := nativeGit.Status(repo, "", env, gitopsRepoConfig.RepoPerEnv, perf)
 		if err != nil {
 			logrus.Errorf("cannot get status: %s", err)
 			time.Sleep(30 * time.Second)
@@ -91,7 +91,7 @@ func processRepo(
 		perf.WithLabelValues("releaseState_appReleases").Observe(time.Since(t1).Seconds())
 
 		envPath := env
-		if repoPerEnv {
+		if gitopsRepoConfig.RepoPerEnv {
 			envPath = ""
 		}
 
@@ -103,9 +103,12 @@ func processRepo(
 				time.Sleep(30 * time.Second)
 				continue
 			}
+			if commit == nil {
+				continue
+			}
 			perf.WithLabelValues("releaseState_appRelease").Observe(time.Since(t2).Seconds())
 
-			gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", repoName, commit.Hash.String())
+			gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", gitopsRepoConfig.GitopsRepo, commit.Hash.String())
 			created := commit.Committer.When
 
 			if release != nil {
