@@ -407,7 +407,7 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 			Hash:               result.GitopsRef,
 			Status:             result.Status.String(),
 			GitopsCommitStatus: gitopsCommit.Status,
-			Env:                gitopsCommit.Env,
+			Env:                result.Manifest.Env,
 			StatusDesc:         result.StatusDesc,
 		})
 	}
