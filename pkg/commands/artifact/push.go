@@ -18,8 +18,7 @@ var artifactPushCmd = cli.Command{
 	UsageText: `gimlet artifact push \
      -f artifact.json \
      --server http://gimletd.mycompany.com
-     --token c012367f6e6f71de17ae4c6a7baac2e9
-	 --output json`,
+     --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "file",
