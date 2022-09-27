@@ -350,7 +350,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func getEvent(w http.ResponseWriter, r *http.Request) {
+func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 	var id string
 
 	params := r.URL.Query()
@@ -364,7 +364,7 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
-	event, err := store.Event(id)
+	event, err := store.EventReleaseTrack(id)
 	if err == sql.ErrNoRows {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	} else if err != nil {
@@ -396,17 +396,11 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
-		gitopsCommit, err := store.GitopsCommit(result.GitopsRef)
-		if err != nil {
-			logrus.Warnf("cannot get gitops commit: %s", err)
-			continue
-		}
-
 		results = append(results, dx.Result{
 			App:                result.Manifest.App,
 			Hash:               result.GitopsRef,
 			Status:             result.Status.String(),
-			GitopsCommitStatus: gitopsCommit.Status,
+			GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
 			Env:                result.Manifest.Env,
 			StatusDesc:         result.StatusDesc,
 		})
@@ -423,7 +417,7 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write(statusBytes)
 }
 
-func getEventByArtifactId(w http.ResponseWriter, r *http.Request) {
+func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
 	var id string
 
 	params := r.URL.Query()
@@ -437,7 +431,7 @@ func getEventByArtifactId(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
-	event, err := store.EventByArtifactId(id)
+	event, err := store.EventArtifactTrack(id)
 	if err == sql.ErrNoRows {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	} else if err != nil {
@@ -469,17 +463,11 @@ func getEventByArtifactId(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
-		gitopsCommit, err := store.GitopsCommit(result.GitopsRef)
-		if err != nil {
-			logrus.Warnf("cannot get gitops commit: %s", err)
-			continue
-		}
-
 		results = append(results, dx.Result{
 			App:                result.Manifest.App,
 			Hash:               result.GitopsRef,
 			Status:             result.Status.String(),
-			GitopsCommitStatus: gitopsCommit.Status,
+			GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
 			Env:                result.Manifest.Env,
 			StatusDesc:         result.StatusDesc,
 		})
@@ -510,4 +498,13 @@ func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string,
 	}
 
 	return repoName, repoPerEnv, nil
+}
+
+func gitopsCommitStatusFromHash(store *store.Store, gitopsRef string) string {
+	gitopsCommit, err := store.GitopsCommit(gitopsRef)
+	if err != nil {
+		logrus.Warnf("cannot get gitops commit: %s", err)
+	}
+
+	return gitopsCommit.Status
 }

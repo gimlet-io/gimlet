@@ -16,7 +16,7 @@ import (
 
 var artifactTrackCmd = cli.Command{
 	Name:  "track",
-	Usage: "Track rollback and release requests",
+	Usage: "Track artifact from release requests",
 	UsageText: `gimlet artifact track <artifact_id>
      --server http://gimletd.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
@@ -67,11 +67,11 @@ func track(c *cli.Context) error {
 
 	if wait {
 		for {
-			releaseStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
+			artifactStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
 			if err != nil {
 				return err
 			}
-			if (releaseStatus == "error" || hasFailed || everySucceeded) && releaseStatus != "new" {
+			if (artifactStatus == "error" || hasFailed || everySucceeded) && artifactStatus != "new" {
 				break
 			}
 			time.Sleep(time.Second * 5)
@@ -91,11 +91,11 @@ func artifactTrackMessage(
 	artifactID string,
 	output string,
 ) (string, bool, bool, error) {
-	var releaseResultCount int
+	var artifactResultCount int
 	var failedCount int
 	var succeededCount int
 
-	releaseStatus, err := client.TrackGetWithArtifactId(artifactID)
+	artifactStatus, err := client.TrackArtifact(artifactID)
 	if err != nil {
 		return "", false, false, err
 	}
@@ -104,7 +104,7 @@ func artifactTrackMessage(
 		jsonString := bytes.NewBufferString("")
 		e := json.NewEncoder(jsonString)
 		e.SetIndent("", "  ")
-		e.Encode(releaseStatus)
+		e.Encode(artifactStatus)
 		if err != nil {
 			return "", false, false, fmt.Errorf("cannot deserialize release status %s", err)
 		}
@@ -118,20 +118,20 @@ func artifactTrackMessage(
 		"%v Request (%s) is %s %s\n",
 		emoji.BackhandIndexPointingRight,
 		artifactID,
-		releaseStatus.Status,
-		releaseStatus.StatusDesc,
+		artifactStatus.Status,
+		artifactStatus.StatusDesc,
 	)
 
-	if releaseStatus.Results != nil {
-		if len(releaseStatus.Results) == 0 {
+	if artifactStatus.Results != nil {
+		if len(artifactStatus.Results) == 0 {
 			fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
 
 			return "", false, false, nil
 		}
 
-		releaseResultCount = len(releaseStatus.Results)
+		artifactResultCount = len(artifactStatus.Results)
 
-		for _, result := range releaseStatus.Results {
+		for _, result := range artifactStatus.Results {
 			if strings.Contains(result.GitopsCommitStatus, "Failed") {
 				failedCount++
 				fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
@@ -144,15 +144,15 @@ func artifactTrackMessage(
 			}
 		}
 	} else {
-		if len(releaseStatus.GitopsHashes) == 0 {
+		if len(artifactStatus.GitopsHashes) == 0 {
 			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
 
 			return "", false, false, nil
 		}
 
-		releaseResultCount = len(releaseStatus.GitopsHashes)
+		artifactResultCount = len(artifactStatus.GitopsHashes)
 
-		for _, gitopsHash := range releaseStatus.GitopsHashes {
+		for _, gitopsHash := range artifactStatus.GitopsHashes {
 			if strings.Contains(gitopsHash.Status, "Failed") {
 				failedCount++
 				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
@@ -165,5 +165,5 @@ func artifactTrackMessage(
 		}
 	}
 
-	return releaseStatus.Status, failedCount > 0, succeededCount == releaseResultCount, nil
+	return artifactStatus.Status, failedCount > 0, succeededCount == artifactResultCount, nil
 }

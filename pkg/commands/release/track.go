@@ -95,7 +95,7 @@ func releaseTrackMessage(
 	var failedCount int
 	var succeededCount int
 
-	releaseStatus, err := client.TrackGet(trackingID)
+	releaseStatus, err := client.TrackRelease(trackingID)
 	if err != nil {
 		return "", false, false, err
 	}
