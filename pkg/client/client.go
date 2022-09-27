@@ -32,17 +32,18 @@ import (
 )
 
 const (
-	pathArtifact   = "%s/api/artifact"
-	pathArtifacts  = "%s/api/artifacts"
-	pathReleases   = "%s/api/releases"
-	pathStatus     = "%s/api/status"
-	pathRollback   = "%s/api/rollback"
-	pathDelete     = "%s/api/delete"
-	pathEvent      = "%s/api/event"
-	pathUser       = "%s/api/user"
-	pathUsers	   = "%s/api/users"
-	pathGitopsRepo = "%s/api/gitopsRepo"
-	pathGitopsCommits = "%s/api/gitopsCommits"
+	pathArtifact          = "%s/api/artifact"
+	pathArtifacts         = "%s/api/artifacts"
+	pathReleases          = "%s/api/releases"
+	pathStatus            = "%s/api/status"
+	pathRollback          = "%s/api/rollback"
+	pathDelete            = "%s/api/delete"
+	pathEvent             = "%s/api/event"
+	pathEventByArtifactId = "%s/api/eventByArtifactId"
+	pathUser              = "%s/api/user"
+	pathUsers             = "%s/api/users"
+	pathGitopsRepo        = "%s/api/gitopsRepo"
+	pathGitopsCommits     = "%s/api/gitopsCommits"
 )
 
 type client struct {
@@ -316,6 +317,18 @@ func (c *client) TrackGet(trackingID string) (*dx.ReleaseStatus, error) {
 
 	result := new(dx.ReleaseStatus)
 	err := c.get(uri+"?id="+trackingID, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (c *client) TrackGetWithArtifactId(artifactID string) (*dx.ReleaseStatus, error) {
+	uri := fmt.Sprintf(pathEventByArtifactId, c.addr)
+
+	result := new(dx.ReleaseStatus)
+	err := c.get(uri+"?artifactId="+artifactID, result)
 	if err != nil {
 		return nil, err
 	}

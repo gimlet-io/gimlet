@@ -423,6 +423,79 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write(statusBytes)
 }
 
+func getEventByArtifactId(w http.ResponseWriter, r *http.Request) {
+	var id string
+
+	params := r.URL.Query()
+
+	if val, ok := params["artifactId"]; ok {
+		id = val[0]
+	} else {
+		http.Error(w, fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadRequest), "id parameter is mandatory"), http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	store := ctx.Value("store").(*store.Store)
+	event, err := store.EventByArtifactId(id)
+	if err == sql.ErrNoRows {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	} else if err != nil {
+		logrus.Errorf("cannot get event: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	gitopsStatus := []dx.GitopsStatus{}
+	for _, gitopsHash := range event.GitopsHashes {
+		gitopsCommit, err := store.GitopsCommit(gitopsHash)
+		if err != nil {
+			logrus.Warnf("cannot get gitops commit: %s", err)
+			continue
+		}
+
+		if gitopsCommit != nil {
+			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
+				Hash:       gitopsHash,
+				Status:     gitopsCommit.Status,
+				StatusDesc: gitopsCommit.StatusDesc,
+			})
+		} else {
+			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
+				Hash:   gitopsHash,
+				Status: "N/A",
+			})
+		}
+	}
+
+	results := []dx.Result{}
+	for _, result := range event.Results {
+		gitopsCommit, err := store.GitopsCommit(result.GitopsRef)
+		if err != nil {
+			logrus.Warnf("cannot get gitops commit: %s", err)
+			continue
+		}
+
+		results = append(results, dx.Result{
+			App:                result.Manifest.App,
+			Hash:               result.GitopsRef,
+			Status:             result.Status.String(),
+			GitopsCommitStatus: gitopsCommit.Status,
+			Env:                result.Manifest.Env,
+			StatusDesc:         result.StatusDesc,
+		})
+	}
+
+	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
+		Status:       event.Status,
+		StatusDesc:   event.StatusDesc,
+		GitopsHashes: gitopsStatus,
+		Results:      results,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(statusBytes)
+}
+
 func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string, defaultGitopsRepo string) (string, bool, error) {
 	repoName := defaultGitopsRepo
 	repoPerEnv := false

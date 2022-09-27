@@ -3,8 +3,9 @@ package release
 import (
 	"context"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"os"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
@@ -55,7 +56,6 @@ var releaseMakeCmd = cli.Command{
 func make(c *cli.Context) error {
 	serverURL := c.String("server")
 	token := c.String("token")
-	artifactId := c.String("artifact")
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -69,7 +69,7 @@ func make(c *cli.Context) error {
 	trackingID, err := client.ReleasesPost(
 		dx.ReleaseRequest{
 			Env:        c.String("env"),
-			ArtifactID: artifactId,
+			ArtifactID: c.String("artifact"),
 			App:        c.String("app"),
 		},
 	)
@@ -78,7 +78,7 @@ func make(c *cli.Context) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Release is now added to the release queue with ID %s\n", emoji.WomanGesturingOk, trackingID)
-	fmt.Fprintf(os.Stderr, "Track it with:\ngimlet release track %s\n\n", artifactId)
+	fmt.Fprintf(os.Stderr, "Track it with:\ngimlet release track %s\n\n", trackingID)
 
 	return nil
 }

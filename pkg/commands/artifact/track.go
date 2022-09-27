@@ -1,4 +1,4 @@
-package release
+package artifact
 
 import (
 	"bytes"
@@ -14,10 +14,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var releaseTrackCmd = cli.Command{
+var artifactTrackCmd = cli.Command{
 	Name:  "track",
 	Usage: "Track rollback and release requests",
-	UsageText: `gimlet release track <id>
+	UsageText: `gimlet artifact track <artifact_id>
      --server http://gimletd.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
@@ -61,13 +61,13 @@ func track(c *cli.Context) error {
 		},
 	)
 
-	trackingID := c.Args().First()
+	artifactID := c.Args().First()
 
 	client := client.NewClient(serverURL, auth)
 
 	if wait {
 		for {
-			releaseStatus, hasFailed, everySucceeded, err := releaseTrackMessage(client, trackingID, output)
+			releaseStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
 			if err != nil {
 				return err
 			}
@@ -77,7 +77,7 @@ func track(c *cli.Context) error {
 			time.Sleep(time.Second * 5)
 		}
 	} else {
-		_, _, _, err := releaseTrackMessage(client, trackingID, output)
+		_, _, _, err := artifactTrackMessage(client, artifactID, output)
 		if err != nil {
 			return err
 		}
@@ -86,16 +86,16 @@ func track(c *cli.Context) error {
 	return nil
 }
 
-func releaseTrackMessage(
+func artifactTrackMessage(
 	client client.Client,
-	trackingID string,
+	artifactID string,
 	output string,
 ) (string, bool, bool, error) {
 	var releaseResultCount int
 	var failedCount int
 	var succeededCount int
 
-	releaseStatus, err := client.TrackGet(trackingID)
+	releaseStatus, err := client.TrackGetWithArtifactId(artifactID)
 	if err != nil {
 		return "", false, false, err
 	}
@@ -117,7 +117,7 @@ func releaseTrackMessage(
 	fmt.Printf(
 		"%v Request (%s) is %s %s\n",
 		emoji.BackhandIndexPointingRight,
-		trackingID,
+		artifactID,
 		releaseStatus.Status,
 		releaseStatus.StatusDesc,
 	)
