@@ -33,7 +33,7 @@ type RollbackRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
-//GitopsStatus holds the gitops references that were created based on an event
+// GitopsStatus holds the gitops references that were created based on an event
 type GitopsStatus struct {
 	Hash       string `json:"hash,omitempty"`
 	Status     string `json:"status,omitempty"`

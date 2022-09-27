@@ -219,7 +219,9 @@ func rolloutHistory(w http.ResponseWriter, r *http.Request) {
 			config.GimletD.URL,
 			config.GimletD.TOKEN,
 			config.ReleaseHistorySinceDays,
+			-1,
 			env.Name,
+			"",
 			repoName,
 		)
 		if err != nil {
@@ -244,6 +246,53 @@ func rolloutHistory(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(rolloutHistoryString)
+}
+
+func rolloutHistoryPerApp(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	name := chi.URLParam(r, "name")
+	env := chi.URLParam(r, "env")
+	app := chi.URLParam(r, "app")
+	repoName := fmt.Sprintf("%s/%s", owner, name)
+	const perAppLimit = 10
+
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+
+	// If GimletD is not set up, throw 404
+	if config.GimletD.URL == "" ||
+		config.GimletD.TOKEN == "" {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("{}"))
+		return
+	}
+
+	releases, err := getAppReleasesFromGimletD(
+		config.GimletD.URL,
+		config.GimletD.TOKEN,
+		config.ReleaseHistorySinceDays,
+		perAppLimit,
+		env,
+		app,
+		repoName,
+	)
+	if err != nil {
+		logrus.Errorf("cannot get releases for git repo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	sort.Sort(ByCreated(releases))
+
+	releasesString, err := json.Marshal(releases)
+	if err != nil {
+		logrus.Errorf("cannot serialize releases: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(releasesString)
 }
 
 func insertIntoRolloutHistory(rolloutHistory []*Env, release *dx.Release, perAppLimit int) []*Env {
@@ -321,7 +370,9 @@ func getAppReleasesFromGimletD(
 	gimletdURL string,
 	gimletdToken string,
 	releaseHistorySinceDays int,
+	limit int,
 	env string,
+	app string,
 	repoName string,
 ) ([]*dx.Release, error) {
 	oauth2Config := new(oauth2.Config)
@@ -338,9 +389,9 @@ func getAppReleasesFromGimletD(
 	since := time.Now().Add(-1 * time.Hour * 24 * time.Duration(releaseHistorySinceDays))
 
 	return client.ReleasesGet(
-		"",
+		app,
 		env,
-		-1,
+		limit,
 		0,
 		repoName,
 		&since, nil,

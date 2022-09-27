@@ -1,10 +1,26 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
 import { Pod } from "../serviceCard/serviceCard";
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
+import { ACTION_TYPE_ROLLOUT_HISTORY } from "../../redux/redux";
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName, gimletClient, dispatch } = props;
+
+  useEffect(() => {
+    gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
+      .then(data => {
+        dispatch({
+          type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+            owner: owner,
+            repo: repoName,
+            env: envName,
+            app: stack.service.name,
+            releases: data,
+          }
+        });
+      }, () => {/* Generic error handler deals with it */});
+  }, []);
 
   return (
     <div className="w-full flex items-center justify-between space-x-6">
@@ -43,7 +59,7 @@ function ServiceDetail(props) {
         </div>
         <div className="flex flex-wrap text-sm">
           <div className="flex-1 min-w-full md:min-w-0">
-            {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} />) : null}
+            {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} key={`${ingress.namespace}/${ingress.name}`} />) : null}
           </div>
           <div className="flex-1 md:ml-2 min-w-full md:min-w-0">
             <Deployment
@@ -89,11 +105,11 @@ class Deployment extends Component {
     return (
       <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
         <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
-        <p className="mb-1">
+        <div className="mb-1">
           <p className="truncate">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</p>
           <p className="text-xs italic"><a href={`https://github.com/${repo}/commit/${deployment.sha}`} target="_blank"
             rel="noopener noreferrer">{deployment.sha.slice(0, 6)}</a></p>
-        </p>
+        </div>
         <p className="text-xs truncate">{deployment.namespace}/{deployment.name}</p>
         {
           deployment.pods && deployment.pods.map((pod) => (

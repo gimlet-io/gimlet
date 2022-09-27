@@ -4,7 +4,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 
 export class Commits extends Component {
   render() {
-    const {commits, connectedAgents, rolloutHistory, deployHandler, repo} = this.props;
+    const {commits, connectedAgents, deployHandler, repo} = this.props;
 
     if (!commits) {
       return null;
@@ -76,7 +76,6 @@ export class Commits extends Component {
                 <ReleaseBadges
                   sha={commit.sha}
                   connectedAgents={connectedAgents}
-                  rolloutHistory={rolloutHistory}
                 />
                 <DeployWidget
                   deployTargets={commit.deployTargets}
@@ -146,7 +145,7 @@ class StatusIcon extends Component {
 
 class ReleaseBadges extends Component {
   render() {
-    const {sha, connectedAgents, rolloutHistory} = this.props;
+    const {sha, connectedAgents} = this.props;
 
     let current = [];
     for (let envName of Object.keys(connectedAgents)) {
@@ -162,36 +161,6 @@ class ReleaseBadges extends Component {
       }
     }
 
-    let recent = [];
-    if (rolloutHistory) {
-      rolloutHistory.forEach(env => {
-        if (env.apps) {
-          env.apps.forEach(app => {
-            app.releases.forEach(release => {
-              if (release.version.sha === sha) {
-                const exists = recent.find(element => element.env === env.name && element.app === app.name);
-                const isCurrent = current.find(element => element.env === env.name && element.app === app.name);
-                if (!exists && !isCurrent) {
-                  recent.push({
-                    env: env.name,
-                    app: app.name
-                  })
-                }
-              }
-            })
-          })
-        }
-      })
-    }
-
-    let recentBadges = recent.map((release) => (
-      <span key={`${release.app}-${release.env}`}
-            className="inline-flex items-center px-2.5 py-0.5 rounded-md font-medium bg-gray-100 text-gray-800 mr-2"
-      >
-        was recently {release.app} on {release.env}
-      </span>
-    ))
-
     let releaseBadges = current.map((release) => (
       <span key={`${release.app}-${release.env}`}
             className="inline-flex items-center px-2.5 py-0.5 rounded-md font-medium bg-pink-100 text-pink-800 mr-2"
@@ -202,7 +171,6 @@ class ReleaseBadges extends Component {
 
     return (
       <div className="max-w-sm break-all inline-block text-sm">
-        {recentBadges}
         {releaseBadges}
       </div>
     )

@@ -12,9 +12,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests, gimletClient, dispatch } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, gimletClient, dispatch);
 
     return (
       <div>
@@ -73,7 +73,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, gimletClient, dispatch) {
   let services = [];
 
   let configsWeHave = [];
@@ -90,7 +90,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
       <ServiceDetail
         key={stack.service.name}
         stack={stack}
-        rolloutHistory={appRolloutHistory(envName, stack.service.name, repoRolloutHistory)}
+        rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
         rollback={rollback}
         envName={envName}
         owner={owner}
@@ -98,6 +98,8 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         fileName={fileName(fileInfos, stack.service.name)}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={configExists}
+        gimletClient={gimletClient}
+        dispatch={dispatch}
       />
     )
   })
@@ -113,7 +115,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
             name: config
           }
         }}
-        rolloutHistory={appRolloutHistory(envName, config, repoRolloutHistory)}
+        rolloutHistory={repoRolloutHistory?.[envName]?.[config]}
         rollback={rollback}
         envName={envName}
         owner={owner}
@@ -121,6 +123,8 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         fileName={fileName(fileInfos, config)}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={true}
+        gimletClient={gimletClient}
+        dispatch={dispatch}
       />
     }
     )
@@ -132,19 +136,6 @@ function fileName(fileInfos, appName) {
   if (fileInfos.find(fileInfo => fileInfo.appName === appName)) {
     return fileInfos.find(fileInfo => fileInfo.appName === appName).fileName;
   }
-}
-
-function appRolloutHistory(envName, appName, repoRolloutHistory) {
-  if (repoRolloutHistory) {
-    let envRolloutHistory = repoRolloutHistory.find(env => env.name === envName)
-
-    if (envRolloutHistory) {
-      let appRolloutHistory = envRolloutHistory.apps.find(app => app.name === appName)
-      return appRolloutHistory
-    }
-  }
-
-  return []
 }
 
 function emptyState(searchFilter, envConfigs, newConfig, envName, repoName) {

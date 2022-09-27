@@ -22,9 +22,10 @@ export class RolloutHistory extends Component {
 
   render() {
     let { env, app, appRolloutHistory, rollback } = this.props;
+
     const { open } = this.state;
 
-    if (!appRolloutHistory || !appRolloutHistory.releases) {
+    if (!appRolloutHistory) {
       return null;
     }
 
@@ -35,9 +36,9 @@ export class RolloutHistory extends Component {
     let currentlyReleasedRef;
     let allPreviousCommitsAreRollbacks = true;
 
-    const releasesCount = appRolloutHistory.releases.length;
+    const releasesCount = appRolloutHistory.length;
     for (let i = releasesCount-1; i >= 0; i--) {
-      const rollout = appRolloutHistory.releases[i];
+      const rollout = appRolloutHistory[i];
       const currentlyReleased = !rollout.rolledBack && allPreviousCommitsAreRollbacks;
       if (currentlyReleased) {
         currentlyReleasedRef = rollout.gitopsRef;
@@ -45,7 +46,7 @@ export class RolloutHistory extends Component {
       }
     }
 
-    appRolloutHistory.releases.forEach((rollout, idx) => {
+    appRolloutHistory.forEach((rollout, idx) => {
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy')
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
