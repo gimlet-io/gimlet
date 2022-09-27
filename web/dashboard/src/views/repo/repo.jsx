@@ -138,20 +138,6 @@ export default class Repo extends Component {
     });
   }
 
-  // componentDidUpdate(prevProps, prevState) {
-  //   if (this.state.connectedAgents !== prevState.connectedAgents) {
-  //     console.log(this.state.connectedAgents)
-  //     for (const envName of Object.keys(this.state.connectedAgents)) {
-  //       const env = this.state.connectedAgents[envName]
-  //       for(const stack of env.stacks) {
-  //         const app = stack.service.name;
-  //         const { owner, repo } = this.props.match.params;
-          
-  //       }
-  //     }
-  //   }
-  // }
-
   refreshBranches(owner, repo) {
     this.props.gimletClient.getBranches(owner, repo)
       .then(data => {
