@@ -20,6 +20,7 @@ function ServiceDetail(props) {
           }
         });
       }, () => {/* Generic error handler deals with it */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
