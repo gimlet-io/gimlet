@@ -193,61 +193,6 @@ type Env struct {
 	Apps []*App `json:"apps"`
 }
 
-func rolloutHistory(w http.ResponseWriter, r *http.Request) {
-	owner := chi.URLParam(r, "owner")
-	name := chi.URLParam(r, "name")
-	repoName := fmt.Sprintf("%s/%s", owner, name)
-	const perAppLimit = 10
-
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-
-	// If GimletD is not set up, throw 404
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("{}"))
-		return
-	}
-
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	envs := gatherEnvsFromAgents(agentHub)
-
-	rolloutHistory := []*Env{}
-	for _, env := range envs {
-		releases, err := getAppReleasesFromGimletD(
-			config.GimletD.URL,
-			config.GimletD.TOKEN,
-			config.ReleaseHistorySinceDays,
-			-1,
-			env.Name,
-			"",
-			repoName,
-		)
-		if err != nil {
-			logrus.Errorf("cannot get releases for git repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		for _, release := range releases {
-			rolloutHistory = insertIntoRolloutHistory(rolloutHistory, release, perAppLimit)
-		}
-	}
-
-	rolloutHistory = orderRolloutHistoryFromAscending(rolloutHistory)
-
-	rolloutHistoryString, err := json.Marshal(rolloutHistory)
-	if err != nil {
-		logrus.Errorf("cannot serialize releases: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(rolloutHistoryString)
-}
-
 func rolloutHistoryPerApp(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	name := chi.URLParam(r, "name")
