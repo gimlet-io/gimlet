@@ -44,9 +44,10 @@ var artifactTrackCmd = cli.Command{
 			Usage:   "Updates the output every five seconds. Runs until Artifact has error, at least one gitops hash has error or every gitops has has succeeded. Cannot use with --output flag",
 		},
 		&cli.StringFlag{
-			Name:    "timeout",
-			Aliases: []string{"t"},
-			Usage:   "Breaks the loop within the given time. Only usable with --wait flag",
+			Name:        "timeout",
+			Aliases:     []string{"t"},
+			Usage:       "Breaks the loop within the given time. Only usable with --wait flag",
+			DefaultText: "10m",
 		},
 	},
 	Action: track,
@@ -59,9 +60,12 @@ func track(c *cli.Context) error {
 	wait := c.Bool("wait")
 	timeoutString := c.String("timeout")
 
-	if timeoutString != "" && !wait {
-		return fmt.Errorf("--wait flag is required with --timeout")
+	var timeoutTime *time.Duration
+	t, err := time.ParseDuration(timeoutString)
+	if err != nil {
+		return err
 	}
+	timeoutTime = &t
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -75,45 +79,32 @@ func track(c *cli.Context) error {
 
 	client := client.NewClient(serverURL, auth)
 
-	if wait {
-		if timeoutString != "" {
-			timeoutTime, err := time.ParseDuration(timeoutString)
-			if err != nil {
-				return err
-			}
+	if !wait {
+		_, err := artifactTrackMessage(client, artifactID, output)
+		return err
+	}
 
-		loop:
-			for timeout := time.After(timeoutTime); ; {
-				select {
-				case <-timeout:
-					break loop
-				default:
-				}
-				artifactStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
-				if err != nil {
-					return err
-				}
-				if (artifactStatus == "error" || hasFailed || everySucceeded) && artifactStatus != "new" {
-					break
-				}
-				time.Sleep(time.Second * 5)
-			}
-		} else {
-			for {
-				artifactStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
-				if err != nil {
-					return err
-				}
-				if (artifactStatus == "error" || hasFailed || everySucceeded) && artifactStatus != "new" {
-					break
-				}
-				time.Sleep(time.Second * 5)
-			}
-		}
-	} else {
-		_, _, _, err := artifactTrackMessage(client, artifactID, output)
+	timeout := time.After(*timeoutTime)
+	for {
+		finished, err := artifactTrackMessage(client, artifactID, output)
 		if err != nil {
 			return err
+		}
+
+		if finished {
+			return nil
+		}
+
+		sleep := time.After(time.Second * 5)
+		timedOut := false
+		select {
+		case <-timeout:
+			timedOut = true
+		case <-sleep:
+		}
+
+		if timedOut {
+			break
 		}
 	}
 
@@ -124,14 +115,15 @@ func artifactTrackMessage(
 	client client.Client,
 	artifactID string,
 	output string,
-) (string, bool, bool, error) {
+) (bool, error) {
 	var artifactResultCount int
 	var failedCount int
 	var succeededCount int
+	finished := false
 
 	artifactStatus, err := client.TrackArtifact(artifactID)
 	if err != nil {
-		return "", false, false, err
+		return finished, err
 	}
 
 	if output == "json" {
@@ -140,12 +132,13 @@ func artifactTrackMessage(
 		e.SetIndent("", "  ")
 		e.Encode(artifactStatus)
 		if err != nil {
-			return "", false, false, fmt.Errorf("cannot deserialize release status %s", err)
+			return finished, fmt.Errorf("cannot deserialize release status %s", err)
 		}
 
 		fmt.Println(jsonString.String())
+		finished = true
 
-		return "", false, true, nil
+		return finished, nil
 	}
 
 	fmt.Printf(
@@ -160,7 +153,7 @@ func artifactTrackMessage(
 		if len(artifactStatus.Results) == 0 {
 			fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
 
-			return "", false, false, nil
+			return finished, nil
 		}
 
 		artifactResultCount = len(artifactStatus.Results)
@@ -181,7 +174,7 @@ func artifactTrackMessage(
 		if len(artifactStatus.GitopsHashes) == 0 {
 			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
 
-			return "", false, false, nil
+			return finished, nil
 		}
 
 		artifactResultCount = len(artifactStatus.GitopsHashes)
@@ -199,5 +192,11 @@ func artifactTrackMessage(
 		}
 	}
 
-	return artifactStatus.Status, failedCount > 0, succeededCount == artifactResultCount, nil
+	if artifactStatus.Status == "error" || failedCount > 0 {
+		err = fmt.Errorf("gitops write failed")
+	} else if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
+		finished = true
+	}
+
+	return finished, err
 }
