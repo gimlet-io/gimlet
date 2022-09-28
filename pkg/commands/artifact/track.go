@@ -43,6 +43,11 @@ var artifactTrackCmd = cli.Command{
 			Aliases: []string{"w"},
 			Usage:   "Updates the output every five seconds. Runs until Artifact has error, at least one gitops hash has error or every gitops has has succeeded. Cannot use with --output flag",
 		},
+		&cli.StringFlag{
+			Name:    "timeout",
+			Aliases: []string{"t"},
+			Usage:   "Breaks the loop within the given time. Only usable with --wait flag",
+		},
 	},
 	Action: track,
 }
@@ -52,6 +57,11 @@ func track(c *cli.Context) error {
 	token := c.String("token")
 	output := c.String("output")
 	wait := c.Bool("wait")
+	timeoutString := c.String("timeout")
+
+	if timeoutString != "" && !wait {
+		return fmt.Errorf("--wait flag is required with --timeout")
+	}
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -66,15 +76,39 @@ func track(c *cli.Context) error {
 	client := client.NewClient(serverURL, auth)
 
 	if wait {
-		for {
-			artifactStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
+		if timeoutString != "" {
+			timeoutTime, err := time.ParseDuration(timeoutString)
 			if err != nil {
 				return err
 			}
-			if (artifactStatus == "error" || hasFailed || everySucceeded) && artifactStatus != "new" {
-				break
+
+		loop:
+			for timeout := time.After(timeoutTime); ; {
+				select {
+				case <-timeout:
+					break loop
+				default:
+				}
+				artifactStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
+				if err != nil {
+					return err
+				}
+				if (artifactStatus == "error" || hasFailed || everySucceeded) && artifactStatus != "new" {
+					break
+				}
+				time.Sleep(time.Second * 5)
 			}
-			time.Sleep(time.Second * 5)
+		} else {
+			for {
+				artifactStatus, hasFailed, everySucceeded, err := artifactTrackMessage(client, artifactID, output)
+				if err != nil {
+					return err
+				}
+				if (artifactStatus == "error" || hasFailed || everySucceeded) && artifactStatus != "new" {
+					break
+				}
+				time.Sleep(time.Second * 5)
+			}
 		}
 	} else {
 		_, _, _, err := artifactTrackMessage(client, artifactID, output)
