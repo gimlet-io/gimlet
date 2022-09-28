@@ -67,17 +67,17 @@ func track(c *cli.Context) error {
 
 	if wait {
 		for {
-			releaseStatus, hasFailed, everySucceeded, err := releaseTrackMessage(client, trackingID, output)
+			finished, err := releaseTrackMessage(client, trackingID, output)
 			if err != nil {
 				return err
 			}
-			if (releaseStatus == "error" || hasFailed || everySucceeded) && releaseStatus != "new" {
+			if finished {
 				break
 			}
 			time.Sleep(time.Second * 5)
 		}
 	} else {
-		_, _, _, err := releaseTrackMessage(client, trackingID, output)
+		_, err := releaseTrackMessage(client, trackingID, output)
 		if err != nil {
 			return err
 		}
@@ -90,14 +90,15 @@ func releaseTrackMessage(
 	client client.Client,
 	trackingID string,
 	output string,
-) (string, bool, bool, error) {
+) (bool, error) {
 	var releaseResultCount int
 	var failedCount int
 	var succeededCount int
+	finished := false
 
 	releaseStatus, err := client.TrackRelease(trackingID)
 	if err != nil {
-		return "", false, false, err
+		return finished, err
 	}
 
 	if output == "json" {
@@ -106,12 +107,13 @@ func releaseTrackMessage(
 		e.SetIndent("", "  ")
 		e.Encode(releaseStatus)
 		if err != nil {
-			return "", false, false, fmt.Errorf("cannot deserialize release status %s", err)
+			return finished, fmt.Errorf("cannot deserialize release status %s", err)
 		}
 
 		fmt.Println(jsonString.String())
+		finished = true
 
-		return "", false, true, nil
+		return finished, nil
 	}
 
 	fmt.Printf(
@@ -126,7 +128,7 @@ func releaseTrackMessage(
 		if len(releaseStatus.Results) == 0 {
 			fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
 
-			return "", false, false, nil
+			return finished, nil
 		}
 
 		releaseResultCount = len(releaseStatus.Results)
@@ -147,7 +149,7 @@ func releaseTrackMessage(
 		if len(releaseStatus.GitopsHashes) == 0 {
 			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
 
-			return "", false, false, nil
+			return finished, nil
 		}
 
 		releaseResultCount = len(releaseStatus.GitopsHashes)
@@ -165,5 +167,11 @@ func releaseTrackMessage(
 		}
 	}
 
-	return releaseStatus.Status, failedCount > 0, succeededCount == releaseResultCount, nil
+	if releaseStatus.Status == "error" || failedCount > 0 {
+		err = fmt.Errorf("gitops write failed")
+	} else if succeededCount == releaseResultCount && releaseStatus.Status != "new" {
+		finished = true
+	}
+
+	return finished, err
 }
