@@ -43,6 +43,12 @@ var releaseTrackCmd = cli.Command{
 			Aliases: []string{"w"},
 			Usage:   "Updates the output every five seconds. Runs until Artifact has error, at least one gitops hash has error or every gitops has has succeeded. Cannot use with --output flag",
 		},
+		&cli.StringFlag{
+			Name:        "timeout",
+			Aliases:     []string{"t"},
+			Usage:       "Breaks the loop within the given time. Only usable with --wait flag",
+			DefaultText: "10m",
+		},
 	},
 	Action: track,
 }
@@ -52,6 +58,14 @@ func track(c *cli.Context) error {
 	token := c.String("token")
 	output := c.String("output")
 	wait := c.Bool("wait")
+	timeoutString := c.String("timeout")
+
+	var timeoutTime *time.Duration
+	t, err := time.ParseDuration(timeoutString)
+	if err != nil {
+		return err
+	}
+	timeoutTime = &t
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -65,21 +79,32 @@ func track(c *cli.Context) error {
 
 	client := client.NewClient(serverURL, auth)
 
-	if wait {
-		for {
-			finished, err := releaseTrackMessage(client, trackingID, output)
-			if err != nil {
-				return err
-			}
-			if finished {
-				break
-			}
-			time.Sleep(time.Second * 5)
-		}
-	} else {
+	if !wait {
 		_, err := releaseTrackMessage(client, trackingID, output)
+		return err
+	}
+
+	timeout := time.After(*timeoutTime)
+	for {
+		finished, err := releaseTrackMessage(client, trackingID, output)
 		if err != nil {
 			return err
+		}
+
+		if finished {
+			return nil
+		}
+
+		sleep := time.After(time.Second * 5)
+		timedOut := false
+		select {
+		case <-timeout:
+			timedOut = true
+		case <-sleep:
+		}
+
+		if timedOut {
+			break
 		}
 	}
 
