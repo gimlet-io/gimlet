@@ -9,6 +9,7 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -44,10 +45,10 @@ var artifactTrackCmd = cli.Command{
 			Usage:   "Updates the output every five seconds. Runs until Artifact has error, at least one gitops hash has error or every gitops has has succeeded. Cannot use with --output flag",
 		},
 		&cli.StringFlag{
-			Name:        "timeout",
-			Aliases:     []string{"t"},
-			Usage:       "Breaks the loop within the given time. Only usable with --wait flag",
-			DefaultText: "10m",
+			Name:    "timeout",
+			Aliases: []string{"t"},
+			Usage:   "Breaks the loop within the given time. Only usable with --wait flag",
+			Value:   "10m",
 		},
 	},
 	Action: track,
@@ -79,19 +80,115 @@ func track(c *cli.Context) error {
 
 	client := client.NewClient(serverURL, auth)
 
-	if !wait {
-		_, err := artifactTrackMessage(client, artifactID, output)
-		return err
-	}
-
-	timeout := time.After(*timeoutTime)
-	for {
-		finished, err := artifactTrackMessage(client, artifactID, output)
+	if output == "json" {
+		artifactStatus, err := client.TrackArtifact(artifactID)
 		if err != nil {
 			return err
 		}
 
-		if finished {
+		jsonString := bytes.NewBufferString("")
+		e := json.NewEncoder(jsonString)
+		e.SetIndent("", "  ")
+		e.Encode(artifactStatus)
+		if err != nil {
+			return fmt.Errorf("cannot deserialize release status %s", err)
+		}
+
+		fmt.Println(jsonString)
+
+		return nil
+	}
+
+	if !wait {
+		artifactStatus, err := client.TrackArtifact(artifactID)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf(
+			"%v Request (%s) is %s %s\n",
+			emoji.BackhandIndexPointingRight,
+			artifactID,
+			artifactStatus.Status,
+			artifactStatus.StatusDesc,
+		)
+
+		if artifactStatus.Results != nil {
+			if len(artifactStatus.Results) == 0 {
+				fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
+			}
+
+			for _, result := range artifactStatus.Results {
+				if strings.Contains(result.GitopsCommitStatus, "Failed") {
+					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+				} else {
+					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
+				}
+			}
+			return nil
+		}
+
+		if len(artifactStatus.GitopsHashes) == 0 {
+			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
+		}
+
+		for _, gitopsHash := range artifactStatus.GitopsHashes {
+			if strings.Contains(gitopsHash.Status, "Failed") {
+				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
+			} else {
+				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
+			}
+		}
+
+		return nil
+	}
+
+	timeout := time.After(*timeoutTime)
+	for {
+		artifactStatus, err := client.TrackArtifact(artifactID)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf(
+			"%v Request (%s) is %s %s\n",
+			emoji.BackhandIndexPointingRight,
+			artifactID,
+			artifactStatus.Status,
+			artifactStatus.StatusDesc,
+		)
+
+		if artifactStatus.Results != nil {
+			if len(artifactStatus.Results) == 0 {
+				fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
+			}
+
+			for _, result := range artifactStatus.Results {
+				if strings.Contains(result.GitopsCommitStatus, "Failed") {
+					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+				} else {
+					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
+				}
+			}
+		} else {
+			if len(artifactStatus.GitopsHashes) == 0 {
+				fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
+			}
+
+			for _, gitopsHash := range artifactStatus.GitopsHashes {
+				if strings.Contains(gitopsHash.Status, "Failed") {
+					fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
+				} else {
+					fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
+				}
+			}
+		}
+
+		statusError, everySucceeded, hasFailed := processArtifactStatus(*artifactStatus)
+
+		if statusError || hasFailed {
+			return fmt.Errorf(artifactStatus.StatusDesc)
+		} else if everySucceeded {
 			return nil
 		}
 
@@ -111,92 +208,57 @@ func track(c *cli.Context) error {
 	return nil
 }
 
-func artifactTrackMessage(
-	client client.Client,
-	artifactID string,
-	output string,
-) (bool, error) {
+func processArtifactStatus(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
 	var artifactResultCount int
 	var failedCount int
 	var succeededCount int
-	finished := false
+	var statusError bool
+	var everySucceeded bool
+	var hasFailed bool
 
-	artifactStatus, err := client.TrackArtifact(artifactID)
-	if err != nil {
-		return finished, err
+	if artifactStatus.Status == "error" {
+		statusError = true
 	}
-
-	if output == "json" {
-		jsonString := bytes.NewBufferString("")
-		e := json.NewEncoder(jsonString)
-		e.SetIndent("", "  ")
-		e.Encode(artifactStatus)
-		if err != nil {
-			return finished, fmt.Errorf("cannot deserialize release status %s", err)
-		}
-
-		fmt.Println(jsonString.String())
-		finished = true
-
-		return finished, nil
-	}
-
-	fmt.Printf(
-		"%v Request (%s) is %s %s\n",
-		emoji.BackhandIndexPointingRight,
-		artifactID,
-		artifactStatus.Status,
-		artifactStatus.StatusDesc,
-	)
 
 	if artifactStatus.Results != nil {
-		if len(artifactStatus.Results) == 0 {
-			fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
-
-			return finished, nil
-		}
-
 		artifactResultCount = len(artifactStatus.Results)
 
 		for _, result := range artifactStatus.Results {
 			if strings.Contains(result.GitopsCommitStatus, "Failed") {
 				failedCount++
-				fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
-			} else {
-				if result.GitopsCommitStatus == model.ReconciliationSucceeded {
-					succeededCount++
-				}
-
-				fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
+			} else if result.GitopsCommitStatus == model.ReconciliationSucceeded {
+				succeededCount++
 			}
 		}
-	} else {
-		if len(artifactStatus.GitopsHashes) == 0 {
-			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
 
-			return finished, nil
+		if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
+			everySucceeded = true
 		}
 
-		artifactResultCount = len(artifactStatus.GitopsHashes)
+		if failedCount > 0 {
+			hasFailed = true
+		}
 
-		for _, gitopsHash := range artifactStatus.GitopsHashes {
-			if strings.Contains(gitopsHash.Status, "Failed") {
-				failedCount++
-				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
-			} else {
-				if gitopsHash.Status == model.ReconciliationSucceeded {
-					succeededCount++
-				}
-				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
-			}
+		return statusError, everySucceeded, hasFailed
+	}
+
+	artifactResultCount = len(artifactStatus.GitopsHashes)
+
+	for _, gitopsHash := range artifactStatus.GitopsHashes {
+		if strings.Contains(gitopsHash.Status, "Failed") {
+			failedCount++
+		} else if gitopsHash.Status == model.ReconciliationSucceeded {
+			succeededCount++
 		}
 	}
 
-	if artifactStatus.Status == "error" || failedCount > 0 {
-		err = fmt.Errorf("gitops write failed")
-	} else if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
-		finished = true
+	if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
+		everySucceeded = true
 	}
 
-	return finished, err
+	if failedCount > 0 {
+		hasFailed = true
+	}
+
+	return statusError, everySucceeded, hasFailed
 }

@@ -6,6 +6,7 @@ require (
 	cuelang.org/go v0.4.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/MichaelMure/go-term-markdown v0.1.4
+	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
@@ -89,6 +90,8 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20220824120805-4b6e5c587895 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/alecthomas/chroma v0.7.1 // indirect
+	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
+	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.2 // indirect
