@@ -17,7 +17,7 @@ WORKDIR /gimlet-dashboard
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
-COPY --chown=gimlet-dashboard:gimlet-dashboard bin/gimlet-dashboard-${TARGETPLATFORM//\//-} gimlet-dashboard
+COPY --chown=gimlet-dashboard:gimlet-dashboard bin/${TARGETPLATFORM}/gimlet-dashboard gimlet-dashboard
 COPY --chown=gimlet-dashboard:gimlet-dashboard web/dashboard/build ./web/build/
 
 USER gimlet-dashboard
