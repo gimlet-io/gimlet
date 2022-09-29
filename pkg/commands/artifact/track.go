@@ -37,17 +37,17 @@ var artifactTrackCmd = cli.Command{
 		&cli.StringFlag{
 			Name:    "output",
 			Aliases: []string{"o"},
-			Usage:   "Output format. Cannot use with --wait flag",
+			Usage:   "Format the output as json with the \"-o json\" switch",
 		},
 		&cli.BoolFlag{
 			Name:    "wait",
 			Aliases: []string{"w"},
-			Usage:   "Updates the output every five seconds. Runs until Artifact has error, at least one gitops hash has error or every gitops has has succeeded. Cannot use with --output flag",
+			Usage:   "Wait until the artifact is processed",
 		},
 		&cli.StringFlag{
 			Name:    "timeout",
 			Aliases: []string{"t"},
-			Usage:   "Breaks the loop within the given time. Only usable with --wait flag",
+			Usage:   "If you specified the wait flag, the wait will time out by this specified value. The default is 10m (minutes)",
 			Value:   "10m",
 		},
 	},
@@ -115,72 +115,71 @@ func track(c *cli.Context) error {
 			artifactStatus.StatusDesc,
 		)
 
+		if artifactStatus.Status == model.StatusNew {
+			fmt.Printf("\t%v The artifact is not processed yet...\n", emoji.HourglassNotDone)
+		} else if artifactStatus.Status == model.StatusError {
+			return fmt.Errorf(artifactStatus.StatusDesc)
+		}
+
 		if artifactStatus.Results != nil {
 			if len(artifactStatus.Results) == 0 {
-				fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
+				fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
+				return nil
 			}
 
 			for _, result := range artifactStatus.Results {
 				if strings.Contains(result.GitopsCommitStatus, "Failed") {
 					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", result.StatusDesc))
-					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+					fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 				} else {
-					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
+					fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
 				}
 			}
 		} else {
 			if len(artifactStatus.GitopsHashes) == 0 {
-				fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
+				fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
+				return nil
 			}
 
 			for _, gitopsHash := range artifactStatus.GitopsHashes {
 				if strings.Contains(gitopsHash.Status, "Failed") {
 					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", gitopsHash.StatusDesc))
-					fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
+					fmt.Printf("\t%v Gitops hash %s status is %s, %s\n", emoji.ExclamationMark, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 				} else {
-					fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
+					fmt.Printf("\t%v Gitops hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
 				}
 			}
 		}
 
-		artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(*artifactStatus)
+		everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(*artifactStatus)
 
-		if artifactProcessingError {
-			return fmt.Errorf(artifactStatus.StatusDesc)
-		} else if gitopsCommitsHaveFailed {
+		if gitopsCommitsHaveFailed {
 			return fmt.Errorf(gitopsCommitsStatusDesc.String())
 		} else if everythingSucceeded {
 			return nil
 		}
 
+		if !wait {
+			break
+		}
+
 		sleep := time.After(time.Second * 5)
 		select {
 		case <-timeout:
-			return fmt.Errorf("process timed out")
+			return fmt.Errorf("wait timed timed out")
 		case <-sleep:
-		}
-
-		if !wait {
-			break
 		}
 	}
 
 	return nil
 }
 
-func ExtractEndState(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
+func ExtractEndState(artifactStatus dx.ReleaseStatus) (bool, bool) {
 	var artifactResultCount int
 	var failedCount int
 	var succeededCount int
-	var artifactProcessingError bool
 	var everythingSucceeded bool
 	var gitopsCommitsHaveFailed bool
-
-	if artifactStatus.Status == "error" {
-		artifactProcessingError = true
-
-		return artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed
-	}
 
 	if artifactStatus.Results != nil {
 		artifactResultCount = len(artifactStatus.Results)
@@ -201,7 +200,7 @@ func ExtractEndState(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
 			gitopsCommitsHaveFailed = true
 		}
 
-		return artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed
+		return everythingSucceeded, gitopsCommitsHaveFailed
 	}
 
 	artifactResultCount = len(artifactStatus.GitopsHashes)
@@ -222,5 +221,5 @@ func ExtractEndState(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
 		gitopsCommitsHaveFailed = true
 	}
 
-	return artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed
+	return everythingSucceeded, gitopsCommitsHaveFailed
 }

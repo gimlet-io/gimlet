@@ -15,9 +15,8 @@ func Test_extractEndStateIfReleaseStatusNew(t *testing.T) {
 		Results:      []dx.Result{},
 	}
 
-	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, artifactProcessingError, false)
 	assert.Equal(t, everythingSucceeded, false)
 	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
@@ -30,9 +29,8 @@ func Test_extractEndStateIfReleaseStatusFailed(t *testing.T) {
 		Results:      []dx.Result{},
 	}
 
-	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, artifactProcessingError, true)
 	assert.Equal(t, everythingSucceeded, false)
 	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
@@ -67,9 +65,8 @@ func Test_extractEndStateIfGitopsCommitFailed(t *testing.T) {
 		},
 	}
 
-	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, artifactProcessingError, false)
 	assert.Equal(t, everythingSucceeded, false)
 	assert.Equal(t, gitopsCommitsHaveFailed, true)
 }
@@ -104,9 +101,8 @@ func Test_extractEndStateIfGitopsCommitsSucceeded(t *testing.T) {
 		},
 	}
 
-	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, artifactProcessingError, false)
 	assert.Equal(t, everythingSucceeded, true)
 	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
