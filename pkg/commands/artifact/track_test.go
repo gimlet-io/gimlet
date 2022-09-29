@@ -7,7 +7,7 @@ import (
 	"gotest.tools/assert"
 )
 
-func Test_processArifactStatusNew(t *testing.T) {
+func Test_extractEndStateIfReleaseStatusNew(t *testing.T) {
 	testReleaseStatus := dx.ReleaseStatus{
 		Status:       "new",
 		StatusDesc:   "",
@@ -15,14 +15,14 @@ func Test_processArifactStatusNew(t *testing.T) {
 		Results:      []dx.Result{},
 	}
 
-	statusError, everySucceeded, hasFailed := processArtifactStatus(testReleaseStatus)
+	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, statusError, false)
-	assert.Equal(t, everySucceeded, false)
-	assert.Equal(t, hasFailed, false)
+	assert.Equal(t, artifactProcessingError, false)
+	assert.Equal(t, everythingSucceeded, false)
+	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
 
-func Test_processArifactStatusError(t *testing.T) {
+func Test_extractEndStateIfReleaseStatusFailed(t *testing.T) {
 	testReleaseStatus := dx.ReleaseStatus{
 		Status:       "error",
 		StatusDesc:   "",
@@ -30,14 +30,14 @@ func Test_processArifactStatusError(t *testing.T) {
 		Results:      []dx.Result{},
 	}
 
-	statusError, everySucceeded, hasFailed := processArtifactStatus(testReleaseStatus)
+	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, statusError, true)
-	assert.Equal(t, everySucceeded, false)
-	assert.Equal(t, hasFailed, false)
+	assert.Equal(t, artifactProcessingError, true)
+	assert.Equal(t, everythingSucceeded, false)
+	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
 
-func Test_processArifactStatusGitopsCommitFailed(t *testing.T) {
+func Test_extractEndStateIfGitopsCommitFailed(t *testing.T) {
 	testReleaseStatus := dx.ReleaseStatus{
 		Status:     "processed",
 		StatusDesc: "",
@@ -67,14 +67,14 @@ func Test_processArifactStatusGitopsCommitFailed(t *testing.T) {
 		},
 	}
 
-	statusError, everySucceeded, hasFailed := processArtifactStatus(testReleaseStatus)
+	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, statusError, false)
-	assert.Equal(t, everySucceeded, false)
-	assert.Equal(t, hasFailed, true)
+	assert.Equal(t, artifactProcessingError, false)
+	assert.Equal(t, everythingSucceeded, false)
+	assert.Equal(t, gitopsCommitsHaveFailed, true)
 }
 
-func Test_processArifactStatusGitopsCommitsSucceeded(t *testing.T) {
+func Test_extractEndStateIfGitopsCommitsSucceeded(t *testing.T) {
 	testReleaseStatus := dx.ReleaseStatus{
 		Status:     "processed",
 		StatusDesc: "",
@@ -104,9 +104,9 @@ func Test_processArifactStatusGitopsCommitsSucceeded(t *testing.T) {
 		},
 	}
 
-	statusError, everySucceeded, hasFailed := processArtifactStatus(testReleaseStatus)
+	artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
 
-	assert.Equal(t, statusError, false)
-	assert.Equal(t, everySucceeded, true)
-	assert.Equal(t, hasFailed, false)
+	assert.Equal(t, artifactProcessingError, false)
+	assert.Equal(t, everythingSucceeded, true)
+	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
