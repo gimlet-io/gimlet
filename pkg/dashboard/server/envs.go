@@ -53,6 +53,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	config := ctx.Value("config").(*config.Config)
+	user := ctx.Value("user").(*model.User)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
 	env, err := db.GetEnvironment(req.Env)
@@ -148,7 +149,9 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Infrastructure components change on %s", env.Name), "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch,
+		fmt.Sprintf("[Gimlet Dashboard] Infrastructure components change on %s", env.Name),
+		fmt.Sprintf("@%s created this PR for %s on %s", user.Login, env.InfraRepo, env.Name))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
