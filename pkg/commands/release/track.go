@@ -9,8 +9,7 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
@@ -99,50 +98,7 @@ func track(c *cli.Context) error {
 		return nil
 	}
 
-	if !wait {
-		releaseStatus, err := client.TrackRelease(trackingID)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf(
-			"%v Request (%s) is %s %s\n",
-			emoji.BackhandIndexPointingRight,
-			trackingID,
-			releaseStatus.Status,
-			releaseStatus.StatusDesc,
-		)
-
-		if releaseStatus.Results != nil {
-			if len(releaseStatus.Results) == 0 {
-				fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
-			}
-
-			for _, result := range releaseStatus.Results {
-				if strings.Contains(result.GitopsCommitStatus, "Failed") {
-					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
-				} else {
-					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
-				}
-			}
-			return nil
-		}
-
-		if len(releaseStatus.GitopsHashes) == 0 {
-			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
-		}
-
-		for _, gitopsHash := range releaseStatus.GitopsHashes {
-			if strings.Contains(gitopsHash.Status, "Failed") {
-				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
-			} else {
-				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
-			}
-		}
-
-		return nil
-	}
-
+	var gitopsCommitsStatusDesc strings.Builder
 	timeout := time.After(*timeoutTime)
 	for {
 		releaseStatus, err := client.TrackRelease(trackingID)
@@ -165,6 +121,7 @@ func track(c *cli.Context) error {
 
 			for _, result := range releaseStatus.Results {
 				if strings.Contains(result.GitopsCommitStatus, "Failed") {
+					gitopsCommitsStatusDesc.WriteString(result.StatusDesc + "\n")
 					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 				} else {
 					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
@@ -177,6 +134,7 @@ func track(c *cli.Context) error {
 
 			for _, gitopsHash := range releaseStatus.GitopsHashes {
 				if strings.Contains(gitopsHash.Status, "Failed") {
+					gitopsCommitsStatusDesc.WriteString(gitopsHash.StatusDesc + "\n")
 					fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 				} else {
 					fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
@@ -184,11 +142,13 @@ func track(c *cli.Context) error {
 			}
 		}
 
-		statusError, everySucceeded, hasFailed := processReleaseStatus(*releaseStatus)
+		artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := artifact.ExtractEndState(*releaseStatus)
 
-		if statusError || hasFailed {
+		if artifactProcessingError {
 			return fmt.Errorf(releaseStatus.StatusDesc)
-		} else if everySucceeded {
+		} else if gitopsCommitsHaveFailed {
+			return fmt.Errorf(gitopsCommitsStatusDesc.String())
+		} else if everythingSucceeded {
 			return nil
 		}
 
@@ -200,65 +160,10 @@ func track(c *cli.Context) error {
 		case <-sleep:
 		}
 
-		if timedOut {
+		if timedOut || !wait {
 			break
 		}
 	}
 
 	return nil
-}
-
-func processReleaseStatus(releaseStatus dx.ReleaseStatus) (bool, bool, bool) {
-	var releaseResultCount int
-	var failedCount int
-	var succeededCount int
-	var statusError bool
-	var everySucceeded bool
-	var hasFailed bool
-
-	if releaseStatus.Status == "error" {
-		statusError = true
-	}
-
-	if releaseStatus.Results != nil {
-		releaseResultCount = len(releaseStatus.Results)
-
-		for _, result := range releaseStatus.Results {
-			if strings.Contains(result.GitopsCommitStatus, "Failed") {
-				failedCount++
-			} else if result.GitopsCommitStatus == model.ReconciliationSucceeded {
-				succeededCount++
-			}
-		}
-
-		if succeededCount == releaseResultCount && releaseStatus.Status != "new" {
-			everySucceeded = true
-		}
-
-		if failedCount > 0 {
-			hasFailed = true
-		}
-
-		return statusError, everySucceeded, hasFailed
-	}
-
-	releaseResultCount = len(releaseStatus.GitopsHashes)
-
-	for _, gitopsHash := range releaseStatus.GitopsHashes {
-		if strings.Contains(gitopsHash.Status, "Failed") {
-			failedCount++
-		} else if gitopsHash.Status == model.ReconciliationSucceeded {
-			succeededCount++
-		}
-	}
-
-	if succeededCount == releaseResultCount && releaseStatus.Status != "new" {
-		everySucceeded = true
-	}
-
-	if failedCount > 0 {
-		hasFailed = true
-	}
-
-	return statusError, everySucceeded, hasFailed
 }

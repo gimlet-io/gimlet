@@ -99,50 +99,7 @@ func track(c *cli.Context) error {
 		return nil
 	}
 
-	if !wait {
-		artifactStatus, err := client.TrackArtifact(artifactID)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf(
-			"%v Request (%s) is %s %s\n",
-			emoji.BackhandIndexPointingRight,
-			artifactID,
-			artifactStatus.Status,
-			artifactStatus.StatusDesc,
-		)
-
-		if artifactStatus.Results != nil {
-			if len(artifactStatus.Results) == 0 {
-				fmt.Printf("\t%v This release don't have any results\n", emoji.Bookmark)
-			}
-
-			for _, result := range artifactStatus.Results {
-				if strings.Contains(result.GitopsCommitStatus, "Failed") {
-					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
-				} else {
-					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
-				}
-			}
-			return nil
-		}
-
-		if len(artifactStatus.GitopsHashes) == 0 {
-			fmt.Printf("\t%v This release don't have any gitops hashes\n", emoji.Bookmark)
-		}
-
-		for _, gitopsHash := range artifactStatus.GitopsHashes {
-			if strings.Contains(gitopsHash.Status, "Failed") {
-				fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
-			} else {
-				fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
-			}
-		}
-
-		return nil
-	}
-
+	var gitopsCommitsStatusDesc strings.Builder
 	timeout := time.After(*timeoutTime)
 	for {
 		artifactStatus, err := client.TrackArtifact(artifactID)
@@ -165,6 +122,7 @@ func track(c *cli.Context) error {
 
 			for _, result := range artifactStatus.Results {
 				if strings.Contains(result.GitopsCommitStatus, "Failed") {
+					gitopsCommitsStatusDesc.WriteString(result.StatusDesc + "\n")
 					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 				} else {
 					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
@@ -177,6 +135,7 @@ func track(c *cli.Context) error {
 
 			for _, gitopsHash := range artifactStatus.GitopsHashes {
 				if strings.Contains(gitopsHash.Status, "Failed") {
+					gitopsCommitsStatusDesc.WriteString(gitopsHash.StatusDesc + "\n")
 					fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 				} else {
 					fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
@@ -184,11 +143,13 @@ func track(c *cli.Context) error {
 			}
 		}
 
-		statusError, everySucceeded, hasFailed := processArtifactStatus(*artifactStatus)
+		artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(*artifactStatus)
 
-		if statusError || hasFailed {
+		if artifactProcessingError {
 			return fmt.Errorf(artifactStatus.StatusDesc)
-		} else if everySucceeded {
+		} else if gitopsCommitsHaveFailed {
+			return fmt.Errorf(gitopsCommitsStatusDesc.String())
+		} else if everythingSucceeded {
 			return nil
 		}
 
@@ -200,7 +161,7 @@ func track(c *cli.Context) error {
 		case <-sleep:
 		}
 
-		if timedOut {
+		if timedOut || !wait {
 			break
 		}
 	}
@@ -208,16 +169,18 @@ func track(c *cli.Context) error {
 	return nil
 }
 
-func processArtifactStatus(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
+func ExtractEndState(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
 	var artifactResultCount int
 	var failedCount int
 	var succeededCount int
-	var statusError bool
-	var everySucceeded bool
-	var hasFailed bool
+	var artifactProcessingError bool
+	var everythingSucceeded bool
+	var gitopsCommitsHaveFailed bool
 
 	if artifactStatus.Status == "error" {
-		statusError = true
+		artifactProcessingError = true
+
+		return artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed
 	}
 
 	if artifactStatus.Results != nil {
@@ -232,14 +195,14 @@ func processArtifactStatus(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
 		}
 
 		if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
-			everySucceeded = true
+			everythingSucceeded = true
 		}
 
 		if failedCount > 0 {
-			hasFailed = true
+			gitopsCommitsHaveFailed = true
 		}
 
-		return statusError, everySucceeded, hasFailed
+		return artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed
 	}
 
 	artifactResultCount = len(artifactStatus.GitopsHashes)
@@ -253,12 +216,12 @@ func processArtifactStatus(artifactStatus dx.ReleaseStatus) (bool, bool, bool) {
 	}
 
 	if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
-		everySucceeded = true
+		everythingSucceeded = true
 	}
 
 	if failedCount > 0 {
-		hasFailed = true
+		gitopsCommitsHaveFailed = true
 	}
 
-	return statusError, everySucceeded, hasFailed
+	return artifactProcessingError, everythingSucceeded, gitopsCommitsHaveFailed
 }
