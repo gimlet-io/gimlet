@@ -122,7 +122,7 @@ func track(c *cli.Context) error {
 
 			for _, result := range artifactStatus.Results {
 				if strings.Contains(result.GitopsCommitStatus, "Failed") {
-					gitopsCommitsStatusDesc.WriteString(result.StatusDesc + "\n")
+					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", result.StatusDesc))
 					fmt.Printf("\t%v App %s on %s hash %s status is %s, %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 				} else {
 					fmt.Printf("\t%v App %s on %s hash %s status is %s\n", emoji.Pager, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
@@ -135,7 +135,7 @@ func track(c *cli.Context) error {
 
 			for _, gitopsHash := range artifactStatus.GitopsHashes {
 				if strings.Contains(gitopsHash.Status, "Failed") {
-					gitopsCommitsStatusDesc.WriteString(gitopsHash.StatusDesc + "\n")
+					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", gitopsHash.StatusDesc))
 					fmt.Printf("\t%v Hash %s status is %s, %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 				} else {
 					fmt.Printf("\t%v Hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
