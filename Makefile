@@ -50,11 +50,15 @@ build-installer:
 
 dist-gimletd:
 	mkdir -p bin
-	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimletd-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/gimletd
+	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimletd-linux-amd64 github.com/gimlet-io/gimlet-cli/cmd/gimletd
+	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimletd-linux-arm64 github.com/gimlet-io/gimlet-cli/cmd/dashboard
 dist-dashboard:
 	mkdir -p bin
-	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-dashboard-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/dashboard
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-agent-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/agent
+	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-dashboard-linux-amd64 github.com/gimlet-io/gimlet-cli/cmd/dashboard
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-agent-linux-amd64 github.com/gimlet-io/gimlet-cli/cmd/agent
+
+	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-dashboard-linux-arm64 github.com/gimlet-io/gimlet-cli/cmd/dashboard
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-agent-linux-arm64 github.com/gimlet-io/gimlet-cli/cmd/agent
 dist-cli:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli

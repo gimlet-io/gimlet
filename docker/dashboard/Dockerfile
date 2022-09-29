@@ -1,9 +1,5 @@
 FROM --platform=$BUILDPLATFORM alpine:3.16
 
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
-
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
@@ -18,7 +14,10 @@ ADD docker/dashboard/known_hosts /etc/ssh/ssh_known_hosts
 RUN mkdir /var/lib/gimlet-dashboard
 WORKDIR /gimlet-dashboard
 
-COPY --chown=gimlet-dashboard:gimlet-dashboard bin/gimlet-dashboard-linux-x86_64 gimlet-dashboard
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+COPY --chown=gimlet-dashboard:gimlet-dashboard bin/gimlet-dashboard-${TARGETPLATFORM//\//-} gimlet-dashboard
 COPY --chown=gimlet-dashboard:gimlet-dashboard web/dashboard/build ./web/build/
 
 USER gimlet-dashboard
