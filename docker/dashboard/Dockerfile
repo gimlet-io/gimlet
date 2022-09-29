@@ -1,5 +1,7 @@
 FROM --platform=$BUILDPLATFORM alpine:3.16
 
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 RUN apk update && apk upgrade && \
