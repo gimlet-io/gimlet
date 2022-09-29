@@ -153,14 +153,13 @@ func track(c *cli.Context) error {
 		}
 
 		sleep := time.After(time.Second * 5)
-		timedOut := false
 		select {
 		case <-timeout:
-			timedOut = true
+			return fmt.Errorf("process timed out")
 		case <-sleep:
 		}
 
-		if timedOut || !wait {
+		if !wait {
 			break
 		}
 	}
