@@ -9,7 +9,6 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -151,11 +150,11 @@ func track(c *cli.Context) error {
 			}
 		}
 
-		everythingSucceeded, gitopsCommitsHaveFailed := artifact.ExtractEndState(*releaseStatus)
+		allGitopsCommitsApplied, gitopsCommitsHaveFailed := releaseStatus.ExtractGitopsEndState()
 
 		if gitopsCommitsHaveFailed {
 			return fmt.Errorf(gitopsCommitsStatusDesc.String())
-		} else if everythingSucceeded {
+		} else if allGitopsCommitsApplied {
 			return nil
 		}
 

@@ -9,7 +9,6 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -151,11 +150,11 @@ func track(c *cli.Context) error {
 			}
 		}
 
-		everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(*artifactStatus)
+		allGitopsCommitsApplied, gitopsCommitsHaveFailed := artifactStatus.ExtractGitopsEndState()
 
 		if gitopsCommitsHaveFailed {
 			return fmt.Errorf(gitopsCommitsStatusDesc.String())
-		} else if everythingSucceeded {
+		} else if allGitopsCommitsApplied {
 			return nil
 		}
 
@@ -172,54 +171,4 @@ func track(c *cli.Context) error {
 	}
 
 	return nil
-}
-
-func ExtractEndState(artifactStatus dx.ReleaseStatus) (bool, bool) {
-	var artifactResultCount int
-	var failedCount int
-	var succeededCount int
-	var everythingSucceeded bool
-	var gitopsCommitsHaveFailed bool
-
-	if artifactStatus.Results != nil {
-		artifactResultCount = len(artifactStatus.Results)
-
-		for _, result := range artifactStatus.Results {
-			if strings.Contains(result.GitopsCommitStatus, "Failed") {
-				failedCount++
-			} else if result.GitopsCommitStatus == model.ReconciliationSucceeded {
-				succeededCount++
-			}
-		}
-
-		if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
-			everythingSucceeded = true
-		}
-
-		if failedCount > 0 {
-			gitopsCommitsHaveFailed = true
-		}
-
-		return everythingSucceeded, gitopsCommitsHaveFailed
-	}
-
-	artifactResultCount = len(artifactStatus.GitopsHashes)
-
-	for _, gitopsHash := range artifactStatus.GitopsHashes {
-		if strings.Contains(gitopsHash.Status, "Failed") {
-			failedCount++
-		} else if gitopsHash.Status == model.ReconciliationSucceeded {
-			succeededCount++
-		}
-	}
-
-	if succeededCount == artifactResultCount && artifactStatus.Status != "new" {
-		everythingSucceeded = true
-	}
-
-	if failedCount > 0 {
-		gitopsCommitsHaveFailed = true
-	}
-
-	return everythingSucceeded, gitopsCommitsHaveFailed
 }

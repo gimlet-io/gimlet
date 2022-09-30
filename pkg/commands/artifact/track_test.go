@@ -7,31 +7,17 @@ import (
 	"gotest.tools/assert"
 )
 
-func Test_extractEndStateIfReleaseStatusNew(t *testing.T) {
+func Test_extractEndStateWithNoGitopsComimt(t *testing.T) {
 	testReleaseStatus := dx.ReleaseStatus{
-		Status:       "new",
+		Status:       "does not matter, the method checks the gitops commits only",
 		StatusDesc:   "",
 		GitopsHashes: []dx.GitopsStatus{},
 		Results:      []dx.Result{},
 	}
 
-	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := testReleaseStatus.ExtractGitopsEndState()
 
-	assert.Equal(t, everythingSucceeded, false)
-	assert.Equal(t, gitopsCommitsHaveFailed, false)
-}
-
-func Test_extractEndStateIfReleaseStatusFailed(t *testing.T) {
-	testReleaseStatus := dx.ReleaseStatus{
-		Status:       "error",
-		StatusDesc:   "",
-		GitopsHashes: []dx.GitopsStatus{},
-		Results:      []dx.Result{},
-	}
-
-	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
-
-	assert.Equal(t, everythingSucceeded, false)
+	assert.Equal(t, everythingSucceeded, true)
 	assert.Equal(t, gitopsCommitsHaveFailed, false)
 }
 
@@ -65,7 +51,7 @@ func Test_extractEndStateIfGitopsCommitFailed(t *testing.T) {
 		},
 	}
 
-	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := testReleaseStatus.ExtractGitopsEndState()
 
 	assert.Equal(t, everythingSucceeded, false)
 	assert.Equal(t, gitopsCommitsHaveFailed, true)
@@ -101,7 +87,7 @@ func Test_extractEndStateIfGitopsCommitsSucceeded(t *testing.T) {
 		},
 	}
 
-	everythingSucceeded, gitopsCommitsHaveFailed := ExtractEndState(testReleaseStatus)
+	everythingSucceeded, gitopsCommitsHaveFailed := testReleaseStatus.ExtractGitopsEndState()
 
 	assert.Equal(t, everythingSucceeded, true)
 	assert.Equal(t, gitopsCommitsHaveFailed, false)
