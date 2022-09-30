@@ -3,6 +3,8 @@
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/gimlet-io/gimlet-cli)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gimlet-io/gimlet-cli)](https://goreportcard.com/report/github.com/gimlet-io/gimlet-cli)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Roadmap](https://img.shields.io/badge/roadmap-gimlet-blue)](https://github.com/orgs/gimlet-io/projects/1/views/2)
+[![Milestones](https://img.shields.io/badge/milestones-gimlet-blue)](https://github.com/gimlet-io/gimlet/milestones)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/gimlet-io/gimlet-documentation/blob/main/public/logo-dark.svg">
