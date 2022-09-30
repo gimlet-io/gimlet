@@ -495,7 +495,7 @@ func deployStatus(w http.ResponseWriter, r *http.Request) {
 	)
 	client := client.NewClient(config.GimletD.URL, auth)
 
-	releaseStatus, err := client.TrackGet(trackingId)
+	releaseStatus, err := client.TrackRelease(trackingId)
 	if err != nil {
 		logrus.Errorf("cannot get deployStatus: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

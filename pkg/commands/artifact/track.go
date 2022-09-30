@@ -1,4 +1,4 @@
-package release
+package artifact
 
 import (
 	"bytes"
@@ -14,10 +14,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var releaseTrackCmd = cli.Command{
+var artifactTrackCmd = cli.Command{
 	Name:  "track",
-	Usage: "Track rollback and release requests",
-	UsageText: `gimlet release track <id>
+	Usage: "Track artifact from release requests",
+	UsageText: `gimlet artifact track <artifact_id>
      --server http://gimletd.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
@@ -75,12 +75,12 @@ func track(c *cli.Context) error {
 		},
 	)
 
-	trackingID := c.Args().First()
+	artifactID := c.Args().First()
 
 	client := client.NewClient(serverURL, auth)
 
 	if output == "json" {
-		releaseStatus, err := client.TrackRelease(trackingID)
+		artifactStatus, err := client.TrackArtifact(artifactID)
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func track(c *cli.Context) error {
 		jsonString := bytes.NewBufferString("")
 		e := json.NewEncoder(jsonString)
 		e.SetIndent("", "  ")
-		e.Encode(releaseStatus)
+		e.Encode(artifactStatus)
 		if err != nil {
 			return fmt.Errorf("cannot deserialize release status %s", err)
 		}
@@ -101,7 +101,7 @@ func track(c *cli.Context) error {
 	var gitopsCommitsStatusDesc strings.Builder
 	timeout := time.After(*timeoutTime)
 	for {
-		releaseStatus, err := client.TrackRelease(trackingID)
+		artifactStatus, err := client.TrackArtifact(artifactID)
 		if err != nil {
 			return err
 		}
@@ -109,24 +109,24 @@ func track(c *cli.Context) error {
 		fmt.Printf(
 			"%v Request (%s) is %s %s\n",
 			emoji.BackhandIndexPointingRight,
-			trackingID,
-			releaseStatus.Status,
-			releaseStatus.StatusDesc,
+			artifactID,
+			artifactStatus.Status,
+			artifactStatus.StatusDesc,
 		)
 
-		if releaseStatus.Status == model.StatusNew {
-			fmt.Printf("\t%v The release is not processed yet...\n", emoji.HourglassNotDone)
-		} else if releaseStatus.Status == model.StatusError {
-			return fmt.Errorf(releaseStatus.StatusDesc)
+		if artifactStatus.Status == model.StatusNew {
+			fmt.Printf("\t%v The artifact is not processed yet...\n", emoji.HourglassNotDone)
+		} else if artifactStatus.Status == model.StatusError {
+			return fmt.Errorf(artifactStatus.StatusDesc)
 		}
 
-		if releaseStatus.Results != nil {
-			if len(releaseStatus.Results) == 0 {
-				fmt.Printf("\t%v The release didn't generate any gitops commits\n", emoji.Bookmark)
+		if artifactStatus.Results != nil {
+			if len(artifactStatus.Results) == 0 {
+				fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
 				return nil
 			}
 
-			for _, result := range releaseStatus.Results {
+			for _, result := range artifactStatus.Results {
 				if strings.Contains(result.GitopsCommitStatus, "Failed") {
 					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", result.StatusDesc))
 					fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
@@ -135,12 +135,12 @@ func track(c *cli.Context) error {
 				}
 			}
 		} else {
-			if len(releaseStatus.GitopsHashes) == 0 {
-				fmt.Printf("\t%v The release didn't generate any gitops commits\n", emoji.Bookmark)
+			if len(artifactStatus.GitopsHashes) == 0 {
+				fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
 				return nil
 			}
 
-			for _, gitopsHash := range releaseStatus.GitopsHashes {
+			for _, gitopsHash := range artifactStatus.GitopsHashes {
 				if strings.Contains(gitopsHash.Status, "Failed") {
 					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", gitopsHash.StatusDesc))
 					fmt.Printf("\t%v Gitops hash %s status is %s, %s\n", emoji.ExclamationMark, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
@@ -150,7 +150,7 @@ func track(c *cli.Context) error {
 			}
 		}
 
-		allGitopsCommitsApplied, gitopsCommitsHaveFailed := releaseStatus.ExtractGitopsEndState()
+		allGitopsCommitsApplied, gitopsCommitsHaveFailed := artifactStatus.ExtractGitopsEndState()
 
 		if gitopsCommitsHaveFailed {
 			return fmt.Errorf(gitopsCommitsStatusDesc.String())
@@ -165,7 +165,7 @@ func track(c *cli.Context) error {
 		sleep := time.After(time.Second * 5)
 		select {
 		case <-timeout:
-			return fmt.Errorf("process timed out")
+			return fmt.Errorf("wait timed timed out")
 		case <-sleep:
 		}
 	}

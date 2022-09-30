@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
-	"io/ioutil"
 )
 
 var artifactPushCmd = cli.Command{
@@ -37,6 +38,11 @@ var artifactPushCmd = cli.Command{
 			EnvVars:  []string{"GIMLET_TOKEN"},
 			Required: true,
 		},
+		&cli.StringFlag{
+			Name:    "output",
+			Aliases: []string{"o"},
+			Usage:   "Output format",
+		},
 	},
 	Action: push,
 }
@@ -54,6 +60,7 @@ func push(c *cli.Context) error {
 
 	serverURL := c.String("server")
 	token := c.String("token")
+	output := c.String("output")
 
 	config := new(oauth2.Config)
 	auth := config.Client(
@@ -70,7 +77,6 @@ func push(c *cli.Context) error {
 		return fmt.Errorf("cannot push artifact file %s", err)
 	}
 
-	fmt.Println("Artifact saved")
 	savedArtifactStr := bytes.NewBufferString("")
 	e := json.NewEncoder(savedArtifactStr)
 	e.SetIndent("", "  ")
@@ -78,6 +84,14 @@ func push(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot deserialize artifact %s", err)
 	}
+
+	if output == "json" {
+		fmt.Println(savedArtifactStr)
+
+		return nil
+	}
+
+	fmt.Println("Artifact saved")
 	fmt.Println(savedArtifactStr)
 
 	return nil

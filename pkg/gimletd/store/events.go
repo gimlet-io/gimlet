@@ -119,7 +119,7 @@ WHERE artifact_id = $1;
 }
 
 // Event returns an event by id
-func (db *Store) Event(id string) (*model.Event, error) {
+func (db *Store) EventReleaseTrack(id string) (*model.Event, error) {
 	query := fmt.Sprintf(`
 SELECT id, created, blob, status, status_desc, gitops_hashes, results
 FROM events
@@ -128,6 +128,19 @@ WHERE id = $1;
 
 	var data model.Event
 	err := meddler.QueryRow(db, &data, query, id)
+	return &data, err
+}
+
+// Event returns an event by artifact id
+func (db *Store) EventArtifactTrack(artifactId string) (*model.Event, error) {
+	query := fmt.Sprintf(`
+SELECT id, created, blob, status, status_desc, gitops_hashes, results
+FROM events
+WHERE artifact_id = $1;
+`)
+
+	var data model.Event
+	err := meddler.QueryRow(db, &data, query, artifactId)
 	return &data, err
 }
 

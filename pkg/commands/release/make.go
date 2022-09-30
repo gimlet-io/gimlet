@@ -3,8 +3,9 @@ package release
 import (
 	"context"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"os"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
