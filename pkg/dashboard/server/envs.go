@@ -355,6 +355,7 @@ func BootstrapEnv(
 	if repoPerEnv {
 		envName = ""
 	}
+	headBranch := nativeGit.HeadBranch(repo)
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		envName,
@@ -363,7 +364,7 @@ func BootstrapEnv(
 		true,
 		true,
 		fmt.Sprintf("git@github.com:%s.git", repoName),
-		"main",
+		headBranch,
 	)
 	if err != nil {
 		return "", "", "", fmt.Errorf("cannot generate manifest: %s", err)
