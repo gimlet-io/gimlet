@@ -121,6 +121,7 @@ func DelCookie(w http.ResponseWriter, r *http.Request, name string) {
 		Domain:   r.URL.Host,
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   true,
 	}
 
 	http.SetCookie(w, &cookie)
