@@ -150,8 +150,8 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet Dashboard] Infrastructure components change on %s", env.Name),
-		fmt.Sprintf("@%s created this PR for %s on %s", user.Login, env.InfraRepo, env.Name))
+		fmt.Sprintf("[Gimlet Dashboard] `%s` infrastructure components change", env.Name),
+		fmt.Sprintf("@%s is editing the infrastructure components on %s", user.Login, env.Name))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
