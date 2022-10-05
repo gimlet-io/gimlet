@@ -242,7 +242,7 @@ class EnvConfig extends Component {
         });
         this.resetNotificationStateAfterThreeSeconds()
       }
-    }, 15000);
+    }, 60000);
 
     this.setState({
       timeoutTimer: timeoutTimer
