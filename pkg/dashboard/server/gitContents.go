@@ -369,6 +369,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	config := ctx.Value("config").(*config.Config)
+	user := ctx.Value("user").(*model.User)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(fmt.Sprintf("%s/%s", owner, repoName))
@@ -486,7 +487,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Environment config change on %s", env), "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch,
+		fmt.Sprintf("[Gimlet Dashboard] `%s` ➡️ `%s` deployment configuration change", envConfigData.AppName, env),
+		fmt.Sprintf("@%s is editing the `%s` deployment configuration for the `%s` environment.", user.Login, envConfigData.AppName, env))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
