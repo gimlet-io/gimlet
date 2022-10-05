@@ -134,8 +134,8 @@ func saveFavoriteRepos(w http.ResponseWriter, r *http.Request) {
 	var reposPayload favRepos
 	err := json.NewDecoder(r.Body).Decode(&reposPayload)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode repos payload: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -159,8 +159,8 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 	var servicesPayload map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&servicesPayload)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode services payload: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -168,8 +168,8 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 	if s, ok := servicesPayload["favoriteServices"]; ok {
 		services = s.([]string)
 	} else {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot get favorite services: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 

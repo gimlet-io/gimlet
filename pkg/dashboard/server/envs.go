@@ -42,9 +42,8 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	var req saveInfrastructureComponentsReq
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		logrus.Error(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode req: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -187,8 +186,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	bootstrapConfig := &api.GitopsBootstrapConfig{}
 	err := json.NewDecoder(r.Body).Decode(&bootstrapConfig)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode bootstrap config: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 

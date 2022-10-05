@@ -354,8 +354,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	envConfigData := &envConfig{}
 	err := json.NewDecoder(r.Body).Decode(&envConfigData)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode env config data: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 

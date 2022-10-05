@@ -394,8 +394,8 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 	var envNameToSave string
 	err := json.NewDecoder(r.Body).Decode(&envNameToSave)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode env name to save: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -418,8 +418,8 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	var envNameToDelete string
 	err := json.NewDecoder(r.Body).Decode(&envNameToDelete)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode env name to delete: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
