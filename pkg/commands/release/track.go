@@ -120,14 +120,12 @@ func track(c *cli.Context) error {
 			return fmt.Errorf(releaseStatus.StatusDesc)
 		} else {
 			printGitopsStatuses(releaseStatus)
-		}
-
-		allGitopsCommitsApplied, gitopsCommitsHaveFailed := releaseStatus.ExtractGitopsEndState()
-
-		if gitopsCommitsHaveFailed {
-			return fmt.Errorf("gitops commits have failed to apply")
-		} else if allGitopsCommitsApplied {
-			return nil
+			allGitopsCommitsApplied, gitopsCommitsHaveFailed := releaseStatus.ExtractGitopsEndState()
+			if gitopsCommitsHaveFailed {
+				return fmt.Errorf("gitops commits have failed to apply")
+			} else if allGitopsCommitsApplied {
+				return nil
+			}
 		}
 
 		if !wait {
