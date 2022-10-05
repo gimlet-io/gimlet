@@ -9,6 +9,7 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -98,7 +99,6 @@ func track(c *cli.Context) error {
 		return nil
 	}
 
-	var gitopsCommitsStatusDesc strings.Builder
 	timeout := time.After(*timeoutTime)
 	for {
 		artifactStatus, err := client.TrackArtifact(artifactID)
@@ -118,44 +118,14 @@ func track(c *cli.Context) error {
 			fmt.Printf("\t%v The artifact is not processed yet...\n", emoji.HourglassNotDone)
 		} else if artifactStatus.Status == model.StatusError {
 			return fmt.Errorf(artifactStatus.StatusDesc)
-		}
-
-		if artifactStatus.Results != nil {
-			if len(artifactStatus.Results) == 0 {
-				fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
-				return nil
-			}
-
-			for _, result := range artifactStatus.Results {
-				if strings.Contains(result.GitopsCommitStatus, "Failed") {
-					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", result.StatusDesc))
-					fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
-				} else {
-					fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
-				}
-			}
 		} else {
-			if len(artifactStatus.GitopsHashes) == 0 {
-				fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
+			printGitopsStatuses(artifactStatus)
+			allGitopsCommitsApplied, gitopsCommitsHaveFailed := artifactStatus.ExtractGitopsEndState()
+			if gitopsCommitsHaveFailed {
+				return fmt.Errorf("gitops commits have failed to apply")
+			} else if allGitopsCommitsApplied {
 				return nil
 			}
-
-			for _, gitopsHash := range artifactStatus.GitopsHashes {
-				if strings.Contains(gitopsHash.Status, "Failed") {
-					gitopsCommitsStatusDesc.WriteString(fmt.Sprintf("%s\n", gitopsHash.StatusDesc))
-					fmt.Printf("\t%v Gitops hash %s status is %s, %s\n", emoji.ExclamationMark, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
-				} else {
-					fmt.Printf("\t%v Gitops hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
-				}
-			}
-		}
-
-		allGitopsCommitsApplied, gitopsCommitsHaveFailed := artifactStatus.ExtractGitopsEndState()
-
-		if gitopsCommitsHaveFailed {
-			return fmt.Errorf(gitopsCommitsStatusDesc.String())
-		} else if allGitopsCommitsApplied {
-			return nil
 		}
 
 		if !wait {
@@ -171,4 +141,32 @@ func track(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func printGitopsStatuses(artifactStatus *dx.ReleaseStatus) {
+	if artifactStatus.Results != nil {
+		if len(artifactStatus.Results) == 0 {
+			fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
+		}
+
+		for _, result := range artifactStatus.Results {
+			if strings.Contains(result.GitopsCommitStatus, "Failed") {
+				fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+			} else {
+				fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
+			}
+		}
+	} else {
+		if len(artifactStatus.GitopsHashes) == 0 {
+			fmt.Printf("\t%v The artifact didn't trigger any release policies\n", emoji.Bookmark)
+		}
+
+		for _, gitopsHash := range artifactStatus.GitopsHashes {
+			if strings.Contains(gitopsHash.Status, "Failed") {
+				fmt.Printf("\t%v Gitops hash %s status is %s, %s\n", emoji.ExclamationMark, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
+			} else {
+				fmt.Printf("\t%v Gitops hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
+			}
+		}
+	}
 }
