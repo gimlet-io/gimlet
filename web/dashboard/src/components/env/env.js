@@ -7,7 +7,7 @@ export class Env extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isClosed: false
+      isClosed: localStorage.getItem([this.props.envName]) === "true"
     }
   }
 
@@ -22,6 +22,7 @@ export class Env extends Component {
           {envName}
           <svg
             onClick={() => {
+              localStorage.setItem(this.props.envName, !this.state.isClosed);
               this.setState((prevState) => {
                 return {
                   isClosed: !prevState.isClosed
