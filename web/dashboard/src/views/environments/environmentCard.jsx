@@ -72,7 +72,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       setStack(env.stackConfig.config);
       setStackNonDefaultValues(env.stackConfig.config);
     }
-  }, [env.stackConfig]);
+    if (env.deploymentAutomationEnabled) {
+      setDeploymentAutomationEnabled(env.deploymentAutomationEnabled);
+    }
+  }, [env.deploymentAutomationEnabled, env.stackConfig]);
 
   const gitopsRepositories = [
     { name: env.infraRepo, href: `https://github.com/${env.infraRepo}` },
