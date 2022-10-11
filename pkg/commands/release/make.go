@@ -1,7 +1,9 @@
 package release
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -49,6 +51,11 @@ var releaseMakeCmd = cli.Command{
 			Name:  "app",
 			Usage: "release only a specific app from the artifact",
 		},
+		&cli.StringFlag{
+			Name:    "output",
+			Aliases: []string{"o"},
+			Usage:   "Format the output as json with the \"-o json\" switch",
+		},
 	},
 	Action: make,
 }
@@ -75,6 +82,23 @@ func make(c *cli.Context) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	output := c.String("output")
+	if output == "json" {
+		jsonString := bytes.NewBufferString("")
+		e := json.NewEncoder(jsonString)
+		e.SetIndent("", "  ")
+		e.Encode(map[string]interface{}{
+			"id": trackingID,
+		})
+		if err != nil {
+			return fmt.Errorf("cannot deserialize json %s", err)
+		}
+
+		fmt.Println(jsonString)
+
+		return nil
 	}
 
 	fmt.Fprintf(os.Stderr, "%v Release is now added to the release queue with ID %s\n", emoji.WomanGesturingOk, trackingID)
