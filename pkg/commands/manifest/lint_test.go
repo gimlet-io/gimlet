@@ -65,6 +65,7 @@ func Test_lint(t *testing.T) {
 	args = append(args, "-f", envFile.Name())
 
 	g := goblin.Goblin(t)
+	g.Timeout(20 * time.Second)
 	g.Describe("gimlet manifest lint", func() {
 		g.It("Should parse a gimlet manifest", func() {
 			err = commands.Run(&Command, args)
