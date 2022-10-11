@@ -99,6 +99,7 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/listUsers", listUsers)
 		r.Post("/api/saveUser", saveUser)
 		r.Get("/api/envs", envs)
+		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/env/{env}/app/{app}/rolloutHistory", rolloutHistoryPerApp)
@@ -136,6 +137,7 @@ func agentRoutes(r *chi.Mux) {
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
 		r.Post("/agent/state/{name}/update", update)
+		r.Post("/agent/podLogs", broadcastPodLogs)
 	})
 }
 

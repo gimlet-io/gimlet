@@ -11,6 +11,7 @@ const EnvsUpdatedEventString = "envsUpdated"
 const StaleRepoDataEventString = "staleRepoData"
 const GitopsCommitEventString = "gitopsCommit"
 const CommitStatusUpdatedEventString = "commitStatusUpdated"
+const PodLogsEventString = "podLogs"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -47,5 +48,10 @@ type CommitStatusUpdatedEvent struct {
 	Sha           string                `json:"sha"`
 	RepoName      string                `json:"repo"`
 	DeployTargets []*model.DeployTarget `json:"deployTargets"`
+	StreamingEvent
+}
+
+type PodLogsEvent struct {
+	PodLogs string `json:"podLogs"`
 	StreamingEvent
 }

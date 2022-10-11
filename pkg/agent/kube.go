@@ -106,7 +106,7 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 	var deployment *api.Deployment
 
 	for _, d := range deployments {
-		if selectorsMatch(d.Spec.Selector.MatchLabels, service.Spec.Selector) {
+		if SelectorsMatch(d.Spec.Selector.MatchLabels, service.Spec.Selector) {
 			var sha string
 			if hash, ok := d.GetAnnotations()[AnnotationGitSha]; ok {
 				sha = hash
@@ -186,7 +186,7 @@ func podStatus(pod v1.Pod) string {
 	return fmt.Sprint(pod.Status.Phase)
 }
 
-func selectorsMatch(first map[string]string, second map[string]string) bool {
+func SelectorsMatch(first map[string]string, second map[string]string) bool {
 	if len(first) != len(second) {
 		return false
 	}

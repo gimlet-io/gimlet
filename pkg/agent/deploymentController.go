@@ -29,7 +29,7 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 
 				createdDeployment := obj.(*apps_v1.Deployment)
 				for _, svc := range integratedServices {
-					if selectorsMatch(createdDeployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+					if SelectorsMatch(createdDeployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
 						var sha string
 						if hash, ok := createdDeployment.GetAnnotations()[AnnotationGitSha]; ok {
 							sha = hash
@@ -55,7 +55,7 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 
 				updatedDeployment := obj.(*apps_v1.Deployment)
 				for _, svc := range integratedServices {
-					if selectorsMatch(updatedDeployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+					if SelectorsMatch(updatedDeployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
 						var sha string
 						if hash, ok := updatedDeployment.GetAnnotations()[AnnotationGitSha]; ok {
 							sha = hash

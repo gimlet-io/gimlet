@@ -49,6 +49,8 @@ export default class GimletClient {
 
   getPullRequestsFromInfraRepo = () => this.getWithAxios(`/api/infraRepoPullRequests`);
 
+  podlogsRequest = (namespace, serviceName, sinceTime) => this.getWithAxios(`/api/podLogs?namespace=${namespace}&serviceName=${serviceName}&sinceTime=${sinceTime}`);
+
   bootstrapGitops = (envName, repoPerEnv, infraRepo, appsRepo) => this.postWithAxios('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, infraRepo, appsRepo }));
 
   saveEnvToDB = (envName) => this.postWithAxios("/api/saveEnvToDB", JSON.stringify(envName));

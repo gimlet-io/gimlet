@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -12,14 +14,18 @@ import (
 	"os/signal"
 	"path"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
@@ -176,6 +182,8 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config) {
 					switch e["action"] {
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
+					case "podlogs":
+						go podLogs(kubeEnv, config.Host, config.AgentKey, e["namespace"].(string), e["serviceName"].(string), e["sinceTime"].(string))
 					}
 				} else {
 					log.Info("event stream closed")
@@ -231,6 +239,64 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	log.Debug("init state sent")
 }
 
+func podLogs(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string, namespace string, serviceName string, sinceTimeString string) {
+	count := int64(100)
+
+	sinceTime, err := strconv.Atoi(sinceTimeString)
+	if err != nil {
+		log.Errorf("could not convert sincetime: %v", err)
+		return
+	}
+
+	podLogOpts := v1.PodLogOptions{
+		TailLines: &count,
+		SinceTime: &meta_v1.Time{
+			Time: time.Now().Add(time.Duration(-sinceTime*1000) * time.Minute),
+		},
+	}
+
+	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get services: %v", err)
+		return
+	}
+
+	var integratedServices []v1.Service
+	for _, s := range svc.Items {
+		if _, ok := s.ObjectMeta.GetAnnotations()[agent.AnnotationGitRepository]; ok {
+			integratedServices = append(integratedServices, s)
+		}
+	}
+
+	allDeployments, err := kubeEnv.Client.AppsV1().Deployments(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get deployments: %v", err)
+		return
+	}
+
+	allPods, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get pods: %v", err)
+		return
+	}
+
+	for _, svc := range integratedServices {
+		for _, deployment := range allDeployments.Items {
+			for _, pod := range allPods.Items {
+				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+					if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+						pod.Namespace == deployment.Namespace {
+						logsReq := kubeEnv.Client.CoreV1().Pods(namespace).GetLogs(pod.Name, &podLogOpts)
+						sendLogs(logsReq, pod.Name, gimletHost, agentKey)
+					}
+				}
+			}
+		}
+	}
+
+	log.Debug("pod logs sent")
+}
+
 func httpClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
@@ -242,5 +308,55 @@ func httpClient() *http.Client {
 			ResponseHeaderTimeout: 20 * time.Second,
 			ExpectContinueTimeout: 10 * time.Second,
 		},
+	}
+}
+
+func sendLogs(logsReq *rest.Request, podName string, gimletHost string, agentKey string) {
+	podLogs, err := logsReq.Stream(context.Background())
+	if err != nil {
+		log.Errorf("could not stream pod logs: %v", err)
+		return
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		log.Errorf("could not copy: %v", err)
+		return
+	}
+	str := buf.String()
+
+	logs := api.Pod{
+		Logs: str,
+		Name: podName,
+	}
+
+	logsString, err := json.Marshal(logs)
+	if err != nil {
+		log.Errorf("could not serialize k8s state: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/podLogs", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(logsString))
+	if err != nil {
+		log.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("could not send k8s pod logs: %d - %v", resp.StatusCode, string(body))
+		return
 	}
 }
