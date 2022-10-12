@@ -68,6 +68,8 @@ function ServiceDetail(props) {
               envName={envName}
               repo={stack.repo}
               deployment={stack.deployment}
+              gimletClient={gimletClient}
+              store={store}
             />
           </div>
           <div className="flex-1 min-w-full md:min-w-0" />
@@ -98,7 +100,7 @@ class Ingress extends Component {
 
 class Deployment extends Component {
   render() {
-    const { deployment, repo } = this.props;
+    const { deployment, repo, gimletClient, store } = this.props;
 
     if (deployment === undefined) {
       return null;
@@ -106,6 +108,12 @@ class Deployment extends Component {
 
     return (
       <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
+        <button className="text-xs text-gray-400 absolute top-0 right-0 p-2"
+          onClick={() => {
+            // TODO implement the since time loop
+            podlogsRequest(gimletClient, store, deployment.namespace, deployment.name, "10");
+          }}
+        >app logs</button>
         <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
         <div className="mb-1">
           <p className="truncate">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</p>
@@ -125,3 +133,10 @@ class Deployment extends Component {
 }
 
 export default ServiceDetail;
+
+function podlogsRequest(gimletClient, store, namespace, serviceName, sinceTime) {
+  gimletClient.podlogsRequest(namespace, serviceName, sinceTime);
+  store.dispatch({
+    type: ACTION_TYPE_OVERLAY, payload: {}
+  });
+}
