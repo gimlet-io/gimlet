@@ -492,7 +492,7 @@ func processArtifactEvent(
 	for _, manifest := range artifact.Environments {
 		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 		if err != nil {
-			logrus.Warnf("%s: %s", manifest.App, manifest.Env, err.Error())
+			logrus.Warnf("%s: %s", manifest.App, err.Error())
 			continue
 		}
 
