@@ -67,6 +67,16 @@ export function popupWindowReset(state) {
   return state;
 }
 
+export function overlay(state) {
+  state.overlay.visible = true;
+  return state;
+}
+
+export function overlayReset(state) {
+  state.overlay.visible = false;
+  return state;
+}
+
 export function envsUpdated(state, allEnvs) {
   allEnvs.connectedAgents.forEach((agent) => {
     state.connectedAgents[agent.name] = agent;

@@ -39,6 +39,10 @@ export const ACTION_TYPE_SETTINGS = 'settings';
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
+export const ACTION_TYPE_OVERLAY = 'overlay';
+export const ACTION_TYPE_OVERLAYRESET = 'overlayReset';
+
+
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
 export const EVENT_ENVS_UPDATED = 'envsUpdated';
@@ -49,6 +53,7 @@ export const EVENT_COMMIT_STATUS_UPDATED = 'commitStatusUpdated';
 export const EVENT_POD_CREATED = 'podCreated';
 export const EVENT_POD_UPDATED = 'podUpdated';
 export const EVENT_POD_DELETED = 'podDeleted';
+export const EVENT_POD_LOGS = 'podLogs';
 
 export const EVENT_DEPLOYMENT_CREATED = 'deploymentCreated';
 export const EVENT_DEPLOYMENT_UPDATED = 'deploymentUpdated';
@@ -88,6 +93,10 @@ export const initialState = {
     link: "",
     errorList: null
   },
+  overlay: {
+    visible: false,
+  },
+  podLogs: undefined,
   users: []
 };
 
@@ -111,6 +120,10 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.popupWindowSuccess(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWRESET:
       return eventHandlers.popupWindowReset(state);
+    case ACTION_TYPE_OVERLAY:
+      return eventHandlers.overlay(state);
+    case ACTION_TYPE_OVERLAYRESET:
+      return eventHandlers.overlayReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_TYPE_GITOPS_COMMITS:
@@ -183,6 +196,8 @@ function processStreamingEvent(state, event) {
       return podEventHandlers.podUpdated(state, event);
     case EVENT_POD_DELETED:
       return podEventHandlers.podDeleted(state, event);
+    case EVENT_POD_LOGS:
+      return podEventHandlers.podLogs(state, event);
     case EVENT_DEPLOYMENT_CREATED:
       return deploymentEventHandlers.deploymentCreated(state, event);
     case EVENT_DEPLOYMENT_UPDATED:
