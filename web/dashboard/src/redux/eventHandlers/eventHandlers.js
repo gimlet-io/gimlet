@@ -74,6 +74,7 @@ export function overlay(state) {
 
 export function overlayReset(state) {
   state.overlay.visible = false;
+  state.podLogs = "";
   return state;
 }
 

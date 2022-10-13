@@ -96,7 +96,7 @@ export const initialState = {
   overlay: {
     visible: false,
   },
-  podLogs: undefined,
+  podLogs: "",
   users: []
 };
 

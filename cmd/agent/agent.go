@@ -242,17 +242,19 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 func podLogs(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string, namespace string, serviceName string, sinceTimeString string) {
 	count := int64(100)
 
-	sinceTime, err := strconv.Atoi(sinceTimeString)
-	if err != nil {
-		log.Errorf("could not convert sincetime: %v", err)
-		return
-	}
-
 	podLogOpts := v1.PodLogOptions{
 		TailLines: &count,
-		SinceTime: &meta_v1.Time{
-			Time: time.Now().Add(time.Duration(-sinceTime*1000) * time.Minute),
-		},
+	}
+
+	if sinceTimeString != "0" {
+		sinceTime, err := strconv.Atoi(sinceTimeString)
+		if err != nil {
+			log.Errorf("could not convert sincetime: %v", err)
+			return
+		}
+
+		since := int64(sinceTime)
+		podLogOpts.SinceSeconds = &since
 	}
 
 	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})

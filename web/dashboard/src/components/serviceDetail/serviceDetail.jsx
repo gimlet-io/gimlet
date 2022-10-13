@@ -99,6 +99,22 @@ class Ingress extends Component {
 }
 
 class Deployment extends Component {
+  constructor(props) {
+    super(props);
+    let reduxState = this.props.store.getState();
+
+    this.state = {
+      overlay: reduxState.overlay
+    };
+    this.props.store.subscribe(() => {
+      let reduxState = this.props.store.getState();
+
+      this.setState({
+        overlay: reduxState.overlay
+      });
+    });
+  }
+xw
   render() {
     const { deployment, repo, gimletClient, store } = this.props;
 
@@ -110,8 +126,10 @@ class Deployment extends Component {
       <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
         <button className="text-xs text-gray-400 absolute top-0 right-0 p-2"
           onClick={() => {
-            // TODO implement the since time loop
-            podlogsRequest(gimletClient, store, deployment.namespace, deployment.name, "10");
+            store.dispatch({
+              type: ACTION_TYPE_OVERLAY, payload: {}
+            });
+            checkPodLogs(gimletClient, store, this.state.overlay, deployment.namespace, deployment.name, "0");
           }}
         >app logs</button>
         <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
@@ -129,14 +147,16 @@ class Deployment extends Component {
       </div>
     );
   }
-
 }
 
 export default ServiceDetail;
 
-function podlogsRequest(gimletClient, store, namespace, serviceName, sinceTime) {
+function checkPodLogs(gimletClient, store, overlay, namespace, serviceName, sinceTime) {
   gimletClient.podlogsRequest(namespace, serviceName, sinceTime);
-  store.dispatch({
-    type: ACTION_TYPE_OVERLAY, payload: {}
-  });
+
+  if (overlay.visible) {
+    setTimeout(() => {
+      checkPodLogs(gimletClient, store, overlay, namespace, serviceName, "1")
+    }, 1000);
+  }
 }

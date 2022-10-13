@@ -29,7 +29,7 @@ export default class KubernetesPodLogsOverlay extends Component {
                     <div className="w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl">
                         <div className="flex p-4">
                             <div className="w-0 h-96 flex-1 justify-between bg-gray-800 rounded-md overflow-auto text-left p-4">
-                                {this.state.podLogs?.split('\n').map(line => <p key={line} className='font-mono text-xs text-yellow-200'>{line}</p>)}
+                                {this.state.podLogs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
                             </div>
                             <div className="ml-4 flex-shrink-0 flex items-start">
                                 <button
