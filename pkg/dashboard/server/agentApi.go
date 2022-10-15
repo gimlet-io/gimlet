@@ -44,10 +44,10 @@ func register(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	a := &streaming.ConnectedAgent{
-		Name: name,
-		Namespace: namespace,
+		Name:         name,
+		Namespace:    namespace,
 		EventChannel: eventChannel,
-		Stacks: []*api.Stack{},
+		Stacks:       []*api.Stack{},
 	}
 
 	hub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
@@ -182,24 +182,6 @@ func update(w http.ResponseWriter, r *http.Request) {
 
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
 	jsonString, _ := json.Marshal(update)
-	clientHub.Broadcast <- jsonString
-}
-
-func broadcastPodLogs(w http.ResponseWriter, r *http.Request) {
-	var pod api.Pod
-	err := json.NewDecoder(r.Body).Decode(&pod)
-	if err != nil {
-		logrus.Errorf("cannot decode pod logs: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.PodLogsEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.PodLogsEventString},
-		PodLogs:        pod.Logs,
-	})
 	clientHub.Broadcast <- jsonString
 }
 

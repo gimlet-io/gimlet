@@ -90,9 +90,10 @@ export function podDeleted(state, event) {
 
 export function podLogs(state, event) {
   console.log("coming from websocket")
-  console.log(event.podLogs)
+  console.log(event)
+  console.log(event)
 
-  state.podLogs += (event.podLogs + "\n");
+  state.podLogs[event.pod] = (state.podLogs[event.pod] + event.podLogs + "\n");
   return state;
 }
 

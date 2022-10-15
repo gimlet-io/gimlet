@@ -147,11 +147,17 @@ func envs(w http.ResponseWriter, r *http.Request) {
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	serviceName := r.URL.Query().Get("serviceName")
-	sinceTime := r.URL.Query().Get("sinceTime")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.StreamPodLogsSend(namespace, serviceName)
+}
 
-	agentHub.ForcePodLogsSend(namespace, serviceName, sinceTime)
+func stopPodLogs(w http.ResponseWriter, r *http.Request) {
+	namespace := r.URL.Query().Get("namespace")
+	serviceName := r.URL.Query().Get("serviceName")
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.StopPodLogs(namespace, serviceName)
 }
 
 func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {

@@ -96,7 +96,7 @@ export const initialState = {
   overlay: {
     visible: false,
   },
-  podLogs: "",
+  podLogs: {},
   users: []
 };
 
@@ -120,10 +120,6 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.popupWindowSuccess(state, action.payload);
     case ACTION_TYPE_POPUPWINDOWRESET:
       return eventHandlers.popupWindowReset(state);
-    case ACTION_TYPE_OVERLAY:
-      return eventHandlers.overlay(state);
-    case ACTION_TYPE_OVERLAYRESET:
-      return eventHandlers.overlayReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_TYPE_GITOPS_COMMITS:

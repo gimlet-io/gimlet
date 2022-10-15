@@ -1,7 +1,8 @@
-import React, { Component, useEffect } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import { Pod } from "../serviceCard/serviceCard";
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
+import {XIcon} from '@heroicons/react/solid'
 import { ACTION_TYPE_ROLLOUT_HISTORY } from "../../redux/redux";
 
 function ServiceDetail(props) {
@@ -22,6 +23,15 @@ function ServiceDetail(props) {
       }, () => {/* Generic error handler deals with it */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [logsOverlayVisible, setLogsOverlayVisible] = useState(false)
+  const [logsOverlayNamespace, setLogsOverlayNamespace] = useState("")
+  const [logsOverlayPod, setLogsOverlayPod] = useState("")
+
+  const closeLogsOverlayHandler = (namespace, serviceName) => {
+    setLogsOverlayVisible(false)
+    gimletClient.stopPodlogsRequest(namespace, serviceName);
+  }
 
   return (
     <div className="w-full flex items-center justify-between space-x-6">
@@ -72,10 +82,28 @@ function ServiceDetail(props) {
               store={store}
             />
           </div>
-          <div className="flex-1 min-w-full md:min-w-0" />
+          <div className="flex flex-wrap text-sm">
+            <div className="flex-1 min-w-full md:min-w-0">
+              {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} />) : null}
+            </div>
+            <div className="flex-1 md:ml-2 min-w-full md:min-w-0">
+              <Deployment
+                envName={stack.env}
+                repo={stack.repo}
+                deployment={stack.deployment}
+                service={stack.service}
+                gimletClient={gimletClient}
+                store={store}
+                setLogsOverlayVisible={setLogsOverlayVisible}
+                setLogsOverlayNamespace={setLogsOverlayNamespace}
+                setLogsOverlayPod={setLogsOverlayPod}
+              />
+            </div>
+            <div className="flex-1 min-w-full md:min-w-0" />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -114,9 +142,9 @@ class Deployment extends Component {
       });
     });
   }
-xw
+
   render() {
-    const { deployment, repo, gimletClient, store } = this.props;
+    const { deployment, service, repo, gimletClient, setLogsOverlayVisible, setLogsOverlayNamespace, setLogsOverlayPod } = this.props;
 
     if (deployment === undefined) {
       return null;
@@ -126,10 +154,10 @@ xw
       <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
         <button className="text-xs text-gray-400 absolute top-0 right-0 p-2"
           onClick={() => {
-            store.dispatch({
-              type: ACTION_TYPE_OVERLAY, payload: {}
-            });
-            checkPodLogs(gimletClient, store, this.state.overlay, deployment.namespace, deployment.name, "0");
+            setLogsOverlayVisible(true)
+            setLogsOverlayNamespace(deployment.namespace);
+            setLogsOverlayPod(service);
+            gimletClient.podLogsRequest(deployment.namespace, service.name);
           }}
         >app logs</button>
         <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
@@ -151,12 +179,41 @@ xw
 
 export default ServiceDetail;
 
-function checkPodLogs(gimletClient, store, overlay, namespace, serviceName, sinceTime) {
-  gimletClient.podlogsRequest(namespace, serviceName, sinceTime);
+const PodLogsOverlay = ({visible, namespace, pod, closeLogsOverlayHandler, store}) => {
+  const [logs, setLogs] = useState("")
 
-  if (overlay.visible) {
-    setTimeout(() => {
-      checkPodLogs(gimletClient, store, overlay, namespace, serviceName, "1")
-    }, 1000);
-  }
+  const podName = namespace + "/" + pod;
+
+  // let reduxState = store.getState();
+  // setLogs(reduxState.podLogs[podName]);
+
+  // store.subscribe(() => {
+  //   let reduxState = store.getState();
+  //   setLogs(reduxState.podLogs[podName]);
+  // });
+
+  return (
+    <div className={(visible ? "visible" : "invisible") + " fixed inset-0 z-10 overflow-y-auto"}>
+        <div className="bg-slate-600 bg-opacity-70 top-0 left-0 w-full h-full outline-none overflow-x-hidden overflow-y-auto show flex min-h-full items-end justify-center text-center sm:items-center p-4">
+            <div className="w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl">
+                <div className="flex p-4">
+                    <div className="w-0 h-96 flex-1 justify-between bg-gray-800 rounded-md overflow-auto text-left p-4">
+                        {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
+                    </div>
+                    <div className="ml-4 flex-shrink-0 flex items-start">
+                        <button
+                            className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+                            onClick={() => {
+                              closeLogsOverlayHandler();
+                            }}
+                        >
+                            <span className="sr-only">Close</span>
+                            <XIcon className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  )
 }

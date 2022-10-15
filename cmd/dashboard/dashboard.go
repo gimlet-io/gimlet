@@ -55,6 +55,9 @@ func main() {
 	clientHub := streaming.NewClientHub()
 	go clientHub.Run()
 
+	agentWSHub := streaming.NewAgentWSHub(*clientHub)
+	go agentWSHub.Run()
+
 	store := store.New(config.Database.Driver, config.Database.Config)
 
 	err = bootstrapEnvs(config.BootstrapEnv, store)
@@ -104,6 +107,7 @@ func main() {
 		config,
 		agentHub,
 		clientHub,
+		agentWSHub,
 		store,
 		gitSvc,
 		tokenManager,
