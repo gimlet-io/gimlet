@@ -150,7 +150,9 @@ func printGitopsStatuses(artifactStatus *dx.ReleaseStatus) {
 		}
 
 		for _, result := range artifactStatus.Results {
-			if strings.Contains(result.GitopsCommitStatus, "Failed") {
+			if result.Status == model.Failure.String() {
+				fmt.Printf("\t%v %s -> %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Status, result.StatusDesc)
+			} else if strings.Contains(result.GitopsCommitStatus, "Failed") {
 				fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
 			} else {
 				fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
@@ -162,7 +164,9 @@ func printGitopsStatuses(artifactStatus *dx.ReleaseStatus) {
 		}
 
 		for _, gitopsHash := range artifactStatus.GitopsHashes {
-			if strings.Contains(gitopsHash.Status, "Failed") {
+			if artifactStatus.Status == model.Failure.String() {
+				fmt.Printf("\t%v status is %s, %s\n", emoji.ExclamationMark, artifactStatus.Status, artifactStatus.StatusDesc)
+			} else if strings.Contains(gitopsHash.Status, "Failed") {
 				fmt.Printf("\t%v Gitops hash %s status is %s, %s\n", emoji.ExclamationMark, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
 			} else {
 				fmt.Printf("\t%v Gitops hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
