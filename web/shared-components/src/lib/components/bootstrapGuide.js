@@ -26,7 +26,7 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
                         target="_blank"
                         rel="noreferrer"
                         className="hover:text-blue-900 mx-1 hover:underline"
-                        href="https://gimlet.io/docs/make-kubernetes-an-application-platform-with-gimlet-stack/#authorize-flux-to-fetch-your-gitops-repository">
+                        href="https://gimlet.io/docs/bootstrap-gitops-automation-with-gimlet-cli#add-deploy-key-to-gitops-repo">
                         click here
                     </a>)
                 </li>

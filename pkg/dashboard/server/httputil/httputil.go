@@ -115,11 +115,13 @@ func SetCookie(w http.ResponseWriter, r *http.Request, name, value string) {
 // DelCookie deletes a cookie.
 func DelCookie(w http.ResponseWriter, r *http.Request, name string) {
 	cookie := http.Cookie{
-		Name:   name,
-		Value:  "deleted",
-		Path:   "/",
-		Domain: r.URL.Host,
-		MaxAge: -1,
+		Name:     name,
+		Value:    "deleted",
+		Path:     "/",
+		Domain:   r.URL.Host,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
 	}
 
 	http.SetCookie(w, &cookie)

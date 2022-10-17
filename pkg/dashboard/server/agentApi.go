@@ -124,8 +124,8 @@ func state(w http.ResponseWriter, r *http.Request) {
 	var stacks []api.Stack
 	err := json.NewDecoder(r.Body).Decode(&stacks)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode stacks: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -170,8 +170,8 @@ func update(w http.ResponseWriter, r *http.Request) {
 	var update api.StackUpdate
 	err := json.NewDecoder(r.Body).Decode(&update)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode update: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

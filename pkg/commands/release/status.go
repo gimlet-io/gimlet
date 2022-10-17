@@ -101,8 +101,6 @@ func status(c *cli.Context) error {
 			gray := color.New(color.FgHiBlack).SprintFunc()
 			green := color.New(color.FgGreen).SprintFunc()
 
-			fmt.Println(app)
-
 			if release != nil {
 				created := time.Unix(release.Created, 0)
 				rolledBack := ""

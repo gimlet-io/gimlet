@@ -350,7 +350,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func getEvent(w http.ResponseWriter, r *http.Request) {
+func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 	var id string
 
 	params := r.URL.Query()
@@ -364,7 +364,7 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
-	event, err := store.Event(id)
+	event, err := store.EventReleaseTrack(id)
 	if err == sql.ErrNoRows {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	} else if err != nil {
@@ -397,10 +397,79 @@ func getEvent(w http.ResponseWriter, r *http.Request) {
 	results := []dx.Result{}
 	for _, result := range event.Results {
 		results = append(results, dx.Result{
-			App:        result.Manifest.App,
-			Hash:       result.GitopsRef,
-			Status:     result.Status.String(),
-			StatusDesc: result.StatusDesc,
+			App:                result.Manifest.App,
+			Hash:               result.GitopsRef,
+			Status:             result.Status.String(),
+			GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
+			Env:                result.Manifest.Env,
+			StatusDesc:         result.StatusDesc,
+		})
+	}
+
+	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
+		Status:       event.Status,
+		StatusDesc:   event.StatusDesc,
+		GitopsHashes: gitopsStatus,
+		Results:      results,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(statusBytes)
+}
+
+func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
+	var id string
+
+	params := r.URL.Query()
+
+	if val, ok := params["artifactId"]; ok {
+		id = val[0]
+	} else {
+		http.Error(w, fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadRequest), "id parameter is mandatory"), http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	store := ctx.Value("store").(*store.Store)
+	event, err := store.EventArtifactTrack(id)
+	if err == sql.ErrNoRows {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	} else if err != nil {
+		logrus.Errorf("cannot get event: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	gitopsStatus := []dx.GitopsStatus{}
+	for _, gitopsHash := range event.GitopsHashes {
+		gitopsCommit, err := store.GitopsCommit(gitopsHash)
+		if err != nil {
+			logrus.Warnf("cannot get gitops commit: %s", err)
+			continue
+		}
+
+		if gitopsCommit != nil {
+			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
+				Hash:       gitopsHash,
+				Status:     gitopsCommit.Status,
+				StatusDesc: gitopsCommit.StatusDesc,
+			})
+		} else {
+			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
+				Hash:   gitopsHash,
+				Status: "N/A",
+			})
+		}
+	}
+
+	results := []dx.Result{}
+	for _, result := range event.Results {
+		results = append(results, dx.Result{
+			App:                result.Manifest.App,
+			Hash:               result.GitopsRef,
+			Status:             result.Status.String(),
+			GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
+			Env:                result.Manifest.Env,
+			StatusDesc:         result.StatusDesc,
 		})
 	}
 
@@ -429,4 +498,13 @@ func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string,
 	}
 
 	return repoName, repoPerEnv, nil
+}
+
+func gitopsCommitStatusFromHash(store *store.Store, gitopsRef string) string {
+	gitopsCommit, err := store.GitopsCommit(gitopsRef)
+	if err != nil {
+		logrus.Warnf("cannot get gitops commit: %s", err)
+	}
+
+	return gitopsCommit.Status
 }

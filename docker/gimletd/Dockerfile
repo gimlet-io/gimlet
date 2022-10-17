@@ -1,4 +1,4 @@
-FROM alpine:3.16
+FROM --platform=$BUILDPLATFORM alpine:3.16
 
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
@@ -7,7 +7,10 @@ ENV DATABASE_DRIVER=sqlite3
 ENV DATABASE_CONFIG=/var/lib/gimletd/gimletd.sqlite
 ENV XDG_CACHE_HOME /var/lib/gimletd
 
-ADD bin/gimletd-linux-x86_64 /bin/gimletd
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+ADD bin/${TARGETPLATFORM}/gimletd /bin/gimletd
 
 RUN addgroup -S gimletd && adduser -S gimletd -G gimletd
 

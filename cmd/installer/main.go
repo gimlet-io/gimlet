@@ -610,10 +610,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(infraRepo)
+	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tmpPath)
 
 	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
 	if err != nil {

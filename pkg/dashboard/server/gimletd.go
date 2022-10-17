@@ -107,8 +107,8 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 	var usernameToSave string
 	err := json.NewDecoder(r.Body).Decode(&usernameToSave)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode user name to save: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -347,8 +347,8 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 	var releaseRequest dx.ReleaseRequest
 	err := json.NewDecoder(r.Body).Decode(&releaseRequest)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode release request: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -408,8 +408,8 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 	var rollbackRequest dx.RollbackRequest
 	err := json.NewDecoder(r.Body).Decode(&rollbackRequest)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode rollback request: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -491,7 +491,7 @@ func deployStatus(w http.ResponseWriter, r *http.Request) {
 	)
 	client := client.NewClient(config.GimletD.URL, auth)
 
-	releaseStatus, err := client.TrackGet(trackingId)
+	releaseStatus, err := client.TrackRelease(trackingId)
 	if err != nil {
 		logrus.Errorf("cannot get deployStatus: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

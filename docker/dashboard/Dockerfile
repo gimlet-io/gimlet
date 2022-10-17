@@ -1,4 +1,4 @@
-FROM alpine:3.16
+FROM --platform=$BUILDPLATFORM alpine:3.16
 
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
@@ -14,7 +14,10 @@ ADD docker/dashboard/known_hosts /etc/ssh/ssh_known_hosts
 RUN mkdir /var/lib/gimlet-dashboard
 WORKDIR /gimlet-dashboard
 
-COPY --chown=gimlet-dashboard:gimlet-dashboard bin/gimlet-dashboard-linux-x86_64 gimlet-dashboard
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+COPY --chown=gimlet-dashboard:gimlet-dashboard bin/${TARGETPLATFORM}/gimlet-dashboard gimlet-dashboard
 COPY --chown=gimlet-dashboard:gimlet-dashboard web/dashboard/build ./web/build/
 
 USER gimlet-dashboard

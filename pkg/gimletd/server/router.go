@@ -61,7 +61,8 @@ func SetupRouter(
 		r.Post("/api/releases", release)
 		r.Post("/api/rollback", rollback)
 		r.Post("/api/delete", delete)
-		r.Get("/api/event", getEvent)
+		r.Get("/api/eventReleaseTrack", getEventReleaseTrack)
+		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
 		r.Post("/api/flux-events", fluxEvent)
 		r.Get("/api/gitopsCommits", getGitopsCommits)
 

@@ -42,9 +42,8 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	var req saveInfrastructureComponentsReq
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		logrus.Error(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode req: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -53,6 +52,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	config := ctx.Value("config").(*config.Config)
+	user := ctx.Value("user").(*model.User)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
 	env, err := db.GetEnvironment(req.Env)
@@ -148,7 +148,9 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch, fmt.Sprintf("[Gimlet Dashboard] Infrastructure components change on %s", env.Name), "Gimlet Dashboard has created this PR")
+	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch,
+		fmt.Sprintf("[Gimlet Dashboard] `%s` infrastructure components change", env.Name),
+		fmt.Sprintf("@%s is editing the infrastructure components on `%s`", user.Login, env.Name))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -187,8 +189,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	bootstrapConfig := &api.GitopsBootstrapConfig{}
 	err := json.NewDecoder(r.Body).Decode(&bootstrapConfig)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		logrus.Errorf("cannot decode bootstrap config: %s", err)
+		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -355,6 +357,7 @@ func BootstrapEnv(
 	if repoPerEnv {
 		envName = ""
 	}
+	headBranch := nativeGit.HeadBranch(repo)
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		envName,
@@ -363,7 +366,7 @@ func BootstrapEnv(
 		true,
 		true,
 		fmt.Sprintf("git@github.com:%s.git", repoName),
-		"main",
+		headBranch,
 	)
 	if err != nil {
 		return "", "", "", fmt.Errorf("cannot generate manifest: %s", err)

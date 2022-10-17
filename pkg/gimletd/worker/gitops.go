@@ -492,7 +492,8 @@ func processArtifactEvent(
 	for _, manifest := range artifact.Environments {
 		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 		if err != nil {
-			return deployEvents, err
+			logrus.Warnf("%s: %s", manifest.App, err.Error())
+			continue
 		}
 
 		deployEvent := model.Result{
