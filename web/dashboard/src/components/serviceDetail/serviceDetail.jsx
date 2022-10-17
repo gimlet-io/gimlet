@@ -1,9 +1,13 @@
-import React, { Component, useEffect, useState } from 'react';
+import React, { Component, useEffect, useState, useRef } from 'react';
 import { Pod } from "../serviceCard/serviceCard";
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import {XIcon} from '@heroicons/react/solid'
-import { ACTION_TYPE_ROLLOUT_HISTORY } from "../../redux/redux";
+import { 
+  ACTION_TYPE_ROLLOUT_HISTORY,
+  ACTION_TYPE_CLEAR_PODLOGS
+} from "../../redux/redux";
+
 
 function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName, releaseHistorySinceDays, gimletClient, dispatch } = props;
@@ -26,11 +30,16 @@ function ServiceDetail(props) {
 
   const [logsOverlayVisible, setLogsOverlayVisible] = useState(false)
   const [logsOverlayNamespace, setLogsOverlayNamespace] = useState("")
-  const [logsOverlayPod, setLogsOverlayPod] = useState("")
+  const [logsOverlayService, setLogsOverlayService] = useState("")
 
   const closeLogsOverlayHandler = (namespace, serviceName) => {
     setLogsOverlayVisible(false)
     gimletClient.stopPodlogsRequest(namespace, serviceName);
+    dispatch({
+      type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
+        pod: namespace + "/" + serviceName
+      }
+    });
   }
 
   return (
@@ -93,10 +102,9 @@ function ServiceDetail(props) {
                 deployment={stack.deployment}
                 service={stack.service}
                 gimletClient={gimletClient}
-                store={store}
                 setLogsOverlayVisible={setLogsOverlayVisible}
                 setLogsOverlayNamespace={setLogsOverlayNamespace}
-                setLogsOverlayPod={setLogsOverlayPod}
+                setLogsOverlayService={setLogsOverlayService}
               />
             </div>
             <div className="flex-1 min-w-full md:min-w-0" />
@@ -127,24 +135,8 @@ class Ingress extends Component {
 }
 
 class Deployment extends Component {
-  constructor(props) {
-    super(props);
-    let reduxState = this.props.store.getState();
-
-    this.state = {
-      overlay: reduxState.overlay
-    };
-    this.props.store.subscribe(() => {
-      let reduxState = this.props.store.getState();
-
-      this.setState({
-        overlay: reduxState.overlay
-      });
-    });
-  }
-
   render() {
-    const { deployment, service, repo, gimletClient, setLogsOverlayVisible, setLogsOverlayNamespace, setLogsOverlayPod } = this.props;
+    const { deployment, service, repo, gimletClient, setLogsOverlayVisible, setLogsOverlayNamespace, setLogsOverlayService } = this.props;
 
     if (deployment === undefined) {
       return null;
@@ -156,7 +148,7 @@ class Deployment extends Component {
           onClick={() => {
             setLogsOverlayVisible(true)
             setLogsOverlayNamespace(deployment.namespace);
-            setLogsOverlayPod(service);
+            setLogsOverlayService(service.name);
             gimletClient.podLogsRequest(deployment.namespace, service.name);
           }}
         >app logs</button>
@@ -179,41 +171,45 @@ class Deployment extends Component {
 
 export default ServiceDetail;
 
-const PodLogsOverlay = ({visible, namespace, pod, closeLogsOverlayHandler, store}) => {
-  const [logs, setLogs] = useState("")
+const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, store }) => {
+  let reduxState = store.getState();
+  const pod = namespace + "/" + svc;
 
-  const podName = namespace + "/" + pod;
+  const [logs, setLogs] = useState(reduxState.podLogs[pod])
 
-  // let reduxState = store.getState();
-  // setLogs(reduxState.podLogs[podName]);
+  store.subscribe(() => {
+    setLogs(reduxState.podLogs[pod])
+  });
 
-  // store.subscribe(() => {
-  //   let reduxState = store.getState();
-  //   setLogs(reduxState.podLogs[podName]);
-  // });
+  const logsEndRef = useRef(null);
+ 
+  useEffect(() => {
+    logsEndRef.current.scrollIntoView();
+  }, [logs]);
 
   return (
     <div className={(visible ? "visible" : "invisible") + " fixed inset-0 z-10 overflow-y-auto"}>
-        <div className="bg-slate-600 bg-opacity-70 top-0 left-0 w-full h-full outline-none overflow-x-hidden overflow-y-auto show flex min-h-full items-end justify-center text-center sm:items-center p-4">
-            <div className="w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl">
-                <div className="flex p-4">
-                    <div className="w-0 h-96 flex-1 justify-between bg-gray-800 rounded-md overflow-auto text-left p-4">
-                        {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
-                    </div>
-                    <div className="ml-4 flex-shrink-0 flex items-start">
-                        <button
-                            className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
-                            onClick={() => {
-                              closeLogsOverlayHandler();
-                            }}
-                        >
-                            <span className="sr-only">Close</span>
-                            <XIcon className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                    </div>
-                </div>
+      <div className="bg-slate-600 bg-opacity-70 top-0 left-0 w-full h-full outline-none overflow-x-hidden overflow-y-auto show flex min-h-full items-end justify-center text-center sm:items-center p-4">
+        <div className="w-4/5 h-4/5 transform overflow-hidden rounded-lg bg-white text-left shadow-xl">
+          <div className="h-full p-4">
+            <div className="h-full justify-between bg-gray-800 rounded-md overflow-auto text-left p-4">
+              {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
+              <div ref={logsEndRef} />
             </div>
+            <div className="absolute top-0 right-0 p-2">
+              <button
+                className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+                onClick={() => {
+                  closeLogsOverlayHandler(namespace, svc);
+                }}
+              >
+                <span className="sr-only">Close</span>
+                <XIcon className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
   )
 }

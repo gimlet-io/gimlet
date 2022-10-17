@@ -35,13 +35,10 @@ export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
 export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
+export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
-
-export const ACTION_TYPE_OVERLAY = 'overlay';
-export const ACTION_TYPE_OVERLAYRESET = 'overlayReset';
-
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
@@ -92,9 +89,6 @@ export const initialState = {
     message: "",
     link: "",
     errorList: null
-  },
-  overlay: {
-    visible: false,
   },
   podLogs: {},
   users: []
@@ -168,6 +162,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.deployStatus(state, action.payload)
     case ACTION_TYPE_CLEAR_DEPLOY_STATUS:
       return eventHandlers.clearDeployStatus(state)
+    case ACTION_TYPE_CLEAR_PODLOGS:
+       return podEventHandlers.clearPodLogs(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
     default:

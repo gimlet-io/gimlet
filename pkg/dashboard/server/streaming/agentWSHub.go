@@ -7,7 +7,6 @@ package streaming
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -45,6 +44,7 @@ func (c *AgentWSClient) readPump() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -54,12 +54,15 @@ func (c *AgentWSClient) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		fmt.Println(string(message))
 
 		var wsMessage WSMessage
 		err = json.Unmarshal(message, &wsMessage)
 		if err != nil {
 			log.Errorf("could not decode ws message from agent")
+		}
+
+		if wsMessage.Type == "tick" {
+			continue
 		}
 
 		jsonString, _ := json.Marshal(PodLogsEvent{

@@ -95,7 +95,7 @@ func main() {
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 
-	messages := make(chan *streaming.WSMessage, 10)
+	messages := make(chan *streaming.WSMessage)
 
 	go serverCommunication(kubeEnv, config, messages)
 	go serverWSCommunication(config.AgentKey, messages)
@@ -320,7 +320,7 @@ func podLogs(
 				for _, pod := range allPods.Items {
 					if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
 						pod.Namespace == deployment.Namespace {
-						streamPodLogs(kubeEnv, namespace, pod.Name, messages, stopChannel)
+						streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, stopChannel)
 						return
 					}
 				}
@@ -345,7 +345,7 @@ func httpClient() *http.Client {
 	}
 }
 
-func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, messages chan *streaming.WSMessage, stopChannel chan int) {
+func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
 		TailLines: &count,
@@ -371,7 +371,7 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, messages chan 
 		msg := &streaming.WSMessage{
 			Type:    "log",
 			Message: sc.Text(),
-			Pod:     namespace + "/" + pod,
+			Pod:     namespace + "/" + serviceName,
 		}
 		messages <- msg
 	}
