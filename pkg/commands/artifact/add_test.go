@@ -201,6 +201,19 @@ func Test_add(t *testing.T) {
 			g.Assert(len(a.Vars) == 5).IsTrue("Should have 5 variables in vars")
 			g.Assert(a.Vars["KEY"] == "VALUE").IsTrue("Should add variable to vars")
 		})
+		g.It("Should add context variables to artifact that holds an equal sign", func() {
+			args := strings.Split("gimlet artifact add", " ")
+			args = append(args, "-f", artifactFile.Name())
+			args = append(args, "--var", "KEY=https://avatars.githubusercontent.com/u/4289031?v=4")
+			err = commands.Run(&Command, args)
+			g.Assert(err == nil).IsTrue(err)
+
+			content, _ := ioutil.ReadFile(artifactFile.Name())
+			var a dx.Artifact
+			err = json.Unmarshal(content, &a)
+			g.Assert(err == nil).IsTrue(err)
+			g.Assert(a.Context["KEY"] == "https://avatars.githubusercontent.com/u/4289031?v=4").IsTrue("Should add var")
+		})
 		g.It("Should append context variable to artifact", func() {
 			args := strings.Split("gimlet artifact add", " ")
 			args = append(args, "-f", artifactFile.Name())
@@ -208,7 +221,7 @@ func Test_add(t *testing.T) {
 			err = commands.Run(&Command, args)
 			g.Assert(err == nil).IsTrue(err)
 
-			content, err := ioutil.ReadFile(artifactFile.Name())
+			content, _ := ioutil.ReadFile(artifactFile.Name())
 			var a dx.Artifact
 			err = json.Unmarshal(content, &a)
 			g.Assert(err == nil).IsTrue(err)

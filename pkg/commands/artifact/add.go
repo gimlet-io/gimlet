@@ -56,15 +56,12 @@ func add(c *cli.Context) error {
 	item := map[string]interface{}{}
 	for _, field := range fields {
 		keyValue := strings.Split(field, "=")
-		if len(keyValue) != 2 {
-			return fmt.Errorf("--field should follow a key=value format")
-		}
-		item[keyValue[0]] = keyValue[1]
+		item[keyValue[0]] = strings.Join(keyValue[1:], "=")
 
 		if a.Vars == nil {
 			a.Vars = map[string]string{}
 		}
-		a.Vars[keyValue[0]] = keyValue[1]
+		a.Vars[keyValue[0]] = strings.Join(keyValue[1:], "=")
 
 	}
 	if len(item) != 0 {
@@ -91,10 +88,7 @@ func add(c *cli.Context) error {
 	context := map[string]string{}
 	for _, v := range vars {
 		keyValue := strings.Split(v, "=")
-		if len(keyValue) != 2 {
-			return fmt.Errorf("--var should follow a key=value format")
-		}
-		context[keyValue[0]] = keyValue[1]
+		context[keyValue[0]] = strings.Join(keyValue[1:], "=")
 	}
 	for k, v := range context {
 		if a.Context == nil {
