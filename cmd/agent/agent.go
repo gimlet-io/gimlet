@@ -378,15 +378,20 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName st
 }
 
 func serverWSCommunication(token string, messages chan *streaming.WSMessage) {
-loop:
 	for {
 		u := url.URL{Scheme: "ws", Host: "127.0.0.1:9000", Path: "/agent/ws/"}
 
-		token = "BEARER " + token
-		c := dial(token, u)
+		bearerToken := "BEARER " + token
+		c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
+			"Authorization": []string{bearerToken},
+		})
+		if err != nil {
+			log.Errorf("dial:", err.Error())
+			time.Sleep(3 * time.Second)
+			continue
+		}
 
 		log.Info("Connected ws")
-
 		defer c.Close()
 
 		done := make(chan struct{})
@@ -407,10 +412,11 @@ loop:
 		defer ticker.Stop()
 
 		for {
+			wsDisconnected := false
+
 			select {
 			case <-done:
-				log.Info("Disonnected ws")
-				goto loop
+				wsDisconnected = true
 			case t := <-ticker.C:
 				tick := &streaming.WSMessage{
 					Type:    "tick",
@@ -439,23 +445,11 @@ loop:
 					return
 				}
 			}
-		}
-	}
-}
 
-func dial(token string, u url.URL) *websocket.Conn {
-	for {
-		c, resp, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
-			"Authorization": []string{token},
-		})
-		if err != nil {
-			if err == websocket.ErrBadHandshake {
-				log.Errorf("handshake failed with status %d", resp.StatusCode)
+			if wsDisconnected {
+				log.Info("Disonnected ws")
+				break
 			}
-			log.Errorf("dial:", err.Error())
-			time.Sleep(3 * time.Second)
-			continue
 		}
-		return c
 	}
 }
