@@ -182,31 +182,29 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
   });
 
   const logsEndRef = useRef(null);
- 
+
   useEffect(() => {
     logsEndRef.current.scrollIntoView();
   }, [logs]);
 
   return (
-    <div className={(visible ? "visible" : "invisible") + " fixed inset-0 z-10 overflow-y-auto"}>
-      <div className="bg-slate-600 bg-opacity-70 top-0 left-0 w-full h-full outline-none overflow-x-hidden overflow-y-auto show flex min-h-full items-end justify-center text-center sm:items-center p-4">
-        <div className="w-4/5 h-4/5 transform overflow-hidden rounded-lg bg-white text-left shadow-xl">
-          <div className="h-full p-4">
-            <div className="h-full justify-between bg-gray-800 rounded-md overflow-auto text-left p-4">
-              {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
-              <div ref={logsEndRef} />
-            </div>
-            <div className="absolute top-0 right-0 p-2">
-              <button
-                className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
-                onClick={() => {
-                  closeLogsOverlayHandler(namespace, svc);
-                }}
-              >
-                <span className="sr-only">Close</span>
-                <XIcon className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
+    <div class={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}>
+      <div class="flex self-center items-center justify-center w-full p-8 h-4/5">
+        <div class="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6">
+          <div className="absolute top-0 right-0 p-1.5">
+            <button
+              className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+              onClick={() => {
+                closeLogsOverlayHandler(namespace, svc);
+              }}
+            >
+              <span className="sr-only">Close</span>
+              <XIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+          <div class="h-full relative overflow-y-auto p-4 bg-slate-800 rounded-lg">
+            {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
+            <p ref={logsEndRef} />
           </div>
         </div>
       </div>

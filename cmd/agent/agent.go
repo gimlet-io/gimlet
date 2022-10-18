@@ -97,7 +97,7 @@ func main() {
 
 	messages := make(chan *streaming.WSMessage)
 
-	// go serverCommunication(kubeEnv, config, messages)
+	go serverCommunication(kubeEnv, config, messages)
 	go serverWSCommunication(config.AgentKey, messages)
 
 	signals := make(chan os.Signal, 1)
