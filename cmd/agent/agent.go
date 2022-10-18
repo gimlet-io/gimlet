@@ -386,7 +386,7 @@ func serverWSCommunication(token string, messages chan *streaming.WSMessage) {
 			"Authorization": []string{bearerToken},
 		})
 		if err != nil {
-			log.Errorf("dial:", err.Error())
+			log.Errorf("dial:%s", err.Error())
 			time.Sleep(3 * time.Second)
 			continue
 		}
