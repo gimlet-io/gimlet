@@ -15,7 +15,7 @@ function ServiceDetail(props) {
   useEffect(() => {
     gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
       .then(data => {
-        dispatch({
+        store.dispatch({
           type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
             owner: owner,
             repo: repoName,
@@ -35,7 +35,7 @@ function ServiceDetail(props) {
   const closeLogsOverlayHandler = (namespace, serviceName) => {
     setLogsOverlayVisible(false)
     gimletClient.stopPodlogsRequest(namespace, serviceName);
-    dispatch({
+    store.dispatch({
       type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
         pod: namespace + "/" + serviceName
       }

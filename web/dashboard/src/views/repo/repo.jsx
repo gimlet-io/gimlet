@@ -424,7 +424,7 @@ export default class Repo extends Component {
                     pullRequests={pullRequests?.[envName]}
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={this.props.gimletClient}
-                    dispatch={this.props.store.dispatch}
+                    store={this.props.store}
                   />
                 )
                 }

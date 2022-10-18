@@ -101,7 +101,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         configExists={configExists}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
-        dispatch={dispatch}
+        store={store}
       />
     )
   })
@@ -127,7 +127,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         configExists={true}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
-        dispatch={dispatch}
+        store={store}
       />
     }
     )
