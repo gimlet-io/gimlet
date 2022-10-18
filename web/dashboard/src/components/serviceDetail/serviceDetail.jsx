@@ -188,9 +188,9 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
   }, [logs]);
 
   return (
-    <div class={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}>
-      <div class="flex self-center items-center justify-center w-full p-8 h-4/5">
-        <div class="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6">
+    <div className={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}>
+      <div className="flex self-center items-center justify-center w-full p-8 h-4/5">
+        <div className="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6">
           <div className="absolute top-0 right-0 p-1.5">
             <button
               className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
@@ -202,7 +202,7 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
               <XIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <div class="h-full relative overflow-y-auto p-4 bg-slate-800 rounded-lg">
+          <div className="h-full relative overflow-y-auto p-4 bg-slate-800 rounded-lg">
             {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
             <p ref={logsEndRef} />
           </div>
