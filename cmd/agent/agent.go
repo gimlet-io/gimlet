@@ -97,7 +97,7 @@ func main() {
 
 	messages := make(chan *streaming.WSMessage)
 
-	go serverCommunication(kubeEnv, config, messages)
+	// go serverCommunication(kubeEnv, config, messages)
 	go serverWSCommunication(config.AgentKey, messages)
 
 	signals := make(chan os.Signal, 1)
@@ -378,65 +378,84 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName st
 }
 
 func serverWSCommunication(token string, messages chan *streaming.WSMessage) {
-	u := url.URL{Scheme: "ws", Host: "127.0.0.1:9000", Path: "/agent/ws/"}
-
-	token = "BEARER " + token
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
-		"Authorization": []string{token},
-	})
-	if err != nil {
-		log.Fatal("dial:", err)
-	}
-	defer c.Close()
-
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				log.Println("read:", err)
-				return
-			}
-			log.Printf("recv: %s", message)
-		}
-	}()
-
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
+loop:
 	for {
-		select {
-		case <-done:
-			return
-		case t := <-ticker.C:
-			tick := &streaming.WSMessage{
-				Type:    "tick",
-				Message: t.String(),
-			}
+		u := url.URL{Scheme: "ws", Host: "127.0.0.1:9000", Path: "/agent/ws/"}
 
-			serializedMessage, err := json.Marshal(tick)
-			if err != nil {
-				log.Error("dial:", err)
-			}
+		token = "BEARER " + token
+		c := dial(token, u)
 
-			err = c.WriteMessage(websocket.TextMessage, serializedMessage)
-			if err != nil {
-				log.Println("write:", err)
-				return
-			}
-		case message := <-messages:
-			serializedMessage, err := json.Marshal(message)
-			if err != nil {
-				log.Error("dial:", err)
-			}
+		log.Info("Connected ws")
 
-			err = c.WriteMessage(websocket.TextMessage, serializedMessage)
-			if err != nil {
-				log.Println("write:", err)
-				return
+		defer c.Close()
+
+		done := make(chan struct{})
+
+		go func() {
+			defer close(done)
+			for {
+				_, message, err := c.ReadMessage()
+				if err != nil {
+					log.Println("read:", err)
+					return
+				}
+				log.Printf("recv: %s", message)
+			}
+		}()
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-done:
+				log.Info("Disonnected ws")
+				goto loop
+			case t := <-ticker.C:
+				tick := &streaming.WSMessage{
+					Type:    "tick",
+					Message: t.String(),
+				}
+
+				serializedMessage, err := json.Marshal(tick)
+				if err != nil {
+					log.Error("dial:", err)
+				}
+
+				err = c.WriteMessage(websocket.TextMessage, serializedMessage)
+				if err != nil {
+					log.Println("write:", err)
+					return
+				}
+			case message := <-messages:
+				serializedMessage, err := json.Marshal(message)
+				if err != nil {
+					log.Error("dial:", err)
+				}
+
+				err = c.WriteMessage(websocket.TextMessage, serializedMessage)
+				if err != nil {
+					log.Println("write:", err)
+					return
+				}
 			}
 		}
+	}
+}
+
+func dial(token string, u url.URL) *websocket.Conn {
+	for {
+		c, resp, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
+			"Authorization": []string{token},
+		})
+		if err != nil {
+			if err == websocket.ErrBadHandshake {
+				log.Errorf("handshake failed with status %d", resp.StatusCode)
+			}
+			log.Errorf("dial:", err.Error())
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		return c
 	}
 }
