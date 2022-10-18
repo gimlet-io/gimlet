@@ -2,8 +2,8 @@ import React, { Component, useEffect, useState, useRef } from 'react';
 import { Pod } from "../serviceCard/serviceCard";
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
-import {XIcon} from '@heroicons/react/solid'
-import { 
+import { XIcon } from '@heroicons/react/solid'
+import {
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_CLEAR_PODLOGS
 } from "../../redux/redux";
@@ -24,8 +24,8 @@ function ServiceDetail(props) {
             releases: data,
           }
         });
-      }, () => {/* Generic error handler deals with it */});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, () => {/* Generic error handler deals with it */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [logsOverlayVisible, setLogsOverlayVisible] = useState(false)
@@ -93,7 +93,7 @@ function ServiceDetail(props) {
           </div>
           <div className="flex flex-wrap text-sm">
             <div className="flex-1 min-w-full md:min-w-0">
-              {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} />) : null}
+              {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} key={`${ingress.namespace}/${ingress.name}`} />) : null}
             </div>
             <div className="flex-1 md:ml-2 min-w-full md:min-w-0">
               <Deployment
