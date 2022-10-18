@@ -89,9 +89,9 @@ export default class Repo extends Component {
           }
         });
       }, () => {/* Generic error handler deals with it */
-      });
+    });
 
-      this.props.gimletClient.getPullRequests(owner, repo)
+    this.props.gimletClient.getPullRequests(owner, repo)
       .then(data => {
         this.props.store.dispatch({
           type: ACTION_TYPE_REPO_PULLREQUESTS, payload: {
@@ -100,19 +100,7 @@ export default class Repo extends Component {
           }
         });
       }, () => {/* Generic error handler deals with it */
-      });
-
-    this.props.gimletClient.getRolloutHistory(owner, repo)
-      .then(data => {
-        this.props.store.dispatch({
-          type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-            owner: owner,
-            repo: repo,
-            releases: data
-          }
-        });
-      }, () => {/* Generic error handler deals with it */
-      });
+    });
 
     this.props.gimletClient.getEnvConfigs(owner, repo)
       .then(envConfigs => {
@@ -124,7 +112,7 @@ export default class Repo extends Component {
           }
         });
       }, () => {/* Generic error handler deals with it */
-      });
+    });
 
     this.props.gimletClient.getBranches(owner, repo)
       .then(data => {
@@ -147,7 +135,7 @@ export default class Repo extends Component {
           }
         });
       }, () => {/* Generic error handler deals with it */
-      });
+    });
   }
 
   refreshBranches(owner, repo) {
@@ -249,17 +237,22 @@ export default class Repo extends Component {
             }
           }
           if (gitopsCommitsApplied) {
-            this.props.gimletClient.getRolloutHistory(owner, repo)
+            for (const result of deployRequest.results) {
+              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
               .then(data => {
-                this.props.store.dispatch({
-                  type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-                    owner: owner,
-                    repo: repo,
-                    releases: data
-                  }
-                });
-              }, () => {/* Generic error handler deals with it */
-              });
+                  this.props.store.dispatch({
+                    type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+                      owner: owner,
+                      repo: repo,
+                      env: result.env,
+                      app: result.app,
+                      releases: data,
+                    }
+                  });
+                }, () => {/* Generic error handler deals with it */}
+              );
+            }
+            
           }
         }
       }, () => {/* Generic error handler deals with it */
@@ -417,6 +410,7 @@ export default class Repo extends Component {
 
                 {Object.keys(filteredEnvs).sort().map((envName) =>
                   <Env
+                    key={envName}
                     searchFilter={search.filter}
                     envName={envName}
                     env={filteredEnvs[envName]}
@@ -429,6 +423,8 @@ export default class Repo extends Component {
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
                     pullRequests={pullRequests?.[envName]}
+                    gimletClient={this.props.gimletClient}
+                    dispatch={this.props.store.dispatch}
                   />
                 )
                 }
@@ -447,7 +443,6 @@ export default class Repo extends Component {
                     <Commits
                       commits={commits[repoName]}
                       connectedAgents={filteredEnvs}
-                      rolloutHistory={repoRolloutHistory}
                       deployHandler={this.deploy}
                       repo={repoName}
                     />

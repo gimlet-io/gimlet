@@ -209,7 +209,21 @@ export function search(state, search) {
 
 export function rolloutHistory(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
-  state.rolloutHistory[repo] = payload.releases;
+  const env = payload.env;
+  const app = payload.app;
+  const releases = payload.releases;
+  let existing = state.rolloutHistory[repo]
+  if (!existing){
+    existing = {}
+  }
+  state.rolloutHistory[repo] = {
+    ...existing,
+    [env]: {
+      ...existing.env,
+      [app]: releases,
+    }
+
+  };
   return state;
 }
 
