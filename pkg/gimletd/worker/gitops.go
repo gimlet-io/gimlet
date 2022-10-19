@@ -766,7 +766,7 @@ func updateEvent(store *store.Store, event *model.Event) error {
 	if err != nil {
 		return err
 	}
-	return store.UpdateEventStatus(event.ID, event.Type, event.Status, event.StatusDesc, string(gitopsHashesString), string(resultsString))
+	return store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, string(gitopsHashesString), string(resultsString))
 }
 
 func gitopsTemplateAndWrite(
