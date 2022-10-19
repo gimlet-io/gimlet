@@ -286,19 +286,13 @@ func setResultsOnRollbackEvent(event *model.Event, rollbackEvent *events.Rollbac
 		return
 	}
 
-	var rollbackStatus model.Status
-	rollbackStatus = 1
-	if rollbackEvent.Status == 0 {
-		rollbackStatus = 0
-	}
-
 	if event.Results == nil {
 		event.Results = []model.Result{}
 	}
 
 	event.Results = append(event.Results, model.Result{
 		TriggeredBy: rollbackEvent.RollbackRequest.TriggeredBy,
-		Status:      rollbackStatus,
+		Status:      model.Status(rollbackEvent.Status),
 		StatusDesc:  rollbackEvent.StatusDesc,
 		GitopsRef:   gitopsSha,
 		GitopsRepo:  rollbackEvent.GitopsRepo,
