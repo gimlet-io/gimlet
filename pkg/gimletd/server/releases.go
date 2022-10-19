@@ -396,6 +396,15 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
+		if event.Type == "rollback" {
+			results = append(results, dx.Result{
+				Hash:               result.GitopsRef,
+				Status:             result.Status.String(),
+				GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
+				StatusDesc:         result.StatusDesc,
+			})
+			continue
+		}
 		results = append(results, dx.Result{
 			App:                result.Manifest.App,
 			Hash:               result.GitopsRef,
