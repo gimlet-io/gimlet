@@ -150,6 +150,7 @@ func processEvent(
 		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
 		for _, sha := range rollbackEvent.GitopsRefs {
 			setGitopsHashOnEvent(event, sha)
+			setResultsOnRollbackEvent(event, rollbackEvent, store, sha)
 			saveAndBroadcastRollbackEvent(rollbackEvent, sha, event, store, eventSinkHub)
 		}
 	case model.BranchDeletedEvent:
@@ -172,7 +173,9 @@ func processEvent(
 	}
 
 	// record gitops hashes on events
-	event.Results = []model.Result{}
+	if event.Results == nil {
+		event.Results = []model.Result{}
+	}
 	for _, deployEvent := range deployEvents {
 		setGitopsHashOnEvent(event, deployEvent.GitopsRef)
 		saveAndBroadcastGitopsCommit(deployEvent, event, store, eventSinkHub)
@@ -276,6 +279,24 @@ func setGitopsHashOnEvent(event *model.Event, gitopsSha string) {
 	}
 
 	event.GitopsHashes = append(event.GitopsHashes, gitopsSha)
+}
+
+func setResultsOnRollbackEvent(event *model.Event, rollbackEvent *events.RollbackEvent, store *store.Store, gitopsSha string) {
+	if gitopsSha == "" {
+		return
+	}
+
+	if event.Results == nil {
+		event.Results = []model.Result{}
+	}
+
+	event.Results = append(event.Results, model.Result{
+		TriggeredBy: rollbackEvent.RollbackRequest.TriggeredBy,
+		Status:      model.Status(rollbackEvent.Status),
+		StatusDesc:  rollbackEvent.StatusDesc,
+		GitopsRef:   gitopsSha,
+		GitopsRepo:  rollbackEvent.GitopsRepo,
+	})
 }
 
 func processReleaseEvent(
