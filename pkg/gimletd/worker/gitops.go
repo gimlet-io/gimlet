@@ -113,12 +113,12 @@ func processEvent(
 
 	// process event based on type
 	var err error
-	var deployEvents []model.Result
+	var deployResults []model.Result
 	var rollbackEvent *events.RollbackEvent
 	var deleteEvents []*events.DeleteEvent
 	switch event.Type {
 	case model.ArtifactCreatedEvent:
-		deployEvents, err = processArtifactEvent(
+		deployResults, err = processArtifactEvent(
 			gitopsRepo,
 			parsedGitopsRepos,
 			repoCache,
@@ -129,7 +129,7 @@ func processEvent(
 			perf,
 		)
 	case model.ReleaseRequestedEvent:
-		deployEvents, err = processReleaseEvent(
+		deployResults, err = processReleaseEvent(
 			store,
 			gitopsRepo,
 			parsedGitopsRepos,
@@ -147,12 +147,6 @@ func processEvent(
 			repoCache,
 			event,
 		)
-		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
-		for _, sha := range rollbackEvent.GitopsRefs {
-			setGitopsHashOnEvent(event, sha)
-			setResultsOnRollbackEvent(event, rollbackEvent, store, sha)
-			saveAndBroadcastRollbackEvent(rollbackEvent, sha, event, store, eventSinkHub)
-		}
 	case model.BranchDeletedEvent:
 		deleteEvents, err = processBranchDeletedEvent(
 			gitopsRepo,
@@ -167,21 +161,28 @@ func processEvent(
 		}
 	}
 
-	// send out notifications based on gitops events
-	for _, deployEvent := range deployEvents {
-		notificationsManager.Broadcast(notifications.MessageFromGitOpsEvent(deployEvent))
+	// send out notifications
+	for _, deployResult := range deployResults {
+		notificationsManager.Broadcast(notifications.MessageFromGitOpsEvent(deployResult))
+	}
+	if rollbackEvent != nil {
+		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
 	}
 
-	// record gitops hashes on events
-	if event.Results == nil {
-		event.Results = []model.Result{}
+	// associate gitops writes with events
+	event.Results = []model.Result{}
+	for _, deployResult := range deployResults {
+		setGitopsHashOnEvent(event, deployResult.GitopsRef)
+		event.Results = append(event.Results, deployResult)
+		saveAndBroadcastGitopsCommit(deployResult, event, store, eventSinkHub)
 	}
-	for _, deployEvent := range deployEvents {
-		setGitopsHashOnEvent(event, deployEvent.GitopsRef)
-		saveAndBroadcastGitopsCommit(deployEvent, event, store, eventSinkHub)
-		event.Results = append(event.Results, deployEvent)
+	if rollbackEvent != nil {
+		for _, sha := range rollbackEvent.GitopsRefs {
+			setGitopsHashOnEvent(event, sha)
+			setResultsOnRollbackEvent(event, rollbackEvent, store, sha)
+			saveAndBroadcastRollbackEvent(rollbackEvent, sha, event, store, eventSinkHub)
+		}
 	}
-
 	// store event state
 	if err != nil {
 		logrus.Errorf("error in processing event: %s", err.Error())
@@ -284,10 +285,6 @@ func setGitopsHashOnEvent(event *model.Event, gitopsSha string) {
 func setResultsOnRollbackEvent(event *model.Event, rollbackEvent *events.RollbackEvent, store *store.Store, gitopsSha string) {
 	if gitopsSha == "" {
 		return
-	}
-
-	if event.Results == nil {
-		event.Results = []model.Result{}
 	}
 
 	event.Results = append(event.Results, model.Result{
@@ -412,6 +409,7 @@ func processRollbackEvent(
 	rollbackEvent := &events.RollbackEvent{
 		RollbackRequest: &rollbackRequest,
 		GitopsRepo:      repoName,
+		GitopsRefs:      []string{},
 	}
 
 	t0 := time.Now().UnixNano()
