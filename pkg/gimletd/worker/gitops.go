@@ -288,11 +288,12 @@ func setResultsOnRollbackEvent(event *model.Event, rollbackEvent *events.Rollbac
 	}
 
 	event.Results = append(event.Results, model.Result{
-		TriggeredBy: rollbackEvent.RollbackRequest.TriggeredBy,
-		Status:      model.Status(rollbackEvent.Status),
-		StatusDesc:  rollbackEvent.StatusDesc,
-		GitopsRef:   gitopsSha,
-		GitopsRepo:  rollbackEvent.GitopsRepo,
+		TriggeredBy:     rollbackEvent.RollbackRequest.TriggeredBy,
+		Status:          model.Status(rollbackEvent.Status),
+		StatusDesc:      rollbackEvent.StatusDesc,
+		GitopsRef:       gitopsSha,
+		GitopsRepo:      rollbackEvent.GitopsRepo,
+		RollbackRequest: rollbackEvent.RollbackRequest,
 	})
 }
 

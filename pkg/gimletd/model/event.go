@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 )
 
@@ -34,9 +35,10 @@ func (s Status) String() string {
 }
 
 type Result struct {
-	Manifest    *dx.Manifest
-	Artifact    *dx.Artifact
-	TriggeredBy string
+	Manifest        *dx.Manifest
+	Artifact        *dx.Artifact
+	RollbackRequest *dx.RollbackRequest
+	TriggeredBy     string
 
 	Status     Status
 	StatusDesc string

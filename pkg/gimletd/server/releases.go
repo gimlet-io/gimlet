@@ -402,6 +402,8 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 				Status:             result.Status.String(),
 				GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
 				StatusDesc:         result.StatusDesc,
+				App:                result.RollbackRequest.App,
+				Env:                result.RollbackRequest.Env,
 			})
 			continue
 		}
