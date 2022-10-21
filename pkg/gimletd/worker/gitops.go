@@ -174,13 +174,13 @@ func processEvent(
 	for _, deployResult := range deployResults {
 		setGitopsHashOnEvent(event, deployResult.GitopsRef)
 		event.Results = append(event.Results, deployResult)
-		saveAndBroadcastGitopsCommit(deployResult, event, store, eventSinkHub)
+		saveAndBroadcastGitopsCommit(deployResult.GitopsRef, deployResult.Manifest.Env, event, store, eventSinkHub)
 	}
 	if rollbackEvent != nil {
 		for _, sha := range rollbackEvent.GitopsRefs {
 			setGitopsHashOnEvent(event, sha)
 			setResultsOnRollbackEvent(event, rollbackEvent, store, sha)
-			saveAndBroadcastRollbackEvent(rollbackEvent, sha, event, store, eventSinkHub)
+			saveAndBroadcastGitopsCommit(sha, rollbackEvent.RollbackRequest.Env, event, store, eventSinkHub)
 		}
 	}
 	// store event state
@@ -922,40 +922,23 @@ func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {
 	return false
 }
 
-func saveAndBroadcastGitopsCommit(deployEvent model.Result, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
-	if deployEvent.GitopsRef == "" {
+func saveAndBroadcastGitopsCommit(
+	sha string,
+	env string,
+	event *model.Event,
+	store *store.Store,
+	eventSinkHub *streaming.EventSinkHub,
+) {
+	if sha == "" {
 		return
 	}
 
 	gitopsCommitToSave := model.GitopsCommit{
-		Sha:        deployEvent.GitopsRef,
-		Status:     model.NotReconciled,
-		StatusDesc: deployEvent.StatusDesc,
-		Created:    event.Created,
-		Env:        deployEvent.Manifest.Env,
-	}
-
-	eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
-
-	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
-	if err != nil {
-		logrus.Warnf("could not save or update gitops commit: %s", err)
-	}
-}
-
-func saveAndBroadcastRollbackEvent(rollbackEvent *events.RollbackEvent, sha string, event *model.Event, store *store.Store, eventSinkHub *streaming.EventSinkHub) {
-	var rollbackStatus string
-	if rollbackEvent.Status == 0 {
-		rollbackStatus = model.ReconciliationSucceeded
-	} else {
-		rollbackStatus = model.ReconciliationFailed
-	}
-	gitopsCommitToSave := model.GitopsCommit{
 		Sha:        sha,
-		Status:     rollbackStatus,
-		StatusDesc: rollbackEvent.StatusDesc,
+		Status:     model.NotReconciled,
+		StatusDesc: "",
 		Created:    event.Created,
-		Env:        rollbackEvent.RollbackRequest.Env,
+		Env:        env,
 	}
 
 	eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
