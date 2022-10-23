@@ -1,14 +1,14 @@
 version: '3'
 services:
   k3s:
-    image: rancher/k3s:v1.21.2-k3s1
+    image: rancher/k3s:v1.25.2-k3s1
     command: server --tls-san 192.168.0.14 --tls-san 127.0.0.1
     tmpfs:
     - /run
     - /var/run
     privileged: true
     environment:
-    - K3S_CLUSTER_SECRET=somethingtotallyrandom
+    - K3S_TOKEN=somethingtotallyrandom
     - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
     - K3S_KUBECONFIG_MODE=666
     volumes:
