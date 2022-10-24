@@ -107,6 +107,7 @@ class StatusIcon extends Component {
     switch (status.state) {
       case 'SUCCESS':
       case 'COMPLETED':
+      case 'NEUTRAL':
         return (
           <svg className="inline fill-current text-green-400 ml-1" viewBox="0 0 12 16" version="1.1" width="15"
                height="20"
