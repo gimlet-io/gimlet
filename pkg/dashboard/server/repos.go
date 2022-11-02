@@ -3,7 +3,6 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -29,15 +28,12 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 
 	orgReposJson := func() *model.KeyValue {
 		for {
-			fmt.Println("get repos loop")
 			orgReposJson, err := dao.KeyValue(model.OrgRepos)
 			if err != nil && err != sql.ErrNoRows {
 				logrus.Errorf("cannot load org repos: %s", err)
 				http.Error(w, http.StatusText(500), 500)
 				return nil
 			}
-
-			fmt.Println(orgReposJson)
 
 			if orgReposJson.Value != "" {
 				return orgReposJson
@@ -58,9 +54,6 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	if orgReposJson.Value == "" {
 		orgReposJson.Value = "[]"
 	}
-
-	fmt.Println("outer loop")
-	fmt.Println(orgReposJson)
 
 	err := json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
 	if err != nil {
