@@ -253,6 +253,11 @@ export function updateCommitStatus(state, event) {
   return state;
 }
 
+export function updateRepos(state, event) {
+  state.gitRepos = event.repos;
+  return state;
+}
+
 export function branches(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
   state.branches[repo] = payload.branches;

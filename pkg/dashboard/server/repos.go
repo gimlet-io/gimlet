@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
@@ -22,17 +24,45 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 
 	var orgRepos []string
 	dao := ctx.Value("store").(*store.Store)
-	orgReposJson, err := dao.KeyValue(model.OrgRepos)
-	if err != nil && err != sql.ErrNoRows {
-		logrus.Errorf("cannot load org repos: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
+	config := ctx.Value("config").(*config.Config)
+	timeout := time.After(60 * time.Second)
+
+	orgReposJson := func() *model.KeyValue {
+		for {
+			fmt.Println("get repos loop")
+			orgReposJson, err := dao.KeyValue(model.OrgRepos)
+			if err != nil && err != sql.ErrNoRows {
+				logrus.Errorf("cannot load org repos: %s", err)
+				http.Error(w, http.StatusText(500), 500)
+				return nil
+			}
+
+			fmt.Println(orgReposJson)
+
+			if orgReposJson.Value != "" {
+				return orgReposJson
+			}
+
+			go updateOrgRepos(ctx)
+			go updateUserRepos(config, dao, user)
+
+			select {
+			case <-timeout:
+				return &model.KeyValue{}
+			default:
+				time.Sleep(3 * time.Second)
+			}
+		}
+	}()
+
 	if orgReposJson.Value == "" {
 		orgReposJson.Value = "[]"
 	}
 
-	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
+	fmt.Println("outer loop")
+	fmt.Println(orgReposJson)
+
+	err := json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
 	if err != nil {
 		logrus.Errorf("cannot unmarshal org repos: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -50,13 +80,15 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.UpdateReposEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.ReposUpdatedString},
+		Repos:          orgRepos,
+	})
+	clientHub.Broadcast <- jsonString
+
 	w.WriteHeader(200)
 	w.Write(reposString)
-
-	config := ctx.Value("config").(*config.Config)
-
-	go updateOrgRepos(ctx)
-	go updateUserRepos(config, dao, user)
 }
 
 func updateOrgRepos(ctx context.Context) {
