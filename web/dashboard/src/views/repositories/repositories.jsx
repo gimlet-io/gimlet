@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoAgents, emptyStateNoMatchingService } from "../services/services";
+import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -19,6 +20,7 @@ export default class Repositories extends Component {
       search: reduxState.search,
       agents: reduxState.settings.agents,
       gitRepos: reduxState.gitRepos,
+      repositoriesLoading: true,
     }
 
     // handling API and streaming state changes
@@ -39,6 +41,18 @@ export default class Repositories extends Component {
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
     this.favoriteHandler = this.favoriteHandler.bind(this);
+  }
+
+  componentDidMount() {
+    this.props.gimletClient.getGitRepos()
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_GIT_REPOS, payload: data
+        });
+        this.setState({ repositoriesLoading: false });
+      }, () => {
+        this.setState({ repositoriesLoading: false });
+      });
   }
 
   mapToRepositories(connectedAgents, gitRepos) {
@@ -146,7 +160,7 @@ export default class Repositories extends Component {
     const emptyState = search.filter !== '' ?
       emptyStateNoMatchingService()
       :
-      (<p className="text-xs text-gray-800">No services</p>);
+      (<p className="text-xs text-gray-800">Currently you don't have any repositories</p>);
 
     return (
       <div>
@@ -156,7 +170,7 @@ export default class Repositories extends Component {
           </div>
         </header>
         <main>
-          {!this.state.gitRepos ?
+          {!this.state.gitRepos && this.state.repositoriesLoading ?
             <Spinner />
             :
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
