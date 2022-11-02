@@ -19,7 +19,6 @@ export default class Repositories extends Component {
       favorites: favoriteRepos,
       search: reduxState.search,
       agents: reduxState.settings.agents,
-      gitRepos: reduxState.gitRepos,
       repositoriesLoading: true,
     }
 
@@ -36,7 +35,6 @@ export default class Repositories extends Component {
       this.setState({ search: reduxState.search });
       this.setState({ agents: reduxState.settings.agents });
       this.setState({ favorites: favoriteRepos });
-      this.setState({ gitRepos: reduxState.gitRepos });
     });
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
@@ -57,10 +55,6 @@ export default class Repositories extends Component {
 
   mapToRepositories(connectedAgents, gitRepos) {
     const repositories = {}
-
-    if (!gitRepos) {
-      return repositories;
-    }
 
     for (const r of gitRepos) {
       if (repositories[r] === undefined) {
@@ -170,7 +164,7 @@ export default class Repositories extends Component {
           </div>
         </header>
         <main>
-          {!this.state.gitRepos && this.state.repositoriesLoading ?
+          {this.state.repositoriesLoading ?
             <Spinner />
             :
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
