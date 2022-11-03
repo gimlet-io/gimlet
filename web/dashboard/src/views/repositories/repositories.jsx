@@ -19,6 +19,7 @@ export default class Repositories extends Component {
       favorites: favoriteRepos,
       search: reduxState.search,
       agents: reduxState.settings.agents,
+      appSettingsURL: reduxState.application.appSettingsURL,
       repositoriesLoading: true,
     }
 
@@ -35,6 +36,7 @@ export default class Repositories extends Component {
       this.setState({ search: reduxState.search });
       this.setState({ agents: reduxState.settings.agents });
       this.setState({ favorites: favoriteRepos });
+      this.setState({ appSettingsURL: reduxState.application.appSettingsURL });
     });
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
@@ -154,7 +156,14 @@ export default class Repositories extends Component {
     const emptyState = search.filter !== '' ?
       emptyStateNoMatchingService()
       :
-      (<p className="text-xs text-gray-800">Currently you don't have any repositories</p>);
+      (<p className="text-xs text-gray-800">
+        Currently you don't have any repository, or application do not have permission to access repositories.
+        <button
+            onClick={() => window.open(this.state.appSettingsURL)}
+            className="text-xs text-gray-800 hover:text-gray-900 cursor-pointer">
+            Check application settings here.
+          </button>
+        </p>);
 
     return (
       <div>
