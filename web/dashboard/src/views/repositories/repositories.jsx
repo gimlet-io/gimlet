@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
-import { emptyStateNoAgents, emptyStateNoMatchingService } from "../services/services";
+import { emptyStateNoMatchingService } from "../services/services";
 import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 
 export default class Repositories extends Component {
@@ -105,7 +105,7 @@ export default class Repositories extends Component {
   }
 
   render() {
-    const { repositories, search, agents, favorites } = this.state;
+    const { repositories, search, favorites } = this.state;
 
     let filteredRepositories = {};
     for (const repoName of Object.keys(repositories)) {
@@ -186,8 +186,6 @@ export default class Repositories extends Component {
                 </div>
               }
               <div className="px-4 pt-8 sm:px-0">
-                {agents.length === 0 && emptyStateNoAgents()}
-
                 <div>
                   {favorites.length > 0 &&
                     <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
