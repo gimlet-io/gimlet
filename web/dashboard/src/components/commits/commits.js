@@ -1,10 +1,42 @@
-import {format, formatDistance} from "date-fns";
-import React, {Component} from "react";
+import { format, formatDistance } from "date-fns";
+import React, { Component } from "react";
 import DeployWidget from "../deployWidget/deployWidget";
+import InfiniteScroll from "react-infinite-scroll-component";
+import { ACTION_TYPE_COMMITS } from "../../redux/redux";
 
 export class Commits extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      limit: 20
+    }
+
+    this.fetchNextCommitsWidgets = this.fetchNextCommitsWidgets.bind(this);
+  }
+
+  fetchNextCommitsWidgets() {
+    let { gimletClient, store, owner, branch, repository } = this.props;
+    //TODO find better use of repo-repoName-repository
+    // TODO new eventhandler update commits
+    gimletClient.getCommits(owner, repository, branch, this.state.limit)
+      .then(data => {
+        store.dispatch({
+          type: ACTION_TYPE_COMMITS, payload: {
+            owner: owner,
+            repo: repository,
+            commits: data
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
+
+    this.setState({ limit: this.state.limit + 10 });
+  }
+
+
   render() {
-    const {commits, connectedAgents, deployHandler, repo} = this.props;
+    const { commits, connectedAgents, deployHandler, repo } = this.props;
 
     if (!commits) {
       return null;
@@ -90,11 +122,18 @@ export class Commits extends Component {
       )
     })
 
+    //TODO hide scroll on component infinitescroll
     return (
       <div className="flow-root">
-        <ul className="-mb-4">
-          {commitWidgets}
-        </ul>
+        <InfiniteScroll
+          dataLength={commitWidgets.length}
+          next={this.fetchNextCommitsWidgets}
+          hasMore={true}
+        >
+          <ul className="-mb-4">
+            {commitWidgets}
+          </ul>
+        </InfiniteScroll>
       </div>
     )
   }

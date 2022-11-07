@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -25,6 +26,15 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	repoName := fmt.Sprintf("%s/%s", owner, name)
 	branch := r.URL.Query().Get("branch")
+	limitString := r.URL.Query().Get("limit")
+
+	// TODO use page instead of limit, return 10 commits per page
+	limit, err := strconv.Atoi(limitString)
+	if err != nil {
+		logrus.Errorf("cannot convert string to int: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -50,7 +60,6 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := 10
 	commits := []*Commit{}
 	err = commitWalker.ForEach(func(c *object.Commit) error {
 		if limit != 0 && len(commits) >= limit {

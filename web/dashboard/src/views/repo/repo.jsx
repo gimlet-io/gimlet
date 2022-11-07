@@ -153,7 +153,7 @@ export default class Repo extends Component {
   }
 
   refreshCommits(owner, repo, branch) {
-    this.props.gimletClient.getCommits(owner, repo, branch)
+    this.props.gimletClient.getCommits(owner, repo, branch, 10)
       .then(data => {
         this.props.store.dispatch({
           type: ACTION_TYPE_COMMITS, payload: {
@@ -191,7 +191,7 @@ export default class Repo extends Component {
     if (newBranch !== selectedBranch) {
       this.setState({ selectedBranch: newBranch });
 
-      this.props.gimletClient.getCommits(owner, repo, newBranch)
+      this.props.gimletClient.getCommits(owner, repo, newBranch, 10)
         .then(data => {
           this.props.store.dispatch({
             type: ACTION_TYPE_COMMITS, payload: {
@@ -238,8 +238,8 @@ export default class Repo extends Component {
           }
           if (gitopsCommitsApplied) {
             for (const result of deployRequest.results) {
-              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
-              .then(data => {
+              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app, 10)
+                .then(data => {
                   this.props.store.dispatch({
                     type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
                       owner: owner,
@@ -440,11 +440,17 @@ export default class Repo extends Component {
                     }
                   </div>
                   {commits &&
+                  //TODO find better use of repo-repoName-repository
                     <Commits
                       commits={commits[repoName]}
                       connectedAgents={filteredEnvs}
                       deployHandler={this.deploy}
                       repo={repoName}
+                      gimletClient={this.props.gimletClient}
+                      store={this.props.store}
+                      owner={owner}
+                      repository={repo}
+                      branch={this.state.selectedBranch}
                     />
                   }
                 </div>
