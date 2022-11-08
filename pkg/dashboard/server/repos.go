@@ -25,9 +25,6 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)
 
-	go updateOrgRepos(ctx)
-	go updateUserRepos(config, dao, user)
-
 	timeout := time.After(60 * time.Second)
 	orgReposJson := func() *model.KeyValue {
 		for {
@@ -41,6 +38,9 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 			if orgReposJson.Value != "" {
 				return orgReposJson
 			}
+
+			go updateOrgRepos(ctx)
+			go updateUserRepos(config, dao, user)
 
 			select {
 			case <-timeout:
