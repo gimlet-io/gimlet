@@ -212,18 +212,15 @@ export function rolloutHistory(state, payload) {
   const env = payload.env;
   const app = payload.app;
   const releases = payload.releases;
-  let existing = state.rolloutHistory[repo]
-  if (!existing){
-    existing = {}
-  }
-  state.rolloutHistory[repo] = {
-    ...existing,
-    [env]: {
-      ...existing.env,
-      [app]: releases,
-    }
 
-  };
+  if (!state.rolloutHistory[repo]) {
+    state.rolloutHistory[repo] = {}
+    if (!state.rolloutHistory[repo][env]) {
+      state.rolloutHistory[repo][env] = {}
+    }
+  }
+
+  state.rolloutHistory[repo][env][app] = releases
   return state;
 }
 
