@@ -16,15 +16,15 @@ export class Commits extends Component {
   }
 
   fetchNextCommitsWidgets() {
-    let { gimletClient, store, owner, branch, repository } = this.props;
-    //TODO find better use of repo-repoName-repository
+    let { gimletClient, store, owner, branch, repo } = this.props;
+    console.log("fetch next commits")
     // TODO new eventhandler update commits
-    gimletClient.getCommits(owner, repository, branch, this.state.limit)
+    gimletClient.getCommits(owner, repo, branch, this.state.limit)
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_COMMITS, payload: {
             owner: owner,
-            repo: repository,
+            repo: repo,
             commits: data
           }
         });
@@ -36,12 +36,13 @@ export class Commits extends Component {
 
 
   render() {
-    const { commits, connectedAgents, deployHandler, repo } = this.props;
+    const { commits, connectedAgents, deployHandler, owner, repo } = this.props;
 
     if (!commits) {
       return null;
     }
 
+    const repoName = `${owner}/${repo}`
     const commitWidgets = [];
 
     commits.forEach((commit, idx, ar) => {
@@ -113,7 +114,7 @@ export class Commits extends Component {
                   deployTargets={commit.deployTargets}
                   deployHandler={deployHandler}
                   sha={commit.sha}
-                  repo={repo}
+                  repo={repoName}
                 />
               </div>
             </div>
@@ -122,12 +123,12 @@ export class Commits extends Component {
       )
     })
 
-    //TODO hide scroll on component infinitescroll
     return (
       <div className="flow-root">
         <InfiniteScroll
           dataLength={commitWidgets.length}
           next={this.fetchNextCommitsWidgets}
+          style={{ overflowY: 'hidden' }}
           hasMore={true}
         >
           <ul className="-mb-4">

@@ -440,16 +440,14 @@ export default class Repo extends Component {
                     }
                   </div>
                   {commits &&
-                  //TODO find better use of repo-repoName-repository
                     <Commits
                       commits={commits[repoName]}
                       connectedAgents={filteredEnvs}
                       deployHandler={this.deploy}
-                      repo={repoName}
+                      repo={repo}
                       gimletClient={this.props.gimletClient}
                       store={this.props.store}
                       owner={owner}
-                      repository={repo}
                       branch={this.state.selectedBranch}
                     />
                   }
