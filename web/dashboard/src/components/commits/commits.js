@@ -2,14 +2,14 @@ import { format, formatDistance } from "date-fns";
 import React, { Component } from "react";
 import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { ACTION_TYPE_COMMITS } from "../../redux/redux";
+import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 
 export class Commits extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      limit: 20
+      page: 2
     }
 
     this.fetchNextCommitsWidgets = this.fetchNextCommitsWidgets.bind(this);
@@ -17,12 +17,11 @@ export class Commits extends Component {
 
   fetchNextCommitsWidgets() {
     let { gimletClient, store, owner, branch, repo } = this.props;
-    console.log("fetch next commits")
-    // TODO new eventhandler update commits
-    gimletClient.getCommits(owner, repo, branch, this.state.limit)
+
+    gimletClient.getCommits(owner, repo, branch, this.state.page)
       .then(data => {
         store.dispatch({
-          type: ACTION_TYPE_COMMITS, payload: {
+          type: ACTION_TYPE_UPDATE_COMMITS, payload: {
             owner: owner,
             repo: repo,
             commits: data
@@ -31,9 +30,8 @@ export class Commits extends Component {
       }, () => {/* Generic error handler deals with it */
       });
 
-    this.setState({ limit: this.state.limit + 10 });
+    this.setState({ page: this.state.page + 1 });
   }
-
 
   render() {
     const { commits, connectedAgents, deployHandler, owner, repo } = this.props;
@@ -129,7 +127,7 @@ export class Commits extends Component {
           dataLength={commitWidgets.length}
           next={this.fetchNextCommitsWidgets}
           style={{ overflowY: 'hidden' }}
-          hasMore={true}
+          hasMore={this.state.page < 10}
         >
           <ul className="-mb-4">
             {commitWidgets}

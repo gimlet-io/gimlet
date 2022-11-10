@@ -230,6 +230,12 @@ export function commits(state, payload) {
   return state;
 }
 
+export function updateCommits(state, payload) {
+  const repo = `${payload.owner}/${payload.repo}`;
+  state.commits[repo] = state.commits[repo].concat(payload.commits);
+  return state;
+}
+
 export function updateCommitStatus(state, event) {
   const repo = `${event.owner}/${event.repo}`;
 

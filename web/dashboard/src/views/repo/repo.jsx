@@ -153,7 +153,7 @@ export default class Repo extends Component {
   }
 
   refreshCommits(owner, repo, branch) {
-    this.props.gimletClient.getCommits(owner, repo, branch, 10)
+    this.props.gimletClient.getCommits(owner, repo, branch, 1)
       .then(data => {
         this.props.store.dispatch({
           type: ACTION_TYPE_COMMITS, payload: {
@@ -191,7 +191,7 @@ export default class Repo extends Component {
     if (newBranch !== selectedBranch) {
       this.setState({ selectedBranch: newBranch });
 
-      this.props.gimletClient.getCommits(owner, repo, newBranch, 10)
+      this.props.gimletClient.getCommits(owner, repo, newBranch, 1)
         .then(data => {
           this.props.store.dispatch({
             type: ACTION_TYPE_COMMITS, payload: {

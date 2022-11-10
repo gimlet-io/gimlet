@@ -13,6 +13,7 @@ export const ACTION_TYPE_CHARTSCHEMA = 'chartSchema';
 export const ACTION_TYPE_SEARCH = 'search';
 export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
 export const ACTION_TYPE_COMMITS = 'commits';
+export const ACTION_TYPE_UPDATE_COMMITS = 'updateCommits';
 export const ACTION_TYPE_BRANCHES = 'branches';
 export const ACTION_TYPE_ENVCONFIGS = 'envConfigs';
 export const ACTION_TYPE_SAVE_ENV_PULLREQUEST = 'updateEnvsPullRequestsOnSave';
@@ -127,6 +128,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.rolloutHistory(state, action.payload)
     case ACTION_TYPE_COMMITS:
       return eventHandlers.commits(state, action.payload)
+      case ACTION_TYPE_UPDATE_COMMITS:
+        return eventHandlers.updateCommits(state, action.payload)
     case ACTION_TYPE_BRANCHES:
       return eventHandlers.branches(state, action.payload)
     case ACTION_TYPE_ENVCONFIGS:

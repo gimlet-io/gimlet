@@ -26,12 +26,11 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	repoName := fmt.Sprintf("%s/%s", owner, name)
 	branch := r.URL.Query().Get("branch")
-	limitString := r.URL.Query().Get("limit")
+	pageString := r.URL.Query().Get("page")
 
-	// TODO use page instead of limit, return 10 commits per page
-	limit, err := strconv.Atoi(limitString)
+	page, err := strconv.Atoi(pageString)
 	if err != nil {
-		logrus.Errorf("cannot convert string to int: %s", err)
+		logrus.Errorf("cannot parse pageString: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -60,6 +59,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	limit := 99
 	commits := []*Commit{}
 	err = commitWalker.ForEach(func(c *object.Commit) error {
 		if limit != 0 && len(commits) >= limit {
@@ -83,11 +83,15 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	firstIndexOfPage, lastIndexOfPage := firstAndLastIndexByPage(page)
+
+	commitsSlice := commits[firstIndexOfPage:lastIndexOfPage]
+
 	dao := ctx.Value("store").(*store.Store)
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	commits, err = decorateCommitsWithSCMData(repoName, commits, dao, gitServiceImpl, token)
+	commits, err = decorateCommitsWithSCMData(repoName, commitsSlice, dao, gitServiceImpl, token)
 	if err != nil {
 		logrus.Errorf("cannot decorate commits: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -131,6 +135,10 @@ type Commit struct {
 	Tags          []string             `json:"tags,omitempty"`
 	Status        model.CombinedStatus `json:"status,omitempty"`
 	DeployTargets []*DeployTarget      `json:"deployTargets,omitempty"`
+}
+
+func firstAndLastIndexByPage(page int) (int, int) {
+	return page*10 - 10, page * 10
 }
 
 func decorateCommitsWithSCMData(
