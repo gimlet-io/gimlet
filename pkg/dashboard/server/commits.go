@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -17,6 +16,7 @@ import (
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/sirupsen/logrus"
 )
@@ -26,14 +26,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	repoName := fmt.Sprintf("%s/%s", owner, name)
 	branch := r.URL.Query().Get("branch")
-	pageString := r.URL.Query().Get("page")
-
-	page, err := strconv.Atoi(pageString)
-	if err != nil {
-		logrus.Errorf("cannot parse pageString: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	hashString := r.URL.Query().Get("fromHash")
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -49,9 +42,14 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		branch = helper.HeadBranch(repo)
 	}
 
-	head := helper.BranchHeadHash(repo, branch)
+	hash := helper.BranchHeadHash(repo, branch)
+
+	if hashString != "head" {
+		hash = plumbing.NewHash(hashString)
+	}
+
 	commitWalker, err := repo.Log(&git.LogOptions{
-		From: head,
+		From: hash,
 	})
 	if err != nil {
 		logrus.Errorf("cannot walk commits: %s", err)
@@ -59,7 +57,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := 99
+	limit := 10
 	commits := []*Commit{}
 	err = commitWalker.ForEach(func(c *object.Commit) error {
 		if limit != 0 && len(commits) >= limit {
@@ -83,15 +81,11 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	firstIndexOfPage, lastIndexOfPage := firstAndLastIndexByPage(page)
-
-	commitsSlice := commits[firstIndexOfPage:lastIndexOfPage]
-
 	dao := ctx.Value("store").(*store.Store)
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	commits, err = decorateCommitsWithSCMData(repoName, commitsSlice, dao, gitServiceImpl, token)
+	commits, err = decorateCommitsWithSCMData(repoName, commits, dao, gitServiceImpl, token)
 	if err != nil {
 		logrus.Errorf("cannot decorate commits: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -135,10 +129,6 @@ type Commit struct {
 	Tags          []string             `json:"tags,omitempty"`
 	Status        model.CombinedStatus `json:"status,omitempty"`
 	DeployTargets []*DeployTarget      `json:"deployTargets,omitempty"`
-}
-
-func firstAndLastIndexByPage(page int) (int, int) {
-	return page*10 - 10, page * 10
 }
 
 func decorateCommitsWithSCMData(

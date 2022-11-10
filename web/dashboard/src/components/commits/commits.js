@@ -8,17 +8,15 @@ export class Commits extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      page: 2
-    }
-
     this.fetchNextCommitsWidgets = this.fetchNextCommitsWidgets.bind(this);
   }
 
   fetchNextCommitsWidgets() {
-    let { gimletClient, store, owner, branch, repo } = this.props;
+    let { gimletClient, store, owner, branch, repo, commits } = this.props;
 
-    gimletClient.getCommits(owner, repo, branch, this.state.page)
+    const lastCommit = commits[commits.length - 1]
+
+    gimletClient.getCommits(owner, repo, branch, lastCommit.sha)
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_UPDATE_COMMITS, payload: {
@@ -29,8 +27,6 @@ export class Commits extends Component {
         });
       }, () => {/* Generic error handler deals with it */
       });
-
-    this.setState({ page: this.state.page + 1 });
   }
 
   render() {
@@ -127,7 +123,7 @@ export class Commits extends Component {
           dataLength={commitWidgets.length}
           next={this.fetchNextCommitsWidgets}
           style={{ overflowY: 'hidden' }}
-          hasMore={this.state.page < 10}
+          hasMore={true}
         >
           <ul className="-mb-4">
             {commitWidgets}
