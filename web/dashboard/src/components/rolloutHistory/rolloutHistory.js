@@ -53,8 +53,14 @@ export class RolloutHistory extends Component {
       const showDate = previousDateLabel !== dateLabel
       previousDateLabel = dateLabel;
 
+      let ringColor = "ring-yellow-200";
+      if (rollout.gitopsCommitStatus.includes("Succeeded")) {
+        ringColor = "ring-green-200";
+      } else if (rollout.gitopsCommitStatus.includes("Failed")) {
+        ringColor = "ring-red-400";
+      }
+
       let color = rollout.rolledBack ? 'bg-red-300' : 'bg-green-100';
-      let ringColor = rollout.rolledBack ? 'ring-red-400' : 'ring-green-200';
       let border = showDate ? 'lg:border-l' : '';
 
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
