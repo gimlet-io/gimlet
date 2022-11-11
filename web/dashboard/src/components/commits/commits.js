@@ -1,15 +1,42 @@
-import {format, formatDistance} from "date-fns";
-import React, {Component} from "react";
+import { format, formatDistance } from "date-fns";
+import React, { Component } from "react";
 import DeployWidget from "../deployWidget/deployWidget";
+import InfiniteScroll from "react-infinite-scroll-component";
+import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 
 export class Commits extends Component {
+  constructor(props) {
+    super(props);
+
+    this.fetchNextCommitsWidgets = this.fetchNextCommitsWidgets.bind(this);
+  }
+
+  fetchNextCommitsWidgets() {
+    let { gimletClient, store, owner, branch, repo, commits } = this.props;
+
+    const lastCommit = commits[commits.length - 1]
+
+    gimletClient.getCommits(owner, repo, branch, lastCommit.sha)
+      .then(data => {
+        store.dispatch({
+          type: ACTION_TYPE_UPDATE_COMMITS, payload: {
+            owner: owner,
+            repo: repo,
+            commits: data
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
+  }
+
   render() {
-    const {commits, connectedAgents, deployHandler, repo} = this.props;
+    const { commits, connectedAgents, deployHandler, owner, repo } = this.props;
 
     if (!commits) {
       return null;
     }
 
+    const repoName = `${owner}/${repo}`
     const commitWidgets = [];
 
     commits.forEach((commit, idx, ar) => {
@@ -81,7 +108,7 @@ export class Commits extends Component {
                   deployTargets={commit.deployTargets}
                   deployHandler={deployHandler}
                   sha={commit.sha}
-                  repo={repo}
+                  repo={repoName}
                 />
               </div>
             </div>
@@ -92,9 +119,16 @@ export class Commits extends Component {
 
     return (
       <div className="flow-root">
-        <ul className="-mb-4">
-          {commitWidgets}
-        </ul>
+        <InfiniteScroll
+          dataLength={commitWidgets.length}
+          next={this.fetchNextCommitsWidgets}
+          style={{ overflowY: 'hidden' }}
+          hasMore={true}
+        >
+          <ul className="-mb-4">
+            {commitWidgets}
+          </ul>
+        </InfiniteScroll>
       </div>
     )
   }
