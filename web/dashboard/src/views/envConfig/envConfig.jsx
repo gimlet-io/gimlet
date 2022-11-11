@@ -610,13 +610,13 @@ gimlet manifest template -f manifest.yaml`}
           <span className="inline-flex gap-x-3 float-right">
             <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
               <Menu.Button
-                className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Replicate to..
               </Menu.Button>
               <span className="-ml-px relative block">
                 <Menu.Button
-                  className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                  className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <span className="sr-only">Open options</span>
                   <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
                 </Menu.Button>
