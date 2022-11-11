@@ -238,8 +238,8 @@ export default class Repo extends Component {
           }
           if (gitopsCommitsApplied) {
             for (const result of deployRequest.results) {
-              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app, 10)
-                .then(data => {
+              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
+              .then(data => {
                   this.props.store.dispatch({
                     type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
                       owner: owner,
