@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
@@ -25,6 +25,7 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)
 
+	fmt.Println("start loop")
 	timeout := time.After(60 * time.Second)
 	orgReposJson := func() *model.KeyValue {
 		for {
@@ -35,10 +36,16 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 				return nil
 			}
 
+			fmt.Println("print orgreposJson")
+			fmt.Println(orgReposJson)
+			fmt.Println("print user repos")
+			fmt.Println(len(user.Repos))
+
 			if orgReposJson.Value != "" {
 				return orgReposJson
 			}
 
+			fmt.Println("update repos")
 			go updateOrgRepos(ctx)
 			go updateUserRepos(config, dao, user)
 
@@ -51,6 +58,10 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	fmt.Println("end loop")
+	fmt.Println("print user repos before update")
+	fmt.Println(len(user.Repos))
+
 	if orgReposJson.Value == "" {
 		orgReposJson.Value = "[]"
 	}
@@ -61,6 +72,16 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
+
+	user, err = dao.User(user.Login)
+	if err != nil {
+		logrus.Errorf("cannot get user from db: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	fmt.Println("print user repos after update")
+	fmt.Println(len(user.Repos))
 
 	userHasAccessToRepos := intersection(orgRepos, user.Repos)
 	if userHasAccessToRepos == nil {
