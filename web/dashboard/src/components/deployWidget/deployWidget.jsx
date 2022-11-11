@@ -24,19 +24,19 @@ export default function DeployWidget(props) {
   }
 
   return (
-    <span className="relative inline-flex shadow-sm rounded-md">
-      <button
-        type="button"
-        className="relative cursor-default inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-      >
-        Deploy..
-      </button>
-      <Menu as="span" className="-ml-px relative block">
+    <span className="relative inline-flex flex-row rounded-md">
+      <Menu as="span" className="relative inline-flex shadow-sm rounded-md align-middle">
         <Menu.Button
-          className="relative z-0 inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-          <span className="sr-only">Open options</span>
-          <ChevronDownIcon className="h-5 w-5" aria-hidden="true"/>
+          className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Deploy..
         </Menu.Button>
+        <span className="-ml-px relative block">
+          <Menu.Button
+            className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <span className="sr-only">Open options</span>
+            <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+          </Menu.Button>
           <Menu.Items
             className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
             <div className="py-1">
@@ -44,7 +44,7 @@ export default function DeployWidget(props) {
                 if (deployTargetsByEnv[env].length > 1) {
                   return (
                     <Menu.Item key={`${env}`}>
-                      {({active}) => (
+                      {({ active }) => (
                         <button
                           onClick={() => deployHandler({
                             env: env,
@@ -67,7 +67,7 @@ export default function DeployWidget(props) {
               })}
               {deployTargets.map((target) => (
                 <Menu.Item key={`${target.app}-${target.env}`}>
-                  {({active}) => (
+                  {({ active }) => (
                     <button
                       onClick={() => deployHandler(target, sha, repo)}
                       className={(
@@ -82,6 +82,7 @@ export default function DeployWidget(props) {
               ))}
             </div>
           </Menu.Items>
+        </span>
       </Menu>
     </span>
   )
