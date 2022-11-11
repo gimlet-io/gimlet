@@ -73,13 +73,6 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.UpdateReposEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.ReposUpdatedString},
-		Repos:          orgRepos,
-	})
-	clientHub.Broadcast <- jsonString
-
 	w.WriteHeader(200)
 	w.Write(reposString)
 }
