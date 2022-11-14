@@ -1,6 +1,7 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
-import {emptyStateNoAgents, emptyStateNoMatchingService} from "../services/services";
+import { emptyStateNoMatchingService } from "../services/services";
+import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -17,7 +18,9 @@ export default class Repositories extends Component {
       repositories: this.mapToRepositories(reduxState.connectedAgents, reduxState.gitRepos),
       favorites: favoriteRepos,
       search: reduxState.search,
-      agents: reduxState.settings.agents
+      agents: reduxState.settings.agents,
+      appSettingsURL: reduxState.application.appSettingsURL,
+      repositoriesLoading: true,
     }
 
     // handling API and streaming state changes
@@ -29,14 +32,27 @@ export default class Repositories extends Component {
         favoriteRepos = reduxState.user.favoriteRepos;
       }
 
-      this.setState({repositories: this.mapToRepositories(reduxState.connectedAgents, reduxState.gitRepos)});
-      this.setState({search: reduxState.search});
-      this.setState({agents: reduxState.settings.agents});
-      this.setState({favorites: favoriteRepos});
+      this.setState({ repositories: this.mapToRepositories(reduxState.connectedAgents, reduxState.gitRepos) });
+      this.setState({ search: reduxState.search });
+      this.setState({ agents: reduxState.settings.agents });
+      this.setState({ favorites: favoriteRepos });
+      this.setState({ appSettingsURL: reduxState.application.appSettingsURL });
     });
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
     this.favoriteHandler = this.favoriteHandler.bind(this);
+  }
+
+  componentDidMount() {
+    this.props.gimletClient.getGitRepos()
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_GIT_REPOS, payload: data
+        });
+        this.setState({ repositoriesLoading: false });
+      }, () => {
+        this.setState({ repositoriesLoading: false });
+      });
   }
 
   mapToRepositories(connectedAgents, gitRepos) {
@@ -89,7 +105,7 @@ export default class Repositories extends Component {
   }
 
   render() {
-    const {repositories, search, agents, favorites} = this.state;
+    const { repositories, search, favorites } = this.state;
 
     let filteredRepositories = {};
     for (const repoName of Object.keys(repositories)) {
@@ -140,7 +156,14 @@ export default class Repositories extends Component {
     const emptyState = search.filter !== '' ?
       emptyStateNoMatchingService()
       :
-      (<p className="text-xs text-gray-800">No services</p>);
+      (<p className="text-xs text-gray-800">
+        You don't have any repositories. Most likely you haven't granted access to any repositories on the Github OAuth screen.
+        <button
+            onClick={() => window.open(this.state.appSettingsURL)}
+            className="text-xs text-gray-800 hover:text-gray-900 cursor-pointer">
+            Check application settings here.
+          </button>
+        </p>);
 
     return (
       <div>
@@ -150,32 +173,47 @@ export default class Repositories extends Component {
           </div>
         </header>
         <main>
-          <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            {favorites.length > 0 &&
-            <div className="px-4 pt-8 sm:px-0">
-              <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Favorites</h4>
-              <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {favoriteRepoCards}
-              </ul>
-            </div>
-            }
-            <div className="px-4 pt-8 sm:px-0">
-              {agents.length === 0 && emptyStateNoAgents()}
-              
-              <div>
-                {favorites.length > 0 &&
-                <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
-                }
-                <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {repoCards.length > 0 ? repoCards : emptyState}
-                </ul>
+          {this.state.repositoriesLoading ?
+            <Spinner />
+            :
+            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+              {favorites.length > 0 &&
+                <div className="px-4 pt-8 sm:px-0">
+                  <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Favorites</h4>
+                  <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {favoriteRepoCards}
+                  </ul>
+                </div>
+              }
+              <div className="px-4 pt-8 sm:px-0">
+                <div>
+                  {favorites.length > 0 &&
+                    <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
+                  }
+                  <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {repoCards.length > 0 ? repoCards : emptyState}
+                  </ul>
+                </div>
+
               </div>
-              
-            </div>
-          </div>
+            </div>}
         </main>
       </div>
     )
   }
 
+}
+
+const Spinner = () => {
+  return (
+    <div className="max-w-7xl grid place-items-center mx-auto px-4 sm:px-6 lg:px-8">
+      <div role="status">
+        <svg className="inline w-16 h-16 text-gray-200 animate-spin dark:text-gray-200 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />
+          <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" />
+        </svg>
+        <span className="sr-only">Loading...</span>
+      </div>
+    </div>
+  )
 }

@@ -22,9 +22,39 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 
 	var orgRepos []string
 	dao := ctx.Value("store").(*store.Store)
-	orgReposJson, err := dao.KeyValue(model.OrgRepos)
-	if err != nil && err != sql.ErrNoRows {
-		logrus.Errorf("cannot load org repos: %s", err)
+	config := ctx.Value("config").(*config.Config)
+
+	go updateOrgRepos(ctx)
+	go updateUserRepos(config, dao, user)
+
+	timeout := time.After(45 * time.Second)
+	orgReposJson, user, err := func() (*model.KeyValue, *model.User, error) {
+		for {
+			orgReposJson, err := dao.KeyValue(model.OrgRepos)
+			if err != nil && err != sql.ErrNoRows {
+				logrus.Errorf("cannot load org repos: %s", err)
+				return nil, nil, err
+			}
+
+			user, err = dao.User(user.Login)
+			if err != nil {
+				logrus.Errorf("cannot get user from db: %s", err)
+				return nil, nil, err
+			}
+
+			if orgReposJson.Value != "" && len(user.Repos) > 0 {
+				return orgReposJson, user, nil
+			}
+
+			select {
+			case <-timeout:
+				return &model.KeyValue{}, &model.User{}, nil
+			default:
+				time.Sleep(3 * time.Second)
+			}
+		}
+	}()
+	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -52,11 +82,6 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write(reposString)
-
-	config := ctx.Value("config").(*config.Config)
-
-	go updateOrgRepos(ctx)
-	go updateUserRepos(config, dao, user)
 }
 
 func updateOrgRepos(ctx context.Context) {
