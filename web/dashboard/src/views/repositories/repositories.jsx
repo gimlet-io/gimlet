@@ -157,7 +157,7 @@ export default class Repositories extends Component {
       emptyStateNoMatchingService()
       :
       (<p className="text-xs text-gray-800">
-        Currently you don't have any repository, or application do not have permission to access repositories.
+        You don't have any repositories. Most likely you haven't granted access to any repositories on the Github OAuth screen.
         <button
             onClick={() => window.open(this.state.appSettingsURL)}
             className="text-xs text-gray-800 hover:text-gray-900 cursor-pointer">
