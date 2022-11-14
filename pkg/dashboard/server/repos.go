@@ -25,53 +25,48 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)
 
-	fmt.Println("start loop")
 	timeout := time.After(60 * time.Second)
-	orgReposJson := func() *model.KeyValue {
+	orgReposJson, err := func() (*model.KeyValue, error) {
 		for {
 			orgReposJson, err := dao.KeyValue(model.OrgRepos)
 			if err != nil && err != sql.ErrNoRows {
-				logrus.Errorf("cannot load org repos: %s", err)
-				http.Error(w, http.StatusText(500), 500)
-				return nil
+				return nil, err
 			}
 
-			fmt.Println("print orgreposJson")
-			fmt.Println(orgReposJson)
-			fmt.Println("print user repos")
-			fmt.Println(len(user.Repos))
-
 			if orgReposJson.Value != "" {
-				return orgReposJson
+				return orgReposJson, nil
 			}
 
 			fmt.Println("update repos")
 			go updateOrgRepos(ctx)
-			go updateUserRepos(config, dao, user)
 
 			select {
 			case <-timeout:
-				return &model.KeyValue{}
+				return &model.KeyValue{}, nil
 			default:
 				time.Sleep(3 * time.Second)
 			}
 		}
 	}()
-
-	fmt.Println("end loop")
-	fmt.Println("print user repos before update")
-	fmt.Println(len(user.Repos))
+	if err != nil {
+		logrus.Errorf("cannot load org repos: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 
 	if orgReposJson.Value == "" {
 		orgReposJson.Value = "[]"
 	}
 
-	err := json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
+	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
 	if err != nil {
 		logrus.Errorf("cannot unmarshal org repos: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
+
+	fmt.Println("user before update")
+	fmt.Println(user.Repos)
 
 	user, err = dao.User(user.Login)
 	if err != nil {
@@ -80,8 +75,10 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("print user repos after update")
-	fmt.Println(len(user.Repos))
+	updateUserRepos(config, dao, user)
+
+	fmt.Println("user after update")
+	fmt.Println(user.Repos)
 
 	userHasAccessToRepos := intersection(orgRepos, user.Repos)
 	if userHasAccessToRepos == nil {
