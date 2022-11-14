@@ -28,31 +28,36 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	go updateUserRepos(config, dao, user)
 
 	timeout := time.After(60 * time.Second)
-	orgReposJson, err := func() (*model.KeyValue, error) {
+	orgReposJson, user, err := func() (*model.KeyValue, *model.User, error) {
 		for {
 			orgReposJson, err := dao.KeyValue(model.OrgRepos)
 			if err != nil && err != sql.ErrNoRows {
-				return nil, err
+				logrus.Errorf("cannot load org repos: %s", err)
+				return nil, nil, err
 			}
 
-			if orgReposJson.Value != "" {
-				return orgReposJson, nil
+			user, err = dao.User(user.Login)
+			if err != nil {
+				logrus.Errorf("cannot get user from db: %s", err)
+				return nil, nil, err
+			}
+
+			if orgReposJson.Value != "" && len(user.Repos) > 0 {
+				return orgReposJson, user, nil
 			}
 
 			select {
 			case <-timeout:
-				return &model.KeyValue{}, nil
+				return &model.KeyValue{}, &model.User{}, nil
 			default:
 				time.Sleep(3 * time.Second)
 			}
 		}
 	}()
 	if err != nil {
-		logrus.Errorf("cannot load org repos: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-
 	if orgReposJson.Value == "" {
 		orgReposJson.Value = "[]"
 	}
@@ -60,31 +65,6 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
 	if err != nil {
 		logrus.Errorf("cannot unmarshal org repos: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	user, err = func() (*model.User, error) {
-		for {
-			user, err = dao.User(user.Login)
-			if err != nil {
-				return nil, err
-			}
-
-			if len(user.Repos) > 0 {
-				return user, nil
-			}
-
-			select {
-			case <-timeout:
-				return user, nil
-			default:
-				time.Sleep(3 * time.Second)
-			}
-		}
-	}()
-	if err != nil {
-		logrus.Errorf("cannot get user from db: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
