@@ -3,7 +3,6 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -25,6 +24,9 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)
 
+	go updateOrgRepos(ctx)
+	go updateUserRepos(config, dao, user)
+
 	timeout := time.After(60 * time.Second)
 	orgReposJson, err := func() (*model.KeyValue, error) {
 		for {
@@ -36,9 +38,6 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 			if orgReposJson.Value != "" {
 				return orgReposJson, nil
 			}
-
-			fmt.Println("update repos")
-			go updateOrgRepos(ctx)
 
 			select {
 			case <-timeout:
@@ -65,20 +64,30 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("user before update")
-	fmt.Println(user.Repos)
+	user, err = func() (*model.User, error) {
+		for {
+			user, err = dao.User(user.Login)
+			if err != nil {
+				return nil, err
+			}
 
-	user, err = dao.User(user.Login)
+			if len(user.Repos) > 0 {
+				return user, nil
+			}
+
+			select {
+			case <-timeout:
+				return user, nil
+			default:
+				time.Sleep(3 * time.Second)
+			}
+		}
+	}()
 	if err != nil {
 		logrus.Errorf("cannot get user from db: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-
-	updateUserRepos(config, dao, user)
-
-	fmt.Println("user after update")
-	fmt.Println(user.Repos)
 
 	userHasAccessToRepos := intersection(orgRepos, user.Repos)
 	if userHasAccessToRepos == nil {
