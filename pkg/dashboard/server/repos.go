@@ -27,7 +27,7 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	go updateOrgRepos(ctx)
 	go updateUserRepos(config, dao, user)
 
-	timeout := time.After(60 * time.Second)
+	timeout := time.After(45 * time.Second)
 	orgReposJson, user, err := func() (*model.KeyValue, *model.User, error) {
 		for {
 			orgReposJson, err := dao.KeyValue(model.OrgRepos)
