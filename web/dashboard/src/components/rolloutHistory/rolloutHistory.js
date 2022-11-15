@@ -53,20 +53,22 @@ export class RolloutHistory extends Component {
       const showDate = previousDateLabel !== dateLabel
       previousDateLabel = dateLabel;
 
-      let ringColor = "ring-yellow-200";
-      if (rollout.gitopsCommitStatus.includes("Succeeded")) {
+      let color = rollout.rolledBack ? 'bg-grey-300' : 'bg-yellow-100';
+      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
+      if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+        color = "bg-green-100";
         ringColor = "ring-green-200";
-      } else if (rollout.gitopsCommitStatus.includes("Failed")) {
+      } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+        color = "bg-red-300";
         ringColor = "ring-red-400";
       }
 
-      let color = rollout.rolledBack ? 'bg-red-300' : 'bg-green-100';
       let border = showDate ? 'lg:border-l' : '';
 
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
       markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
-      rollouts.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
+      rollouts.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, true))
     })
 
     return (
@@ -144,7 +146,7 @@ at ${exactDate}`;
   )
 }
 
-function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
+export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, hasRollbackFunction) {
   return (
     <li key={rollout.gitopsRef}
       className="hover:bg-yellow-100 p-4 rounded"
@@ -176,14 +178,17 @@ function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app,
                   {dateLabel} ago
                 </a>
               </p>
+              <div className="mt-0.5 text-sm text-gray-500">
+                {rollout.gitopsCommitStatusDesc === "" ? "Commit is not applied yet." : rollout.gitopsCommitStatusDesc}
+              </div>
             </div>
             <div className="mt-2 text-sm text-gray-700">
-              <div className="ml-2 md:ml-4">
+              <div className="ml-4 md:ml-4">
                 <Commit version={rollout.version} />
               </div>
             </div>
           </div>
-          <div>
+          {hasRollbackFunction && <div>
             {!currentlyReleased && !rollout.rolledBack &&
               <button
                 type="button"
@@ -208,6 +213,7 @@ function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app,
               </span>
             }
           </div>
+          }
         </div>
       </div>
     </li>

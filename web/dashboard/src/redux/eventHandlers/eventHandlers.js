@@ -224,6 +224,11 @@ export function rolloutHistory(state, payload) {
   return state;
 }
 
+export function releaseStatuses(state, payload) {
+  state.releaseStatuses[payload.envName] = payload.data;
+  return state;
+}
+
 export function commits(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
   state.commits[repo] = payload.commits;

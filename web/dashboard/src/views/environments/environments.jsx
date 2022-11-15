@@ -20,8 +20,8 @@ class Environments extends Component {
             input: "",
             saveButtonTriggered: false,
             user: reduxState.user,
-            gitopsCommits: reduxState.gitopsCommits,
-            popupWindow: reduxState.popupWindow
+            popupWindow: reduxState.popupWindow,
+            releaseStatuses: reduxState.releaseStatuses
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -30,8 +30,8 @@ class Environments extends Component {
                 connectedAgents: reduxState.connectedAgents,
                 envs: reduxState.envs,
                 user: reduxState.user,
-                gitopsCommits: reduxState.gitopsCommits,
-                popupWindow: reduxState.popupWindow
+                popupWindow: reduxState.popupWindow,
+                releaseStatuses: reduxState.releaseStatuses
             });
         });
 
@@ -62,7 +62,7 @@ class Environments extends Component {
 
     getEnvironmentCards() {
         console.log("generating env cards")
-        const { connectedAgents, envs, gitopsCommits, popupWindow } = this.state;
+        const { connectedAgents, envs, releaseStatuses, popupWindow } = this.state;
         const { environment, tab } = this.props.match.params;
         const sortedEnvs = this.sortingByName(envs);
 
@@ -77,7 +77,7 @@ class Environments extends Component {
                 refreshEnvs={this.refreshEnvs}
                 tab={tab}
                 envFromParams={environment}
-                gitopsCommits={gitopsCommits}
+                releaseStatuses={releaseStatuses[env.name]}
                 popupWindow={popupWindow}
                 pullRequests={env.pullRequests}
             />))

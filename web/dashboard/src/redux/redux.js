@@ -12,6 +12,7 @@ export const ACTION_TYPE_GIMLETD = 'gimletd';
 export const ACTION_TYPE_CHARTSCHEMA = 'chartSchema';
 export const ACTION_TYPE_SEARCH = 'search';
 export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
+export const ACTION_TYPE_RELEASE_STATUSES = 'releaseStatuses';
 export const ACTION_TYPE_COMMITS = 'commits';
 export const ACTION_TYPE_UPDATE_COMMITS = 'updateCommits';
 export const ACTION_TYPE_BRANCHES = 'branches';
@@ -63,6 +64,7 @@ export const initialState = {
   connectedAgents: {},
   search: { filter: '' },
   rolloutHistory: {},
+  releaseStatuses: {},
   commits: {},
   branches: {},
   pullRequests: {},
@@ -126,6 +128,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.search(state, action.payload)
     case ACTION_TYPE_ROLLOUT_HISTORY:
       return eventHandlers.rolloutHistory(state, action.payload)
+    case ACTION_TYPE_RELEASE_STATUSES:
+      return eventHandlers.releaseStatuses(state, action.payload)
     case ACTION_TYPE_COMMITS:
       return eventHandlers.commits(state, action.payload)
       case ACTION_TYPE_UPDATE_COMMITS:
