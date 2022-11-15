@@ -215,9 +215,9 @@ export function rolloutHistory(state, payload) {
 
   if (!state.rolloutHistory[repo]) {
     state.rolloutHistory[repo] = {}
-    if (!state.rolloutHistory[repo][env]) {
-      state.rolloutHistory[repo][env] = {}
-    }
+  }
+  if (!state.rolloutHistory[repo][env]) {
+    state.rolloutHistory[repo][env] = {}
   }
 
   state.rolloutHistory[repo][env][app] = releases
