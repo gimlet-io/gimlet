@@ -203,8 +203,12 @@ func RemoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, pa
 }
 
 func RemoteFoldersOnBranchWithoutCheckout(repo *git.Repository, branch string, path string) ([]string, error) {
+	var err error
 	if branch == "" {
-		branch = HeadBranch(repo)
+		branch, err = HeadBranch(repo)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get head branch: %s", err)
+		}
 	}
 
 	head := BranchHeadHash(repo, branch)
@@ -255,14 +259,13 @@ func RemoteContentOnBranchWithoutCheckout(repo *git.Repository, branch string, p
 	return f.Contents()
 }
 
-func HeadBranch(repo *git.Repository) string {
-	branches := BranchList(repo)
-	for _, b := range branches {
-		if b == "main" {
-			return "main"
-		}
+func HeadBranch(repo *git.Repository) (string, error) {
+	headBranch, err := repo.Head()
+	if err != nil {
+		return "", err
 	}
-	return "master"
+
+	return headBranch.Name().Short(), nil
 }
 
 func BranchList(repo *git.Repository) []string {
