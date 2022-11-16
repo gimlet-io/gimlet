@@ -269,7 +269,7 @@ func releaseStatuses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sort.Sort(ByCreatedDescend(releases))
+	sort.Sort(ByCreated(releases))
 
 	releasesString, err := json.Marshal(releases)
 	if err != nil {
@@ -320,12 +320,6 @@ type ByCreated []*dx.Release
 func (a ByCreated) Len() int           { return len(a) }
 func (a ByCreated) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByCreated) Less(i, j int) bool { return a[i].Created < a[j].Created }
-
-type ByCreatedDescend []*dx.Release
-
-func (a ByCreatedDescend) Len() int           { return len(a) }
-func (a ByCreatedDescend) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByCreatedDescend) Less(i, j int) bool { return a[i].Created > a[j].Created }
 
 func orderRolloutHistoryFromAscending(rolloutHistory []*Env) []*Env {
 	orderedRolloutHistory := []*Env{}

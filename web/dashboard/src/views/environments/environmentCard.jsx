@@ -8,7 +8,6 @@ import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_ENVUPDATED,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
   ACTION_TYPE_RELEASE_STATUSES
@@ -314,31 +313,23 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       })
   }
 
-  const gitopsCommitColorByStatus = (status) => {
-    return status.includes("Succeeded") ?
-      "green"
-      :
-      status.includes("Failed") ?
-        "red"
-        :
-        "yellow"
-  }
-
-  const renderGitopsCommit = (idx, rollout) => {
-    const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
-    const dateLabel = formatDistance(rollout.created * 1000, new Date());
-
-    let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
-    if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
-      ringColor = "ring-green-200";
-    } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
-      ringColor = "ring-red-400";
-    }
-
-    return (rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, false))
-  }
-
   const gitopsCommitsTab = () => {
+    let renderReleaseStatuses = [];
+
+    releaseStatuses.forEach((rollout, idx) => {
+      const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
+      const dateLabel = formatDistance(rollout.created * 1000, new Date());
+  
+      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
+      if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+        ringColor = "ring-green-200";
+      } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+        ringColor = "ring-red-400";
+      }
+
+      renderReleaseStatuses.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, false))
+    })
+
     return (
       <div className="flow-root">
         <ul className="mt-4">
@@ -350,7 +341,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           <div className="bg-yellow-50 rounded">
             <div className="flow-root">
               <ul className="-mb-4 p-2 md:p-4 lg:p-8">
-                {releaseStatuses.map((releaseStatus, idx, arr) => renderGitopsCommit(idx, releaseStatus))}
+                {renderReleaseStatuses}
               </ul>
             </div>
           </div>
