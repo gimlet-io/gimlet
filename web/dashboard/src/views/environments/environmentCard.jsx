@@ -24,17 +24,17 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   useEffect(() => {
     gimletClient.getReleaseStatuses(env.name)
-    .then(data => {
+      .then(data => {
         store.dispatch({
-            type: ACTION_TYPE_RELEASE_STATUSES,
-            payload: {
-                envName: env.name,
-                data: data,
-            }
+          type: ACTION_TYPE_RELEASE_STATUSES,
+          payload: {
+            envName: env.name,
+            data: data,
+          }
         });
-    }, () => {/* Generic error handler deals with it */
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, () => {/* Generic error handler deals with it */
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (repoPerEnv && infraRepo === "gitops-infra") {
@@ -235,16 +235,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
   const refreshReleaseStatuses = () => {
     gimletClient.getReleaseStatuses(env.name)
-    .then(data => {
+      .then(data => {
         store.dispatch({
-            type: ACTION_TYPE_RELEASE_STATUSES,
-            payload: {
-                envName: env.name,
-                data: data,
-            }
+          type: ACTION_TYPE_RELEASE_STATUSES,
+          payload: {
+            envName: env.name,
+            data: data,
+          }
         });
-    }, () => {/* Generic error handler deals with it */
-    })
+      }, () => {/* Generic error handler deals with it */
+      })
   }
 
   const configureAgent = (envName) => {
@@ -319,7 +319,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     releaseStatuses.forEach((rollout, idx) => {
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
-  
+
       let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
       if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
         ringColor = "ring-green-200";
@@ -327,7 +327,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         ringColor = "ring-red-400";
       }
 
-      renderReleaseStatuses.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, false))
+      renderReleaseStatuses.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
     })
 
     return (
@@ -359,7 +359,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             stackDefinition={env.stackDefinition}
             setValues={setValues}
             validationCallback={validationCallback}
-          />   
+          />
           <div className="p-0 flow-root my-8">
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button

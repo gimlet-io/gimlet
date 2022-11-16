@@ -68,7 +68,7 @@ export class RolloutHistory extends Component {
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
       markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
-      rollouts.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, true))
+      rollouts.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
     })
 
     return (
@@ -146,7 +146,7 @@ at ${exactDate}`;
   )
 }
 
-export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, hasRollbackFunction) {
+export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
   return (
     <li key={rollout.gitopsRef}
       className="hover:bg-yellow-100 p-4 rounded"
@@ -179,7 +179,7 @@ export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, en
                 </a>
               </p>
               <div className="mt-0.5 text-sm text-gray-500">
-                {rollout.gitopsCommitStatusDesc === "" ? "Commit is not applied yet." : rollout.gitopsCommitStatusDesc}
+                {!rollout.gitopsCommitStatusDesc ? "Commit is not applied yet." : rollout.gitopsCommitStatusDesc}
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-700">
@@ -188,32 +188,32 @@ export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, en
               </div>
             </div>
           </div>
-          {hasRollbackFunction && <div>
-            {!currentlyReleased && !rollout.rolledBack &&
-              <button
-                type="button"
-                onClick={(e) => {
-                  // eslint-disable-next-line no-restricted-globals
-                  confirm('Are you sure you want to roll back?') &&
-                    rollback(env, app, rollout.gitopsRef, e);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Rollback to this version
-              </button>
-            }
-            {rollout.rolledBack &&
-              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                Rolled back
-              </span>
-            }
-            {currentlyReleased &&
-              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                Current version
-              </span>
-            }
-          </div>
-          }
+          {rollback &&
+            <div>
+              {!currentlyReleased && !rollout.rolledBack &&
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // eslint-disable-next-line no-restricted-globals
+                    confirm('Are you sure you want to roll back?') &&
+                      rollback(env, app, rollout.gitopsRef, e);
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Rollback to this version
+                </button>
+              }
+              {rollout.rolledBack &&
+                <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  Rolled back
+                </span>
+              }
+              {currentlyReleased &&
+                <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  Current version
+                </span>
+              }
+            </div>}
         </div>
       </div>
     </li>
