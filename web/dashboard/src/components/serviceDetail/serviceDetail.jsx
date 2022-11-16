@@ -158,7 +158,7 @@ class Deployment extends Component {
           <p className="text-xs italic"><a href={`https://github.com/${repo}/commit/${deployment.sha}`} target="_blank"
             rel="noopener noreferrer">{deployment.sha.slice(0, 6)}</a></p>
         </div>
-        <p className="text-xs truncate">{deployment.namespace}/{deployment.name}</p>
+        <p className="text-xs truncate w-9/12">{deployment.namespace}/{deployment.name}</p>
         {
           deployment.pods && deployment.pods.map((pod) => (
             <Pod key={pod.name} pod={pod} />
