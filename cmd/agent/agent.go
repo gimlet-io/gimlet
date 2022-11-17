@@ -188,7 +188,6 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
-						fmt.Println("got request from dashboard")
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
 
@@ -289,7 +288,7 @@ func podLogs(
 	messages chan *streaming.WSMessage,
 	stopChannel chan int,
 ) {
-	fmt.Println("pod logs")
+
 	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		log.Errorf("could not get services: %v", err)
@@ -347,7 +346,6 @@ func httpClient() *http.Client {
 }
 
 func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
-	fmt.Println("streaming pod logs")
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
 		TailLines: &count,

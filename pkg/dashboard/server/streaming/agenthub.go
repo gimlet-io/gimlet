@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -68,9 +67,6 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("send podlogs request to agenthub")
-	fmt.Println(podlogsRequest)
 
 	for _, a := range h.Agents {
 		a.EventChannel <- []byte(podlogsRequestString)
