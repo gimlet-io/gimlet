@@ -379,7 +379,7 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName st
 
 func serverWSCommunication(config config.Config, messages chan *streaming.WSMessage) {
 	for {
-		u := url.URL{Scheme: "ws", Host: config.Host, Path: "/agent/ws/"}
+		u := url.URL{Scheme: "ws", Host: cutUrlSchema(config.Host), Path: "/agent/ws/"}
 
 		bearerToken := "BEARER " + config.AgentKey
 		c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
@@ -452,4 +452,10 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			}
 		}
 	}
+}
+
+func cutUrlSchema(baseUrl string) string {
+	slicedUrl := strings.Split(baseUrl, "//")
+
+	return slicedUrl[1]
 }
