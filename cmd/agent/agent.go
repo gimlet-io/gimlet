@@ -379,19 +379,14 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName st
 
 func serverWSCommunication(config config.Config, messages chan *streaming.WSMessage) {
 	for {
-		u := url.URL{Scheme: "ws", Host: cutUrlSchema(config.Host), Path: "/agent/ws/"}
-
-		fmt.Println(u.String())
+		u := webSocketURL(config.Host)
 
 		bearerToken := "BEARER " + config.AgentKey
-		c, response, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
+		c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
 			"Authorization": []string{bearerToken},
 		})
 		if err != nil {
 			log.Errorf("dial:%s", err.Error())
-			fmt.Println(response.Status)
-			fmt.Println(response.Header)
-			fmt.Println(response.Body)
 			time.Sleep(3 * time.Second)
 			continue
 		}
@@ -459,8 +454,12 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 	}
 }
 
-func cutUrlSchema(baseUrl string) string {
-	slicedUrl := strings.Split(baseUrl, "//")
+func webSocketURL(host string) url.URL {
+	urlSlice := strings.Split(host, "//")
+	hostWithoutScheme := urlSlice[1]
 
-	return slicedUrl[1]
+	if strings.Contains(host, "https") {
+		return url.URL{Scheme: "wss", Host: hostWithoutScheme, Path: "/agent/ws/"}
+	}
+	return url.URL{Scheme: "ws", Host: hostWithoutScheme, Path: "/agent/ws/"}
 }
