@@ -98,7 +98,7 @@ func main() {
 	messages := make(chan *streaming.WSMessage)
 
 	go serverCommunication(kubeEnv, config, messages)
-	go serverWSCommunication(config.AgentKey, messages)
+	go serverWSCommunication(config, messages)
 
 	signals := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
@@ -377,11 +377,11 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName st
 	}
 }
 
-func serverWSCommunication(token string, messages chan *streaming.WSMessage) {
+func serverWSCommunication(config config.Config, messages chan *streaming.WSMessage) {
 	for {
-		u := url.URL{Scheme: "ws", Host: "127.0.0.1:9000", Path: "/agent/ws/"}
+		u := url.URL{Scheme: "ws", Host: config.Host, Path: "/agent/ws/"}
 
-		bearerToken := "BEARER " + token
+		bearerToken := "BEARER " + config.AgentKey
 		c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
 			"Authorization": []string{bearerToken},
 		})
