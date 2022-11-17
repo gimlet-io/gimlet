@@ -381,12 +381,17 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 	for {
 		u := url.URL{Scheme: "ws", Host: cutUrlSchema(config.Host), Path: "/agent/ws/"}
 
+		fmt.Println(u.String())
+
 		bearerToken := "BEARER " + config.AgentKey
-		c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
+		c, response, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
 			"Authorization": []string{bearerToken},
 		})
 		if err != nil {
 			log.Errorf("dial:%s", err.Error())
+			fmt.Println(response.Status)
+			fmt.Println(response.Header)
+			fmt.Println(response.Body)
 			time.Sleep(3 * time.Second)
 			continue
 		}
