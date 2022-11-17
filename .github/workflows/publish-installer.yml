@@ -63,7 +63,7 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.PAT }} # `PAT` is a secret that contains your Personal Access Token with `write:packages` scope
     - name: Build and push Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3.2.0
       with:
         context: .
         file: docker/installer/Dockerfile

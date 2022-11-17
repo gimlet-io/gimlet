@@ -22,7 +22,7 @@
             "args": [
                 "release",
                 "track",
-                "c3e857ce-0e4e-402a-8cbb-0325c06532be"
+                "fc495037-523b-44fd-a1ff-d68c828ee361"
             ],
             "envFile": "${workspaceFolder}/.env"
         },
