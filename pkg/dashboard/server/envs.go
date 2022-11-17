@@ -111,7 +111,12 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headBranch := nativeGit.HeadBranch(repo)
+	headBranch, err := nativeGit.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
 	if err != nil {
@@ -357,7 +362,11 @@ func BootstrapEnv(
 	if repoPerEnv {
 		envName = ""
 	}
-	headBranch := nativeGit.HeadBranch(repo)
+	headBranch, err := nativeGit.HeadBranch(repo)
+	if err != nil {
+		return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
+	}
+
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		envName,

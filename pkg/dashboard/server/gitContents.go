@@ -97,7 +97,13 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branch := helper.HeadBranch(repo)
+	branch, err := helper.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
@@ -287,7 +293,12 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branch := helper.HeadBranch(repo)
+	branch, err := helper.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
@@ -380,7 +391,13 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headBranch := helper.HeadBranch(repo)
+	headBranch, err := helper.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	existingEnvConfigs, err := existingEnvConfigs(repo, headBranch)
 	if err != nil {
 		logrus.Errorf(err.Error())
@@ -594,7 +611,11 @@ func hasShipper(files map[string]string, shipperCommand string) bool {
 }
 
 func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCommand string) (bool, bool, error) {
-	branch := helper.HeadBranch(repo)
+	branch, err := helper.HeadBranch(repo)
+	if err != nil {
+		return false, false, err
+	}
+
 	ciConfigFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ciConfigPath)
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {

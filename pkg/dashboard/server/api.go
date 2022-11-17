@@ -191,7 +191,13 @@ func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, e
 
 func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
 	var stackConfig dx.StackConfig
-	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, helper.HeadBranch(repo), path)
+
+	headBranch, err := helper.HeadBranch(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, headBranch, path)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +329,11 @@ func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.M
 		},
 	}
 
-	branch := helper.HeadBranch(repo)
+	branch, err := helper.HeadBranch(repo)
+	if err != nil {
+		return nil, err
+	}
+
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {

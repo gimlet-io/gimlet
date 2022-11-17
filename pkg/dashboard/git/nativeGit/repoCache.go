@@ -149,7 +149,13 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 
-	headBranch := nativeGit.HeadBranch(repo)
+	headBranch, err := nativeGit.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		r.cleanRepo(repoName)
+		return
+	}
+
 	branchHeadHash := nativeGit.BranchHeadHash(repo, headBranch)
 	err = w.Reset(&git.ResetOptions{
 		Commit: branchHeadHash,

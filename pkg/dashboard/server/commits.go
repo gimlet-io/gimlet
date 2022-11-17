@@ -39,7 +39,12 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if branch == "" {
-		branch = helper.HeadBranch(repo)
+		branch, err = helper.HeadBranch(repo)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			logrus.Errorf("cannot get head branch: %s", err)
+			return
+		}
 	}
 
 	hash := helper.BranchHeadHash(repo, branch)
