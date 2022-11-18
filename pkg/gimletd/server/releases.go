@@ -96,7 +96,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 
 	store := ctx.Value("store").(*store.Store)
 	for _, r := range releases {
-		r.GitopsRepo = gitopsRepo
+		r.GitopsRepo = repoName
 		r.GitopsCommitStatus = gitopsCommitStatusFromHash(store, r.GitopsRef)
 		r.GitopsCommitStatusDesc = gitopsCommitStatusDescFromHash(store, r.GitopsRef)
 	}
