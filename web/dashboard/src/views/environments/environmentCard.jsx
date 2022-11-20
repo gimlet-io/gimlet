@@ -314,6 +314,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const gitopsCommitsTab = () => {
+    if (!releaseStatuses) {
+      return null
+    }
+
     let renderReleaseStatuses = [];
 
     releaseStatuses.forEach((rollout, idx) => {
