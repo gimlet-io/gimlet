@@ -11,18 +11,6 @@ const (
 	Failure
 )
 
-type DeployEvent struct {
-	Manifest    *dx.Manifest
-	Artifact    *dx.Artifact
-	TriggeredBy string
-
-	Status     Status
-	StatusDesc string
-
-	GitopsRef  string
-	GitopsRepo string
-}
-
 type RollbackEvent struct {
 	RollbackRequest *dx.RollbackRequest
 
@@ -34,15 +22,15 @@ type RollbackEvent struct {
 }
 
 type DeleteEvent struct {
-	Env string
-	App string
+	Env         string
+	App         string
 	TriggeredBy string
 
 	Status     Status
 	StatusDesc string
 
-	GitopsRef  string
-	GitopsRepo string
+	GitopsRef          string
+	GitopsRepo         string
 	BranchDeletedEvent BranchDeletedEvent
 }
 

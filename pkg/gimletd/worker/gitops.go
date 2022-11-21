@@ -114,7 +114,7 @@ func processEvent(
 	// process event based on type
 	var err error
 	var deployResults []model.Result
-	var rollbackEvent *events.RollbackEvent
+	var rollbackResult *events.RollbackEvent
 	var deleteEvents []*events.DeleteEvent
 	switch event.Type {
 	case model.ArtifactCreatedEvent:
@@ -140,7 +140,7 @@ func processEvent(
 			perf,
 		)
 	case model.RollbackRequestedEvent:
-		rollbackEvent, err = processRollbackEvent(
+		rollbackResult, err = processRollbackEvent(
 			gitopsRepo,
 			parsedGitopsRepos,
 			gitopsRepoDeployKeyPath,
@@ -165,22 +165,20 @@ func processEvent(
 	for _, deployResult := range deployResults {
 		notificationsManager.Broadcast(notifications.MessageFromGitOpsEvent(deployResult))
 	}
-	if rollbackEvent != nil {
-		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackEvent))
+	if rollbackResult != nil {
+		notificationsManager.Broadcast(notifications.MessageFromRollbackEvent(rollbackResult))
 	}
 
 	// associate gitops writes with events
 	event.Results = []model.Result{}
 	for _, deployResult := range deployResults {
-		setGitopsHashOnEvent(event, deployResult.GitopsRef)
 		event.Results = append(event.Results, deployResult)
 		saveAndBroadcastGitopsCommit(deployResult.GitopsRef, deployResult.Manifest.Env, event, store, eventSinkHub)
 	}
-	if rollbackEvent != nil {
-		for _, sha := range rollbackEvent.GitopsRefs {
-			setGitopsHashOnEvent(event, sha)
-			setResultsOnRollbackEvent(event, rollbackEvent, store, sha)
-			saveAndBroadcastGitopsCommit(sha, rollbackEvent.RollbackRequest.Env, event, store, eventSinkHub)
+	if rollbackResult != nil {
+		for _, sha := range rollbackResult.GitopsRefs {
+			setResultsOnRollbackEvent(event, rollbackResult, store, sha)
+			saveAndBroadcastGitopsCommit(sha, rollbackResult.RollbackRequest.Env, event, store, eventSinkHub)
 		}
 	}
 	// store event state
@@ -270,18 +268,6 @@ func processBranchDeletedEvent(
 	return deletedEvents, err
 }
 
-func setGitopsHashOnEvent(event *model.Event, gitopsSha string) {
-	if gitopsSha == "" {
-		return
-	}
-
-	if event.GitopsHashes == nil {
-		event.GitopsHashes = []string{}
-	}
-
-	event.GitopsHashes = append(event.GitopsHashes, gitopsSha)
-}
-
 func setResultsOnRollbackEvent(event *model.Event, rollbackEvent *events.RollbackEvent, store *store.Store, gitopsSha string) {
 	if gitopsSha == "" {
 		return
@@ -307,25 +293,25 @@ func processReleaseEvent(
 	event *model.Event,
 	perf *prometheus.HistogramVec,
 ) ([]model.Result, error) {
-	var deployEvents []model.Result
+	var deployResults []model.Result
 	var releaseRequest dx.ReleaseRequest
 	err := json.Unmarshal([]byte(event.Blob), &releaseRequest)
 	if err != nil {
-		return deployEvents, fmt.Errorf("cannot parse release request with id: %s", event.ID)
+		return deployResults, fmt.Errorf("cannot parse release request with id: %s", event.ID)
 	}
 
 	artifactEvent, err := store.Artifact(releaseRequest.ArtifactID)
 	if err != nil {
-		return deployEvents, fmt.Errorf("cannot find artifact with id: %s", event.ArtifactID)
+		return deployResults, fmt.Errorf("cannot find artifact with id: %s", event.ArtifactID)
 	}
 	artifact, err := model.ToArtifact(artifactEvent)
 	if err != nil {
-		return deployEvents, fmt.Errorf("cannot parse artifact %s", err.Error())
+		return deployResults, fmt.Errorf("cannot parse artifact %s", err.Error())
 	}
 
 	manifests, err := artifact.CueEnvironmentsToManifests()
 	if err != nil {
-		return deployEvents, err
+		return deployResults, err
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
@@ -336,7 +322,7 @@ func processReleaseEvent(
 
 		repoName, _, err := repoInfo(parsedGitopsRepos, manifest.Env, gitopsRepo)
 		if err != nil {
-			return deployEvents, err
+			return deployResults, err
 		}
 
 		deployEvent := model.Result{
@@ -351,7 +337,7 @@ func processReleaseEvent(
 		if err != nil {
 			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
-			deployEvents = append(deployEvents, deployEvent)
+			deployResults = append(deployResults, deployEvent)
 			continue
 		}
 
@@ -383,10 +369,10 @@ func processReleaseEvent(
 			deployEvent.StatusDesc = err.Error()
 		}
 		deployEvent.GitopsRef = sha
-		deployEvents = append(deployEvents, deployEvent)
+		deployResults = append(deployResults, deployEvent)
 	}
 
-	return deployEvents, nil
+	return deployResults, nil
 }
 
 func processRollbackEvent(
@@ -493,10 +479,10 @@ func processArtifactEvent(
 	dao *store.Store,
 	perf *prometheus.HistogramVec,
 ) ([]model.Result, error) {
-	var deployEvents []model.Result
+	var deployResults []model.Result
 	artifact, err := model.ToArtifact(event)
 	if err != nil {
-		return deployEvents, fmt.Errorf("cannot parse artifact %s", err.Error())
+		return deployResults, fmt.Errorf("cannot parse artifact %s", err.Error())
 	}
 
 	if artifact.HasCleanupPolicy() {
@@ -505,7 +491,7 @@ func processArtifactEvent(
 
 	manifests, err := artifact.CueEnvironmentsToManifests()
 	if err != nil {
-		return deployEvents, err
+		return deployResults, err
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
@@ -528,7 +514,7 @@ func processArtifactEvent(
 		if err != nil {
 			deployEvent.Status = model.Failure
 			deployEvent.StatusDesc = err.Error()
-			deployEvents = append(deployEvents, deployEvent)
+			deployResults = append(deployResults, deployEvent)
 			continue
 		}
 
@@ -559,10 +545,10 @@ func processArtifactEvent(
 			deployEvent.StatusDesc = err.Error()
 		}
 		deployEvent.GitopsRef = sha
-		deployEvents = append(deployEvents, deployEvent)
+		deployResults = append(deployResults, deployEvent)
 	}
 
-	return deployEvents, nil
+	return deployResults, nil
 }
 
 func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact) {

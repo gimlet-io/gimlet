@@ -106,10 +106,9 @@ func (r *BranchDeleteEventWorker) Run() {
 
 					// store branch deleted event
 					_, err = r.dao.CreateEvent(&model.Event{
-						Type:         model.BranchDeletedEvent,
-						Blob:         string(branchDeletedEventStr),
-						Repository:   repoName,
-						GitopsHashes: []string{},
+						Type:       model.BranchDeletedEvent,
+						Blob:       string(branchDeletedEventStr),
+						Repository: repoName,
 					})
 					if err != nil {
 						logrus.Warnf("could not store branch deleted event: %s", err)

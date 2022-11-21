@@ -144,33 +144,17 @@ func track(c *cli.Context) error {
 }
 
 func printGitopsStatuses(releaseStatus *dx.ReleaseStatus) {
-	if releaseStatus.Results != nil {
-		if len(releaseStatus.Results) == 0 {
-			fmt.Printf("\t%v The release didn't generate any gitops commits\n", emoji.Bookmark)
-		}
+	if len(releaseStatus.Results) == 0 {
+		fmt.Printf("\t%v The release didn't generate any gitops commits\n", emoji.Bookmark)
+	}
 
-		for _, result := range releaseStatus.Results {
-			if result.Status == model.Failure.String() {
-				fmt.Printf("\t%v %s -> %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Status, result.StatusDesc)
-			} else if strings.Contains(result.GitopsCommitStatus, "Failed") {
-				fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
-			} else {
-				fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
-			}
-		}
-	} else {
-		if len(releaseStatus.GitopsHashes) == 0 {
-			fmt.Printf("\t%v The release didn't generate any gitops commits\n", emoji.Bookmark)
-		}
-
-		for _, gitopsHash := range releaseStatus.GitopsHashes {
-			if releaseStatus.Status == model.Failure.String() {
-				fmt.Printf("\t%v status is %s, %s\n", emoji.ExclamationMark, releaseStatus.Status, releaseStatus.StatusDesc)
-			} else if strings.Contains(gitopsHash.Status, "Failed") {
-				fmt.Printf("\t%v Gitops hash %s status is %s, %s\n", emoji.ExclamationMark, gitopsHash.Hash, gitopsHash.Status, gitopsHash.StatusDesc)
-			} else {
-				fmt.Printf("\t%v Gitops hash %s status is %s\n", emoji.OpenBook, gitopsHash.Hash, gitopsHash.Status)
-			}
+	for _, result := range releaseStatus.Results {
+		if result.Status == model.Failure.String() {
+			fmt.Printf("\t%v %s -> %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Status, result.StatusDesc)
+		} else if strings.Contains(result.GitopsCommitStatus, "Failed") {
+			fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+		} else {
+			fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
 		}
 	}
 }

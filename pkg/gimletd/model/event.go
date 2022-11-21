@@ -48,14 +48,13 @@ type Result struct {
 }
 
 type Event struct {
-	ID           string   `json:"id,omitempty"  meddler:"id"`
-	Created      int64    `json:"created,omitempty"  meddler:"created"`
-	Type         string   `json:"type,omitempty"  meddler:"type"`
-	Blob         string   `json:"blob,omitempty"  meddler:"blob"`
-	Status       string   `json:"status"  meddler:"status"`
-	StatusDesc   string   `json:"statusDesc"  meddler:"status_desc"`
-	GitopsHashes []string `json:"gitopsHashes"  meddler:"gitops_hashes,json"`
-	Results      []Result `json:"results"  meddler:"results,json"`
+	ID         string   `json:"id,omitempty"  meddler:"id"`
+	Created    int64    `json:"created,omitempty"  meddler:"created"`
+	Type       string   `json:"type,omitempty"  meddler:"type"`
+	Blob       string   `json:"blob,omitempty"  meddler:"blob"`
+	Status     string   `json:"status"  meddler:"status"`
+	StatusDesc string   `json:"statusDesc"  meddler:"status_desc"`
+	Results    []Result `json:"results"  meddler:"results,json"`
 
 	// denormalized artifact fields
 	Repository   string      `json:"repository,omitempty"  meddler:"repository"`
