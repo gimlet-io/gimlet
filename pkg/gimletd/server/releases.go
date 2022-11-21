@@ -94,8 +94,11 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	store := ctx.Value("store").(*store.Store)
 	for _, r := range releases {
-		r.GitopsRepo = gitopsRepo
+		r.GitopsRepo = repoName
+		r.GitopsCommitStatus = gitopsCommitStatusFromHash(store, r.GitopsRef)
+		r.GitopsCommitStatusDesc = gitopsCommitStatusDescFromHash(store, r.GitopsRef)
 	}
 
 	releasesStr, err := json.Marshal(releases)
@@ -518,4 +521,13 @@ func gitopsCommitStatusFromHash(store *store.Store, gitopsRef string) string {
 	}
 
 	return gitopsCommit.Status
+}
+
+func gitopsCommitStatusDescFromHash(store *store.Store, gitopsRef string) string {
+	gitopsCommit, err := store.GitopsCommit(gitopsRef)
+	if err != nil {
+		logrus.Warnf("cannot get gitops commit: %s", err)
+	}
+
+	return gitopsCommit.StatusDesc
 }

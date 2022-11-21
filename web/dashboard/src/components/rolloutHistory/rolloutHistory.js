@@ -53,8 +53,16 @@ export class RolloutHistory extends Component {
       const showDate = previousDateLabel !== dateLabel
       previousDateLabel = dateLabel;
 
-      let color = rollout.rolledBack ? 'bg-red-300' : 'bg-green-100';
-      let ringColor = rollout.rolledBack ? 'ring-red-400' : 'ring-green-200';
+      let color = rollout.rolledBack ? 'bg-grey-300' : 'bg-yellow-100';
+      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
+      if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+        color = "bg-green-100";
+        ringColor = "ring-green-200";
+      } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+        color = "bg-red-300";
+        ringColor = "ring-red-400";
+      }
+
       let border = showDate ? 'lg:border-l' : '';
 
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
@@ -138,7 +146,7 @@ at ${exactDate}`;
   )
 }
 
-function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
+export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
   return (
     <li key={rollout.gitopsRef}
       className="hover:bg-yellow-100 p-4 rounded"
@@ -170,38 +178,42 @@ function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app,
                   {dateLabel} ago
                 </a>
               </p>
+              <div className="mt-0.5 text-sm text-gray-500">
+                {!rollout.gitopsCommitStatusDesc ? "Commit is not applied yet." : rollout.gitopsCommitStatusDesc}
+              </div>
             </div>
             <div className="mt-2 text-sm text-gray-700">
-              <div className="ml-2 md:ml-4">
+              <div className="ml-4 md:ml-4">
                 <Commit version={rollout.version} />
               </div>
             </div>
           </div>
-          <div>
-            {!currentlyReleased && !rollout.rolledBack &&
-              <button
-                type="button"
-                onClick={(e) => {
-                  // eslint-disable-next-line no-restricted-globals
-                  confirm('Are you sure you want to roll back?') &&
-                    rollback(env, app, rollout.gitopsRef, e);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Rollback to this version
-              </button>
-            }
-            {rollout.rolledBack &&
-              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                Rolled back
-              </span>
-            }
-            {currentlyReleased &&
-              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                Current version
-              </span>
-            }
-          </div>
+          {rollback &&
+            <div>
+              {!currentlyReleased && !rollout.rolledBack &&
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // eslint-disable-next-line no-restricted-globals
+                    confirm('Are you sure you want to roll back?') &&
+                      rollback(env, app, rollout.gitopsRef, e);
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Rollback to this version
+                </button>
+              }
+              {rollout.rolledBack &&
+                <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  Rolled back
+                </span>
+              }
+              {currentlyReleased &&
+                <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  Current version
+                </span>
+              }
+            </div>}
         </div>
       </div>
     </li>

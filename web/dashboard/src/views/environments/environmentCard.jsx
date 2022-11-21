@@ -8,18 +8,34 @@ import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_ENVUPDATED,
-  ACTION_TYPE_SAVE_ENV_PULLREQUEST
+  ACTION_TYPE_SAVE_ENV_PULLREQUEST,
+  ACTION_TYPE_RELEASE_STATUSES
 } from "../../redux/redux";
 import { renderPullRequests } from '../../components/env/env';
+import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, gitopsCommits, popupWindow, pullRequests }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
   const ref = useRef();
+
+  useEffect(() => {
+    gimletClient.getReleaseStatuses(env.name)
+      .then(data => {
+        store.dispatch({
+          type: ACTION_TYPE_RELEASE_STATUSES,
+          payload: {
+            envName: env.name,
+            data: data,
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (repoPerEnv && infraRepo === "gitops-infra") {
     setInfraRepo(`gitops-${env.name}-infra`);
@@ -217,14 +233,18 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     )
   }
 
-  const refreshGitopsCommits = () => {
-    gimletClient.getGitopsCommits()
-      .then(data => store.dispatch({
-        type: ACTION_TYPE_GITOPS_COMMITS, payload:
-          data
-      }), () => {
-        /* Generic error handler deals with it */
-      });
+  const refreshReleaseStatuses = () => {
+    gimletClient.getReleaseStatuses(env.name)
+      .then(data => {
+        store.dispatch({
+          type: ACTION_TYPE_RELEASE_STATUSES,
+          payload: {
+            envName: env.name,
+            data: data,
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      })
   }
 
   const configureAgent = (envName) => {
@@ -293,65 +313,42 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       })
   }
 
-  const gitopsCommitColorByStatus = (status) => {
-    return status.includes("Succeeded") ?
-      "green"
-      :
-      status.includes("Failed") ?
-        "red"
-        :
-        "yellow"
-  }
-
-  const renderGitopsCommit = (gitopsCommit, idx, arr) => {
-    const exactDate = format(gitopsCommit.created * 1000, 'h:mm:ss a, MMMM do yyyy');
-    const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
-    const gitopsCommitColor = gitopsCommitColorByStatus(gitopsCommit.status);
-
-    return (<li key={idx}
-      className={`bg-${gitopsCommitColor}-100 hover:bg-${gitopsCommitColor}-200 p-4 rounded`}
-    >
-      <div className="relative">
-        {idx !== arr.length - 1 &&
-          <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-400" aria-hidden="true"></span>
-        }
-        <div className="relative flex items-start space-x-3">
-          <img
-            className={`h-8 w-8 rounded-full ring-gray-400 flex items-center justify-center ring-4`}
-            src={`https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png`}
-            alt="triggerer"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-gray-900">{gitopsCommit.status}</p>
-            <p className=" -mt-1">
-              <a
-                className="text-xs text-gray-500 hover:text-gray-600"
-                title={exactDate}
-                href={`https://github.com/${env.appsRepo}/commit/${gitopsCommit.sha}`}
-                target="_blank"
-                rel="noopener noreferrer">
-                <span className="font-mono">{gitopsCommit.sha?.slice(0, 6)}</span> state recorded {dateLabel} ago
-              </a>
-            </p>
-            <p className="text-gray-700 mt-2">
-              <span>{gitopsCommit.statusDesc}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </li>)
-  }
-
   const gitopsCommitsTab = () => {
+    if (!releaseStatuses) {
+      return null
+    }
+
+    let renderReleaseStatuses = [];
+
+    releaseStatuses.forEach((rollout, idx) => {
+      const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
+      const dateLabel = formatDistance(rollout.created * 1000, new Date());
+
+      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
+      if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+        ringColor = "ring-green-200";
+      } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+        ringColor = "ring-red-400";
+      }
+
+      renderReleaseStatuses.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+    })
+
     return (
       <div className="flow-root">
         <ul className="mt-4">
           <div className="flow-root">
-            <svg onClick={() => refreshGitopsCommits()} xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg onClick={() => refreshReleaseStatuses()} xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
-          {gitopsCommits.filter(gitopsCommit => gitopsCommit.env === env.name).map((gitopsCommit, idx, arr) => renderGitopsCommit(gitopsCommit, idx, arr))}
+          <div className="bg-yellow-50 rounded">
+            <div className="flow-root">
+              <ul className="-mb-4 p-2 md:p-4 lg:p-8">
+                {renderReleaseStatuses}
+              </ul>
+            </div>
+          </div>
         </ul>
       </div>
     )

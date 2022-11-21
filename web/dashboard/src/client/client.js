@@ -29,6 +29,8 @@ export default class GimletClient {
 
   getRolloutHistoryPerApp = (owner, name, env, app) => this.get(`/api/repo/${owner}/${name}/env/${env}/app/${app}/rolloutHistory`);
 
+  getReleaseStatuses = (env) => this.getWithAxios(`/api/env/${env}/releaseStatuses`);
+
   getCommits = (owner, name, branch, fromHash) => this.get(`/api/repo/${owner}/${name}/commits?branch=${branch}&fromHash=${fromHash}`);
 
   getBranches = (owner, name) => this.get(`/api/repo/${owner}/${name}/branches`);

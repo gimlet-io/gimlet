@@ -240,6 +240,48 @@ func rolloutHistoryPerApp(w http.ResponseWriter, r *http.Request) {
 	w.Write(releasesString)
 }
 
+func releaseStatuses(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	env := chi.URLParam(r, "env")
+	const perAppLimit = 20
+
+	// If GimletD is not set up, throw 404
+	if config.GimletD.URL == "" ||
+		config.GimletD.TOKEN == "" {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("{}"))
+		return
+	}
+
+	releases, err := getAppReleasesFromGimletD(
+		config.GimletD.URL,
+		config.GimletD.TOKEN,
+		config.ReleaseHistorySinceDays,
+		perAppLimit,
+		env,
+		"",
+		"",
+	)
+	if err != nil {
+		logrus.Errorf("cannot get releases for git repo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	sort.Sort(ByCreated(releases))
+
+	releasesString, err := json.Marshal(releases)
+	if err != nil {
+		logrus.Errorf("cannot serialize releases: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(releasesString)
+}
+
 func insertIntoRolloutHistory(rolloutHistory []*Env, release *dx.Release, perAppLimit int) []*Env {
 	for _, env := range rolloutHistory {
 		if env.Name == release.Env {

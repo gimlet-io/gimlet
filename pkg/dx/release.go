@@ -21,9 +21,11 @@ type Release struct {
 
 	Version *Version `json:"version"`
 
-	GitopsRef  string `json:"gitopsRef"`
-	GitopsRepo string `json:"gitopsRepo"`
-	Created    int64  `json:"created,omitempty"`
+	GitopsRef              string `json:"gitopsRef"`
+	GitopsRepo             string `json:"gitopsRepo"`
+	GitopsCommitStatus     string `json:"gitopsCommitStatus"`
+	GitopsCommitStatusDesc string `json:"gitopsCommitStatusDesc"`
+	Created                int64  `json:"created,omitempty"`
 
 	RolledBack bool `json:"rolledBack,omitempty"`
 }

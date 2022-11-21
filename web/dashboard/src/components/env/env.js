@@ -191,8 +191,8 @@ export function renderPullRequests(pullRequests) {
         <span className="font-bold text-sm">Pull Requests:</span>
         <ul className="list-disc list-inside text-xs ml-2">
           {pullRequests.map(pullRequest =>
-            <li>
-              <a key={pullRequest.sha} href={pullRequest.link} target="_blank" rel="noopener noreferrer">
+            <li key={pullRequest.sha}>
+              <a href={pullRequest.link} target="_blank" rel="noopener noreferrer">
                 {`#${pullRequest.number} ${pullRequest.title}`}
               </a>
             </li>)}
