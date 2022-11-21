@@ -52,7 +52,7 @@ function ServiceDetail(props) {
         </h3>
         <div className="my-2 mb-4 sm:my-4 sm:mb-6">
           <RolloutHistory
-            env={stack.env}
+            env={envName}
             app={stack.service.name}
             rollback={rollback}
             appRolloutHistory={rolloutHistory}
@@ -64,7 +64,7 @@ function ServiceDetail(props) {
           </div>
           <div className="flex-1 md:ml-2 min-w-full md:min-w-0">
             <Deployment
-              envName={stack.env}
+              envName={envName}
               repo={stack.repo}
               deployment={stack.deployment}
             />

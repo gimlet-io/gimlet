@@ -156,11 +156,7 @@ func processEvent(
 	}
 
 	// associate gitops writes with events
-	event.Results = []model.Result{}
-	for _, result := range results {
-		event.Results = append(event.Results, result)
-		saveAndBroadcastGitopsCommit(result.GitopsRef, result.Manifest.Env, event, store, eventSinkHub)
-	}
+	event.Results = results
 
 	// store event state
 	if err != nil {
@@ -177,6 +173,17 @@ func processEvent(
 		if err != nil {
 			logrus.Warnf("could not update event status %v", err)
 		}
+	}
+
+	// broadcast gitops commits to clients
+	for _, result := range results {
+		var env string
+		if event.Type == model.RollbackRequestedEvent {
+			env = result.RollbackRequest.Env
+		} else {
+			env = result.Manifest.Env
+		}
+		saveAndBroadcastGitopsCommit(result.GitopsRef, env, event, store, eventSinkHub)
 	}
 
 	// send out notifications
