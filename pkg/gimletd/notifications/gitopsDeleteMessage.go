@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	githubLib "github.com/google/go-github/v37/github"
 )
 
 type gitopsDeleteMessage struct {
-	event *events.DeleteEvent
+	result model.Result
 }
 
 func (gm *gitopsDeleteMessage) AsSlackMessage() (*slackMessage, error) {
@@ -19,8 +19,8 @@ func (gm *gitopsDeleteMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	if gm.event.Status == events.Failure {
-		msg.Text = fmt.Sprintf("Failed to delete %s of %s", gm.event.App, gm.event.Env)
+	if gm.result.Status == model.Failure {
+		msg.Text = fmt.Sprintf("Failed to delete %s of %s", gm.result.Manifest.App, gm.result.Manifest.Env)
 		msg.Blocks = append(msg.Blocks,
 			Block{
 				Type: section,
@@ -36,17 +36,13 @@ func (gm *gitopsDeleteMessage) AsSlackMessage() (*slackMessage, error) {
 				Elements: []Text{
 					{
 						Type: markdown,
-						Text: fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s", gm.event.StatusDesc),
+						Text: fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s", gm.result.StatusDesc),
 					},
 				},
 			},
 		)
 	} else {
-		if gm.event.TriggeredBy == "policy" {
-			msg.Text = fmt.Sprintf("Policy based deletion of %s on %s", gm.event.App, gm.event.Env)
-		} else {
-			msg.Text = fmt.Sprintf("%s is deleting %s on %s", gm.event.TriggeredBy, gm.event.App, gm.event.Env)
-		}
+		msg.Text = fmt.Sprintf("Policy based deletion of %s on %s", gm.result.Manifest.App, gm.result.Manifest.Env)
 		msg.Blocks = append(msg.Blocks,
 			Block{
 				Type: section,
@@ -60,8 +56,8 @@ func (gm *gitopsDeleteMessage) AsSlackMessage() (*slackMessage, error) {
 			Block{
 				Type: contextString,
 				Elements: []Text{
-					{Type: markdown, Text: fmt.Sprintf(":dart: %s", strings.Title(gm.event.Env))},
-					{Type: markdown, Text: fmt.Sprintf(":paperclip: %s", commitLink(gm.event.GitopsRepo, gm.event.GitopsRef))},
+					{Type: markdown, Text: fmt.Sprintf(":dart: %s", strings.Title(gm.result.Manifest.Env))},
+					{Type: markdown, Text: fmt.Sprintf(":paperclip: %s", commitLink(gm.result.GitopsRepo, gm.result.GitopsRef))},
 				},
 			},
 		)
@@ -71,7 +67,7 @@ func (gm *gitopsDeleteMessage) AsSlackMessage() (*slackMessage, error) {
 }
 
 func (gm *gitopsDeleteMessage) Env() string {
-	return gm.event.Env
+	return gm.result.Manifest.Env
 }
 
 func (gm *gitopsDeleteMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
@@ -89,18 +85,14 @@ func (gm *gitopsDeleteMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	if gm.event.Status == events.Failure {
-		msg.Text = fmt.Sprintf("Failed to delete %s of %s", gm.event.App, gm.event.Env)
-		msg.Embed.Description += fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s", gm.event.StatusDesc)
+	if gm.result.Status == model.Failure {
+		msg.Text = fmt.Sprintf("Failed to delete %s of %s", gm.result.Manifest.App, gm.result.Manifest.Env)
+		msg.Embed.Description += fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s", gm.result.StatusDesc)
 		msg.Embed.Color = 15158332
 	} else {
-		if gm.event.TriggeredBy == "policy" {
-			msg.Text = fmt.Sprintf("Policy based deletion of %s on %s", gm.event.App, gm.event.Env)
-		} else {
-			msg.Text = fmt.Sprintf("%s is deleting %s on %s", gm.event.TriggeredBy, gm.event.App, gm.event.Env)
-		}
-		msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.event.Env))
-		msg.Embed.Description += fmt.Sprintf(":paperclip: %s\n", discordCommitLink(gm.event.GitopsRepo, gm.event.GitopsRef))
+		msg.Text = fmt.Sprintf("Policy based deletion of %s on %s", gm.result.Manifest.App, gm.result.Manifest.Env)
+		msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.result.Manifest.Env))
+		msg.Embed.Description += fmt.Sprintf(":paperclip: %s\n", discordCommitLink(gm.result.GitopsRepo, gm.result.GitopsRef))
 
 		msg.Embed.Color = 3066993
 	}
@@ -108,9 +100,9 @@ func (gm *gitopsDeleteMessage) AsDiscordMessage() (*discordMessage, error) {
 	return msg, nil
 }
 
-func MessageFromDeleteEvent(event *events.DeleteEvent) Message {
+func MessageFromDeleteEvent(result model.Result) Message {
 	return &gitopsDeleteMessage{
-		event: event,
+		result: result,
 	}
 }
 

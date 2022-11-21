@@ -151,7 +151,7 @@ func (gm *gitopsDeployMessage) AsDiscordMessage() (*discordMessage, error) {
 
 }
 
-func MessageFromGitOpsEvent(event model.Result) Message {
+func DeployMessageFromGitOpsResult(event model.Result) Message {
 	return &gitopsDeployMessage{
 		event: event,
 	}

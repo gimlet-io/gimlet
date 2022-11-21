@@ -6,7 +6,6 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
 )
 
 func TestSendingFluxMessage(t *testing.T) {
@@ -76,14 +75,16 @@ func TestSendingFluxMessage(t *testing.T) {
 func TestSendingGitopsDeleteMessage(t *testing.T) {
 
 	msgDeleteFailed := gitopsDeleteMessage{
-		event: &events.DeleteEvent{
-			Env:         "staging",
-			App:         "myapp",
+		result: model.Result{
+			Manifest: &dx.Manifest{
+				Env: "staging",
+				App: "myapp",
+			},
 			TriggeredBy: "Gimlet",
 			StatusDesc:  "cannot delete",
 			GitopsRef:   "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
 			GitopsRepo:  "testrepo",
-			Status:      1,
+			Status:      model.Failure,
 		},
 	}
 
@@ -97,14 +98,16 @@ func TestSendingGitopsDeleteMessage(t *testing.T) {
 	}
 
 	msgPolicyDeletion := gitopsDeleteMessage{
-		event: &events.DeleteEvent{
-			Env:         "staging",
-			App:         "myapp",
+		result: model.Result{
+			Manifest: &dx.Manifest{
+				Env: "staging",
+				App: "myapp",
+			},
 			TriggeredBy: "policy",
 			StatusDesc:  "cannot delete",
 			GitopsRef:   "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
 			GitopsRepo:  "testrepo",
-			Status:      2,
+			Status:      model.Success,
 		},
 	}
 
@@ -182,46 +185,35 @@ func TestSendingGitopsDeployMessage(t *testing.T) {
 
 func TestSendingGitopsRollbackMessage(t *testing.T) {
 
-	msgRollbackFailed := gitopsRollbackMessage{
-		event: &events.RollbackEvent{
-			RollbackRequest: &dx.RollbackRequest{
-				Env:         "staging",
-				App:         "myapp",
-				TargetSHA:   "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
-				TriggeredBy: "Gimlet",
+	msgRollback := gitopsRollbackMessage{
+		event: model.Event{
+			Status:     model.Failure.String(),
+			StatusDesc: "failed",
+			Results: []model.Result{
+				{
+					GitopsRef:  "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
+					GitopsRepo: "gimlet-io",
+				},
+				{
+					GitopsRef:  "76ab7d611242f7c6742f0ab662133e02b2ba2bbb",
+					GitopsRepo: "gimlet-io",
+				},
+				{
+					GitopsRef:  "76ab7d611242f7c6742f0ab662133e02b2ba2lll",
+					GitopsRepo: "gimlet-io",
+				},
 			},
-			Status:     1,
-			StatusDesc: "success",
-			GitopsRefs: []string{"76ab7d611242f7c6742f0ab662133e02b2ba2b1c", "76ab7d611242f7c6742f0ab662133e02b2ba2bbb", "76ab7d611242f7c6742f0ab662133e02b2ba2lll"},
-			GitopsRepo: "gimlet-io",
+		},
+		rollbackRequest: dx.RollbackRequest{
+			Env:         "staging",
+			App:         "myapp",
+			TargetSHA:   "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
+			TriggeredBy: "Gimlet",
 		},
 	}
 
-	discordMessageRollbackFailed, err := msgRollbackFailed.AsDiscordMessage()
-	if err != nil {
-		t.Errorf("Failed to create Discord message!")
-	}
-
-	if !strings.Contains(discordMessageRollbackFailed.Text, "Failed to roll back") {
-		t.Errorf("Rollback failed message must contain 'Failed to roll back'")
-	}
-
-	msgRollbackSuccess := gitopsRollbackMessage{
-		event: &events.RollbackEvent{
-			RollbackRequest: &dx.RollbackRequest{
-				Env:         "staging",
-				App:         "myapp",
-				TargetSHA:   "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
-				TriggeredBy: "Gimlet",
-			},
-			Status:     0,
-			StatusDesc: "success",
-			GitopsRefs: []string{"76ab7d611242f7c6742f0ab662133e02b2ba2b1c", "76ab7d611242f7c6742f0ab662133e02b2ba2bbb", "76ab7d611242f7c6742f0ab662133e02b2ba2lll"},
-			GitopsRepo: "gimlet-io",
-		},
-	}
-
-	discordMessageRollbackSuccess, err := msgRollbackSuccess.AsDiscordMessage()
+	msgRollback.event.Status = model.Success.String()
+	discordMessageRollbackSuccess, err := msgRollback.AsDiscordMessage()
 	if err != nil {
 		t.Errorf("Failed to create Discord message!")
 	}
