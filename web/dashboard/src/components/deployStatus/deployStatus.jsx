@@ -55,17 +55,8 @@ export default class DeployStatus extends Component {
       )
     }
 
-    // Feature 'Add results to deploy status', gitopsHashes is deprecated, will be removed!
-    if (deploy.results) {
-      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo);
-      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);
-    } else {
-      const hasGitopsHashes = deploy.gitopsHashes && deploy.gitopsHashes.length !== 0;
-      if (deploy.status === 'processed' || hasGitopsHashes) {
-        gitopsWidget = gitopsWidgetFromGitopsHashes(deploy, gitopsRepo);
-        appliedWidget = appliedWidgetFromGitopsHashes(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);
-      }
-    }
+    gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo);
+    appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);  
 
     return (
       <>
@@ -237,47 +228,12 @@ function gitopsWidgetFromResults(deploy, gitopsRepo) {
   )
 }
 
-function gitopsWidgetFromGitopsHashes(deploy, gitopsRepo) {
-  return (
-    <div className="mt-2">
-      <p className="text-yellow-100 font-semibold">
-        Manifests written to git
-      </p>
-      {deploy.gitopsHashes.map(hashStatus => (
-        <p key={hashStatus.hash} className="pl-2">
-          <span>📋</span>
-          <a
-            href={`https://github.com/${gitopsRepo}/commit/${hashStatus.hash}`}
-            target="_blank" rel="noopener noreferrer"
-            className='ml-1'
-          >
-            {hashStatus.hash.slice(0, 6)}
-          </a>
-        </p>
-      ))}
-    </div>
-  )
-}
-
 function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
   const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
   deploy.results.forEach(result => {
     if (result.hash === firstCommitOfEnv.sha) {
-      deployCommit = Object.assign({}, firstCommitOfEnv);
-    }
-  })
-
-  return renderAppliedWidget(deployCommit, gitopsRepo);
-}
-
-function appliedWidgetFromGitopsHashes(deploy, gitopsCommits, env, gitopsRepo) {
-  const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
-
-  let deployCommit = {};
-  deploy.gitopsHashes.forEach(gitopsHash => {
-    if (gitopsHash.hash === firstCommitOfEnv.sha) {
       deployCommit = Object.assign({}, firstCommitOfEnv);
     }
   })
