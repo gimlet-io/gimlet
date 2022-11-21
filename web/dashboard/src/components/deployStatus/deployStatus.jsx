@@ -182,7 +182,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo) {
 function renderResult(result, gitopsRepo) {
   if (result.hash && result.status === "success") {
     return (
-      <div className="pl-2 mb-2">
+      <div className="pl-2 mb-2" key={result.hash}>
         <p className="font-semibold truncate mb-1" title={result.app}>
           {result.app}
           <span className='mx-1 align-middle'>✅</span>
@@ -229,6 +229,10 @@ function gitopsWidgetFromResults(deploy, gitopsRepo) {
 }
 
 function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
+  if (!deploy.results) {
+    return null
+  }
+
   const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
