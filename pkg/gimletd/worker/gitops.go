@@ -180,20 +180,22 @@ func processEvent(
 	}
 
 	// send out notifications
-	for _, result := range results {
-		switch event.Type {
-		case model.ArtifactCreatedEvent:
-			fallthrough
-		case model.ReleaseRequestedEvent:
-			notificationsManager.Broadcast(notifications.DeployMessageFromGitOpsResult(result))
-		case model.RollbackRequestedEvent:
-			m, err := notifications.MessageFromRollbackEvent(*event)
-			if err != nil {
-				logrus.Warnf("could not convert to notification %v", err)
+	if event.Type == model.RollbackRequestedEvent {
+		m, err := notifications.MessageFromRollbackEvent(*event)
+		if err != nil {
+			logrus.Warnf("could not convert to notification %v", err)
+		}
+		notificationsManager.Broadcast(m)
+	} else {
+		for _, result := range results {
+			switch event.Type {
+			case model.ArtifactCreatedEvent:
+				fallthrough
+			case model.ReleaseRequestedEvent:
+				notificationsManager.Broadcast(notifications.DeployMessageFromGitOpsResult(result))
+			case model.BranchDeletedEvent:
+				notificationsManager.Broadcast(notifications.MessageFromDeleteEvent(result))
 			}
-			notificationsManager.Broadcast(m)
-		case model.BranchDeletedEvent:
-			notificationsManager.Broadcast(notifications.MessageFromDeleteEvent(result))
 		}
 	}
 }
