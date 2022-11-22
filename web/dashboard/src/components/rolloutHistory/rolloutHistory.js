@@ -21,7 +21,7 @@ export class RolloutHistory extends Component {
   }
 
   render() {
-    let { env, app, appRolloutHistory, rollback } = this.props;
+    let { env, app, appRolloutHistory, rollback, releaseHistorySinceDays } = this.props;
 
     const { open } = this.state;
 
@@ -70,6 +70,13 @@ export class RolloutHistory extends Component {
       markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
       rollouts.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
     })
+
+    if (releaseHistorySinceDays && releasesCount === 0) {
+      return (
+        <div className="text-xs text-gray-800 p-2">
+          No releases in the past {releaseHistorySinceDays} days.
+        </div>)
+    }
 
     return (
       <div className="">

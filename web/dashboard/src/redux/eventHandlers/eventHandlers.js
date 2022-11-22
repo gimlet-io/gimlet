@@ -287,6 +287,11 @@ export function repoMetas(state, payload) {
   return state;
 }
 
+export function settings(state, payload) {
+  state.settings.releaseHistorySinceDays = payload.releaseHistorySinceDays;
+  return state;
+}
+
 export function deploy(state, payload) {
   state.runningDeploys = [payload];
   return state;

@@ -213,3 +213,21 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write([]byte("{}"))
 }
+
+func settings(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	settings := map[string]interface{}{
+		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
+	}
+
+	settingsString, err := json.Marshal(settings)
+	if err != nil {
+		logrus.Errorf("cannot serialize settings: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte(settingsString))
+}

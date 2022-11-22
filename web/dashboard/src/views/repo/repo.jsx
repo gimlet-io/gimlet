@@ -363,7 +363,7 @@ export default class Repo extends Component {
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, search, rolloutHistory, commits, agents, pullRequests } = this.state;
+    let { envs, connectedAgents, search, rolloutHistory, commits, agents, pullRequests, settings } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
@@ -423,6 +423,7 @@ export default class Repo extends Component {
                     repoName={repo}
                     fileInfos={this.fileMetasByEnv(envName)}
                     pullRequests={pullRequests?.[envName]}
+                    releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={this.props.gimletClient}
                     dispatch={this.props.store.dispatch}
                   />
