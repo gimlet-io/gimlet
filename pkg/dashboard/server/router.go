@@ -100,6 +100,7 @@ func userRoutes(r *chi.Mux) {
 		r.Post("/api/saveUser", saveUser)
 		r.Get("/api/envs", envs)
 		r.Get("/api/gitRepos", gitRepos)
+		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/env/{env}/app/{app}/rolloutHistory", rolloutHistoryPerApp)
 		r.Get("/api/env/{env}/releaseStatuses", releaseStatuses)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)

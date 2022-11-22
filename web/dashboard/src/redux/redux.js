@@ -34,6 +34,7 @@ export const ACTION_TYPE_POPUPWINDOWPROGRESS = 'popupWindowProgress';
 export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
 export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
+export const ACTION_TYPE_SETTINGS = 'settings';
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
@@ -150,6 +151,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.saveRepoPullRequest(state, action.payload)
     case ACTION_TYPE_REPO_METAS:
       return eventHandlers.repoMetas(state, action.payload)
+      case ACTION_TYPE_SETTINGS:
+        return eventHandlers.settings(state, action.payload)
     case ACTION_TYPE_DEPLOY:
       return eventHandlers.deploy(state, action.payload)
     case ACTION_TYPE_DEPLOY_STATUS:

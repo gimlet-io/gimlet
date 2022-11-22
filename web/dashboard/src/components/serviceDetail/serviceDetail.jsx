@@ -5,7 +5,7 @@ import Emoji from "react-emoji-render";
 import { ACTION_TYPE_ROLLOUT_HISTORY } from "../../redux/redux";
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName, gimletClient, dispatch } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName, releaseHistorySinceDays, gimletClient, dispatch } = props;
 
   useEffect(() => {
     gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
@@ -56,6 +56,7 @@ function ServiceDetail(props) {
             app={stack.service.name}
             rollback={rollback}
             appRolloutHistory={rolloutHistory}
+            releaseHistorySinceDays={releaseHistorySinceDays}
           />
         </div>
         <div className="flex flex-wrap text-sm">

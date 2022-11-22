@@ -12,9 +12,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests, gimletClient, dispatch } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, dispatch } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, gimletClient, dispatch);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, dispatch);
 
     return (
       <div>
@@ -74,7 +74,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, gimletClient, dispatch) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, dispatch) {
   let services = [];
 
   let configsWeHave = [];
@@ -99,6 +99,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         fileName={fileName(fileInfos, stack.service.name)}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={configExists}
+        releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         dispatch={dispatch}
       />
@@ -124,6 +125,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         fileName={fileName(fileInfos, config)}
         navigateToConfigEdit={navigateToConfigEdit}
         configExists={true}
+        releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         dispatch={dispatch}
       />

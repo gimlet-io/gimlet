@@ -7,7 +7,8 @@ import {
   ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_USER,
   ACTION_TYPE_USERS,
-  ACTION_TYPE_APPLICATION
+  ACTION_TYPE_APPLICATION,
+  ACTION_TYPE_SETTINGS
 } from "./redux/redux";
 
 export default class APIBackend extends Component {
@@ -45,6 +46,9 @@ export default class APIBackend extends Component {
       });
       this.props.gimletClient.getGitopsCommits()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_COMMITS, payload: data }), () => {/* Generic error handler deals with it */
+      });
+      this.props.gimletClient.getSettings()
+      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data }), () => {/* Generic error handler deals with it */
       });
   }
 
