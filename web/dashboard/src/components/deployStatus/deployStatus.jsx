@@ -55,8 +55,11 @@ export default class DeployStatus extends Component {
       )
     }
 
-    gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo);
-    appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);  
+    const hasResults = deploy.results && deploy.results.length !== 0;
+    if (deploy.status === 'processed' || hasResults) {
+      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo);
+      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);  
+    }
 
     return (
       <>
@@ -211,13 +214,6 @@ function renderResult(result, gitopsRepo) {
 
 
 function gitopsWidgetFromResults(deploy, gitopsRepo) {
-  if (deploy.status !== 'processed') {
-    return (
-      <div className="mt-2">
-        <Loading />
-      </div>);
-  }
-
   return (
     <div className="mt-2">
       <p className="text-yellow-100 font-semibold">
@@ -229,10 +225,6 @@ function gitopsWidgetFromResults(deploy, gitopsRepo) {
 }
 
 function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
-  if (!deploy.results) {
-    return null
-  }
-
   const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
