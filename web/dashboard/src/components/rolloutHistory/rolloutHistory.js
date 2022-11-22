@@ -71,7 +71,7 @@ export class RolloutHistory extends Component {
       rollouts.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
     })
 
-    if (releasesCount === 0) {
+    if (releaseHistorySinceDays && releasesCount === 0) {
       return (
         <div className="text-xs text-gray-800 p-2">
           This app doesn't have releases for {releaseHistorySinceDays} days.
