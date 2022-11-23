@@ -387,7 +387,7 @@ func processRollbackEvent(
 	}
 
 	t0 := time.Now().UnixNano()
-	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(gitopsRepo)
+	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
