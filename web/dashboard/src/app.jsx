@@ -9,7 +9,7 @@ import GimletClient from "./client/client";
 import Repositories from "./views/repositories/repositories";
 import APIBackend from "./apiBackend";
 import Profile from "./views/profile/profile";
-import Services from "./views/services/services";
+import Pulse from "./views/pulse/pulse";
 import Repo from "./views/repo/repo";
 import DeployStatus from "./components/deployStatus/deployStatus";
 import LoginPage from './views/login/loginPage';
@@ -48,7 +48,7 @@ export default class App extends Component {
     );
     const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store} />);
     const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient} />);
-    const ServicesWithRouting = withRouter(props => <Services {...props} store={store} />);
+    const PulseWithRouting = withRouter(props => <Pulse {...props} store={store} gimletClient={gimletClient} />);
     const RepositoriesWithRouting = withRouter(props => <Repositories {...props} store={store} gimletClient={gimletClient} />);
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
     const ChartUIWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
@@ -71,8 +71,8 @@ export default class App extends Component {
           <NavBar />
           <div className="py-10">
             <Switch>
-              <Route path="/services">
-                <ServicesWithRouting />
+              <Route path="/pulse">
+                <PulseWithRouting />
               </Route>
 
               <Route path="/repositories">

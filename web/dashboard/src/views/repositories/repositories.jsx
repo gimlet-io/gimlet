@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
-import { emptyStateNoMatchingService } from "../services/services";
+import { emptyStateNoMatchingService } from "../pulse/pulse";
 import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 
 export default class Repositories extends Component {
