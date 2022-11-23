@@ -430,7 +430,7 @@ func processRollbackEvent(
 			TriggeredBy:     rollbackRequest.TriggeredBy,
 			Status:          model.Success,
 			GitopsRef:       hash,
-			GitopsRepo:      gitopsRepo,
+			GitopsRepo:      repoName,
 		})
 	}
 
