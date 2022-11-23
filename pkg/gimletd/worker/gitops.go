@@ -188,11 +188,13 @@ func processEvent(
 
 	// send out notifications
 	if event.Type == model.RollbackRequestedEvent {
-		m, err := notifications.MessageFromRollbackEvent(*event)
-		if err != nil {
-			logrus.Warnf("could not convert to notification %v", err)
+		if event.Results != nil {
+			m, err := notifications.MessageFromRollbackEvent(*event)
+			if err != nil {
+				logrus.Warnf("could not convert to notification %v", err)
+			}
+			notificationsManager.Broadcast(m)
 		}
-		notificationsManager.Broadcast(m)
 	} else {
 		for _, result := range results {
 			switch event.Type {
