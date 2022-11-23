@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
 import { CheckIcon, XIcon, FlagIcon } from '@heroicons/react/solid';
 import { ACTION_TYPE_RELEASE_STATUSES } from '../../redux/redux';
+import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
 export default class Releases extends Component {
     constructor(props) {
@@ -10,13 +11,15 @@ export default class Releases extends Component {
         let { env } = this.props;
         let reduxState = this.props.store.getState();
         this.state = {
-            releaseStatuses: reduxState.releaseStatuses[env]
+            releaseStatuses: reduxState.releaseStatuses[env],
+            releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays
         }
 
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
 
             this.setState({ releaseStatuses: reduxState.releaseStatuses[env] });
+            this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
         });
     }
 
@@ -36,79 +39,43 @@ export default class Releases extends Component {
     }
 
     render() {
-        let { releaseStatuses } = this.state;
+        let { releaseStatuses, releaseHistorySinceDays } = this.state;
 
         if (!releaseStatuses) {
             return null;
         }
 
+        let renderReleaseStatuses = [];
+
+        releaseStatuses.forEach((rollout, idx) => {
+            const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
+            const dateLabel = formatDistance(rollout.created * 1000, new Date());
+
+            let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
+            if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+                ringColor = "ring-green-200";
+            } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+                ringColor = "ring-red-400";
+            }
+
+            renderReleaseStatuses.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+        })
+
         return (
             <div>
                 <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">{this.props.env}</h4>
                 {releaseStatuses.length > 0 ?
-                    <ul className="-mb-8">
-                        {releaseStatuses.map((releaseStatus, releaseStatusIdx) => {
-                            const exactDate = format(releaseStatus.created * 1000, 'h:mm:ss a, MMMM do yyyy')
-                            const dateLabel = formatDistance(releaseStatus.created * 1000, new Date());
-                            const gitopsCommit = this.props.gitopsCommitsByEnv.find(gitopsCommit => gitopsCommit.sha === releaseStatus.gitopsRef);
-                            
-                            let color = "bg-yellow-200";
-                            let Icon = FlagIcon;
-                    
-                            if (gitopsCommit.status.includes("Succeeded")) {
-                                color = "bg-green-500";
-                                Icon = CheckIcon;
-                            } else if (gitopsCommit.status.includes("Failed")) {
-                                color = "bg-red-500";
-                                Icon = XIcon;
-                            }
-                            
-                            return (
-                                <li key={releaseStatusIdx}>
-                                    <div className="relative pb-8">
-                                        {releaseStatusIdx !== releaseStatuses.length - 1 ? (
-                                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
-                                        ) : null}
-                                        <div className="relative flex space-x-3">
-                                            <div>
-                                                <span
-                                                    className={color + ' h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white'}>
-                                                    <Icon className="h-5 w-5 text-white" aria-hidden="true" />
-                                                </span>
-                                            </div>
-                                            <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                                <div>
-                                                    <p className="text-sm text-gray-500">
-                                                        {`${releaseStatus.triggeredBy} `}
-                                                    </p>
-                                                    <p className="ml-2 text-sm text-gray-500">
-                                                        <span className="font-medium text-gray-900">
-                                                            {`${releaseStatus.app} -> ${releaseStatus.env} - ${releaseStatus.version.repositoryName}`}
-                                                        </span>
-                                                    </p>
-                                                    <p className="ml-2 text-sm text-gray-500">
-                                                        <a href={`https://github.com/${releaseStatus.gitopsRepo}/commit/${releaseStatus.gitopsRef}`} className="font-medium text-gray-900">
-                                                            {`${releaseStatus.gitopsRef.slice(0, 6)} - ${releaseStatus.version.message}`}
-                                                        </a>
-                                                    </p>
-                                                </div>
-                                                <div className="whitespace-nowrap text-right text-sm text-gray-500">
-                                                    <p
-                                                        className="ml-1"
-                                                        title={exactDate}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer">
-                                                        {dateLabel} ago
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>)
-                        })}
-                    </ul>
+                    <div className="bg-white p-4 rounded">
+                        <div className="bg-yellow-50 rounded">
+                            <div className="flow-root">
+                                <ul className="-mb-4 p-2 md:p-4 lg:p-8">
+                                    {renderReleaseStatuses}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                     :
-                    <p className="text-xs text-gray-800">{`There are no deploys yet in ${this.props.env}.`}</p>}
+                    <p className="text-xs text-gray-800">{`No releases in the past ${releaseHistorySinceDays} days.`}</p>}
             </div>
         );
     }
