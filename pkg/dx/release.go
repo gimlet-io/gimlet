@@ -46,13 +46,6 @@ type RollbackRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
-// GitopsStatus holds the gitops references that were created based on an event
-type GitopsStatus struct {
-	Hash       string `json:"hash,omitempty"`
-	Status     string `json:"status,omitempty"`
-	StatusDesc string `json:"statusDesc,omitempty"`
-}
-
 type Result struct {
 	App                string `json:"app,omitempty"`
 	Hash               string `json:"hash,omitempty"`
@@ -63,10 +56,9 @@ type Result struct {
 }
 
 type ReleaseStatus struct {
-	Status       string         `json:"status"`
-	StatusDesc   string         `json:"statusDesc"`
-	GitopsHashes []GitopsStatus `json:"gitopsHashes"`
-	Results      []Result       `json:"results"`
+	Status     string   `json:"status"`
+	StatusDesc string   `json:"statusDesc"`
+	Results    []Result `json:"results"`
 }
 
 func (rs *ReleaseStatus) ExtractGitopsEndState() (bool, bool) {
@@ -76,34 +68,12 @@ func (rs *ReleaseStatus) ExtractGitopsEndState() (bool, bool) {
 	var allCommitsApplied bool
 	var gitopsCommitsHaveFailed bool
 
-	if rs.Results != nil {
-		artifactResultCount = len(rs.Results)
+	artifactResultCount = len(rs.Results)
 
-		for _, result := range rs.Results {
-			if strings.Contains(result.GitopsCommitStatus, "Failed") {
-				failedCount++
-			} else if result.GitopsCommitStatus == ReconciliationSucceeded {
-				succeededCount++
-			}
-		}
-
-		if succeededCount == artifactResultCount {
-			allCommitsApplied = true
-		}
-
-		if failedCount > 0 {
-			gitopsCommitsHaveFailed = true
-		}
-
-		return allCommitsApplied, gitopsCommitsHaveFailed
-	}
-
-	artifactResultCount = len(rs.GitopsHashes)
-
-	for _, gitopsHash := range rs.GitopsHashes {
-		if strings.Contains(gitopsHash.Status, "Failed") {
+	for _, result := range rs.Results {
+		if strings.Contains(result.GitopsCommitStatus, "Failed") {
 			failedCount++
-		} else if gitopsHash.Status == ReconciliationSucceeded {
+		} else if result.GitopsCommitStatus == ReconciliationSucceeded {
 			succeededCount++
 		}
 	}

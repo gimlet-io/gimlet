@@ -14,7 +14,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
 	commonGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -94,7 +93,7 @@ func (r *BranchDeleteEventWorker) Run() {
 
 					logrus.Infof("cleaning up %s", deletedBranch)
 
-					branchDeletedEventStr, err := json.Marshal(events.BranchDeletedEvent{
+					branchDeletedEventStr, err := json.Marshal(dx.BranchDeletedEvent{
 						Repo:      repoName,
 						Branch:    deletedBranch,
 						Manifests: manifests,
@@ -106,10 +105,9 @@ func (r *BranchDeleteEventWorker) Run() {
 
 					// store branch deleted event
 					_, err = r.dao.CreateEvent(&model.Event{
-						Type:         model.BranchDeletedEvent,
-						Blob:         string(branchDeletedEventStr),
-						Repository:   repoName,
-						GitopsHashes: []string{},
+						Type:       model.BranchDeletedEvent,
+						Blob:       string(branchDeletedEventStr),
+						Repository: repoName,
 					})
 					if err != nil {
 						logrus.Warnf("could not store branch deleted event: %s", err)

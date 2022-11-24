@@ -1,16 +1,19 @@
 package notifications
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker/events"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	githubLib "github.com/google/go-github/v37/github"
 )
 
 type gitopsRollbackMessage struct {
-	event *events.RollbackEvent
+	event           model.Event
+	rollbackRequest dx.RollbackRequest
 }
 
 func (gm *gitopsRollbackMessage) AsSlackMessage() (*slackMessage, error) {
@@ -19,75 +22,40 @@ func (gm *gitopsRollbackMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	if gm.event.Status == events.Failure {
-		msg.Text = fmt.Sprintf("Failed to roll back %s of %s",
-			gm.event.RollbackRequest.App,
-			gm.event.RollbackRequest.Env)
-		msg.Blocks = append(msg.Blocks,
-			Block{
-				Type: section,
-				Text: &Text{
-					Type: markdown,
-					Text: msg.Text,
-				},
+	msg.Text = fmt.Sprintf("🔙 %s is rolling back %s on %s", gm.rollbackRequest.TriggeredBy, gm.rollbackRequest.App, gm.rollbackRequest.Env)
+	msg.Blocks = append(msg.Blocks,
+		Block{
+			Type: section,
+			Text: &Text{
+				Type: markdown,
+				Text: msg.Text,
 			},
-		)
-		msg.Blocks = append(msg.Blocks,
-			Block{
-				Type: contextString,
-				Elements: []Text{
-					{
-						Type: markdown,
-						Text: fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s", gm.event.StatusDesc),
-					},
-				},
+		},
+	)
+	msg.Blocks = append(msg.Blocks,
+		Block{
+			Type: contextString,
+			Elements: []Text{
+				{Type: markdown, Text: fmt.Sprintf(":dart: %s", strings.Title(gm.rollbackRequest.Env))},
+				{Type: markdown, Text: fmt.Sprintf(":clipboard: %s", gm.rollbackRequest.TargetSHA)},
 			},
+		},
+	)
+	for _, result := range gm.event.Results {
+		msg.Blocks[len(msg.Blocks)-1].Elements = append(
+			msg.Blocks[len(msg.Blocks)-1].Elements,
+			Text{Type: markdown, Text: fmt.Sprintf(":paperclip: %s", commitLink(result.GitopsRepo, result.GitopsRef))},
 		)
-		msg.Blocks = append(msg.Blocks,
-			Block{
-				Type: contextString,
-				Elements: []Text{
-					{Type: markdown, Text: fmt.Sprintf(":dart: %s", strings.Title(gm.event.RollbackRequest.Env))},
-					{Type: markdown, Text: fmt.Sprintf(":clipboard: %s", gm.event.RollbackRequest.TargetSHA)},
-				},
-			},
-		)
-	} else {
-		msg.Text = fmt.Sprintf("🔙 %s is rolling back %s on %s", gm.event.RollbackRequest.TriggeredBy, gm.event.RollbackRequest.App, gm.event.RollbackRequest.Env)
-		msg.Blocks = append(msg.Blocks,
-			Block{
-				Type: section,
-				Text: &Text{
-					Type: markdown,
-					Text: msg.Text,
-				},
-			},
-		)
-		msg.Blocks = append(msg.Blocks,
-			Block{
-				Type: contextString,
-				Elements: []Text{
-					{Type: markdown, Text: fmt.Sprintf(":dart: %s", strings.Title(gm.event.RollbackRequest.Env))},
-					{Type: markdown, Text: fmt.Sprintf(":clipboard: %s", gm.event.RollbackRequest.TargetSHA)},
-				},
-			},
-		)
-		for _, gitopsRef := range gm.event.GitopsRefs {
-			msg.Blocks[len(msg.Blocks)-1].Elements = append(
-				msg.Blocks[len(msg.Blocks)-1].Elements,
-				Text{Type: markdown, Text: fmt.Sprintf(":paperclip: %s", commitLink(gm.event.GitopsRepo, gitopsRef))},
-			)
-		}
-		if len(msg.Blocks[len(msg.Blocks)-1].Elements) > 10 {
-			msg.Blocks[len(msg.Blocks)-1].Elements = msg.Blocks[len(msg.Blocks)-1].Elements[:10]
-		}
+	}
+	if len(msg.Blocks[len(msg.Blocks)-1].Elements) > 10 {
+		msg.Blocks[len(msg.Blocks)-1].Elements = msg.Blocks[len(msg.Blocks)-1].Elements[:10]
 	}
 
 	return msg, nil
 }
 
 func (gm *gitopsRollbackMessage) Env() string {
-	return gm.event.RollbackRequest.Env
+	return gm.rollbackRequest.Env
 }
 
 func (gm *gitopsRollbackMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
@@ -105,37 +73,32 @@ func (gm *gitopsRollbackMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	if gm.event.Status == events.Failure {
-		msg.Text = fmt.Sprintf("Failed to roll back %s of %s",
-			gm.event.RollbackRequest.App,
-			gm.event.RollbackRequest.Env)
+	msg.Text = fmt.Sprintf(":arrow_backward: %s is rolling back %s on %s", gm.rollbackRequest.TriggeredBy, gm.rollbackRequest.App, gm.rollbackRequest.Env)
 
-		msg.Embed.Description += fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s\n", gm.event.StatusDesc)
-		msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.event.RollbackRequest.Env))
-		msg.Embed.Description += fmt.Sprintf(":clipboard: %s\n", gm.event.RollbackRequest.TargetSHA)
+	msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.rollbackRequest.Env))
+	msg.Embed.Description += fmt.Sprintf(":clipboard: %s\n", gm.rollbackRequest.TargetSHA)
 
-		msg.Embed.Color = 15158332
-
-	} else {
-		msg.Text = fmt.Sprintf(":arrow_backward: %s is rolling back %s on %s", gm.event.RollbackRequest.TriggeredBy, gm.event.RollbackRequest.App, gm.event.RollbackRequest.Env)
-
-		msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.event.RollbackRequest.Env))
-		msg.Embed.Description += fmt.Sprintf(":clipboard: %s\n", gm.event.RollbackRequest.TargetSHA)
-
-		for _, gitopsRef := range gm.event.GitopsRefs {
-			msg.Embed.Description += fmt.Sprintf(":paperclip: %s\n", discordCommitLink(gm.event.GitopsRepo, gitopsRef))
-		}
-
-		msg.Embed.Color = 3066993
+	for _, result := range gm.event.Results {
+		msg.Embed.Description += fmt.Sprintf(":paperclip: %s\n", discordCommitLink(result.GitopsRepo, result.GitopsRef))
 	}
+
+	msg.Embed.Color = 3066993
 
 	return msg, nil
 }
 
-func MessageFromRollbackEvent(event *events.RollbackEvent) Message {
-	return &gitopsRollbackMessage{
-		event: event,
+func MessageFromRollbackEvent(event model.Event) (Message, error) {
+
+	var rollbackRequest dx.RollbackRequest
+	err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse rollback request with id: %s", event.ID)
 	}
+
+	return &gitopsRollbackMessage{
+		event:           event,
+		rollbackRequest: rollbackRequest,
+	}, nil
 }
 
 func (gm *gitopsRollbackMessage) RepositoryName() string {

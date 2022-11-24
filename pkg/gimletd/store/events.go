@@ -121,7 +121,7 @@ WHERE artifact_id = $1;
 // Event returns an event by id
 func (db *Store) EventReleaseTrack(id string) (*model.Event, error) {
 	query := fmt.Sprintf(`
-SELECT id, created, blob, type, status, status_desc, gitops_hashes, results
+SELECT id, created, blob, type, status, status_desc, results
 FROM events
 WHERE id = $1;
 `)
@@ -134,7 +134,7 @@ WHERE id = $1;
 // Event returns an event by artifact id
 func (db *Store) EventArtifactTrack(artifactId string) (*model.Event, error) {
 	query := fmt.Sprintf(`
-SELECT id, created, blob, status, status_desc, gitops_hashes, results
+SELECT id, created, blob, status, status_desc, results
 FROM events
 WHERE artifact_id = $1;
 `)
@@ -152,9 +152,9 @@ func (db *Store) UnprocessedEvents() (events []*model.Event, err error) {
 }
 
 // UpdateEventStatus updates an event status in the database
-func (db *Store) UpdateEventStatus(id string, status string, desc string, gitopsStatusString string, results string) error {
+func (db *Store) UpdateEventStatus(id string, status string, desc string, results string) error {
 	stmt := sql.Stmt(db.driver, sql.UpdateEventStatus)
-	_, err := db.Exec(stmt, status, desc, gitopsStatusString, results, id)
+	_, err := db.Exec(stmt, status, desc, results, id)
 	return err
 }
 

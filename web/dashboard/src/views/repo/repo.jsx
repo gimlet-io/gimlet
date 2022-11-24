@@ -212,7 +212,6 @@ export default class Repo extends Component {
       .then(data => {
         deployRequest.status = data.status;
         deployRequest.statusDesc = data.statusDesc;
-        deployRequest.gitopsHashes = data.gitopsHashes;
         deployRequest.results = data.results;
         this.props.store.dispatch({
           type: ACTION_TYPE_DEPLOY_STATUS, payload: deployRequest
@@ -226,10 +225,10 @@ export default class Repo extends Component {
 
         if (data.status === "processed") {
           let gitopsCommitsApplied = true;
-          const numberOfGitopsHashes = data.gitopsHashes.length;
-          if (numberOfGitopsHashes > 0) {
-            const latestGitopsHashMetadata = data.gitopsHashes[0];
-            if (latestGitopsHashMetadata.status === 'N/A') { // poll until all gitops writes are applied
+          const numberOfResults = data.results.length;
+          if (numberOfResults > 0) {
+            const latestGitopsHashMetadata = data.results[0];
+            if (latestGitopsHashMetadata.gitopsCommitStatus === "N/A") { // poll until all gitops writes are applied
               gitopsCommitsApplied = false;
               setTimeout(() => {
                 this.checkDeployStatus(deployRequest);

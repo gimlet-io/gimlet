@@ -206,10 +206,9 @@ func release(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	event, err := store.CreateEvent(&model.Event{
-		Type:         model.ReleaseRequestedEvent,
-		Blob:         string(releaseRequestStr),
-		Repository:   artifact.Repository,
-		GitopsHashes: []string{},
+		Type:       model.ReleaseRequestedEvent,
+		Blob:       string(releaseRequestStr),
+		Repository: artifact.Repository,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
@@ -375,28 +374,6 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	gitopsStatus := []dx.GitopsStatus{}
-	for _, gitopsHash := range event.GitopsHashes {
-		gitopsCommit, err := store.GitopsCommit(gitopsHash)
-		if err != nil {
-			logrus.Warnf("cannot get gitops commit: %s", err)
-			continue
-		}
-
-		if gitopsCommit != nil {
-			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
-				Hash:       gitopsHash,
-				Status:     gitopsCommit.Status,
-				StatusDesc: gitopsCommit.StatusDesc,
-			})
-		} else {
-			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
-				Hash:   gitopsHash,
-				Status: "N/A",
-			})
-		}
-	}
-
 	results := []dx.Result{}
 	for _, result := range event.Results {
 		if event.Type == "rollback" {
@@ -421,10 +398,9 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
-		Status:       event.Status,
-		StatusDesc:   event.StatusDesc,
-		GitopsHashes: gitopsStatus,
-		Results:      results,
+		Status:     event.Status,
+		StatusDesc: event.StatusDesc,
+		Results:    results,
 	})
 
 	w.WriteHeader(http.StatusOK)
@@ -453,28 +429,6 @@ func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	gitopsStatus := []dx.GitopsStatus{}
-	for _, gitopsHash := range event.GitopsHashes {
-		gitopsCommit, err := store.GitopsCommit(gitopsHash)
-		if err != nil {
-			logrus.Warnf("cannot get gitops commit: %s", err)
-			continue
-		}
-
-		if gitopsCommit != nil {
-			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
-				Hash:       gitopsHash,
-				Status:     gitopsCommit.Status,
-				StatusDesc: gitopsCommit.StatusDesc,
-			})
-		} else {
-			gitopsStatus = append(gitopsStatus, dx.GitopsStatus{
-				Hash:   gitopsHash,
-				Status: "N/A",
-			})
-		}
-	}
-
 	results := []dx.Result{}
 	for _, result := range event.Results {
 		results = append(results, dx.Result{
@@ -488,10 +442,9 @@ func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
-		Status:       event.Status,
-		StatusDesc:   event.StatusDesc,
-		GitopsHashes: gitopsStatus,
-		Results:      results,
+		Status:     event.Status,
+		StatusDesc: event.StatusDesc,
+		Results:    results,
 	})
 
 	w.WriteHeader(http.StatusOK)
