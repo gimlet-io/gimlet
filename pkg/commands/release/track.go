@@ -152,7 +152,7 @@ func printGitopsStatuses(releaseStatus *dx.ReleaseStatus) {
 		if result.Status == model.Failure.String() {
 			fmt.Printf("\t%v %s -> %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Status, result.StatusDesc)
 		} else if strings.Contains(result.GitopsCommitStatus, "Failed") {
-			fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.Status, result.StatusDesc)
+			fmt.Printf("\t%v %s -> %s, gitops hash: %s, status: %s, %s\n", emoji.ExclamationMark, result.App, result.Env, result.Hash, result.GitopsCommitStatus, result.GitopsCommitStatusDesc)
 		} else {
 			fmt.Printf("\t%v %s -> %s, gitops hash %s, status is %s\n", emoji.OpenBook, result.App, result.Env, result.Hash, result.GitopsCommitStatus)
 		}
