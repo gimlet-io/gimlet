@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
-import { CheckIcon, XIcon, FlagIcon } from '@heroicons/react/solid';
 import { ACTION_TYPE_RELEASE_STATUSES } from '../../redux/redux';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
