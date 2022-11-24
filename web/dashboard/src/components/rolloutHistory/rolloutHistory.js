@@ -86,7 +86,7 @@ export class RolloutHistory extends Component {
         {open &&
           <div className="bg-yellow-50 rounded">
             <div className="flow-root">
-              <ul className="-mb-4 p-2 md:p-4 lg:p-8">
+              <ul className="-mb-4 p-2">
                 {rollouts}
               </ul>
             </div>

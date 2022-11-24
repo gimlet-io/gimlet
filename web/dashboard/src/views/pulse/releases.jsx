@@ -61,13 +61,13 @@ export default class Releases extends Component {
         })
 
         return (
-            <div>
+            <div className="mb-12">
                 <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">{this.props.env}</h4>
                 {releaseStatuses.length > 0 ?
                     <div className="bg-white p-4 rounded">
                         <div className="bg-yellow-50 rounded">
                             <div className="flow-root">
-                                <ul className="-mb-4 p-2 md:p-4 lg:p-8">
+                                <ul className="-mb-4 p-2">
                                     {renderReleaseStatuses}
                                 </ul>
                             </div>
