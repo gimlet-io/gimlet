@@ -97,8 +97,10 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	store := ctx.Value("store").(*store.Store)
 	for _, r := range releases {
 		r.GitopsRepo = repoName
-		r.GitopsCommitStatus = gitopsCommitStatusFromHash(store, r.GitopsRef)
-		r.GitopsCommitStatusDesc = gitopsCommitStatusDescFromHash(store, r.GitopsRef)
+
+		gitopsCommitStatus, gitopsCommitStatusDesc := gitopsCommitStatusFromHash(store, r.GitopsRef)
+		r.GitopsCommitStatus = gitopsCommitStatus
+		r.GitopsCommitStatusDesc = gitopsCommitStatusDesc
 	}
 
 	releasesStr, err := json.Marshal(releases)
@@ -376,24 +378,27 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
+		gitopsCommitStatus, gitopsCommitStatusDesc := gitopsCommitStatusFromHash(store, result.GitopsRef)
 		if event.Type == "rollback" {
 			results = append(results, dx.Result{
-				Hash:               result.GitopsRef,
-				Status:             result.Status.String(),
-				GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
-				StatusDesc:         result.StatusDesc,
-				App:                result.RollbackRequest.App,
-				Env:                result.RollbackRequest.Env,
+				Hash:                   result.GitopsRef,
+				Status:                 result.Status.String(),
+				GitopsCommitStatus:     gitopsCommitStatus,
+				GitopsCommitStatusDesc: gitopsCommitStatusDesc,
+				StatusDesc:             result.StatusDesc,
+				App:                    result.RollbackRequest.App,
+				Env:                    result.RollbackRequest.Env,
 			})
 			continue
 		}
 		results = append(results, dx.Result{
-			App:                result.Manifest.App,
-			Hash:               result.GitopsRef,
-			Status:             result.Status.String(),
-			GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
-			Env:                result.Manifest.Env,
-			StatusDesc:         result.StatusDesc,
+			App:                    result.Manifest.App,
+			Hash:                   result.GitopsRef,
+			Status:                 result.Status.String(),
+			GitopsCommitStatus:     gitopsCommitStatus,
+			GitopsCommitStatusDesc: gitopsCommitStatusDesc,
+			Env:                    result.Manifest.Env,
+			StatusDesc:             result.StatusDesc,
 		})
 	}
 
@@ -431,13 +436,15 @@ func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
+		gitopsCommitStatus, gitopsCommitStatusDesc := gitopsCommitStatusFromHash(store, result.GitopsRef)
 		results = append(results, dx.Result{
-			App:                result.Manifest.App,
-			Hash:               result.GitopsRef,
-			Status:             result.Status.String(),
-			GitopsCommitStatus: gitopsCommitStatusFromHash(store, result.GitopsRef),
-			Env:                result.Manifest.Env,
-			StatusDesc:         result.StatusDesc,
+			App:                    result.Manifest.App,
+			Hash:                   result.GitopsRef,
+			Status:                 result.Status.String(),
+			GitopsCommitStatus:     gitopsCommitStatus,
+			GitopsCommitStatusDesc: gitopsCommitStatusDesc,
+			Env:                    result.Manifest.Env,
+			StatusDesc:             result.StatusDesc,
 		})
 	}
 
@@ -467,20 +474,11 @@ func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string,
 	return repoName, repoPerEnv, nil
 }
 
-func gitopsCommitStatusFromHash(store *store.Store, gitopsRef string) string {
+func gitopsCommitStatusFromHash(store *store.Store, gitopsRef string) (string, string) {
 	gitopsCommit, err := store.GitopsCommit(gitopsRef)
 	if err != nil {
 		logrus.Warnf("cannot get gitops commit: %s", err)
 	}
 
-	return gitopsCommit.Status
-}
-
-func gitopsCommitStatusDescFromHash(store *store.Store, gitopsRef string) string {
-	gitopsCommit, err := store.GitopsCommit(gitopsRef)
-	if err != nil {
-		logrus.Warnf("cannot get gitops commit: %s", err)
-	}
-
-	return gitopsCommit.StatusDesc
+	return gitopsCommit.Status, gitopsCommit.StatusDesc
 }

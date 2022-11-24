@@ -27,6 +27,19 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
+            "name": "artifact track",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd/cli",
+            "args": [
+                "artifact",
+                "track",
+                "gimlet-io/test-app-baa88f67-9a32-4ad3-b251-2a876c0e4adc"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
             "name": "GimletD",
             "type": "go",
             "request": "launch",
