@@ -316,12 +316,14 @@ func podLogs(
 
 	for _, svc := range integratedServices {
 		for _, deployment := range allDeployments.Items {
-			if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-				for _, pod := range allPods.Items {
-					if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
-						pod.Namespace == deployment.Namespace {
-						streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, stopChannel)
-						return
+			if deployment.Name == serviceName {
+				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+					for _, pod := range allPods.Items {
+						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+							pod.Namespace == deployment.Namespace {
+							streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, stopChannel)
+							return
+						}
 					}
 				}
 			}
@@ -346,10 +348,6 @@ func httpClient() *http.Client {
 }
 
 func streamPodLogs(kubeEnv *agent.KubeEnv, namespace string, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
-	fmt.Println("debugging")
-	fmt.Println(namespace)
-	fmt.Println(serviceName)
-	fmt.Println(pod)
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
 		TailLines: &count,
