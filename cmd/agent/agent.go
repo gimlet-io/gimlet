@@ -345,7 +345,11 @@ func httpClient() *http.Client {
 	}
 }
 
-func streamPodLogs(kubeEnv *agent.KubeEnv, namespace, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
+func streamPodLogs(kubeEnv *agent.KubeEnv, namespace string, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
+	fmt.Println("debugging")
+	fmt.Println(namespace)
+	fmt.Println(serviceName)
+	fmt.Println(pod)
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
 		TailLines: &count,
