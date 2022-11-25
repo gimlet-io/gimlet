@@ -56,7 +56,7 @@ export default class Releases extends Component {
                         </div>
                     </div>
                     :
-                    <p className="text-xs text-gray-800">{`No releases in the past ${releaseHistorySinceDays} days.`}</p>}
+                    <div className="text-xs text-gray-800">No releases in the past {releaseHistorySinceDays} days.</div>}
             </div>
         );
     }
