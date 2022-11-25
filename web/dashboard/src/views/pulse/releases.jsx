@@ -4,29 +4,11 @@ import { ACTION_TYPE_RELEASE_STATUSES } from '../../redux/redux';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
 export default class Releases extends Component {
-    constructor(props) {
-        super(props);
-
-        let { env } = this.props;
-        let reduxState = this.props.store.getState();
-        this.state = {
-            releaseStatuses: reduxState.releaseStatuses[env],
-            releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays
-        }
-
-        this.props.store.subscribe(() => {
-            let reduxState = this.props.store.getState();
-
-            this.setState({ releaseStatuses: reduxState.releaseStatuses[env] });
-            this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
-        });
-    }
-
     componentDidMount() {
-        let { env } = this.props;
-        this.props.gimletClient.getReleaseStatuses(env, 3)
+        let { gimletClient, store, env } = this.props;
+        gimletClient.getReleaseStatuses(env, 3)
             .then(data => {
-                this.props.store.dispatch({
+                store.dispatch({
                     type: ACTION_TYPE_RELEASE_STATUSES,
                     payload: {
                         envName: env,
@@ -38,7 +20,7 @@ export default class Releases extends Component {
     }
 
     render() {
-        let { releaseStatuses, releaseHistorySinceDays } = this.state;
+        let { releaseStatuses, releaseHistorySinceDays, env } = this.props;
 
         if (!releaseStatuses) {
             return null;
@@ -62,7 +44,7 @@ export default class Releases extends Component {
 
         return (
             <div className="mb-12">
-                <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">{this.props.env}</h4>
+                <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">{env}</h4>
                 {releaseStatuses.length > 0 ?
                     <div className="bg-white p-4 rounded">
                         <div className="bg-yellow-50 rounded">

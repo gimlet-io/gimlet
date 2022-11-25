@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { PlusIcon } from '@heroicons/react/solid';
 import Releases from './releases';
-import { ACTION_TYPE_GITOPS_COMMITS } from '../../redux/redux';
 
 export default class Pulse extends Component {
   constructor(props) {
@@ -10,25 +9,17 @@ export default class Pulse extends Component {
     let reduxState = this.props.store.getState();
     this.state = {
       envs: reduxState.envs,
-      gitopsCommits: reduxState.gitopsCommits
+      releaseStatuses: reduxState.releaseStatuses,
+      releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays
     }
 
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
       this.setState({ envs: reduxState.envs });
-      this.setState({ gitopsCommits: reduxState.gitopsCommits });
+      this.setState({ releaseStatuses: reduxState.releaseStatuses });
+      this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
     });
-  }
-
-  componentDidMount() {
-    this.props.gimletClient.getGitopsCommits()
-      .then(data => this.props.store.dispatch({
-        type: ACTION_TYPE_GITOPS_COMMITS, payload:
-          data
-      }), () => {
-        /* Generic error handler deals with it */
-      });
   }
 
   render() {
@@ -51,13 +42,14 @@ export default class Pulse extends Component {
                           gimletClient={this.props.gimletClient}
                           store={this.props.store}
                           env={env.name}
-                          gitopsCommitsByEnv={this.state.gitopsCommits.filter(gitopsCommit => gitopsCommit.env === env.name)}
+                          releaseHistorySinceDays={this.state.releaseHistorySinceDays}
+                          releaseStatuses={this.state.releaseStatuses[env.name]}
                         />
                       </div>
                     )}
                   </div>
                   :
-                  <p className="text-xs text-gray-800">{`There are no environments yet.`}</p>}
+                  <p className="text-xs text-gray-800">You don't have any environments.</p>}
               </div>
             </div>
           </div>
