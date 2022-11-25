@@ -24,7 +24,7 @@ export default class Releases extends Component {
 
     componentDidMount() {
         let { env } = this.props;
-        this.props.gimletClient.getReleaseStatuses(env, 5)
+        this.props.gimletClient.getReleaseStatuses(env, 3)
             .then(data => {
                 this.props.store.dispatch({
                     type: ACTION_TYPE_RELEASE_STATUSES,
