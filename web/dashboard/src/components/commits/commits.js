@@ -8,7 +8,12 @@ export class Commits extends Component {
   constructor(props) {
     super(props);
 
+    this.state = {
+      isScrollButtonActive: false,
+    }
+
     this.fetchNextCommitsWidgets = this.fetchNextCommitsWidgets.bind(this);
+    this.handleClickScroll = this.handleClickScroll.bind(this);
   }
 
   fetchNextCommitsWidgets() {
@@ -27,6 +32,23 @@ export class Commits extends Component {
         });
       }, () => {/* Generic error handler deals with it */
       });
+  }
+
+  componentDidMount () {
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 1200) {
+          this.setState({ isScrollButtonActive: true });
+        } else {
+          this.setState({ isScrollButtonActive: false });
+        }
+    });
+  }
+
+  handleClickScroll() {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+  });
   }
 
   render() {
@@ -129,6 +151,15 @@ export class Commits extends Component {
             {commitWidgets}
           </ul>
         </InfiniteScroll>
+        {this.state.isScrollButtonActive &&
+          <div id="0" className='fixed inset-10 flex items-end px-4 py-6'>
+            <button onClick={() => this.handleClickScroll()} className='my-8 ml-auto px-5 py-2 bg-green-500 text-white text-sm font-bold tracking-wide rounded-full focus:outline-none'>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+              </svg>
+            </button>
+          </div>
+        }
       </div>
     )
   }
