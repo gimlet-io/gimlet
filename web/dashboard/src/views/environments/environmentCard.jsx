@@ -23,7 +23,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   const ref = useRef();
 
   useEffect(() => {
-    gimletClient.getReleaseStatuses(env.name)
+    gimletClient.getReleaseStatuses(env.name, 10)
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_RELEASE_STATUSES,
@@ -234,7 +234,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const refreshReleaseStatuses = () => {
-    gimletClient.getReleaseStatuses(env.name)
+    gimletClient.getReleaseStatuses(env.name, 10)
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_RELEASE_STATUSES,
@@ -344,7 +344,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           </div>
           <div className="bg-yellow-50 rounded">
             <div className="flow-root">
-              <ul className="-mb-4 p-2 md:p-4 lg:p-8">
+              <ul className="-mb-4 p-2">
                 {renderReleaseStatuses}
               </ul>
             </div>

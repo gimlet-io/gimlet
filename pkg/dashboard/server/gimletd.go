@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -244,7 +245,14 @@ func releaseStatuses(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	env := chi.URLParam(r, "env")
-	const perAppLimit = 20
+	perAppLimitString := r.URL.Query().Get("limit")
+
+	perAppLimit, err := strconv.Atoi(perAppLimitString)
+	if err != nil {
+		logrus.Errorf("cannot convert limit: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	// If GimletD is not set up, throw 404
 	if config.GimletD.URL == "" ||

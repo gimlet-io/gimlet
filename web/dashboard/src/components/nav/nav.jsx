@@ -7,7 +7,7 @@ import logo from "!file-loader!./logo.svg";
 import {ACTION_TYPE_SEARCH} from "../../redux/redux";
 
 const navigation = [
-  {name: 'Services', href: '/services'},
+  {name: 'Pulse', href: '/pulse'},
   {name: 'Repositories', href: '/repositories'},
   {name: 'Environments', href: '/environments'},
 ]
