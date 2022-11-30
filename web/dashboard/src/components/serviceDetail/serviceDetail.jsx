@@ -198,12 +198,12 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
   return (
     <div
       className={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}
-      onClick={() => {
-        closeLogsOverlayHandler(namespace, svc);
-      }}
+      onClick={() => { closeLogsOverlayHandler(namespace, svc) }}
     >
       <div className="flex self-center items-center justify-center w-full p-8 h-4/5">
-        <div className="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6">
+        <div className="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6"
+          onClick={e => { e.stopPropagation() }}
+        >
           <div className="absolute top-0 right-0 p-1.5">
             <button
               className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
