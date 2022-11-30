@@ -42,6 +42,19 @@ function ServiceDetail(props) {
     });
   }
 
+  useEffect(() => {
+    if (typeof window != 'undefined' && window.document) {
+      if (logsOverlayVisible) {
+        document.body.style.overflow = 'hidden';
+        document.body.style.paddingRight = '15px';
+      }
+      return () => {
+        document.body.style.overflow = 'unset';
+        document.body.style.paddingRight = '0px';
+      }
+    }
+  }, [logsOverlayVisible]);
+
   return (
     <>
       <PodLogsOverlay
