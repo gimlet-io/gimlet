@@ -11,7 +11,7 @@ import {
   ACTION_TYPE_ADD_ENVCONFIG,
   ACTION_TYPE_REPO_PULLREQUESTS
 } from "../../redux/redux";
-import { Commits } from "../../components/commits/commits";
+import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { emptyStateNoAgents } from "../pulse/pulse";
 import { Env } from '../../components/env/env';
