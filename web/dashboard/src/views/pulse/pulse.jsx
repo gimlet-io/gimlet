@@ -21,6 +21,10 @@ export default class Pulse extends Component {
     });
   }
 
+  componentDidMount() {
+    this.props.gimletClient.getEvents();
+  }
+
   render() {
     return (
       <div>

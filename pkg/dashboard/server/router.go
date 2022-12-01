@@ -102,6 +102,7 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/stopPodLogs", stopPodLogs)
+		r.Get("/api/events", getEvents)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/env/{env}/app/{app}/rolloutHistory", rolloutHistoryPerApp)

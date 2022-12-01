@@ -90,6 +90,21 @@ func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
 	}
 }
 
+func (h *AgentHub) GetEvents() {
+	kubeEvents := map[string]interface{}{
+		"action": "events",
+	}
+
+	kubeEventsString, err := json.Marshal(kubeEvents)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(kubeEventsString)
+	}
+}
+
 func (a *ConnectedAgent) RepoStacks(repo string) []*api.Stack {
 	stacks := []*api.Stack{}
 

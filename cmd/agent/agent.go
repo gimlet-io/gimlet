@@ -205,6 +205,8 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
 						stopPodLogs(runningLogStreams, namespace, svc)
+					case "events":
+						go kubeEvents(kubeEnv)
 					}
 				} else {
 					log.Info("event stream closed")
@@ -458,6 +460,29 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			}
 		}
 	}
+}
+
+func kubeEvents(kubeEnv *agent.KubeEnv) {
+	namespaces, err := kubeEnv.Client.CoreV1().Namespaces().List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get namespaces: %v", err)
+		return
+	}
+
+	var allEvents []v1.Event
+	for _, n := range namespaces.Items {
+		eventList, err := kubeEnv.Client.CoreV1().Events(n.Name).List(context.TODO(), meta_v1.ListOptions{})
+		if err != nil {
+			log.Errorf("could not get events: %v", err)
+			return
+		}
+
+		allEvents = append(allEvents, eventList.Items...)
+	}
+
+	log.Info(allEvents)
+
+	log.Debug("events sent")
 }
 
 func webSocketURL(host string) url.URL {
