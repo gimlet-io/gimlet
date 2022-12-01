@@ -2,6 +2,7 @@ import { format, formatDistance } from "date-fns";
 import { Component } from "react";
 import Emoji from "react-emoji-render";
 import { nanoid } from 'nanoid';
+import defaultProfilePicture from "../../views/profile/defaultProfilePicture.png"
 
 export class RolloutHistory extends Component {
   constructor(props) {
@@ -73,7 +74,7 @@ export class RolloutHistory extends Component {
 
     if (releaseHistorySinceDays && releasesCount === 0) {
       return (
-        <div className="text-xs text-gray-800 p-2">
+        <div className="text-xs text-gray-500 py-2">
           No releases in the past {releaseHistorySinceDays} days.
         </div>)
     }
@@ -167,7 +168,8 @@ export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, en
             <img
               className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 ${ringColor}`}
               src={`https://github.com/${rollout.triggeredBy}.png?size=128`}
-              alt={rollout.triggeredBy} />
+              onError={(e) => { e.target.src = defaultProfilePicture }}
+              alt="" />
           </div>
           <div className="min-w-0 flex-1">
             <div>
