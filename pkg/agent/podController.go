@@ -36,8 +36,8 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 				createdPod := obj.(*v1.Pod)
 				for _, svc := range integratedServices {
 					for _, deployment := range allDeployments.Items {
-						if selectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-							if hasLabels(deployment.Spec.Selector.MatchLabels, createdPod.GetObjectMeta().GetLabels()) &&
+						if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+							if HasLabels(deployment.Spec.Selector.MatchLabels, createdPod.GetObjectMeta().GetLabels()) &&
 								createdPod.Namespace == deployment.Namespace {
 								update := &api.StackUpdate{
 									Event:   EventPodCreated,
@@ -72,8 +72,8 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 				updatedPod := obj.(*v1.Pod)
 				for _, svc := range integratedServices {
 					for _, deployment := range allDeployments.Items {
-						if selectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-							if hasLabels(deployment.Spec.Selector.MatchLabels, updatedPod.GetObjectMeta().GetLabels()) &&
+						if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+							if HasLabels(deployment.Spec.Selector.MatchLabels, updatedPod.GetObjectMeta().GetLabels()) &&
 								updatedPod.Namespace == deployment.Namespace {
 								podStatus := podStatus(*updatedPod)
 								podLogs := ""
@@ -112,7 +112,7 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 }
 
 // hasLabels determines if all the selectors are present as labels
-func hasLabels(selector map[string]string, labels map[string]string) bool {
+func HasLabels(selector map[string]string, labels map[string]string) bool {
 	for selectorLabel, selectorValue := range selector {
 		hasLabel := false
 		for label, value := range labels {

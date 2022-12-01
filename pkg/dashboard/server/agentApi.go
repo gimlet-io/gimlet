@@ -44,10 +44,10 @@ func register(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	a := &streaming.ConnectedAgent{
-		Name: name,
-		Namespace: namespace,
+		Name:         name,
+		Namespace:    namespace,
 		EventChannel: eventChannel,
-		Stacks: []*api.Stack{},
+		Stacks:       []*api.Stack{},
 	}
 
 	hub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)

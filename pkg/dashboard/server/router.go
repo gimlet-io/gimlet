@@ -25,6 +25,7 @@ func SetupRouter(
 	config *config.Config,
 	agentHub *streaming.AgentHub,
 	clientHub *streaming.ClientHub,
+	agentWSHub *streaming.AgentWSHub,
 	store *store.Store,
 	gitService customScm.CustomGitService,
 	tokenManager customScm.NonImpersonatedTokenManager,
@@ -62,7 +63,7 @@ func SetupRouter(
 		w.WriteHeader(http.StatusOK)
 	})
 
-	agentRoutes(r)
+	agentRoutes(r, agentWSHub)
 	userRoutes(r)
 	githubOAuthRoutes(config, r)
 
@@ -99,6 +100,8 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/listUsers", listUsers)
 		r.Post("/api/saveUser", saveUser)
 		r.Get("/api/envs", envs)
+		r.Get("/api/podLogs", getPodLogs)
+		r.Get("/api/stopPodLogs", stopPodLogs)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/env/{env}/app/{app}/rolloutHistory", rolloutHistoryPerApp)
@@ -127,7 +130,7 @@ func userRoutes(r *chi.Mux) {
 	})
 }
 
-func agentRoutes(r *chi.Mux) {
+func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(agentAuth))
 		r.Use(jwtauth.Authenticator)
@@ -136,6 +139,10 @@ func agentRoutes(r *chi.Mux) {
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
 		r.Post("/agent/state/{name}/update", update)
+
+		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
+			streaming.ServeAgentWs(agentWSHub, w, r)
+		})
 	})
 }
 

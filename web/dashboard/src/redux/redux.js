@@ -35,6 +35,7 @@ export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
 export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
+export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
@@ -49,6 +50,7 @@ export const EVENT_COMMIT_STATUS_UPDATED = 'commitStatusUpdated';
 export const EVENT_POD_CREATED = 'podCreated';
 export const EVENT_POD_UPDATED = 'podUpdated';
 export const EVENT_POD_DELETED = 'podDeleted';
+export const EVENT_POD_LOGS = 'podLogs';
 
 export const EVENT_DEPLOYMENT_CREATED = 'deploymentCreated';
 export const EVENT_DEPLOYMENT_UPDATED = 'deploymentUpdated';
@@ -88,6 +90,7 @@ export const initialState = {
     link: "",
     errorList: null
   },
+  podLogs: {},
   users: []
 };
 
@@ -159,6 +162,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.deployStatus(state, action.payload)
     case ACTION_TYPE_CLEAR_DEPLOY_STATUS:
       return eventHandlers.clearDeployStatus(state)
+    case ACTION_TYPE_CLEAR_PODLOGS:
+       return podEventHandlers.clearPodLogs(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
     default:
@@ -183,6 +188,8 @@ function processStreamingEvent(state, event) {
       return podEventHandlers.podUpdated(state, event);
     case EVENT_POD_DELETED:
       return podEventHandlers.podDeleted(state, event);
+    case EVENT_POD_LOGS:
+      return podEventHandlers.podLogs(state, event);
     case EVENT_DEPLOYMENT_CREATED:
       return deploymentEventHandlers.deploymentCreated(state, event);
     case EVENT_DEPLOYMENT_UPDATED:

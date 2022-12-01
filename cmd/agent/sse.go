@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+
+	"github.com/sirupsen/logrus"
 )
 
 func register(host string, name string, namespace string, token string) (chan map[string]interface{}, error) {
@@ -24,14 +25,14 @@ func register(host string, name string, namespace string, token string) (chan ma
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "BEARER " + token)
+	req.Header.Set("Authorization", "BEARER "+token)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("got response status code %d\n", resp.StatusCode)
+		return nil, fmt.Errorf("got response status code %d", resp.StatusCode)
 	}
 
 	events := make(chan map[string]interface{})

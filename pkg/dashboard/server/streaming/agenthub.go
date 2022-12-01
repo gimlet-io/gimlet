@@ -1,6 +1,8 @@
 package streaming
 
 import (
+	"encoding/json"
+
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 )
@@ -51,6 +53,40 @@ func (h *AgentHub) Run() {
 func (h *AgentHub) ForceStateSend() {
 	for _, a := range h.Agents {
 		a.EventChannel <- []byte("{\"action\": \"refetch\"}")
+	}
+}
+
+func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
+	podlogsRequest := map[string]interface{}{
+		"action":      "podLogs",
+		"namespace":   namespace,
+		"serviceName": serviceName,
+	}
+
+	podlogsRequestString, err := json.Marshal(podlogsRequest)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(podlogsRequestString)
+	}
+}
+
+func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
+	podlogsRequest := map[string]interface{}{
+		"action":      "stopPodLogs",
+		"namespace":   namespace,
+		"serviceName": serviceName,
+	}
+
+	podlogsRequestString, err := json.Marshal(podlogsRequest)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(podlogsRequestString)
 	}
 }
 

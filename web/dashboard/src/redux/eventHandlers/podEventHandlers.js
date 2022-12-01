@@ -88,6 +88,16 @@ export function podDeleted(state, event) {
   return state;
 }
 
+export function podLogs(state, event) {
+  state.podLogs[event.pod] = (state.podLogs[event.pod] + event.podLogs + "\n");
+  return state;
+}
+
+export function clearPodLogs(state, payload) {
+  state.podLogs[payload.pod] = "";
+  return state;
+}
+
 function deploymentHasPod(deployment, podName) {
   if (deployment.pods === undefined) {
     return false;

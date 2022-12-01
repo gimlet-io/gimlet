@@ -12,9 +12,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, dispatch } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, dispatch);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store);
 
     return (
       <div>
@@ -74,7 +74,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, dispatch) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store) {
   let services = [];
 
   let configsWeHave = [];
@@ -101,7 +101,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         configExists={configExists}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
-        dispatch={dispatch}
+        store={store}
       />
     )
   })
@@ -127,7 +127,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         configExists={true}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
-        dispatch={dispatch}
+        store={store}
       />
     }
     )

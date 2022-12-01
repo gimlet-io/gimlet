@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,8 +20,12 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
@@ -89,7 +95,10 @@ func main() {
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 
-	go serverCommunication(kubeEnv, config)
+	messages := make(chan *streaming.WSMessage)
+
+	go serverCommunication(kubeEnv, config, messages)
+	go serverWSCommunication(config, messages)
 
 	signals := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
@@ -154,7 +163,7 @@ func parseEnvString(envString string) (string, string, error) {
 	}
 }
 
-func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config) {
+func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages chan *streaming.WSMessage) {
 	for {
 		done := make(chan bool)
 
@@ -168,6 +177,8 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config) {
 		log.Info("Connected to Gimlet")
 		go sendState(kubeEnv, config.Host, config.AgentKey)
 
+		runningLogStreams := map[string]chan int{}
+
 		go func(events chan map[string]interface{}) {
 			for {
 				e, more := <-events
@@ -176,9 +187,28 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config) {
 					switch e["action"] {
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
+					case "podLogs":
+						namespace := e["namespace"].(string)
+						svc := e["serviceName"].(string)
+
+						stopCh := make(chan int)
+						runningLogStreams[namespace+"/"+svc] = stopCh
+
+						go podLogs(
+							kubeEnv,
+							e["namespace"].(string),
+							e["serviceName"].(string),
+							messages,
+							stopCh,
+						)
+					case "stopPodLogs":
+						namespace := e["namespace"].(string)
+						svc := e["serviceName"].(string)
+						stopPodLogs(runningLogStreams, namespace, svc)
 					}
 				} else {
 					log.Info("event stream closed")
+					stopAllPodLogs(runningLogStreams)
 					done <- true
 					return
 				}
@@ -231,6 +261,78 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	log.Debug("init state sent")
 }
 
+func stopPodLogs(
+	runningLogStreams map[string]chan int,
+	namespace string,
+	serviceName string,
+) {
+	for svc, stopCh := range runningLogStreams {
+		if svc == namespace+"/"+serviceName {
+			stopCh <- 0
+		}
+	}
+}
+
+func stopAllPodLogs(
+	runningLogStreams map[string]chan int,
+) {
+	for _, stopCh := range runningLogStreams {
+		stopCh <- 0
+	}
+}
+
+func podLogs(
+	kubeEnv *agent.KubeEnv,
+	namespace string,
+	serviceName string,
+	messages chan *streaming.WSMessage,
+	stopChannel chan int,
+) {
+
+	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get services: %v", err)
+		return
+	}
+
+	var integratedServices []v1.Service
+	for _, s := range svc.Items {
+		if _, ok := s.ObjectMeta.GetAnnotations()[agent.AnnotationGitRepository]; ok {
+			integratedServices = append(integratedServices, s)
+		}
+	}
+
+	allDeployments, err := kubeEnv.Client.AppsV1().Deployments(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get deployments: %v", err)
+		return
+	}
+
+	allPods, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get pods: %v", err)
+		return
+	}
+
+	for _, svc := range integratedServices {
+		for _, deployment := range allDeployments.Items {
+			if deployment.Name == serviceName {
+				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+					for _, pod := range allPods.Items {
+						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+							pod.Namespace == deployment.Namespace {
+							streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, stopChannel)
+							return
+						}
+					}
+				}
+			}
+		}
+	}
+
+	log.Debug("pod logs sent")
+}
+
 func httpClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
@@ -243,4 +345,134 @@ func httpClient() *http.Client {
 			ExpectContinueTimeout: 10 * time.Second,
 		},
 	}
+}
+
+func streamPodLogs(kubeEnv *agent.KubeEnv, namespace string, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
+	count := int64(100)
+	podLogOpts := v1.PodLogOptions{
+		TailLines: &count,
+		Follow:    true,
+	}
+	logsReq := kubeEnv.Client.CoreV1().Pods(namespace).GetLogs(pod, &podLogOpts)
+
+	podLogs, err := logsReq.Stream(context.Background())
+	if err != nil {
+		log.Errorf("could not stream pod logs: %v", err)
+		return
+	}
+	defer podLogs.Close()
+
+	go func() {
+		<-stopChannel
+		podLogs.Close()
+	}()
+
+	sc := bufio.NewScanner(podLogs)
+	for sc.Scan() {
+		text := sc.Text()
+		log.Infof(text)
+		chunks := chunks(text, 1000)
+		for _, chunk := range chunks {
+			msg := &streaming.WSMessage{
+				Type:    "log",
+				Message: chunk,
+				Pod:     namespace + "/" + serviceName,
+			}
+			messages <- msg
+		}
+	}
+}
+
+func serverWSCommunication(config config.Config, messages chan *streaming.WSMessage) {
+	for {
+		u := webSocketURL(config.Host)
+
+		bearerToken := "BEARER " + config.AgentKey
+		c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
+			"Authorization": []string{bearerToken},
+		})
+		if err != nil {
+			log.Errorf("dial:%s", err.Error())
+			time.Sleep(3 * time.Second)
+			continue
+		}
+
+		log.Info("Connected ws")
+		defer c.Close()
+
+		done := make(chan struct{})
+
+		go func() {
+			defer close(done)
+			for {
+				_, message, err := c.ReadMessage()
+				if err != nil {
+					log.Println("read:", err)
+					return
+				}
+				log.Printf("recv: %s", message)
+			}
+		}()
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for {
+			wsDisconnected := false
+
+			select {
+			case <-done:
+				wsDisconnected = true
+			case t := <-ticker.C:
+				tick := &streaming.WSMessage{
+					Type:    "tick",
+					Message: t.String(),
+				}
+
+				serializedMessage, err := json.Marshal(tick)
+				if err != nil {
+					log.Error("dial:", err)
+				}
+
+				err = c.WriteMessage(websocket.TextMessage, serializedMessage)
+				if err != nil {
+					log.Println("write:", err)
+					return
+				}
+			case message := <-messages:
+				serializedMessage, err := json.Marshal(message)
+				if err != nil {
+					log.Error("dial:", err)
+				}
+
+				err = c.WriteMessage(websocket.TextMessage, serializedMessage)
+				if err != nil {
+					log.Println("write:", err)
+					return
+				}
+			}
+
+			if wsDisconnected {
+				log.Info("Disonnected ws")
+				break
+			}
+		}
+	}
+}
+
+func webSocketURL(host string) url.URL {
+	urlSlice := strings.Split(host, "//")
+	hostWithoutScheme := urlSlice[1]
+
+	if strings.Contains(host, "https") {
+		return url.URL{Scheme: "wss", Host: hostWithoutScheme, Path: "/agent/ws/"}
+	}
+	return url.URL{Scheme: "ws", Host: hostWithoutScheme, Path: "/agent/ws/"}
+}
+
+func chunks(str string, size int) []string {
+	if len(str) <= size {
+		return []string{str}
+	}
+	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
 }
