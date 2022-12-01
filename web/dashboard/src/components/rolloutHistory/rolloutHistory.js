@@ -169,7 +169,7 @@ export function rolloutWidget(idx, ringColor, exactDate, dateLabel, rollback, en
               className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 ${ringColor}`}
               src={`https://github.com/${rollout.triggeredBy}.png?size=128`}
               onError={(e) => { e.target.src = defaultProfilePicture }}
-              alt="" />
+              alt={rollout.triggeredBy} />
           </div>
           <div className="min-w-0 flex-1">
             <div>
