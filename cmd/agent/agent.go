@@ -370,7 +370,7 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace string, pod string, service
 	sc := bufio.NewScanner(podLogs)
 	for sc.Scan() {
 		text := sc.Text()
-		log.Infof(string(text))
+		log.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
 			msg := &streaming.WSMessage{
