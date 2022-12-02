@@ -96,7 +96,7 @@ export class RolloutHistory extends Component {
 }
 
 function Commit(props) {
-  const { version } = props;
+  const { version, isReleaseStatus, gitopsRepo } = props;
 
   const exactDate = format(version.created * 1000, 'h:mm:ss a, MMMM do yyyy')
   const dateLabel = formatDistance(version.created * 1000, new Date());
@@ -104,6 +104,7 @@ function Commit(props) {
   return (
     <div className="md:flex text-xs text-gray-500">
       <div className="md:flex-initial">
+        <span className="font-semibold leading-none">{isReleaseStatus && <Emoji text={gitopsRepo} />}</span>
         <span className="font-semibold leading-none">{version.message && <Emoji text={version.message} />}</span>
         <div className="flex mt-1">
           {version.author &&
@@ -209,7 +210,11 @@ export function rolloutWidget(idx, exactDate, dateLabel, rollback, env, app, cur
             </div>
             <div className="mt-2 text-sm text-gray-700">
               <div className="ml-4 md:ml-4">
-                <Commit version={rollout.version} />
+                <Commit
+                isReleaseStatus={rollback === undefined}
+                gitopsRepo={rollout.gitopsRepo}
+                version={rollout.version}
+                />
               </div>
             </div>
           </div>
