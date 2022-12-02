@@ -98,9 +98,10 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	for _, r := range releases {
 		r.GitopsRepo = repoName
 
-		gitopsCommitStatus, gitopsCommitStatusDesc := gitopsCommitStatusFromHash(store, r.GitopsRef)
+		gitopsCommitStatus, gitopsCommitStatusDesc, gitopsCommitCreated := gitopsCommitMetasFromHash(store, r.GitopsRef)
 		r.GitopsCommitStatus = gitopsCommitStatus
 		r.GitopsCommitStatusDesc = gitopsCommitStatusDesc
+		r.GitopsCommitCreated = gitopsCommitCreated
 	}
 
 	releasesStr, err := json.Marshal(releases)
@@ -378,7 +379,7 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
-		gitopsCommitStatus, gitopsCommitStatusDesc := gitopsCommitStatusFromHash(store, result.GitopsRef)
+		gitopsCommitStatus, gitopsCommitStatusDesc, _ := gitopsCommitMetasFromHash(store, result.GitopsRef)
 		if event.Type == "rollback" {
 			results = append(results, dx.Result{
 				Hash:                   result.GitopsRef,
@@ -436,7 +437,7 @@ func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
-		gitopsCommitStatus, gitopsCommitStatusDesc := gitopsCommitStatusFromHash(store, result.GitopsRef)
+		gitopsCommitStatus, gitopsCommitStatusDesc, _ := gitopsCommitMetasFromHash(store, result.GitopsRef)
 		results = append(results, dx.Result{
 			App:                    result.Manifest.App,
 			Hash:                   result.GitopsRef,
@@ -474,11 +475,11 @@ func repoInfo(parsedGitopsRepos map[string]*config.GitopsRepoConfig, env string,
 	return repoName, repoPerEnv, nil
 }
 
-func gitopsCommitStatusFromHash(store *store.Store, gitopsRef string) (string, string) {
+func gitopsCommitMetasFromHash(store *store.Store, gitopsRef string) (string, string, int64) {
 	gitopsCommit, err := store.GitopsCommit(gitopsRef)
 	if err != nil {
 		logrus.Warnf("cannot get gitops commit: %s", err)
 	}
 
-	return gitopsCommit.Status, gitopsCommit.StatusDesc
+	return gitopsCommit.Status, gitopsCommit.StatusDesc, gitopsCommit.Created
 }

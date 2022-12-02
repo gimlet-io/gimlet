@@ -161,6 +161,10 @@ at ${exactDate}`;
 }
 
 export function rolloutWidget(idx, bgColor, hoverBgColor, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
+  const exactGitopsCommitCreatedDate = format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
+  let gitopsCommitCreatedDateLabel = formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
+  gitopsCommitCreatedDateLabel = gitopsCommitCreatedDateLabel.charAt(0).toUpperCase() + gitopsCommitCreatedDateLabel.slice(1);
+
   return (
     <li key={rollout.gitopsRef}
       className={`${hoverBgColor} ${bgColor} p-4 rounded`}
@@ -194,7 +198,9 @@ export function rolloutWidget(idx, bgColor, hoverBgColor, ringColor, exactDate, 
                 </a>
               </p>
               <div className="mt-0.5 text-sm text-gray-500">
-                {!rollout.gitopsCommitStatusDesc ? "Commit is not applied yet." : rollout.gitopsCommitStatusDesc}
+                <span title={exactGitopsCommitCreatedDate} >
+                  {gitopsCommitCreatedDateLabel} ago {!rollout.gitopsCommitStatusDesc ? "commit is not applied yet." : rollout.gitopsCommitStatusDesc}
+                </span>
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-700">
