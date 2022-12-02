@@ -324,20 +324,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-300';
-      let bgColor = rollout.rolledBack ? 'bg-grey-100' : 'bg-yellow-100';
-      let hoverBgColor = rollout.rolledBack ? 'hover:bg-grey-200' : 'hover:bg-yellow-200';
-      if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
-        ringColor = "ring-green-200";
-        bgColor = 'bg-green-100';
-        hoverBgColor = 'hover:bg-green-200';
-      } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
-        ringColor = "ring-red-400";
-        bgColor = 'bg-red-100';
-        hoverBgColor = 'hover:bg-red-200';
-      }
-
-      renderReleaseStatuses.unshift(rolloutWidget(idx, bgColor, hoverBgColor, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+      renderReleaseStatuses.unshift(rolloutWidget(idx, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
     })
 
     return (

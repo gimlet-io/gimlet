@@ -55,19 +55,10 @@ export class RolloutHistory extends Component {
       previousDateLabel = dateLabel;
 
       let color = rollout.rolledBack ? 'bg-grey-300' : 'bg-yellow-100';
-      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-300';
-      let bgColor = rollout.rolledBack ? 'bg-grey-100' : 'bg-yellow-100';
-      let hoverBgColor = rollout.rolledBack ? 'hover:bg-grey-200' : 'hover:bg-yellow-200';
       if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
         color = "bg-green-100";
-        ringColor = "ring-green-300";
-        bgColor = 'bg-green-100';
-        hoverBgColor = 'hover:bg-green-200';
       } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
         color = "bg-red-300";
-        ringColor = "ring-red-400";
-        bgColor = 'bg-red-100';
-        hoverBgColor = 'hover:bg-red-200';
       }
 
       let border = showDate ? 'lg:border-l' : '';
@@ -75,7 +66,7 @@ export class RolloutHistory extends Component {
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
       markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
-      rollouts.unshift(rolloutWidget(idx, bgColor, hoverBgColor, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
+      rollouts.unshift(rolloutWidget(idx, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
     })
 
     if (releaseHistorySinceDays && releasesCount === 0) {
@@ -160,10 +151,23 @@ at ${exactDate}`;
   )
 }
 
-export function rolloutWidget(idx, bgColor, hoverBgColor, ringColor, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
+export function rolloutWidget(idx, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
   const exactGitopsCommitCreatedDate = format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
   let gitopsCommitCreatedDateLabel = formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
   gitopsCommitCreatedDateLabel = gitopsCommitCreatedDateLabel.charAt(0).toUpperCase() + gitopsCommitCreatedDateLabel.slice(1);
+
+  let ringColor = rollout.rolledBack ? 'ring-grey-300' : 'ring-yellow-300';
+  let bgColor = rollout.rolledBack ? 'bg-grey-100' : 'bg-yellow-100';
+  let hoverBgColor = rollout.rolledBack ? 'hover:bg-grey-200' : 'hover:bg-yellow-200';
+  if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+    ringColor = "ring-green-300";
+    bgColor = 'bg-green-100';
+    hoverBgColor = 'hover:bg-green-200';
+  } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+    ringColor = "ring-red-300";
+    bgColor = 'bg-red-100';
+    hoverBgColor = 'hover:bg-red-200';
+  }
 
   return (
     <li key={rollout.gitopsRef}
