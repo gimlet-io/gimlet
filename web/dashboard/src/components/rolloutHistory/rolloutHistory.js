@@ -102,7 +102,7 @@ function Commit(props) {
   return (
     <div className="md:flex text-xs">
       <div className="md:flex-initial space-y-0.5">
-      {isReleaseStatus && <div className="font-semibold text-gray-800"> <Emoji text={gitopsRepo} /></div>}
+      {isReleaseStatus && <div className="font-bold text-gray-700"> <Emoji text={gitopsRepo} /></div>}
         <div className="font-medium text-gray-600">{version.message && <Emoji text={version.message} />}</div>
         <div className="flex">
           {version.author &&
@@ -198,7 +198,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm space-y-0.5">
-              <p className="font-semibold text-gray-800">{rollout.triggeredBy}</p>
+              <p className="font-bold text-gray-700">{rollout.triggeredBy}</p>
               <p className="font-medium text-gray-600">
                 <span>Released</span>
                 <a
