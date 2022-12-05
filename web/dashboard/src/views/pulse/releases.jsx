@@ -28,11 +28,11 @@ export default class Releases extends Component {
 
         let renderReleaseStatuses = [];
 
-        releaseStatuses.forEach((rollout, idx) => {
+        releaseStatuses.forEach((rollout, idx, arr) => {
             const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
             const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-            renderReleaseStatuses.unshift(rolloutWidget(idx, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+            renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
         })
 
         return (
@@ -40,12 +40,10 @@ export default class Releases extends Component {
                 <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">{env}</h4>
                 {releaseStatuses.length > 0 ?
                     <div className="bg-white p-4 rounded">
-                        <div className="bg-yellow-50 rounded">
-                            <div className="flow-root">
-                                <ul className="-mb-4 p-2">
-                                    {renderReleaseStatuses}
-                                </ul>
-                            </div>
+                        <div className="flow-root">
+                            <ul>
+                                {renderReleaseStatuses}
+                            </ul>
                         </div>
                     </div>
                     :
