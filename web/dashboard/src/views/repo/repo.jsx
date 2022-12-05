@@ -9,7 +9,8 @@ import {
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_ADD_ENVCONFIG,
-  ACTION_TYPE_REPO_PULLREQUESTS
+  ACTION_TYPE_REPO_PULLREQUESTS,
+  ACTION_TYPE_RELEASE_STATUSES,
 } from "../../redux/redux";
 import { Commits } from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
@@ -226,6 +227,7 @@ export default class Repo extends Component {
         if (data.status === "processed") {
           let gitopsCommitsApplied = true;
           const numberOfResults = data.results.length;
+          const pulseTab = window.location.href.includes("pulse");
           if (numberOfResults > 0) {
             const latestGitopsHashMetadata = data.results[0];
             if (latestGitopsHashMetadata.gitopsCommitStatus === "N/A") { // poll until all gitops writes are applied
@@ -248,10 +250,21 @@ export default class Repo extends Component {
                       releases: data,
                     }
                   });
-                }, () => {/* Generic error handler deals with it */}
-              );
+                }, () => {/* Generic error handler deals with it */ }
+                );
+
+              this.props.gimletClient.getReleaseStatuses(result.env, pulseTab ? 3 : 10)
+                .then(data => {
+                  this.props.store.dispatch({
+                    type: ACTION_TYPE_RELEASE_STATUSES,
+                    payload: {
+                      envName: result.env,
+                      data: data,
+                    }
+                  });
+                }, () => {/* Generic error handler deals with it */
+                })
             }
-            
           }
         }
       }, () => {/* Generic error handler deals with it */

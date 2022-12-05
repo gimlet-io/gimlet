@@ -169,12 +169,6 @@ export function updateGitopsCommits(state, event) {
     state.gitopsCommits.unshift(event.gitopsCommit);
   }
 
-  console.log("event")
-  console.log(event.gitopsCommit.sha)
-  console.log(event.gitopsCommit.created)
-  console.log(event.gitopsCommit.status)
-  console.log(event.gitopsCommit.statusDesc)
-
   for (const repo in state.rolloutHistory) {
     const repoObj = state.rolloutHistory[repo];
     for (const env in repoObj) {
@@ -182,8 +176,6 @@ export function updateGitopsCommits(state, event) {
       for (const appName in envObj) {
         envObj[appName].forEach(app => {
           if (app.gitopsRef === event.gitopsCommit.sha) {
-            console.log("found matching app")
-            console.log(app)
             app.gitopsCommitStatus = event.gitopsCommit.status
             app.gitopsCommitStatusDesc = event.gitopsCommit.statusDesc
             app.gitopsCommitCreated = event.gitopsCommit.created
@@ -191,6 +183,16 @@ export function updateGitopsCommits(state, event) {
         })
       }
     }
+  }
+
+  if (Object.keys(state.releaseStatuses).length !== 0) {
+    state.releaseStatuses[event.gitopsCommit.env].forEach(releaseStatus => {
+      if (releaseStatus.gitopsRef === event.gitopsCommit.sha) {
+        releaseStatus.gitopsCommitStatus = event.gitopsCommit.status
+        releaseStatus.gitopsCommitStatusDesc = event.gitopsCommit.statusDesc
+        releaseStatus.gitopsCommitCreated = event.gitopsCommit.created
+      }
+    })
   }
 
   return state;
