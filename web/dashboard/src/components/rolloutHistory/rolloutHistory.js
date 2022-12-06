@@ -155,19 +155,22 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
   let gitopsCommitCreatedDateLabel = formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
 
   let rounding = "";
-  let status = rollout.rolledBack ? "Rolled back" : "Trailing";
-  let ringColor = rollout.rolledBack ? 'ring-grey-300' : 'ring-yellow-300';
-  let bgColor = rollout.rolledBack ? 'bg-grey-100' : 'bg-yellow-100';
-  let hoverBgColor = rollout.rolledBack ? 'hover:bg-grey-200' : 'hover:bg-yellow-200';
+  let status = rollout.gitopsCommitStatus.includes("NotReady") ? "Applying" : "Trailing";
+  let ringColor = 'ring-yellow-300';
+  let bgColor = 'bg-yellow-100';
+  let hoverBgColor = 'hover:bg-yellow-200';
 
-  if (rollout.gitopsCommitStatus.includes("NotReady") && !rollout.rolledBack) {
-    status = "Applying";
-  } else if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
+  if (rollout.rolledBack) {
+    ringColor = 'ring-grey-300';
+    bgColor = 'bg-grey-100';
+    hoverBgColor = 'hover:bg-grey-200';
+    status = "Rolled back.";
+  } else if (rollout.gitopsCommitStatus.includes("Succeeded")) {
     ringColor = "ring-green-300";
     bgColor = 'bg-green-100';
     hoverBgColor = 'hover:bg-green-200';
     status = "Applied";
-  } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
+  } else if (rollout.gitopsCommitStatus.includes("Failed")) {
     ringColor = "ring-red-300";
     bgColor = 'bg-red-100';
     hoverBgColor = 'hover:bg-red-200';
@@ -176,7 +179,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
 
   if (idx === 0) {
     rounding = "rounded-b"
-  } else if (idx === arr.length -1) {
+  } else if (idx === arr.length - 1) {
     rounding = "rounded-t"
   }
 
