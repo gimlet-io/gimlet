@@ -26,9 +26,11 @@ export default class Releases extends Component {
             return null;
         }
 
+        const limitedReleaseStatuses = releaseStatuses.slice(-3);
+
         let renderReleaseStatuses = [];
 
-        releaseStatuses.forEach((rollout, idx, arr) => {
+        limitedReleaseStatuses.forEach((rollout, idx, arr) => {
             const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
             const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
