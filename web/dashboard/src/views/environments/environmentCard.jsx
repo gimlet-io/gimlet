@@ -167,7 +167,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         store.dispatch({
           type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.stackConfig
         });
-        resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
