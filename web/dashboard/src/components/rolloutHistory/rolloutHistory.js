@@ -101,9 +101,9 @@ function Commit(props) {
 
   return (
     <div className="md:flex text-xs">
-      <div className="md:flex-initial space-y-0.5">
-      {isReleaseStatus && <div className="font-bold text-gray-700"> <Emoji text={gitopsRepo} /></div>}
-        <div className="font-medium text-gray-600">{version.message && <Emoji text={version.message} />}</div>
+      <div className="md:flex-initial space-y-0.5 mt-2">
+      {isReleaseStatus && <div className="font-semibold text-gray-700"> <Emoji text={gitopsRepo} /></div>}
+        <div className="text-gray-700">{version.message && <Emoji text={version.message} />}</div>
         <div className="flex">
           {version.author &&
             <img
@@ -114,7 +114,7 @@ function Commit(props) {
               height="20"
             />
           }
-          <div className="text-gray-500">
+          <div className="text-gray-600">
             <span className="font-semibold">{version.authorName}</span>
             <a
               className="ml-1"
@@ -198,8 +198,8 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm space-y-0.5">
-              <p className="font-bold text-gray-700">{rollout.triggeredBy}</p>
-              <p className="font-medium text-gray-600">
+              <p className="font-semibold text-gray-700">{rollout.triggeredBy}</p>
+              <p className="text-gray-700">
                 <span>Released</span>
                 <a
                   className="ml-1"
@@ -210,7 +210,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
                   {dateLabel} ago
                 </a>
               </p>
-              <div className="text-gray-500">
+              <div className="text-gray-600">
                 <span title={exactGitopsCommitCreatedDate} >
                   {status} {gitopsCommitCreatedDateLabel} ago, {!rollout.gitopsCommitStatusDesc ? "commit is not applied yet." : rollout.gitopsCommitStatusDesc}
                 </span>
