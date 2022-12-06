@@ -14,7 +14,6 @@ import {
 } from "../../redux/redux";
 import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
-import { emptyStateNoAgents } from "../pulse/pulse";
 import { Env } from '../../components/env/env';
 
 export default class Repo extends Component {
@@ -375,7 +374,7 @@ export default class Repo extends Component {
   render() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, search, rolloutHistory, commits, agents, pullRequests, settings } = this.state;
+    let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
@@ -414,12 +413,6 @@ export default class Repo extends Component {
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
               <div>
-                {agents.length === 0 &&
-                  <div className="mt-8 mb-16">
-                    {emptyStateNoAgents()}
-                  </div>
-                }
-
                 {Object.keys(filteredEnvs).sort().map((envName) =>
                   <Env
                     key={envName}
