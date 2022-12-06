@@ -167,7 +167,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         store.dispatch({
           type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.stackConfig
         });
-        resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
@@ -320,18 +319,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
 
     let renderReleaseStatuses = [];
 
-    releaseStatuses.forEach((rollout, idx) => {
+    releaseStatuses.forEach((rollout, idx, arr) => {
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-      let ringColor = rollout.rolledBack ? 'ring-grey-400' : 'ring-yellow-200';
-      if (rollout.gitopsCommitStatus.includes("Succeeded") && !rollout.rolledBack) {
-        ringColor = "ring-green-200";
-      } else if (rollout.gitopsCommitStatus.includes("Failed") && !rollout.rolledBack) {
-        ringColor = "ring-red-400";
-      }
-
-      renderReleaseStatuses.unshift(rolloutWidget(idx, ringColor, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
     })
 
     return (
@@ -342,12 +334,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
-          <div className="bg-yellow-50 rounded">
-            <div className="flow-root">
-              <ul className="-mb-4 p-2">
-                {renderReleaseStatuses}
-              </ul>
-            </div>
+          <div className="flow-root">
+            <ul>
+              {renderReleaseStatuses}
+            </ul>
           </div>
         </ul>
       </div>

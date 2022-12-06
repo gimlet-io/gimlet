@@ -311,7 +311,6 @@ class EnvConfig extends Component {
         if (action === "new") {
           this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
         }
-        this.resetNotificationStateAfterThreeSeconds();
       }, err => {
         clearTimeout(this.state.timeoutTimer);
         this.props.store.dispatch({

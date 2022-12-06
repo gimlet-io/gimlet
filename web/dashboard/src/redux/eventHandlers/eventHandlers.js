@@ -169,6 +169,32 @@ export function updateGitopsCommits(state, event) {
     state.gitopsCommits.unshift(event.gitopsCommit);
   }
 
+  for (const repo in state.rolloutHistory) {
+    const repoObj = state.rolloutHistory[repo];
+    for (const env in repoObj) {
+      const envObj = repoObj[env];
+      for (const appName in envObj) {
+        envObj[appName].forEach(app => {
+          if (app.gitopsRef === event.gitopsCommit.sha) {
+            app.gitopsCommitStatus = event.gitopsCommit.status
+            app.gitopsCommitStatusDesc = event.gitopsCommit.statusDesc
+            app.gitopsCommitCreated = event.gitopsCommit.created
+          }
+        })
+      }
+    }
+  }
+
+  if (Object.keys(state.releaseStatuses).length !== 0) {
+    state.releaseStatuses[event.gitopsCommit.env].forEach(releaseStatus => {
+      if (releaseStatus.gitopsRef === event.gitopsCommit.sha) {
+        releaseStatus.gitopsCommitStatus = event.gitopsCommit.status
+        releaseStatus.gitopsCommitStatusDesc = event.gitopsCommit.statusDesc
+        releaseStatus.gitopsCommitCreated = event.gitopsCommit.created
+      }
+    })
+  }
+
   return state;
 }
 

@@ -118,7 +118,7 @@ export default class Profile extends Component {
                 <div className="relative">
                   <img className="h-16 w-16 rounded-full"
                     src={user.imageUrl}
-                    alt="" />
+                    alt={user.login} />
                   <span className="absolute inset-0 shadow-inner rounded-full" aria-hidden="true"></span>
                 </div>
               </div>
@@ -309,7 +309,7 @@ function userList(sortedUsers, defaultProfilePicture) {
                 className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900"
                 src={`https://github.com/${user.login}.png?size=128`}
                 onError={(e) => { e.target.src = defaultProfilePicture }}
-                alt="" />
+                alt={user.login} />
               <div className="ml-4">{user.login}</div>
             </div>
             {user.token &&

@@ -25,6 +25,7 @@ type Release struct {
 	GitopsRepo             string `json:"gitopsRepo"`
 	GitopsCommitStatus     string `json:"gitopsCommitStatus"`
 	GitopsCommitStatusDesc string `json:"gitopsCommitStatusDesc"`
+	GitopsCommitCreated    int64  `json:"gitopsCommitCreated,omitempty"`
 	Created                int64  `json:"created,omitempty"`
 
 	RolledBack bool `json:"rolledBack,omitempty"`
