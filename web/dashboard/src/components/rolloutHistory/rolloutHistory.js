@@ -164,7 +164,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
     ringColor = 'ring-grey-300';
     bgColor = 'bg-grey-100';
     hoverBgColor = 'hover:bg-grey-200';
-    status = "Rolled back.";
+    status = "Rolled back";
   } else if (rollout.gitopsCommitStatus.includes("Succeeded")) {
     ringColor = "ring-green-300";
     bgColor = 'bg-green-100';
