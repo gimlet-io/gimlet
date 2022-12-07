@@ -148,8 +148,8 @@ const Commits = ({ commits, connectedAgents, deployHandler, owner, repo, gimletC
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
       >
-        <div className='fixed inset-10 flex items-end px-4 py-6'>
-          <button onClick={handleClickScroll} className='my-8 ml-auto px-5 py-2 bg-green-500 text-white text-sm font-bold tracking-wide rounded-full focus:outline-none'>
+        <div className='fixed inset-10 flex items-end px-4 py-6 pointer-events-none'>
+          <button onClick={handleClickScroll} className='my-8 ml-auto px-5 py-2 bg-green-500 text-white text-sm font-bold tracking-wide rounded-full focus:outline-none pointer-events-auto'>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
             </svg>
