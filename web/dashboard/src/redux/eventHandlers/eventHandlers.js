@@ -271,6 +271,10 @@ export function updateCommits(state, payload) {
 export function updateCommitStatus(state, event) {
   const repo = `${event.owner}/${event.repo}`;
 
+  if (!state.commits[repo]) {
+    state.commits[repo] = [];
+  }
+
   state.commits[repo].forEach(commit => {
     if (commit.sha === event.sha) {
       Object.assign(commit.status, event.commitStatus);
