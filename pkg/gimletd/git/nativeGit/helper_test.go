@@ -3,6 +3,7 @@ package nativeGit
 import (
 	"testing"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/storage/memory"
@@ -88,7 +89,7 @@ func Test_Status(t *testing.T) {
 func initHistory() *git.Repository {
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
 
-	CommitFilesToGit(
+	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"file": `1`,
@@ -100,7 +101,7 @@ func initHistory() *git.Repository {
 		"{}",
 	)
 
-	CommitFilesToGit(
+	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"file": `2`,
@@ -111,7 +112,7 @@ func initHistory() *git.Repository {
 		"1st commit",
 		`{"app":"xxx","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test2","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
-	CommitFilesToGit(
+	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"file": `3`,
@@ -122,7 +123,7 @@ func initHistory() *git.Repository {
 		"1st commit",
 		`{"app":"fosdem-2021","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
-	CommitFilesToGit(
+	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"file": `4`,
@@ -133,7 +134,7 @@ func initHistory() *git.Repository {
 		"2nd commit",
 		`{"app":"fosdem-2022","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
-	CommitFilesToGit(
+	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"file": `5`,
@@ -144,7 +145,7 @@ func initHistory() *git.Repository {
 		"3rd commit",
 		`{"app":"fosdem-2023","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
-	CommitFilesToGit(
+	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"file": `5`,

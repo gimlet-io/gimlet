@@ -758,7 +758,7 @@ func gitopsTemplateAndWrite(
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
 	}
 
-	sha, err := nativeGit.CommitFilesToGit(
+	sha, err := sharedNativeGit.CommitFilesToGit(
 		repo,
 		files,
 		manifest.Env,
