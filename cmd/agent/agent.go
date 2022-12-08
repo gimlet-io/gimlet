@@ -262,7 +262,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	log.Info("init state sent")
+	log.Info("state sent")
 }
 
 func stopPodLogs(
