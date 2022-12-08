@@ -417,7 +417,7 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
+	err = sharedNativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 	if err != nil {
 		return nil, err
 	}
@@ -602,7 +602,7 @@ func cloneTemplateWriteAndPush(
 		head, _ := repo.Head()
 
 		operation := func() error {
-			return nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
+			return sharedNativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
@@ -641,12 +641,12 @@ func cloneTemplateDeleteAndPush(
 		path = cleanupPolicy.AppToCleanup
 	}
 
-	err = nativeGit.DelDir(repo, path)
+	err = sharedNativeGit.DelDir(repo, path)
 	if err != nil {
 		return "", err
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := sharedNativeGit.NothingToCommit(repo)
 	if err != nil {
 		return "", err
 	}
@@ -655,10 +655,10 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	gitMessage := fmt.Sprintf("[GimletD delete] %s/%s deleted by %s", env, cleanupPolicy.AppToCleanup, triggeredBy)
-	sha, err := nativeGit.Commit(repo, gitMessage)
+	sha, err := sharedNativeGit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
-		err = nativeGit.Push(repo, deployKeyPath)
+		err = sharedNativeGit.Push(repo, deployKeyPath)
 		if err != nil {
 			return "", err
 		}
@@ -706,7 +706,7 @@ func revertTo(
 		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app, repoPerEnv)
 		if !hasBeenReverted {
 			logrus.Infof("reverting %s", commit.Hash.String())
-			err = nativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
+			err = sharedNativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
 			if err != nil {
 				return errors.WithMessage(err, "could not revert")
 			}

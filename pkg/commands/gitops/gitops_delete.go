@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 )
@@ -25,8 +25,8 @@ var gitopsDeleteCmd = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name: "app",
-			Usage: "name of the application that you configure (	mandatory)",
+			Name:     "app",
+			Usage:    "name of the application that you configure (	mandatory)",
 			Required: true,
 		},
 		&cli.StringFlag{

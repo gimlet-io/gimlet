@@ -2,194 +2,25 @@ package nativeGit
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	sharedNativeGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
-const File_RW_RW_R = 0664
 const Dir_RWX_RX_R = 0754
-
-func Push(repo *git.Repository, privateKeyPath string) error {
-	t0 := time.Now().UnixNano()
-	publicKeys, err := ssh.NewPublicKeysFromFile("git", privateKeyPath, "")
-	if err != nil {
-		return fmt.Errorf("cannot generate public key from private: %s", err.Error())
-	}
-	logrus.Infof("Reading public key took %d", (time.Now().UnixNano()-t0)/1000/1000)
-
-	t0 = time.Now().UnixNano()
-	err = repo.Push(&git.PushOptions{
-		Auth: publicKeys,
-	})
-	logrus.Infof("Actual push took %d", (time.Now().UnixNano()-t0)/1000/1000)
-
-	if err == git.NoErrAlreadyUpToDate {
-		return nil
-	}
-
-	return err
-}
-
-func PushWithToken(repo *git.Repository, accessToken string) error {
-	err := repo.Push(&git.PushOptions{
-		Auth: &http.BasicAuth{
-			Username: "abc123", // yes, this can be anything except an empty string
-			Password: accessToken,
-		},
-	})
-	if err == git.NoErrAlreadyUpToDate {
-		return nil
-	}
-
-	return err
-}
-
-func NothingToCommit(repo *git.Repository) (bool, error) {
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return false, err
-	}
-
-	status, err := worktree.Status()
-	if err != nil {
-		return false, err
-	}
-
-	return status.IsClean(), nil
-}
-
-func Commit(repo *git.Repository, message string) (string, error) {
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return "", err
-	}
-
-	sha, err := worktree.Commit(message, &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "Gimlet CLI",
-			Email: "cli@gimlet.io",
-			When:  time.Now(),
-		},
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return sha.String(), nil
-}
-
-func NativeRevert(repoPath string, sha string) error {
-	return execCommand(repoPath, "git", "revert", sha)
-}
-
-func NativePush(repoPath string, privateKeyPath string, branch string) error {
-	sshCommand := fmt.Sprintf("ssh -i %s", privateKeyPath)
-	err := execCommand(repoPath, "git", "config", "core.sshCommand", sshCommand)
-	if err != nil {
-		return err
-	}
-	err = execCommand(repoPath, "git", "pull", "--rebase")
-	if err != nil {
-		return err
-	}
-	return execCommand(repoPath, "git", "push", "origin", branch)
-}
-
-func execCommand(rootPath string, cmdName string, args ...string) error {
-	cmd := exec.CommandContext(context.TODO(), cmdName, args...)
-	cmd.Dir = rootPath
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return errors.WithMessage(err, "get stdout pipe for command")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return errors.WithMessage(err, "get stderr pipe for command")
-	}
-	err = cmd.Start()
-	if err != nil {
-		return errors.WithMessage(err, "start command")
-	}
-
-	stdoutData, err := ioutil.ReadAll(stdout)
-	if err != nil {
-		return errors.WithMessage(err, "read stdout data of command")
-	}
-	stderrData, err := ioutil.ReadAll(stderr)
-	if err != nil {
-		return errors.WithMessage(err, "read stderr data of command")
-	}
-
-	err = cmd.Wait()
-	logrus.Infof("git/commit: exec command '%s %s': stdout: %s", cmdName, strings.Join(args, " "), stdoutData)
-	logrus.Infof("git/commit: exec command '%s %s': stderr: %s", cmdName, strings.Join(args, " "), stderrData)
-	if err != nil {
-		return fmt.Errorf("cannot execute command %s: %s", err.Error(), stderrData)
-	}
-
-	return nil
-}
-
-func DelDir(repo *git.Repository, path string) error {
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	_, err = worktree.Filesystem.Stat(path)
-	if err != nil {
-		return nil
-	}
-
-	files, err := worktree.Filesystem.ReadDir(path)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			DelDir(repo, file.Name())
-		}
-
-		_, err = worktree.Remove(filepath.Join(path, file.Name()))
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = worktree.Remove(path)
-
-	return err
-}
-
-func StageFolder(repo *git.Repository, folder string) error {
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	return worktree.AddWithOptions(&git.AddOptions{
-		Glob: folder + "/*",
-	})
-}
 
 func CommitFilesToGit(
 	repo *git.Repository,
@@ -200,7 +31,7 @@ func CommitFilesToGit(
 	message string,
 	releaseString string,
 ) (string, error) {
-	empty, err := NothingToCommit(repo)
+	empty, err := sharedNativeGit.NothingToCommit(repo)
 	if err != nil {
 		return "", fmt.Errorf("cannot get git state %s", err)
 	}
@@ -220,7 +51,7 @@ func CommitFilesToGit(
 
 	// first delete, then recreate app dir
 	// to remove stale template files
-	err = DelDir(repo, rootPath)
+	err = sharedNativeGit.DelDir(repo, rootPath)
 	if err != nil {
 		return "", fmt.Errorf("cannot del dir: %s", err)
 	}
@@ -260,7 +91,7 @@ func CommitFilesToGit(
 		}
 	}
 
-	empty, err = NothingToCommit(repo)
+	empty, err = sharedNativeGit.NothingToCommit(repo)
 	if err != nil {
 		return "", err
 	}
@@ -269,7 +100,7 @@ func CommitFilesToGit(
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet] %s/%s %s", env, app, message)
-	return Commit(repo, gitMessage)
+	return sharedNativeGit.Commit(repo, gitMessage)
 }
 
 func stageFile(worktree *git.Worktree, content string, path string) error {

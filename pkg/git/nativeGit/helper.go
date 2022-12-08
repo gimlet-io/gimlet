@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -310,4 +311,47 @@ func Branch(repo *git.Repository, ref string) error {
 		return err
 	}
 	return nil
+}
+
+func DelDir(repo *git.Repository, path string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	_, err = worktree.Filesystem.Stat(path)
+	if err != nil {
+		return nil
+	}
+
+	files, err := worktree.Filesystem.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			DelDir(repo, file.Name())
+		}
+
+		_, err = worktree.Remove(filepath.Join(path, file.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = worktree.Remove(path)
+
+	return err
+}
+
+func StageFolder(repo *git.Repository, folder string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	return worktree.AddWithOptions(&git.AddOptions{
+		Glob: folder + "/*",
+	})
 }

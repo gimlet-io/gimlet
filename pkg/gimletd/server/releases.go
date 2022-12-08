@@ -16,6 +16,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	sharedNativeGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -322,14 +323,14 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		path = app
 	}
 
-	err = nativeGit.DelDir(repo, path)
+	err = sharedNativeGit.DelDir(repo, path)
 	if err != nil {
 		logrus.Errorf("cannot delete release: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := sharedNativeGit.NothingToCommit(repo)
 	if err != nil {
 		logrus.Errorf("cannot determine git status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -342,11 +343,11 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitMessage := fmt.Sprintf("[GimletD delete] %s/%s deleted by %s", env, app, user.Login)
-	_, err = nativeGit.Commit(repo, gitMessage)
+	_, err = sharedNativeGit.Commit(repo, gitMessage)
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	err = nativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
+	err = sharedNativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
 	gitopsRepoCache.Invalidate(repoName)
