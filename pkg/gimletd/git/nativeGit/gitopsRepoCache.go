@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/otiai10/copy"
@@ -39,7 +40,7 @@ func NewGitopsRepoCache(
 	var defaultCachePath string
 	var err error
 	if gitopsRepo != "" && gitopsRepoDeployKeyPath != "" {
-		defaultCachePath, defaultRepo, err = CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+		defaultCachePath, defaultRepo, err = nativeGit.CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +49,7 @@ func NewGitopsRepoCache(
 	cachePaths := map[string]string{}
 	repos := map[string]*git.Repository{}
 	for _, gitopsRepo := range parsedGitopsRepos {
-		repoCachePath, repo, err := CloneToFs(cacheRoot, gitopsRepo.GitopsRepo, gitopsRepo.DeployKeyPath)
+		repoCachePath, repo, err := nativeGit.CloneToFs(cacheRoot, gitopsRepo.GitopsRepo, gitopsRepo.DeployKeyPath)
 		if err != nil {
 			return nil, err
 		}
@@ -84,11 +85,11 @@ func (r *GitopsRepoCache) Run() {
 		case <-r.stopCh:
 			if r.defaultCachePath != "" {
 				logrus.Infof("cleaning up git repo cache at %s", r.defaultCachePath)
-				TmpFsCleanup(r.defaultCachePath)
+				nativeGit.TmpFsCleanup(r.defaultCachePath)
 			}
 			for _, cachePath := range r.cachePaths {
 				logrus.Infof("cleaning up git repo cache at %s", cachePath)
-				TmpFsCleanup(cachePath)
+				nativeGit.TmpFsCleanup(cachePath)
 			}
 			r.waitCh <- struct{}{}
 			return

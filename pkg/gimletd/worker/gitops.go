@@ -18,6 +18,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	sharedNativeGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -391,7 +392,7 @@ func processRollbackEvent(
 	t0 := time.Now().UnixNano()
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return nil, err
 	}
@@ -581,7 +582,7 @@ func cloneTemplateWriteAndPush(
 	}
 
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -630,7 +631,7 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}

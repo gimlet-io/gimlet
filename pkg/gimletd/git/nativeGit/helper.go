@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -24,37 +23,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const gitSSHAddressFormat = "git@github.com:%s.git"
 const File_RW_RW_R = 0664
 const Dir_RWX_RX_R = 0754
-
-func CloneToFs(rootPath string, repoName string, privateKeyPath string) (string, *git.Repository, error) {
-	err := os.MkdirAll(rootPath, Dir_RWX_RX_R)
-	if err != nil {
-		return "", nil, errors.WithMessage(err, "cannot create folder at $REPO_CACHE_PATH")
-	}
-	path, err := ioutil.TempDir(rootPath, "gitops-")
-	if err != nil {
-		return "", nil, errors.WithMessage(err, "cannot get temporary directory")
-	}
-	url := fmt.Sprintf(gitSSHAddressFormat, repoName)
-	publicKeys, err := ssh.NewPublicKeysFromFile("git", privateKeyPath, "")
-	if err != nil {
-		return "", nil, fmt.Errorf("cannot generate public key from private: %s", err.Error())
-	}
-
-	opts := &git.CloneOptions{
-		URL:  url,
-		Auth: publicKeys,
-	}
-
-	repo, err := git.PlainClone(path, false, opts)
-	return path, repo, err
-}
-
-func TmpFsCleanup(path string) error {
-	return os.RemoveAll(path)
-}
 
 func Push(repo *git.Repository, privateKeyPath string) error {
 	t0 := time.Now().UnixNano()

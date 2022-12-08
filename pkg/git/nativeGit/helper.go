@@ -29,7 +29,7 @@ func CloneToFs(rootPath string, repoName string, privateKeyPath string) (string,
 	}
 	path, err := ioutil.TempDir(rootPath, "gitops-")
 	if err != nil {
-		return "", nil, errors.WithMessage(err, "get temporary directory")
+		return "", nil, errors.WithMessage(err, "cannot get temporary directory")
 	}
 	url := fmt.Sprintf(gitSSHAddressFormat, repoName)
 	publicKeys, err := ssh.NewPublicKeysFromFile("git", privateKeyPath, "")
