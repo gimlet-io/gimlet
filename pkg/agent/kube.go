@@ -255,7 +255,7 @@ func (e *KubeEnv) annotatedServices(repo string) ([]v1.Service, error) {
 	var services []v1.Service
 	for _, s := range svc.Items {
 		if _, ok := s.ObjectMeta.GetAnnotations()[AnnotationGitRepository]; ok {
-			if strings.HasPrefix(s.ObjectMeta.GetAnnotations()[AnnotationGitRepository], "model-search") {
+			if strings.Contains(s.ObjectMeta.GetAnnotations()[AnnotationGitRepository], "ml-search") {
 				continue
 			}
 			if repo == "" {
