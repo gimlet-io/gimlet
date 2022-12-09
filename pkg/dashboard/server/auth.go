@@ -44,12 +44,10 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if config.IsGithub() {
-		member := validateOrganizationMembership(orgList, config.Github.Org, scmUser.Login)
-		if !member {
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
+	member := validateOrganizationMembership(orgList, config.Org(), scmUser.Login)
+	if !member {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
 	}
 
 	store := ctx.Value("store").(*store.Store)

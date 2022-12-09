@@ -51,6 +51,7 @@ type Config struct {
 	Host                    string `envconfig:"HOST"`
 	JWTSecret               string `envconfig:"JWT_SECRET"`
 	Github                  Github
+	Gitlab                  Gitlab
 	Database                Database
 	GimletD                 GimletD
 	Chart                   Chart
@@ -77,6 +78,13 @@ type Github struct {
 	Org            string    `envconfig:"GITHUB_ORG"`
 }
 
+type Gitlab struct {
+	ClientID     string `envconfig:"GITLAB_CLIENT_ID"`
+	ClientSecret string `envconfig:"GITLAB_CLIENT_SECRET"`
+	Debug        bool   `envconfig:"GITLAB_DEBUG"`
+	Org          string `envconfig:"GITLAB_ORG"`
+}
+
 type Chart struct {
 	Name    string `envconfig:"CHART_NAME"`
 	Repo    string `envconfig:"CHART_REPO"`
@@ -95,6 +103,20 @@ type GimletD struct {
 
 func (c *Config) IsGithub() bool {
 	return c.Github.AppID != ""
+}
+
+func (c *Config) IsGitlab() bool {
+	return c.Gitlab.ClientID != ""
+}
+
+func (c *Config) Org() string {
+	if c.IsGithub() {
+		return c.Github.Org
+	} else if c.IsGitlab() {
+		return c.Gitlab.Org
+	}
+
+	return ""
 }
 
 type Multiline string

@@ -14,8 +14,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
-	"github.com/laszlocph/go-login/login/github"
 	"github.com/laszlocph/go-login/login/logger"
+
+	"github.com/laszlocph/go-login/login/github"
+	"github.com/laszlocph/go-login/login/gitlab"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -149,26 +151,43 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 }
 
 func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
-	dumper := logger.DiscardDumper()
-	if config.Github.Debug {
-		dumper = logger.StandardDumper()
+	if config.IsGithub() {
+		dumper := logger.DiscardDumper()
+		if config.Github.Debug {
+			dumper = logger.StandardDumper()
+		}
+		loginMiddleware := &github.Config{
+			ClientID:     config.Github.ClientID,
+			ClientSecret: config.Github.ClientSecret,
+			// you don't need to provide scopes in your authorization request.
+			// Unlike traditional OAuth, the authorization token is limited to the permissions associated
+			// with your GitHub App and those of the user.
+			// https://docs.github.com/en/developers/apps/building-github-apps/identifying-and-authorizing-users-for-github-apps#identifying-and-authorizing-users-for-github-apps
+			Scope:  []string{""},
+			Dumper: dumper,
+		}
+
+		r.Handle("/auth", loginMiddleware.Handler(
+			http.HandlerFunc(auth),
+		))
+		r.Handle("/auth/*", loginMiddleware.Handler(
+			http.HandlerFunc(auth),
+		))
+	} else if config.IsGitlab() {
+		loginMiddleware := &gitlab.Config{
+			ClientID:     config.Gitlab.ClientID,
+			ClientSecret: config.Gitlab.ClientSecret,
+			RedirectURL:  config.Host + "/auth",
+			Scope:        []string{"api"},
+		}
+
+		r.Handle("/auth", loginMiddleware.Handler(
+			http.HandlerFunc(auth),
+		))
+		r.Handle("/auth/*", loginMiddleware.Handler(
+			http.HandlerFunc(auth),
+		))
 	}
-	loginMiddleware := &github.Config{
-		ClientID:     config.Github.ClientID,
-		ClientSecret: config.Github.ClientSecret,
-		// you don't need to provide scopes in your authorization request.
-		// Unlike traditional OAuth, the authorization token is limited to the permissions associated
-		// with your GitHub App and those of the user.
-		// https://docs.github.com/en/developers/apps/building-github-apps/identifying-and-authorizing-users-for-github-apps#identifying-and-authorizing-users-for-github-apps
-		Scope:  []string{""},
-		Dumper: dumper,
-	}
-	r.Handle("/auth", loginMiddleware.Handler(
-		http.HandlerFunc(auth),
-	))
-	r.Handle("/auth/*", loginMiddleware.Handler(
-		http.HandlerFunc(auth),
-	))
 }
 
 // static files from a http.FileSystem

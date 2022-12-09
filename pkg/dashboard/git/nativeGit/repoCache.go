@@ -253,8 +253,15 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 		return nil, errors.WithMessage(err, "couldn't get scm token")
 	}
 
+	var provider string
+	if r.config.IsGithub() {
+		provider = "https://github.com"
+	} else if r.config.IsGitlab() {
+		provider = "https://gitlab.com"
+	}
+
 	opts := &git.CloneOptions{
-		URL: fmt.Sprintf("%s/%s", "https://github.com", repoName),
+		URL: fmt.Sprintf("%s/%s", provider, repoName),
 		Auth: &http.BasicAuth{
 			Username: user,
 			Password: token,
