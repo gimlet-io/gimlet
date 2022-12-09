@@ -18,6 +18,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	sharedNativeGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -391,7 +392,7 @@ func processRollbackEvent(
 	t0 := time.Now().UnixNano()
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +417,7 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
+	err = sharedNativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 	if err != nil {
 		return nil, err
 	}
@@ -581,7 +582,7 @@ func cloneTemplateWriteAndPush(
 	}
 
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -601,7 +602,7 @@ func cloneTemplateWriteAndPush(
 		head, _ := repo.Head()
 
 		operation := func() error {
-			return nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
+			return sharedNativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
@@ -630,7 +631,7 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -640,12 +641,12 @@ func cloneTemplateDeleteAndPush(
 		path = cleanupPolicy.AppToCleanup
 	}
 
-	err = nativeGit.DelDir(repo, path)
+	err = sharedNativeGit.DelDir(repo, path)
 	if err != nil {
 		return "", err
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := sharedNativeGit.NothingToCommit(repo)
 	if err != nil {
 		return "", err
 	}
@@ -654,10 +655,10 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	gitMessage := fmt.Sprintf("[GimletD delete] %s/%s deleted by %s", env, cleanupPolicy.AppToCleanup, triggeredBy)
-	sha, err := nativeGit.Commit(repo, gitMessage)
+	sha, err := sharedNativeGit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
-		err = nativeGit.Push(repo, deployKeyPath)
+		err = sharedNativeGit.Push(repo, deployKeyPath)
 		if err != nil {
 			return "", err
 		}
@@ -705,7 +706,7 @@ func revertTo(
 		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app, repoPerEnv)
 		if !hasBeenReverted {
 			logrus.Infof("reverting %s", commit.Hash.String())
-			err = nativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
+			err = sharedNativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
 			if err != nil {
 				return errors.WithMessage(err, "could not revert")
 			}
@@ -757,7 +758,7 @@ func gitopsTemplateAndWrite(
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
 	}
 
-	sha, err := nativeGit.CommitFilesToGit(
+	sha, err := sharedNativeGit.CommitFilesToGit(
 		repo,
 		files,
 		manifest.Env,

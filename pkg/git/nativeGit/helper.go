@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ func CloneToFs(rootPath string, repoName string, privateKeyPath string) (string,
 	}
 	path, err := ioutil.TempDir(rootPath, "gitops-")
 	if err != nil {
-		return "", nil, errors.WithMessage(err, "get temporary directory")
+		return "", nil, errors.WithMessage(err, "cannot get temporary directory")
 	}
 	url := fmt.Sprintf(gitSSHAddressFormat, repoName)
 	publicKeys, err := ssh.NewPublicKeysFromFile("git", privateKeyPath, "")
@@ -310,4 +311,201 @@ func Branch(repo *git.Repository, ref string) error {
 		return err
 	}
 	return nil
+}
+
+func DelDir(repo *git.Repository, path string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	_, err = worktree.Filesystem.Stat(path)
+	if err != nil {
+		return nil
+	}
+
+	files, err := worktree.Filesystem.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			DelDir(repo, file.Name())
+		}
+
+		_, err = worktree.Remove(filepath.Join(path, file.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = worktree.Remove(path)
+
+	return err
+}
+
+func StageFolder(repo *git.Repository, folder string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	return worktree.AddWithOptions(&git.AddOptions{
+		Glob: folder + "/*",
+	})
+}
+
+// Content returns the content of a file
+func Content(repo *git.Repository, path string) (string, error) {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return "", err
+	}
+
+	f, err := worktree.Filesystem.Open(path)
+	if err != nil {
+		return "", nil
+	}
+	defer f.Close()
+
+	content, err := ioutil.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
+// Folder returns the file contents of a folder (non-recursive)
+func Folder(repo *git.Repository, path string) (map[string]string, error) {
+	files := map[string]string{}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return files, err
+	}
+
+	fileInfos, err := worktree.Filesystem.ReadDir(path)
+	if err != nil {
+		return files, err
+	}
+	for _, fileInfo := range fileInfos {
+		if fileInfo.IsDir() {
+			continue
+		}
+
+		f, err := worktree.Filesystem.Open(filepath.Join(path, fileInfo.Name()))
+		if err != nil {
+			return files, nil
+		}
+		defer f.Close()
+
+		content, err := ioutil.ReadAll(f)
+		if err != nil {
+			return files, err
+		}
+
+		files[fileInfo.Name()] = string(content)
+	}
+
+	return files, nil
+}
+
+func CommitFilesToGit(
+	repo *git.Repository,
+	files map[string]string,
+	env string,
+	app string,
+	repoPerEnv bool,
+	message string,
+	releaseString string,
+) (string, error) {
+	empty, err := NothingToCommit(repo)
+	if err != nil {
+		return "", fmt.Errorf("cannot get git state %s", err)
+	}
+	if !empty {
+		return "", fmt.Errorf("there are staged changes in the gitops repo. Commit them first then try again")
+	}
+
+	w, err := repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("cannot get worktree %s", err)
+	}
+
+	rootPath := filepath.Join(env, app)
+	if repoPerEnv {
+		rootPath = app
+	}
+
+	// first delete, then recreate app dir
+	// to remove stale template files
+	err = DelDir(repo, rootPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot del dir: %s", err)
+	}
+	err = w.Filesystem.MkdirAll(rootPath, Dir_RWX_RX_R)
+	if err != nil {
+		return "", fmt.Errorf("cannot create dir %s", err)
+	}
+
+	for path, content := range files {
+		if !strings.HasSuffix(content, "\n") {
+			content = content + "\n"
+		}
+
+		err = stageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
+		if err != nil {
+			return "", fmt.Errorf("cannot stage file %s", err)
+		}
+	}
+
+	if releaseString != "" {
+		if !strings.HasSuffix(releaseString, "\n") {
+			releaseString = releaseString + "\n"
+		}
+
+		envReleaseJsonPath := env
+		if repoPerEnv {
+			envReleaseJsonPath = ""
+		}
+
+		err = stageFile(w, releaseString, filepath.Join(envReleaseJsonPath, "release.json"))
+		if err != nil {
+			return "", fmt.Errorf("cannot stage file %s", err)
+		}
+		err = stageFile(w, releaseString, filepath.Join(rootPath, "release.json"))
+		if err != nil {
+			return "", fmt.Errorf("cannot stage file %s", err)
+		}
+	}
+
+	empty, err = NothingToCommit(repo)
+	if err != nil {
+		return "", err
+	}
+	if empty {
+		return "", nil
+	}
+
+	gitMessage := fmt.Sprintf("[Gimlet] %s/%s %s", env, app, message)
+	return Commit(repo, gitMessage)
+}
+
+func stageFile(worktree *git.Worktree, content string, path string) error {
+	createdFile, err := worktree.Filesystem.Create(path)
+	if err != nil {
+		return err
+	}
+	_, err = createdFile.Write([]byte(content))
+	if err != nil {
+		return err
+	}
+	err = createdFile.Close()
+	if err != nil {
+		return err
+	}
+
+	_, err = worktree.Add(path)
+	return err
 }
