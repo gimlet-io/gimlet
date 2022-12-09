@@ -3,11 +3,12 @@ package notifications
 import (
 	"context"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
-	githubLib "github.com/google/go-github/v37/github"
-	"golang.org/x/oauth2"
 	"strings"
 	"time"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
+	githubLib "github.com/google/go-github/v37/github"
+	"golang.org/x/oauth2"
 )
 
 type github struct {

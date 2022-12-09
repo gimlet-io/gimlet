@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	commonGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"

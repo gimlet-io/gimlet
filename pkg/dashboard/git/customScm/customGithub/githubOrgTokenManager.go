@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
@@ -24,15 +23,15 @@ type GithubOrgTokenManager struct {
 	expiresAt *time.Time
 }
 
-func NewGithubOrgTokenManager(config *config.Config) (*GithubOrgTokenManager, error) {
-	installID, err := strconv.ParseInt(config.Github.InstallationID, 10, 64)
+func NewGithubOrgTokenManager(appId string, installationId string, privateKey string) (*GithubOrgTokenManager, error) {
+	installID, err := strconv.ParseInt(installationId, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse installationId: %s", err)
 	}
 
 	manager := &GithubOrgTokenManager{
-		appId:          config.Github.AppID,
-		privateKey:     config.Github.PrivateKey.String(),
+		appId:          appId,
+		privateKey:     privateKey,
 		installationId: installID,
 	}
 	err = manager.refreshOrgToken()

@@ -15,8 +15,8 @@ import (
 	"syscall"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
@@ -59,7 +59,11 @@ func main() {
 
 	var tokenManager customScm.NonImpersonatedTokenManager
 	if config.Github.AppID != "" {
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(config)
+		tokenManager, err = customGithub.NewGithubOrgTokenManager(
+			config.Github.AppID,
+			config.Github.InstallationID,
+			config.Github.PrivateKey.String(),
+		)
 		if err != nil {
 			panic(err)
 		}

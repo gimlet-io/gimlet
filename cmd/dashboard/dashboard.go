@@ -72,7 +72,11 @@ func main() {
 
 	if config.IsGithub() {
 		gitSvc = &customGithub.GithubClient{}
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(config)
+		tokenManager, err = customGithub.NewGithubOrgTokenManager(
+			config.Github.AppID,
+			config.Github.InstallationID,
+			config.Github.PrivateKey.String(),
+		)
 		if err != nil {
 			panic(err)
 		}

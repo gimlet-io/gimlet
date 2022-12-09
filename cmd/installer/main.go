@@ -344,13 +344,8 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	data := ctx.Value("data").(*data)
 	data.installationId = formValues.Get("installation_id")
 
-	tokenManager, err := customGithub.NewGithubOrgTokenManager(&config.Config{
-		Github: config.Github{
-			AppID:          data.id,
-			PrivateKey:     config.Multiline(data.pem),
-			InstallationID: data.installationId,
-		},
-	})
+	privateKey := config.Multiline(data.pem)
+	tokenManager, err := customGithub.NewGithubOrgTokenManager(data.id, data.installationId, privateKey.String())
 	if err != nil {
 		panic(err)
 	}
