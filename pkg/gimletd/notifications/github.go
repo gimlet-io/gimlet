@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	githubLib "github.com/google/go-github/v37/github"
 	"golang.org/x/oauth2"
 )
