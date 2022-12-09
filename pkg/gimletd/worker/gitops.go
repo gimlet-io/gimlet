@@ -13,12 +13,12 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	sharedNativeGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -36,7 +36,7 @@ type GitopsWorker struct {
 	tokenManager            customScm.NonImpersonatedTokenManager
 	notificationsManager    notifications.Manager
 	eventsProcessed         prometheus.Counter
-	repoCache               *nativeGit.GitopsRepoCache
+	repoCache               *gitops.GitopsRepoCache
 	eventSinkHub            *streaming.EventSinkHub
 	perf                    *prometheus.HistogramVec
 }
@@ -49,7 +49,7 @@ func NewGitopsWorker(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	notificationsManager notifications.Manager,
 	eventsProcessed prometheus.Counter,
-	repoCache *nativeGit.GitopsRepoCache,
+	repoCache *gitops.GitopsRepoCache,
 	eventSinkHub *streaming.EventSinkHub,
 	perf *prometheus.HistogramVec,
 ) *GitopsWorker {
@@ -103,7 +103,7 @@ func processEvent(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	event *model.Event,
 	notificationsManager notifications.Manager,
-	repoCache *nativeGit.GitopsRepoCache,
+	repoCache *gitops.GitopsRepoCache,
 	eventSinkHub *streaming.EventSinkHub,
 	perf *prometheus.HistogramVec,
 ) {
@@ -214,7 +214,7 @@ func processBranchDeletedEvent(
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
-	gitopsRepoCache *nativeGit.GitopsRepoCache,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 	event *model.Event,
 ) ([]model.Result, error) {
 	var branchDeletedEvent dx.BranchDeletedEvent
@@ -283,7 +283,7 @@ func processReleaseEvent(
 	store *store.Store,
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
-	gitopsRepoCache *nativeGit.GitopsRepoCache,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
@@ -375,7 +375,7 @@ func processRollbackEvent(
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
-	gitopsRepoCache *nativeGit.GitopsRepoCache,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 	event *model.Event,
 ) ([]model.Result, error) {
 	var rollbackRequest dx.RollbackRequest
@@ -392,7 +392,7 @@ func processRollbackEvent(
 	t0 := time.Now().UnixNano()
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
-	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
+	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +417,7 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = sharedNativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
+	err = nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +464,7 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 func processArtifactEvent(
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
-	gitopsRepoCache *nativeGit.GitopsRepoCache,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
@@ -568,7 +568,7 @@ func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact)
 func cloneTemplateWriteAndPush(
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
-	gitopsRepoCache *nativeGit.GitopsRepoCache,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	manifest *dx.Manifest,
@@ -582,7 +582,7 @@ func cloneTemplateWriteAndPush(
 	}
 
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
-	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
+	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -602,7 +602,7 @@ func cloneTemplateWriteAndPush(
 		head, _ := repo.Head()
 
 		operation := func() error {
-			return sharedNativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
+			return nativeGit.NativePush(repoTmpPath, deployKeyPath, head.Name().Short())
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
@@ -619,7 +619,7 @@ func cloneTemplateWriteAndPush(
 func cloneTemplateDeleteAndPush(
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
-	gitopsRepoCache *nativeGit.GitopsRepoCache,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 	gitopsRepoDeployKeyPath string,
 	cleanupPolicy *dx.Cleanup,
 	env string,
@@ -631,7 +631,7 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	repo, repoTmpPath, deployKeyPath, err := gitopsRepoCache.InstanceForWrite(repoName)
-	defer sharedNativeGit.TmpFsCleanup(repoTmpPath)
+	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -641,12 +641,12 @@ func cloneTemplateDeleteAndPush(
 		path = cleanupPolicy.AppToCleanup
 	}
 
-	err = sharedNativeGit.DelDir(repo, path)
+	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		return "", err
 	}
 
-	empty, err := sharedNativeGit.NothingToCommit(repo)
+	empty, err := nativeGit.NothingToCommit(repo)
 	if err != nil {
 		return "", err
 	}
@@ -655,10 +655,10 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	gitMessage := fmt.Sprintf("[GimletD delete] %s/%s deleted by %s", env, cleanupPolicy.AppToCleanup, triggeredBy)
-	sha, err := sharedNativeGit.Commit(repo, gitMessage)
+	sha, err := nativeGit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
-		err = sharedNativeGit.Push(repo, deployKeyPath)
+		err = nativeGit.Push(repo, deployKeyPath)
 		if err != nil {
 			return "", err
 		}
@@ -693,7 +693,7 @@ func revertTo(
 			return fmt.Errorf("EOF")
 		}
 
-		if !nativeGit.RollbackCommit(c) {
+		if !gitops.RollbackCommit(c) {
 			commitsToRevert = append(commitsToRevert, c)
 		}
 		return nil
@@ -703,10 +703,10 @@ func revertTo(
 	}
 
 	for _, commit := range commitsToRevert {
-		hasBeenReverted, err := nativeGit.HasBeenReverted(repo, commit, env, app, repoPerEnv)
+		hasBeenReverted, err := gitops.HasBeenReverted(repo, commit, env, app, repoPerEnv)
 		if !hasBeenReverted {
 			logrus.Infof("reverting %s", commit.Hash.String())
-			err = sharedNativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
+			err = nativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
 			if err != nil {
 				return errors.WithMessage(err, "could not revert")
 			}
@@ -758,7 +758,7 @@ func gitopsTemplateAndWrite(
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
 	}
 
-	sha, err := sharedNativeGit.CommitFilesToGit(
+	sha, err := nativeGit.CommitFilesToGit(
 		repo,
 		files,
 		manifest.Env,

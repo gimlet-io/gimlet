@@ -1,4 +1,4 @@
-package nativeGit
+package gitops
 
 import (
 	"testing"

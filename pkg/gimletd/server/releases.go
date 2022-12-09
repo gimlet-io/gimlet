@@ -13,10 +13,10 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	sharedNativeGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -68,7 +68,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
+	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*gitops.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
@@ -88,7 +88,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	}
 
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
-	releases, err := nativeGit.Releases(repo, app, env, repoPerEnv, since, until, limit, gitRepo, perf)
+	releases, err := gitops.Releases(repo, app, env, repoPerEnv, since, until, limit, gitRepo, perf)
 	if err != nil {
 		logrus.Errorf("cannot get releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -131,7 +131,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
+	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*gitops.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
 	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
@@ -144,7 +144,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	repo := gitopsRepoCache.InstanceForRead(repoName)
-	appReleases, err := nativeGit.Status(repo, app, env, repoPerEnv, perf)
+	appReleases, err := gitops.Status(repo, app, env, repoPerEnv, perf)
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -284,7 +284,7 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 func delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
-	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*nativeGit.GitopsRepoCache)
+	gitopsRepoCache := ctx.Value("gitopsRepoCache").(*gitops.GitopsRepoCache)
 	gitopsRepo := ctx.Value("gitopsRepo").(string)
 	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
 
@@ -323,14 +323,14 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		path = app
 	}
 
-	err = sharedNativeGit.DelDir(repo, path)
+	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		logrus.Errorf("cannot delete release: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	empty, err := sharedNativeGit.NothingToCommit(repo)
+	empty, err := nativeGit.NothingToCommit(repo)
 	if err != nil {
 		logrus.Errorf("cannot determine git status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -343,11 +343,11 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitMessage := fmt.Sprintf("[GimletD delete] %s/%s deleted by %s", env, app, user.Login)
-	_, err = sharedNativeGit.Commit(repo, gitMessage)
+	_, err = nativeGit.Commit(repo, gitMessage)
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	err = sharedNativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
+	err = nativeGit.NativePush(pathToCleanUp, deployKeyPath, head.Name().Short())
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
 	gitopsRepoCache.Invalidate(repoName)

@@ -1,0 +1,443 @@
+* [33m6c19183[m -[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m[m Gitops related git logic is moved to the gitops package; common git logic moved to the shared gitops pkg [32m(20 seconds ago) [1;34mGithub Actions[m
+* [33mc868db3[m -[m[33m ([m[1;31morigin/main[m[33m)[m[m Cleanup (#389) [32m(35 minutes ago) [1;34mLaszlo Fogas[m
+* [33m4f3444d[m -[m[m fix: upgrade typescript from 4.8.4 to 4.9.3 (#388) [32m(2 hours ago) [1;34mSnyk bot[m
+* [33m32bece3[m -[m[33m ([m[1;33mtag: dashboard-v0.12.1-debug.1[m[33m)[m[m Info log to help debugging [32m(2 days ago) [1;34mLaszlo Fogas[m
+* [33m1997f9f[m -[m[33m ([m[1;33mtag: dashboard-v0.12.1[m[33m)[m[m Fix uncliclable area when button shows up (#386) [32m(2 days ago) [1;34mÁdám Sisák[m
+* [33m7350a80[m -[m[m Undefined error guard (#385) [32m(2 days ago) [1;34mÁdám Sisák[m
+* [33m446bf82[m -[m[m EmptyStateNoAgent component removed (#381) [32m(3 days ago) [1;34mÁdám Sisák[m
+* [33m5bb331c[m -[m[m latest [32m(3 days ago) [1;34mGithub Actions[m
+* [33m8075da6[m -[m[33m ([m[1;33mtag: gimletd-v0.15.0-rc.8[m[33m, [m[1;33mtag: gimletd-v0.15.0[m[33m, [m[1;33mtag: dashboard-v0.12.0-rc.2[m[33m, [m[1;33mtag: dashboard-v0.12.0[m[33m, [m[1;33mtag: cli-v0.19.0[m[33m)[m[m Bugfix: Rollout widget styles (#379) [32m(3 days ago) [1;34mÁdám Sisák[m
+* [33ma2c210a[m -[m[m Enhancement: Scroll button on commits (#378) [32m(8 days ago) [1;34mÁdám Sisák[m
+* [33m0a0d5fd[m -[m[33m ([m[1;33mtag: gimletd-v0.15.0-rc.6[m[33m, [m[1;33mtag: dashboard-v0.12.0-rc.1[m[33m)[m[m Feature: Application logs in gimlet (#344) [32m(8 days ago) [1;34mÁdám Sisák[m
+* [33m3f383ae[m -[m[m fix: upgrade @craco/craco from 7.0.0-alpha.3 to 7.0.0 (#377) [32m(8 days ago) [1;34mLaszlo Fogas[m
+* [33mc9a4cd1[m -[m[m fix: upgrade @craco/craco from 7.0.0-alpha.3 to 7.0.0 (#376) [32m(9 days ago) [1;34mLaszlo Fogas[m
+* [33m9de4898[m -[m[m fix: upgrade @tailwindcss/typography from 0.5.7 to 0.5.8 (#375) [32m(10 days ago) [1;34mSnyk bot[m
+* [33m040e455[m -[m[m Enhancement: Pulse tab (#361) [32m(11 days ago) [1;34mÁdám Sisák[m
+* [33m6bb08fb[m -[m[m Gitops commit status in track commands should print gitops failure reasons (#374) [32m(2 weeks ago) [1;34mLaszlo Fogas[m
+* [33mbb61f2e[m -[m[m fix: upgrade @types/react from 17.0.51 to 17.0.52 (#373) [32m(2 weeks ago) [1;34mSnyk bot[m
+* [33m4f43b84[m -[m[m Deprecate gitops hashes (#369) [32m(2 weeks ago) [1;34mLaszlo Fogas[m
+* [33mc000405[m -[m[m fix: upgrade @types/react-dom from 17.0.17 to 17.0.18 (#372) [32m(2 weeks ago) [1;34mSnyk bot[m
+* [33me7f4aae[m -[m[m fix: upgrade @types/react from 17.0.50 to 17.0.52 (#371) [32m(2 weeks ago) [1;34mSnyk bot[m
+* [33m1ae9a64[m -[m[m Enhancement: Note on empty Rollout history (#370) [32m(2 weeks ago) [1;34mÁdám Sisák[m
+* [33m124fc00[m -[m[m fix: upgrade @types/react from 17.0.50 to 17.0.51 (#367) [32m(2 weeks ago) [1;34mSnyk bot[m
+* [33mfb19519[m -[m[m fix: upgrade @types/react-dom from 17.0.17 to 17.0.18 (#368) [32m(2 weeks ago) [1;34mLaszlo Fogas[m
+* [33m9053b60[m -[m[m Enhancement: Gitops commit state in version history (#363) [32m(3 weeks ago) [1;34mÁdám Sisák[m
+* [33m39150b8[m -[m[m Latest installer tag [32m(3 weeks ago) [1;34mLaszlo Fogas[m
+* [33m7d62450[m -[m[33m ([m[1;33mtag: installer-v0.4.7[m[33m)[m[m Fixing tags [32m(3 weeks ago) [1;34mLaszlo Fogas[m
+* [33m0e9a6bf[m -[m[33m ([m[1;33mtag: installer-v0.4.6[m[33m)[m[m Trying to fix image pushing [32m(3 weeks ago) [1;34mLaszlo Fogas[m
+* [33m23cd8d8[m -[m[33m ([m[1;33mtag: installer-v0.4.5[m[33m, [m[1;33mtag: installer-v0.4.4[m[33m, [m[1;33mtag: installer-v0.4.3[m[33m)[m[m Latest installer [32m(3 weeks ago) [1;34mLaszlo Fogas[m
+* [33m9944889[m -[m[m Burned in head branch name fix (#366) [32m(3 weeks ago) [1;34mÁdám Sisák[m
+* [33m6222196[m -[m[33m ([m[1;33mtag: dashboard-v0.11.2[m[33m)[m[m Undefined guard fix (#365) [32m(3 weeks ago) [1;34mÁdám Sisák[m
+* [33m4b7c251[m -[m[33m ([m[1;33mtag: dashboard-v0.11.1[m[33m)[m[m Enhancement: Loading screen on first start (#355) [32m(4 weeks ago) [1;34mÁdám Sisák[m
+* [33m8b3ace0[m -[m[m Bugfix: Fully clickable deploy button (#364) [32m(4 weeks ago) [1;34mÁdám Sisák[m
+* [33m79a5816[m -[m[m Enhancement: Infinite scroll on commits (#362) [32m(4 weeks ago) [1;34mÁdám Sisák[m
+* [33m8b6b90e[m -[m[m Fix rolloutHistory state update (#360) [32m(4 weeks ago) [1;34mÁdám Sisák[m
+* [33m5af8343[m -[m[m fix: upgrade react-router-dom from 5.3.3 to 5.3.4 (#354) [32m(5 weeks ago) [1;34mLaszlo Fogas[m
+* [33med6c944[m -[m[m fix: upgrade react-router-dom from 5.3.3 to 5.3.4 (#352) [32m(5 weeks ago) [1;34mLaszlo Fogas[m
+* [33m1212c8e[m -[m[m Handling skipped Github Actions job status [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33m48f818d[m -[m[m Latest CLI [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33m5f3c9aa[m -[m[m Bump k3s version (#351) [32m(7 weeks ago) [1;34mAlberto Llamas[m
+* [33m0df961c[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.14[m[33m, [m[1;33mtag: gimletd-v0.14.0[m[33m, [m[1;33mtag: dashboard-v0.11.0[m[33m, [m[1;33mtag: cli-v0.18.0[m[33m)[m[m Fixing rollback gitops results [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33m38616a1[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.13[m[33m)[m[m Refactor [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33m28599c4[m -[m[m fix: upgrade typescript from 4.8.3 to 4.8.4 (#349) [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33m54e8ec8[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.12[m[33m)[m[m Refactoring gitops write administering; prevent nil if rollback didn't produce a gitops hash [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33mc91705a[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.11[m[33m, [m[1;33mtag: dashboard-v0.11.0-rc.5[m[33m)[m[m Bugfix: Empty deploy status on rollback (#347) [32m(7 weeks ago) [1;34mÁdám Sisák[m
+* [33ma3ae3ee[m -[m[m fix: upgrade typescript from 4.8.3 to 4.8.4 (#348) [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33ma2b2424[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.10[m[33m, [m[1;33mtag: dashboard-v0.11.0-rc.4[m[33m)[m[m Switched to per-app deploy history for predictable performance (#315) [32m(7 weeks ago) [1;34mLaszlo Fogas[m
+* [33ma6c7caa[m -[m[m Publishing also the latest tag for the installer [32m(8 weeks ago) [1;34mLaszlo Fogas[m
+* [33m1f5bca2[m -[m[m Publishing a Docker image with Gimlet CLI because it is handy in CI (#341) [32m(8 weeks ago) [1;34mLaszlo Fogas[m
+* [33ma9fea2e[m -[m[m Fix broken link (#342) [32m(8 weeks ago) [1;34mÁdám Sisák[m
+* [33me7b5b3e[m -[m[33m ([m[1;33mtag: cli-v0.18.0-rc.12[m[33m)[m[m Handling manifest processing errors [32m(8 weeks ago) [1;34mLaszlo Fogas[m
+* [33mda7dbbb[m -[m[m Handling env vars with equal sign in them [32m(8 weeks ago) [1;34mLaszlo Fogas[m
+* [33m69c8b83[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.9[m[33m, [m[1;33mtag: dashboard-v0.11.0-rc.3[m[33m)[m[m Env config with non existing environment should not fail the artifact processing, it is a recovarable mistake [32m(8 weeks ago) [1;34mGithub Actions[m
+* [33m5948443[m -[m[m Env config with non existing environment should not fail the artifact processing, it is a recovarable mistake [32m(8 weeks ago) [1;34mGithub Actions[m
+* [33meafab4f[m -[m[m `gimlet release make` output as json (#340) [32m(8 weeks ago) [1;34mLaszlo Fogas[m
+* [33m46b2f27[m -[m[m Bugfix: Broken links (#338) [32m(8 weeks ago) [1;34mÁdám Sisák[m
+* [33m2a92893[m -[m[m fix: upgrade @types/react from 17.0.49 to 17.0.50 (#339) [32m(8 weeks ago) [1;34mSnyk bot[m
+* [33m01cc332[m -[m[m fix: upgrade @types/react from 17.0.49 to 17.0.50 (#334) [32m(9 weeks ago) [1;34mLaszlo Fogas[m
+* [33mbf23029[m -[m[m fix: upgrade date-fns from 2.29.2 to 2.29.3 (#333) [32m(9 weeks ago) [1;34mLaszlo Fogas[m
+* [33me25e981[m -[m[m Component update on state change (#336) [32m(9 weeks ago) [1;34mÁdám Sisák[m
+* [33m2f35f9f[m -[m[m Fixing track (#332) [32m(9 weeks ago) [1;34mLaszlo Fogas[m
+* [33mf68000c[m -[m[m Bugfix: snyk findings (#331) [32m(9 weeks ago) [1;34mÁdám Sisák[m
+* [33m2bb5044[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.8[m[33m, [m[1;33mtag: dashboard-v0.11.0-rc.2[m[33m)[m[m Testing multiarch (#322) [32m(9 weeks ago) [1;34mLaszlo Fogas[m
+* [33m20b17f9[m -[m[m Cleaning up test repo deploy key [32m(9 weeks ago) [1;34mLaszlo Fogas[m
+* [33m32e51d5[m -[m[m Complete PR create description (#326) [32m(9 weeks ago) [1;34mÁdám Sisák[m
+* [33mc25e091[m -[m[m fix: upgrade date-fns from 2.29.2 to 2.29.3 (#329) [32m(9 weeks ago) [1;34mSnyk bot[m
+* [33mafdf413[m -[m[m Timeout on save set to 60s (#330) [32m(9 weeks ago) [1;34mÁdám Sisák[m
+* [33mc9aa882[m -[m[m State isClosed set to local storage (#328) [32m(9 weeks ago) [1;34mÁdám Sisák[m
+* [33m08e3c95[m -[m[m Get head branch name for bootstrap (#327) [32m(9 weeks ago) [1;34mÁdám Sisák[m
+* [33mc5727af[m -[m[m fix: upgrade typescript from 4.8.2 to 4.8.3 (#325) [32m(10 weeks ago) [1;34mLaszlo Fogas[m
+* [33mdf15c97[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.7[m[33m, [m[1;33mtag: dashboard-v0.11.0-rc.1[m[33m)[m[m Enhancement: Synchronous artifact processing (#314) [32m(2 months ago) [1;34mÁdám Sisák[m
+*   [33m34953c2[m -[m[m Merge pull request #324 from gimlet-io/snyk-upgrade-fe74ffac2573b15a78d4be49645f72c6 [32m(2 months ago) [1;34mLaszlo Fogas[m
+[32m|[m[33m\[m  
+[32m|[m * [33mc4e6e31[m -[m[m fix: upgrade typescript from 4.8.2 to 4.8.3 [32m(2 months ago) [1;34msnyk-bot[m
+* [33m|[m   [33mab40343[m -[m[m Merge pull request #321 from lalyos/patch-1 [32m(2 months ago) [1;34mLaszlo Fogas[m
+[33m|[m[35m\[m [33m\[m  
+[33m|[m [35m|[m[33m/[m  
+[33m|[m[33m/[m[35m|[m   
+[33m|[m * [33mfc2e27c[m -[m[m [readme] Add roadmap and milestones links [32m(2 months ago) [1;34mLajos Papp[m
+[33m|[m[33m/[m  
+* [33m2f4e445[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.6[m[33m)[m[m Fixing release state worker [32m(2 months ago) [1;34mGithub Actions[m
+* [33m9709755[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.4[m[33m)[m[m Fixing release state worker [32m(2 months ago) [1;34mGithub Actions[m
+*   [33m756b0b9[m -[m[33m ([m[1;33mtag: gimletd-v0.14.0-rc.3[m[33m)[m[m Merge pull request #313 from gimlet-io/metrics [32m(2 months ago) [1;34mLaszlo Fogas[m
+[36m|[m[1;31m\[m  
+[36m|[m * [33m42a3554[m -[m[m Metrics on gitops read and write functions [32m(2 months ago) [1;34mLaszlo Fogas[m
+[36m|[m[36m/[m  
+* [33m6f28472[m -[m[m fix: upgrade @tailwindcss/forms from 0.5.2 to 0.5.3 (#312) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m48c4d13[m -[m[m fix: upgrade @tailwindcss/typography from 0.5.4 to 0.5.7 (#311) [32m(3 months ago) [1;34mLaszlo Fogas[m
+*   [33mc75cd2b[m -[m[33m ([m[1;33mtag: installer-v0.4.2[m[33m)[m[m Merge pull request #306 from gimlet-io/dockerized-installer [32m(3 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m[1;33m\[m  
+[1;32m|[m * [33m4bcff81[m -[m[m Compile error [32m(3 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m * [33m2f96afb[m -[m[m Hosted installers need authorization [32m(3 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m * [33m472c072[m -[m[m Setting Github org on the installer ui [32m(3 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m * [33m6f96343[m -[m[33m ([m[1;33mtag: installer-v0.4.2-rc.2[m[33m)[m[m Git is needed [32m(3 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m * [33m4bdef97[m -[m[33m ([m[1;33mtag: installer-v0.4.2-rc.1[m[33m)[m[m Dockerized installer [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [1;33m|[m [33md63b36b[m -[m[m fix: upgrade typescript from 4.7.4 to 4.8.2 (#307) [32m(3 months ago) [1;34mSnyk bot[m
+* [1;33m|[m [33mf1faf56[m -[m[m fix: upgrade @types/react from 17.0.48 to 17.0.49 (#308) [32m(3 months ago) [1;34mSnyk bot[m
+* [1;33m|[m [33m4e68590[m -[m[m fix: upgrade @types/react from 17.0.48 to 17.0.49 (#301) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [1;33m|[m [33mb247136[m -[m[m fix: upgrade typescript from 4.7.4 to 4.8.2 (#300) [32m(3 months ago) [1;34mLaszlo Fogas[m
+[1;33m|[m[1;33m/[m  
+* [33m641a2b2[m -[m[33m ([m[1;33mtag: installer-v0.4.1[m[33m)[m[m Latest installer [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m7aea449[m -[m[m Init repo if it is empty (#304) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m4bf9452[m -[m[33m ([m[1;33mtag: installer-v0.4.0[m[33m, [m[1;33mtag: gimletd-v0.13.0[m[33m, [m[1;33mtag: dashboard-v0.10.0[m[33m, [m[1;33mtag: cli-v0.17.0[m[33m)[m[m Relase is done [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m7dfa93a[m -[m[m Stack is released [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33mea23ced[m -[m[33m ([m[1;33mtag: dashboard-v0.10.0-rc.2[m[33m)[m[m fix: upgrade @tailwindcss/typography from 0.5.2 to 0.5.4 (#291) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33maf667a9[m -[m[m Bugfix: stack config (#292) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33m7c3d3af[m -[m[m Using rc based stack [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m242cc23[m -[m[33m ([m[1;33mtag: gimletd-v0.13.0-rc.1[m[33m, [m[1;33mtag: dashboard-v0.10.0-rc.1[m[33m, [m[1;33mtag: cli-v0.17.0-rc.1[m[33m)[m[m Correcting stack reference [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m3acc061[m -[m[m Local install improvements (#288) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m29c830c[m -[m[m Bugfix: Copy to clipboard (#289) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33m1f18225[m -[m[m fix: upgrade date-fns from 2.29.1 to 2.29.2 (#286) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m458d989[m -[m[m Creating an empty object if gitops commits are empty (#287) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33m643de53[m -[m[m Enhancement: git event convert from string (#280) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33mb8c060e[m -[m[m Dark mode logo [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m3c0f136[m -[m[m fix: upgrade date-fns from 2.29.1 to 2.29.2 (#285) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m3915dbc[m -[m[m Non-bootstrapped env returns error fix (#284) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33mc38d4e4[m -[m[m Update: flux in go.mod (#283) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33m4f5991c[m -[m[m Enhancement: All changes go to pr (#278) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33ma07d97f[m -[m[m Updating CLI version [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m9a5890d[m -[m[m fix: upgrade @testing-library/jest-dom from 5.16.4 to 5.16.5 (#265) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m65c3a39[m -[m[m Enhancement: error validation in env config edit (#262) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33m341a035[m -[m[m Bugfix:  Server error on editing config that contains percentage in app name (#259) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33mdc0095f[m -[m[m fix: upgrade @testing-library/jest-dom from 5.16.4 to 5.16.5 (#263) [32m(3 months ago) [1;34mLaszlo Fogas[m
+* [33m273583d[m -[m[m Fixed undefined error in default chart reference (#261) [32m(3 months ago) [1;34mÁdám Sisák[m
+* [33m1cb38b9[m -[m[m fix: upgrade @testing-library/jest-dom from 5.16.4 to 5.16.5 (#260) [32m(3 months ago) [1;34mSnyk bot[m
+* [33m6b3c1e2[m -[m[m Enhancement: creating pull request on saving infrastructure components (#257) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33m7cf8cb7[m -[m[m Bugfix: saving copied env config used the default chart reference (#258) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mb593b1e[m -[m[m Update preview.yaml [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33md689deb[m -[m[m Update preview.yaml [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mb2b3851[m -[m[m Enhancement:show open pull requests in repo view (#254) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33m8c18dc6[m -[m[m fix: upgrade @graywolfai/react-heroicons from 1.3.0 to 1.3.1 (#256) [32m(4 months ago) [1;34mSnyk bot[m
+* [33mde80b40[m -[m[m Expand default permissions with pull requests write (#255) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mea3fb59[m -[m[m fix: upgrade @graywolfai/react-heroicons from 1.3.0 to 1.3.1 (#252) [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m8e51339[m -[m[m fix: upgrade @types/react from 17.0.47 to 17.0.48 (#251) [32m(4 months ago) [1;34mSnyk bot[m
+* [33me5f6891[m -[m[m Enhancement: all changes to pr first (#253) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mcd5c1ca[m -[m[m Fixing link in zsh [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m1317ae9[m -[m[m Fixing broken links [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33me1a00b5[m -[m[m fix: upgrade @types/react from 17.0.47 to 17.0.48 (#250) [32m(4 months ago) [1;34mSnyk bot[m
+* [33m55e2d98[m -[m[m CLI help text fixes [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m09a591e[m -[m[m Enhancement/make render config file real time in env config (#244) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mb2161cf[m -[m[m Feature: use emptyDir in preview apps (#249) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33m9853fa6[m -[m[m fix: upgrade react-scripts from 5.0.0 to 5.0.1 (#248) [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33mec54ba2[m -[m[m fix: upgrade date-fns from 2.28.0 to 2.29.1 (#247) [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m0edfc33[m -[m[m Convert config name to valid encoding (#246) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33m6695d31[m -[m[m fix: upgrade date-fns from 2.28.0 to 2.29.1 (#245) [32m(4 months ago) [1;34mSnyk bot[m
+* [33md65aec8[m -[m[m fix: upgrade @heroicons/react from 1.0.5 to 1.0.6 (#241) [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m667c7d6[m -[m[m fix: upgrade redux from 4.1.2 to 4.2.0 (#240) [32m(4 months ago) [1;34mSnyk bot[m
+* [33m9d86791[m -[m[m fix: upgrade @testing-library/jest-dom from 5.16.0 to 5.16.4 (#238) [32m(4 months ago) [1;34mSnyk bot[m
+* [33m57031f5[m -[m[m fix: upgrade date-fns from 2.27.0 to 2.28.0 (#242) [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33mf7655ef[m -[m[m fix: upgrade react-router-dom from 5.3.0 to 5.3.3 (#239) [32m(4 months ago) [1;34mSnyk bot[m
+* [33md7e31b1[m -[m[m Enhancement: deploy policy fields in env config edit (#235) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mc933267[m -[m[m Enhancement/markdown compatible styles (#243) [32m(4 months ago) [1;34mÁdám Sisák[m
+* [33mfbc77cc[m -[m[m Latest CLI [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m171074e[m -[m[33m ([m[1;33mtag: gimletd-v0.12.0[m[33m, [m[1;33mtag: dashboard-v0.9.0-rc.11[m[33m, [m[1;33mtag: dashboard-v0.9.0[m[33m, [m[1;33mtag: cli-v0.16.0[m[33m)[m[m Agent stacks should never be nil [32m(4 months ago) [1;34mGithub Actions[m
+* [33m76cd0be[m -[m[m It happened that an agent was connected but stacks were nil [32m(4 months ago) [1;34mLaszlo Fogas[m
+* [33m6fa2222[m -[m[m fix: upgrade typescript from 4.5.2 to 4.7.4 (#229) [32m(4 months ago) [1;34mSnyk bot[m
+* [33md19690c[m -[m[m fix: upgrade @types/react from 17.0.37 to 17.0.47 (#230) [32m(4 months ago) [1;34mSnyk bot[m
+* [33m15bf1a0[m -[m[m fix: upgrade @types/react-dom from 17.0.11 to 17.0.17 (#232) [32m(4 months ago) [1;34mSnyk bot[m
+* [33me5f1cc8[m -[m[m fix: upgrade axios from 0.25.0 to 0.27.2 (#233) [32m(4 months ago) [1;34mSnyk bot[m
+* [33mce60e26[m -[m[m Early return if we dont have connected agents or envs (#234) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33m1d5ccef[m -[m[m Undefined check on connectedAgents (#228) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33m3e04f53[m -[m[m Cannot use Switch from @headlessui/react in 1.6.5 (#227) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33m244a7fa[m -[m[m Logging deleted branches and cleanup process success (#226) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33m6551059[m -[m[m Enhancement/variables example in manifest edit view (#225) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m4e496b6[m -[m[m fix: upgrade @heroicons/react from 1.0.5 to 1.0.6 (#220) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m35c57f7[m -[m[m fix: upgrade @headlessui/react from 1.6.4 to 1.6.5 (#221) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m22c71a0[m -[m[m fix: upgrade date-fns from 2.27.0 to 2.28.0 (#222) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m234d4f2[m -[m[m fix: upgrade typescript from 4.7.3 to 4.7.4 (#223) [32m(5 months ago) [1;34mSnyk bot[m
+* [33md990bd6[m -[m[m fix: upgrade @types/node from 12.20.37 to 12.20.55 (#224) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m309c809[m -[m[33m ([m[1;33mtag: gimletd-v0.12.0-rc.5[m[33m)[m[m Refactor: revamp vars in shipper (#216) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33m3f34209[m -[m[m fix: docker/gimletd/Dockerfile to reduce vulnerabilities (#218) [32m(5 months ago) [1;34mSnyk bot[m
+* [33mbf91643[m -[m[m fix: docker/dashboard/Dockerfile.agent to reduce vulnerabilities (#217) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m9691c8d[m -[m[m fix: docker/dashboard/Dockerfile to reduce vulnerabilities (#219) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m7baafbd[m -[m[m fix: upgrade react-router-dom from 5.3.0 to 5.3.3 (#212) [32m(5 months ago) [1;34mSnyk bot[m
+* [33ma0cda91[m -[m[m fix: upgrade axios from 0.25.0 to 0.27.2 (#210) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m2128df1[m -[m[m fix: upgrade @testing-library/jest-dom from 5.16.0 to 5.16.4 (#211) [32m(5 months ago) [1;34mSnyk bot[m
+* [33mb2f3d17[m -[m[m fix: upgrade @types/react from 17.0.45 to 17.0.47 (#213) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m751b1db[m -[m[m fix: upgrade redux from 4.1.2 to 4.2.0 (#214) [32m(5 months ago) [1;34mSnyk bot[m
+* [33m30e649a[m -[m[m Bugfix/build frontend (#215) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33m126c315[m -[m[m Removed console logs [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33mb30c654[m -[m[m Bugfix: deleted branch detector (#209) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33mf630960[m -[m[m fix: upgrade @types/react from 17.0.37 to 17.0.45 (#201) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m51a328b[m -[m[m fix: upgrade @types/react-dom from 17.0.11 to 17.0.17 (#203) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33mfe1ced2[m -[m[m fix: upgrade @headlessui/react from 1.4.2 to 1.6.4 (#202) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m46d7010[m -[m[m fix: upgrade @types/node from 12.20.37 to 12.20.55 (#200) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m1c02526[m -[m[m fix: upgrade typescript from 4.5.2 to 4.7.3 (#199) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m5acb5a8[m -[m[m Added installationToken to CloneChartFromRepo (#207) [32m(5 months ago) [1;34mÁdám Sisák[m
+* [33mcc43713[m -[m[m Pleasing react [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m5307c39[m -[m[m Added cleanup for branches except main (#208) [32m(5 months ago) [1;34mdzsak[m
+* [33m9d9400f[m -[m[m Bugfix: gimlet stack update --check prints the versions unordered (#206) [32m(5 months ago) [1;34mdzsak[m
+* [33mdd0278b[m -[m[m less bold [32m(5 months ago) [1;34mGithub Actions[m
+* [33mf461a2d[m -[m[m Bugfix: when gimletd fails, deploy widget spins, and gitops commit entry is made (#204) [32m(5 months ago) [1;34mdzsak[m
+* [33ma912402[m -[m[m Display dash version on profile page (#205) [32m(5 months ago) [1;34mdzsak[m
+* [33m9c78791[m -[m[m Using newConfig method for first envs (#198) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m853dd27[m -[m[m fix: upgrade @testing-library/jest-dom from 5.16.2 to 5.16.4 (#195) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m20d88de[m -[m[m fix: upgrade @testing-library/react from 12.1.3 to 12.1.5 (#196) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33mf6c30b8[m -[m[m fix: upgrade react-scripts from 5.0.0 to 5.0.1 (#197) [32m(5 months ago) [1;34mLaszlo Fogas[m
+* [33m12334ab[m -[m[m Upgrade/tailwind v3 (#181) [32m(5 months ago) [1;34mdzsak[m
+* [33m330c4b0[m -[m[m Fixing undefined error [32m(5 months ago) [1;34mGithub Actions[m
+* [33ma934702[m -[m[33m ([m[1;33mtag: installer-v0.3.11[m[33m)[m[m Support Github organizations in Gimlet installer (#191) [32m(5 months ago) [1;34mdzsak[m
+* [33mba5e436[m -[m[m Add undefined check for render gitops commit (#194) [32m(6 months ago) [1;34mdzsak[m
+* [33mdd997ae[m -[m[m We don't use app state; only misusing it in the way we develop gimlet, let's remove from the app (#193) [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33m81f4843[m -[m[m Replicating env configurations (#184) [32m(6 months ago) [1;34mdzsak[m
+* [33me9ffd12[m -[m[m SanitizeDNSName now truncates to 53 (#192) [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33m139b835[m -[m[33m ([m[1;33mtag: cli-v0.16.0-rc.1[m[33m)[m[m Helm releases can be only 53 characters long [32m(6 months ago) [1;34mGithub Actions[m
+* [33m84f8bbd[m -[m[m Fixed text overflow in deployment and ingress (#190) [32m(6 months ago) [1;34mdzsak[m
+* [33m1ac8360[m -[m[m Fix default state reset on refresh (#183) [32m(6 months ago) [1;34mdzsak[m
+* [33m00070c6[m -[m[m Enhancemenet/new app config button even if one exists (#186) [32m(6 months ago) [1;34mdzsak[m
+* [33m2a63c66[m -[m[m Added CopiableCodeSnippet to envConfig (#172) [32m(6 months ago) [1;34mdzsak[m
+*   [33mf97c815[m -[m[m Merge pull request #182 from gimlet-io/enhancement/add-link-to-env-config-file [32m(6 months ago) [1;34mLaszlo Fogas[m
+[1;34m|[m[1;35m\[m  
+[1;34m|[m *   [33mdbbc2d8[m -[m[m Merge branch 'main' into enhancement/add-link-to-env-config-file [32m(6 months ago) [1;34mGithub Actions[m
+[1;34m|[m [1;36m|[m[1;34m\[m  
+[1;34m|[m [1;36m|[m[1;34m/[m  
+[1;34m|[m[1;34m/[m[1;36m|[m   
+* [1;36m|[m   [33m0b3eda7[m -[m[m Merge pull request #188 from gimlet-io/fix-long-branchnames [32m(6 months ago) [1;34mLaszlo Fogas[m
+[32m|[m[33m\[m [1;36m\[m  
+[32m|[m * [1;36m|[m [33m9ccc073[m -[m[m Truncating function [32m(6 months ago) [1;34mGithub Actions[m
+[32m|[m * [1;36m|[m [33mb492f61[m -[m[m Trying to sanitize the whole name, to not have too long names [32m(6 months ago) [1;34mGithub Actions[m
+[32m|[m[32m/[m [1;36m/[m  
+* [1;36m|[m   [33m8be6c25[m -[m[m Merge pull request #185 from gimlet-io/bugfix/values-diff-view-overflow [32m(6 months ago) [1;34mLaszlo Fogas[m
+[34m|[m[35m\[m [1;36m\[m  
+[34m|[m * [1;36m|[m [33mb41c618[m -[m[m Added styles to ReactDiffViewer [32m(6 months ago) [1;34mÁdám[m
+[34m|[m[34m/[m [1;36m/[m  
+[34m|[m * [33m228d78b[m -[m[m Added check if have a config file on github [32m(6 months ago) [1;34mÁdám[m
+[34m|[m * [33m25ee971[m -[m[m Added fileInfos to a redux state [32m(6 months ago) [1;34mÁdám[m
+[34m|[m * [33mec86598[m -[m[m Added fileName to envConfig [32m(6 months ago) [1;34mÁdám[m
+[34m|[m * [33ma4914d3[m -[m[m Added fileName to serviceDetail [32m(6 months ago) [1;34mÁdám[m
+[34m|[m * [33m7a6fad8[m -[m[m Added fileInfos to gitRepoMetas [32m(6 months ago) [1;34mÁdám[m
+[34m|[m * [33m0f6c9ba[m -[m[m Added config link to serviceDetails (WIP file name to link) [32m(6 months ago) [1;34mÁdám[m
+[34m|[m * [33m4172674[m -[m[m Added env file link to envConfig [32m(6 months ago) [1;34mÁdám[m
+[34m|[m[34m/[m  
+*   [33mc5585e5[m -[m[m Merge pull request #187 from gimlet-io/preview-app-oauth [32m(6 months ago) [1;34mLaszlo Fogas[m
+[36m|[m[1;31m\[m  
+[36m|[m * [33m663d0cf[m -[m[m For preview instances of gimlet to know where did the OAuth flow start [32m(6 months ago) [1;34mGithub Actions[m
+[36m|[m * [33mc4bebea[m -[m[m Fixing our emoji game [32m(6 months ago) [1;34mGithub Actions[m
+[36m|[m * [33m5e9c197[m -[m[m Using dedicated Github app for preview deploys [32m(6 months ago) [1;34mGithub Actions[m
+* [1;31m|[m [33m6ba764d[m -[m[m Change npm version of css-loader and webpack (#180) [32m(6 months ago) [1;34mdzsak[m
+[1;31m|[m[1;31m/[m  
+* [33mac0e8e0[m -[m[m Preview deploy (#179) [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33m6e01494[m -[m[m Badge doesn't work [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33mcae3dc2[m -[m[m Snyk badge [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33mb505eaa[m -[m[m Fix env config default state disappears on reload (#169) [32m(6 months ago) [1;34mdzsak[m
+* [33m663fb04[m -[m[m Refactor chart handling (#171) [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33mce9d843[m -[m[m Baseimage update [32m(6 months ago) [1;34mGithub Actions[m
+* [33maff32f3[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.12[m[33m, [m[1;33mtag: dashboard-v0.8.0[m[33m)[m[m Fix App name in envconfig (#168) [32m(6 months ago) [1;34mdzsak[m
+* [33m72a8fe0[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.11[m[33m)[m[m Fixing Gimletd connection [32m(6 months ago) [1;34mGithub Actions[m
+* [33m45a85b1[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.10[m[33m)[m[m Added deploy targets to update commit status event (#167) [32m(6 months ago) [1;34mdzsak[m
+* [33mfa3c61a[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.9[m[33m)[m[m This should come from a var; updating it here for now [32m(6 months ago) [1;34mGithub Actions[m
+* [33m3390dc2[m -[m[m Bugfix/webhook update commit statuses (#166) [32m(6 months ago) [1;34mdzsak[m
+* [33m387f3a3[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.8[m[33m)[m[m Fixing 1-click-gimletd config [32m(6 months ago) [1;34mGithub Actions[m
+* [33m9866bed[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.7[m[33m)[m[m Nil check [32m(6 months ago) [1;34mGithub Actions[m
+* [33m3cd0e27[m -[m[m Add gitopsCommits to deploy status (#164) [32m(6 months ago) [1;34mdzsak[m
+* [33mf5000ad[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.6[m[33m, [m[1;33mtag: dashboard-v0.8.0-rc.5[m[33m)[m[m 1 click gimletd config (#165) [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33m6ea5b1d[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.4[m[33m)[m[m 1 click config (#157) [32m(6 months ago) [1;34mLaszlo Fogas[m
+* [33m64eb92b[m -[m[m Fixing broken link in installer [32m(7 months ago) [1;34mGithub Actions[m
+* [33mf7e29c2[m -[m[m Triggering CI [32m(7 months ago) [1;34mGithub Actions[m
+* [33mcd96c74[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.3[m[33m)[m[m Add lastCommitSucceeded to deployStatus (#162) [32m(7 months ago) [1;34mdzsak[m
+* [33m127f882[m -[m[m Add undefined check for gitops commit sha in environment card (#161) [32m(7 months ago) [1;34mdzsak[m
+* [33mb96c2a5[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.2[m[33m)[m[m Add undefined check before slicing commit sha (#160) [32m(7 months ago) [1;34mdzsak[m
+* [33m953eb32[m -[m[m Update/tailwind to v3 (#159) [32m(7 months ago) [1;34mdzsak[m
+* [33m19f8f09[m -[m[m Readme.md [32m(7 months ago) [1;34mLaszlo Fogas[m
+* [33m73ceb7c[m -[m[m Readme.md [32m(7 months ago) [1;34mLaszlo Fogas[m
+* [33m0144b95[m -[m[m Readme.md [32m(7 months ago) [1;34mLaszlo Fogas[m
+* [33m483658e[m -[m[m Logo [32m(7 months ago) [1;34mLaszlo Fogas[m
+* [33m8d862bc[m -[m[m Readme.md [32m(7 months ago) [1;34mLaszlo Fogas[m
+* [33m979e532[m -[m[33m ([m[1;33mtag: dashboard-v0.8.0-rc.1[m[33m)[m[m Enhancement/link CI config for repos (#158) [32m(7 months ago) [1;34mdzsak[m
+* [33mf21bbca[m -[m[m Updating helm-react-ui [32m(7 months ago) [1;34mGithub Actions[m
+* [33md88c4c9[m -[m[m Refactor in footer (#156) [32m(7 months ago) [1;34mdzsak[m
+* [33mee9aa96[m -[m[m Latest CLI [32m(7 months ago) [1;34mLaszlo Fogas[m
+* [33m0463ae9[m -[m[33m ([m[1;33mtag: gimletd-v0.11.0[m[33m, [m[1;33mtag: dashboard-v0.7.0[m[33m, [m[1;33mtag: cli-v0.15.0[m[33m)[m[m Fixed gitops commit description (#155) [32m(7 months ago) [1;34mdzsak[m
+* [33m20c7d4f[m -[m[33m ([m[1;33mtag: gimletd-v0.11.0-rc.5[m[33m, [m[1;33mtag: dashboard-v0.7.0-rc.7[m[33m)[m[m Css classes need to be in code in verbatim, to not get purged by css optimizations [32m(7 months ago) [1;34mGithub Actions[m
+* [33m6547b6d[m -[m[m Fix releases for repoPerEnv in env query [32m(7 months ago) [1;34mGithub Actions[m
+* [33mb920a0f[m -[m[m Add proper link creation in deploy status (#154) [32m(7 months ago) [1;34mdzsak[m
+* [33m5328770[m -[m[m Fix React warning (#153) [32m(7 months ago) [1;34mdzsak[m
+* [33ma53893b[m -[m[m Footer link now works without page reload [32m(7 months ago) [1;34mÁdám[m
+* [33m2055270[m -[m[m Refactor/env config page (#151) [32m(7 months ago) [1;34mdzsak[m
+* [33m25439a4[m -[m[33m ([m[1;33mtag: dashboard-v0.7.0-rc.6[m[33m)[m[m Fix page refresh on environments subviews [32m(7 months ago) [1;34mGithub Actions[m
+* [33ma97d95e[m -[m[m Paddings & margins [32m(7 months ago) [1;34mGithub Actions[m
+* [33m41a9892[m -[m[m Fix gitRepoMetas naming [32m(7 months ago) [1;34mÁdám[m
+* [33md4ad498[m -[m[m Add gitRepoMetas function [32m(7 months ago) [1;34mÁdám[m
+* [33m5ba23a8[m -[m[m Fix RemoteFolderOnBranchWithoutCheckout function [32m(7 months ago) [1;34mÁdám[m
+* [33m8f83b6d[m -[m[m Added repo name as initial app name [32m(7 months ago) [1;34mÁdám[m
+* [33md5aef2e[m -[m[m Enhancement/close button to popup window (#149) [32m(7 months ago) [1;34mdzsak[m
+* [33m9066387[m -[m[m Add cursor pointer and title to the upper div [32m(7 months ago) [1;34mÁdám[m
+* [33mbf58257[m -[m[33m ([m[1;33mtag: gimletd-v0.11.0-rc.4[m[33m)[m[m Filtering envs first to gracefully handle unconfigured gitops envs [32m(7 months ago) [1;34mGithub Actions[m
+* [33m2b2621f[m -[m[m Carrying change through to the installer [32m(7 months ago) [1;34mGithub Actions[m
+* [33m40a5487[m -[m[33m ([m[1;33mtag: gimletd-v0.11.0-rc.3[m[33m, [m[1;33mtag: dashboard-v0.7.0-rc.5[m[33m, [m[1;33mtag: cli-v0.15.0-rc.1[m[33m)[m[m Added a temporary cli command to staging deleted files to git (#147) [32m(7 months ago) [1;34mdzsak[m
+* [33m8688d1f[m -[m[m Enhancement/handle repo per env (#140) [32m(7 months ago) [1;34mLaszlo Fogas[m
+*   [33m0f79107[m -[m[m Merge pull request #146 from gimlet-io/update/flux-imports-in-go-mod [32m(7 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m[1;33m\[m  
+[1;32m|[m * [33m8fbeaf5[m -[m[m Update flux in go.mod [32m(7 months ago) [1;34mÁdám[m
+[1;32m|[m[1;32m/[m  
+*   [33m4ed92b7[m -[m[m Merge pull request #144 from gimlet-io/fix/make-gitops-repo-configurable [32m(7 months ago) [1;34mLaszlo Fogas[m
+[1;34m|[m[1;35m\[m  
+[1;34m|[m * [33m5d48c72[m -[m[m Made gitops repo configurable [32m(7 months ago) [1;34mÁdám[m
+[1;34m|[m * [33me2ddca4[m -[m[m Changed default values for infrarepo and appsrepo [32m(7 months ago) [1;34mÁdám[m
+[1;34m|[m * [33me935165[m -[m[m Fix gitops repo configurable [32m(7 months ago) [1;34mÁdám[m
+[1;34m|[m[1;34m/[m  
+*   [33m571ae87[m -[m[m Merge pull request #143 from gimlet-io/enhancement/footer-with-gitops-statuses [32m(7 months ago) [1;34mLaszlo Fogas[m
+[1;36m|[m[31m\[m  
+[1;36m|[m * [33mc6c16f2[m -[m[m Small changes for footer.js [32m(7 months ago) [1;34mÁdám[m
+[1;36m|[m * [33m4e5b245[m -[m[m Modified styles for footer.js [32m(7 months ago) [1;34mÁdám[m
+[1;36m|[m * [33mf73b157[m -[m[m Fixed env cards gitops commit list [32m(7 months ago) [1;34mÁdám[m
+[1;36m|[m * [33m9ed674a[m -[m[m Fixed linking to gitops commits [32m(7 months ago) [1;34mÁdám[m
+[1;36m|[m * [33me7c513a[m -[m[m Rewrited Footer component from function to class [32m(8 months ago) [1;34mÁdám[m
+[1;36m|[m * [33m6e3885c[m -[m[m Footer WIP [32m(8 months ago) [1;34mÁdám[m
+[1;36m|[m * [33m8390095[m -[m[m Added footer component [32m(8 months ago) [1;34mÁdám[m
+[1;36m|[m * [33md7247b2[m -[m[m Added footer to app.jsx [32m(8 months ago) [1;34mÁdám[m
+[1;36m|[m[1;36m/[m  
+*   [33md90ad62[m -[m[m Merge pull request #142 from gimlet-io/fix/gitops-commits-table-in-migrations [32m(8 months ago) [1;34mLaszlo Fogas[m
+[32m|[m[33m\[m  
+[32m|[m * [33mcc0b038[m -[m[m Fixing gitops commits table [32m(8 months ago) [1;34mÁdám[m
+[32m|[m[32m/[m  
+* [33m61ccef8[m -[m[m Added saveAndBroadcastDeployEvents and saveAndBroadcastRollbackEvent … (#141) [32m(8 months ago) [1;34mdzsak[m
+* [33m3bf3ab1[m -[m[33m ([m[1;33mtag: installer-v0.3.10[m[33m)[m[m Adhering to stack changes [32m(8 months ago) [1;34mGithub Actions[m
+* [33m18fce7d[m -[m[m Save and broadcast gitops commit on release event (#139) [32m(8 months ago) [1;34mdzsak[m
+* [33m4f7c622[m -[m[m Book link [32m(8 months ago) [1;34mGithub Actions[m
+* [33mb69ffbe[m -[m[33m ([m[1;33mtag: dashboard-v0.7.0-rc.4[m[33m)[m[m Using latest stack instead of a stale env var [32m(8 months ago) [1;34mGithub Actions[m
+* [33m8b88ca7[m -[m[m Linking to the deploy keys page [32m(8 months ago) [1;34mGithub Actions[m
+* [33m6faf835[m -[m[33m ([m[1;33mtag: gimletd-v0.11.0-rc.2[m[33m, [m[1;33mtag: dashboard-v0.7.0-rc.3[m[33m)[m[m Allowing to create org repos (#138) [32m(8 months ago) [1;34mLaszlo Fogas[m
+* [33mdfa99a2[m -[m[m Streaming events from d to dash (#137) [32m(8 months ago) [1;34mLaszlo Fogas[m
+* [33mbac64d9[m -[m[m Enhancement/gitops commit model changes (#136) [32m(8 months ago) [1;34mdzsak[m
+* [33mc3dd235[m -[m[m Make config name configurable (#135) [32m(8 months ago) [1;34mszabogabor91[m
+* [33m554dbc0[m -[m[33m ([m[1;33mtag: dashboard-v0.7.0-rc.2[m[33m)[m[m Fixing streaming env updates [32m(8 months ago) [1;34mGithub Actions[m
+* [33mbcfb9a8[m -[m[33m ([m[1;33mtag: gimletd-v0.11.0-rc.1[m[33m, [m[1;33mtag: dashboard-v0.7.0-rc.1[m[33m, [m[1;33mtag: dashboard-v0.6.2-rc.1[m[33m)[m[m Skip warning when dependency not ready (#134) [32m(8 months ago) [1;34mdzsak[m
+* [33mca43d4c[m -[m[m Enhancement/gitops commits tab in environments page (#133) [32m(8 months ago) [1;34mdzsak[m
+* [33mf777009[m -[m[m Add user list and creation to profile (#131) [32m(8 months ago) [1;34mszabogabor91[m
+* [33mfdf889b[m -[m[m Change local popup window to global one for consistency (#132) [32m(8 months ago) [1;34mszabogabor91[m
+* [33m15c4718[m -[m[m Fixing tag [32m(8 months ago) [1;34mLaszlo Fogas[m
+* [33mc711653[m -[m[m Install update [32m(8 months ago) [1;34mLaszlo Fogas[m
+* [33mafefa9d[m -[m[m gimletd: using git helpers common in the project [32m(8 months ago) [1;34mGithub Actions[m
+* [33m7c6db53[m -[m[m Using the well known naming pattern [32m(8 months ago) [1;34mGithub Actions[m
+* [33m5cc12f9[m -[m[33m ([m[1;33mtag: installer-v0.3.9[m[33m, [m[1;33mtag: dashboard-v0.6.1[m[33m)[m[m installer: version bump [32m(8 months ago) [1;34mGithub Actions[m
+* [33m8435ddd[m -[m[m Fixed kustomization reference [32m(8 months ago) [1;34mGithub Actions[m
+* [33m124ba00[m -[m[m Moved to common package [32m(8 months ago) [1;34mGithub Actions[m
+* [33m6b8978a[m -[m[33m ([m[1;33mtag: installer-v0.3.8[m[33m)[m[m Using the right GimletD token in notifications [32m(8 months ago) [1;34mGithub Actions[m
+* [33me9566da[m -[m[33m ([m[1;33mtag: installer-v0.3.7[m[33m)[m[m Latest installer [32m(8 months ago) [1;34mGithub Actions[m
+* [33m6821f47[m -[m[m write notifications file to apps repo (#128) [32m(8 months ago) [1;34mdzsak[m
+* [33m76d18f8[m -[m[m Agent launch config [32m(8 months ago) [1;34mGithub Actions[m
+*   [33m6c5373c[m -[m[33m ([m[1;33mtag: dashboard-v0.6.1-rc.1[m[33m)[m[m Merge pull request #127 from gimlet-io/agent-update [32m(8 months ago) [1;34mLaszlo Fogas[m
+[34m|[m[35m\[m  
+[34m|[m * [33m3a02665[m -[m[m Tip was breaking for a long time [32m(8 months ago) [1;34mGithub Actions[m
+[34m|[m * [33mcc040ec[m -[m[m Don't use deprecated api groups [32m(8 months ago) [1;34mGithub Actions[m
+[34m|[m[34m/[m  
+*   [33mdeaa308[m -[m[m Merge pull request #125 from gimlet-io/bugfix/separate-cards-on-profile-page [32m(8 months ago) [1;34mLaszlo Fogas[m
+[36m|[m[1;31m\[m  
+[36m|[m * [33m5de62af[m -[m[m Fix config name to be repoName instead of envName [32m(8 months ago) [1;34mszabogabor91[m
+[36m|[m * [33mc71dbb0[m -[m[m Add top and bot margin 4 to GimletD guidance card [32m(8 months ago) [1;34mszabogabor91[m
+[36m|[m[36m/[m  
+* [33mf850d91[m -[m[33m ([m[1;33mtag: installer-v0.3.6[m[33m)[m[m Installer: version bump [32m(8 months ago) [1;34mGithub Actions[m
+* [33m3a70e54[m -[m[m Installer: fixing civo params [32m(8 months ago) [1;34mGithub Actions[m
+* [33m6baa8ff[m -[m[33m ([m[1;33mtag: gimletd-v0.10.0[m[33m, [m[1;33mtag: dashboard-v0.6.0[m[33m, [m[1;33mtag: cli-v0.14.0[m[33m)[m[m Add hasFormValidationError variable to check for empty required fields (#124) [32m(8 months ago) [1;34mszabogabor91[m
+* [33m16cfe7d[m -[m[33m ([m[1;33mtag: dashboard-v0.6.0-rc.8[m[33m)[m[m Add option to input namespace (#123) [32m(8 months ago) [1;34mszabogabor91[m
+* [33m0f477b9[m -[m[33m ([m[1;33mtag: installer-v0.3.5[m[33m)[m[m Latest installer [32m(8 months ago) [1;34mGithub Actions[m
+* [33m1369978[m -[m[m Marshalling ed25519 keys to OpenSSH format [32m(8 months ago) [1;34mGithub Actions[m
+* [33m265575d[m -[m[33m ([m[1;33mtag: gimletd-v0.10.0-rc.2[m[33m, [m[1;33mtag: dashboard-v0.6.0-rc.7[m[33m)[m[m Newer base image [32m(8 months ago) [1;34mGithub Actions[m
+* [33m348accf[m -[m[33m ([m[1;33mtag: installer-v0.3.4[m[33m)[m[m Latest installer [32m(8 months ago) [1;34mGithub Actions[m
+* [33mff80e3f[m -[m[33m ([m[1;33mtag: cli-v0.14.0-rc.4[m[33m)[m[m Apps repo should not install flux, as it was installed in the infra repo [32m(8 months ago) [1;34mGithub Actions[m
+* [33m730cc6f[m -[m[m Since changes in the bootstrapping in #113 we need to have a dependencies folder [32m(8 months ago) [1;34mGithub Actions[m
+* [33mc9216da[m -[m[m GimletD token is a JWT token [32m(8 months ago) [1;34mGithub Actions[m
+* [33mbb36ff4[m -[m[m Enforcing JWT expiry (#120) [32m(8 months ago) [1;34mLaszlo Fogas[m
+* [33mbbd4e7c[m -[m[33m ([m[1;33mtag: gimletd-v0.10.0-rc.1[m[33m, [m[1;33mtag: dashboard-v0.6.0-rc.6[m[33m)[m[m Revert "Fixing cookie expiry (#118)" [32m(9 months ago) [1;34mGithub Actions[m
+* [33mc83fd0a[m -[m[m Fixing cookie expiry (#118) [32m(9 months ago) [1;34mdzsak[m
+* [33mfe96042[m -[m[m Dashboard breaks without connected agent (#119) [32m(9 months ago) [1;34mszabogabor91[m
+* [33ma724e1f[m -[m[33m ([m[1;33mtag: installer-v0.3.3[m[33m)[m[m Using explicit tty read to not eat up script in curl to bash [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [33m51711ec[m -[m[m Minor adjustments [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [33m9f3f102[m -[m[m Using latest stack in installer [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [33m9e085f8[m -[m[33m ([m[1;33mtag: cli-v0.14.0-rc.3[m[33m)[m[m Hotfix/visual bug in installer step three (#116) [32m(9 months ago) [1;34mdzsak[m
+* [33m367b82e[m -[m[33m ([m[1;33mtag: installer-v0.3.2[m[33m)[m[m Fixing compile error [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [33md0a1415[m -[m[m Closing bootstrap page (#115) [32m(9 months ago) [1;34mszabogabor91[m
+* [33mae016de[m -[m[m Added Kustomization dependencies to Gitops repo file (#113) [32m(9 months ago) [1;34mdzsak[m
+* [33m668b5e8[m -[m[33m ([m[1;33mtag: dashboard-v0.6.0-rc.5[m[33m)[m[m Not purging tailwind classes from shared-components upon build [32m(9 months ago) [1;34mGithub Actions[m
+* [33m1c03053[m -[m[m Added email input to installer step-2 (#114) [32m(9 months ago) [1;34mdzsak[m
+* [33m888aaff[m -[m[33m ([m[1;33mtag: dashboard-v0.6.0-rc.4[m[33m)[m[m Not purging tailwind classes from shared-components upon build [32m(9 months ago) [1;34mGithub Actions[m
+* [33m25c338f[m -[m[33m ([m[1;33mtag: dashboard-v0.6.0-rc.3[m[33m)[m[m Not purging tailwind classes from shared-components upon build [32m(9 months ago) [1;34mGithub Actions[m
+* [33m1b0d3d5[m -[m[m Fixing oversight [32m(9 months ago) [1;34mGithub Actions[m
+* [33m6147c3c[m -[m[m Hotfix/bootstrap guide component (#111) [32m(9 months ago) [1;34mdzsak[m
+* [33m79f3902[m -[m[m No commits from gitops bootstrap (#112) [32m(9 months ago) [1;34mszabogabor91[m
+* [33md2fe231[m -[m[33m ([m[1;33mtag: installer-v0.3.1[m[33m)[m[m Installer to not drop tailwind classes [32m(9 months ago) [1;34mGithub Actions[m
+* [33m0695628[m -[m[33m ([m[1;33mtag: installer-v0.3.0[m[33m)[m[m Fixing CI [32m(9 months ago) [1;34mGithub Actions[m
+* [33m63e0232[m -[m[m Fixing tests [32m(9 months ago) [1;34mGithub Actions[m
+* [33m08828da[m -[m[m Fixing tests [32m(9 months ago) [1;34mGithub Actions[m
+*   [33mc648e0b[m -[m[m Merge pull request #110 from gimlet-io/refactor/installer-to-react [32m(9 months ago) [1;34mLaszlo Fogas[m
+[1;32m|[m[1;33m\[m  
+[1;32m|[m * [33m3f10732[m -[m[m Unused files [32m(9 months ago) [1;34mGithub Actions[m
+[1;32m|[m * [33meb2ae28[m -[m[m Unused file [32m(9 months ago) [1;34mGithub Actions[m
+[1;32m|[m * [33mf964edd[m -[m[m Installer reactified [32m(9 months ago) [1;34mGithub Actions[m
+[1;32m|[m * [33m0c3cfa8[m -[m[m Server react files [32m(9 months ago) [1;34mGithub Actions[m
+[1;32m|[m * [33m2b53794[m -[m[m Bundling React app [32m(9 months ago) [1;34mGithub Actions[m
+[1;32m|[m * [33m68127f2[m -[m[m Fixing logging error in axios get [32m(9 months ago) [1;34mÁdám[m
+[1;32m|[m * [33mda47362[m -[m[m Fixing HTML attributes for React [32m(9 months ago) [1;34mÁdám[m
+[1;32m|[m * [33md4813e2[m -[m[m Fixing Axios in web/installer [32m(9 months ago) [1;34mdzsak[m
+[1;32m|[m * [33m66d5b31[m -[m[m Added axios to installer [32m(9 months ago) [1;34mÁdám[m
+[1;32m|[m * [33m9a29dfc[m -[m[m Added getContext to main.go [32m(9 months ago) [1;34mÁdám[m
+[1;32m|[m * [33m91bb311[m -[m[m Add page closing button [32m(9 months ago) [1;34mszabogabor91[m
+[1;32m|[m * [33mf968c4a[m -[m[m Add "done" API to close page [32m(9 months ago) [1;34mszabogabor91[m
+[1;32m|[m * [33mafc1c9b[m -[m[m Fixed bootstrap guide text [32m(9 months ago) [1;34mdzsak[m
+[1;32m|[m * [33m25c779a[m -[m[m Fixed proxy IP in package json [32m(9 months ago) [1;34mdzsak[m
+[1;32m|[m * [33m325ae3f[m -[m[m Added shared components [32m(9 months ago) [1;34mdzsak[m
+[1;32m|[m * [33m6282945[m -[m[m Added React version of installer to /web [32m(9 months ago) [1;34mdzsak[m
+[1;32m|[m * [33md5b2248[m -[m[m Added web/installer node_modules to gitignore [32m(9 months ago) [1;34mdzsak[m
+[1;32m|[m[1;32m/[m  
+* [33m85ec737[m -[m[m Get script for standalone installer [32m(9 months ago) [1;34mGithub Actions[m
+* [33m16d26af[m -[m[m Minor changes [32m(9 months ago) [1;34mGithub Actions[m
+* [33m720e20a[m -[m[m Standalone installer (#109) [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [33md1d0b70[m -[m[m Fixed bugs in installer web (#108) [32m(9 months ago) [1;34mdzsak[m
+* [33m094c064[m -[m[m Added link how to add deploy key to git (#107) [32m(9 months ago) [1;34mdzsak[m
+* [33m6279d3f[m -[m[m Fixing installer [32m(9 months ago) [1;34mGithub Actions[m
+* [33m8c5bccb[m -[m[33m ([m[1;33mtag: installer-v0.2.5[m[33m)[m[m Postgres Config (#105) [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [33mf59aa34[m -[m[33m ([m[1;33mtag: dashboard-v0.6.0-rc.2[m[33m)[m[m Handling empty bootstrap env [32m(9 months ago) [1;34mGithub Actions[m
+* [33m988be42[m -[m[33m ([m[1;33mtag: dashboard-v0.6.0-rc.1[m[33m)[m[m Errorprone [32m(9 months ago) [1;34mGithub Actions[m
+* [33mafc8112[m -[m[33m ([m[1;33mtag: cli-v0.14.0-rc.2[m[33m)[m[m Fixing version [32m(9 months ago) [1;34mGithub Actions[m
+*   [33mdc36866[m -[m[33m ([m[1;33mtag: cli-v0.14.0-rc.1[m[33m)[m[m Merge pull request #103 from gimlet-io/installer-iteration [32m(9 months ago) [1;34mLaszlo Fogas[m
+[1;34m|[m[1;35m\[m  
+[1;34m|[m *   [33mc9cc988[m -[m[m Merge remote-tracking branch 'origin/main' into installer-iteration [32m(9 months ago) [1;34mGithub Actions[m
+[1;34m|[m [1;36m|[m[1;34m\[m  
+[1;34m|[m [1;36m|[m[1;34m/[m  
+[1;34m|[m[1;34m/[m[1;36m|[m   
+* [1;36m|[m [33mdc44984[m -[m[m Installer iteration (#102) [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [1;36m|[m [33m003fb7d[m -[m[33m ([m[1;33mtag: installer-v0.1.0[m[33m)[m[m Add bootstrap env to config (#101) [32m(9 months ago) [1;34mszabogabor91[m
+* [1;36m|[m [33m1c3975d[m -[m[m Installer first steps (#90) [32m(9 months ago) [1;34mLaszlo Fogas[m
+* [1;36m|[m   [33m63c968b[m -[m[m Merge pull request #95 from gimlet-io/enhancement-env-page-gitops-bootstrap [32m(9 months ago) [1;34mLaszlo Fogas[m
+[32m|[m[33m\[m [1;36m\[m  
+[32m|[m * [1;36m|[m [33mc7d079c[m -[m[m Minor fixes [32m(9 months ago) [1;34mÁdám[m
+[32m|[m * [1;36m|[m [33m3cc385b[m -[m[m Added bootstrap guide to environment card [32m(9 months ago) [1;34mÁdám[m
+[32m|[m * [1;36m|[m [33m4b3731b[m -[m[m Small warning update [32m(9 months ago) [1;34mLaszlo Fogas[m
+[32m|[m * [1;36m|[m [33mee913db[m -[m[m Fixing refreshEnvs on delete env from DB [32m(9 months ago) [1;34mÁdám[m
+[32m|[m * [1;36m|[m [33me9711a0[m -[m[33m ([m[1;34mgrafted[m[33m)[m[m Fixing bug flashing env card on bootstrapping [32m(9 months ago) [1;34mÁdám[m
+[32m|[m  [1;36m/[m  
+* [1;36m|[m [33mc80d6e2[m -[m[m Add admin token env var (#98) [32m(9 months ago) [1;34mszabogabor91[m
+* [1;36m|[m [33m4dea840[m -[m[m Change rolloutWidget list key from nanoid to gitopsRef (#96) [32m(9 months ago) [1;34mszabogabor91[m
+* [1;36m|[m [33m46d68b4[m -[m[m Delete redundant classNames functions from deployWidget, dropdown, nav (#94) [32m(9 months ago) [1;34mszabogabor91[m
+* [1;36m|[m [33m6df8daf[m -[m[m Change every 'class' to 'className' except in .html and .svg files (#93) [32m(9 months ago) [1;34mszabogabor91[m
+* [1;36m|[m [33m422e64f[m -[m[33m ([m[1;34mgrafted[m[33m)[m[m Merge pull request #92 from gimlet-io/refactor [32m(10 months ago) [1;34mdzsak[m
+ [1;36m/[m  
+* [33mc2574dd[m -[m[33m ([m[1;33mtag: installer-v0.2.4[m[33m)[m[m Fixing host [32m(9 months ago) [1;34mGithub Actions[m
+* [33mf6b3a3c[m -[m[33m ([m[1;33mtag: installer-v0.2.3[m[33m)[m[m Bootstrapping vars [32m(9 months ago) [1;34mGithub Actions[m
+* [33m22b9856[m -[m[m Latest tag [32m(9 months ago) [1;34mGithub Actions[m
+* [33m7942cdb[m -[m[33m ([m[1;33mtag: installer-v0.2.2[m[33m)[m[m Ed25519 keys [32m(9 months ago) [1;34mGithub Actions[m
+* [33m8b6f032[m -[m[33m ([m[1;33mtag: installer-v0.2.1[m[33m)[m[m Fixing deploy key secret name [32m(9 months ago) [1;34mGithub Actions[m
+* [33m43d50d3[m -[m[m Fixing bogus deploy key generation [32m(9 months ago) [1;34mGithub Actions[m
+* [33ma2b82d9[m -[m[m Tuning [32m(9 months ago) [1;34mGithub Actions[m
+* [33mefa8895[m -[m[33m ([m[1;34mgrafted[m[33m, [m[1;33mtag: installer-v0.2.0[m[33m)[m[m Prep for release [32m(9 months ago) [1;34mGithub Actions[m

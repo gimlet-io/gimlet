@@ -1,4 +1,4 @@
-package nativeGit
+package gitops
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -57,7 +58,7 @@ func Releases(
 	if err != nil {
 		return nil, err
 	}
-	commits = NewCommitDirIterFromIter(path, commits, repo)
+	commits = nativeGit.NewCommitDirIterFromIter(path, commits, repo)
 
 	err = commits.ForEach(func(c *object.Commit) error {
 		if limit != -1 && len(releases) >= limit {
@@ -269,7 +270,7 @@ func HasBeenReverted(
 	if err != nil {
 		return false, errors.WithMessage(err, "could not walk commits")
 	}
-	commits = NewCommitDirIterFromIter(path, commits, repo)
+	commits = nativeGit.NewCommitDirIterFromIter(path, commits, repo)
 
 	hasBeenReverted := false
 	err = commits.ForEach(func(c *object.Commit) error {

@@ -17,7 +17,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server"
@@ -92,7 +92,7 @@ func main() {
 		logrus.Fatal("could not parse gitops repositories")
 	}
 
-	repoCache, err := nativeGit.NewGitopsRepoCache(
+	repoCache, err := gitops.NewGitopsRepoCache(
 		config.RepoCachePath,
 		config.GitopsRepo,
 		parsedGitopsRepos,

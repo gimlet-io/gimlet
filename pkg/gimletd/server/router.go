@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
@@ -22,7 +22,7 @@ func SetupRouter(
 	store *store.Store,
 	notificationsManager notifications.Manager,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
-	repoCache *nativeGit.GitopsRepoCache,
+	repoCache *gitops.GitopsRepoCache,
 	perf *prometheus.HistogramVec,
 	eventSinkHub *streaming.EventSinkHub,
 ) *chi.Mux {

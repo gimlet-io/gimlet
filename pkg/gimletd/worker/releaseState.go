@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +16,7 @@ import (
 
 type ReleaseStateWorker struct {
 	GitopsRepo      string
-	RepoCache       *nativeGit.GitopsRepoCache
+	RepoCache       *gitops.GitopsRepoCache
 	Releases        *prometheus.GaugeVec
 	Perf            *prometheus.HistogramVec
 	GitopsRepos     map[string]*config.GitopsRepoConfig
@@ -62,7 +63,7 @@ func processRepo(
 	gitopsRepoConfig *config.GitopsRepoConfig,
 	releases *prometheus.GaugeVec,
 	perf *prometheus.HistogramVec,
-	repoCache *nativeGit.GitopsRepoCache,
+	repoCache *gitops.GitopsRepoCache,
 ) error {
 	t0 := time.Now()
 	repo := repoCache.InstanceForRead(gitopsRepoConfig.GitopsRepo)
@@ -73,7 +74,7 @@ func processRepo(
 	if gitopsRepoConfig.RepoPerEnv {
 		envs = []string{gitopsRepoConfig.Env}
 	} else {
-		envs, err = nativeGit.Envs(repo)
+		envs, err = gitops.Envs(repo)
 		if err != nil {
 			return fmt.Errorf("cannot get envs: %s", err)
 		}
@@ -82,7 +83,7 @@ func processRepo(
 	releases.Reset()
 	for _, env := range envs {
 		t1 := time.Now()
-		appReleases, err := nativeGit.Status(repo, "", env, gitopsRepoConfig.RepoPerEnv, perf)
+		appReleases, err := gitops.Status(repo, "", env, gitopsRepoConfig.RepoPerEnv, perf)
 		if err != nil {
 			logrus.Errorf("cannot get status: %s", err)
 			time.Sleep(30 * time.Second)
