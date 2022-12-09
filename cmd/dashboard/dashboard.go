@@ -83,7 +83,7 @@ func main() {
 		}
 	} else if config.IsGitlab() {
 		gitSvc = &customGitlab.GitlabClient{}
-		tokenManager = &customGitlab.GitlabTokenManager{}
+		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
 	}
 
 	stopCh := make(chan struct{})
