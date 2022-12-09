@@ -39,7 +39,7 @@ export default class Releases extends Component {
 
         return (
             <div className="mb-12">
-                <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">{env}</h4>
+                <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 mb-4">{env}</h4>
                 {releaseStatuses.length > 0 ?
                     <div className="bg-white p-4 rounded">
                         <div className="flow-root">

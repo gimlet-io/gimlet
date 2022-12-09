@@ -20,6 +20,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -206,7 +207,7 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						svc := e["serviceName"].(string)
 						stopPodLogs(runningLogStreams, namespace, svc)
 					case "events":
-						go kubeEvents(kubeEnv)
+						go kubeEvents(kubeEnv, config.Host, config.AgentKey)
 					}
 				} else {
 					log.Info("event stream closed")
@@ -462,25 +463,99 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 	}
 }
 
-func kubeEvents(kubeEnv *agent.KubeEnv) {
+func kubeEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	namespaces, err := kubeEnv.Client.CoreV1().Namespaces().List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		log.Errorf("could not get namespaces: %v", err)
 		return
 	}
 
-	var allEvents []v1.Event
+	svc, err := kubeEnv.Client.CoreV1().Services("default").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get services: %v", err)
+		return
+	}
+
+	var integratedServices []v1.Service
+	for _, s := range svc.Items {
+		if _, ok := s.ObjectMeta.GetAnnotations()[agent.AnnotationGitRepository]; ok {
+			integratedServices = append(integratedServices, s)
+		}
+	}
+
+	var allEvents []api.Event
 	for _, n := range namespaces.Items {
-		eventList, err := kubeEnv.Client.CoreV1().Events(n.Name).List(context.TODO(), meta_v1.ListOptions{})
+		allDeployments, err := kubeEnv.Client.AppsV1().Deployments(n.Name).List(context.TODO(), meta_v1.ListOptions{})
 		if err != nil {
-			log.Errorf("could not get events: %v", err)
+			log.Errorf("could not get deployments: %v", err)
 			return
 		}
 
-		allEvents = append(allEvents, eventList.Items...)
+		allPods, err := kubeEnv.Client.CoreV1().Pods(n.Name).List(context.TODO(), meta_v1.ListOptions{})
+		if err != nil {
+			log.Errorf("could not get pods: %v", err)
+			return
+		}
+
+		for _, svc := range integratedServices {
+			for _, deployment := range allDeployments.Items {
+				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+					for _, pod := range allPods.Items {
+						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+							pod.Namespace == deployment.Namespace {
+							events, _ := kubeEnv.Client.CoreV1().Events(pod.Namespace).List(context.TODO(), meta_v1.ListOptions{
+								FieldSelector: fmt.Sprintf("involvedObject.name=%s", pod.Name),
+								TypeMeta: meta_v1.TypeMeta{
+									Kind: "Pod",
+								}})
+							for _, event := range events.Items {
+								if event.Type == "Warning" {
+									allEvents = append(allEvents, api.Event{
+										LastSeen:            event.LastTimestamp.Unix(),
+										DeploymentName:      deployment.Name,
+										DeploymentNamespace: deployment.Namespace,
+										Type:                event.Type,
+										Reason:              event.Reason,
+										Object:              event.InvolvedObject.Name,
+										Message:             event.Message,
+									})
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
 	}
 
-	log.Info(allEvents)
+	allEventsString, err := json.Marshal(allEvents)
+	if err != nil {
+		log.Errorf("could not serialize k8s events: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/kubernetesEvents", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(allEventsString))
+	if err != nil {
+		log.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
+		return
+	}
 
 	log.Debug("events sent")
 }

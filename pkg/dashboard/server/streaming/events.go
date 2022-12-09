@@ -12,6 +12,7 @@ const StaleRepoDataEventString = "staleRepoData"
 const GitopsCommitEventString = "gitopsCommit"
 const CommitStatusUpdatedEventString = "commitStatusUpdated"
 const PodLogsEventString = "podLogs"
+const KubernetesEventsString = "kubernetesEvents"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -54,5 +55,10 @@ type CommitStatusUpdatedEvent struct {
 type PodLogsEvent struct {
 	PodLogs string `json:"podLogs"`
 	Pod     string `json:"pod"`
+	StreamingEvent
+}
+
+type KubernetesEventsEvent struct {
+	KubernetesEvents interface{} `json:"kubernetesEvents"`
 	StreamingEvent
 }

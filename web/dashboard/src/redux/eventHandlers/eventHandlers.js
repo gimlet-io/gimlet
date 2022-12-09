@@ -288,6 +288,15 @@ export function updateCommitStatus(state, event) {
   return state;
 }
 
+export function kubernetesEvents(state, event) {
+
+  if (event.kubernetesEvents) {
+    state.kubernetesEvents = event.kubernetesEvents;
+  }
+
+  return state;
+}
+
 export function branches(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
   state.branches[repo] = payload.branches;

@@ -46,6 +46,7 @@ export const EVENT_ENVS_UPDATED = 'envsUpdated';
 export const EVENT_STALE_REPO_DATA = 'staleRepoData';
 export const EVENT_GITOPS_COMMIT_EVENT = 'gitopsCommit';
 export const EVENT_COMMIT_STATUS_UPDATED = 'commitStatusUpdated';
+export const EVENT_KUBERNETES_EVENTS = 'kubernetesEvents';
 
 export const EVENT_POD_CREATED = 'podCreated';
 export const EVENT_POD_UPDATED = 'podUpdated';
@@ -81,6 +82,7 @@ export const initialState = {
   fileInfos: [],
   envs: [],
   gitopsCommits: [],
+  kubernetesEvents: [],
   popupWindow: {
     visible: false,
     finished: false,
@@ -208,6 +210,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateGitopsCommits(state, event);
     case EVENT_COMMIT_STATUS_UPDATED:
       return eventHandlers.updateCommitStatus(state, event);
+      case EVENT_KUBERNETES_EVENTS:
+        return eventHandlers.kubernetesEvents(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;

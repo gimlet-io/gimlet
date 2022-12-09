@@ -118,6 +118,24 @@ func broadcastAgentDisconnectedEvent(clientHub *streaming.ClientHub, a *streamin
 	clientHub.Broadcast <- jsonString
 }
 
+func kubernetesEvents(w http.ResponseWriter, r *http.Request) {
+	var kubernetesEvents []api.Event
+	err := json.NewDecoder(r.Body).Decode(&kubernetesEvents)
+	if err != nil {
+		logrus.Errorf("cannot decode kubernetes events: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.KubernetesEventsEvent{
+		StreamingEvent:   streaming.StreamingEvent{Event: streaming.KubernetesEventsString},
+		KubernetesEvents: kubernetesEvents,
+	})
+	clientHub.Broadcast <- jsonString
+}
+
 func state(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 
