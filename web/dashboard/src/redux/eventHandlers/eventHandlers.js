@@ -289,7 +289,6 @@ export function updateCommitStatus(state, event) {
 }
 
 export function kubernetesEvents(state, event) {
-
   if (event.kubernetesEvents) {
     state.kubernetesEvents = event.kubernetesEvents;
   }

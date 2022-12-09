@@ -117,7 +117,7 @@ export function KubeEventsAlertBox(kubernetesEvents, history) {
   )
 }
 
-function decorateKubeEventWithEnvAndRepo(kubernetesEvents, connectedAgents) {
+export function decorateKubeEventWithEnvAndRepo(kubernetesEvents, connectedAgents) {
   kubernetesEvents.forEach(event => {
     for (const env in connectedAgents) {
       connectedAgents[env].stacks.forEach(stack => {
