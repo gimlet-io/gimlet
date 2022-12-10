@@ -43,23 +43,24 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		return nil, err
 	}
 
+	d, err := e.Client.AppsV1().Deployments(e.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not get deployments: %s", err)
+	}
+
+	i, err := e.Client.NetworkingV1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not get ingresses: %s", err)
+	}
+
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
-		d, err := e.Client.AppsV1().Deployments(e.Namespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("could not get deployments: %s", err)
-		}
-
 		deployment, err := e.deploymentForService(service, d.Items)
 		if err != nil {
 			return nil, fmt.Errorf("could not get deployment for service: %s", err)
 		}
 
 		var ingresses []*api.Ingress
-		i, err := e.Client.NetworkingV1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("could not get ingresses: %s", err)
-		}
 		for _, ingress := range i.Items {
 			for _, rule := range ingress.Spec.Rules {
 				for _, path := range rule.HTTP.Paths {
