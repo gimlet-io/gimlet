@@ -118,7 +118,7 @@ func broadcastAgentDisconnectedEvent(clientHub *streaming.ClientHub, a *streamin
 	clientHub.Broadcast <- jsonString
 }
 
-func kubernetesEvents(w http.ResponseWriter, r *http.Request) {
+func events(w http.ResponseWriter, r *http.Request) {
 	var kubernetesEvents []api.Event
 	err := json.NewDecoder(r.Body).Decode(&kubernetesEvents)
 	if err != nil {

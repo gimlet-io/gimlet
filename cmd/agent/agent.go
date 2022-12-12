@@ -464,13 +464,7 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 }
 
 func kubeEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	namespaces, err := kubeEnv.Client.CoreV1().Namespaces().List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		log.Errorf("could not get namespaces: %v", err)
-		return
-	}
-
-	svc, err := kubeEnv.Client.CoreV1().Services("default").List(context.TODO(), meta_v1.ListOptions{})
+	svc, err := kubeEnv.Client.CoreV1().Services("").List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		log.Errorf("could not get services: %v", err)
 		return
@@ -483,48 +477,46 @@ func kubeEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 		}
 	}
 
+	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get deployments: %v", err)
+		return
+	}
+
+	allPods, err := kubeEnv.Client.CoreV1().Pods("").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get pods: %v", err)
+		return
+	}
+
+	events, err := kubeEnv.Client.CoreV1().Events("").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get events: %v", err)
+		return
+	}
+
 	var allEvents []api.Event
-	for _, n := range namespaces.Items {
-		allDeployments, err := kubeEnv.Client.AppsV1().Deployments(n.Name).List(context.TODO(), meta_v1.ListOptions{})
-		if err != nil {
-			log.Errorf("could not get deployments: %v", err)
-			return
-		}
-
-		allPods, err := kubeEnv.Client.CoreV1().Pods(n.Name).List(context.TODO(), meta_v1.ListOptions{})
-		if err != nil {
-			log.Errorf("could not get pods: %v", err)
-			return
-		}
-
-		for _, svc := range integratedServices {
-			for _, deployment := range allDeployments.Items {
-				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-					for _, pod := range allPods.Items {
-						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
-							pod.Namespace == deployment.Namespace {
-							events, _ := kubeEnv.Client.CoreV1().Events(pod.Namespace).List(context.TODO(), meta_v1.ListOptions{
-								FieldSelector: fmt.Sprintf("involvedObject.name=%s", pod.Name),
-								TypeMeta: meta_v1.TypeMeta{
-									Kind: "Pod",
-								}})
-							for _, event := range events.Items {
-								if event.Type == "Warning" {
-									allEvents = append(allEvents, api.Event{
-										LastSeen:            event.LastTimestamp.Unix(),
-										DeploymentName:      deployment.Name,
-										DeploymentNamespace: deployment.Namespace,
-										Type:                event.Type,
-										Reason:              event.Reason,
-										Object:              event.InvolvedObject.Name,
-										Message:             event.Message,
-									})
-								}
+	for _, svc := range integratedServices {
+		for _, deployment := range allDeployments.Items {
+			if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+				for _, pod := range allPods.Items {
+					if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+						pod.Namespace == deployment.Namespace {
+						for _, event := range events.Items {
+							if event.Type == "Warning" && (event.InvolvedObject.Name == pod.Name || event.InvolvedObject.Name == deployment.Name) {
+								allEvents = append(allEvents, api.Event{
+									LastSeen:            event.LastTimestamp.Unix(),
+									DeploymentName:      deployment.Name,
+									DeploymentNamespace: deployment.Namespace,
+									Type:                event.Type,
+									Reason:              event.Reason,
+									Object:              event.InvolvedObject.Name,
+									Message:             event.Message,
+								})
 							}
 						}
 					}
 				}
-
 			}
 		}
 	}
@@ -535,7 +527,7 @@ func kubeEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	reqUrl := fmt.Sprintf("%s/agent/kubernetesEvents", gimletHost)
+	reqUrl := fmt.Sprintf("%s/agent/events", gimletHost)
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(allEventsString))
 	if err != nil {
 		log.Errorf("could not create http request: %v", err)

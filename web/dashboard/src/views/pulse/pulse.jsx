@@ -11,7 +11,7 @@ export default class Pulse extends Component {
       envs: reduxState.envs,
       releaseStatuses: reduxState.releaseStatuses,
       releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays,
-      kubernetesEvents: decorateKubeEventWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents)
+      kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents)
     }
 
     this.props.store.subscribe(() => {
@@ -20,7 +20,7 @@ export default class Pulse extends Component {
       this.setState({ envs: reduxState.envs });
       this.setState({ releaseStatuses: reduxState.releaseStatuses });
       this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
-      this.setState({ kubernetesEvents: decorateKubeEventWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents) });
+      this.setState({ kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents) });
     });
   }
 
@@ -35,7 +35,7 @@ export default class Pulse extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              {KubeEventsAlertBox(this.state.kubernetesEvents, this.props.history)}
+              {KubernetesEventsAlertBox(this.state.kubernetesEvents, this.props.history)}
               <div className="my-4">
                 {this.state.envs.length > 0 ?
                   <div className="flow-root">
@@ -68,7 +68,7 @@ export function emptyStateNoMatchingService() {
   )
 }
 
-export function KubeEventsAlertBox(kubernetesEvents, history) {
+export function KubernetesEventsAlertBox(kubernetesEvents, history) {
   if (kubernetesEvents.length === 0) {
     return null;
   }
@@ -117,7 +117,7 @@ export function KubeEventsAlertBox(kubernetesEvents, history) {
   )
 }
 
-export function decorateKubeEventWithEnvAndRepo(kubernetesEvents, connectedAgents) {
+export function decorateKubernetesEventsWithEnvAndRepo(kubernetesEvents, connectedAgents) {
   kubernetesEvents.forEach(event => {
     for (const env in connectedAgents) {
       connectedAgents[env].stacks.forEach(stack => {

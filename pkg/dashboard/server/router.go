@@ -140,7 +140,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
 		r.Post("/agent/state/{name}/update", update)
-		r.Post("/agent/kubernetesEvents", kubernetesEvents)
+		r.Post("/agent/events", events)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeAgentWs(agentWSHub, w, r)
