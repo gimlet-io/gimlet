@@ -264,6 +264,10 @@ func decorateDeploymentWithSCMDataWithRetry(
 	return deployment, nil
 }
 
+// commits come from go-scm based live git traversal
+// we decorate that commit data with data from SCMs with the
+// following fields: url, author, author_pic, message, created, tags, status
+// URL, Author, AuthorPic, Tags, Status
 func fetchCommits(
 	owner string,
 	repo string,

@@ -17,6 +17,8 @@ type GithubClient struct {
 }
 
 // FetchCommits fetches Github commits and their statuses
+// Only the following fields are used:
+// url, author, author_pic, message, created, tags, status
 /* Getting multiple commits by hash
 query {
   viewer {
