@@ -463,7 +463,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gitSvc := &customGithub.GithubClient{}
+	gitSvc := &customGithub.GithubClient{} // TODO make github possible
 	repos, err := gitSvc.OrgRepos(installationToken)
 	if err != nil {
 		panic(err)
@@ -505,6 +505,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		data.accessToken,
 		installationToken,
 		data.loggedInUser,
+		gitSvc,
 	)
 	if err != nil {
 		panic(err)
@@ -515,6 +516,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		data.accessToken,
 		installationToken,
 		data.loggedInUser,
+		gitSvc,
 	)
 	if err != nil {
 		panic(err)
@@ -545,6 +547,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		true,
+		"TODO",
 	)
 	if err != nil {
 		panic(err)
@@ -556,6 +559,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		false,
+		"TODO",
 	)
 	if err != nil {
 		panic(err)
@@ -574,6 +578,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		gitUser,
+		"TODO",
 	)
 	if err != nil {
 		panic(err)

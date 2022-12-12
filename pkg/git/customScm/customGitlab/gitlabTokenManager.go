@@ -11,7 +11,7 @@ func NewGitlabTokenManager(adminToken string) *GitlabTokenManager {
 }
 
 func (tm *GitlabTokenManager) Token() (string, string, error) {
-	return tm.adminToken, "gimlet", nil
+	return tm.adminToken, "oauth2", nil
 }
 
 func (tm *GitlabTokenManager) AppToken() (string, error) {

@@ -120,6 +120,16 @@ func (c *Config) Org() string {
 	return ""
 }
 
+func (c *Config) ScmURL() string {
+	if c.IsGithub() {
+		return "github.com"
+	} else if c.IsGitlab() {
+		return "gitlab.com"
+	}
+
+	return ""
+}
+
 type Multiline string
 
 func (m *Multiline) Decode(value string) error {

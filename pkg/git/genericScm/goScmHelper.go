@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httputil"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -272,6 +273,11 @@ func (helper *GoScmHelper) RegisterWebhook(
 	owner string,
 	repo string,
 ) error {
+	if strings.Contains(host, "localhost") {
+		logrus.Warnf("Not registering webhook for localhost")
+		return nil
+	}
+
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   token,
 		Refresh: "",

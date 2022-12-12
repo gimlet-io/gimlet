@@ -16,7 +16,7 @@ import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests }) => {
-  const [repoPerEnv, setRepoPerEnv] = useState(false)
+  const [repoPerEnv, setRepoPerEnv] = useState(true)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);

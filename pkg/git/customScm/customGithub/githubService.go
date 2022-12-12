@@ -361,3 +361,29 @@ func (c *GithubClient) GetAppOwner(appToken string) (string, error) {
 
 	return *appinfo.Owner.Login, err
 }
+
+func (c *GithubClient) CreateRepository(owner string, repo string, loggedInUser string, orgToken string, userToken string) error {
+	token := orgToken
+	if owner == loggedInUser {
+		owner = "" // if the repo is not an org repo, but the logged in user's, the Github API doesn't need an org
+		token = userToken
+	}
+
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	var (
+		name     = repo
+		private  = true
+		autoInit = true
+	)
+
+	r := &github.Repository{
+		Name:     &name,
+		Private:  &private,
+		AutoInit: &autoInit,
+	}
+	_, _, err := client.Repositories.Create(context.Background(), owner, r)
+	return err
+}

@@ -15,10 +15,10 @@
 package genericScm
 
 import (
-"context"
-"net/url"
+	"context"
+	"net/url"
 
-"github.com/gimlet-io/go-scm/scm"
+	"github.com/gimlet-io/go-scm/scm"
 )
 
 func replaceHook(ctx context.Context, client *scm.Client, repo string, hook *scm.HookInput) error {
