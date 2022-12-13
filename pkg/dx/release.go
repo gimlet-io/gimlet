@@ -73,7 +73,7 @@ func (rs *ReleaseStatus) ExtractGitopsEndState() (bool, bool) {
 	artifactResultCount = len(rs.Results)
 
 	for _, result := range rs.Results {
-		if strings.Contains(result.GitopsCommitStatus, "Failed") {
+		if strings.Contains(result.GitopsCommitStatus, "Failed") || result.Status == "failure" {
 			failedCount++
 		} else if result.GitopsCommitStatus == ReconciliationSucceeded {
 			succeededCount++
