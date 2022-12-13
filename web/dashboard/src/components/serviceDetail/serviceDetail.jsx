@@ -1,5 +1,4 @@
 import React, { Component, useEffect, useState, useRef } from 'react';
-import { Pod } from "../serviceCard/serviceCard";
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { XIcon } from '@heroicons/react/solid'
@@ -223,4 +222,43 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
       </div>
     </div>
   )
+}
+
+function Pod(props) {
+  const {pod} = props;
+
+  let color;
+  let pulsar;
+  switch (pod.status) {
+    case 'Running':
+      color = 'text-blue-200';
+      pulsar = '';
+      break;
+    case 'PodInitializing':
+    case 'ContainerCreating':
+    case 'Pending':
+      color = 'text-blue-100';
+      pulsar = 'pulsar-green';
+      break;
+    case 'Terminating':
+      color = 'text-blue-800';
+      pulsar = 'pulsar-gray';
+      break;
+    default:
+      color = 'text-red-600';
+      pulsar = '';
+      break;
+  }
+
+  return (
+    <span className="inline-block w-4 mr-1 mt-2">
+      <svg viewBox="0 0 1 1"
+           className={`fill-current ${color} ${pulsar}`}>
+        <g>
+          <title>{pod.name} - {pod.status}</title>
+          <rect width="1" height="1"/>
+        </g>
+      </svg>
+    </span>
+  );
 }
