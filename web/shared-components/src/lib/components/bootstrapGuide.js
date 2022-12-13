@@ -1,7 +1,8 @@
 import React from 'react'
 
-const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, controllerGenerated }) => {
+const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, controllerGenerated, scmUrl }) => {
     const repoName = parseRepoName(repoPath);
+    const deployKeySettingsUrl = `https://${scmUrl}/${repoPath}` + (scmUrl === "github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
     let type = "";
 
     if (repoPath.includes("apps")) {
@@ -15,11 +16,11 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
             <>
                 <li>👉 Clone the Gitops repository</li>
                 <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
-                    <li>git clone git@github.com:{repoPath}.git</li>
+                    <li>git clone git@{scmUrl}:{repoPath}.git</li>
                     <li>cd {repoName}</li>
                 </ul>
 
-                <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${repoPath}/settings/keys`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{repoName}</a> repository</li>
+                <li>👉 Add the following deploy key to your Git provider to the <a href={deployKeySettingsUrl} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{repoName}</a> repository</li>
                 <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{publicKey}</li>
                 <li>( Don't know how to do it?
                     <a

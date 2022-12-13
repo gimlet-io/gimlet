@@ -12,7 +12,8 @@ export default class DeployStatus extends Component {
     this.state = {
       runningDeploys: reduxState.runningDeploys,
       envs: reduxState.envs,
-      gitopsCommits: reduxState.gitopsCommits
+      gitopsCommits: reduxState.gitopsCommits,
+      scmUrl: reduxState.settings.scmUrl
     }
 
     // handling API and streaming state changes
@@ -22,11 +23,12 @@ export default class DeployStatus extends Component {
       this.setState({ runningDeploys: reduxState.runningDeploys });
       this.setState({ envs: reduxState.envs });
       this.setState({ gitopsCommits: reduxState.gitopsCommits });
+      this.setState({ scmUrl: reduxState.settings.scmUrl });
     });
   }
 
   render() {
-    const {runningDeploys, envs} = this.state;
+    const {runningDeploys, envs, scmUrl} = this.state;
 
     if (runningDeploys.length === 0) {
       return null;
@@ -57,8 +59,8 @@ export default class DeployStatus extends Component {
 
     const hasResults = deploy.results && deploy.results.length !== 0;
     if (deploy.status === 'processed' || hasResults) {
-      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo);
-      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo);  
+      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl);
+      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo, scmUrl);  
     }
 
     return (
@@ -100,7 +102,7 @@ export default class DeployStatus extends Component {
                       <p className="pl-2">
                         <span>📎</span>
                         <a
-                          href={`https://github.com/${deploy.repo}/commit/${deploy.sha}`}
+                          href={`https://${scmUrl}/${deploy.repo}/commit/${deploy.sha}`}
                           target="_blank" rel="noopener noreferrer"
                           className='ml-1'
                         >
@@ -146,7 +148,7 @@ function Loading() {
   )
 }
 
-function renderAppliedWidget(deployCommit, gitopsRepo) {
+function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl) {
   if (!deployCommit.sha) {
     return null;
   }
@@ -171,7 +173,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo) {
     <p key={deployCommit.sha} className={`font-semibold ${color}`}>
       {deployCommitStatusIcon}
       <a
-        href={`https://github.com/${gitopsRepo}/commit/${deployCommit.sha}`}
+        href={`https://${scmUrl}/${gitopsRepo}/commit/${deployCommit.sha}`}
         target="_blank" rel="noopener noreferrer"
         className='ml-1'
       >
@@ -182,7 +184,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo) {
   )
 }
 
-function renderResult(result, gitopsRepo) {
+function renderResult(result, gitopsRepo, scmUrl) {
   if (result.hash && result.status === "success") {
     return (
       <div className="pl-2 mb-2" key={result.hash}>
@@ -190,7 +192,7 @@ function renderResult(result, gitopsRepo) {
           {result.app}
           <span className='mx-1 align-middle'>✅</span>
           <a
-            href={`https://github.com/${gitopsRepo}/commit/${result.hash}`}
+            href={`https://${scmUrl}/${gitopsRepo}/commit/${result.hash}`}
             target="_blank" rel="noopener noreferrer" className="font-normal"
           >
             {result.hash.slice(0, 6)}
@@ -213,18 +215,18 @@ function renderResult(result, gitopsRepo) {
 }
 
 
-function gitopsWidgetFromResults(deploy, gitopsRepo) {
+function gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl) {
   return (
     <div className="mt-2">
       <p className="text-yellow-100 font-semibold">
         Manifests written to git
       </p>
-      {deploy.results.map(result => renderResult(result, gitopsRepo))}
+      {deploy.results.map(result => renderResult(result, gitopsRepo, scmUrl))}
     </div>
   )
 }
 
-function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
+function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo, scmUrl) {
   const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
@@ -234,5 +236,5 @@ function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo) {
     }
   })
 
-  return renderAppliedWidget(deployCommit, gitopsRepo);
+  return renderAppliedWidget(deployCommit, gitopsRepo, scmUrl);
 }

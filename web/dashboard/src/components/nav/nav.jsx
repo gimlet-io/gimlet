@@ -23,7 +23,8 @@ export default class Nav extends Component {
     // default state
     let reduxState = this.props.store.getState();
     this.state = {
-      user: reduxState.user
+      user: reduxState.user,
+      scmUrl: reduxState.settings.scmUrl
     }
 
     // handling API and streaming state changes
@@ -31,12 +32,13 @@ export default class Nav extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({user: reduxState.user});
+      this.setState({scmUrl: reduxState.settings.scmUrl});
     });
 
   }
 
   render() {
-    const {user} = this.state;
+    const {user,scmUrl} = this.state;
     const {store} = this.props;
 
     const loggedIn = user !== undefined;
@@ -44,7 +46,7 @@ export default class Nav extends Component {
       return null;
     }
 
-    user.imageUrl = `https://github.com/${user.login}.png?size=128`
+    user.imageUrl = `https://${scmUrl}/${user.login}.png?size=128`
 
     return (
       <Disclosure as="nav" className="bg-white border-b border-gray-200">

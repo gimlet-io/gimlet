@@ -22,7 +22,7 @@ export class RolloutHistory extends Component {
   }
 
   render() {
-    let { env, app, appRolloutHistory, rollback, releaseHistorySinceDays } = this.props;
+    let { env, app, appRolloutHistory, rollback, releaseHistorySinceDays, scmUrl } = this.props;
 
     const { open } = this.state;
 
@@ -66,7 +66,7 @@ export class RolloutHistory extends Component {
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
       markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
-      rollouts.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout))
+      rollouts.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl))
     })
 
     if (releaseHistorySinceDays && releasesCount === 0) {
@@ -94,7 +94,7 @@ export class RolloutHistory extends Component {
 }
 
 function Commit(props) {
-  const { version, isReleaseStatus, gitopsRepo } = props;
+  const { version, isReleaseStatus, gitopsRepo, scmUrl } = props;
 
   const exactDate = format(version.created * 1000, 'h:mm:ss a, MMMM do yyyy')
   const dateLabel = formatDistance(version.created * 1000, new Date());
@@ -108,7 +108,7 @@ function Commit(props) {
           {version.author &&
             <img
               className="rounded-sm overflow-hidden mr-1"
-              src={`https://github.com/${version.author}.png?size=128`}
+              src={`https://${scmUrl}/${version.author}.png?size=128`}
               alt={version.authorName}
               width="20"
               height="20"
@@ -119,7 +119,7 @@ function Commit(props) {
             <a
               className="ml-1"
               title={exactDate}
-              href={`https://github.com/${version.repositoryName}/commit/${version.sha}`}
+              href={`https://${scmUrl}/${version.repositoryName}/commit/${version.sha}`}
               target="_blank"
               rel="noopener noreferrer">
               comitted {dateLabel} ago
@@ -150,7 +150,7 @@ at ${exactDate}`;
   )
 }
 
-export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout) {
+export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl) {
   const exactGitopsCommitCreatedDate = format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
   let gitopsCommitCreatedDateLabel = formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
 
@@ -195,7 +195,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
           <div className="relative">
             <img
               className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 ${ringColor}`}
-              src={`https://github.com/${rollout.triggeredBy}.png?size=128`}
+              src={`https://${scmUrl}/${rollout.triggeredBy}.png?size=128`}
               onError={(e) => { e.target.src = defaultProfilePicture }}
               alt={rollout.triggeredBy} />
           </div>
@@ -207,7 +207,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
                 <a
                   className="ml-1"
                   title={exactDate}
-                  href={`https://github.com/${rollout.gitopsRepo}/commit/${rollout.gitopsRef}`}
+                  href={`https://${scmUrl}/${rollout.gitopsRepo}/commit/${rollout.gitopsRef}`}
                   target="_blank"
                   rel="noopener noreferrer">
                   {dateLabel} ago
@@ -224,6 +224,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
               isReleaseStatus={rollback === undefined}
               gitopsRepo={rollout.gitopsRepo}
               version={rollout.version}
+              scmUrl={scmUrl}
               />
             </div>
           </div>

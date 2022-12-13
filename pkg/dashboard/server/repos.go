@@ -208,6 +208,7 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	settings := map[string]interface{}{
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
+		"scmUrl":                  config.ScmURL(),
 	}
 
 	settingsString, err := json.Marshal(settings)

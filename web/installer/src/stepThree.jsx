@@ -140,6 +140,7 @@ const StepThree = ({ getContext }) => {
                                 secretFileName={context.infraSecretFileName}
                                 gitopsRepoFileName={context.infraGitopsRepoFileName}
                                 controllerGenerated={true}
+                                scmUrl={"github.com"} //TODO replace burnt in github.com with the config scm url
                             />
                             <BootstrapGuide
                                 envName={context.envName}
@@ -150,6 +151,7 @@ const StepThree = ({ getContext }) => {
                                 gitopsRepoFileName={context.appsGitopsRepoFileName}
                                 notificationsFileName={context.notificationsFileName}
                                 controllerGenerated={false}
+                                scmUrl={"github.com"} //TODO replace burnt in github.com with the config scm url
                             />
                             <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
                                 <ul className="break-all text-sm text-blue-700 space-y-2">
