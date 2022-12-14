@@ -133,7 +133,6 @@ export default class Nav extends Component {
                     className="text-gray-500 inline-flex items-center px-1 pt-1 text-sm relative"
                   >
                     Book
-                    <span className="relative -mt-4 text-xs rounded-lg px-1 bg-yellow-200 text-yellow-800">New</span>
                   </a>
                 </div>
                 <div className="hidden sm:ml-2 sm:flex sm:items-center">
