@@ -15,13 +15,21 @@
 package agent
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -80,6 +88,88 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	}
 
 	return stacks, nil
+}
+
+func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
+	integratedServices, err := kubeEnv.annotatedServices("")
+	if err != nil {
+		log.Errorf("could not get integrated services: %v", err)
+		return
+	}
+
+	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get deployments: %v", err)
+		return
+	}
+
+	allPods, err := kubeEnv.Client.CoreV1().Pods("").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get pods: %v", err)
+		return
+	}
+
+	events, err := kubeEnv.Client.CoreV1().Events("").List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get events: %v", err)
+		return
+	}
+
+	var typeWarningEvents []api.Event
+	for _, svc := range integratedServices {
+		for _, deployment := range allDeployments.Items {
+			if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+				for _, pod := range allPods.Items {
+					if HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+						pod.Namespace == deployment.Namespace {
+						for _, event := range events.Items {
+							if event.Type == "Warning" && (event.InvolvedObject.Name == pod.Name || event.InvolvedObject.Name == deployment.Name) {
+								typeWarningEvents = append(typeWarningEvents, api.Event{
+									LastSeen:            event.LastTimestamp.Unix(),
+									DeploymentName:      deployment.Name,
+									DeploymentNamespace: deployment.Namespace,
+									Type:                event.Type,
+									Reason:              event.Reason,
+									Object:              event.InvolvedObject.Name,
+									Message:             event.Message,
+								})
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	typeWarningEventsString, err := json.Marshal(typeWarningEvents)
+	if err != nil {
+		log.Errorf("could not serialize k8s events: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/events", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(typeWarningEventsString))
+	if err != nil {
+		log.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	log.Debug("events sent")
 }
 
 // annotatedServices returns all services that are enabled for Gimlet
@@ -213,4 +303,18 @@ func SelectorsMatch(first map[string]string, second map[string]string) bool {
 	}
 
 	return true
+}
+
+func httpClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   20 * time.Second,
+			ResponseHeaderTimeout: 20 * time.Second,
+			ExpectContinueTimeout: 10 * time.Second,
+		},
+	}
 }

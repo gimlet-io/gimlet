@@ -20,7 +20,6 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -207,7 +206,7 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						svc := e["serviceName"].(string)
 						stopPodLogs(runningLogStreams, namespace, svc)
 					case "events":
-						go kubeEvents(kubeEnv, config.Host, config.AgentKey)
+						go agent.KubeEvents(kubeEnv, config.Host, config.AgentKey)
 					}
 				} else {
 					log.Info("event stream closed")
@@ -461,88 +460,6 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			}
 		}
 	}
-}
-
-func kubeEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	integratedServices, err := kubeEnv.AnnotatedServices("")
-	if err != nil {
-		log.Errorf("could not get integrated services: %v", err)
-		return
-	}
-
-	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		log.Errorf("could not get deployments: %v", err)
-		return
-	}
-
-	allPods, err := kubeEnv.Client.CoreV1().Pods("").List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		log.Errorf("could not get pods: %v", err)
-		return
-	}
-
-	events, err := kubeEnv.Client.CoreV1().Events("").List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		log.Errorf("could not get events: %v", err)
-		return
-	}
-
-	var allEvents []api.Event
-	for _, svc := range integratedServices {
-		for _, deployment := range allDeployments.Items {
-			if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-				for _, pod := range allPods.Items {
-					if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
-						pod.Namespace == deployment.Namespace {
-						for _, event := range events.Items {
-							if event.Type == "Warning" && (event.InvolvedObject.Name == pod.Name || event.InvolvedObject.Name == deployment.Name) {
-								allEvents = append(allEvents, api.Event{
-									LastSeen:            event.LastTimestamp.Unix(),
-									DeploymentName:      deployment.Name,
-									DeploymentNamespace: deployment.Namespace,
-									Type:                event.Type,
-									Reason:              event.Reason,
-									Object:              event.InvolvedObject.Name,
-									Message:             event.Message,
-								})
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	allEventsString, err := json.Marshal(allEvents)
-	if err != nil {
-		log.Errorf("could not serialize k8s events: %v", err)
-		return
-	}
-
-	reqUrl := fmt.Sprintf("%s/agent/events", gimletHost)
-	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(allEventsString))
-	if err != nil {
-		log.Errorf("could not create http request: %v", err)
-		return
-	}
-	req.Header.Set("Authorization", "BEARER "+agentKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := httpClient()
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
-		return
-	}
-
-	log.Debug("events sent")
 }
 
 func webSocketURL(host string) url.URL {
