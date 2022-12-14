@@ -47,9 +47,11 @@ type RollbackRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
+// Result of processing the Gimlet environment file or files from artifact
 type Result struct {
-	App                    string `json:"app,omitempty"`
-	Hash                   string `json:"hash,omitempty"`
+	App  string `json:"app,omitempty"`
+	Hash string `json:"hash,omitempty"`
+	// Status of processing the Gimlet environment file from artifact
 	Status                 string `json:"status,omitempty"`
 	GitopsCommitStatus     string `json:"gitopsCommitStatus,omitempty"`
 	GitopsCommitStatusDesc string `json:"gitopsCommitStatusDesc,omitempty"`
