@@ -51,7 +51,7 @@ const StepOne = ({ getContext }) => {
                   className="flex-shrink-0 w-10 h-10 flex items-center justify-center border-2 border-indigo-600 rounded-full">
                   <span className="text-indigo-600">01</span>
                 </span>
-                <span className="ml-4 text-sm font-medium text-indigo-600">Create Github Application</span>
+                <span className="ml-4 text-sm font-medium text-indigo-600">Integrate with Source Code Manager</span>
               </div>
 
               {/* <!-- Arrow separator for lg screens and up --> */}
@@ -100,6 +100,8 @@ const StepOne = ({ getContext }) => {
         </nav>
 
         <div className="mt-8 font-mono text-sm">
+          <div>
+          <h2 className="text-xl font-sans font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate mb-4">Github</h2>
           <p className="">Gimlet Dashboard uses a Github Application to gain access to your source code.</p>
           <p className="">You must create this application first.</p>
 
@@ -109,7 +111,7 @@ const StepOne = ({ getContext }) => {
             <input type="hidden" name="manifest" id="manifest" value={manifest}></input><br />
             <div className="text-gray-700">
               <div className="flex mt-4">
-                <div className="font-medium self-center">Github organization</div>
+                <div className="font-medium self-center">Github Organization</div>
                 <div className="max-w-lg flex rounded-md ml-4">
                   <div className="max-w-lg w-full lg:max-w-xs">
                     <input id="org" name="org"
@@ -126,6 +128,52 @@ const StepOne = ({ getContext }) => {
               className="mt-8 cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             </input>
           </form>
+          </div>
+          <div className="my-8">
+            <div className="inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+          </div>
+          <div className="mb-64">
+            <h2 className="text-xl font-sans font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate mb-4">Gitlab</h2>
+            <p className="">Gimlet Dashboard uses a personal access token to integrate with Gitlab.</p>
+            <p className="">You must provide this token first.</p>
+            <form action={org ? `https://github.com/organizations/${org}/settings/apps/new` : "https://github.com/settings/apps/new"} method="post">
+            <input type="hidden" name="manifest" id="manifest" value={manifest}></input><br />
+            <div className="text-gray-700">
+              <div className="flex mt-4">
+                <div className="font-medium self-center">Personal Access Token</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="org" name="org"
+                      value={org}
+                      onChange={e => setOrg(e.target.value)}
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="text" />
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 leading-loose">The token can be created on the <a href="https://gitlab.com/-/profile/personal_access_tokens">https://gitlab.com/-/profile/personal_access_tokens</a> page. Grant api and write_repository access.</div>
+              <div className="flex mt-4">
+                <div className="font-medium self-center">Gitlab Group</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="org" name="org"
+                      value={org}
+                      onChange={e => setOrg(e.target.value)}
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="text" />
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 leading-loose">Limit Gimlet to a given Gitlab Group. Leave it empty to integrate Gimlet with your personal Gitlab account.</div>
+            </div>
+            <p className="mt-8">When you hit the "Integrate Gimlet" button, we create an OAuth Application under your personal account or group that will control much of the integration.</p>
+            <input type="submit" value="Integrate Gimlet"
+              className="mt-8 cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            </input>
+          </form>
+          </div>
         </div>
 
       </div>

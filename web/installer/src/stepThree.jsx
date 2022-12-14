@@ -48,7 +48,7 @@ const StepThree = ({ getContext }) => {
                                                     clipRule="evenodd" />
                                             </svg>
                                         </span>
-                                        <span className="ml-4 text-sm font-medium text-gray-900">Create Github Application</span>
+                                        <span className="ml-4 text-sm font-medium text-gray-900">Integrate with Source Code Manager</span>
                                     </span>
                                 </div>
 
