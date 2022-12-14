@@ -47,22 +47,33 @@ type RollbackRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
-// Result of processing the Gimlet environment file or files from artifact
+// Result of the Gimlet environment manifest processing
 type Result struct {
 	App  string `json:"app,omitempty"`
 	Hash string `json:"hash,omitempty"`
-	// Status of processing the Gimlet environment file from artifact
-	Status                 string `json:"status,omitempty"`
+	// Status of the Gimlet environment manifest processing
+	Status string `json:"status,omitempty"`
+	// GitopsCommitStatus shows the status of the gitops commit of the Gimlet environment manifest processing
+	// While manifests are processed succesfully, and gitops commits are written, Flux may fail to apply them
+	// This field holds the Flux results
 	GitopsCommitStatus     string `json:"gitopsCommitStatus,omitempty"`
 	GitopsCommitStatusDesc string `json:"gitopsCommitStatusDesc,omitempty"`
 	Env                    string `json:"env,omitempty"`
 	StatusDesc             string `json:"statusDesc,omitempty"`
 }
 
+// ReleaseStatus is the result of an artifact shipping or an on-demand deploy
 type ReleaseStatus struct {
-	Status     string   `json:"status"`
-	StatusDesc string   `json:"statusDesc"`
-	Results    []Result `json:"results"`
+
+	// Status of the artifact processing or an on-demand deploy event's processing
+	Status string `json:"status"`
+
+	// StatusDesc is the longer format of the processing Status
+	StatusDesc string `json:"statusDesc"`
+
+	// An artifact or an on-demand deploy tipycally holds multiple Gimlet environment manifest configuration
+	// Results is the result of the processing of each manifest, one manifest can fail, while others may succeed
+	Results []Result `json:"results"`
 }
 
 func (rs *ReleaseStatus) ExtractGitopsEndState() (bool, bool) {
