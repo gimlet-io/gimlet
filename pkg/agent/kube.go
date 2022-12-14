@@ -29,7 +29,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -97,19 +96,19 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), meta_v1.ListOptions{})
+	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("could not get deployments: %v", err)
 		return
 	}
 
-	allPods, err := kubeEnv.Client.CoreV1().Pods("").List(context.TODO(), meta_v1.ListOptions{})
+	allPods, err := kubeEnv.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("could not get pods: %v", err)
 		return
 	}
 
-	events, err := kubeEnv.Client.CoreV1().Events("").List(context.TODO(), meta_v1.ListOptions{})
+	events, err := kubeEnv.Client.CoreV1().Events("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("could not get events: %v", err)
 		return
