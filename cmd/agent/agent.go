@@ -464,17 +464,10 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 }
 
 func kubeEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	svc, err := kubeEnv.Client.CoreV1().Services("").List(context.TODO(), meta_v1.ListOptions{})
+	integratedServices, err := kubeEnv.AnnotatedServices("")
 	if err != nil {
-		log.Errorf("could not get services: %v", err)
+		log.Errorf("could not get integrated services: %v", err)
 		return
-	}
-
-	var integratedServices []v1.Service
-	for _, s := range svc.Items {
-		if _, ok := s.ObjectMeta.GetAnnotations()[agent.AnnotationGitRepository]; ok {
-			integratedServices = append(integratedServices, s)
-		}
 	}
 
 	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), meta_v1.ListOptions{})
