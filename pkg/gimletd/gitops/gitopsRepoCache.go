@@ -33,14 +33,21 @@ func NewGitopsRepoCache(
 	gitopsRepo string,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
+	gitSSHAddressFormat string,
 	stopCh chan os.Signal,
 	waitCh chan struct{},
+
 ) (*GitopsRepoCache, error) {
 	var defaultRepo *git.Repository
 	var defaultCachePath string
 	var err error
 	if gitopsRepo != "" && gitopsRepoDeployKeyPath != "" {
-		defaultCachePath, defaultRepo, err = nativeGit.CloneToFs(cacheRoot, gitopsRepo, gitopsRepoDeployKeyPath)
+		defaultCachePath, defaultRepo, err = nativeGit.CloneToFs(
+			cacheRoot,
+			gitopsRepo,
+			gitopsRepoDeployKeyPath,
+			gitSSHAddressFormat,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +56,12 @@ func NewGitopsRepoCache(
 	cachePaths := map[string]string{}
 	repos := map[string]*git.Repository{}
 	for _, gitopsRepo := range parsedGitopsRepos {
-		repoCachePath, repo, err := nativeGit.CloneToFs(cacheRoot, gitopsRepo.GitopsRepo, gitopsRepo.DeployKeyPath)
+		repoCachePath, repo, err := nativeGit.CloneToFs(
+			cacheRoot,
+			gitopsRepo.GitopsRepo,
+			gitopsRepo.DeployKeyPath,
+			gitSSHAddressFormat,
+		)
 		if err != nil {
 			return nil, err
 		}
