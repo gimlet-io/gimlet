@@ -160,6 +160,11 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	agentHub.StopPodLogs(namespace, serviceName)
 }
 
+func getEvents(w http.ResponseWriter, r *http.Request) {
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.GetEvents()
+}
+
 func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {
 	for _, env := range envs {
 		if env.StackConfig == nil {

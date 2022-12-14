@@ -102,6 +102,7 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/stopPodLogs", stopPodLogs)
+		r.Get("/api/events", getEvents)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/env/{env}/app/{app}/rolloutHistory", rolloutHistoryPerApp)
@@ -139,6 +140,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
 		r.Post("/agent/state/{name}/update", update)
+		r.Post("/agent/events", events)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeAgentWs(agentWSHub, w, r)

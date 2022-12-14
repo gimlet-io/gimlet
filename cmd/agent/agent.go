@@ -205,6 +205,8 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
 						stopPodLogs(runningLogStreams, namespace, svc)
+					case "events":
+						go agent.KubeEvents(kubeEnv, config.Host, config.AgentKey)
 					}
 				} else {
 					log.Info("event stream closed")
