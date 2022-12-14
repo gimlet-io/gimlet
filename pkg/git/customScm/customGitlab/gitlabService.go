@@ -2,8 +2,9 @@ package customGitlab
 
 import (
 	"context"
-	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/go-scm/scm"
@@ -37,16 +38,48 @@ func (c *GitlabClient) FetchCommits(
 
 			go func(sha string, commits chan *model.Commit) {
 				defer wg.Done()
+
+				commit, _, err := git.Commits.GetCommit(scm.Join(owner, repo), sha)
+				if err != nil {
+					logrus.Warnf("couldn't fetch commit info (%s): %s", sha, err)
+					return
+				}
+
 				statuses, _, err := git.Commits.GetCommitStatuses(
 					scm.Join(owner, repo),
 					sha,
 					&gitlab.GetCommitStatusesOptions{},
 				)
 				if err != nil {
-					logrus.Warnf("couldn't fetch commit info (%s): %s", sha, err)
+					logrus.Warnf("couldn't fetch commit status (%s): %s", sha, err)
 				}
-				fmt.Println(statuses)
-				commits <- &model.Commit{}
+
+				contexts := []model.Status{}
+				for _, s := range statuses {
+					state := fromGitlabStatus(s.Status)
+					contexts = append(contexts, model.Status{
+						State:       state,
+						Context:     s.Name,
+						CreatedAt:   s.CreatedAt.Format(time.RFC3339),
+						TargetUrl:   s.TargetURL,
+						Description: s.Description,
+					})
+				}
+
+				var commitStatus string
+				if commit.Status != nil {
+					commitStatus = string(*commit.Status)
+				}
+
+				commits <- &model.Commit{
+					SHA:     sha,
+					Message: commit.Message,
+					URL:     commit.WebURL,
+					Status: model.CombinedStatus{
+						State:    commitStatus,
+						Contexts: contexts,
+					},
+				}
 			}(hash, commits)
 		}
 
@@ -55,13 +88,14 @@ func (c *GitlabClient) FetchCommits(
 	}()
 
 	fetched := []*model.Commit{}
-	select {
-	case <-waitCh:
-	case c := <-commits:
-		fetched = append(fetched, c)
+	for {
+		select {
+		case <-waitCh:
+			return fetched, nil
+		case c := <-commits:
+			fetched = append(fetched, c)
+		}
 	}
-
-	return fetched, nil
 }
 
 func (c *GitlabClient) OrgRepos(installationToken string) ([]string, error) {
@@ -82,4 +116,15 @@ func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser 
 		Name: &repo,
 	})
 	return err
+}
+
+func fromGitlabStatus(gitlabStatus string) string {
+	// https://docs.gitlab.com/ee/api/commits.html#set-the-pipeline-status-of-a-commit
+	// https://github.com/gimlet-io/gimlet/blob/1997f9f8f08ccff96828b239b5126632b47dee77/web/dashboard/src/components/commits/commits.js#L183
+	switch gitlabStatus {
+	case "running":
+		return "IN_PROGRESS"
+	default:
+		return strings.ToUpper(gitlabStatus)
+	}
 }
