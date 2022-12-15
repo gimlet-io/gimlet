@@ -257,7 +257,7 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 	if r.config.IsGithub() {
 		provider = "https://github.com"
 	} else if r.config.IsGitlab() {
-		provider = "https://gitlab.com"
+		provider = "http://127.0.0.1:8000"
 	}
 
 	opts := &git.CloneOptions{

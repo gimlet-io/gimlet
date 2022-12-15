@@ -98,8 +98,22 @@ func (c *GitlabClient) FetchCommits(
 	}
 }
 
-func (c *GitlabClient) OrgRepos(installationToken string) ([]string, error) {
-	return nil, nil
+func (c *GitlabClient) OrgRepos(token string) ([]string, error) {
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("http://127.0.0.1:8000"))
+	if err != nil {
+		return nil, err
+	}
+
+	projects, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{})
+	if err != nil {
+		return nil, err
+	}
+	repos := []string{}
+	for _, p := range projects {
+		repos = append(repos, p.Name)
+	}
+
+	return repos, nil
 }
 
 func (c *GitlabClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context.Context) (string, string, string, error) {
@@ -107,14 +121,33 @@ func (c *GitlabClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context
 }
 
 func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser string, orgToken string, userToken string) error {
-	git, err := gitlab.NewClient(orgToken)
+	git, err := gitlab.NewClient(orgToken, gitlab.WithBaseURL("http://127.0.0.1:8000"))
 	if err != nil {
 		return err
 	}
 
-	_, _, err = git.Projects.CreateProject(&gitlab.CreateProjectOptions{
-		Name: &repo,
-	})
+	var namespaceId int
+	groups, _, err := git.Groups.ListGroups(&gitlab.ListGroupsOptions{})
+	if err != nil {
+		return err
+	}
+	for _, g := range groups {
+		if g.Name == owner {
+			namespaceId = g.ID
+		}
+	}
+
+	if namespaceId != 0 {
+		_, _, err = git.Projects.CreateProject(&gitlab.CreateProjectOptions{
+			Name:        &repo,
+			NamespaceID: &namespaceId,
+		})
+	} else {
+		_, _, err = git.Projects.CreateProject(&gitlab.CreateProjectOptions{
+			Name: &repo,
+		})
+	}
+
 	return err
 }
 
