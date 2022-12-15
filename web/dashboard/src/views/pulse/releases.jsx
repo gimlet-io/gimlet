@@ -38,7 +38,7 @@ export default class Releases extends Component {
         })
 
         return (
-            <div className="mb-12">
+            <div>
                 <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 mb-4">{env}</h4>
                 {releaseStatuses.length > 0 ?
                     <div className="bg-white p-4 rounded">

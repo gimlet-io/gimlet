@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import ServiceDetail from "../serviceDetail/serviceDetail";
 
 export class Env extends Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -11,10 +10,16 @@ export class Env extends Component {
     }
   }
 
-  render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store } = this.props;
+  componentDidMount() {
+    if (this.props.envName === this.props.envFromParams) {
+      this.setState({ isClosed: false });
+    }
+  }
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store);
+  render() {
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams } = this.props;
+
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams);
 
     return (
       <div>
@@ -74,7 +79,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams) {
   let services = [];
 
   let configsWeHave = [];
@@ -98,10 +103,13 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         repoName={repoName}
         fileName={fileName(fileInfos, stack.service.name)}
         navigateToConfigEdit={navigateToConfigEdit}
+        linkToDeployment={linkToDeployment}
         configExists={configExists}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         store={store}
+        kubernetesEvents={kubernetesEventsByDeploymentName(kubernetesEvents, stack.service.name)}
+        deploymentFromParams={deploymentFromParams}
       />
     )
   })
@@ -124,15 +132,22 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         repoName={repoName}
         fileName={fileName(fileInfos, config)}
         navigateToConfigEdit={navigateToConfigEdit}
+        linkToDeployment={linkToDeployment}
         configExists={true}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         store={store}
+        kubernetesEvents={kubernetesEventsByDeploymentName(kubernetesEvents, config)}
+        deploymentFromParams={deploymentFromParams}
       />
     }
     )
   )
   return services
+}
+
+function kubernetesEventsByDeploymentName(kubernetesEvents, deploymentName) {
+  return kubernetesEvents.filter(event => event.deploymentName === deploymentName)
 }
 
 function fileName(fileInfos, appName) {
