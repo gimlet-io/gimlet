@@ -2,6 +2,7 @@ import React, { Component, useEffect, useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { XIcon } from '@heroicons/react/solid'
+import { KubernetesEventsAlertBox } from '../../views/pulse/pulse';
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_CLEAR_PODLOGS
@@ -9,7 +10,15 @@ import {
 
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, configExists, fileName, releaseHistorySinceDays, gimletClient, store } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams } = props;
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (deploymentFromParams === stack.service.name) {
+      window.scrollTo({ behavior: 'smooth', top: ref.current.offsetTop })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deploymentFromParams, stack.service.name]);
 
   useEffect(() => {
     gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
@@ -64,8 +73,8 @@ function ServiceDetail(props) {
         store={store}
       />
       <div className="w-full flex items-center justify-between space-x-6">
-        <div className="flex-1 truncate">
-          <h3 className="flex text-lg font-bold">
+        <div className="flex-1">
+          <h3 ref={ref} className="flex text-lg font-bold">
             {stack.service.name}
             {configExists &&
               <>
@@ -78,6 +87,17 @@ function ServiceDetail(props) {
                       d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                   </svg>
                 </a>
+                <span onClick={() => linkToDeployment(envName, stack.service.name)}>
+                  <svg
+                    className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                    </path>
+                  </svg>
+                </span>
                 <span onClick={() => navigateToConfigEdit(envName, stack.service.name)}>
                   <svg
                     className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1  h-5 w-5"
@@ -89,6 +109,12 @@ function ServiceDetail(props) {
               </>
             }
           </h3>
+          {<div className="px-3 py-4">
+            <KubernetesEventsAlertBox
+              kubernetesEvents={kubernetesEvents}
+              hideButton
+            />
+          </div>}
           <div className="my-2 mb-4 sm:my-4 sm:mb-6">
             <RolloutHistory
               env={envName}

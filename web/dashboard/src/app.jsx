@@ -95,7 +95,7 @@ export default class App extends Component {
                 <ChartUIWithRouting />
               </Route>
 
-              <Route path="/repo/:owner/:repo">
+              <Route path="/repo/:owner/:repo/:environment?/:deployment?">
                 <RepoWithRouting store={store} />
               </Route>
 

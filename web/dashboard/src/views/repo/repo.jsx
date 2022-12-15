@@ -15,6 +15,7 @@ import {
 import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
+import { decorateKubernetesEventsWithEnvAndRepo } from '../pulse/pulse';
 
 export default class Repo extends Component {
   constructor(props) {
@@ -38,7 +39,8 @@ export default class Repo extends Component {
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
-      pullRequests: reduxState.pullRequests[repoName]
+      pullRequests: reduxState.pullRequests[repoName],
+      kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName)
     }
 
     // handling API and streaming state changes
@@ -55,7 +57,8 @@ export default class Repo extends Component {
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
-        pullRequests: reduxState.pullRequests[repoName]
+        pullRequests: reduxState.pullRequests[repoName],
+        kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName)
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -75,6 +78,7 @@ export default class Repo extends Component {
     this.rollback = this.rollback.bind(this)
     this.checkDeployStatus = this.checkDeployStatus.bind(this)
     this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
+    this.linkToDeployment = this.linkToDeployment.bind(this)
     this.newConfig = this.newConfig.bind(this)
   }
 
@@ -313,6 +317,11 @@ export default class Repo extends Component {
     this.props.history.push(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}`));
   }
 
+  linkToDeployment(env, deployment) {
+    const { owner, repo } = this.props.match.params;
+    this.props.history.push(`/repo/${owner}/${repo}/${env}/${deployment}`);
+  }
+
   newConfig(env, config) {
     const { owner, repo } = this.props.match.params;
 
@@ -371,8 +380,12 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
+  kubernetesEventsByEnv(envName) {
+    return this.state.kubernetesEvents.filter(event => event.envName === envName)
+  }
+
   render() {
-    const { owner, repo } = this.props.match.params;
+    const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings } = this.state;
     const { branches, selectedBranch, envConfigs } = this.state;
@@ -422,6 +435,7 @@ export default class Repo extends Component {
                     repoRolloutHistory={repoRolloutHistory}
                     envConfigs={envConfigs[envName]}
                     navigateToConfigEdit={this.navigateToConfigEdit}
+                    linkToDeployment={this.linkToDeployment}
                     newConfig={this.newConfig}
                     rollback={this.rollback}
                     owner={owner}
@@ -431,6 +445,9 @@ export default class Repo extends Component {
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={this.props.gimletClient}
                     store={this.props.store}
+                    kubernetesEvents={this.kubernetesEventsByEnv(envName)}
+                    envFromParams={environment}
+                    deploymentFromParams={deployment}
                   />
                 )
                 }
