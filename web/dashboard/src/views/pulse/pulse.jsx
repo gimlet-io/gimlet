@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
-import { nanoid } from 'nanoid';
 import Releases from './releases';
 
 export default class Pulse extends Component {
@@ -85,7 +84,7 @@ export function KubernetesEventsAlertBox({ kubernetesEvents, history, hideButton
         const dateLabel = formatDistance(event.lastSeen * 1000, new Date());
 
         return (
-          <div key={nanoid()} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${event.object} ${event.message}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
