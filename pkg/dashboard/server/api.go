@@ -465,3 +465,25 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(envNameToDelete))
 }
+
+func getProvider(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+	var provider string
+
+	if config.IsGithub() {
+		provider = "GitHub"
+	} else if config.IsGitlab() {
+		provider = "GitLab"
+	}
+
+	providerString, err := json.Marshal(provider)
+	if err != nil {
+		logrus.Errorf("cannot serialize provider: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte(providerString))
+}

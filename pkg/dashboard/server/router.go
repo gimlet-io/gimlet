@@ -77,6 +77,8 @@ func SetupRouter(
 
 	r.Post("/hook", hook)
 
+	r.Get("/provider", getProvider)
+
 	filesDir := http.Dir("./web/build")
 	fileServer(r, "/", filesDir)
 	fileServer(r, "/login", filesDir)
