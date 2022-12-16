@@ -11,7 +11,7 @@ export default class Pulse extends Component {
       envs: reduxState.envs,
       releaseStatuses: reduxState.releaseStatuses,
       releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays,
-      kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents)
+      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents),
     }
 
     this.props.store.subscribe(() => {
@@ -20,7 +20,7 @@ export default class Pulse extends Component {
       this.setState({ envs: reduxState.envs });
       this.setState({ releaseStatuses: reduxState.releaseStatuses });
       this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
-      this.setState({ kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents) });
+      this.setState({ kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents) });
     });
   }
 
@@ -35,8 +35,8 @@ export default class Pulse extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              {<KubernetesEventsAlertBox
-                kubernetesEvents={this.state.kubernetesEvents}
+              {<KubernetesAlertBox
+                alerts={this.state.kubernetesAlerts}
                 history={this.props.history}
               />}
               <h3 className="text-2xl font-semibold leading-tight text-gray-900 mt-16 mb-8">Environments</h3>
@@ -72,39 +72,39 @@ export function emptyStateNoMatchingService() {
   )
 }
 
-export function KubernetesEventsAlertBox({ kubernetesEvents, history, hideButton }) {
-  if (kubernetesEvents.length === 0) {
+export function KubernetesAlertBox({ alerts, history, hideButton }) {
+  if (alerts.length === 0) {
     return null;
   }
 
   return (
     <ul className="space-y-2 text-sm text-red-800">
-      {kubernetesEvents.map(event => {
-        const exactDate = format(event.lastSeen * 1000, 'h:mm:ss a, MMMM do yyyy')
-        const dateLabel = formatDistance(event.lastSeen * 1000, new Date());
+      {alerts.map(alert => {
+        const exactDate = format(alert.lastSeen * 1000, 'h:mm:ss a, MMMM do yyyy')
+        const dateLabel = formatDistance(alert.lastSeen * 1000, new Date());
 
         return (
-          <div key={`${event.object} ${event.message}`} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${alert.object} ${alert.message}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
-                  {event.object} {event.reason}
+                  {alert.object} {alert.reason}
                 </p>
                 <p>
-                  {event.message}
+                  {alert.message}
                 </p>
               </span>
             </div>
             {!hideButton &&
               <>
-                {event.envName && <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
+                {alert.envName && <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
                   <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-200">
-                    {event.envName}
+                    {alert.envName}
                   </span>
                 </div>}
-                {event.repoName && <div className="absolute bottom-0 right-0 p-2 space-x-2">
+                {alert.repoName && <div className="absolute bottom-0 right-0 p-2 space-x-2">
                   <button className="inline-flex items-center px-3 py-0.5 rounded-md text-sm font-medium bg-blue-400 text-slate-50"
-                    onClick={() => history.push(`/repo/${event.repoName}/${event.envName}/${event.deploymentName}`)}
+                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${alert.deploymentName}`)}
                   >
                     Jump there
                   </button>
@@ -124,18 +124,17 @@ export function KubernetesEventsAlertBox({ kubernetesEvents, history, hideButton
   )
 }
 
-export function decorateKubernetesEventsWithEnvAndRepo(kubernetesEvents, connectedAgents) {
-  kubernetesEvents.forEach(event => {
+export function decorateKubernetesAlertsWithEnvAndRepo(kubernetesAlerts, connectedAgents) {
+  kubernetesAlerts.forEach(alert => {
     for (const env in connectedAgents) {
       connectedAgents[env].stacks.forEach(stack => {
-        if (event.deploymentNamespace === stack.deployment.namespace && event.deploymentName === stack.deployment.name) {
-          event.envName = stack.env;
-          event.repoName = stack.repo;
+        if (alert.deploymentNamespace === stack.deployment.namespace && alert.deploymentName === stack.deployment.name) {
+          alert.envName = stack.env;
+          alert.repoName = stack.repo;
         }
       })
     }
   })
 
-  return kubernetesEvents;
-
+  return kubernetesAlerts;
 }

@@ -2,7 +2,7 @@ import React, { Component, useEffect, useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { XIcon } from '@heroicons/react/solid'
-import { KubernetesEventsAlertBox } from '../../views/pulse/pulse';
+import { KubernetesAlertBox } from '../../views/pulse/pulse';
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_CLEAR_PODLOGS
@@ -10,7 +10,7 @@ import {
 
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams } = props;
   const ref = useRef(null);
 
   useEffect(() => {
@@ -110,8 +110,8 @@ function ServiceDetail(props) {
             }
           </h3>
           {<div className="px-3 py-4">
-            <KubernetesEventsAlertBox
-              kubernetesEvents={kubernetesEvents}
+            <KubernetesAlertBox
+              alerts={kubernetesAlerts}
               hideButton
             />
           </div>}

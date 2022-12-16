@@ -59,6 +59,6 @@ type PodLogsEvent struct {
 }
 
 type KubernetesEventsEvent struct {
-	KubernetesEvents []api.Event `json:"kubernetesEvents"`
+	KubernetesEvents []api.Alert `json:"kubernetesEvents"`
 	StreamingEvent
 }

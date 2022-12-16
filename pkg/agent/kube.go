@@ -114,7 +114,7 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	var typeWarningEvents []api.Event
+	var typeWarningEvents []api.Alert
 	for _, svc := range integratedServices {
 		for _, deployment := range allDeployments.Items {
 			if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
@@ -123,11 +123,10 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 						pod.Namespace == deployment.Namespace {
 						for _, event := range events.Items {
 							if event.Type == "Warning" && (event.InvolvedObject.Name == pod.Name || event.InvolvedObject.Name == deployment.Name) {
-								typeWarningEvents = append(typeWarningEvents, api.Event{
+								typeWarningEvents = append(typeWarningEvents, api.Alert{
 									LastSeen:            event.LastTimestamp.Unix(),
 									DeploymentName:      deployment.Name,
 									DeploymentNamespace: deployment.Namespace,
-									Type:                event.Type,
 									Reason:              event.Reason,
 									Object:              event.InvolvedObject.Name,
 									Message:             event.Message,

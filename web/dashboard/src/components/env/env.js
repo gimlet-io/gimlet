@@ -17,9 +17,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams);
 
     return (
       <div>
@@ -79,7 +79,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesEvents, deploymentFromParams) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams) {
   let services = [];
 
   let configsWeHave = [];
@@ -108,7 +108,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         store={store}
-        kubernetesEvents={kubernetesEventsByDeploymentName(kubernetesEvents, stack.service.name)}
+        kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, stack.service.name)}
         deploymentFromParams={deploymentFromParams}
       />
     )
@@ -137,7 +137,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         store={store}
-        kubernetesEvents={kubernetesEventsByDeploymentName(kubernetesEvents, config)}
+        kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, config)}
         deploymentFromParams={deploymentFromParams}
       />
     }
@@ -146,8 +146,8 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
   return services
 }
 
-function kubernetesEventsByDeploymentName(kubernetesEvents, deploymentName) {
-  return kubernetesEvents.filter(event => event.deploymentName === deploymentName)
+function kubernetesAlertsByDeploymentName(kubernetesAlerts, deploymentName) {
+  return kubernetesAlerts.filter(event => event.deploymentName === deploymentName)
 }
 
 function fileName(fileInfos, appName) {

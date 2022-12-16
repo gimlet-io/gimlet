@@ -119,7 +119,7 @@ func broadcastAgentDisconnectedEvent(clientHub *streaming.ClientHub, a *streamin
 }
 
 func events(w http.ResponseWriter, r *http.Request) {
-	var kubernetesEvents []api.Event
+	var kubernetesEvents []api.Alert
 	err := json.NewDecoder(r.Body).Decode(&kubernetesEvents)
 	if err != nil {
 		logrus.Errorf("cannot decode kubernetes events: %s", err)

@@ -56,11 +56,10 @@ type ConnectedAgent struct {
 	Stacks []*Stack `json:"stacks"`
 }
 
-type Event struct {
+type Alert struct {
 	LastSeen            int64  `json:"lastSeen"`
 	DeploymentName      string `json:"deploymentName"`
 	DeploymentNamespace string `json:"deploymentNamespace"`
-	Type                string `json:"type"`
 	Reason              string `json:"reason"`
 	Object              string `json:"object"`
 	Message             string `json:"message"`
