@@ -164,8 +164,8 @@ const StepOne = ({ getContext }) => {
                 </div>
               </div>
               <div className="text-xs text-gray-500">
-                Personal access  tokens can be created on the <a className="text-blue-500" href="https://gitlab.com/-/profile/personal_access_tokens" target="_blank">https://gitlab.com/-/profile/personal_access_tokens</a> page,
-                group access tokens on <a className="text-blue-500" href="https://gitlab.com/groups/$your-group/-/settings/access_tokens" target="_blank">https://gitlab.com/groups/$your-group/-/settings/access_tokens</a>.
+                Personal access  tokens can be created on the <a className="text-blue-500" href="https://gitlab.com/-/profile/personal_access_tokens" target="_blank" rel="noreferrer">https://gitlab.com/-/profile/personal_access_tokens</a> page,
+                group access tokens on <a className="text-blue-500" href="https://gitlab.com/groups/$your-group/-/settings/access_tokens" target="_blank" rel="noreferrer">https://gitlab.com/groups/$your-group/-/settings/access_tokens</a>.
                 Grant `api` and `write_repository` access. For Group tokens, grant an `Owner` role too.</div>
               <div className="flex mt-4">
                 <div className="font-medium self-center">Gitlab Application ID</div>
@@ -187,8 +187,8 @@ const StepOne = ({ getContext }) => {
                   </div>
                 </div>
               </div>
-              <div className="text-xs text-gray-500">Applications can be created on the <a className="text-blue-500" href="https://gitlab.com/-/profile/applications" target="_blank">https://gitlab.com/-/profile/applications</a> page,
-              group applications on <a className="text-blue-500" href="https://gitlab.com/groups/$your-group/-/settings/applications" target="_blank">https://gitlab.com/groups/$your-group/-/settings/applications</a>.
+              <div className="text-xs text-gray-500">Applications can be created on the <a className="text-blue-500" href="https://gitlab.com/-/profile/applications" target="_blank" rel="noreferrer">https://gitlab.com/-/profile/applications</a> page,
+              group applications on <a className="text-blue-500" href="https://gitlab.com/groups/$your-group/-/settings/applications" target="_blank" rel="noreferrer">https://gitlab.com/groups/$your-group/-/settings/applications</a>.
                 Grant `api` access.</div>
             </div>
             <input type="submit" value="Integrate Gimlet"
