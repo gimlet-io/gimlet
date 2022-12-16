@@ -79,10 +79,10 @@ func main() {
 	r.Use(middleware.Logger)
 
 	stackUrl := stack.DefaultStackURL
-	latestTag, _ := stack.LatestVersion(stackUrl)
-	if latestTag != "" {
-		stackUrl = stackUrl + "?tag=" + latestTag
-	}
+	// latestTag, _ := stack.LatestVersion(stackUrl)
+	// if latestTag != "" {
+	// 	stackUrl = stackUrl + "?tag=" + latestTag
+	// }
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
@@ -262,6 +262,9 @@ func setGitlabStackConfig(data *data, token string) {
 	gimletDashboardConfig["gitlabClientId"] = data.clientId
 	gimletDashboardConfig["gitlabClientSecret"] = data.clientSecret
 	gimletDashboardConfig["gitlabAdminToken"] = token
+
+	gimletdConfig := data.stackConfig.Config["gimletd"].(map[string]interface{})
+	gimletdConfig["gitSSHAddressFormat"] = "git@gitlab.com:%s.git"
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -575,9 +578,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	go gitRepoCache.Run()
 	data.repoCache = gitRepoCache
 
-	scmUrl := "git@gitlab.com:%s.git"
+	scmUrl := "gitlab.com"
 	if data.gitlab {
-		scmUrl = "git@127.0.0.1:8000:%s.git"
+		scmUrl = "gitlab.gitlab.h.turbopizza.net"
 	}
 	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := server.BootstrapEnv(
 		gitRepoCache,
@@ -726,7 +729,7 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	appId := formValues.Get("appId")
 	appSecret := formValues.Get("appSecret")
 
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("http://127.0.0.1:8000"))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://gitlab.gitlab.h.turbopizza.net"))
 	if err != nil {
 		panic(err)
 	}
