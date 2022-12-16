@@ -184,6 +184,24 @@ func state(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
+func irregularPods(w http.ResponseWriter, r *http.Request) {
+	var irregularPods []api.Alert
+	err := json.NewDecoder(r.Body).Decode(&irregularPods)
+	if err != nil {
+		logrus.Errorf("cannot decode kubernetes events: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.IrregularPodsEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.IrregularPodsString},
+		IrregularPods:  irregularPods,
+	})
+	clientHub.Broadcast <- jsonString
+}
+
 func update(w http.ResponseWriter, r *http.Request) {
 	var update api.StackUpdate
 	err := json.NewDecoder(r.Body).Decode(&update)

@@ -11,6 +11,7 @@ const EnvsUpdatedEventString = "envsUpdated"
 const StaleRepoDataEventString = "staleRepoData"
 const GitopsCommitEventString = "gitopsCommit"
 const CommitStatusUpdatedEventString = "commitStatusUpdated"
+const IrregularPodsString = "irregularPods"
 const PodLogsEventString = "podLogs"
 const KubernetesEventsString = "kubernetesEvents"
 
@@ -49,6 +50,11 @@ type CommitStatusUpdatedEvent struct {
 	Sha           string                `json:"sha"`
 	RepoName      string                `json:"repo"`
 	DeployTargets []*model.DeployTarget `json:"deployTargets"`
+	StreamingEvent
+}
+
+type IrregularPodsEvent struct {
+	IrregularPods []api.Alert `json:"irregularPods"`
 	StreamingEvent
 }
 

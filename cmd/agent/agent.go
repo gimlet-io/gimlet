@@ -187,6 +187,8 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 					switch e["action"] {
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
+					case "irregularPods":
+						go agent.IrregularPods(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
