@@ -71,6 +71,7 @@ type data struct {
 	securityToken           string
 	gitlab                  bool
 	github                  bool
+	scmURL                  string
 }
 
 func main() {
@@ -115,6 +116,7 @@ func main() {
 	r.Use(middleware.WithValue("data", &data{
 		stackConfig:     stackConfig,
 		stackDefinition: stackDefinition,
+		scmURL:          "github.com", // will be overwritten for Gitlab
 	}))
 
 	browserClosed := make(chan int, 1)
@@ -264,7 +266,7 @@ func setGitlabStackConfig(data *data, token string) {
 	gimletDashboardConfig["gitlabAdminToken"] = token
 
 	gimletdConfig := data.stackConfig.Config["gimletd"].(map[string]interface{})
-	gimletdConfig["gitSSHAddressFormat"] = "git@gitlab.com:%s.git"
+	gimletdConfig["gitSSHAddressFormat"] = "git@" + data.scmURL + ":%s.git"
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -578,10 +580,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	go gitRepoCache.Run()
 	data.repoCache = gitRepoCache
 
-	scmUrl := "gitlab.com"
-	if data.gitlab {
-		scmUrl = "gitlab.gitlab.h.turbopizza.net"
-	}
 	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := server.BootstrapEnv(
 		gitRepoCache,
 		envName,
@@ -589,7 +587,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		true,
-		scmUrl,
+		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
@@ -601,7 +599,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		false,
-		scmUrl,
+		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
@@ -620,7 +618,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		gitUser,
-		scmUrl,
+		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
@@ -725,6 +723,7 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	formValues := r.Form
 	fmt.Println(formValues)
 
+	gitlabUrl := formValues.Get("gitlabUrl")
 	token := formValues.Get("token")
 	appId := formValues.Get("appId")
 	appSecret := formValues.Get("appSecret")
@@ -767,6 +766,7 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	gimletdPublicKey := initStackConfig(data)
 	data.gimletdPublicKey = gimletdPublicKey
 
+	data.scmURL = gitlabUrl
 	setGitlabStackConfig(data, token)
 
 	data.securityToken = uuid.New().String()

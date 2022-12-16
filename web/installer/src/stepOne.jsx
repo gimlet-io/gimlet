@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 const StepOne = ({ getContext }) => {
   const [org, setOrg] = useState(null);
+  const [gitlabUrl, setGitlabUrl] = useState("gitlab.com");
 
   let url = window.location.href;
   url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
@@ -140,6 +141,18 @@ const StepOne = ({ getContext }) => {
             Gimlet will also need an OAuth application to handle OAuth based authentication.</p>
             <form action="/gitlabInit" method="post">
             <div className="text-gray-700">
+            <div className="flex mt-4">
+                <div className="font-medium self-center">Gitlab URL</div>
+                <div className="max-w-lg flex rounded-md ml-4">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <input id="gitlabUrl" name="gitlabUrl"
+                      className="block w-full p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={gitlabUrl}
+                      onChange={e => setGitlabUrl(e.target.value)}
+                      type="text" />
+                  </div>
+                </div>
+              </div>
               <div className="flex mt-4">
                 <div className="font-medium self-center">Personal/Group Access Token</div>
                 <div className="max-w-lg flex rounded-md ml-4">
