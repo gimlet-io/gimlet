@@ -301,6 +301,7 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 		"envName":                 data.envName,
 		"stackDefinition":         data.stackDefinition,
 		"stackConfig":             data.stackConfig,
+		"scmUrl":                  data.scmURL,
 	}
 
 	contextString, err := json.Marshal(context)
