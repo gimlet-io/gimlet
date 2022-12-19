@@ -290,7 +290,15 @@ export function updateCommitStatus(state, event) {
 
 export function kubernetesEvents(state, event) {
   if (event.kubernetesEvents) {
-    state.kubernetesEvents = event.kubernetesEvents;
+    state.kubernetesAlerts = [...state.kubernetesAlerts, ...event.kubernetesEvents];
+  }
+
+  return state;
+}
+
+export function irregularPods(state, event) {
+  if (event.irregularPods) {
+    state.kubernetesAlerts = [...state.kubernetesAlerts, ...event.irregularPods];
   }
 
   return state;

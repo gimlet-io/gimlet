@@ -114,7 +114,7 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	var typeWarningEvents []api.Event
+	var typeWarningEvents []api.Alert
 	for _, svc := range integratedServices {
 		for _, deployment := range allDeployments.Items {
 			if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
@@ -123,11 +123,10 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 						pod.Namespace == deployment.Namespace {
 						for _, event := range events.Items {
 							if event.Type == "Warning" && (event.InvolvedObject.Name == pod.Name || event.InvolvedObject.Name == deployment.Name) {
-								typeWarningEvents = append(typeWarningEvents, api.Event{
+								typeWarningEvents = append(typeWarningEvents, api.Alert{
 									LastSeen:            event.LastTimestamp.Unix(),
 									DeploymentName:      deployment.Name,
 									DeploymentNamespace: deployment.Namespace,
-									Type:                event.Type,
 									Reason:              event.Reason,
 									Object:              event.InvolvedObject.Name,
 									Message:             event.Message,
@@ -169,6 +168,80 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 	}
 
 	log.Debug("events sent")
+}
+
+func IrregularPods(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
+	integratedServices, err := kubeEnv.annotatedServices("")
+	if err != nil {
+		log.Errorf("could not get integrated services: %v", err)
+		return
+	}
+
+	allDeployments, err := kubeEnv.Client.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get deployments: %v", err)
+		return
+	}
+
+	allPods, err := kubeEnv.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Errorf("could not get pods: %v", err)
+		return
+	}
+
+	var irregularPods []api.Alert
+	for _, svc := range integratedServices {
+		for _, deployment := range allDeployments.Items {
+			if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
+				for _, pod := range allPods.Items {
+					if HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
+						pod.Namespace == deployment.Namespace {
+						podStatus := podStatus(pod)
+
+						if isError(podStatus) {
+							irregularPods = append(irregularPods, api.Alert{
+								DeploymentName:      deployment.Name,
+								DeploymentNamespace: deployment.Namespace,
+								Reason:              podStatus,
+								Object:              pod.Name,
+								Message:             podErrorCause(pod),
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	irregularPodsString, err := json.Marshal(irregularPods)
+	if err != nil {
+		log.Errorf("could not serialize k8s events: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/irregularPods", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(irregularPodsString))
+	if err != nil {
+		log.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	log.Debug("irregular pods sent")
 }
 
 // annotatedServices returns all services that are enabled for Gimlet
@@ -316,4 +389,14 @@ func httpClient() *http.Client {
 			ExpectContinueTimeout: 10 * time.Second,
 		},
 	}
+}
+
+func isError(podStatus string) bool {
+	normalStates := []string{"Running", "Pending", "Terminating", "Succeeded", "Unknown", "ContainerCreating", "PodInitializing"}
+	for _, normalState := range normalStates {
+		if podStatus == normalState {
+			return false
+		}
+	}
+	return true
 }

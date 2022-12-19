@@ -116,6 +116,7 @@ func userRoutes(r *chi.Mux) {
 		r.Post("/api/rollback", rollback)
 		r.Get("/api/deployStatus", deployStatus)
 		r.Get("/api/gitopsCommits", getGitopsCommits)
+		r.Get("/api/irregularPods", getIrregularPods)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)
 		r.Get("/api/repo/{owner}/{name}/pullRequests", getPullRequests)
@@ -143,6 +144,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
+		r.Post("/agent/irregularPods", irregularPods)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 

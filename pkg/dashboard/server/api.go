@@ -144,6 +144,11 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
+func getIrregularPods(w http.ResponseWriter, r *http.Request) {
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.GetIrregularPods()
+}
+
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	serviceName := r.URL.Query().Get("serviceName")

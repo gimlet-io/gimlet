@@ -15,7 +15,7 @@ import {
 import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
-import { decorateKubernetesEventsWithEnvAndRepo } from '../pulse/pulse';
+import { decorateKubernetesAlertsWithEnvAndRepo } from '../pulse/pulse';
 
 export default class Repo extends Component {
   constructor(props) {
@@ -40,8 +40,7 @@ export default class Repo extends Component {
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests[repoName],
-      kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName),
-      scmUrl: reduxState.settings.scmUrl
+      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents).filter(event => event.repoName === repoName)
     }
 
     // handling API and streaming state changes
@@ -59,7 +58,7 @@ export default class Repo extends Component {
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests[repoName],
-        kubernetesEvents: decorateKubernetesEventsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName),
+        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl
       });
 
@@ -382,8 +381,8 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  kubernetesEventsByEnv(envName) {
-    return this.state.kubernetesEvents.filter(event => event.envName === envName)
+  kubernetesAlertsByEnv(envName) {
+    return this.state.kubernetesAlerts.filter(event => event.envName === envName)
   }
 
   render() {
@@ -447,7 +446,7 @@ export default class Repo extends Component {
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={this.props.gimletClient}
                     store={this.props.store}
-                    kubernetesEvents={this.kubernetesEventsByEnv(envName)}
+                    kubernetesAlerts={this.kubernetesAlertsByEnv(envName)}
                     envFromParams={environment}
                     deploymentFromParams={deployment}
                     scmUrl={scmUrl}
