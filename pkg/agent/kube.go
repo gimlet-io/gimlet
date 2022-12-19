@@ -200,7 +200,6 @@ func IrregularPods(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 
 						if isError(podStatus) {
 							irregularPods = append(irregularPods, api.Alert{
-								LastSeen:            time.Now().Unix(), //TODO find status update time
 								DeploymentName:      deployment.Name,
 								DeploymentNamespace: deployment.Namespace,
 								Reason:              podStatus,
