@@ -80,9 +80,6 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
   return (
     <ul className="space-y-2 text-sm text-red-800">
       {alerts.map(alert => {
-        const exactDate = format(alert.lastSeen * 1000, 'h:mm:ss a, MMMM do yyyy')
-        const dateLabel = formatDistance(alert.lastSeen * 1000, new Date());
-
         return (
           <div key={`${alert.object} ${alert.message}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
@@ -110,13 +107,7 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
                   </button>
                 </div>}
               </>}
-            <div
-              className="text-xs text-red-700 absolute bottom-0 left-0 p-3"
-              title={exactDate}
-              target="_blank"
-              rel="noopener noreferrer">
-              {dateLabel} ago
-            </div>
+            {dateLabel(alert.lastSeen)}
           </div>
         )
       })}
@@ -137,4 +128,23 @@ export function decorateKubernetesAlertsWithEnvAndRepo(kubernetesAlerts, connect
   })
 
   return kubernetesAlerts;
+}
+
+function dateLabel(lastSeen) {
+  if (!lastSeen) {
+    return null
+  }
+
+  const exactDate = format(lastSeen * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(lastSeen * 1000, new Date());
+
+  return (
+    <div
+      className="text-xs text-red-700 absolute bottom-0 left-0 p-3"
+      title={exactDate}
+      target="_blank"
+      rel="noopener noreferrer">
+      {dateLabel} ago
+    </div>
+  );
 }
