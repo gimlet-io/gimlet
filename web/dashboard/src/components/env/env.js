@@ -17,9 +17,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams } = this.props;
+    const { searchFilter, envName, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams);
+    const renderedServices = renderServices(env.stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl);
 
     return (
       <div>
@@ -79,7 +79,7 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams) {
+function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl) {
   let services = [];
 
   let configsWeHave = [];
@@ -110,6 +110,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         store={store}
         kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, stack.service.name)}
         deploymentFromParams={deploymentFromParams}
+        scmUrl={scmUrl}
       />
     )
   })
@@ -139,6 +140,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
         store={store}
         kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, config)}
         deploymentFromParams={deploymentFromParams}
+        scmUrl={scmUrl}
       />
     }
     )

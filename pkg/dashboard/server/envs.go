@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,9 +26,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -202,8 +199,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	token, gitUser, _ := tokenManager.Token()
-	org := config.Github.Org
+	org := config.Org()
 
 	db := r.Context().Value("store").(*store.Store)
 	environment, err := db.GetEnvironment(bootstrapConfig.EnvName)
@@ -243,7 +241,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		environment.InfraRepo,
 		user.AccessToken,
 		token,
-		user.Login)
+		user.Login,
+		gitServiceImpl,
+	)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -256,6 +256,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		user.AccessToken,
 		token,
 		user.Login,
+		gitServiceImpl,
 	)
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
@@ -266,6 +267,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	go updateOrgRepos(ctx)
 	go updateUserRepos(config, db, user)
 
+	scmURL := config.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*dNativeGit.RepoCache)
 	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
@@ -274,6 +276,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		bootstrapConfig.RepoPerEnv,
 		token,
 		true,
+		scmURL,
 	)
 	if err != nil {
 		logrus.Error(err)
@@ -288,6 +291,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		bootstrapConfig.RepoPerEnv,
 		token,
 		false,
+		scmURL,
 	)
 	if err != nil {
 		logrus.Error(err)
@@ -304,6 +308,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		bootstrapConfig.RepoPerEnv,
 		token,
 		gitUser,
+		scmURL,
 	)
 	if err != nil {
 		logrus.Error(err)
@@ -344,12 +349,13 @@ func BootstrapEnv(
 	repoPerEnv bool,
 	token string,
 	shouldGenerateController bool,
+	scmURL string,
 ) (string, string, string, error) {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		if strings.Contains(err.Error(), "remote repository is empty") {
-			repo, tmpPath, err = initRepo(repoName)
+			repo, tmpPath, err = initRepo(scmURL, repoName)
 			defer os.RemoveAll(tmpPath)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot init empty repo: %s", err)
@@ -364,7 +370,11 @@ func BootstrapEnv(
 	}
 	headBranch, err := nativeGit.HeadBranch(repo)
 	if err != nil {
-		return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
+		if strings.Contains(err.Error(), "reference not found") {
+			headBranch = "main"
+		} else {
+			return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
+		}
 	}
 
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
@@ -374,7 +384,7 @@ func BootstrapEnv(
 		tmpPath,
 		true,
 		true,
-		fmt.Sprintf("git@github.com:%s.git", repoName),
+		fmt.Sprintf("git@%s:%s.git", scmURL, repoName),
 		headBranch,
 	)
 	if err != nil {
@@ -391,7 +401,7 @@ func BootstrapEnv(
 	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
-func initRepo(repoName string) (*git.Repository, string, error) {
+func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
 	tmpPath, _ := ioutil.TempDir("", "gitops-")
 	repo, err := git.PlainInit(tmpPath, false)
 	if err != nil {
@@ -399,7 +409,7 @@ func initRepo(repoName string) (*git.Repository, string, error) {
 	}
 	_, err = repo.CreateRemote(&gitConfig.RemoteConfig{
 		Name: "origin",
-		URLs: []string{fmt.Sprintf("https://github.com/%s.git", repoName)},
+		URLs: []string{fmt.Sprintf("https://%s/%s.git", scmURL, repoName)},
 	})
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
@@ -417,6 +427,7 @@ func BootstrapNotifications(
 	repoPerEnv bool,
 	token string,
 	gitUser string,
+	scmURL string,
 ) (string, error) {
 	targetPath := envName
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
@@ -449,7 +460,7 @@ func BootstrapNotifications(
 		targetPath,
 		repoPerEnv,
 		tmpPath,
-		fmt.Sprintf("git@github.com:%s.git", repoName),
+		fmt.Sprintf("git@%s:%s.git", scmURL, repoName),
 		gimletdUrl,
 		gimletdToken,
 	)
@@ -472,41 +483,20 @@ func AssureRepoExists(orgRepos []string,
 	userToken string,
 	orgToken string,
 	loggedInUser string,
+	gitServiceImpl customScm.CustomGitService,
 ) (bool, error) {
 	if hasRepo(orgRepos, repoName) {
 		return false, nil
 	}
 
-	org := ""
+	owner := ""
 	parts := strings.Split(repoName, "/")
 	if len(parts) == 2 {
-		org = parts[0]
+		owner = parts[0]
 		repoName = parts[1]
 	}
 
-	token := orgToken
-	if org == loggedInUser {
-		org = "" // if the repo is not an org repo, but the logged in user's, the Github API doesn't need an org
-		token = userToken
-	}
-
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(context.Background(), ts)
-	client := github.NewClient(tc)
-
-	var (
-		name     = repoName
-		private  = true
-		autoInit = true
-	)
-
-	r := &github.Repository{
-		Name:     &name,
-		Private:  &private,
-		AutoInit: &autoInit,
-	}
-	_, _, err := client.Repositories.Create(context.Background(), org, r)
-
+	err := gitServiceImpl.CreateRepository(owner, repoName, loggedInUser, orgToken, userToken)
 	return true, err
 }
 

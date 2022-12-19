@@ -335,6 +335,7 @@ export function repoMetas(state, payload) {
 
 export function settings(state, payload) {
   state.settings.releaseHistorySinceDays = payload.releaseHistorySinceDays;
+  state.settings.scmUrl = payload.scmUrl;
   return state;
 }
 

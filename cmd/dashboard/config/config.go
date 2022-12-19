@@ -51,6 +51,7 @@ type Config struct {
 	Host                    string `envconfig:"HOST"`
 	JWTSecret               string `envconfig:"JWT_SECRET"`
 	Github                  Github
+	Gitlab                  Gitlab
 	Database                Database
 	GimletD                 GimletD
 	Chart                   Chart
@@ -77,6 +78,15 @@ type Github struct {
 	Org            string    `envconfig:"GITHUB_ORG"`
 }
 
+type Gitlab struct {
+	ClientID     string `envconfig:"GITLAB_CLIENT_ID"`
+	ClientSecret string `envconfig:"GITLAB_CLIENT_SECRET"`
+	AdminToken   string `envconfig:"GITLAB_ADMIN_TOKEN"` // This is a personal access token of the Gitlab admin
+	Debug        bool   `envconfig:"GITLAB_DEBUG"`
+	Org          string `envconfig:"GITLAB_ORG"`
+	URL          string `envconfig:"GITLAB_URL"`
+}
+
 type Chart struct {
 	Name    string `envconfig:"CHART_NAME"`
 	Repo    string `envconfig:"CHART_REPO"`
@@ -95,6 +105,33 @@ type GimletD struct {
 
 func (c *Config) IsGithub() bool {
 	return c.Github.AppID != ""
+}
+
+func (c *Config) IsGitlab() bool {
+	return c.Gitlab.ClientID != ""
+}
+
+func (c *Config) Org() string {
+	if c.IsGithub() {
+		return c.Github.Org
+	} else if c.IsGitlab() {
+		return c.Gitlab.Org
+	}
+
+	return ""
+}
+
+func (c *Config) ScmURL() string {
+	if c.IsGithub() {
+		return "github.com"
+	} else if c.IsGitlab() {
+		if c.Gitlab.URL != "" {
+			return c.Gitlab.URL
+		}
+		return "gitlab.com"
+	}
+
+	return ""
 }
 
 type Multiline string

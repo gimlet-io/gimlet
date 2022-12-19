@@ -101,6 +101,7 @@ func main() {
 		config.GitopsRepo,
 		parsedGitopsRepos,
 		config.GitopsRepoDeployKeyPath,
+		config.GitSSHAddressFormat,
 		stopCh,
 		waitCh,
 	)

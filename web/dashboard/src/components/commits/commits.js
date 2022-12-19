@@ -5,7 +5,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 
-const Commits = ({ commits, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch }) => {
+const Commits = ({ commits, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
   const repoName = `${owner}/${repo}`
   const commitsRef = useRef();
@@ -86,7 +86,7 @@ const Commits = ({ commits, connectedAgents, deployHandler, owner, repo, gimletC
                 <p className="mt-0.5 text-xs text-gray-800">
                   <a
                     className="font-semibold"
-                    href={`https://github.com/${commit.author}`}
+                    href={`https://${scmUrl}/${commit.author}`}
                     target="_blank"
                     rel="noopener noreferrer">
                     {commit.authorName}

@@ -490,6 +490,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		message = fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env)
 	}
 
+	_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), nativeGit.Dir_RWX_RX_R)
 	err = os.WriteFile(filepath.Join(tmpPath, envConfigFilePath), toSaveBuffer.Bytes(), nativeGit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file: %s", err)

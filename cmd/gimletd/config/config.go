@@ -29,6 +29,9 @@ func defaults(c *Config) {
 	if c.ReleaseStats == "" {
 		c.ReleaseStats = "disabled"
 	}
+	if c.GitSSHAddressFormat == "" {
+		c.GitSSHAddressFormat = "git@github.com:%s.git"
+	}
 }
 
 // String returns the configuration in string format.
@@ -48,6 +51,7 @@ type Config struct {
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
 	Notifications           Notifications
 	Github                  Github
+	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 	ReleaseStats            string `envconfig:"RELEASE_STATS"`
 	PrintAdminToken         bool   `envconfig:"PRINT_ADMIN_TOKEN"`
 	AdminToken              string `envconfig:"ADMIN_TOKEN"`

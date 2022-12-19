@@ -58,7 +58,8 @@ export default class Repo extends Component {
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests[repoName],
-        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents).filter(event => event.repoName === repoName)
+        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName),
+        scmUrl: reduxState.settings.scmUrl
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -358,7 +359,7 @@ export default class Repo extends Component {
     return (
       <>
         {repoMetas.githubActions || repoMetas.circleCi ?
-          <a href={`https://github.com/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer">
+          <a href={`https://${this.state.scmUrl}/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg" className={`inline ml-1 h-4 w-4 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
@@ -388,7 +389,7 @@ export default class Repo extends Component {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings } = this.state;
-    const { branches, selectedBranch, envConfigs } = this.state;
+    const { branches, selectedBranch, envConfigs, scmUrl } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
 
@@ -406,7 +407,7 @@ export default class Repo extends Component {
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
-              <a href={`https://github.com/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
                 <svg xmlns="http://www.w3.org/2000/svg"
                   className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
                   viewBox="0 0 24 24">
@@ -448,6 +449,7 @@ export default class Repo extends Component {
                     kubernetesAlerts={this.kubernetesAlertsByEnv(envName)}
                     envFromParams={environment}
                     deploymentFromParams={deployment}
+                    scmUrl={scmUrl}
                   />
                 )
                 }
@@ -472,6 +474,7 @@ export default class Repo extends Component {
                       store={this.props.store}
                       owner={owner}
                       branch={this.state.selectedBranch}
+                      scmUrl={scmUrl}
                     />
                   }
                 </div>

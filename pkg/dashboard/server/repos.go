@@ -1,9 +1,9 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -20,35 +20,27 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 
-	var orgRepos []string
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)
 
-	go updateOrgRepos(ctx)
 	go updateUserRepos(config, dao, user)
 
 	timeout := time.After(45 * time.Second)
-	orgReposJson, user, err := func() (*model.KeyValue, *model.User, error) {
+	user, err := func() (*model.User, error) {
 		for {
-			orgReposJson, err := dao.KeyValue(model.OrgRepos)
-			if err != nil && err != sql.ErrNoRows {
-				logrus.Errorf("cannot load org repos: %s", err)
-				return nil, nil, err
-			}
-
-			user, err = dao.User(user.Login)
+			user, err := dao.User(user.Login)
 			if err != nil {
 				logrus.Errorf("cannot get user from db: %s", err)
-				return nil, nil, err
+				return nil, err
 			}
 
-			if orgReposJson.Value != "" && len(user.Repos) > 0 {
-				return orgReposJson, user, nil
+			if len(user.Repos) > 0 {
+				return user, nil
 			}
 
 			select {
 			case <-timeout:
-				return &model.KeyValue{}, &model.User{}, nil
+				return &model.User{}, nil
 			default:
 				time.Sleep(3 * time.Second)
 			}
@@ -58,21 +50,8 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	if orgReposJson.Value == "" {
-		orgReposJson.Value = "[]"
-	}
 
-	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
-	if err != nil {
-		logrus.Errorf("cannot unmarshal org repos: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	userHasAccessToRepos := intersection(orgRepos, user.Repos)
-	if userHasAccessToRepos == nil {
-		userHasAccessToRepos = []string{}
-	}
+	userHasAccessToRepos := hasPrefix(user.Repos, config.Org())
 	reposString, err := json.Marshal(userHasAccessToRepos)
 	if err != nil {
 		logrus.Errorf("cannot serialize repos: %s", err)
@@ -151,6 +130,16 @@ func intersection(s1, s2 []string) (inter []string) {
 	return
 }
 
+func hasPrefix(repos []string, prefix string) []string {
+	filtered := []string{}
+	for _, r := range repos {
+		if strings.HasPrefix(r, prefix) {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered
+}
+
 type favRepos struct {
 	FavoriteRepos []string `json:"favoriteRepos"`
 }
@@ -219,6 +208,7 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	settings := map[string]interface{}{
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
+		"scmUrl":                  config.ScmURL(),
 	}
 
 	settingsString, err := json.Marshal(settings)

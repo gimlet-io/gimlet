@@ -21,7 +21,9 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
@@ -32,6 +34,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
+	"github.com/xanzy/go-gitlab"
 	"gopkg.in/yaml.v3"
 
 	"encoding/hex"
@@ -46,7 +49,7 @@ type data struct {
 	pem                     string
 	appOwner                string
 	installationId          string
-	tokenManager            *customGithub.GithubOrgTokenManager
+	tokenManager            customScm.NonImpersonatedTokenManager
 	accessToken             string
 	refreshToken            string
 	loggedInUser            string
@@ -66,6 +69,9 @@ type data struct {
 	stackConfig             *dx.StackConfig
 	stackDefinition         map[string]interface{}
 	securityToken           string
+	gitlab                  bool
+	github                  bool
+	scmURL                  string
 }
 
 func main() {
@@ -74,10 +80,10 @@ func main() {
 	r.Use(middleware.Logger)
 
 	stackUrl := stack.DefaultStackURL
-	latestTag, _ := stack.LatestVersion(stackUrl)
-	if latestTag != "" {
-		stackUrl = stackUrl + "?tag=" + latestTag
-	}
+	// latestTag, _ := stack.LatestVersion(stackUrl)
+	// if latestTag != "" {
+	// 	stackUrl = stackUrl + "?tag=" + latestTag
+	// }
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
@@ -110,6 +116,7 @@ func main() {
 	r.Use(middleware.WithValue("data", &data{
 		stackConfig:     stackConfig,
 		stackDefinition: stackDefinition,
+		scmURL:          "github.com", // will be overwritten for Gitlab
 	}))
 
 	browserClosed := make(chan int, 1)
@@ -123,6 +130,7 @@ func main() {
 	r.Get("/installed", installed)
 	r.Post("/bootstrap", bootstrap)
 	r.Post("/done", done)
+	r.Post("/gitlabInit", gitlabInit)
 
 	workDir, err := ioutil.TempDir(os.TempDir(), "gimlet")
 	if err != nil {
@@ -162,7 +170,7 @@ func main() {
 	srv.Shutdown(context.TODO())
 }
 
-func initStackConfig(data *data) (*dx.StackConfig, string) {
+func initStackConfig(data *data) string {
 	jwtSecret, _ := randomHex(32)
 	agentAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
 	_, agentToken, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -223,23 +231,42 @@ func initStackConfig(data *data) (*dx.StackConfig, string) {
 	}
 
 	data.stackConfig.Config["gimletDashboard"] = map[string]interface{}{
-		"enabled":              true,
-		"jwtSecret":            jwtSecret,
-		"githubOrg":            data.appOwner,
-		"gimletdToken":         gimletdSignedAdminToken,
-		"githubAppId":          data.id,
-		"githubPrivateKey":     data.pem,
-		"githubClientId":       data.clientId,
-		"githubClientSecret":   data.clientSecret,
-		"webhookSecret":        webhookSecret,
-		"githubInstallationId": data.installationId,
-		"bootstrapEnv":         "will be set right before bootstrap",
-		"postgresql":           dashboardPostgresConfig,
-		"gimletdURL":           "http://gimletd:8888",
-		"host":                 fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
+		"enabled":       true,
+		"jwtSecret":     jwtSecret,
+		"gimletdToken":  gimletdSignedAdminToken,
+		"webhookSecret": webhookSecret,
+		"bootstrapEnv":  "will be set right before bootstrap",
+		"postgresql":    dashboardPostgresConfig,
+		"gimletdURL":    "http://gimletd:8888",
+		"host":          fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
 	}
 
-	return data.stackConfig, gimletdPublicKey
+	return gimletdPublicKey
+}
+
+func setGithubStackConfig(data *data) {
+	data.github = true
+	gimletDashboardConfig := data.stackConfig.Config["gimletDashboard"].(map[string]interface{})
+
+	gimletDashboardConfig["githubOrg"] = data.appOwner
+	gimletDashboardConfig["githubAppId"] = data.id
+	gimletDashboardConfig["githubPrivateKey"] = data.pem
+	gimletDashboardConfig["githubClientId"] = data.clientId
+	gimletDashboardConfig["githubClientSecret"] = data.clientSecret
+	gimletDashboardConfig["githubInstallationId"] = data.installationId
+}
+
+func setGitlabStackConfig(data *data, token string) {
+	data.gitlab = true
+	gimletDashboardConfig := data.stackConfig.Config["gimletDashboard"].(map[string]interface{})
+
+	gimletDashboardConfig["gitlabOrg"] = data.appOwner
+	gimletDashboardConfig["gitlabClientId"] = data.clientId
+	gimletDashboardConfig["gitlabClientSecret"] = data.clientSecret
+	gimletDashboardConfig["gitlabAdminToken"] = token
+
+	gimletdConfig := data.stackConfig.Config["gimletd"].(map[string]interface{})
+	gimletdConfig["gitSSHAddressFormat"] = "git@" + data.scmURL + ":%s.git"
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -274,6 +301,7 @@ func getContext(w http.ResponseWriter, r *http.Request) {
 		"envName":                 data.envName,
 		"stackDefinition":         data.stackDefinition,
 		"stackConfig":             data.stackConfig,
+		"scmUrl":                  data.scmURL,
 	}
 
 	contextString, err := json.Marshal(context)
@@ -424,9 +452,10 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 	data.loggedInUser = scmUser.Login
 
-	stackConfig, gimletdPublicKey := initStackConfig(data)
-	data.stackConfig = stackConfig
+	gimletdPublicKey := initStackConfig(data)
 	data.gimletdPublicKey = gimletdPublicKey
+
+	setGithubStackConfig(data)
 
 	data.securityToken = uuid.New().String()
 	setSessionCookie(w, r, data.securityToken)
@@ -453,7 +482,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	formValues := r.PostForm
-	fmt.Println(formValues)
 
 	ctx := r.Context()
 	data := ctx.Value("data").(*data)
@@ -463,7 +491,13 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	gitSvc := &customGithub.GithubClient{}
+	var gitSvc customScm.CustomGitService
+	if data.github {
+		gitSvc = &customGithub.GithubClient{}
+	} else {
+		gitSvc = &customGitlab.GitlabClient{}
+	}
+
 	repos, err := gitSvc.OrgRepos(installationToken)
 	if err != nil {
 		panic(err)
@@ -505,6 +539,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		data.accessToken,
 		installationToken,
 		data.loggedInUser,
+		gitSvc,
 	)
 	if err != nil {
 		panic(err)
@@ -515,6 +550,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		data.accessToken,
 		installationToken,
 		data.loggedInUser,
+		gitSvc,
 	)
 	if err != nil {
 		panic(err)
@@ -524,12 +560,19 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+
+	fakeDashConfig := &config.Config{}
+	if data.github {
+		fakeDashConfig.Github = config.Github{AppID: "xxx"}
+	} else {
+		fakeDashConfig.Gitlab = config.Gitlab{ClientID: "xxx"}
+	}
 	gitRepoCache, err := nativeGit.NewRepoCache(
 		data.tokenManager,
 		nil,
 		repoCachePath,
 		nil,
-		nil,
+		fakeDashConfig,
 		nil,
 	)
 	if err != nil {
@@ -545,6 +588,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		true,
+		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
@@ -556,6 +600,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		false,
+		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
@@ -574,6 +619,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		gitUser,
+		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
@@ -668,4 +714,69 @@ func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, e
 	var stackDefinition map[string]interface{}
 	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
 	return stackDefinition, err
+}
+
+func gitlabInit(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	formValues := r.Form
+	fmt.Println(formValues)
+
+	gitlabUrl := formValues.Get("gitlabUrl")
+	token := formValues.Get("token")
+	appId := formValues.Get("appId")
+	appSecret := formValues.Get("appSecret")
+
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://gitlab.gitlab.h.turbopizza.net"))
+	if err != nil {
+		panic(err)
+	}
+
+	user, _, err := git.Users.CurrentUser()
+	if err != nil {
+		panic(err)
+	}
+
+	var org string
+	if user.Bot {
+		groups, _, err := git.Groups.ListGroups(&gitlab.ListGroupsOptions{})
+		if err != nil {
+			panic(err)
+		}
+		org = groups[0].Name
+	} else {
+		org = user.Username
+	}
+
+	ctx := r.Context()
+	data := ctx.Value("data").(*data)
+
+	data.id = appId
+	data.clientId = appId
+	data.clientSecret = appSecret
+
+	tokenManager := customGitlab.NewGitlabTokenManager(token)
+
+	data.appOwner = org
+	data.tokenManager = tokenManager
+
+	data.loggedInUser = user.Username
+
+	gimletdPublicKey := initStackConfig(data)
+	data.gimletdPublicKey = gimletdPublicKey
+
+	data.scmURL = gitlabUrl
+	setGitlabStackConfig(data, token)
+
+	data.securityToken = uuid.New().String()
+	setSessionCookie(w, r, data.securityToken)
+
+	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
+}
+
+func groupFromUsername(username string) string {
+	username = strings.TrimPrefix(username, "group_")
+	return strings.Split(username, "_")[0]
 }

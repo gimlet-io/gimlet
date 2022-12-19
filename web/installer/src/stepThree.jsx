@@ -48,7 +48,7 @@ const StepThree = ({ getContext }) => {
                                                     clipRule="evenodd" />
                                             </svg>
                                         </span>
-                                        <span className="ml-4 text-sm font-medium text-gray-900">Create Github Application</span>
+                                        <span className="ml-4 text-sm font-medium text-gray-900">Integrate with Source Code Manager</span>
                                     </span>
                                 </div>
 
@@ -124,11 +124,11 @@ const StepThree = ({ getContext }) => {
                             <div className="pt-4">
                                 <p>
                                     Go checkout the repo for your infrastructure components: <br />
-                                    👉 <a href={`https://github.com/${context.infraRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.infraRepo}</a>
+                                    👉 <a href={`https://${context.scmUrl}/${context.infraRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://{context.scmUrl}/{context.infraRepo}</a>
                                 </p>
                                 <p className="mt-2">
                                     Don't forget to check the repo for your own applications: <br />
-                                    👉 <a href={`https://github.com/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://github.com/{context.appsRepo}</a>
+                                    👉 <a href={`https://${context.scmUrl}/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://{context.scmUrl}/{context.appsRepo}</a>
                                 </p>
                             </div>
                             <h3 className="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
@@ -140,6 +140,7 @@ const StepThree = ({ getContext }) => {
                                 secretFileName={context.infraSecretFileName}
                                 gitopsRepoFileName={context.infraGitopsRepoFileName}
                                 controllerGenerated={true}
+                                scmUrl={context.scmUrl}
                             />
                             <BootstrapGuide
                                 envName={context.envName}
@@ -150,10 +151,11 @@ const StepThree = ({ getContext }) => {
                                 gitopsRepoFileName={context.appsGitopsRepoFileName}
                                 notificationsFileName={context.notificationsFileName}
                                 controllerGenerated={false}
+                                scmUrl={context.scmUrl}
                             />
                             <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
                                 <ul className="break-all text-sm text-blue-700 space-y-2">
-                                    <li>👉 Add the following deploy key to your Git provider to the <a href={`https://github.com/${context.appsRepo}/settings/keys`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository <span className="font-bold">with write access</span>.</li>
+                                    <li>👉 Add the following deploy key to your Git provider to the <a href={`https://${context.scmUrl}/${context.appsRepo}` + (context.scmUrl === "github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository <span className="font-bold">with write access</span>.</li>
                                     <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{context.gimletdPublicKey}</li>
                                 </ul>
                             </div>

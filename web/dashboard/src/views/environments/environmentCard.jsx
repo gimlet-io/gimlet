@@ -15,8 +15,8 @@ import {
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests }) => {
-  const [repoPerEnv, setRepoPerEnv] = useState(false)
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl }) => {
+  const [repoPerEnv, setRepoPerEnv] = useState(true)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
@@ -94,8 +94,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }, [env.deploymentAutomationEnabled, env.stackConfig]);
 
   const gitopsRepositories = [
-    { name: env.infraRepo, href: `https://github.com/${env.infraRepo}` },
-    { name: env.appsRepo, href: `https://github.com/${env.appsRepo}` }
+    { name: env.infraRepo, href: `https://${scmUrl}/${env.infraRepo}` },
+    { name: env.appsRepo, href: `https://${scmUrl}/${env.appsRepo}` }
   ];
 
   const switchTabHandler = (tabName) => {
@@ -416,6 +416,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
+  const deployKeySettingsUrl = `https://${scmUrl}/${env.appsRepo}` + (scmUrl === "github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
 
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
@@ -479,7 +480,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             {deploymentAutomationPublicKey &&
               <div className="rounded-md bg-blue-50 p-4 mb-4 mt-2 overflow-hidden">
                 <ul className="break-all text-sm text-blue-700 space-y-2">
-                  <li>👉 Add the following deploy key to your Git provider as a read-write key in the <a href={`https://github.com/${env.appsRepo}/settings/keys`} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{env.appsRepo}</a> repository</li>
+                  <li>👉 Add the following deploy key to your Git provider as a read-write key in the <a href={deployKeySettingsUrl} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{env.appsRepo}</a> repository</li>
                   <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{deploymentAutomationPublicKey}</li>
                   <h2 className=''>Happy Gitopsing🎊</h2>
                 </ul>
@@ -534,6 +535,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   secretFileName={bootstrapMessage.infraSecretFileName}
                   gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
                   controllerGenerated={true}
+                  scmUrl={scmUrl}
                 />
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
@@ -544,6 +546,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
                   notificationsFileName={bootstrapMessage.notificationsFileName}
                   controllerGenerated={false}
+                  scmUrl={scmUrl}
                 />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
               </>

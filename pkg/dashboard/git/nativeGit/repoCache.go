@@ -254,7 +254,7 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 	}
 
 	opts := &git.CloneOptions{
-		URL: fmt.Sprintf("%s/%s", "https://github.com", repoName),
+		URL: fmt.Sprintf("https://%s/%s", r.config.ScmURL(), repoName),
 		Auth: &http.BasicAuth{
 			Username: user,
 			Password: token,

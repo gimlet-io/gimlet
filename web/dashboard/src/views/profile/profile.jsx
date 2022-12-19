@@ -21,7 +21,8 @@ export default class Profile extends Component {
       application: reduxState.application,
       users: reduxState.users,
       input: "",
-      saveButtonTriggered: false
+      saveButtonTriggered: false,
+      scmUrl: reduxState.settings.scmUrl
     }
 
     // handling API and streaming state changes
@@ -32,6 +33,7 @@ export default class Profile extends Component {
       this.setState({ users: reduxState.users });
       this.setState({ gimletd: reduxState.gimletd });
       this.setState({ application: reduxState.application });
+      this.setState({ scmUrl: reduxState.settings.scmUrl });
     });
   }
 
@@ -96,7 +98,7 @@ export default class Profile extends Component {
   }
 
   render() {
-    const { user, users, gimletd } = this.state
+    const { user, users, gimletd, scmUrl } = this.state
 
     const sortedUsers = this.sortAlphabetically(users);
 
@@ -105,7 +107,7 @@ export default class Profile extends Component {
       return null;
     }
 
-    user.imageUrl = `https://github.com/${user.login}.png?size=128`;
+    user.imageUrl = `https://${scmUrl}/${user.login}.png?size=128`;
 
     const gimletdIntegrationEnabled = gimletd !== undefined;
 
@@ -180,7 +182,7 @@ source ~/.gimlet/config`}
               }
               {this.so}
               {users &&
-                userList(sortedUsers, DefaultProfilePicture)
+                userList(sortedUsers, DefaultProfilePicture, scmUrl)
               }
               <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                 <div className="px-4 py-5 sm:px-6">
@@ -293,7 +295,7 @@ function dashboardVersion(application) {
   )
 }
 
-function userList(sortedUsers, defaultProfilePicture) {
+function userList(sortedUsers, defaultProfilePicture, scmUrl) {
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
       <div className="px-4 py-5 sm:px-6">
@@ -307,7 +309,7 @@ function userList(sortedUsers, defaultProfilePicture) {
             <div className="inline-flex items-center">
               <img
                 className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900"
-                src={`https://github.com/${user.login}.png?size=128`}
+                src={`https://${scmUrl}/${user.login}.png?size=128`}
                 onError={(e) => { e.target.src = defaultProfilePicture }}
                 alt={user.login} />
               <div className="ml-4">{user.login}</div>

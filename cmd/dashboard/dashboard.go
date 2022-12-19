@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -80,8 +81,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	} else {
-		panic("Github configuration must be provided")
+	} else if config.IsGitlab() {
+		gitSvc = &customGitlab.GitlabClient{}
+		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
 	}
 
 	stopCh := make(chan struct{})
