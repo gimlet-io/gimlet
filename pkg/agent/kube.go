@@ -391,12 +391,12 @@ func httpClient() *http.Client {
 	}
 }
 
-func isError(str string) bool {
-	errorStates := []string{"CrashLoopBackOff", "CreateContainerError", "RunContainerError", "ImagePullBackOff", "ErrImagePull", "Error"}
-	for _, state := range errorStates {
-		if state == str {
-			return true
+func isError(podStatus string) bool {
+	normalStates := []string{"Running", "Pending", "Terminating", "Succeeded", "Unknown", "ContainerCreating", "PodInitializing"}
+	for _, normalState := range normalStates {
+		if podStatus == normalState {
+			return false
 		}
 	}
-	return false
+	return true
 }
