@@ -51,6 +51,7 @@ export default class APIBackend extends Component {
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data }), () => {/* Generic error handler deals with it */
       });
       this.props.gimletClient.getEvents();
+      this.props.gimletClient.getIrregularPods();
   }
 
   render() {

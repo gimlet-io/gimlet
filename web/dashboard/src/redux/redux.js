@@ -47,6 +47,7 @@ export const EVENT_STALE_REPO_DATA = 'staleRepoData';
 export const EVENT_GITOPS_COMMIT_EVENT = 'gitopsCommit';
 export const EVENT_COMMIT_STATUS_UPDATED = 'commitStatusUpdated';
 export const EVENT_KUBERNETES_EVENTS = 'kubernetesEvents';
+export const EVENT_IRREGULAR_PODS = 'irregularPods';
 
 export const EVENT_POD_CREATED = 'podCreated';
 export const EVENT_POD_UPDATED = 'podUpdated';
@@ -82,7 +83,8 @@ export const initialState = {
   fileInfos: [],
   envs: [],
   gitopsCommits: [],
-  kubernetesEvents: [],
+  kubernetesAlerts: [],
+  irregularPods: [],
   popupWindow: {
     visible: false,
     finished: false,
@@ -212,6 +214,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateCommitStatus(state, event);
       case EVENT_KUBERNETES_EVENTS:
         return eventHandlers.kubernetesEvents(state, event);
+      case EVENT_IRREGULAR_PODS:
+        return eventHandlers.irregularPods(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;
