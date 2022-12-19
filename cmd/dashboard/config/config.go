@@ -84,6 +84,7 @@ type Gitlab struct {
 	AdminToken   string `envconfig:"GITLAB_ADMIN_TOKEN"` // This is a personal access token of the Gitlab admin
 	Debug        bool   `envconfig:"GITLAB_DEBUG"`
 	Org          string `envconfig:"GITLAB_ORG"`
+	URL          string `envconfig:"GITLAB_URL"`
 }
 
 type Chart struct {
@@ -124,6 +125,9 @@ func (c *Config) ScmURL() string {
 	if c.IsGithub() {
 		return "github.com"
 	} else if c.IsGitlab() {
+		if c.Gitlab.URL != "" {
+			return c.Gitlab.URL
+		}
 		return "gitlab.com"
 	}
 
