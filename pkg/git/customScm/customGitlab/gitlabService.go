@@ -13,6 +13,7 @@ import (
 )
 
 type GitlabClient struct {
+	BaseURL string
 }
 
 // FetchCommits gets commit data that we use to decorate
@@ -24,7 +25,7 @@ func (c *GitlabClient) FetchCommits(
 	token string,
 	hashesToFetch []string,
 ) ([]*model.Commit, error) {
-	git, err := gitlab.NewClient(token)
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+c.BaseURL))
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func (c *GitlabClient) FetchCommits(
 }
 
 func (c *GitlabClient) OrgRepos(token string) ([]string, error) {
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://gitlab.gitlab.h.turbopizza.net"))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+c.BaseURL))
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (c *GitlabClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context
 }
 
 func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser string, orgToken string, userToken string) error {
-	git, err := gitlab.NewClient(orgToken, gitlab.WithBaseURL("https://gitlab.gitlab.h.turbopizza.net"))
+	git, err := gitlab.NewClient(orgToken, gitlab.WithBaseURL("https://"+c.BaseURL))
 	if err != nil {
 		return err
 	}

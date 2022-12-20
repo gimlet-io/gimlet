@@ -82,7 +82,9 @@ func main() {
 			panic(err)
 		}
 	} else if config.IsGitlab() {
-		gitSvc = &customGitlab.GitlabClient{}
+		gitSvc = &customGitlab.GitlabClient{
+			BaseURL: config.ScmURL(),
+		}
 		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
 	}
 

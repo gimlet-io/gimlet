@@ -492,7 +492,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	if data.github {
 		gitSvc = &customGithub.GithubClient{}
 	} else {
-		gitSvc = &customGitlab.GitlabClient{}
+		gitSvc = &customGitlab.GitlabClient{
+			BaseURL: data.scmURL,
+		}
 	}
 
 	repos, err := gitSvc.OrgRepos(installationToken)
@@ -726,7 +728,7 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	appId := formValues.Get("appId")
 	appSecret := formValues.Get("appSecret")
 
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://gitlab.gitlab.h.turbopizza.net"))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+gitlabUrl))
 	if err != nil {
 		panic(err)
 	}

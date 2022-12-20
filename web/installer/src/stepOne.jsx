@@ -189,7 +189,7 @@ const StepOne = ({ getContext }) => {
               </div>
               <div className="text-xs text-gray-500">Applications can be created on the <a className="text-blue-500" href="https://gitlab.com/-/profile/applications" target="_blank" rel="noreferrer">https://gitlab.com/-/profile/applications</a> page,
               group applications on <a className="text-blue-500" href="https://gitlab.com/groups/$your-group/-/settings/applications" target="_blank" rel="noreferrer">https://gitlab.com/groups/$your-group/-/settings/applications</a>.
-                Grant `api` access.</div>
+                Grant `api` access. The redirect URL is: {window.location.href}/auth</div>
             </div>
             <input type="submit" value="Integrate Gimlet"
               className="mt-8 cursor-pointer font-sans inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
