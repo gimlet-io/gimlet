@@ -454,7 +454,7 @@ func CommitFilesToGit(
 			content = content + "\n"
 		}
 
-		err = stageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
+		err = StageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
@@ -470,11 +470,11 @@ func CommitFilesToGit(
 			envReleaseJsonPath = ""
 		}
 
-		err = stageFile(w, releaseString, filepath.Join(envReleaseJsonPath, "release.json"))
+		err = StageFile(w, releaseString, filepath.Join(envReleaseJsonPath, "release.json"))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
-		err = stageFile(w, releaseString, filepath.Join(rootPath, "release.json"))
+		err = StageFile(w, releaseString, filepath.Join(rootPath, "release.json"))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
@@ -492,7 +492,7 @@ func CommitFilesToGit(
 	return Commit(repo, gitMessage)
 }
 
-func stageFile(worktree *git.Worktree, content string, path string) error {
+func StageFile(worktree *git.Worktree, content string, path string) error {
 	createdFile, err := worktree.Filesystem.Create(path)
 	if err != nil {
 		return err

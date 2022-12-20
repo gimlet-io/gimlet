@@ -138,14 +138,17 @@ func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser 
 		}
 	}
 
+	yesItsTrue := true
 	if namespaceId != 0 {
 		_, _, err = git.Projects.CreateProject(&gitlab.CreateProjectOptions{
-			Name:        &repo,
-			NamespaceID: &namespaceId,
+			Name:                 &repo,
+			NamespaceID:          &namespaceId,
+			InitializeWithReadme: &yesItsTrue,
 		})
 	} else {
 		_, _, err = git.Projects.CreateProject(&gitlab.CreateProjectOptions{
-			Name: &repo,
+			Name:                 &repo,
+			InitializeWithReadme: &yesItsTrue,
 		})
 	}
 

@@ -370,11 +370,7 @@ func BootstrapEnv(
 	}
 	headBranch, err := nativeGit.HeadBranch(repo)
 	if err != nil {
-		if strings.Contains(err.Error(), "reference not found") {
-			headBranch = "main"
-		} else {
-			return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
-		}
+		return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
 	}
 
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
@@ -404,6 +400,18 @@ func BootstrapEnv(
 func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
 	tmpPath, _ := ioutil.TempDir("", "gitops-")
 	repo, err := git.PlainInit(tmpPath, false)
+	if err != nil {
+		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
+	}
+	w, err := repo.Worktree()
+	if err != nil {
+		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
+	}
+	err = nativeGit.StageFile(w, "", "README.md")
+	if err != nil {
+		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
+	}
+	_, err = nativeGit.Commit(repo, "Init")
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
