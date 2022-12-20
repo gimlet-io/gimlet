@@ -58,7 +58,7 @@ export default class Repo extends Component {
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests[repoName],
-        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesEvents, reduxState.connectedAgents).filter(event => event.repoName === repoName),
+        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl
       });
 
