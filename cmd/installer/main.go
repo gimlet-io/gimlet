@@ -441,10 +441,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.refreshToken = appInfo["refresh_token"].(string)
 
 	goScmHelper := genericScm.NewGoScmHelper(&config.Config{
-		Github: config.Github{
-			ClientID:     data.clientId,
-			ClientSecret: data.clientSecret,
-		},
+		Github: config.Github{AppID: "dummyID - helper uses the tokens only"},
 	}, nil)
 	scmUser, err := goScmHelper.User(data.accessToken, data.refreshToken)
 	if err != nil {
