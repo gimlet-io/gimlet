@@ -81,10 +81,11 @@ type Github struct {
 type Gitlab struct {
 	ClientID     string `envconfig:"GITLAB_CLIENT_ID"`
 	ClientSecret string `envconfig:"GITLAB_CLIENT_SECRET"`
-	AdminToken   string `envconfig:"GITLAB_ADMIN_TOKEN"` // This is a personal access token of the Gitlab admin
-	Debug        bool   `envconfig:"GITLAB_DEBUG"`
-	Org          string `envconfig:"GITLAB_ORG"`
-	URL          string `envconfig:"GITLAB_URL"`
+	// This is a personal access token of the Gitlab admin or a Group Token
+	AdminToken string `envconfig:"GITLAB_ADMIN_TOKEN"`
+	Debug      bool   `envconfig:"GITLAB_DEBUG"`
+	Org        string `envconfig:"GITLAB_ORG"`
+	URL        string `envconfig:"GITLAB_URL"`
 }
 
 type Chart struct {

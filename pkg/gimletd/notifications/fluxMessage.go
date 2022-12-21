@@ -6,7 +6,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	githubLib "github.com/google/go-github/v37/github"
 )
 
 type fluxMessage struct {
@@ -83,7 +82,7 @@ func (fm *fluxMessage) Env() string {
 	return fm.env
 }
 
-func (fm *fluxMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
+func (fm *fluxMessage) AsStatus() (*status, error) {
 	return nil, nil
 }
 

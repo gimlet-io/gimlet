@@ -7,22 +7,23 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/google/go-github/v37/github"
 	githubLib "github.com/google/go-github/v37/github"
 	"golang.org/x/oauth2"
 )
 
-type github struct {
+type githubProvider struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 }
 
-func NewGithubProvider(tokenManager customScm.NonImpersonatedTokenManager) *github {
-	return &github{
+func NewGithubProvider(tokenManager customScm.NonImpersonatedTokenManager) *githubProvider {
+	return &githubProvider{
 		tokenManager: tokenManager,
 	}
 }
 
-func (g *github) send(msg Message) error {
-	status, err := msg.AsGithubStatus()
+func (g *githubProvider) send(msg Message) error {
+	status, err := msg.AsStatus()
 	if err != nil {
 		return fmt.Errorf("cannot create github status message: %s", err)
 	}
@@ -41,10 +42,20 @@ func (g *github) send(msg Message) error {
 
 	sha := msg.SHA()
 
-	return g.post(owner, repo, sha, status)
+	urlPtr := &status.targetURL
+	if status.targetURL == "" {
+		urlPtr = nil
+	}
+
+	return g.post(owner, repo, sha, &githubLib.RepoStatus{
+		State:       &status.state,
+		Context:     &status.context,
+		Description: &status.description,
+		TargetURL:   urlPtr,
+	})
 }
 
-func (g *github) post(owner string, repo string, sha string, status *githubLib.RepoStatus) error {
+func (g *githubProvider) post(owner string, repo string, sha string, status *githubLib.RepoStatus) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -54,9 +65,9 @@ func (g *github) post(owner string, repo string, sha string, status *githubLib.R
 	}
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
-	client := githubLib.NewClient(tc)
+	client := github.NewClient(tc)
 
-	opts := &githubLib.ListOptions{PerPage: 50}
+	opts := &github.ListOptions{PerPage: 50}
 	statuses, _, err := client.Repositories.ListStatuses(ctx, owner, repo, sha, opts)
 	if err != nil {
 		return fmt.Errorf("could not list commit statuses: %v", err)
@@ -73,7 +84,7 @@ func (g *github) post(owner string, repo string, sha string, status *githubLib.R
 	return nil
 }
 
-func statusExists(statuses []*githubLib.RepoStatus, status *githubLib.RepoStatus) bool {
+func statusExists(statuses []*github.RepoStatus, status *github.RepoStatus) bool {
 	for _, s := range statuses {
 		if *s.Context == *status.Context {
 			if *s.State == *status.State && *s.Description == *status.Description {

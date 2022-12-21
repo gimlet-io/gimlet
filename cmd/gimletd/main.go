@@ -24,6 +24,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/securecookie"
@@ -58,7 +59,7 @@ func main() {
 	}
 
 	var tokenManager customScm.NonImpersonatedTokenManager
-	if config.Github.AppID != "" {
+	if config.IsGithub() {
 		tokenManager, err = customGithub.NewGithubOrgTokenManager(
 			config.Github.AppID,
 			config.Github.InstallationID,
@@ -67,8 +68,12 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+	} else if config.IsGitlab() {
+		tokenManager = customGitlab.NewGitlabTokenManager(
+			config.Gitlab.AdminToken,
+		)
 	} else {
-		logrus.Warnf("Please set Github Application based access for features like deleted branch detection and commit status pushing")
+		logrus.Warnf("Please set Github / Gitlab access for features like deleted branch detection and commit status pushing")
 	}
 
 	notificationsManager := notifications.NewManager()
@@ -78,8 +83,10 @@ func main() {
 	if config.Notifications.Provider == "discord" {
 		notificationsManager.AddProvider(discordNotificationProvider(config))
 	}
-	if tokenManager != nil {
+	if config.IsGithub() {
 		notificationsManager.AddProvider(notifications.NewGithubProvider(tokenManager))
+	} else if config.IsGitlab() {
+		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, config.Gitlab.URL))
 	}
 	go notificationsManager.Run()
 
