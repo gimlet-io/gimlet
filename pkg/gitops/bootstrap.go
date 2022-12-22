@@ -118,8 +118,8 @@ func GenerateManifests(
 }
 
 func uniqueName(singleEnv bool, owner string, repoName string, env string) string {
-	if len(owner) > 8 {
-		owner = owner[:8]
+	if len(owner) > 10 {
+		owner = owner[:10]
 	}
 
 	uniqueName := fmt.Sprintf("%s-%s-%s",
