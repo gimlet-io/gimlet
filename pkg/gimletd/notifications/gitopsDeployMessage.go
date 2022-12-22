@@ -9,7 +9,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 )
 
-const githubCommitLink = "https://github.com/%s/commit/%s"
 const contextFormat = "gitops/%s@%s"
 
 type gitopsDeployMessage struct {
@@ -95,18 +94,16 @@ func (gm *gitopsDeployMessage) AsStatus() (*status, error) {
 	}
 
 	state := "success"
-	targetURL := fmt.Sprintf(githubCommitLink, gm.event.GitopsRepo, gm.event.GitopsRef)
-
 	if gm.event.Status == model.Failure {
 		state = "failure"
-		targetURL = ""
 	}
 
 	return &status{
 		state:       state,
 		context:     context,
 		description: desc,
-		targetURL:   targetURL,
+		repo:        gm.event.GitopsRepo,
+		sha:         gm.event.GitopsRef,
 	}, nil
 }
 

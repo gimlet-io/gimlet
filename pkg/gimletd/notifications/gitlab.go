@@ -9,6 +9,8 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+const gitlabCommitLink = "%s/%s/-/commit/%s"
+
 type gitlabProvider struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 	baseUrl      string
@@ -49,9 +51,14 @@ func (g *gitlabProvider) send(msg Message) error {
 
 func (g *gitlabProvider) post(owner string, repo string, sha string, status *status) error {
 	token, _, _ := g.tokenManager.Token()
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+g.baseUrl))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(g.baseUrl))
 	if err != nil {
 		return fmt.Errorf("couldn't create gitlab client: %s", err)
+	}
+
+	targetURL := fmt.Sprintf(gitlabCommitLink, g.baseUrl, status.repo, status.sha)
+	if status.state == "failure" {
+		targetURL = ""
 	}
 
 	_, _, err = git.Commits.SetCommitStatus(
@@ -61,7 +68,7 @@ func (g *gitlabProvider) post(owner string, repo string, sha string, status *sta
 			State:       gitlab.BuildStateValue(status.state),
 			Name:        &status.context,
 			Context:     &status.context,
-			TargetURL:   &status.targetURL,
+			TargetURL:   &targetURL,
 			Description: &status.description,
 		},
 	)

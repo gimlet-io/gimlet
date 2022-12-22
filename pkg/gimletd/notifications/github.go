@@ -12,6 +12,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const githubCommitLink = "https://github.com/%s/commit/%s"
+
 type githubProvider struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 }
@@ -42,8 +44,13 @@ func (g *githubProvider) send(msg Message) error {
 
 	sha := msg.SHA()
 
-	urlPtr := &status.targetURL
-	if status.targetURL == "" {
+	targetURL := fmt.Sprintf(githubCommitLink, status.repo, status.sha)
+	if status.state == "failure" {
+		targetURL = ""
+	}
+
+	urlPtr := &targetURL
+	if targetURL == "" {
 		urlPtr = nil
 	}
 

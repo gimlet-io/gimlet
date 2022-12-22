@@ -13,5 +13,6 @@ type status struct {
 	state       string
 	context     string
 	description string
-	targetURL   string
+	repo        string
+	sha         string
 }
