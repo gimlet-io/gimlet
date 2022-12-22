@@ -13,3 +13,18 @@ sudo sh -c 'echo 172.26.0.2 gitlab.local >> /etc/hosts'
 ```
 k3d cluster create gitlab3 --network gitlab_gitlab --host-alias 172.26.0.2:gitlab.local
 ```
+
+Gimletd known hosts file in this case
+```
+    vars:
+      SSH_KNOWN_HOSTS: /var/lib/gimletd/gitlab_hosts/gitlab.key:/etc/ssh/ssh_known_hosts
+```
+
+```
+    fileSecrets:
+      - name:  gitlab-hosts
+        path: /var/lib/gimletd/gitlab_hosts
+        secrets:
+          gitlab.key: |
+            gitlab.local ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlz... same value as in the flux/deploy key file
+```
