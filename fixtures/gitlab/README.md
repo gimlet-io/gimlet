@@ -28,3 +28,9 @@ Gimletd known hosts file in this case
           gitlab.key: |
             gitlab.local ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlz... same value as in the flux/deploy key file
 ```
+
+in local `.env` file:
+
+```
+SSH_KNOWN_HOSTS=/home/laszlo/projects/gimlet/fixtures/gitlab/gitlab.local.hosts:/home/laszlo/.ssh/known_hosts
+```
