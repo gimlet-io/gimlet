@@ -108,7 +108,7 @@ function Commit(props) {
           {version.author &&
             <img
               className="rounded-sm overflow-hidden mr-1"
-              src={`https://${scmUrl}/${version.author}.png?size=128`}
+              src={`${scmUrl}/${version.author}.png?size=128`}
               alt={version.authorName}
               width="20"
               height="20"
@@ -119,7 +119,7 @@ function Commit(props) {
             <a
               className="ml-1"
               title={exactDate}
-              href={`https://${scmUrl}/${version.repositoryName}/commit/${version.sha}`}
+              href={`${scmUrl}/${version.repositoryName}/commit/${version.sha}`}
               target="_blank"
               rel="noopener noreferrer">
               comitted {dateLabel} ago
@@ -195,7 +195,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
           <div className="relative">
             <img
               className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 ${ringColor}`}
-              src={`https://${scmUrl}/${rollout.triggeredBy}.png?size=128`}
+              src={`${scmUrl}/${rollout.triggeredBy}.png?size=128`}
               onError={(e) => { e.target.src = defaultProfilePicture }}
               alt={rollout.triggeredBy} />
           </div>
@@ -207,7 +207,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
                 <a
                   className="ml-1"
                   title={exactDate}
-                  href={`https://${scmUrl}/${rollout.gitopsRepo}/commit/${rollout.gitopsRef}`}
+                  href={`${scmUrl}/${rollout.gitopsRepo}/commit/${rollout.gitopsRef}`}
                   target="_blank"
                   rel="noopener noreferrer">
                   {dateLabel} ago

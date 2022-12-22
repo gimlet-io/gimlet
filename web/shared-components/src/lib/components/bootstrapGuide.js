@@ -2,7 +2,7 @@ import React from 'react'
 
 const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, controllerGenerated, scmUrl }) => {
     const repoName = parseRepoName(repoPath);
-    const deployKeySettingsUrl = `https://${scmUrl}/${repoPath}` + (scmUrl === "github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
+    const deployKeySettingsUrl = `${scmUrl}/${repoPath}` + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
     let type = "";
 
     if (repoPath.includes("apps")) {
@@ -12,11 +12,12 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
     }
 
     const renderBootstrapGuideText = (controllerGenerated) => {
+        const scmHost = scmUrl.split("://")[1]
         return (
             <>
                 <li>👉 Clone the Gitops repository</li>
                 <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
-                    <li>git clone git@{scmUrl}:{repoPath}.git</li>
+                    <li>git clone git@{scmHost}:{repoPath}.git</li>
                     <li>cd {repoName}</li>
                 </ul>
 

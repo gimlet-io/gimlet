@@ -124,12 +124,12 @@ func (c *Config) Org() string {
 
 func (c *Config) ScmURL() string {
 	if c.IsGithub() {
-		return "github.com"
+		return "https://github.com"
 	} else if c.IsGitlab() {
 		if c.Gitlab.URL != "" {
 			return c.Gitlab.URL
 		}
-		return "gitlab.com"
+		return "https://gitlab.com"
 	}
 
 	return ""

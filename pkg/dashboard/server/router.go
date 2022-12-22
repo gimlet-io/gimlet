@@ -179,6 +179,7 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 		))
 	} else if config.IsGitlab() {
 		loginMiddleware := &gitlab.Config{
+			Server:       config.ScmURL(),
 			ClientID:     config.Gitlab.ClientID,
 			ClientSecret: config.Gitlab.ClientSecret,
 			RedirectURL:  config.Host + "/auth",

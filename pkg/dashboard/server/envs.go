@@ -373,6 +373,7 @@ func BootstrapEnv(
 		return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
 	}
 
+	scmHost := strings.Split(scmURL, "://")[1]
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		envName,
@@ -380,7 +381,7 @@ func BootstrapEnv(
 		tmpPath,
 		true,
 		true,
-		fmt.Sprintf("git@%s:%s.git", scmURL, repoName),
+		fmt.Sprintf("git@%s:%s.git", scmHost, repoName),
 		headBranch,
 	)
 	if err != nil {
@@ -417,7 +418,7 @@ func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
 	}
 	_, err = repo.CreateRemote(&gitConfig.RemoteConfig{
 		Name: "origin",
-		URLs: []string{fmt.Sprintf("https://%s/%s.git", scmURL, repoName)},
+		URLs: []string{fmt.Sprintf("%s/%s.git", scmURL, repoName)},
 	})
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
@@ -463,12 +464,13 @@ func BootstrapNotifications(
 	if repoPerEnv {
 		targetPath = ""
 	}
+	scmHost := strings.Split(scmURL, "://")[1]
 	notificationsFileName, err := gitops.GenerateManifestProviderAndAlert(
 		envName,
 		targetPath,
 		repoPerEnv,
 		tmpPath,
-		fmt.Sprintf("git@%s:%s.git", scmURL, repoName),
+		fmt.Sprintf("git@%s:%s.git", scmHost, repoName),
 		gimletdUrl,
 		gimletdToken,
 	)
