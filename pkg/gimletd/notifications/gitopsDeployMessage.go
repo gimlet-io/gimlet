@@ -7,10 +7,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	githubLib "github.com/google/go-github/v37/github"
 )
 
-const githubCommitLink = "https://github.com/%s/commit/%s"
 const contextFormat = "gitops/%s@%s"
 
 type gitopsDeployMessage struct {
@@ -88,7 +86,7 @@ func (gm *gitopsDeployMessage) Env() string {
 	return gm.event.Manifest.Env
 }
 
-func (gm *gitopsDeployMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
+func (gm *gitopsDeployMessage) AsStatus() (*status, error) {
 	context := fmt.Sprintf(contextFormat, gm.event.Manifest.Env, time.Now().Format(time.RFC3339))
 	desc := gm.event.StatusDesc
 	if len(desc) > 140 {
@@ -96,19 +94,16 @@ func (gm *gitopsDeployMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
 	}
 
 	state := "success"
-	targetURL := fmt.Sprintf(githubCommitLink, gm.event.GitopsRepo, gm.event.GitopsRef)
-	targetURLPtr := &targetURL
-
 	if gm.event.Status == model.Failure {
 		state = "failure"
-		targetURLPtr = nil
 	}
 
-	return &githubLib.RepoStatus{
-		State:       &state,
-		Context:     &context,
-		Description: &desc,
-		TargetURL:   targetURLPtr,
+	return &status{
+		state:       state,
+		context:     context,
+		description: desc,
+		repo:        gm.event.GitopsRepo,
+		sha:         gm.event.GitopsRef,
 	}, nil
 }
 

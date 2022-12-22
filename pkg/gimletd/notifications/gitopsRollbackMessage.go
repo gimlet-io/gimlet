@@ -8,7 +8,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	githubLib "github.com/google/go-github/v37/github"
 )
 
 type gitopsRollbackMessage struct {
@@ -58,7 +57,7 @@ func (gm *gitopsRollbackMessage) Env() string {
 	return gm.rollbackRequest.Env
 }
 
-func (gm *gitopsRollbackMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
+func (gm *gitopsRollbackMessage) AsStatus() (*status, error) {
 	return nil, nil
 }
 

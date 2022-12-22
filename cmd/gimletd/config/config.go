@@ -51,6 +51,7 @@ type Config struct {
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
 	Notifications           Notifications
 	Github                  Github
+	Gitlab                  Gitlab
 	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 	ReleaseStats            string `envconfig:"RELEASE_STATS"`
 	PrintAdminToken         bool   `envconfig:"PRINT_ADMIN_TOKEN"`
@@ -84,6 +85,20 @@ type Github struct {
 	PrivateKey     Multiline `envconfig:"GITHUB_PRIVATE_KEY"`
 	SkipVerify     bool      `envconfig:"GITHUB_SKIP_VERIFY"`
 	Debug          bool      `envconfig:"GITHUB_DEBUG"`
+}
+
+type Gitlab struct {
+	// This is a personal access token of the Gitlab admin or a Group Token
+	AdminToken string `envconfig:"GITLAB_ADMIN_TOKEN"`
+	URL        string `envconfig:"GITLAB_URL"`
+}
+
+func (c *Config) IsGithub() bool {
+	return c.Github.AppID != ""
+}
+
+func (c *Config) IsGitlab() bool {
+	return c.Gitlab.AdminToken != ""
 }
 
 type Multiline string

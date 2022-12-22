@@ -6,7 +6,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	githubLib "github.com/google/go-github/v37/github"
 )
 
 type gitopsDeleteMessage struct {
@@ -70,7 +69,7 @@ func (gm *gitopsDeleteMessage) Env() string {
 	return gm.result.Manifest.Env
 }
 
-func (gm *gitopsDeleteMessage) AsGithubStatus() (*githubLib.RepoStatus, error) {
+func (gm *gitopsDeleteMessage) AsStatus() (*status, error) {
 	return nil, nil
 }
 
