@@ -266,7 +266,8 @@ func setGitlabStackConfig(data *data, token string) {
 	gimletDashboardConfig["gitlabAdminToken"] = token
 
 	gimletdConfig := data.stackConfig.Config["gimletd"].(map[string]interface{})
-	gimletdConfig["gitSSHAddressFormat"] = "git@" + data.scmURL + ":%s.git"
+	scmHost := strings.Split(data.scmURL, "://")[1]
+	gimletdConfig["gitSSHAddressFormat"] = "git@" + scmHost + ":%s.git"
 }
 
 func getContext(w http.ResponseWriter, r *http.Request) {
@@ -564,7 +565,10 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	if data.github {
 		fakeDashConfig.Github = config.Github{AppID: "xxx"}
 	} else {
-		fakeDashConfig.Gitlab = config.Gitlab{ClientID: "xxx"}
+		fakeDashConfig.Gitlab = config.Gitlab{
+			ClientID: "xxx",
+			URL:      data.scmURL,
+		}
 	}
 	gitRepoCache, err := nativeGit.NewRepoCache(
 		data.tokenManager,
@@ -728,7 +732,7 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	appId := formValues.Get("appId")
 	appSecret := formValues.Get("appSecret")
 
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+gitlabUrl))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(gitlabUrl))
 	if err != nil {
 		panic(err)
 	}
@@ -744,7 +748,7 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		org = groups[0].Name
+		org = groups[0].FullPath
 	} else {
 		org = user.Username
 	}

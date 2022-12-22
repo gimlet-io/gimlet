@@ -45,7 +45,7 @@ func NewGoScmHelper(config *config.Config, tokenUpdateCallback func(token *scm.T
 			},
 		}
 	} else if config.IsGitlab() {
-		client, err = gitlab.New("https://" + config.ScmURL())
+		client, err = gitlab.New(config.ScmURL())
 		if err != nil {
 			logrus.WithError(err).
 				Fatalln("main: cannot create the Gitlab client")

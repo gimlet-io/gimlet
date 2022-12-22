@@ -28,7 +28,7 @@ const BootstrapGuide = _ref => {
     scmUrl
   } = _ref;
   const repoName = parseRepoName(repoPath);
-  const deployKeySettingsUrl = "https://".concat(scmUrl, "/").concat(repoPath) + (scmUrl === "github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings");
+  const deployKeySettingsUrl = concat(scmUrl, "/").concat(repoPath) + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings");
   let type = "";
 
   if (repoPath.includes("apps")) {

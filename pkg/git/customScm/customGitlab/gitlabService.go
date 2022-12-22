@@ -25,7 +25,7 @@ func (c *GitlabClient) FetchCommits(
 	token string,
 	hashesToFetch []string,
 ) ([]*model.Commit, error) {
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+c.BaseURL))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(c.BaseURL))
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (c *GitlabClient) FetchCommits(
 }
 
 func (c *GitlabClient) OrgRepos(token string) ([]string, error) {
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL("https://"+c.BaseURL))
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(c.BaseURL))
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (c *GitlabClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context
 }
 
 func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser string, orgToken string, userToken string) error {
-	git, err := gitlab.NewClient(orgToken, gitlab.WithBaseURL("https://"+c.BaseURL))
+	git, err := gitlab.NewClient(orgToken, gitlab.WithBaseURL(c.BaseURL))
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser 
 		return err
 	}
 	for _, g := range groups {
-		if g.Name == owner {
+		if g.FullPath == owner {
 			namespaceId = g.ID
 		}
 	}

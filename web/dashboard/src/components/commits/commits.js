@@ -86,7 +86,7 @@ const Commits = ({ commits, connectedAgents, deployHandler, owner, repo, gimletC
                 <p className="mt-0.5 text-xs text-gray-800">
                   <a
                     className="font-semibold"
-                    href={`https://${scmUrl}/${commit.author}`}
+                    href={`${scmUrl}/${commit.author}`}
                     target="_blank"
                     rel="noopener noreferrer">
                     {commit.authorName}
