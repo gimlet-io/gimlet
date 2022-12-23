@@ -453,6 +453,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	gimletdPublicKey := initStackConfig(data)
 	data.gimletdPublicKey = gimletdPublicKey
 
+	data.scmURL = "https://github.com"
 	setGithubStackConfig(data)
 
 	data.securityToken = uuid.New().String()
