@@ -238,7 +238,7 @@ func initStackConfig(data *data) string {
 		"bootstrapEnv":  "will be set right before bootstrap",
 		"postgresql":    dashboardPostgresConfig,
 		"gimletdURL":    "http://gimletd:8888",
-		"host":          fmt.Sprintf("http://gimlet.%s", os.Getenv("HOST")),
+		"host":          fmt.Sprintf("http://gimlet.%s:%s", os.Getenv("HOST"), "9000"),
 	}
 
 	return gimletdPublicKey

@@ -124,11 +124,11 @@ const StepThree = ({ getContext }) => {
                             <div className="pt-4">
                                 <p>
                                     Go checkout the repo for your infrastructure components: <br />
-                                    👉 <a href={`${context.scmUrl}/${context.infraRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://{context.scmUrl}/{context.infraRepo}</a>
+                                    👉 <a href={`${context.scmUrl}/${context.infraRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">{context.scmUrl}/{context.infraRepo}</a>
                                 </p>
                                 <p className="mt-2">
                                     Don't forget to check the repo for your own applications: <br />
-                                    👉 <a href={`${context.scmUrl}/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">https://{context.scmUrl}/{context.appsRepo}</a>
+                                    👉 <a href={`${context.scmUrl}/${context.appsRepo}`} className="text-blue-600" rel="noreferrer" target="_blank">{context.scmUrl}/{context.appsRepo}</a>
                                 </p>
                             </div>
                             <h3 className="text-2xl font-bold pt-16">Kick off the gitops sync loop with the following steps</h3>
