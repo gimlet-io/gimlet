@@ -28,7 +28,7 @@ const BootstrapGuide = _ref => {
     scmUrl
   } = _ref;
   const repoName = parseRepoName(repoPath);
-  const deployKeySettingsUrl = concat(scmUrl, "/").concat(repoPath) + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings");
+  const deployKeySettingsUrl = "".concat(scmUrl, "/").concat(repoPath) + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings");
   let type = "";
 
   if (repoPath.includes("apps")) {
@@ -38,9 +38,10 @@ const BootstrapGuide = _ref => {
   }
 
   const renderBootstrapGuideText = controllerGenerated => {
+    const scmHost = scmUrl.split("://")[1];
     return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Clone the Gitops repository"), /*#__PURE__*/_react.default.createElement("ul", {
       className: "list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded"
-    }, /*#__PURE__*/_react.default.createElement("li", null, "git clone git@", scmUrl, ":", repoPath, ".git"), /*#__PURE__*/_react.default.createElement("li", null, "cd ", repoName)), /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Add the following deploy key to your Git provider to the ", /*#__PURE__*/_react.default.createElement("a", {
+    }, /*#__PURE__*/_react.default.createElement("li", null, "git clone git@", scmHost, ":", repoPath, ".git"), /*#__PURE__*/_react.default.createElement("li", null, "cd ", repoName)), /*#__PURE__*/_react.default.createElement("li", null, "\uD83D\uDC49 Add the following deploy key to your Git provider to the ", /*#__PURE__*/_react.default.createElement("a", {
       href: deployKeySettingsUrl,
       rel: "noreferrer",
       target: "_blank",
