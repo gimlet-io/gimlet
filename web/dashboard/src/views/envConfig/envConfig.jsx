@@ -383,7 +383,7 @@ class EnvConfig extends Component {
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
           {fileName &&
             <>
-              <a href={`https://${this.state.scmUrl}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
+              <a href={`${this.state.scmUrl}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
                 <svg xmlns="http://www.w3.org/2000/svg"
                   className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
                   viewBox="0 0 24 24">
@@ -395,7 +395,7 @@ class EnvConfig extends Component {
             </>}
         </h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
-          <a href={`https://${this.state.scmUrl}/${repoName}`} target="_blank" rel="noopener noreferrer">
+          <a href={`${this.state.scmUrl}/${repoName}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg"
               className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
               viewBox="0 0 24 24">

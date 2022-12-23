@@ -359,7 +359,7 @@ export default class Repo extends Component {
     return (
       <>
         {repoMetas.githubActions || repoMetas.circleCi ?
-          <a href={`https://${this.state.scmUrl}/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer">
+          <a href={`${this.state.scmUrl}/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg" className={`inline ml-1 h-4 w-4 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
@@ -407,7 +407,7 @@ export default class Repo extends Component {
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
-              <a href={`https://${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
+              <a href={`${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
                 <svg xmlns="http://www.w3.org/2000/svg"
                   className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
                   viewBox="0 0 24 24">

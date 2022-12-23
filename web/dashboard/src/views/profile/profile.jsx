@@ -107,7 +107,7 @@ export default class Profile extends Component {
       return null;
     }
 
-    user.imageUrl = `https://${scmUrl}/${user.login}.png?size=128`;
+    user.imageUrl = `${scmUrl}/${user.login}.png?size=128`;
 
     const gimletdIntegrationEnabled = gimletd !== undefined;
 
@@ -134,7 +134,7 @@ export default class Profile extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              {githubAppSettings(this.state.application.name, this.state.application.appSettingsURL, this.state.application.installationURL)}
+              {scmUrl === "https://github.com" && githubAppSettings(this.state.application.name, this.state.application.appSettingsURL, this.state.application.installationURL)}
               {gimletdIntegrationEnabled &&
                 <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 my-4">
                   <div className="px-4 py-5 sm:px-6">
@@ -309,7 +309,7 @@ function userList(sortedUsers, defaultProfilePicture, scmUrl) {
             <div className="inline-flex items-center">
               <img
                 className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900"
-                src={`https://${scmUrl}/${user.login}.png?size=128`}
+                src={`${scmUrl}/${user.login}.png?size=128`}
                 onError={(e) => { e.target.src = defaultProfilePicture }}
                 alt={user.login} />
               <div className="ml-4">{user.login}</div>

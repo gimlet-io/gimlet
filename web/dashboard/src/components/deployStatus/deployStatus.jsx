@@ -102,7 +102,7 @@ export default class DeployStatus extends Component {
                       <p className="pl-2">
                         <span>📎</span>
                         <a
-                          href={`https://${scmUrl}/${deploy.repo}/commit/${deploy.sha}`}
+                          href={`${scmUrl}/${deploy.repo}/commit/${deploy.sha}`}
                           target="_blank" rel="noopener noreferrer"
                           className='ml-1'
                         >
@@ -173,7 +173,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl) {
     <p key={deployCommit.sha} className={`font-semibold ${color}`}>
       {deployCommitStatusIcon}
       <a
-        href={`https://${scmUrl}/${gitopsRepo}/commit/${deployCommit.sha}`}
+        href={`${scmUrl}/${gitopsRepo}/commit/${deployCommit.sha}`}
         target="_blank" rel="noopener noreferrer"
         className='ml-1'
       >
@@ -192,7 +192,7 @@ function renderResult(result, gitopsRepo, scmUrl) {
           {result.app}
           <span className='mx-1 align-middle'>✅</span>
           <a
-            href={`https://${scmUrl}/${gitopsRepo}/commit/${result.hash}`}
+            href={`${scmUrl}/${gitopsRepo}/commit/${result.hash}`}
             target="_blank" rel="noopener noreferrer" className="font-normal"
           >
             {result.hash.slice(0, 6)}

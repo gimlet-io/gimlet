@@ -94,8 +94,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }, [env.deploymentAutomationEnabled, env.stackConfig]);
 
   const gitopsRepositories = [
-    { name: env.infraRepo, href: `https://${scmUrl}/${env.infraRepo}` },
-    { name: env.appsRepo, href: `https://${scmUrl}/${env.appsRepo}` }
+    { name: env.infraRepo, href: `${scmUrl}/${env.infraRepo}` },
+    { name: env.appsRepo, href: `${scmUrl}/${env.appsRepo}` }
   ];
 
   const switchTabHandler = (tabName) => {
@@ -416,7 +416,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
-  const deployKeySettingsUrl = `https://${scmUrl}/${env.appsRepo}` + (scmUrl === "github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
+  const deployKeySettingsUrl = `${scmUrl}/${env.appsRepo}` + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
 
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">

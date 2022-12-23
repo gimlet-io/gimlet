@@ -46,7 +46,7 @@ export default class Nav extends Component {
       return null;
     }
 
-    user.imageUrl = `https://${scmUrl}/${user.login}.png?size=128`
+    user.imageUrl = `${scmUrl}/${user.login}.png?size=128`
 
     return (
       <Disclosure as="nav" className="bg-white border-b border-gray-200">
