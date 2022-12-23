@@ -264,6 +264,7 @@ func setGitlabStackConfig(data *data, token string) {
 	gimletDashboardConfig["gitlabClientId"] = data.clientId
 	gimletDashboardConfig["gitlabClientSecret"] = data.clientSecret
 	gimletDashboardConfig["gitlabAdminToken"] = token
+	gimletDashboardConfig["gitlabUrl"] = data.scmURL
 
 	gimletdConfig := data.stackConfig.Config["gimletd"].(map[string]interface{})
 	scmHost := strings.Split(data.scmURL, "://")[1]
