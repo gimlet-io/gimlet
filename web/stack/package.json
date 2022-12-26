@@ -36,7 +36,7 @@
     "@heroicons/react": "^1.0.1",
     "ajv": "^6.12.6",
     "and": "0.0.3",
-    "css-loader": "^3.6.0",
+    "css-loader": "^4.0.0",
     "helm-react-ui": "github:gimlet-io/helm-react-ui",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
