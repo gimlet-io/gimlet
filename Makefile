@@ -51,7 +51,7 @@ build-installer:
 dist-gimletd:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/amd64/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
-	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimletd github.com/gimlet-io/gimlet-cli/cmd/dashboard
+	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
 dist-dashboard:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/amd64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
