@@ -48,7 +48,7 @@ func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
 	}
 
 	savedPod.Status = pod.Status
-	savedPod.Message = pod.Message
+	savedPod.StatusDesc = pod.StatusDesc
 
 	return meddler.Update(db, "pods", savedPod)
 }
