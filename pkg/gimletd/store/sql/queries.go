@@ -23,6 +23,7 @@ const UpdateEventStatus = "update-event-status"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKeyValue = "select-key-value"
+const SelectPodByDeployment = "select-pod-by-deployment"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {

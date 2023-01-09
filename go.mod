@@ -6,6 +6,7 @@ require (
 	cuelang.org/go v0.4.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/MichaelMure/go-term-markdown v0.1.4
+	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
@@ -25,6 +26,7 @@ require (
 	github.com/fluxcd/pkg/ssh v0.6.0
 	github.com/fluxcd/source-controller/api v0.28.0
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
+	github.com/gimlet-io/gimletd v0.8.0
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/chi/v5 v5.0.7
@@ -43,7 +45,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/laszlocph/go-login v1.0.4-0.20200901120411-b6d05e420c8a
 	github.com/lib/pq v1.10.6
-	github.com/mattn/go-sqlite3 v1.14.15
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mdaverde/jsonpath v0.0.0-20180315003411-f4ae4b6f36b5
 	github.com/otiai10/copy v1.7.0
 	github.com/pkg/errors v0.9.1
@@ -68,6 +70,11 @@ require (
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/kustomize/api v0.12.1
 	sigs.k8s.io/yaml v1.3.0
+)
+
+require (
+	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
+	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
 )
 
 require (
@@ -114,7 +121,6 @@ require (
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
-	github.com/drone/go-scm v1.28.0 // indirect
 	github.com/elazarl/goproxy v0.0.0-20220529153421-8ea89ba92021 // indirect
 	github.com/eliukblau/pixterm/pkg/ansimage v0.0.0-20191210081756-9fb6cf8c2f75 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
