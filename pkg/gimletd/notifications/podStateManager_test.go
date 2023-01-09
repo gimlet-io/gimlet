@@ -8,7 +8,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/gimlet-io/gimletd/notifications"
 )
 
 func TestSavePodState(t *testing.T) {
@@ -55,7 +54,7 @@ func TestPodStateManagerTrackStates(t *testing.T) {
 		s.Close()
 	}()
 
-	dummyPodStateManager := NewPodStateManager(notifications.NewDummyManager())
+	dummyPodStateManager := NewPodStateManager(NewDummyManager())
 
 	dummyPods := []api.Pod{
 		{Name: "p", Namespace: "n", Status: "ErrImagePull"},

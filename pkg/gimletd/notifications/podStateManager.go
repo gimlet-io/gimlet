@@ -10,15 +10,14 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/gimlet-io/gimletd/notifications"
 	"github.com/sirupsen/logrus"
 )
 
 type PodStateManager struct {
-	NotifManager notifications.Manager
+	NotifManager Manager
 }
 
-func NewPodStateManager(notifManager notifications.Manager) *PodStateManager {
+func NewPodStateManager(notifManager Manager) *PodStateManager {
 	return &PodStateManager{NotifManager: notifManager}
 }
 
