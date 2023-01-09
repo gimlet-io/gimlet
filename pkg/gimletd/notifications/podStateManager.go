@@ -13,15 +13,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type PodStateManager struct {
+type podStateManager struct {
 	NotifManager Manager
 }
 
-func NewPodStateManager(notifManager Manager) *PodStateManager {
-	return &PodStateManager{NotifManager: notifManager}
+func NewPodStateManager(notifManager Manager) *podStateManager {
+	return &podStateManager{NotifManager: notifManager}
 }
 
-func (p PodStateManager) Start(kubeEnv *agent.KubeEnv) {
+func (p podStateManager) Start(kubeEnv *agent.KubeEnv) {
 	gimletdConfig, err := gimletdConfig.Environ()
 	if err != nil {
 		logrus.Fatalln("main: invalid configuration")
@@ -59,7 +59,7 @@ func (p PodStateManager) Start(kubeEnv *agent.KubeEnv) {
 	}()
 }
 
-func (p PodStateManager) trackStates(pods []api.Pod, store store.Store) {
+func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 	for _, pod := range pods {
 		deployment := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		podFromStore, err := store.Pod(deployment)
