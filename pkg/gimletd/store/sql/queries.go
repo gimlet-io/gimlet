@@ -66,6 +66,11 @@ SELECT id, key, value
 FROM key_values
 WHERE key = $1;
 `,
+		SelectPodByDeployment: `
+SELECT id, deployment, status, status_desc, alert_state
+FROM pods
+WHERE deployment = $1;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -106,6 +111,11 @@ LIMIT 20;
 SELECT id, key, value
 FROM key_values
 WHERE key = $1;
+`,
+		SelectPodByDeployment: `
+SELECT id, status, status_desc
+FROM pods
+WHERE deployment = $1;
 `,
 	},
 	"mysql": {},
