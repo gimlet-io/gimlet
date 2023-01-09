@@ -1,7 +1,6 @@
 package notifications
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/alecthomas/assert"
@@ -11,75 +10,76 @@ import (
 )
 
 func TestSavePodState(t *testing.T) {
-	s := store.NewTest()
+	store := store.NewTest()
 	defer func() {
-		s.Close()
+		store.Close()
 	}()
 
-	pod := model.Pod{Name: "p", Namespace: "n", Status: "ErrImagePull"}
+	pod := model.Pod{Deployment: "n/p", Status: "ErrImagePull"}
 
-	err := s.SaveOrUpdatePod(&pod)
+	err := store.SaveOrUpdatePod(&pod)
 	assert.Nil(t, err)
 
-	podFromDb, err := s.Pod(fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
+	podFromDb, err := store.Pod(pod.Deployment)
 	assert.Nil(t, err)
 
 	assert.Equal(t, podFromDb.Status, pod.Status)
 
-	updatedPod := model.Pod{Name: "p", Namespace: "n", Status: "Running"}
+	updatedPod := model.Pod{Deployment: "n/p", Status: "Running"}
 
-	err = s.SaveOrUpdatePod(&updatedPod)
+	err = store.SaveOrUpdatePod(&updatedPod)
 	assert.Nil(t, err)
 
-	updatedPodFromDb, err := s.Pod(fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
+	updatedPodFromDb, err := store.Pod(pod.Deployment)
 	assert.Nil(t, err)
 
 	assert.Equal(t, updatedPod.Status, updatedPodFromDb.Status)
 }
 
 func TestGetPodFromDB(t *testing.T) {
-	s := store.NewTest()
+	store := store.NewTest()
 	defer func() {
-		s.Close()
+		store.Close()
 	}()
 
-	pod1 := model.Pod{Name: "p", Namespace: "n", Status: "ErrImagePull"}
-	pod2 := model.Pod{Name: "p2", Namespace: "n", Status: "Running"}
+	pod1 := model.Pod{Deployment: "n/p", Status: "ErrImagePull"}
+	pod2 := model.Pod{Deployment: "n/p2", Status: "Running"}
 
-	err := s.SaveOrUpdatePod(&pod1)
+	err := store.SaveOrUpdatePod(&pod1)
 	assert.Nil(t, err)
 
-	err = s.SaveOrUpdatePod(&pod2)
+	err = store.SaveOrUpdatePod(&pod2)
 	assert.Nil(t, err)
 
-	podFromDb, err := s.Pod(fmt.Sprintf("%s/%s", pod1.Namespace, pod1.Name))
+	podFromDb, err := store.Pod(pod1.Deployment)
 	assert.Nil(t, err)
 
 	assert.Equal(t, pod1.Status, podFromDb.Status)
 }
 
-func TestPodStateManagerTrackStates(t *testing.T) {
-	s := store.NewTest()
+func TestTrackStates(t *testing.T) {
+	store := store.NewTest()
 	defer func() {
-		s.Close()
+		store.Close()
 	}()
 
-	dummyPodStateManager := NewPodStateManager(NewDummyManager())
+	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
+	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
+	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
+	pods := []api.Pod{pod1, pod2, pod3}
 
-	dummyPods := []api.Pod{
-		{Name: "p", Namespace: "n", Status: "ErrImagePull"},
-		{Name: "p2", Namespace: "n", Status: "Running"},
-		{Name: "p3", Namespace: "n", Status: "Error"},
+	p := NewPodStateManager(NewDummyManager(), 2)
+	p.trackStates(pods, *store)
+
+	expected := []model.Pod{
+		{Deployment: "ns1/pod1", Status: "Running"},
+		{Deployment: "ns1/pod2", Status: "PodFailed"},
+		{Deployment: "ns2/pod3", Status: "Pending"},
 	}
+	for _, pod := range expected {
+		p, err := store.Pod(pod.Deployment)
+		assert.Nil(t, err)
 
-	pod1 := model.Pod{Name: "p", Namespace: "n", Status: "ErrImagePull"}
-	pod2 := model.Pod{Name: "p2", Namespace: "n", Status: "Running"}
-
-	err := s.SaveOrUpdatePod(&pod1)
-	assert.Nil(t, err)
-
-	err = s.SaveOrUpdatePod(&pod2)
-	assert.Nil(t, err)
-
-	dummyPodStateManager.trackStates(dummyPods, *s)
+		assert.Equal(t, p.Status, pod.Status)
+	}
 }
