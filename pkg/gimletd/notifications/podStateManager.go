@@ -6,7 +6,6 @@ import (
 	"time"
 
 	gimletdConfig "github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
@@ -15,48 +14,21 @@ import (
 
 type podStateManager struct {
 	NotifManager Manager
+	WaitTime     int
 }
 
-func NewPodStateManager(notifManager Manager) *podStateManager {
-	return &podStateManager{NotifManager: notifManager}
+func NewPodStateManager(notifManager Manager, waitTime int) *podStateManager {
+	return &podStateManager{NotifManager: notifManager, WaitTime: waitTime}
 }
 
-func (p podStateManager) Start(kubeEnv *agent.KubeEnv) {
+func (p podStateManager) Start(pods []api.Pod) {
 	gimletdConfig, err := gimletdConfig.Environ()
 	if err != nil {
 		logrus.Fatalln("main: invalid configuration")
 	}
 
 	store := store.New(gimletdConfig.Database.Driver, gimletdConfig.Database.Config)
-
-	go func() {
-		for {
-			// annotatedServices, err := kubeEnv.annotatedServices("")
-			// if err != nil {
-			// 	logrus.Errorf("could not get 1 %v", err)
-			// 	return
-			// }
-
-			// d, err := kubeEnv.Client.AppsV1().Deployments(kubeEnv.Namespace).List(context.TODO(), metav1.ListOptions{})
-			// if err != nil {
-			// 	logrus.Errorf("could not get deployments: %s", err)
-			// 	return
-			// }
-
-			// for _, service := range annotatedServices {
-			// 	deployment, err := kubeEnv.deploymentForService(service, d.Items)
-			// 	if err != nil {
-			// 		logrus.Errorf("could not get deployment for service: %s", err)
-			// 		return
-			// 	}
-
-			p.trackStates([]api.Pod{}, *store)
-			// 	p.trackStates(deployment.Pods, *store)
-			// }
-
-			time.Sleep(1 * time.Minute)
-		}
-	}()
+	p.trackStates(pods, *store)
 }
 
 func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
@@ -64,10 +36,17 @@ func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 		deployment := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		podFromStore, err := store.Pod(deployment)
 		if err == sql.ErrNoRows {
+			err = store.SaveOrUpdatePod(&model.Pod{
+				Deployment: fmt.Sprintf("%s/%s", pod.Namespace, pod.Name),
+				Status:     pod.Status,
+				StatusDesc: pod.StatusDescription,
+			})
+			if err != nil {
+				logrus.Errorf("couldn't save or update pod: %s", err)
+				continue
+			}
 			if podErrorState(pod.Status) {
-				//TODO
-				// p.NotifManager.Broadcast(msg)
-				err = store.SaveOrUpdatePod(&model.Pod{})
+				go p.checkWithDelay(store, pod)
 			}
 			continue
 		} else if err != nil {
@@ -75,11 +54,32 @@ func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 			continue
 		}
 
-		if podErrorState(pod.Status) && podFromStore.Status == "" || podErrorState(pod.Status) && pod.Status != podFromStore.Status {
-			//TODO
-			// p.NotifManager.Broadcast(msg)
-			err = store.SaveOrUpdatePod(&model.Pod{})
+		if podErrorState(pod.Status) && pod.Status != podFromStore.Status {
+			err = store.SaveOrUpdatePod(&model.Pod{
+				Deployment: fmt.Sprintf("%s/%s", pod.Namespace, pod.Name),
+				Status:     pod.Status,
+				StatusDesc: pod.StatusDescription,
+			})
+			if err != nil {
+				logrus.Errorf("couldn't save or update pod: %s", err)
+				continue
+			}
+			go p.checkWithDelay(store, pod)
 		}
+	}
+}
+
+func (p podStateManager) checkWithDelay(store store.Store, pod api.Pod) {
+	time.Sleep(time.Duration(p.WaitTime) * time.Minute)
+
+	podFromStore, err := store.Pod(fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
+	if err != nil && err != sql.ErrNoRows {
+		logrus.Errorf("couldn't get pod from db: %s", err)
+	}
+
+	if podErrorState(podFromStore.Status) {
+		//TODO send out notification
+		// p.NotifManager.Broadcast(msg)
 	}
 }
 
