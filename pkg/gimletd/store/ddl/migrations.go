@@ -118,11 +118,12 @@ CREATE TABLE IF NOT EXISTS key_values (
 			name: createTablePods,
 			stmt: `
 CREATE TABLE IF NOT EXISTS pods (
-id          INTEGER PRIMARY KEY AUTOINCREMENT,
-deployment  TEXT,
-status      TEXT,
-status_desc TEXT,
-alert_state TEXT,
+id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
+name				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+alert_state 		  TEXT,
+alert_state_timestamp INTEGER,
 UNIQUE(id)
 );
 `,
@@ -214,11 +215,12 @@ CREATE TABLE IF NOT EXISTS key_values (
 			name: createTablePods,
 			stmt: `
 CREATE TABLE IF NOT EXISTS pods (
-id          INTEGER PRIMARY KEY AUTOINCREMENT,
-deployment  TEXT,
-status      TEXT,
-status_desc TEXT,
-alert_state TEXT,
+id          		  SERIAL,
+name  				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+alert_state 		  TEXT,
+alert_state_timestamp INTEGER,
 UNIQUE(id)
 );
 `,
