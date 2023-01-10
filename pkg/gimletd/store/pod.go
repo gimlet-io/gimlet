@@ -30,6 +30,8 @@ func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
 
 	storedPod.Status = pod.Status
 	storedPod.StatusDesc = pod.StatusDesc
+	storedPod.AlertState = pod.AlertState
+	storedPod.AlertStateTimestamp = pod.AlertStateTimestamp
 
 	return meddler.Update(db, "pods", storedPod)
 }
