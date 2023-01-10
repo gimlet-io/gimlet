@@ -63,18 +63,21 @@ func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 	}
 }
 
-func (p podStateManager) checkWithDelay(store store.Store, pod api.Pod) {
-	time.Sleep(time.Duration(p.waitTime) * time.Minute)
+func (p podStateManager) NotificationManager() {
+	for {
+		pods, err := p.store.Pods()
+		if err != nil {
+			logrus.Errorf("could't get pods from db: %s", err)
+		}
 
-	podFromStore, err := store.Pod(fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
-	if err != nil && err != sql.ErrNoRows {
-		logrus.Errorf("couldn't get pod from db: %s", err)
+		for _, pod := range pods {
+			if pod.AlertState == "Pending" && p.isPendingStateExpired(pod.AlertStateTimestamp) {
+				// p.notifManager.Broadcast(msg)
+			}
+		}
+		time.Sleep(1 * time.Minute)
 	}
-
-	if podErrorState(podFromStore.Status) {
-		//TODO send out notification
-		// p.notifManager.Broadcast(msg)
-	}
+}
 }
 
 func podErrorState(status string) bool {
