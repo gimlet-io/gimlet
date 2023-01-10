@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	gimletdConfig "github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
@@ -14,21 +13,16 @@ import (
 
 type podStateManager struct {
 	notifManager Manager
+	store        store.Store
 	waitTime     int
 }
 
-func NewPodStateManager(notifManager Manager, waitTime int) *podStateManager {
-	return &podStateManager{notifManager: notifManager, waitTime: waitTime}
+func NewPodStateManager(notifManager Manager, store store.Store, waitTime int) *podStateManager {
+	return &podStateManager{notifManager: notifManager, store: store, waitTime: waitTime}
 }
 
-func (p podStateManager) Start(pods []api.Pod) {
-	gimletdConfig, err := gimletdConfig.Environ()
-	if err != nil {
-		logrus.Fatalln("main: invalid configuration")
-	}
-
-	store := store.New(gimletdConfig.Database.Driver, gimletdConfig.Database.Config)
-	p.trackStates(pods, *store)
+func (p podStateManager) Track(pods []api.Pod) {
+	p.trackStates(pods, p.store)
 }
 
 func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {

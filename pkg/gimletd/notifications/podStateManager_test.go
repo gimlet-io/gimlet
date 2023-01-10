@@ -68,8 +68,8 @@ func TestTrackStates(t *testing.T) {
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
 	pods := []api.Pod{pod1, pod2, pod3}
 
-	p := NewPodStateManager(NewDummyManager(), 2)
-	p.trackStates(pods, *store)
+	p := NewPodStateManager(NewDummyManager(), *store, 2)
+	p.trackStates(pods, p.store)
 
 	expected := []model.Pod{
 		{Name: "ns1/pod1", Status: "Running"},
