@@ -8,6 +8,20 @@ import (
 	"github.com/russross/meddler"
 )
 
+func (db *Store) Pods() ([]*model.Pod, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectAllPods)
+	data := []*model.Pod{}
+	err := meddler.QueryAll(db, &data, stmt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return data, err
+}
+
 func (db *Store) Pod(name string) (*model.Pod, error) {
 	stmt := queries.Stmt(db.driver, queries.SelectPodByName)
 	pod := new(model.Pod)
