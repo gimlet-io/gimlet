@@ -78,6 +78,12 @@ func (p podStateManager) NotificationManager() {
 		time.Sleep(1 * time.Minute)
 	}
 }
+
+func (p podStateManager) isPendingStateExpired(alertTimestamp int64) bool {
+	podAlertTime := time.Unix(alertTimestamp, 0)
+	managerWaitTime := time.Now().Add(-time.Minute * p.waitTime)
+
+	return podAlertTime.Before(managerWaitTime)
 }
 
 func podErrorState(status string) bool {

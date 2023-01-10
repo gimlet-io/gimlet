@@ -3,6 +3,7 @@ package notifications
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/alecthomas/assert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -149,4 +150,14 @@ func TestPodAlertStates(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, updatedPod2FromDb.AlertState, "OK")
+}
+
+func TestPendingStateExpired(t *testing.T) {
+	p := NewPodStateManager(NewDummyManager(), *store.NewTest(), 2)
+
+	isPending1 := p.isPendingStateExpired(time.Now().Add(-time.Minute * 2).Unix())
+	assert.Equal(t, true, isPending1)
+
+	isPending2 := p.isPendingStateExpired(time.Now().Add(-time.Minute * 1).Unix())
+	assert.Equal(t, false, isPending2)
 }
