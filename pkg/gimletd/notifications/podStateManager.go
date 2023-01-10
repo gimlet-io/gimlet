@@ -37,7 +37,7 @@ func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 		podFromStore, err := store.Pod(deployment)
 		if err == sql.ErrNoRows {
 			err = store.SaveOrUpdatePod(&model.Pod{
-				Deployment: fmt.Sprintf("%s/%s", pod.Namespace, pod.Name),
+				Name:       fmt.Sprintf("%s/%s", pod.Namespace, pod.Name),
 				Status:     pod.Status,
 				StatusDesc: pod.StatusDescription,
 			})
@@ -56,7 +56,7 @@ func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 
 		if podErrorState(pod.Status) && pod.Status != podFromStore.Status {
 			err = store.SaveOrUpdatePod(&model.Pod{
-				Deployment: fmt.Sprintf("%s/%s", pod.Namespace, pod.Name),
+				Name:       fmt.Sprintf("%s/%s", pod.Namespace, pod.Name),
 				Status:     pod.Status,
 				StatusDesc: pod.StatusDescription,
 			})

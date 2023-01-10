@@ -8,16 +8,16 @@ import (
 	"github.com/russross/meddler"
 )
 
-func (db *Store) Pod(deployment string) (*model.Pod, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectPodByDeployment)
+func (db *Store) Pod(name string) (*model.Pod, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectPodByName)
 	pod := new(model.Pod)
-	err := meddler.QueryRow(db, pod, stmt, deployment)
+	err := meddler.QueryRow(db, pod, stmt, name)
 
 	return pod, err
 }
 
 func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
-	storedPod, err := db.Pod(pod.Deployment)
+	storedPod, err := db.Pod(pod.Name)
 
 	if err != nil {
 		switch err {
