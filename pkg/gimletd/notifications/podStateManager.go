@@ -13,12 +13,12 @@ import (
 )
 
 type podStateManager struct {
-	NotifManager Manager
-	WaitTime     int
+	notifManager Manager
+	waitTime     int
 }
 
 func NewPodStateManager(notifManager Manager, waitTime int) *podStateManager {
-	return &podStateManager{NotifManager: notifManager, WaitTime: waitTime}
+	return &podStateManager{notifManager: notifManager, waitTime: waitTime}
 }
 
 func (p podStateManager) Start(pods []api.Pod) {
@@ -70,7 +70,7 @@ func (p podStateManager) trackStates(pods []api.Pod, store store.Store) {
 }
 
 func (p podStateManager) checkWithDelay(store store.Store, pod api.Pod) {
-	time.Sleep(time.Duration(p.WaitTime) * time.Minute)
+	time.Sleep(time.Duration(p.waitTime) * time.Minute)
 
 	podFromStore, err := store.Pod(fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
 	if err != nil && err != sql.ErrNoRows {
@@ -79,7 +79,7 @@ func (p podStateManager) checkWithDelay(store store.Store, pod api.Pod) {
 
 	if podErrorState(podFromStore.Status) {
 		//TODO send out notification
-		// p.NotifManager.Broadcast(msg)
+		// p.notifManager.Broadcast(msg)
 	}
 }
 
