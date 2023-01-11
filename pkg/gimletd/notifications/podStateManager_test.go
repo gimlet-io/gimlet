@@ -44,8 +44,7 @@ func TestSavePodState(t *testing.T) {
 
 	pod := model.Pod{Name: "n/p", Status: "ErrImagePull"}
 
-	err := store.SaveOrUpdatePod(&pod)
-	assert.Nil(t, err)
+	store.SaveOrUpdatePod(&pod)
 
 	podFromDb, err := store.Pod(pod.Name)
 	assert.Nil(t, err)
@@ -54,8 +53,7 @@ func TestSavePodState(t *testing.T) {
 
 	updatedPod := model.Pod{Name: "n/p", Status: "Running"}
 
-	err = store.SaveOrUpdatePod(&updatedPod)
-	assert.Nil(t, err)
+	store.SaveOrUpdatePod(&updatedPod)
 
 	updatedPodFromDb, err := store.Pod(updatedPod.Name)
 	assert.Nil(t, err)
@@ -72,14 +70,11 @@ func TestGetPodFromDB(t *testing.T) {
 	pod1 := model.Pod{Name: "n/p", Status: "ErrImagePull"}
 	pod2 := model.Pod{Name: "n/p2", Status: "Running"}
 
-	err := store.SaveOrUpdatePod(&pod1)
-	assert.Nil(t, err)
+	store.SaveOrUpdatePod(&pod1)
 
-	err = store.SaveOrUpdatePod(&pod2)
-	assert.Nil(t, err)
+	store.SaveOrUpdatePod(&pod2)
 
-	podFromDb, err := store.Pod(pod1.Name)
-	assert.Nil(t, err)
+	podFromDb, _ := store.Pod(pod1.Name)
 
 	assert.Equal(t, pod1.Status, podFromDb.Status)
 }
@@ -90,12 +85,13 @@ func TestTrackStates(t *testing.T) {
 		store.Close()
 	}()
 
+	dummyNotificationManager := NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
 	pods := []api.Pod{pod1, pod2, pod3}
 
-	p := NewPodStateManager(NewDummyManager(), *store, 2)
+	p := NewPodStateManager(dummyNotificationManager, *store, 2)
 	p.trackStates(pods)
 
 	expected := []model.Pod{
@@ -104,8 +100,7 @@ func TestTrackStates(t *testing.T) {
 		{Name: "ns2/pod3", Status: "Pending"},
 	}
 	for _, pod := range expected {
-		p, err := store.Pod(pod.Name)
-		assert.Nil(t, err)
+		p, _ := store.Pod(pod.Name)
 
 		assert.Equal(t, p.Status, pod.Status)
 	}
@@ -117,20 +112,20 @@ func TestPodAlertStates(t *testing.T) {
 		store.Close()
 	}()
 
+	dummyNotificationManager := NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pods := []api.Pod{pod1, pod2}
 
-	p := NewPodStateManager(NewDummyManager(), *store, 2)
+	p := NewPodStateManager(dummyNotificationManager, *store, 2)
 	p.trackStates(pods)
 
 	expected := []model.Pod{
-		{Name: "ns1/pod1", Status: "Running", AlertState: "OK"},
-		{Name: "ns1/pod2", Status: "PodFailed", AlertState: "Pending"},
+		{Name: "ns1/pod1", AlertState: "OK"},
+		{Name: "ns1/pod2", AlertState: "Pending"},
 	}
 	for _, pod := range expected {
-		p, err := store.Pod(pod.Name)
-		assert.Nil(t, err)
+		p, _ := store.Pod(pod.Name)
 
 		assert.Equal(t, p.AlertState, pod.AlertState)
 	}
@@ -138,22 +133,22 @@ func TestPodAlertStates(t *testing.T) {
 	updatedPod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Error"}
 	p.trackStates([]api.Pod{updatedPod1})
 
-	updatedPod1FromDb, err := store.Pod(fmt.Sprintf("%s/%s", updatedPod1.Namespace, updatedPod1.Name))
-	assert.Nil(t, err)
+	updatedPod1FromDb, _ := store.Pod(fmt.Sprintf("%s/%s", updatedPod1.Namespace, updatedPod1.Name))
 
 	assert.Equal(t, updatedPod1FromDb.AlertState, "Pending")
 
 	updatedPod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "Running"}
 	p.trackStates([]api.Pod{updatedPod2})
 
-	updatedPod2FromDb, err := store.Pod(fmt.Sprintf("%s/%s", updatedPod2.Namespace, updatedPod2.Name))
-	assert.Nil(t, err)
+	updatedPod2Name := fmt.Sprintf("%s/%s", updatedPod2.Namespace, updatedPod2.Name)
+	updatedPod2FromDb, _ := store.Pod(updatedPod2Name)
 
 	assert.Equal(t, updatedPod2FromDb.AlertState, "OK")
 }
 
 func TestPendingStateExpired(t *testing.T) {
-	p := NewPodStateManager(NewDummyManager(), *store.NewTest(), 2)
+	dummyNotificationManager := NewDummyManager()
+	p := NewPodStateManager(dummyNotificationManager, *store.NewTest(), 2)
 
 	isPending1 := p.isPendingStateExpired(time.Now().Add(-time.Minute * 2).Unix())
 	assert.Equal(t, true, isPending1)
