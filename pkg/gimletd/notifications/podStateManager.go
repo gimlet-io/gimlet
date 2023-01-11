@@ -58,7 +58,7 @@ func (p podStateManager) trackStates(pods []api.Pod) {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		currentTime := time.Now().Unix()
 
-		if p.alreadyAlerted(podName) || p.firingState(podName) {
+		if p.alreadyAlerted(podName) {
 			continue
 		}
 
@@ -126,19 +126,7 @@ func (p podStateManager) alreadyAlerted(podName string) bool {
 		return false
 	}
 
-	return pod.AlertState == "Alerted"
-}
-
-func (p podStateManager) firingState(podName string) bool {
-	pod, err := p.store.Pod(podName)
-	if err == sql.ErrNoRows {
-		return false
-	} else if err != nil {
-		logrus.Errorf("could't get pod from db: %s", err)
-		return false
-	}
-
-	return pod.AlertState == "Firing"
+	return pod.AlertState == "Alerted" || pod.AlertState == "Firing"
 }
 
 func podErrorState(status string) bool {
