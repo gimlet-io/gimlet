@@ -146,13 +146,31 @@ func TestPodAlertStates(t *testing.T) {
 	assert.Equal(t, updatedPod2FromDb.AlertState, "OK")
 }
 
-func TestPendingStateExpired(t *testing.T) {
+func TestSetPodAlertStatesToFiring(t *testing.T) {
+	store := store.NewTest()
+	defer func() {
+		store.Close()
+	}()
+
+	currentTime := time.Now()
+
 	dummyNotificationManager := NewDummyManager()
-	p := NewPodStateManager(dummyNotificationManager, *store.NewTest(), 2)
+	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-1 * time.Minute).Unix()}
+	pod2 := model.Pod{Name: "ns1/pod2", Status: "PodFailed", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-3 * time.Minute).Unix()}
 
-	isPending1 := p.isPendingStateExpired(time.Now().Add(-time.Minute * 2).Unix())
-	assert.Equal(t, true, isPending1)
+	store.SaveOrUpdatePod(&pod1)
+	store.SaveOrUpdatePod(&pod2)
 
-	isPending2 := p.isPendingStateExpired(time.Now().Add(-time.Minute * 1).Unix())
-	assert.Equal(t, false, isPending2)
+	p := NewPodStateManager(dummyNotificationManager, *store, 2)
+
+	p.setFiringState()
+
+	expected := []model.Pod{
+		{Name: "ns1/pod1", AlertState: "Pending"},
+		{Name: "ns1/pod2", AlertState: "Firing"},
+	}
+	for _, pod := range expected {
+		p, _ := store.Pod(pod.Name)
+		assert.Equal(t, p.AlertState, pod.AlertState)
+	}
 }
