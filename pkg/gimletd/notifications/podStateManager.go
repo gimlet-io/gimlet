@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -24,10 +25,42 @@ func (p podStateManager) Track(pods []api.Pod) {
 	p.trackStates(pods)
 }
 
+func (p podStateManager) HandleNotifications() {
+	for {
+		p.setFiringState()
+
+		pods, err := p.store.Pods()
+		if err != nil {
+			logrus.Errorf("could't get pods from db: %s", err)
+		}
+
+		for _, pod := range pods {
+			if pod.AlertState == "Firing" {
+				// p.notifManager.Broadcast(msg)
+				err := p.store.SaveOrUpdatePod(&model.Pod{
+					Name:                pod.Name,
+					Status:              pod.Status,
+					StatusDesc:          pod.StatusDesc,
+					AlertState:          "Alerted",
+					AlertStateTimestamp: pod.AlertStateTimestamp,
+				})
+				if err != nil {
+					logrus.Errorf("could't save or update pod: %s", err)
+				}
+			}
+		}
+		time.Sleep(1 * time.Minute)
+	}
+}
+
 func (p podStateManager) trackStates(pods []api.Pod) {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		currentTime := time.Now().Unix()
+
+		if p.alreadyAlerted(podName) || p.firingState(podName) {
+			continue
+		}
 
 		if podErrorState(pod.Status) {
 			err := p.store.SaveOrUpdatePod(&model.Pod{
@@ -39,7 +72,6 @@ func (p podStateManager) trackStates(pods []api.Pod) {
 			})
 			if err != nil {
 				logrus.Errorf("could't save or update pod: %s", err)
-				continue
 			}
 		} else {
 			err := p.store.SaveOrUpdatePod(&model.Pod{
@@ -51,33 +83,62 @@ func (p podStateManager) trackStates(pods []api.Pod) {
 			})
 			if err != nil {
 				logrus.Errorf("could't save or update pod: %s", err)
-				continue
 			}
 		}
 	}
 }
 
-func (p podStateManager) NotificationManager() {
-	for {
-		pods, err := p.store.Pods()
-		if err != nil {
-			logrus.Errorf("could't get pods from db: %s", err)
-		}
+func (p podStateManager) setFiringState() {
+	pods, err := p.store.Pods()
+	if err != nil {
+		logrus.Errorf("could't get pods from db: %s", err)
+	}
 
-		for _, pod := range pods {
-			if pod.AlertState == "Pending" && p.isPendingStateExpired(pod.AlertStateTimestamp) {
-				// p.notifManager.Broadcast(msg)
+	for _, pod := range pods {
+		if pod.AlertState == "Pending" && p.waiTimeIsSoonerThan(pod.AlertStateTimestamp) {
+			err := p.store.SaveOrUpdatePod(&model.Pod{
+				Name:                pod.Name,
+				Status:              pod.Status,
+				StatusDesc:          pod.StatusDesc,
+				AlertState:          "Firing",
+				AlertStateTimestamp: pod.AlertStateTimestamp,
+			})
+			if err != nil {
+				logrus.Errorf("could't save or update pod: %s", err)
 			}
 		}
-		time.Sleep(1 * time.Minute)
 	}
 }
 
-func (p podStateManager) isPendingStateExpired(alertTimestamp int64) bool {
+func (p podStateManager) waiTimeIsSoonerThan(alertTimestamp int64) bool {
 	podAlertTime := time.Unix(alertTimestamp, 0)
 	managerWaitTime := time.Now().Add(-time.Minute * p.waitTime)
 
 	return podAlertTime.Before(managerWaitTime)
+}
+
+func (p podStateManager) alreadyAlerted(podName string) bool {
+	pod, err := p.store.Pod(podName)
+	if err == sql.ErrNoRows {
+		return false
+	} else if err != nil {
+		logrus.Errorf("could't get pod from db: %s", err)
+		return false
+	}
+
+	return pod.AlertState == "Alerted"
+}
+
+func (p podStateManager) firingState(podName string) bool {
+	pod, err := p.store.Pod(podName)
+	if err == sql.ErrNoRows {
+		return false
+	} else if err != nil {
+		logrus.Errorf("could't get pod from db: %s", err)
+		return false
+	}
+
+	return pod.AlertState == "Firing"
 }
 
 func podErrorState(status string) bool {
