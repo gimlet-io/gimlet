@@ -17,7 +17,7 @@ func (pm *podFailedMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	msg.Text = fmt.Sprintf("Pod %s failed on %s", pm.pod.Name, pm.pod.Status)
+	msg.Text = fmt.Sprintf("Pod %s failed with status %s", pm.pod.Name, pm.pod.Status)
 	msg.Blocks = append(msg.Blocks,
 		Block{
 			Type: section,
@@ -60,7 +60,7 @@ func (pm *podFailedMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s", pm.pod.Name, pm.pod.Status)
+	msg.Text = fmt.Sprintf("Pod %s failed with status %s", pm.pod.Name, pm.pod.Status)
 	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", pm.pod.StatusDesc)
 	msg.Embed.Color = 15158332
 
