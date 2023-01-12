@@ -25,7 +25,7 @@ func (p podStateManager) Track(pods []api.Pod) {
 	p.trackStates(pods)
 }
 
-func (p podStateManager) HandleNotifications() {
+func (p podStateManager) Run() {
 	for {
 		p.setFiringState()
 
