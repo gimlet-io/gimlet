@@ -76,7 +76,9 @@ func (p podStateManager) setFiringState() {
 
 	for _, pod := range pods {
 		if pod.AlertState == "Pending" && p.waiTimeIsSoonerThan(pod.AlertStateTimestamp) {
-			// p.notifManager.Broadcast(msg)
+			msg := MessageFromFailedPod(*pod)
+			p.notifManager.Broadcast(msg)
+
 			err := p.store.SaveOrUpdatePod(&model.Pod{
 				Name:                pod.Name,
 				Status:              pod.Status,

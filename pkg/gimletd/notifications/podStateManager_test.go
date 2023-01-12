@@ -85,13 +85,13 @@ func TestTrackStates(t *testing.T) {
 		store.Close()
 	}()
 
-	dummyNotificationManager := NewDummyManager()
+	dummyNotificationsManager := NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
 	pods := []api.Pod{pod1, pod2, pod3}
 
-	p := NewPodStateManager(dummyNotificationManager, *store, 2)
+	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
 	p.trackStates(pods)
 
 	expected := []model.Pod{
@@ -112,12 +112,12 @@ func TestPodAlertStates(t *testing.T) {
 		store.Close()
 	}()
 
-	dummyNotificationManager := NewDummyManager()
+	dummyNotificationsManager := NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pods := []api.Pod{pod1, pod2}
 
-	p := NewPodStateManager(dummyNotificationManager, *store, 2)
+	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
 	p.trackStates(pods)
 
 	expected := []model.Pod{
@@ -154,14 +154,14 @@ func TestSetPodAlertStatesToFiring(t *testing.T) {
 
 	currentTime := time.Now()
 
-	dummyNotificationManager := NewDummyManager()
+	dummyNotificationsManager := NewDummyManager()
 	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-1 * time.Minute).Unix()}
 	pod2 := model.Pod{Name: "ns1/pod2", Status: "PodFailed", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-3 * time.Minute).Unix()}
 
 	store.SaveOrUpdatePod(&pod1)
 	store.SaveOrUpdatePod(&pod2)
 
-	p := NewPodStateManager(dummyNotificationManager, *store, 2)
+	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
 
 	p.setFiringState()
 
