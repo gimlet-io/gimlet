@@ -29,7 +29,7 @@ func (p podStateManager) Run() {
 	for {
 		p.setFiringState()
 
-		time.Sleep(1 * time.Minute)
+		time.Sleep(p.waitTime * time.Minute)
 	}
 }
 
@@ -38,7 +38,7 @@ func (p podStateManager) trackStates(pods []api.Pod) {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		currentTime := time.Now().Unix()
 
-		if p.alreadyAlerted(podName) || p.statusNotChanged(pod) {
+		if p.alreadyAlerted(podName) || p.statusNotChanged(podName, pod.Status) {
 			continue
 		}
 
@@ -112,8 +112,7 @@ func (p podStateManager) alreadyAlerted(podName string) bool {
 	return pod.AlertState == "Firing"
 }
 
-func (p podStateManager) statusNotChanged(pod api.Pod) bool {
-	podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
+func (p podStateManager) statusNotChanged(podName string, podStatus string) bool {
 	podFromDb, err := p.store.Pod(podName)
 	if err == sql.ErrNoRows {
 		return false
@@ -122,7 +121,7 @@ func (p podStateManager) statusNotChanged(pod api.Pod) bool {
 		return false
 	}
 
-	return pod.Status == podFromDb.Status
+	return podStatus == podFromDb.Status
 }
 
 func podErrorState(status string) bool {
