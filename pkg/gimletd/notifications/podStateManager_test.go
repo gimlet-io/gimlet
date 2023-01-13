@@ -174,3 +174,49 @@ func TestSetPodAlertStatesToFiring(t *testing.T) {
 		assert.Equal(t, p.AlertState, pod.AlertState)
 	}
 }
+
+func TestPodAlertStateTimestampOverwrite(t *testing.T) {
+	store := store.NewTest()
+	defer func() {
+		store.Close()
+	}()
+
+	oneMinuteAgo := time.Now().Add(-1 * time.Minute).Unix()
+
+	dummyNotificationsManager := NewDummyManager()
+	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", AlertState: "Pending", AlertStateTimestamp: oneMinuteAgo}
+	pod2 := model.Pod{Name: "ns1/pod2", Status: "Running", AlertState: "OK", AlertStateTimestamp: oneMinuteAgo}
+
+	store.SaveOrUpdatePod(&pod1)
+	store.SaveOrUpdatePod(&pod2)
+
+	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
+
+	trackablePod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Error"}
+	trackablePod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "Running"}
+
+	p.trackStates([]api.Pod{trackablePod1, trackablePod2})
+
+	expected := []model.Pod{
+		{Name: "ns1/pod1", AlertStateTimestamp: oneMinuteAgo},
+		{Name: "ns1/pod2", AlertStateTimestamp: oneMinuteAgo},
+	}
+	for _, pod := range expected {
+		p, _ := store.Pod(pod.Name)
+		assert.Equal(t, p.AlertStateTimestamp, pod.AlertStateTimestamp)
+	}
+
+	trackablePod1 = api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
+	trackablePod2 = api.Pod{Namespace: "ns1", Name: "pod2", Status: "Error"}
+
+	p.trackStates([]api.Pod{trackablePod1, trackablePod2})
+
+	expected = []model.Pod{
+		{Name: "ns1/pod1", AlertStateTimestamp: oneMinuteAgo},
+		{Name: "ns1/pod2", AlertStateTimestamp: oneMinuteAgo},
+	}
+	for _, pod := range expected {
+		p, _ := store.Pod(pod.Name)
+		assert.NotEqual(t, p.AlertStateTimestamp, pod.AlertStateTimestamp)
+	}
+}
