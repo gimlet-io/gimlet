@@ -77,7 +77,7 @@ export class RolloutHistory extends Component {
     }
 
     return (
-      <div className="">
+      <div className="space-y-4">
         <div className="grid grid-cols-10 p-2">
           {markers}
         </div>
