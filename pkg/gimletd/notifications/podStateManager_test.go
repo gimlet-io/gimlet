@@ -221,6 +221,26 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 	}
 }
 
+func TestPodFailedMessage(t *testing.T) {
+	msgPodFailed := podFailedMessage{
+		model.Pod{
+			Name:       "ns1/pod1",
+			Status:     "Error",
+			StatusDesc: "Container failed",
+		},
+	}
+
+	discordMsg, err := msgPodFailed.AsDiscordMessage()
+	assert.Nil(t, err)
+
+	assert.Contains(t, discordMsg.Text, "ns1/pod1 failed with status Error")
+
+	slackMsg, err := msgPodFailed.AsSlackMessage()
+	assert.Nil(t, err)
+
+	assert.Contains(t, slackMsg.Text, "ns1/pod1 failed with status Error")
+}
+
 func TestNotificationSending(t *testing.T) {
 	t.Skip("Skipping notification sending")
 	store := store.NewTest()
