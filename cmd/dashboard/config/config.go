@@ -54,6 +54,7 @@ type Config struct {
 	Gitlab                  Gitlab
 	Database                Database
 	GimletD                 GimletD
+	Notifications           Notifications
 	Chart                   Chart
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
 	WebhookSecret           string `envconfig:"WEBHOOK_SECRET"`
@@ -102,6 +103,13 @@ type Database struct {
 type GimletD struct {
 	URL   string `envconfig:"GIMLETD_URL"`
 	TOKEN string `envconfig:"GIMLETD_TOKEN"`
+}
+
+type Notifications struct {
+	Provider       string `envconfig:"NOTIFICATIONS_PROVIDER"`
+	Token          string `envconfig:"NOTIFICATIONS_TOKEN"`
+	DefaultChannel string `envconfig:"NOTIFICATIONS_DEFAULT_CHANNEL"`
+	ChannelMapping string `envconfig:"NOTIFICATIONS_CHANNEL_MAPPING"`
 }
 
 func (c *Config) IsGithub() bool {
