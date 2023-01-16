@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
 type podFailedMessage struct {

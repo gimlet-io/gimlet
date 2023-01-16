@@ -22,7 +22,6 @@ const createTableGitopsCommits = "create-table-gitopsCommits"
 const addCreatedColumnToGitopsCommitsTable = "add-created-to-gitops-commits-table"
 const addEnvColumnToGitopsCommitsTable = "add-env-to-gitops-commits-table"
 const createTableKeyValues = "create-table-key-values"
-const createTablePods = "create-table-pods"
 const defaultValueForCreated = "default-value-for-created"
 const defaultValueForEnv = "default-value-for-env"
 
@@ -114,20 +113,6 @@ CREATE TABLE IF NOT EXISTS key_values (
 	);
 `,
 		},
-		{
-			name: createTablePods,
-			stmt: `
-CREATE TABLE IF NOT EXISTS pods (
-id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
-name				  TEXT,
-status      		  TEXT,
-status_desc 		  TEXT,
-alert_state 		  TEXT,
-alert_state_timestamp INTEGER,
-UNIQUE(id)
-);
-`,
-		},
 	},
 	"postgres": {
 		{
@@ -209,20 +194,6 @@ CREATE TABLE IF NOT EXISTS key_values (
 	value      TEXT,
 	UNIQUE(key)
 	);
-`,
-		},
-		{
-			name: createTablePods,
-			stmt: `
-CREATE TABLE IF NOT EXISTS pods (
-id          		  SERIAL,
-name  				  TEXT,
-status      		  TEXT,
-status_desc 		  TEXT,
-alert_state 		  TEXT,
-alert_state_timestamp INTEGER,
-UNIQUE(id)
-);
 `,
 		},
 	},

@@ -7,8 +7,8 @@ import (
 
 	"github.com/alecthomas/assert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 )
 
 func TestSavePods(t *testing.T) {

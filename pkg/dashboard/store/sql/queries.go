@@ -21,6 +21,8 @@ const SelectKeyValue = "select-key-value"
 const SelectEnvironments = "select-environments"
 const SelectEnvironment = "select-environment"
 const DeleteEnvironment = "delete-environment"
+const SelectAllPods = "select-all-pods"
+const SelectPodByName = "select-pod-by-name"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -57,6 +59,15 @@ WHERE name = $1;
 DELETE FROM environments
 WHERE name = ?;
 `,
+		SelectAllPods: `
+SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+FROM pods;
+`,
+		SelectPodByName: `
+SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+FROM pods
+WHERE name = $1;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -90,6 +101,15 @@ WHERE name = $1;
 `,
 		DeleteEnvironment: `
 DELETE FROM environments
+WHERE name = $1;
+`,
+		SelectAllPods: `
+SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+FROM pods;
+`,
+		SelectPodByName: `
+SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+FROM pods
 WHERE name = $1;
 `,
 	},

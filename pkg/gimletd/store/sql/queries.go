@@ -23,8 +23,6 @@ const UpdateEventStatus = "update-event-status"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKeyValue = "select-key-value"
-const SelectAllPods = "select-all-pods"
-const SelectPodByName = "select-pod-by-name"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -67,15 +65,6 @@ SELECT id, key, value
 FROM key_values
 WHERE key = $1;
 `,
-		SelectAllPods: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
-FROM pods;
-`,
-		SelectPodByName: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
-FROM pods
-WHERE name = $1;
-`,
 	},
 	"postgres": {
 		Dummy: `
@@ -116,15 +105,6 @@ LIMIT 20;
 SELECT id, key, value
 FROM key_values
 WHERE key = $1;
-`,
-		SelectAllPods: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
-FROM pods;
-`,
-		SelectPodByName: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
-FROM pods
-WHERE name = $1;
 `,
 	},
 	"mysql": {},
