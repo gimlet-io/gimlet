@@ -89,7 +89,7 @@ func TestTrackStates(t *testing.T) {
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
-	pods := []api.Pod{pod1, pod2, pod3}
+	pods := []*api.Pod{&pod1, &pod2, &pod3}
 
 	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
 	p.trackStates(pods)
@@ -115,7 +115,7 @@ func TestPodAlertStates(t *testing.T) {
 	dummyNotificationsManager := NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
-	pods := []api.Pod{pod1, pod2}
+	pods := []*api.Pod{&pod1, &pod2}
 
 	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
 	p.trackStates(pods)
@@ -131,14 +131,14 @@ func TestPodAlertStates(t *testing.T) {
 	}
 
 	updatedPod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Error"}
-	p.trackStates([]api.Pod{updatedPod1})
+	p.trackStates([]*api.Pod{&updatedPod1})
 
 	updatedPod1FromDb, _ := store.Pod(fmt.Sprintf("%s/%s", updatedPod1.Namespace, updatedPod1.Name))
 
 	assert.Equal(t, updatedPod1FromDb.AlertState, "Pending")
 
 	updatedPod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "Running"}
-	p.trackStates([]api.Pod{updatedPod2})
+	p.trackStates([]*api.Pod{&updatedPod2})
 
 	updatedPod2Name := fmt.Sprintf("%s/%s", updatedPod2.Namespace, updatedPod2.Name)
 	updatedPod2FromDb, _ := store.Pod(updatedPod2Name)
@@ -195,7 +195,7 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 	trackablePod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Error"}
 	trackablePod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "Running"}
 
-	p.trackStates([]api.Pod{trackablePod1, trackablePod2})
+	p.trackStates([]*api.Pod{&trackablePod1, &trackablePod2})
 
 	expected := []model.Pod{
 		{Name: "ns1/pod1", AlertStateTimestamp: oneMinuteAgo},
@@ -209,7 +209,7 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 	trackablePod1 = api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	trackablePod2 = api.Pod{Namespace: "ns1", Name: "pod2", Status: "Error"}
 
-	p.trackStates([]api.Pod{trackablePod1, trackablePod2})
+	p.trackStates([]*api.Pod{&trackablePod1, &trackablePod2})
 
 	expected = []model.Pod{
 		{Name: "ns1/pod1", AlertStateTimestamp: oneMinuteAgo},
