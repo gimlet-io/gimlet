@@ -220,3 +220,33 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 		assert.NotEqual(t, p.AlertStateTimestamp, pod.AlertStateTimestamp)
 	}
 }
+
+func TestNotificationSending(t *testing.T) {
+	t.Skip("Skipping notification sending")
+	store := store.NewTest()
+	defer func() {
+		store.Close()
+	}()
+
+	notificationsManager := NewManager()
+
+	notificationsManager.AddProvider(&DiscordProvider{
+		Token:     "",
+		ChannelID: "",
+	})
+
+	go notificationsManager.Run()
+
+	p := NewPodStateManager(notificationsManager, *store, 2)
+
+	currentTime := time.Now()
+	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", StatusDesc: "Back-off pulling image", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-1 * time.Minute).Unix()}
+	pod2 := model.Pod{Name: "ns1/pod2", Status: "ErrImagePull", StatusDesc: "Back-off pulling image", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-3 * time.Minute).Unix()}
+
+	store.SaveOrUpdatePod(&pod1)
+	store.SaveOrUpdatePod(&pod2)
+
+	p.setFiringState()
+
+	time.Sleep(5 * time.Second)
+}
