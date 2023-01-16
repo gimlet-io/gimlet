@@ -202,6 +202,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
           <div className="min-w-0 flex-1">
             <div className="text-sm space-y-0.5">
               <p className="font-semibold text-gray-700">{rollout.triggeredBy}</p>
+              {!rollback && <p className="font-medium text-gray-700">{rollout.app}</p>}
               <p className="text-gray-700">
                 <span>Released</span>
                 <a
