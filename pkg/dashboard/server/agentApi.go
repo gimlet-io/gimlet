@@ -11,6 +11,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/sirupsen/logrus"
 )
 
@@ -149,6 +150,11 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
+	podStateManager, _ := r.Context().Value("podStateManager").(*notifications.PodStateManager)
+	for _, stack := range stacks {
+		podStateManager.Track(stack.Deployment.Pods)
+	}
+
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	agent := agentHub.Agents[name]
 	if agent == nil {
@@ -211,6 +217,11 @@ func update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+
+	podStateManager, _ := r.Context().Value("podStateManager").(*notifications.PodStateManager)
+	for _, stack := range update.Stacks {
+		podStateManager.Track(stack.Deployment.Pods)
+	}
 
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)
 
