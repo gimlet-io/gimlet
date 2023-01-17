@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
@@ -218,9 +219,20 @@ func update(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
-	podStateManager, _ := r.Context().Value("podStateManager").(*notifications.PodStateManager)
-	for _, stack := range update.Stacks {
-		podStateManager.Track(stack.Deployment.Pods)
+	if update.Event == agent.EventPodCreated || update.Event == agent.EventPodUpdated {
+		podStateManager, _ := r.Context().Value("podStateManager").(*notifications.PodStateManager)
+		parts := strings.Split(update.Subject, "/")
+		namespace := parts[0]
+		name := parts[1]
+
+		podStateManager.Track([]*api.Pod{
+			{
+				Namespace:         namespace,
+				Name:              name,
+				Status:            update.Status,
+				StatusDescription: update.ErrorCause,
+			},
+		})
 	}
 
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)

@@ -74,7 +74,6 @@ func main() {
 	if config.Notifications.Provider == "discord" {
 		notificationsManager.AddProvider(discordNotificationProvider(config))
 	}
-
 	go notificationsManager.Run()
 
 	podStateManager := notifications.NewPodStateManager(notificationsManager, *store, 2)
