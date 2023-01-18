@@ -187,7 +187,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
     <li key={rollout.gitopsRef}
       className={`${hoverBgColor} ${bgColor} p-4 ${rounding}`}
     >
-      <div className="relative pb-4">
+      <div className="relative">
         {idx !== 0 &&
           <span className="absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-300" aria-hidden="true"></span>
         }
