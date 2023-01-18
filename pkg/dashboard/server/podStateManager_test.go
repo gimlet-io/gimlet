@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -12,29 +13,47 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 )
 
-func TestSavePods(t *testing.T) {
+func TestGetPendingPods(t *testing.T) {
 	s := store.NewTest()
 	defer func() {
 		s.Close()
 	}()
 
-	pod1 := model.Pod{Name: "n/p1", Status: "ErrImagePull"}
+	pod1 := model.Pod{Name: "n/p1", AlertState: "OK"}
 
 	err := s.SaveOrUpdatePod(&pod1)
 	assert.Nil(t, err)
 
-	pods, err := s.Pods()
+	pods, err := s.PendingPods()
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(pods))
+	assert.Equal(t, 0, len(pods))
 
-	pod2 := model.Pod{Name: "n/p2", Status: "Running"}
+	pod2 := model.Pod{Name: "n/p2", AlertState: "Pending"}
 
 	err = s.SaveOrUpdatePod(&pod2)
 	assert.Nil(t, err)
 
-	pods, err = s.Pods()
+	pods, err = s.PendingPods()
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(pods))
+	assert.Equal(t, 1, len(pods))
+}
+
+func TestDeletePod(t *testing.T) {
+	s := store.NewTest()
+	defer func() {
+		s.Close()
+	}()
+
+	pod1 := model.Pod{Name: "n/p1", AlertState: "OK"}
+
+	s.SaveOrUpdatePod(&pod1)
+
+	err := s.DeletePod(pod1.Name)
+	assert.Nil(t, err)
+
+	_, err = s.Pod(pod1.Name)
+
+	assert.Equal(t, err, sql.ErrNoRows)
 }
 
 func TestSavePodState(t *testing.T) {

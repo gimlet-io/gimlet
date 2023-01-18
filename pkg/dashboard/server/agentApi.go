@@ -218,20 +218,9 @@ func update(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
-	if update.Event == agent.EventPodCreated || update.Event == agent.EventPodUpdated {
+	if strings.Contains(update.Event, "pod") {
 		podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
-		parts := strings.Split(update.Subject, "/")
-		namespace := parts[0]
-		name := parts[1]
-
-		podStateManager.Track([]*api.Pod{
-			{
-				Namespace:         namespace,
-				Name:              name,
-				Status:            update.Status,
-				StatusDescription: update.ErrorCause,
-			},
-		})
+		handlePodUpdate(podStateManager, update)
 	}
 
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)
@@ -270,4 +259,24 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	}
 
 	return update
+}
+
+func handlePodUpdate(podStateManager *podStateManager, update api.StackUpdate) {
+	parts := strings.Split(update.Subject, "/")
+	namespace := parts[0]
+	name := parts[1]
+
+	if update.Event == agent.EventPodDeleted {
+		podStateManager.Delete(update.Subject)
+		return
+	}
+
+	podStateManager.Track([]*api.Pod{
+		{
+			Namespace:         namespace,
+			Name:              name,
+			Status:            update.Status,
+			StatusDescription: update.ErrorCause,
+		},
+	})
 }

@@ -33,6 +33,13 @@ func (p podStateManager) Run() {
 	}
 }
 
+func (p podStateManager) Delete(podName string) {
+	err := p.store.DeletePod(podName)
+	if err != nil && err != sql.ErrNoRows {
+		logrus.Errorf("could't delete pod: %s", err)
+	}
+}
+
 func (p podStateManager) trackStates(pods []*api.Pod) {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
@@ -61,13 +68,13 @@ func (p podStateManager) trackStates(pods []*api.Pod) {
 }
 
 func (p podStateManager) setFiringState() {
-	pods, err := p.store.Pods()
+	pods, err := p.store.PendingPods()
 	if err != nil {
 		logrus.Errorf("could't get pods from db: %s", err)
 	}
 
 	for _, pod := range pods {
-		if pod.AlertState == "Pending" && p.waiTimeIsSoonerThan(pod.AlertStateTimestamp) {
+		if p.waiTimeIsSoonerThan(pod.AlertStateTimestamp) {
 			msg := notifications.MessageFromFailedPod(*pod)
 			p.notifManager.Broadcast(msg)
 

@@ -8,8 +8,8 @@ import (
 	"github.com/russross/meddler"
 )
 
-func (db *Store) Pods() ([]*model.Pod, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectAllPods)
+func (db *Store) PendingPods() ([]*model.Pod, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectPendingPods)
 	data := []*model.Pod{}
 	err := meddler.QueryAll(db, &data, stmt)
 
@@ -28,6 +28,13 @@ func (db *Store) Pod(name string) (*model.Pod, error) {
 	err := meddler.QueryRow(db, pod, stmt, name)
 
 	return pod, err
+}
+
+func (db *Store) DeletePod(name string) error {
+	stmt := queries.Stmt(db.driver, queries.DeletePodByName)
+	_, err := db.Exec(stmt, name)
+
+	return err
 }
 
 func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
