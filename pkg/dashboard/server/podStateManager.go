@@ -37,33 +37,25 @@ func (p podStateManager) trackStates(pods []*api.Pod) {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		currentTime := time.Now().Unix()
+		alertState := "Pending"
 
 		if p.alreadyAlerted(podName) || p.statusNotChanged(podName, pod.Status) {
 			continue
 		}
 
-		if podErrorState(pod.Status) {
-			err := p.store.SaveOrUpdatePod(&model.Pod{
-				Name:                podName,
-				Status:              pod.Status,
-				StatusDesc:          pod.StatusDescription,
-				AlertState:          "Pending",
-				AlertStateTimestamp: currentTime,
-			})
-			if err != nil {
-				logrus.Errorf("could't save or update pod: %s", err)
-			}
-		} else {
-			err := p.store.SaveOrUpdatePod(&model.Pod{
-				Name:                podName,
-				Status:              pod.Status,
-				StatusDesc:          pod.StatusDescription,
-				AlertState:          "OK",
-				AlertStateTimestamp: currentTime,
-			})
-			if err != nil {
-				logrus.Errorf("could't save or update pod: %s", err)
-			}
+		if !podErrorState(pod.Status) {
+			alertState = "OK"
+		}
+
+		err := p.store.SaveOrUpdatePod(&model.Pod{
+			Name:                podName,
+			Status:              pod.Status,
+			StatusDesc:          pod.StatusDescription,
+			AlertState:          alertState,
+			AlertStateTimestamp: currentTime,
+		})
+		if err != nil {
+			logrus.Errorf("could't save or update pod: %s", err)
 		}
 	}
 }
