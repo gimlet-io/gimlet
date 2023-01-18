@@ -12,6 +12,7 @@ export default class Pulse extends Component {
       releaseStatuses: reduxState.releaseStatuses,
       releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays,
       kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents),
+      scmUrl: reduxState.settings.scmUrl
     }
 
     this.props.store.subscribe(() => {
@@ -21,6 +22,7 @@ export default class Pulse extends Component {
       this.setState({ releaseStatuses: reduxState.releaseStatuses });
       this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
       this.setState({ kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents) });
+      this.setState({ scmUrl: reduxState.settings.scmUrl });
     });
   }
 
@@ -51,6 +53,7 @@ export default class Pulse extends Component {
                           env={env.name}
                           releaseHistorySinceDays={this.state.releaseHistorySinceDays}
                           releaseStatuses={this.state.releaseStatuses[env.name]}
+                          scmUrl={this.state.scmUrl}
                         />
                       </div>
                     )}
