@@ -17,6 +17,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
@@ -65,6 +66,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	notificationsManager := notifications.NewManager()
+	if config.Notifications.Provider == "slack" {
+		notificationsManager.AddProvider(slackNotificationProvider(config))
+	}
+	if config.Notifications.Provider == "discord" {
+		notificationsManager.AddProvider(discordNotificationProvider(config))
+	}
+	go notificationsManager.Run()
+
+	podStateManager := server.NewPodStateManager(notificationsManager, *store, 2)
+	go podStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
@@ -120,6 +133,7 @@ func main() {
 		gitSvc,
 		tokenManager,
 		repoCache,
+		podStateManager,
 	)
 	err = http.ListenAndServe(":9000", r)
 	log.Error(err)
@@ -257,4 +271,36 @@ func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) 
 		<-done
 		log.Info("Disconnected from Gimletd")
 	}
+}
+
+func slackNotificationProvider(config *config.Config) *notifications.SlackProvider {
+	slackChannelMap := parseChannelMap(config)
+
+	return &notifications.SlackProvider{
+		Token:          config.Notifications.Token,
+		ChannelMapping: slackChannelMap,
+		DefaultChannel: config.Notifications.DefaultChannel,
+	}
+}
+
+func discordNotificationProvider(config *config.Config) *notifications.DiscordProvider {
+	discordChannelMapping := parseChannelMap(config)
+
+	return &notifications.DiscordProvider{
+		Token:          config.Notifications.Token,
+		ChannelMapping: discordChannelMapping,
+		ChannelID:      config.Notifications.DefaultChannel,
+	}
+}
+
+func parseChannelMap(config *config.Config) map[string]string {
+	channelMap := map[string]string{}
+	if config.Notifications.ChannelMapping != "" {
+		pairs := strings.Split(config.Notifications.ChannelMapping, ",")
+		for _, p := range pairs {
+			keyValue := strings.Split(p, "=")
+			channelMap[keyValue[0]] = keyValue[1]
+		}
+	}
+	return channelMap
 }

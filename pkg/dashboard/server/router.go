@@ -32,6 +32,7 @@ func SetupRouter(
 	gitService customScm.CustomGitService,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
+	podStateManager *podStateManager,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -53,6 +54,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("agentJWT", tokenString))
+	r.Use(middleware.WithValue("podStateManager", podStateManager))
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000"},

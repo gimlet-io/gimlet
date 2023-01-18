@@ -34,6 +34,7 @@ const addAppsrepoColumnToEnvironmentsTable = "addAppsrepoColumnToEnvironmentsTab
 const defaultValueForGitopsRepos = "defaultValueForGitopsRepos"
 const addRepoPerEnvColumnToEnvironmentsTable = "addRepoPerEnvColumnToEnvironmentsTable"
 const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
+const createTablePods = "create-table-pods"
 
 type migration struct {
 	name string
@@ -158,6 +159,20 @@ CREATE TABLE IF NOT EXISTS key_values (
 			name: defaultValueForRepoPerEnv,
 			stmt: `update environments set repo_per_env=false where repo_per_env is null;`,
 		},
+		{
+			name: createTablePods,
+			stmt: `
+CREATE TABLE IF NOT EXISTS pods (
+id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
+name				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+alert_state 		  TEXT,
+alert_state_timestamp INTEGER,
+UNIQUE(id)
+);
+`,
+		},
 	},
 	"postgres": {
 		{
@@ -274,6 +289,20 @@ CREATE TABLE IF NOT EXISTS key_values (
 		{
 			name: defaultValueForRepoPerEnv,
 			stmt: `update environments set repo_per_env=false where repo_per_env is null;`,
+		},
+		{
+			name: createTablePods,
+			stmt: `
+CREATE TABLE IF NOT EXISTS pods (
+id          		  SERIAL,
+name  				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+alert_state 		  TEXT,
+alert_state_timestamp INTEGER,
+UNIQUE(id)
+);
+`,
 		},
 	},
 }

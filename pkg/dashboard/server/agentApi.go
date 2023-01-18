@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
@@ -149,6 +150,11 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
+	podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
+	for _, stack := range stacks {
+		podStateManager.Track(stack.Deployment.Pods)
+	}
+
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	agent := agentHub.Agents[name]
 	if agent == nil {
@@ -212,6 +218,11 @@ func update(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
+	if strings.Contains(update.Event, "pod") {
+		podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
+		handlePodUpdate(podStateManager, update)
+	}
+
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)
 
 	poorMansNewServiceHandler(update, r)
@@ -248,4 +259,24 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	}
 
 	return update
+}
+
+func handlePodUpdate(podStateManager *podStateManager, update api.StackUpdate) {
+	parts := strings.Split(update.Subject, "/")
+	namespace := parts[0]
+	name := parts[1]
+
+	if update.Event == agent.EventPodDeleted {
+		podStateManager.Delete(update.Subject)
+		return
+	}
+
+	podStateManager.Track([]*api.Pod{
+		{
+			Namespace:         namespace,
+			Name:              name,
+			Status:            update.Status,
+			StatusDescription: update.ErrorCause,
+		},
+	})
 }
