@@ -1,4 +1,4 @@
-package notifications
+package server
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 )
 
 func TestSavePods(t *testing.T) {
@@ -85,7 +86,7 @@ func TestTrackStates(t *testing.T) {
 		store.Close()
 	}()
 
-	dummyNotificationsManager := NewDummyManager()
+	dummyNotificationsManager := notifications.NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
@@ -112,7 +113,7 @@ func TestPodAlertStates(t *testing.T) {
 		store.Close()
 	}()
 
-	dummyNotificationsManager := NewDummyManager()
+	dummyNotificationsManager := notifications.NewDummyManager()
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pods := []*api.Pod{&pod1, &pod2}
@@ -154,7 +155,7 @@ func TestSetPodAlertStatesToFiring(t *testing.T) {
 
 	currentTime := time.Now()
 
-	dummyNotificationsManager := NewDummyManager()
+	dummyNotificationsManager := notifications.NewDummyManager()
 	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-1 * time.Minute).Unix()}
 	pod2 := model.Pod{Name: "ns1/pod2", Status: "PodFailed", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-3 * time.Minute).Unix()}
 
@@ -183,7 +184,7 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 
 	oneMinuteAgo := time.Now().Add(-1 * time.Minute).Unix()
 
-	dummyNotificationsManager := NewDummyManager()
+	dummyNotificationsManager := notifications.NewDummyManager()
 	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", AlertState: "Pending", AlertStateTimestamp: oneMinuteAgo}
 	pod2 := model.Pod{Name: "ns1/pod2", Status: "Running", AlertState: "OK", AlertStateTimestamp: oneMinuteAgo}
 
@@ -222,8 +223,8 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 }
 
 func TestPodFailedMessage(t *testing.T) {
-	msgPodFailed := podFailedMessage{
-		model.Pod{
+	msgPodFailed := notifications.PodFailedMessage{
+		Pod: model.Pod{
 			Name:       "ns1/pod1",
 			Status:     "Error",
 			StatusDesc: "Container failed",
@@ -248,9 +249,9 @@ func TestNotificationSending(t *testing.T) {
 		store.Close()
 	}()
 
-	notificationsManager := NewManager()
+	notificationsManager := notifications.NewManager()
 
-	notificationsManager.AddProvider(&DiscordProvider{
+	notificationsManager.AddProvider(&notifications.DiscordProvider{
 		Token:     "",
 		ChannelID: "",
 	})

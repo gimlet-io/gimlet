@@ -7,17 +7,17 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
-type podFailedMessage struct {
-	pod model.Pod
+type PodFailedMessage struct {
+	Pod model.Pod
 }
 
-func (pm *podFailedMessage) AsSlackMessage() (*slackMessage, error) {
+func (pm *PodFailedMessage) AsSlackMessage() (*slackMessage, error) {
 	msg := &slackMessage{
 		Text:   "",
 		Blocks: []Block{},
 	}
 
-	msg.Text = fmt.Sprintf("Pod %s failed with status %s", pm.pod.Name, pm.pod.Status)
+	msg.Text = fmt.Sprintf("Pod %s failed with status %s", pm.Pod.Name, pm.Pod.Status)
 	msg.Blocks = append(msg.Blocks,
 		Block{
 			Type: section,
@@ -33,7 +33,7 @@ func (pm *podFailedMessage) AsSlackMessage() (*slackMessage, error) {
 			Elements: []Text{
 				{
 					Type: markdown,
-					Text: fmt.Sprintf(":exclamation: %s", pm.pod.StatusDesc),
+					Text: fmt.Sprintf(":exclamation: %s", pm.Pod.StatusDesc),
 				},
 			},
 		},
@@ -42,15 +42,15 @@ func (pm *podFailedMessage) AsSlackMessage() (*slackMessage, error) {
 	return msg, nil
 }
 
-func (pm *podFailedMessage) Env() string {
+func (pm *PodFailedMessage) Env() string {
 	return ""
 }
 
-func (pm *podFailedMessage) AsStatus() (*status, error) {
+func (pm *PodFailedMessage) AsStatus() (*status, error) {
 	return nil, nil
 }
 
-func (pm *podFailedMessage) AsDiscordMessage() (*discordMessage, error) {
+func (pm *PodFailedMessage) AsDiscordMessage() (*discordMessage, error) {
 	msg := &discordMessage{
 		Text: "",
 		Embed: &discordgo.MessageEmbed{
@@ -60,23 +60,23 @@ func (pm *podFailedMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	msg.Text = fmt.Sprintf("Pod %s failed with status %s", pm.pod.Name, pm.pod.Status)
-	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", pm.pod.StatusDesc)
+	msg.Text = fmt.Sprintf("Pod %s failed with status %s", pm.Pod.Name, pm.Pod.Status)
+	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", pm.Pod.StatusDesc)
 	msg.Embed.Color = 15158332
 
 	return msg, nil
 }
 
 func MessageFromFailedPod(pod model.Pod) Message {
-	return &podFailedMessage{
-		pod: pod,
+	return &PodFailedMessage{
+		Pod: pod,
 	}
 }
 
-func (pm *podFailedMessage) RepositoryName() string {
+func (pm *PodFailedMessage) RepositoryName() string {
 	return ""
 }
 
-func (pm *podFailedMessage) SHA() string {
+func (pm *PodFailedMessage) SHA() string {
 	return ""
 }

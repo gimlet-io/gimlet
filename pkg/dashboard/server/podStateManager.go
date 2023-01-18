@@ -1,4 +1,4 @@
-package notifications
+package server
 
 import (
 	"database/sql"
@@ -8,32 +8,32 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/sirupsen/logrus"
 )
 
-type PodStateManager struct {
-	notifManager Manager
+type podStateManager struct {
+	notifManager notifications.Manager
 	store        store.Store
 	waitTime     time.Duration
 }
 
-func NewPodStateManager(notifManager Manager, store store.Store, waitTime time.Duration) *PodStateManager {
-	return &PodStateManager{notifManager: notifManager, store: store, waitTime: waitTime}
+func NewPodStateManager(notifManager notifications.Manager, store store.Store, waitTime time.Duration) *podStateManager {
+	return &podStateManager{notifManager: notifManager, store: store, waitTime: waitTime}
 }
 
-func (p PodStateManager) Track(pods []*api.Pod) {
+func (p podStateManager) Track(pods []*api.Pod) {
 	p.trackStates(pods)
 }
 
-func (p PodStateManager) Run() {
+func (p podStateManager) Run() {
 	for {
 		p.setFiringState()
-
 		time.Sleep(p.waitTime * time.Minute)
 	}
 }
 
-func (p PodStateManager) trackStates(pods []*api.Pod) {
+func (p podStateManager) trackStates(pods []*api.Pod) {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		currentTime := time.Now().Unix()
@@ -68,7 +68,7 @@ func (p PodStateManager) trackStates(pods []*api.Pod) {
 	}
 }
 
-func (p PodStateManager) setFiringState() {
+func (p podStateManager) setFiringState() {
 	pods, err := p.store.Pods()
 	if err != nil {
 		logrus.Errorf("could't get pods from db: %s", err)
@@ -76,7 +76,7 @@ func (p PodStateManager) setFiringState() {
 
 	for _, pod := range pods {
 		if pod.AlertState == "Pending" && p.waiTimeIsSoonerThan(pod.AlertStateTimestamp) {
-			msg := MessageFromFailedPod(*pod)
+			msg := notifications.MessageFromFailedPod(*pod)
 			p.notifManager.Broadcast(msg)
 
 			err := p.store.SaveOrUpdatePod(&model.Pod{
@@ -93,14 +93,14 @@ func (p PodStateManager) setFiringState() {
 	}
 }
 
-func (p PodStateManager) waiTimeIsSoonerThan(alertTimestamp int64) bool {
+func (p podStateManager) waiTimeIsSoonerThan(alertTimestamp int64) bool {
 	podAlertTime := time.Unix(alertTimestamp, 0)
 	managerWaitTime := time.Now().Add(-time.Minute * p.waitTime)
 
 	return podAlertTime.Before(managerWaitTime)
 }
 
-func (p PodStateManager) alreadyAlerted(podName string) bool {
+func (p podStateManager) alreadyAlerted(podName string) bool {
 	pod, err := p.store.Pod(podName)
 	if err == sql.ErrNoRows {
 		return false
@@ -112,7 +112,7 @@ func (p PodStateManager) alreadyAlerted(podName string) bool {
 	return pod.AlertState == "Firing"
 }
 
-func (p PodStateManager) statusNotChanged(podName string, podStatus string) bool {
+func (p podStateManager) statusNotChanged(podName string, podStatus string) bool {
 	podFromDb, err := p.store.Pod(podName)
 	if err == sql.ErrNoRows {
 		return false

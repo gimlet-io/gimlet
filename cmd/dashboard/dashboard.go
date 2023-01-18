@@ -76,7 +76,7 @@ func main() {
 	}
 	go notificationsManager.Run()
 
-	podStateManager := notifications.NewPodStateManager(notificationsManager, *store, 2)
+	podStateManager := server.NewPodStateManager(notificationsManager, *store, 2)
 	go podStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
