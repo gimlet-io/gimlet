@@ -1,7 +1,13 @@
 package store
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"database/sql"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -32,7 +38,7 @@ type Store struct {
 // and returns a new Store.
 func New(driver, config string) *Store {
 	return &Store{
-		DB:     open(driver, config),
+		DB:     open(driver, config, ""),
 		driver: driver,
 		config: config,
 	}
@@ -45,7 +51,7 @@ func From(db *sql.DB) *Store {
 
 // open opens a new database connection with the specified
 // driver and connection string and returns a store.
-func open(driver, config string) *sql.DB {
+func open(driver, config, encryptionKey string) *sql.DB {
 	db, err := sql.Open(driver, config)
 	if err != nil {
 		logrus.Errorln(err)
@@ -56,7 +62,7 @@ func open(driver, config string) *sql.DB {
 		db.SetMaxIdleConns(0)
 	}
 
-	setupMeddler(driver)
+	setupMeddler(driver, encryptionKey)
 
 	if err := pingDatabase(db); err != nil {
 		logrus.Errorln(err)
@@ -75,15 +81,16 @@ func open(driver, config string) *sql.DB {
 // environment variables, with fallback to in-memory sqlite.
 func NewTest() *Store {
 	var (
-		driver = "sqlite3"
-		config = "file::memory:?cache=shared"
+		driver        = "sqlite3"
+		config        = "file::memory:?cache=shared"
+		encryptionKey = "the-key-has-to-be-32-bytes-long!"
 	)
 	if os.Getenv("DATABASE_DRIVER") != "" {
 		driver = os.Getenv("DATABASE_DRIVER")
 		config = os.Getenv("DATABASE_CONFIG")
 	}
 	store := &Store{
-		DB:     open(driver, config),
+		DB:     open(driver, config, encryptionKey),
 		driver: driver,
 		config: config,
 	}
@@ -126,7 +133,7 @@ func setupDatabase(driver string, db *sql.DB) error {
 
 // helper function to setup the meddler default driver
 // based on the selected driver name.
-func setupMeddler(driver string) {
+func setupMeddler(driver, encryptionKey string) {
 	switch driver {
 	case "sqlite3":
 		meddler.Default = meddler.SQLite
@@ -135,4 +142,77 @@ func setupMeddler(driver string) {
 	case "postgres":
 		meddler.Default = meddler.PostgreSQL
 	}
+
+	if encryptionKey != "" {
+		meddler.Register("encrypted", EncryptionMeddler{EnryptionKey: encryptionKey})
+	}
+}
+
+type EncryptionMeddler struct {
+	// Has to be 32 bytes long
+	EnryptionKey string
+}
+
+// PreRead is called before a Scan operation for fields that have the EncryptionMeddler
+func (m EncryptionMeddler) PreRead(fieldAddr interface{}) (scanTarget interface{}, err error) {
+	// give a pointer to a byte buffer to grab the raw data
+	return new(string), nil
+}
+
+// PostRead is called after a Scan operation for fields that have the EncryptionMeddler
+func (m EncryptionMeddler) PostRead(fieldAddr, scanTarget interface{}) error {
+	ptr := scanTarget.(*string)
+	if ptr == nil {
+		return fmt.Errorf("EncryptionMeddler.PostRead: nil pointer")
+	}
+	raw := *ptr
+
+	plaintextBytes, err := decrypt([]byte(raw), []byte(m.EnryptionKey))
+	fieldAddrStringPtr := fieldAddr.(*string)
+	*fieldAddrStringPtr = string(plaintextBytes)
+	return err
+}
+
+// PreWrite is called before an Insert or Update operation for fields that have the EncryptionMeddler
+func (m EncryptionMeddler) PreWrite(field interface{}) (saveValue interface{}, err error) {
+	return encrypt([]byte(field.(string)), []byte(m.EnryptionKey))
+}
+
+func encrypt(plaintext []byte, key []byte) ([]byte, error) {
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+
+	return gcm.Seal(nonce, nonce, plaintext, nil), nil
+}
+
+func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		return nil, err
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	return gcm.Open(nil, nonce, ciphertext, nil)
 }

@@ -15,7 +15,11 @@
 package store
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/russross/meddler"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStoreInit(t *testing.T) {
@@ -23,4 +27,36 @@ func TestStoreInit(t *testing.T) {
 	defer func() {
 		s.Close()
 	}()
+}
+
+type Dummy struct {
+	ID     int64  `json:"-" meddler:"id,pk"`
+	Secret string `json:"-" meddler:"secret,encrypted"`
+}
+
+func TestEncryption(t *testing.T) {
+	s := NewTest()
+	defer func() {
+		s.Close()
+	}()
+
+	_, err := s.Exec("CREATE TABLE IF NOT EXISTS dummy (id INTEGER PRIMARY KEY AUTOINCREMENT,secret text);")
+	assert.Nil(t, err)
+
+	err = meddler.Insert(s, "dummy", &Dummy{
+		Secret: "superSecretValue",
+	})
+	assert.Nil(t, err)
+
+	rawData := s.QueryRow("select secret from dummy where id = 1")
+	encrypteSecretValue := new([]byte)
+	err = rawData.Scan(encrypteSecretValue)
+	assert.Nil(t, err)
+	fmt.Println(string(*encrypteSecretValue))
+	assert.NotEqual(t, "superSecretValue", string(*encrypteSecretValue))
+
+	fromDB := new(Dummy)
+	err = meddler.Load(s, "dummy", fromDB, 1)
+	assert.Nil(t, err)
+	assert.Equal(t, "superSecretValue", fromDB.Secret)
 }
