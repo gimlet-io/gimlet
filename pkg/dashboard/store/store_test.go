@@ -16,6 +16,7 @@ package store
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/russross/meddler"
@@ -40,10 +41,15 @@ func TestEncryption(t *testing.T) {
 		s.Close()
 	}()
 
-	_, err := s.Exec("CREATE TABLE IF NOT EXISTS dummy (id INTEGER PRIMARY KEY AUTOINCREMENT,secret text);")
-	assert.Nil(t, err)
+	if os.Getenv("DATABASE_DRIVER") != "" {
+		_, err := s.Exec("CREATE TABLE IF NOT EXISTS dummy (id SERIAL, secret text);")
+		assert.Nil(t, err)
+	} else {
+		_, err := s.Exec("CREATE TABLE IF NOT EXISTS dummy (id INTEGER PRIMARY KEY AUTOINCREMENT,secret text);")
+		assert.Nil(t, err)
+	}
 
-	err = meddler.Insert(s, "dummy", &Dummy{
+	err := meddler.Insert(s, "dummy", &Dummy{
 		Secret: "superSecretValue",
 	})
 	assert.Nil(t, err)
