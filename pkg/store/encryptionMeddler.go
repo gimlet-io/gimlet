@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 )
 
 type EncryptionMeddler struct {
@@ -28,7 +29,11 @@ func (m EncryptionMeddler) PostRead(fieldAddr, scanTarget interface{}) error {
 	}
 	raw := *ptr
 
-	plaintextBytes, err := decrypt([]byte(raw), []byte(m.EnryptionKey))
+	unquoted, err := strconv.Unquote(string([]byte(raw)))
+	if err != nil {
+		return err
+	}
+	plaintextBytes, err := decrypt([]byte(unquoted), []byte(m.EnryptionKey))
 	fieldAddrStringPtr := fieldAddr.(*string)
 	*fieldAddrStringPtr = string(plaintextBytes)
 	return err
@@ -36,7 +41,9 @@ func (m EncryptionMeddler) PostRead(fieldAddr, scanTarget interface{}) error {
 
 // PreWrite is called before an Insert or Update operation for fields that have the EncryptionMeddler
 func (m EncryptionMeddler) PreWrite(field interface{}) (saveValue interface{}, err error) {
-	return encrypt([]byte(field.(string)), []byte(m.EnryptionKey))
+	encrypted, err := encrypt([]byte(field.(string)), []byte(m.EnryptionKey))
+	quoted := strconv.Quote(string(encrypted))
+	return quoted, err
 }
 
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
