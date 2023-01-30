@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/ddl"
+	genericStore "github.com/gimlet-io/gimlet-cli/pkg/store"
 
 	"github.com/russross/meddler"
 
@@ -32,7 +33,7 @@ type Store struct {
 // and returns a new Store.
 func New(driver, config string) *Store {
 	return &Store{
-		DB:     open(driver, config),
+		DB:     open(driver, config, ""),
 		driver: driver,
 		config: config,
 	}
@@ -45,7 +46,7 @@ func From(db *sql.DB) *Store {
 
 // open opens a new database connection with the specified
 // driver and connection string and returns a store.
-func open(driver, config string) *sql.DB {
+func open(driver, config, encryptionKey string) *sql.DB {
 	db, err := sql.Open(driver, config)
 	if err != nil {
 		logrus.Errorln(err)
@@ -56,7 +57,7 @@ func open(driver, config string) *sql.DB {
 		db.SetMaxIdleConns(0)
 	}
 
-	setupMeddler(driver)
+	setupMeddler(driver, encryptionKey)
 
 	if err := pingDatabase(db); err != nil {
 		logrus.Errorln(err)
@@ -75,15 +76,16 @@ func open(driver, config string) *sql.DB {
 // environment variables, with fallback to in-memory sqlite.
 func NewTest() *Store {
 	var (
-		driver = "sqlite3"
-		config = "file::memory:?cache=shared"
+		driver        = "sqlite3"
+		config        = "file::memory:?cache=shared"
+		encryptionKey = "the-key-has-to-be-32-bytes-long!"
 	)
 	if os.Getenv("DATABASE_DRIVER") != "" {
 		driver = os.Getenv("DATABASE_DRIVER")
 		config = os.Getenv("DATABASE_CONFIG")
 	}
 	store := &Store{
-		DB:     open(driver, config),
+		DB:     open(driver, config, encryptionKey),
 		driver: driver,
 		config: config,
 	}
@@ -126,7 +128,7 @@ func setupDatabase(driver string, db *sql.DB) error {
 
 // helper function to setup the meddler default driver
 // based on the selected driver name.
-func setupMeddler(driver string) {
+func setupMeddler(driver, encryptionKey string) {
 	switch driver {
 	case "sqlite3":
 		meddler.Default = meddler.SQLite
@@ -134,5 +136,9 @@ func setupMeddler(driver string) {
 		meddler.Default = meddler.MySQL
 	case "postgres":
 		meddler.Default = meddler.PostgreSQL
+	}
+
+	if encryptionKey != "" {
+		meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey})
 	}
 }
