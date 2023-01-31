@@ -35,7 +35,7 @@ func SetupRouter(
 	gitService customScm.CustomGitService,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
-	podStateManager *podStateManager,
+	alertStateManager *alertStateManager,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 ) *chi.Mux {
@@ -60,7 +60,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("agentJWT", tokenString))
-	r.Use(middleware.WithValue("podStateManager", podStateManager))
+	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))

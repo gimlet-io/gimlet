@@ -111,7 +111,7 @@ func TestTrackStates(t *testing.T) {
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
 	pods := []*api.Pod{&pod1, &pod2, &pod3}
 
-	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	p.trackStates(pods)
 
 	expected := []model.Pod{
@@ -137,7 +137,7 @@ func TestPodAlertStates(t *testing.T) {
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pods := []*api.Pod{&pod1, &pod2}
 
-	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	p.trackStates(pods)
 
 	expected := []model.Pod{
@@ -181,7 +181,7 @@ func TestSetPodAlertStatesToFiring(t *testing.T) {
 	store.SaveOrUpdatePod(&pod1)
 	store.SaveOrUpdatePod(&pod2)
 
-	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 
 	p.setFiringState()
 
@@ -210,7 +210,7 @@ func TestPodAlertStateTimestampOverwrite(t *testing.T) {
 	store.SaveOrUpdatePod(&pod1)
 	store.SaveOrUpdatePod(&pod2)
 
-	p := NewPodStateManager(dummyNotificationsManager, *store, 2)
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 
 	trackablePod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Error"}
 	trackablePod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "Running"}
@@ -277,7 +277,7 @@ func TestNotificationSending(t *testing.T) {
 
 	go notificationsManager.Run()
 
-	p := NewPodStateManager(notificationsManager, *store, 2)
+	p := NewAlertStateManager(notificationsManager, *store, 2)
 
 	currentTime := time.Now()
 	pod1 := model.Pod{Name: "ns1/pod1", Status: "Error", StatusDesc: "Back-off pulling image", AlertState: "Pending", AlertStateTimestamp: currentTime.Add(-1 * time.Minute).Unix()}

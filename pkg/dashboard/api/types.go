@@ -56,6 +56,16 @@ type ConnectedAgent struct {
 	Stacks []*Stack `json:"stacks"`
 }
 
+type Event struct {
+	FirstTimestamp int64  `json:"firstTimestamp"`
+	Count          int32  `json:"count"`
+	Name           string `json:"name"`
+	Namespace      string `json:"namespace"`
+	Status         string `json:"status"`
+	StatusDesc     string `json:"statusDesc"`
+}
+
+// TODO deprecated
 type Alert struct {
 	LastSeen            int64  `json:"lastSeen"`
 	DeploymentName      string `json:"deploymentName"`

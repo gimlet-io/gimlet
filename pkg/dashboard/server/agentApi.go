@@ -150,9 +150,9 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
 	for _, stack := range stacks {
-		podStateManager.Track(stack.Deployment.Pods)
+		alertStateManager.Track(stack.Deployment.Pods)
 	}
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
@@ -219,8 +219,8 @@ func update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if strings.Contains(update.Event, "pod") {
-		podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
-		handlePodUpdate(podStateManager, update)
+		alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
+		handlePodUpdate(alertStateManager, update)
 	}
 
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)
@@ -261,17 +261,17 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(podStateManager *podStateManager, update api.StackUpdate) {
+func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdate) {
 	parts := strings.Split(update.Subject, "/")
 	namespace := parts[0]
 	name := parts[1]
 
 	if update.Event == agent.EventPodDeleted {
-		podStateManager.Delete(update.Subject)
+		alertStateManager.Delete(update.Subject)
 		return
 	}
 
-	podStateManager.Track([]*api.Pod{
+	alertStateManager.Track([]*api.Pod{
 		{
 			Namespace:         namespace,
 			Name:              name,

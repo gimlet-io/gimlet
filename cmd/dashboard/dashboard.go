@@ -72,8 +72,8 @@ func main() {
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
 
-	podStateManager := server.NewPodStateManager(notificationsManager, *store, 2)
-	go podStateManager.Run()
+	alertStateManager := server.NewAlertStateManager(notificationsManager, *store, 2)
+	go alertStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
@@ -161,7 +161,7 @@ func main() {
 		gitSvc,
 		tokenManager,
 		dashboardRepoCache,
-		podStateManager,
+		alertStateManager,
 		notificationsManager,
 		perf,
 	)
