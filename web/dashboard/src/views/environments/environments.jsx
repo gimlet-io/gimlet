@@ -63,7 +63,6 @@ class Environments extends Component {
     }
 
     getEnvironmentCards() {
-        console.log("generating env cards")
         const { connectedAgents, envs, releaseStatuses, popupWindow, scmUrl } = this.state;
         const { environment, tab } = this.props.match.params;
         const sortedEnvs = this.sortingByName(envs);

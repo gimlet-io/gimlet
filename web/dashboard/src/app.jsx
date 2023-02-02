@@ -17,6 +17,7 @@ import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
 import Footer from './views/footer/footer';
+import Userflow from './userflow';
 
 export default class App extends Component {
   constructor(props) {
@@ -35,7 +36,7 @@ export default class App extends Component {
 
     this.state = {
       store: store,
-      gimletClient: gimletClient,
+      gimletClient: gimletClient
     }
   }
 
@@ -62,6 +63,7 @@ export default class App extends Component {
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
         <FooterWithLocation />
+        <Userflow store={store} />
 
         <Route exact path="/">
           <Redirect to="/repositories" />
