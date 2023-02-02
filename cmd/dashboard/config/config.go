@@ -41,6 +41,9 @@ func defaults(c *Config) {
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"
 	}
+	if c.ReleaseStats == "" {
+		c.ReleaseStats = "disabled"
+	}
 }
 
 // String returns the configuration in string format.
@@ -71,6 +74,7 @@ type Config struct {
 	GitopsRepos             string `envconfig:"GITOPS_REPOS"`
 	GitopsRepoDeployKeyPath string `envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
 	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
+	ReleaseStats            string `envconfig:"RELEASE_STATS"`
 }
 
 // Logging provides the logging configuration.

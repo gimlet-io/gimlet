@@ -142,11 +142,30 @@ func main() {
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
 
+	if config.ReleaseStats == "enabled" {
+		releaseStateWorker := &worker.ReleaseStateWorker{
+			GitopsRepo:      config.GitopsRepo,
+			GitopsRepos:     parsedGitopsRepos,
+			DefaultRepoName: config.GitopsRepo,
+			RepoCache:       gimletdRepoCache,
+			Releases:        releases,
+			Perf:            perf,
+		}
+		go releaseStateWorker.Run()
+	}
+
+	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
+		tokenManager,
+		config.RepoCachePath,
+		store,
+	)
+	go branchDeleteEventWorker.Run()
+
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
 
-	go gimletdCommunication(*config, clientHub)
+	go gimletdCommunication(*config, clientHub) // TODO: remove this
 
 	r := server.SetupRouter(
 		config,
@@ -159,8 +178,16 @@ func main() {
 		dashboardRepoCache,
 		podStateManager,
 	)
-	err = http.ListenAndServe(":9000", r)
-	log.Error(err)
+
+	go func() {
+		err = http.ListenAndServe(":9000", r)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	<-waitCh
+	logrus.Info("Successfully cleaned up resources. Stopping.")
 }
 
 func parseEnvs(envString string) ([]*model.Environment, error) {
