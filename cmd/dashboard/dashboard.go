@@ -11,17 +11,16 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/cenkalti/backoff"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -89,12 +88,12 @@ func main() {
 	waitCh := make(chan struct{})
 
 	if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
-		logrus.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
+		log.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
 	}
 
 	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
 	if err != nil {
-		logrus.Fatal("could not parse gitops repositories")
+		log.Fatal("could not parse gitops repositories")
 	}
 
 	gimletdRepoCache, err := gitops.NewGitopsRepoCache(
@@ -141,7 +140,7 @@ func main() {
 		perf,
 	)
 	go gitopsWorker.Run()
-	logrus.Info("Gitops worker started")
+	log.Info("Gitops worker started")
 
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)

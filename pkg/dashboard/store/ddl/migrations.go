@@ -16,6 +16,7 @@ package ddl
 
 const createTableUsers = "create-table-users"
 const addNameColumnToUsersTable = "add-name-column-to-users-table"
+const addAdminColumnToUsersTable = "add-admin-column-to-users-table"
 const createTableEnvironments = "create-table-environments"
 const createTableCommits = "create-table-commits"
 const addMessageColumnToCommitsTable = "add-message-column-to-commits-table"
@@ -35,6 +36,8 @@ const defaultValueForGitopsRepos = "defaultValueForGitopsRepos"
 const addRepoPerEnvColumnToEnvironmentsTable = "addRepoPerEnvColumnToEnvironmentsTable"
 const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 const createTablePods = "create-table-pods"
+const createTableEvents = "create-table-events"
+const createTableGitopsCommits = "create-table-gitopsCommits"
 
 type migration struct {
 	name string
@@ -61,6 +64,10 @@ UNIQUE(login)
 		{
 			name: addNameColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN name TEXT default '';`,
+		},
+		{
+			name: addAdminColumnToUsersTable,
+			stmt: `ALTER TABLE users ADD COLUMN admin BOOLEAN;`,
 		},
 		{
 			name: createTableEnvironments,
@@ -173,6 +180,44 @@ UNIQUE(id)
 );
 `,
 		},
+		{
+			name: createTableEvents,
+			stmt: `
+CREATE TABLE IF NOT EXISTS events (
+id            TEXT,
+created       INTEGER,
+type          TEXT,
+blob          TEXT,
+status        TEXT DEFAULT 'new',
+status_desc   TEXT DEFAULT '',
+repository    TEXT,
+branch        TEXT,
+event         TEXT,
+source_branch TEXT,
+target_branch TEXT,
+tag           TEXT,
+sha           TEXT,
+artifact_id   TEXT,
+gitops_hashes TEXT DEFAULT '[]',
+results		  TEXT DEFAULT '[]',
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableGitopsCommits,
+			stmt: `
+CREATE TABLE IF NOT EXISTS gitops_commits (
+id          INTEGER PRIMARY KEY AUTOINCREMENT,
+sha         TEXT,
+status      TEXT,
+status_desc TEXT,
+created 	INTEGER DEFAULT 0,
+env 		TEXT DEFAULT '',
+UNIQUE(id)
+);
+`,
+		},
 	},
 	"postgres": {
 		{
@@ -193,6 +238,10 @@ UNIQUE(login)
 		{
 			name: addNameColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN name TEXT default '';`,
+		},
+		{
+			name: addAdminColumnToUsersTable,
+			stmt: `ALTER TABLE users ADD COLUMN admin BOOLEAN;`,
 		},
 		{
 			name: createTableEnvironments,
@@ -300,6 +349,44 @@ status      		  TEXT,
 status_desc 		  TEXT,
 alert_state 		  TEXT,
 alert_state_timestamp INTEGER,
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableEvents,
+			stmt: `
+CREATE TABLE IF NOT EXISTS events (
+id            TEXT,
+created       INTEGER,
+type          TEXT,
+blob          TEXT,
+status        TEXT DEFAULT 'new',
+status_desc   TEXT DEFAULT '',
+repository    TEXT,
+branch        TEXT,
+event         TEXT,
+source_branch TEXT,
+target_branch TEXT,
+tag           TEXT,
+sha           TEXT,
+artifact_id   TEXT,
+gitops_hashes TEXT DEFAULT '[]',
+results		  TEXT DEFAULT '[]',
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableGitopsCommits,
+			stmt: `
+CREATE TABLE IF NOT EXISTS gitops_commits (
+id          INTEGER PRIMARY KEY AUTOINCREMENT,
+sha         TEXT,
+status      TEXT,
+status_desc TEXT,
+created 	INTEGER DEFAULT 0,
+env 		TEXT DEFAULT '',
 UNIQUE(id)
 );
 `,

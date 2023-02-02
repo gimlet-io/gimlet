@@ -1,9 +1,10 @@
 package store
 
 import (
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGitopsCommitCRUD(t *testing.T) {

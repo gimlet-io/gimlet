@@ -9,8 +9,8 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )

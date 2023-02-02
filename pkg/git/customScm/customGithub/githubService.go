@@ -170,9 +170,9 @@ func (c *GithubClient) FetchCommits(
 }
 
 func translateCommit(commit commit) *model.Commit {
-	var contexts []model.Status
+	var contexts []model.CommitStatus
 	for _, c := range commit.Status.Contexts {
-		contexts = append(contexts, model.Status{
+		contexts = append(contexts, model.CommitStatus{
 			State:       c.State,
 			Context:     c.Context,
 			CreatedAt:   c.CreatedAt,
@@ -187,7 +187,7 @@ func translateCommit(commit commit) *model.Commit {
 			if checkRun.Conclusion != "" {
 				status = checkRun.Conclusion
 			}
-			contexts = append(contexts, model.Status{
+			contexts = append(contexts, model.CommitStatus{
 				State:     status,
 				Context:   checkRun.Name,
 				CreatedAt: checkRun.CompletedAt,

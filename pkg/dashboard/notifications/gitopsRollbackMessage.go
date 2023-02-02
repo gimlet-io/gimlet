@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 )
 
 type gitopsRollbackMessage struct {

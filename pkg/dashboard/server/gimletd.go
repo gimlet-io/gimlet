@@ -16,7 +16,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	gimletdModel "github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -82,7 +81,7 @@ func gimletdBasicInfo(w http.ResponseWriter, r *http.Request) {
 	client := client.NewClient(config.GimletD.URL, auth)
 	gimletdUser, err := client.UserGet(user.Login, true)
 	if err != nil && strings.Contains(err.Error(), "Not Found") {
-		gimletdUser, err = client.UserPost(&gimletdModel.User{Login: user.Login})
+		gimletdUser, err = client.UserPost(&model.User{Login: user.Login})
 	}
 	if err != nil {
 		logrus.Errorf("cannot get GimletD user: %s", err)
@@ -130,7 +129,7 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 	)
 
 	client := client.NewClient(config.GimletD.URL, auth)
-	createdUser, err := client.UserPost(&gimletdModel.User{Login: usernameToSave})
+	createdUser, err := client.UserPost(&model.User{Login: usernameToSave})
 	if err != nil {
 		logrus.Errorf("cannot save GimletD user: %s", err)
 		http.Error(w, http.StatusText(500), 500)

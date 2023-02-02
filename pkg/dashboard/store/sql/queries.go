@@ -24,6 +24,10 @@ const DeleteEnvironment = "delete-environment"
 const SelectPendingPods = "select-pending-pods"
 const SelectPodByName = "select-pod-by-name"
 const DeletePodByName = "delete-pod-by-name"
+const SelectUnprocessedEvents = "select-unprocessed-events"
+const UpdateEventStatus = "update-event-status"
+const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
+const SelectGitopsCommits = "select-gitops-commits"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -73,6 +77,25 @@ WHERE name = $1;
 		DeletePodByName: `
 DELETE FROM pods where name = $1;
 `,
+		SelectUnprocessedEvents: `
+SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
+FROM events
+WHERE status='new' order by created ASC limit 10;
+`,
+		UpdateEventStatus: `
+UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		SelectGitopsCommitBySha: `
+SELECT id, sha, status, status_desc, created
+FROM gitops_commits
+WHERE sha = $1;
+`,
+		SelectGitopsCommits: `
+SELECT id, sha, status, status_desc, created, env
+FROM gitops_commits
+ORDER BY created DESC
+LIMIT 20;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -120,6 +143,25 @@ WHERE name = $1;
 `,
 		DeletePodByName: `
 DELETE FROM pods where name = $1;
+`,
+		SelectUnprocessedEvents: `
+SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
+FROM events
+WHERE status='new' order by created ASC limit 10;
+`,
+		UpdateEventStatus: `
+UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		SelectGitopsCommitBySha: `
+SELECT id, sha, status, status_desc, created
+FROM gitops_commits
+WHERE sha = $1;
+`,
+		SelectGitopsCommits: `
+SELECT id, sha, status, status_desc, created, env
+FROM gitops_commits
+ORDER BY created DESC
+LIMIT 20;
 `,
 	},
 }

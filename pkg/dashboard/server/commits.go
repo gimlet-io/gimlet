@@ -309,7 +309,7 @@ func squashCommitStatuses(commits []*Commit) []*Commit {
 	var commitsWithSquashedStatuses []*Commit
 
 	for _, commit := range commits {
-		statusMap := map[string]model.Status{}
+		statusMap := map[string]model.CommitStatus{}
 		for _, s := range commit.Status.Contexts {
 			// Statuses are returned in reverse chronological order
 			// we only keep the latest
@@ -320,7 +320,7 @@ func squashCommitStatuses(commits []*Commit) []*Commit {
 			statusMap[s.Context] = s
 		}
 
-		commit.Status.Contexts = []model.Status{}
+		commit.Status.Contexts = []model.CommitStatus{}
 		for _, status := range statusMap {
 			commit.Status.Contexts = append(commit.Status.Contexts, status)
 		}

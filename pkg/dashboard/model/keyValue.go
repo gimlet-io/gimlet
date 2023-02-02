@@ -16,6 +16,9 @@ package model
 
 const OrgRepos = "orgRepos"
 
+// ReposWithCleanupPolicy an array of repo names that have a cleanup policy
+const ReposWithCleanupPolicy = "reposWithCleanupPolicy"
+
 // KeyValue is a key-value pair for simple storage for things fit in the data model
 type KeyValue struct {
 	// ID for this repo

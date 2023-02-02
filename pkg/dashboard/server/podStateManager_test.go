@@ -9,8 +9,8 @@ import (
 	"github.com/alecthomas/assert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 )
 
 func TestGetPendingPods(t *testing.T) {
