@@ -10,6 +10,12 @@ type User struct {
 	// required: true
 	Login string `json:"login"  meddler:"login"`
 
+	// Token is the user's api JWT token - not persisted
+	Token string `json:"token"  meddler:"-"`
+
+	// If the user is admin
+	Admin bool `json:"admin"  meddler:"admin"`
+
 	// Name is the full name for this user
 	Name string `json:"name"  meddler:"name"`
 

@@ -38,6 +38,9 @@ func defaults(c *Config) {
 	if c.Chart.Version == "" {
 		c.Chart.Version = "0.38.0"
 	}
+	if c.GitSSHAddressFormat == "" {
+		c.GitSSHAddressFormat = "git@github.com:%s.git"
+	}
 }
 
 // String returns the configuration in string format.
@@ -61,6 +64,13 @@ type Config struct {
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
 	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
 	UserflowToken           string `envconfig:"USERFLOW_TOKEN"`
+
+	PrintAdminToken         bool   `envconfig:"PRINT_ADMIN_TOKEN"`
+	AdminToken              string `envconfig:"ADMIN_TOKEN"`
+	GitopsRepo              string `envconfig:"GITOPS_REPO"`
+	GitopsRepos             string `envconfig:"GITOPS_REPOS"`
+	GitopsRepoDeployKeyPath string `envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
+	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 }
 
 // Logging provides the logging configuration.
@@ -111,6 +121,13 @@ type Notifications struct {
 	Token          string `envconfig:"NOTIFICATIONS_TOKEN"`
 	DefaultChannel string `envconfig:"NOTIFICATIONS_DEFAULT_CHANNEL"`
 	ChannelMapping string `envconfig:"NOTIFICATIONS_CHANNEL_MAPPING"`
+}
+
+type GitopsRepoConfig struct {
+	Env           string
+	RepoPerEnv    bool
+	GitopsRepo    string
+	DeployKeyPath string
 }
 
 func (c *Config) IsGithub() bool {

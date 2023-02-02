@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
-	"runtime"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/cenkalti/backoff"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
@@ -17,10 +19,9 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
+	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -62,49 +63,55 @@ func main() {
 
 	store := store.New(config.Database.Driver, config.Database.Config)
 
+	err = setupAdminUser(config, store)
+	if err != nil {
+		panic(err)
+	}
+
 	err = bootstrapEnvs(config.BootstrapEnv, store)
 	if err != nil {
 		panic(err)
 	}
 
-	notificationsManager := notifications.NewManager()
-	if config.Notifications.Provider == "slack" {
-		notificationsManager.AddProvider(slackNotificationProvider(config))
-	}
-	if config.Notifications.Provider == "discord" {
-		notificationsManager.AddProvider(discordNotificationProvider(config))
-	}
-	go notificationsManager.Run()
+	gitSvc, tokenManager := initTokenManager(config)
+	notificationsManager := initNotifications(config, tokenManager)
 
 	podStateManager := server.NewPodStateManager(notificationsManager, *store, 2)
 	go podStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
-	var gitSvc customScm.CustomGitService
-	var tokenManager customScm.NonImpersonatedTokenManager
-
-	if config.IsGithub() {
-		gitSvc = &customGithub.GithubClient{}
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			config.Github.AppID,
-			config.Github.InstallationID,
-			config.Github.PrivateKey.String(),
-		)
-		if err != nil {
-			panic(err)
-		}
-	} else if config.IsGitlab() {
-		gitSvc = &customGitlab.GitlabClient{
-			BaseURL: config.ScmURL(),
-		}
-		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
-	}
-
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	repoCache, err := nativeGit.NewRepoCache(
+	gimletdStopCh := make(chan os.Signal, 1)
+	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	waitCh := make(chan struct{})
+
+	if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
+		logrus.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
+	}
+
+	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	if err != nil {
+		logrus.Fatal("could not parse gitops repositories")
+	}
+
+	gimletdRepoCache, err := gitops.NewGitopsRepoCache(
+		config.RepoCachePath,
+		config.GitopsRepo,
+		parsedGitopsRepos,
+		config.GitopsRepoDeployKeyPath,
+		config.GitSSHAddressFormat,
+		gimletdStopCh,
+		waitCh,
+	)
+	if err != nil {
+		panic(err)
+	}
+	go gimletdRepoCache.Run()
+
+	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
 		config.RepoCachePath,
@@ -115,8 +122,26 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go repoCache.Run()
+	go dashboardRepoCache.Run()
 	log.Info("repo cache initialized")
+
+	eventSinkHub := streaming.NewEventSinkHub(config)
+	go eventSinkHub.Run()
+
+	gitopsWorker := worker.NewGitopsWorker(
+		store,
+		config.GitopsRepo,
+		parsedGitopsRepos,
+		config.GitopsRepoDeployKeyPath,
+		tokenManager,
+		notificationsManager,
+		eventsProcessed,
+		gimletdRepoCache,
+		nil, // eventSinkHub,
+		perf,
+	)
+	go gitopsWorker.Run()
+	logrus.Info("Gitops worker started")
 
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
@@ -132,32 +157,11 @@ func main() {
 		store,
 		gitSvc,
 		tokenManager,
-		repoCache,
+		dashboardRepoCache,
 		podStateManager,
 	)
 	err = http.ListenAndServe(":9000", r)
 	log.Error(err)
-}
-
-// helper function configures the logging.
-func initLogger(c *config.Config) {
-	log.SetReportCaller(true)
-
-	customFormatter := &log.TextFormatter{
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			filename := path.Base(f.File)
-			return "", fmt.Sprintf("[%s:%d]", filename, f.Line)
-		},
-	}
-	customFormatter.FullTimestamp = true
-	log.SetFormatter(customFormatter)
-
-	if c.Logging.Debug {
-		log.SetLevel(log.DebugLevel)
-	}
-	if c.Logging.Trace {
-		log.SetLevel(log.TraceLevel)
-	}
 }
 
 func parseEnvs(envString string) ([]*model.Environment, error) {
@@ -303,4 +307,33 @@ func parseChannelMap(config *config.Config) map[string]string {
 		}
 	}
 	return channelMap
+}
+
+func parseGitopsRepos(gitopsReposString string) (map[string]*config.GitopsRepoConfig, error) {
+	gitopsRepos := map[string]*config.GitopsRepoConfig{}
+	splitGitopsRepos := strings.Split(gitopsReposString, ";")
+
+	for _, gitopsReposString := range splitGitopsRepos {
+		if gitopsReposString == "" {
+			continue
+		}
+		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+
+		singleGitopsRepo := &config.GitopsRepoConfig{
+			Env:           parsedGitopsReposString.Get("env"),
+			RepoPerEnv:    repoPerEnv,
+			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
+			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
+		}
+		gitopsRepos[singleGitopsRepo.Env] = singleGitopsRepo
+	}
+
+	return gitopsRepos, nil
 }

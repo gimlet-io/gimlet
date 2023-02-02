@@ -1,122 +1,29 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/base32"
 	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"net/url"
-	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/worker"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/securecookie"
-	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		logrus.Warnf("could not load .env file, relying on env vars")
-	}
-
-	config, err := config.Environ()
-	if err != nil {
-		logger := logrus.WithError(err)
-		logger.Fatalln("main: invalid configuration")
-	}
-
-	initLogging(config)
-
-	if logrus.IsLevelEnabled(logrus.TraceLevel) {
-		fmt.Println(config.String())
-	}
-
-	store := store.New(config.Database.Driver, config.Database.Config)
-
-	err = setupAdminUser(config, store)
-	if err != nil {
-		panic(err)
-	}
-
-	var tokenManager customScm.NonImpersonatedTokenManager
-	if config.IsGithub() {
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			config.Github.AppID,
-			config.Github.InstallationID,
-			config.Github.PrivateKey.String(),
-		)
-		if err != nil {
-			panic(err)
-		}
-	} else if config.IsGitlab() {
-		tokenManager = customGitlab.NewGitlabTokenManager(
-			config.Gitlab.AdminToken,
-		)
-	} else {
-		logrus.Warnf("Please set Github / Gitlab access for features like deleted branch detection and commit status pushing")
-	}
-
-	notificationsManager := notifications.NewManager()
-	if config.Notifications.Provider == "slack" {
-		notificationsManager.AddProvider(slackNotificationProvider(config))
-	}
-	if config.Notifications.Provider == "discord" {
-		notificationsManager.AddProvider(discordNotificationProvider(config))
-	}
-	if config.IsGithub() {
-		notificationsManager.AddProvider(notifications.NewGithubProvider(tokenManager))
-	} else if config.IsGitlab() {
-		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, config.Gitlab.URL))
-	}
-	go notificationsManager.Run()
-
-	stopCh := make(chan os.Signal, 1)
-	signal.Notify(stopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	waitCh := make(chan struct{})
-
-	if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
-		logrus.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
-	}
-
-	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	if err != nil {
-		logrus.Fatal("could not parse gitops repositories")
-	}
-
-	repoCache, err := gitops.NewGitopsRepoCache(
-		config.RepoCachePath,
-		config.GitopsRepo,
-		parsedGitopsRepos,
-		config.GitopsRepoDeployKeyPath,
-		config.GitSSHAddressFormat,
-		stopCh,
-		waitCh,
-	)
-	if err != nil {
-		panic(err)
-	}
-	go repoCache.Run()
-	logrus.Info("repo cache initialized")
 
 	eventSinkHub := streaming.NewEventSinkHub(config)
 	go eventSinkHub.Run()
@@ -227,40 +134,6 @@ func initLogging(c *config.Config) {
 			PrettyPrint: c.Logging.Pretty,
 		})
 	}
-}
-
-// Creates an admin user and prints her access token, in case there are no users in the database
-func setupAdminUser(config *config.Config, store *store.Store) error {
-	admin, err := store.User("admin")
-
-	if err == sql.ErrNoRows {
-		admin := &model.User{
-			Login:  "admin",
-			Secret: adminToken(config),
-			Admin:  true,
-		}
-		err = store.CreateUser(admin)
-		if err != nil {
-			return fmt.Errorf("couldn't create user admin user %s", err)
-		}
-		err = printAdminToken(admin)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return fmt.Errorf("couldn't list users to create admin user %s", err)
-	}
-
-	if config.PrintAdminToken {
-		err = printAdminToken(admin)
-		if err != nil {
-			return err
-		}
-	} else {
-		logrus.Infof("Admin token was already printed, use the PRINT_ADMIN_TOKEN=true env var to print it again")
-	}
-
-	return nil
 }
 
 func printAdminToken(admin *model.User) error {
