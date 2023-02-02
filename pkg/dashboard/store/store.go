@@ -98,6 +98,8 @@ drop table users;
 drop table commits;
 drop table key_values;
 drop table environments;
+drop table events;
+drop table gitops_commits;
 `)
 		setupDatabase(driver, store.DB)
 	}

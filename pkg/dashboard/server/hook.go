@@ -2,14 +2,14 @@ package server
 
 import (
 	"bytes"
-	"context"
+	// "context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	// "github.com/gimlet-io/gimlet-cli/pkg/client"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -19,7 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
+	// "golang.org/x/oauth2"
 )
 
 // hook processes webhooks from SCMs
@@ -33,14 +33,14 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 	goScmHelper := genericScm.NewGoScmHelper(config, nil)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	oauth2Config := new(oauth2.Config)
-	auth := oauth2Config.Client(
-		context.Background(),
-		&oauth2.Token{
-			AccessToken: config.GimletD.TOKEN,
-		},
-	)
-	client := client.NewClient(config.GimletD.URL, auth)
+	// oauth2Config := new(oauth2.Config)
+	// auth := oauth2Config.Client(
+	// 	context.Background(),
+	// 	&oauth2.Token{
+	// 		AccessToken: config.GimletD.TOKEN,
+	// 	},
+	// )
+	// client := client.NewClient(config.GimletD.URL, auth)
 
 	// duplicating request body as we exhaust it twice
 	buf, _ := ioutil.ReadAll(r.Body)
@@ -80,7 +80,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 				}
 
 				gitService := ctx.Value("gitService").(customScm.CustomGitService)
-				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub, client)
+				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
 
 				writer.WriteHeader(http.StatusOK)
 				return
@@ -106,7 +106,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		w := webhook.(*scm.StatusHook)
 
 		gitService := ctx.Value("gitService").(customScm.CustomGitService)
-		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao, clientHub, client)
+		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao, clientHub)
 	case *scm.BranchHook:
 		processBranchHook(webhook, gitRepoCache)
 	}
@@ -133,7 +133,7 @@ func processStatusHook(
 	token string,
 	dao *store.Store,
 	clientHub *streaming.ClientHub,
-	client client.Client,
+	// client client.Client,
 ) {
 	repo := scm.Join(owner, name)
 	commits, err := gitService.FetchCommits(owner, name, token, []string{sha})
@@ -152,23 +152,23 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	artifacts, err := client.ArtifactsGet(
-		"", "",
-		nil,
-		"",
-		[]string{sha},
-		0, 0,
-		nil, nil,
-	)
-	if err != nil {
-		logrus.Errorf("cannot get artifacts: %s", err)
-		return
-	}
+	// artifacts, err := client.ArtifactsGet(
+	// 	"", "",
+	// 	nil,
+	// 	"",
+	// 	[]string{sha},
+	// 	0, 0,
+	// 	nil, nil,
+	// )
+	// if err != nil {
+	// 	logrus.Errorf("cannot get artifacts: %s", err)
+	// 	return
+	// }
 
 	artifactsBySha := map[string]*dx.Artifact{}
-	for _, a := range artifacts {
-		artifactsBySha[a.Version.SHA] = a
-	}
+	// for _, a := range artifacts {
+	// 	artifactsBySha[a.Version.SHA] = a
+	// }
 
 	deployTargets := []*model.DeployTarget{}
 	for _, c := range commits {

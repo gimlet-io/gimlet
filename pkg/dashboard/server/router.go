@@ -1,11 +1,14 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -15,6 +18,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/laszlocph/go-login/login/logger"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/laszlocph/go-login/login/github"
 	"github.com/laszlocph/go-login/login/gitlab"
@@ -33,6 +37,9 @@ func SetupRouter(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
 	podStateManager *podStateManager,
+	notificationsManager notifications.Manager,
+	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	perf *prometheus.HistogramVec,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -45,6 +52,7 @@ func SetupRouter(
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.NoCache)
+	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(middleware.WithValue("agentHub", agentHub))
 	r.Use(middleware.WithValue("clientHub", clientHub))
@@ -56,9 +64,17 @@ func SetupRouter(
 	r.Use(middleware.WithValue("agentJWT", tokenString))
 	r.Use(middleware.WithValue("podStateManager", podStateManager))
 
+	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
+	r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
+	r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
+	r.Use(middleware.WithValue("gitopsRepoCache", repoCache))
+	r.Use(middleware.WithValue("perf", perf))
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000"},
-		AllowedMethods:   []string{"GET", "POST"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000", config.Host},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
@@ -91,6 +107,40 @@ func SetupRouter(
 	fileServer(r, "/environments", filesDir)
 
 	return r
+}
+
+func gimletdRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustUser())
+		r.Post("/api/artifact", saveArtifact)
+		r.Get("/api/artifacts", getArtifacts)
+		r.Get("/api/releases", getReleases)
+		r.Get("/api/status", getStatus)
+		r.Post("/api/releases", release)
+		r.Post("/api/rollback", performRollback)
+		r.Post("/api/delete", delete)
+		r.Get("/api/eventReleaseTrack", getEventReleaseTrack)
+		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
+		r.Post("/api/flux-events", fluxEvent)
+		r.Get("/api/gitopsCommits", getGitopsCommitsGimletd)
+
+		r.Get("/api/gitopsRepo", func(w http.ResponseWriter, r *http.Request) {
+			gitopsRepo := r.Context().Value("gitopsRepo").(string)
+			gitopsRepoJson, _ := json.Marshal(GitopsRepoResult{GitopsRepo: gitopsRepo})
+			w.WriteHeader(http.StatusOK)
+			w.Write(gitopsRepoJson)
+		})
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustAdmin())
+		r.Get("/api/user/{login}", getUser)
+		r.Post("/api/user", saveUserGimletD)
+		r.Delete("/api/user/{login}", deleteUser)
+		r.Get("/api/users", getUsers)
+	})
 }
 
 func userRoutes(r *chi.Mux) {
@@ -233,4 +283,8 @@ func mustAgent(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+type GitopsRepoResult struct {
+	GitopsRepo string `json:"gitopsRepo"`
 }

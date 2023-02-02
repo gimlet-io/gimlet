@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
 )
 
-func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
+func getGitopsCommitsGimletd(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 

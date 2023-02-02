@@ -39,8 +39,6 @@ test-with-postgres:
 
 build-cli:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet github.com/gimlet-io/gimlet-cli/cmd/cli
-build-gimletd:
-	go build -ldflags $(LDFLAGS) -o build/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
 build-agent:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
 build-dashboard:
@@ -48,10 +46,6 @@ build-dashboard:
 build-installer:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-installer github.com/gimlet-io/gimlet-cli/cmd/installer
 
-dist-gimletd:
-	mkdir -p bin
-	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/amd64/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
-	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimletd github.com/gimlet-io/gimlet-cli/cmd/gimletd
 dist-dashboard:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/amd64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard

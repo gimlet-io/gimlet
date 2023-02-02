@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -227,7 +227,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 	w.Write(eventIDBytes)
 }
 
-func rollback(w http.ResponseWriter, r *http.Request) {
+func performRollback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 	user := ctx.Value("user").(*model.User)

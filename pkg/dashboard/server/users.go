@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/base32"
 	"encoding/json"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
 )
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +92,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func saveUser(w http.ResponseWriter, r *http.Request) {
+func saveUserGimletD(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 	var user model.User
 	err := json.NewDecoder(bytes.NewReader(body)).Decode(&user)

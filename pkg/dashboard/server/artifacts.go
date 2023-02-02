@@ -3,14 +3,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 func saveArtifact(w http.ResponseWriter, r *http.Request) {

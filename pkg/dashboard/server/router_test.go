@@ -2,15 +2,16 @@ package server
 
 import (
 	"encoding/base32"
-	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/gorilla/securecookie"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
+	"github.com/gorilla/securecookie"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_MustUser(t *testing.T) {
@@ -18,7 +19,12 @@ func Test_MustUser(t *testing.T) {
 
 	router := SetupRouter(
 		&config.Config{},
+		nil,
+		nil,
+		nil,
 		store,
+		nil,
+		nil,
 		nil,
 		nil,
 		nil,

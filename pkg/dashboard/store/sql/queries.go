@@ -16,6 +16,8 @@ package sql
 
 const Dummy = "dummy"
 const SelectUserByLogin = "select-user-by-login"
+const SelectAllUser = "select-all-user"
+const DeleteUser = "deleteUser"
 const SelectCommitsByRepo = "select-commits-by-repo"
 const SelectKeyValue = "select-key-value"
 const SelectEnvironments = "select-environments"
@@ -35,9 +37,16 @@ var queries = map[string]map[string]string{
 SELECT 1;
 `,
 		SelectUserByLogin: `
-SELECT id, login, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
+SELECT id, login, secret, admin, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users
 WHERE login = $1;
+`,
+		SelectAllUser: `
+SELECT id, login, secret, admin
+FROM users;
+`,
+		DeleteUser: `
+DELETE FROM users where login = $1;
 `,
 		SelectCommitsByRepo: `
 SELECT id, repo, sha, url, author, author_pic, message, created, tags, status
@@ -105,6 +114,13 @@ SELECT 1;
 SELECT id, login, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users
 WHERE login = $1;
+`,
+		SelectAllUser: `
+SELECT id, login, secret, admin
+FROM users;
+`,
+		DeleteUser: `
+DELETE FROM users where login = $1;
 `,
 		SelectCommitsByRepo: `
 SELECT id, repo, sha, url, author, author_pic, message, created, tags, status

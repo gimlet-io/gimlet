@@ -37,4 +37,15 @@ func TestUserCRUD(t *testing.T) {
 	assert.Equal(t, user.Repos, u.Repos)
 	assert.Equal(t, user.FavoriteRepos, u.FavoriteRepos)
 	assert.Equal(t, user.FavoriteServices, u.FavoriteServices)
+
+	users, err := s.Users()
+	assert.Nil(t, err)
+	assert.Equal(t, len(users), 1)
+
+	err = s.DeleteUser("aLogin")
+	assert.Nil(t, err)
+
+	users, err = s.Users()
+	assert.Nil(t, err)
+	assert.Equal(t, len(users), 0)
 }

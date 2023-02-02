@@ -3,15 +3,16 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_saveArtifact(t *testing.T) {
@@ -54,7 +55,6 @@ func Test_saveArtifact(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotEqual(t, response.Created, 0, "should set created time")
 }
-
 
 func Test_getArtifacts(t *testing.T) {
 	store := store.NewTest()
@@ -211,7 +211,7 @@ func Test_getArtifactsSince(t *testing.T) {
 	code, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, "store", store)
 		return ctx
-	}, "/artifacts?since=" + url.QueryEscape(since.Format(time.RFC3339)))
+	}, "/artifacts?since="+url.QueryEscape(since.Format(time.RFC3339)))
 	assert.Equal(t, http.StatusOK, code)
 	var response []*dx.Artifact
 	err = json.Unmarshal([]byte(body), &response)

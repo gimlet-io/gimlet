@@ -11,12 +11,11 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 
@@ -37,7 +36,6 @@ type GitopsWorker struct {
 	notificationsManager    notifications.Manager
 	eventsProcessed         prometheus.Counter
 	repoCache               *gitops.GitopsRepoCache
-	eventSinkHub            *streaming.EventSinkHub
 	perf                    *prometheus.HistogramVec
 }
 
@@ -50,7 +48,6 @@ func NewGitopsWorker(
 	notificationsManager notifications.Manager,
 	eventsProcessed prometheus.Counter,
 	repoCache *gitops.GitopsRepoCache,
-	eventSinkHub *streaming.EventSinkHub,
 	perf *prometheus.HistogramVec,
 ) *GitopsWorker {
 	return &GitopsWorker{
@@ -62,7 +59,6 @@ func NewGitopsWorker(
 		tokenManager:            tokenManager,
 		eventsProcessed:         eventsProcessed,
 		repoCache:               repoCache,
-		eventSinkHub:            eventSinkHub,
 		perf:                    perf,
 	}
 }
@@ -86,7 +82,6 @@ func (w *GitopsWorker) Run() {
 				event,
 				w.notificationsManager,
 				w.repoCache,
-				w.eventSinkHub,
 				w.perf,
 			)
 		}
@@ -104,7 +99,6 @@ func processEvent(
 	event *model.Event,
 	notificationsManager notifications.Manager,
 	repoCache *gitops.GitopsRepoCache,
-	eventSinkHub *streaming.EventSinkHub,
 	perf *prometheus.HistogramVec,
 ) {
 	var token string
@@ -184,7 +178,7 @@ func processEvent(
 		} else {
 			env = result.Manifest.Env
 		}
-		saveAndBroadcastGitopsCommit(result.GitopsRef, env, event, store, eventSinkHub)
+		saveAndBroadcastGitopsCommit(result.GitopsRef, env, event, store)
 	}
 
 	// send out notifications
@@ -889,7 +883,6 @@ func saveAndBroadcastGitopsCommit(
 	env string,
 	event *model.Event,
 	store *store.Store,
-	eventSinkHub *streaming.EventSinkHub,
 ) {
 	if sha == "" {
 		return
@@ -903,7 +896,8 @@ func saveAndBroadcastGitopsCommit(
 		Env:        env,
 	}
 
-	eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
+	// TODO
+	// eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
 
 	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
 	if err != nil {

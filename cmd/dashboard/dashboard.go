@@ -14,13 +14,13 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -124,8 +124,8 @@ func main() {
 	go dashboardRepoCache.Run()
 	log.Info("repo cache initialized")
 
-	eventSinkHub := streaming.NewEventSinkHub(config)
-	go eventSinkHub.Run()
+	// eventSinkHub := streaming.NewEventSinkHub(config)
+	// go eventSinkHub.Run()
 
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
@@ -136,7 +136,7 @@ func main() {
 		notificationsManager,
 		eventsProcessed,
 		gimletdRepoCache,
-		nil, // eventSinkHub,
+		// eventSinkHub,
 		perf,
 	)
 	go gitopsWorker.Run()
@@ -177,6 +177,9 @@ func main() {
 		tokenManager,
 		dashboardRepoCache,
 		podStateManager,
+		notificationsManager,
+		parsedGitopsRepos,
+		perf,
 	)
 
 	go func() {
@@ -187,7 +190,7 @@ func main() {
 	}()
 
 	<-waitCh
-	logrus.Info("Successfully cleaned up resources. Stopping.")
+	log.Info("Successfully cleaned up resources. Stopping.")
 }
 
 func parseEnvs(envString string) ([]*model.Environment, error) {

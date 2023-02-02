@@ -8,12 +8,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fluxcd/pkg/runtime/events"
-	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server/streaming"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
+	fluxEvents "github.com/fluxcd/pkg/runtime/events"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,7 +29,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	r.Body = rdr2 // OK since rdr2 implements the io.ReadCloser interface
 
-	var event events.Event
+	var event fluxEvents.Event
 	json.NewDecoder(r.Body).Decode(&event)
 	env := r.URL.Query().Get("env")
 
@@ -52,8 +51,9 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 		notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
 	}
 
-	eventSinkHub := ctx.Value("eventSinkHub").(*streaming.EventSinkHub)
-	eventSinkHub.BroadcastEvent(gitopsCommit)
+	// TODO
+	// eventSinkHub := ctx.Value("eventSinkHub").(*streaming.EventSinkHub)
+	// eventSinkHub.BroadcastEvent(gitopsCommit)
 
 	store := ctx.Value("store").(*store.Store)
 	err = store.SaveOrUpdateGitopsCommit(gitopsCommit)
@@ -65,7 +65,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(""))
 }
 
-func asGitopsCommit(event events.Event, env string) (*model.GitopsCommit, error) {
+func asGitopsCommit(event fluxEvents.Event, env string) (*model.GitopsCommit, error) {
 	if _, ok := event.Metadata["revision"]; !ok {
 		return nil, fmt.Errorf("could not extract gitops sha from Flux message: %s", event)
 	}
