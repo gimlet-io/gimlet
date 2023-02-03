@@ -8,9 +8,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -24,7 +26,9 @@ import (
 func getReleases(w http.ResponseWriter, r *http.Request) {
 	var since, until *time.Time
 	var app, env, gitRepo string
+	var reverse bool
 	limit := 10
+	ctx := r.Context()
 
 	params := r.URL.Query()
 	if val, ok := params["limit"]; ok {
@@ -36,12 +40,28 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		limit = l
 	}
 
+	if val, ok := params["reverse"]; ok {
+		r, err := strconv.ParseBool(val[0])
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest)+" - "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		reverse = r
+	}
+
 	if val, ok := params["since"]; ok {
 		t, err := time.Parse(time.RFC3339, val[0])
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest)+" - "+err.Error(), http.StatusBadRequest)
 			return
 		}
+		since = &t
+	}
+	if since == nil {
+		// limiting query scope
+		// without these, for apps released just once, the whole history would be traversed
+		config := ctx.Value("config").(*config.Config)
+		t := time.Now().Add(-1 * time.Hour * 24 * time.Duration(config.ReleaseHistorySinceDays))
 		since = &t
 	}
 	if val, ok := params["until"]; ok {
@@ -66,7 +86,6 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		gitRepo = val[0]
 	}
 
-	ctx := r.Context()
 	gitopsRepoCache := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	store := r.Context().Value("store").(*store.Store)
@@ -91,6 +110,10 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		logrus.Errorf("cannot get releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	}
+
+	if reverse {
+		sort.Sort(ByCreated(releases))
 	}
 
 	for _, r := range releases {

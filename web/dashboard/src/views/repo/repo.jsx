@@ -257,7 +257,7 @@ export default class Repo extends Component {
                 }, () => {/* Generic error handler deals with it */ }
                 );
 
-              this.props.gimletClient.getReleaseStatuses(result.env, 10)
+              this.props.gimletClient.getReleases(result.env, 10)
                 .then(data => {
                   this.props.store.dispatch({
                     type: ACTION_TYPE_RELEASE_STATUSES,

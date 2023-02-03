@@ -6,16 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
-	"github.com/go-chi/chi"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )
@@ -107,86 +104,6 @@ type Env struct {
 	Apps []*App `json:"apps"`
 }
 
-func rolloutHistoryPerApp(w http.ResponseWriter, r *http.Request) {
-	owner := chi.URLParam(r, "owner")
-	name := chi.URLParam(r, "name")
-	env := chi.URLParam(r, "env")
-	app := chi.URLParam(r, "app")
-	repoName := fmt.Sprintf("%s/%s", owner, name)
-	const perAppLimit = 10
-
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-
-	releases, err := getAppReleasesFromGimletD(
-		"", //config.GimletD.URL,
-		"", //config.GimletD.TOKEN,
-		config.ReleaseHistorySinceDays,
-		perAppLimit,
-		env,
-		app,
-		repoName,
-	)
-	if err != nil {
-		logrus.Errorf("cannot get releases for git repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	sort.Sort(ByCreated(releases))
-
-	releasesString, err := json.Marshal(releases)
-	if err != nil {
-		logrus.Errorf("cannot serialize releases: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(releasesString)
-}
-
-func releaseStatuses(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	env := chi.URLParam(r, "env")
-	perAppLimitString := r.URL.Query().Get("limit")
-
-	perAppLimit, err := strconv.Atoi(perAppLimitString)
-	if err != nil {
-		logrus.Errorf("cannot convert limit: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	releases, err := getAppReleasesFromGimletD(
-		"", //config.GimletD.URL,
-		"", //config.GimletD.TOKEN,
-		config.ReleaseHistorySinceDays,
-		perAppLimit,
-		env,
-		"",
-		"",
-	)
-	if err != nil {
-		logrus.Errorf("cannot get releases for git repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	sort.Sort(ByCreated(releases))
-
-	releasesString, err := json.Marshal(releases)
-	if err != nil {
-		logrus.Errorf("cannot serialize releases: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(releasesString)
-}
-
 func insertIntoRolloutHistory(rolloutHistory []*Env, release *dx.Release, perAppLimit int) []*Env {
 	for _, env := range rolloutHistory {
 		if env.Name == release.Env {
@@ -256,39 +173,6 @@ func gatherEnvsFromAgents(agentHub *streaming.AgentHub) []*api.ConnectedAgent {
 		})
 	}
 	return envs
-}
-
-func getAppReleasesFromGimletD(
-	gimletdURL string,
-	gimletdToken string,
-	releaseHistorySinceDays int,
-	limit int,
-	env string,
-	app string,
-	repoName string,
-) ([]*dx.Release, error) {
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: gimletdToken,
-	// 	},
-	// )
-	// client := client.NewClient(gimletdURL, auth)
-
-	// limiting query scope
-	// without these, for apps released just once, the whole history would be traversed
-	// since := time.Now().Add(-1 * time.Hour * 24 * time.Duration(releaseHistorySinceDays))
-
-	// return client.ReleasesGet(
-	// 	app,
-	// 	env,
-	// 	limit,
-	// 	0,
-	// 	repoName,
-	// 	&since, nil,
-	// )
-	return nil, nil
 }
 
 func rollback(w http.ResponseWriter, r *http.Request) {
