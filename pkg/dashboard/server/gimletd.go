@@ -291,61 +291,6 @@ func getAppReleasesFromGimletD(
 	return nil, nil
 }
 
-func deploy(w http.ResponseWriter, r *http.Request) {
-	var releaseRequest dx.ReleaseRequest
-	err := json.NewDecoder(r.Body).Decode(&releaseRequest)
-	if err != nil {
-		logrus.Errorf("cannot decode release request: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-	// adminClient := client.NewClient(config.GimletD.URL, auth)
-
-	// user := ctx.Value("user").(*model.User)
-	// gimletdUser, err := adminClient.UserGet(user.Login, true)
-	if err != nil {
-		logrus.Errorf("cannot find gimletd user: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	// oauth2Config = new(oauth2.Config)
-	// auth = oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: gimletdUser.Token,
-	// 	},
-	// )
-	// impersonatedClient := client.NewClient(config.GimletD.URL, auth)
-
-	// trackingID, err := impersonatedClient.ReleasesPost(releaseRequest)
-	// if err != nil {
-	// 	logrus.Errorf("cannot post release: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	trackingString, err := json.Marshal(map[string]interface{}{
-		// "trackingId": trackingID,
-	})
-	if err != nil {
-		logrus.Errorf("cannot serialize trackingId: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(trackingString)
-}
-
 func rollback(w http.ResponseWriter, r *http.Request) {
 	var rollbackRequest dx.RollbackRequest
 	err := json.NewDecoder(r.Body).Decode(&rollbackRequest)
@@ -403,40 +348,6 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(trackingString)
-}
-
-func deployStatus(w http.ResponseWriter, r *http.Request) {
-	trackingId := r.URL.Query().Get("trackingId")
-	if trackingId == "" {
-		http.Error(w, fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadRequest), "trackingId parameter is mandatory"), http.StatusBadRequest)
-		return
-	}
-
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-	// client := client.NewClient(config.GimletD.URL, auth)
-
-	// releaseStatus, err := client.TrackRelease(trackingId)
-	// if err != nil {
-	// 	logrus.Errorf("cannot get deployStatus: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// releaseStatusString, err := json.Marshal(releaseStatus)
-	// if err != nil {
-	// 	logrus.Errorf("cannot serialize releaseStatus: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	w.WriteHeader(http.StatusOK)
-	// w.Write(releaseStatusString)
 }
 
 func getGitopsCommits(w http.ResponseWriter, r *http.Request) {

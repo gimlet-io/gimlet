@@ -61,11 +61,11 @@ export default class GimletClient {
 
   deleteEnvFromDB = (envName) => this.postWithAxios("/api/deleteEnvFromDB", JSON.stringify(envName));
 
-  deploy = (artifactId, env, app) => this.post('/api/deploy', JSON.stringify({ env, app, artifactId }));
+  deploy = (artifactId, env, app) => this.post('/api/releases', JSON.stringify({ env, app, artifactId }));
 
   rollback = (env, app, rollbackTo) => this.post('/api/rollback', JSON.stringify({ env, app, targetSHA: rollbackTo }));
 
-  getDeployStatus = (trackingId) => this.get(`/api/deployStatus?trackingId=${trackingId}`);
+  getDeployStatus = (trackingId) => this.get(`/api/eventReleaseTrack?id=${trackingId}`);
 
   saveFavoriteRepos = (favoriteRepos) => this.post('/api/saveFavoriteRepos', JSON.stringify({ favoriteRepos }));
 

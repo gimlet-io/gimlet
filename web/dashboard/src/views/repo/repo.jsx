@@ -279,7 +279,7 @@ export default class Repo extends Component {
     this.props.gimletClient.deploy(target.artifactId, target.env, target.app)
       .then(data => {
         target.sha = sha;
-        target.trackingId = data.trackingId;
+        target.trackingId = data.id;
         setTimeout(() => {
           this.checkDeployStatus(target);
         }, 500);

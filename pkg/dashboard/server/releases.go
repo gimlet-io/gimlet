@@ -487,6 +487,9 @@ func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitopsCommitMetasFromHash(store *store.Store, gitopsRef string) (string, string, int64) {
+	if gitopsRef == "" {
+		return "", "", 0
+	}
 	gitopsCommit, err := store.GitopsCommit(gitopsRef)
 	if err != nil {
 		logrus.Warnf("cannot get gitops commit: %s", err)
