@@ -158,7 +158,7 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.saveRepoPullRequest(state, action.payload)
     case ACTION_TYPE_REPO_METAS:
       return eventHandlers.repoMetas(state, action.payload)
-      case ACTION_TYPE_SETTINGS:
+    case ACTION_TYPE_SETTINGS:
         return eventHandlers.settings(state, action.payload)
     case ACTION_TYPE_DEPLOY:
       return eventHandlers.deploy(state, action.payload)

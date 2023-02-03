@@ -8,23 +8,16 @@ import (
 	"strconv"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	// "github.com/gimlet-io/gimlet-cli/pkg/client"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 )
 
 func gitopsRepo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
-	}
 
 	// TODO
 	// oauth2Config := new(oauth2.Config)
@@ -57,15 +50,6 @@ func gitopsRepo(w http.ResponseWriter, r *http.Request) {
 }
 
 func gimletdBasicInfo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	// user := ctx.Value("user").(*model.User)
-	config := ctx.Value("config").(*config.Config)
-
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-	}
-
 	// oauth2Config := new(oauth2.Config)
 	// auth := oauth2Config.Client(
 	// 	context.Background(),
@@ -86,7 +70,7 @@ func gimletdBasicInfo(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	userString, err := json.Marshal(map[string]interface{}{
-		"url": config.GimletD.URL,
+		"url": "",
 		// "user": gimletdUser,
 	})
 	if err != nil {
@@ -106,14 +90,6 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 		logrus.Errorf("cannot decode user name to save: %s", err)
 		http.Error(w, http.StatusText(400), 400)
 		return
-	}
-
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
 	}
 
 	// oauth2Config := new(oauth2.Config)
@@ -144,14 +120,6 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func listUsers(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-	}
-
 	// oauth2Config := new(oauth2.Config)
 	// auth := oauth2Config.Client(
 	// 	context.Background(),
@@ -195,17 +163,9 @@ func rolloutHistoryPerApp(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 
-	// If GimletD is not set up, throw 404
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("{}"))
-		return
-	}
-
 	releases, err := getAppReleasesFromGimletD(
-		config.GimletD.URL,
-		config.GimletD.TOKEN,
+		"", //config.GimletD.URL,
+		"", //config.GimletD.TOKEN,
 		config.ReleaseHistorySinceDays,
 		perAppLimit,
 		env,
@@ -244,17 +204,9 @@ func releaseStatuses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If GimletD is not set up, throw 404
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("{}"))
-		return
-	}
-
 	releases, err := getAppReleasesFromGimletD(
-		config.GimletD.URL,
-		config.GimletD.TOKEN,
+		"", //config.GimletD.URL,
+		"", //config.GimletD.TOKEN,
 		config.ReleaseHistorySinceDays,
 		perAppLimit,
 		env,
@@ -393,12 +345,6 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-	}
 	// oauth2Config := new(oauth2.Config)
 	// auth := oauth2Config.Client(
 	// 	context.Background(),
@@ -454,12 +400,6 @@ func rollback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-	}
 	// oauth2Config := new(oauth2.Config)
 	// auth := oauth2Config.Client(
 	// 	context.Background(),
@@ -517,12 +457,6 @@ func deployStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-	}
 	// oauth2Config := new(oauth2.Config)
 	// auth := oauth2Config.Client(
 	// 	context.Background(),
@@ -551,12 +485,6 @@ func deployStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		w.WriteHeader(http.StatusNotFound)
-	}
 	// oauth2Config := new(oauth2.Config)
 	// auth := oauth2Config.Client(
 	// 	context.Background(),
@@ -584,61 +512,53 @@ func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
 	// w.Write(gitopsCommitsString)
 }
 
-func decorateCommitsWithGimletArtifacts(commits []*Commit, config *config.Config) ([]*Commit, error) {
-	if config.GimletD.URL == "" ||
-		config.GimletD.TOKEN == "" {
-		logrus.Warnf("couldn't connect to Gimletd for artifact data: gimletd access not configured")
-		return commits, nil
-	}
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-	// client := client.NewClient(config.GimletD.URL, auth)
-
+func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store) ([]*Commit, error) {
 	var hashes []string
 	for _, c := range commits {
 		hashes = append(hashes, c.SHA)
 	}
 
-	// artifacts, err := client.ArtifactsGet(
-	// 	"", "",
-	// 	nil,
-	// 	"",
-	// 	hashes,
-	// 	0, 0,
-	// 	nil, nil,
-	// )
-	// if err != nil {
-	// 	return commits, fmt.Errorf("cannot get artifacts: %s", err)
-	// }
+	events, err := store.Artifacts(
+		"", "",
+		nil,
+		"",
+		hashes,
+		0, 0, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get artifacts: %s", err)
+	}
 
-	// artifactsBySha := map[string]*dx.Artifact{}
-	// for _, a := range artifacts {
-	// 	artifactsBySha[a.Version.SHA] = a
-	// }
+	artifacts := []*dx.Artifact{}
+	for _, a := range events {
+		artifact, err := model.ToArtifact(a)
+		if err != nil {
+			return nil, fmt.Errorf("cannot deserialize artifact: %s", err)
+		}
+		artifacts = append(artifacts, artifact)
+	}
 
-	// var decoratedCommits []*Commit
-	// for _, c := range commits {
-	// 	if artifact, ok := artifactsBySha[c.SHA]; ok {
-	// 		for _, targetEnv := range artifact.Environments {
-	// 			targetEnv.ResolveVars(artifact.CollectVariables())
-	// 			if c.DeployTargets == nil {
-	// 				c.DeployTargets = []*DeployTarget{}
-	// 			}
-	// 			c.DeployTargets = append(c.DeployTargets, &DeployTarget{
-	// 				App:        targetEnv.App,
-	// 				Env:        targetEnv.Env,
-	// 				ArtifactId: artifact.ID,
-	// 			})
-	// 		}
-	// 	}
-	// 	decoratedCommits = append(decoratedCommits, c)
-	// }
+	artifactsBySha := map[string]*dx.Artifact{}
+	for _, a := range artifacts {
+		artifactsBySha[a.Version.SHA] = a
+	}
 
-	// return decoratedCommits, nil
-	return nil, nil
+	var decoratedCommits []*Commit
+	for _, c := range commits {
+		if artifact, ok := artifactsBySha[c.SHA]; ok {
+			for _, targetEnv := range artifact.Environments {
+				targetEnv.ResolveVars(artifact.CollectVariables())
+				if c.DeployTargets == nil {
+					c.DeployTargets = []*DeployTarget{}
+				}
+				c.DeployTargets = append(c.DeployTargets, &DeployTarget{
+					App:        targetEnv.App,
+					Env:        targetEnv.Env,
+					ArtifactId: artifact.ID,
+				})
+			}
+		}
+		decoratedCommits = append(decoratedCommits, c)
+	}
+
+	return decoratedCommits, nil
 }

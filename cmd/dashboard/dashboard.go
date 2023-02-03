@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/cenkalti/backoff"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
@@ -165,7 +163,7 @@ func main() {
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
 
-	go gimletdCommunication(*config, clientHub) // TODO: remove this
+	// go gimletdCommunication(*config, clientHub) // TODO: remove this
 
 	r := server.SetupRouter(
 		config,
@@ -255,55 +253,6 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 	}
 
 	return false
-}
-
-func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) {
-	for {
-		done := make(chan bool)
-
-		var events chan map[string]interface{}
-		var err error
-		operation := func() error {
-			events, err = registerGimletdEventSink(config.GimletD.URL, config.GimletD.TOKEN)
-			if err != nil {
-				log.Errorf("could not connect to Gimletd: %s", err.Error())
-				return fmt.Errorf("could not connect to Gimletd: %s", err.Error())
-			}
-			return nil
-		}
-		backoffStrategy := backoff.NewExponentialBackOff()
-		err = backoff.Retry(operation, backoffStrategy)
-		if err != nil {
-			log.Errorf("resetting backoff: %s", err)
-			continue
-		}
-
-		log.Info("Connected to Gimletd")
-
-		go func(events chan map[string]interface{}) {
-			for {
-				e, more := <-events
-				if more {
-					log.Debugf("event received: %v", e)
-
-					if e["type"] == "gitopsCommit" {
-						jsonString, _ := json.Marshal(streaming.GitopsEvent{
-							StreamingEvent: streaming.StreamingEvent{Event: streaming.GitopsCommitEventString},
-							GitopsCommit:   e["gitopsCommit"],
-						})
-						clientHub.Broadcast <- jsonString
-					}
-				} else {
-					log.Info("event stream closed")
-					done <- true
-					return
-				}
-			}
-		}(events)
-
-		<-done
-		log.Info("Disconnected from Gimletd")
-	}
 }
 
 func slackNotificationProvider(config *config.Config) *notifications.SlackProvider {

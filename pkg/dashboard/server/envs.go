@@ -301,8 +301,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 	notificationsFileName, err := BootstrapNotifications(
 		gitRepoCache,
-		config.GimletD.URL,
-		config.GimletD.TOKEN,
+		"TODO: need to send here $HOST or internal URL", //config.GimletD.URL,
+		"TODO", //config.GimletD.TOKEN,
 		environment.Name,
 		environment.AppsRepo,
 		bootstrapConfig.RepoPerEnv,

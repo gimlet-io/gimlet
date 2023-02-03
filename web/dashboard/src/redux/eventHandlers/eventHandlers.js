@@ -334,7 +334,7 @@ export function repoMetas(state, payload) {
 }
 
 export function settings(state, payload) {
-  state.settings = payload.releaseHistorySinceDays;
+  state.settings = payload;
   return state;
 }
 

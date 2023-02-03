@@ -67,7 +67,7 @@ UNIQUE(login)
 		},
 		{
 			name: addAdminColumnToUsersTable,
-			stmt: `ALTER TABLE users ADD COLUMN admin BOOLEAN;`,
+			stmt: `ALTER TABLE users ADD COLUMN admin BOOLEAN default false;`,
 		},
 		{
 			name: createTableEnvironments,

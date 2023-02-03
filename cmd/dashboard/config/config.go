@@ -59,7 +59,6 @@ type Config struct {
 	Github                  Github
 	Gitlab                  Gitlab
 	Database                Database
-	GimletD                 GimletD
 	Notifications           Notifications
 	Chart                   Chart
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
@@ -113,11 +112,6 @@ type Chart struct {
 type Database struct {
 	Driver string `envconfig:"DATABASE_DRIVER"`
 	Config string `envconfig:"DATABASE_CONFIG"`
-}
-
-type GimletD struct {
-	URL   string `envconfig:"GIMLETD_URL"`
-	TOKEN string `envconfig:"GIMLETD_TOKEN"`
 }
 
 type Notifications struct {

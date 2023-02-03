@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
@@ -97,8 +96,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config := ctx.Value("config").(*config.Config)
-	commits, err = decorateCommitsWithGimletArtifacts(commits, config)
+	commits, err = decorateCommitsWithGimletArtifacts(commits, dao)
 	if err != nil {
 		logrus.Warnf("cannot get deplyotargets: %s", err)
 	}
