@@ -381,7 +381,7 @@ UNIQUE(id)
 			name: createTableGitopsCommits,
 			stmt: `
 CREATE TABLE IF NOT EXISTS gitops_commits (
-id          INTEGER PRIMARY KEY AUTOINCREMENT,
+id          SERIAL,
 sha         TEXT,
 status      TEXT,
 status_desc TEXT,
