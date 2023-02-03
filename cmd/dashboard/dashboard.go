@@ -11,8 +11,6 @@ import (
 	"syscall"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
@@ -20,6 +18,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -94,20 +93,6 @@ func main() {
 		log.Fatal("could not parse gitops repositories")
 	}
 
-	gimletdRepoCache, err := gitops.NewGitopsRepoCache(
-		config.RepoCachePath,
-		config.GitopsRepo,
-		parsedGitopsRepos,
-		config.GitopsRepoDeployKeyPath,
-		config.GitSSHAddressFormat,
-		gimletdStopCh,
-		waitCh,
-	)
-	if err != nil {
-		panic(err)
-	}
-	go gimletdRepoCache.Run()
-
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
@@ -133,7 +118,7 @@ func main() {
 		tokenManager,
 		notificationsManager,
 		eventsProcessed,
-		gimletdRepoCache,
+		dashboardRepoCache,
 		// eventSinkHub,
 		perf,
 	)
@@ -145,7 +130,7 @@ func main() {
 			GitopsRepo:      config.GitopsRepo,
 			GitopsRepos:     parsedGitopsRepos,
 			DefaultRepoName: config.GitopsRepo,
-			RepoCache:       gimletdRepoCache,
+			RepoCache:       dashboardRepoCache,
 			Releases:        releases,
 			Perf:            perf,
 		}
@@ -178,7 +163,6 @@ func main() {
 		notificationsManager,
 		parsedGitopsRepos,
 		perf,
-		gimletdRepoCache,
 	)
 
 	go func() {

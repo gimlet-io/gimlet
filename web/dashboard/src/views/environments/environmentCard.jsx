@@ -74,9 +74,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [envFromParams, env.name]);
 
-  const [deploymentAutomationEnabled, setDeploymentAutomationEnabled] = useState(env.deploymentAutomationEnabled);
-  const [deploymentAutomationPublicKey, setDeploymentAutomationPublicKey] = useState();
-
   const hasGitopsRepo = env.infraRepo !== "";
 
   const [stack, setStack] = useState({});
@@ -88,10 +85,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       setStack(env.stackConfig.config);
       setStackNonDefaultValues(env.stackConfig.config);
     }
-    if (env.deploymentAutomationEnabled) {
-      setDeploymentAutomationEnabled(env.deploymentAutomationEnabled);
-    }
-  }, [env.deploymentAutomationEnabled, env.stackConfig]);
+  }, [env.stackConfig]);
 
   const gitopsRepositories = [
     { name: env.infraRepo, href: `${scmUrl}/${env.infraRepo}` },
@@ -278,40 +272,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       })
   }
 
-  const enableDeploymentAutomation = (envName) => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Enabling deployment automation..."
-      }
-    });
-
-    gimletClient.enableDeploymentAutomation(envName)
-      .then((data) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Deployment automation config was written to the gitops environment"
-          }
-        });
-        store.dispatch({
-          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data.config
-        });
-        setDeploymentAutomationEnabled(true)
-        setDeploymentAutomationPublicKey(data.publicKey)
-        setStack(data.config.config)
-        setStackNonDefaultValues(data.config.config)
-        resetPopupWindowAfterThreeSeconds()
-      }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
-        });
-        resetPopupWindowAfterThreeSeconds()
-      })
-  }
-
   const gitopsCommitsTab = () => {
     if (!releaseStatuses) {
       return null
@@ -416,7 +376,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
-  const deployKeySettingsUrl = `${scmUrl}/${env.appsRepo}` + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
 
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
@@ -477,38 +436,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </div>
             }
 
-            {deploymentAutomationPublicKey &&
-              <div className="rounded-md bg-blue-50 p-4 mb-4 mt-2 overflow-hidden">
-                <ul className="break-all text-sm text-blue-700 space-y-2">
-                  <li>👉 Add the following deploy key to your Git provider as a read-write key in the <a href={deployKeySettingsUrl} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{env.appsRepo}</a> repository</li>
-                  <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{deploymentAutomationPublicKey}</li>
-                  <h2 className=''>Happy Gitopsing🎊</h2>
-                </ul>
-              </div>
-            }
-            {!deploymentAutomationEnabled &&
-              <div className="rounded-md bg-red-50 p-4 mt-2">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Deployment automation is not configured for this environment</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      Configure Gimletd to be able to deploy to this environment under <span className="italic">Infrastructure components &gt; Gimletd</span><br />
-                      Or use the <span
-                        className="font-medium cursor-pointer"
-                        onClick={(e) => {
-                          // eslint-disable-next-line no-restricted-globals
-                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
-                            enableDeploymentAutomation(env.name, e);
-                        }}
-                      >1-click-config</span>.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
             <div className="sm:hidden">
               <label htmlFor="tabs" className="sr-only">
                 Select a tab

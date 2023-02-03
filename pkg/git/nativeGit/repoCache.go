@@ -14,7 +14,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -23,8 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
-
-const Dir_RWX_RX_R = 0754
 
 var FetchRefSpec = []config.RefSpec{
 	"refs/heads/*:refs/remotes/origin/*",
@@ -149,14 +146,14 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := HeadBranch(repo)
 	if err != nil {
 		logrus.Errorf("cannot get head branch: %s", err)
 		r.cleanRepo(repoName)
 		return
 	}
 
-	branchHeadHash := nativeGit.BranchHeadHash(repo, headBranch)
+	branchHeadHash := BranchHeadHash(repo, headBranch)
 	err = w.Reset(&git.ResetOptions{
 		Commit: branchHeadHash,
 		Mode:   git.HardReset,

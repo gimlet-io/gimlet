@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -41,7 +40,6 @@ func SetupRouter(
 	notificationsManager notifications.Manager,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	perf *prometheus.HistogramVec,
-	gitopsRepoCache *gitops.GitopsRepoCache,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -69,7 +67,6 @@ func SetupRouter(
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
 	r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
-	r.Use(middleware.WithValue("gitopsRepoCache", gitopsRepoCache))
 	r.Use(middleware.WithValue("perf", perf))
 
 	r.Use(cors.Handler(cors.Options{
@@ -185,7 +182,6 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
 		r.Post(("/api/envs/{env}/installAgent"), installAgent)
-		r.Post(("/api/envs/{env}/enableDeploymentAutomation"), enableDeploymentAutomation)
 	})
 }
 

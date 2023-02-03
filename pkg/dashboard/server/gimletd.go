@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,7 +14,9 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/go-chi/chi"
+	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )
 
@@ -58,31 +61,40 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
+	ctx := r.Context()
+	store := ctx.Value("store").(*store.Store)
 
-	// client := client.NewClient(config.GimletD.URL, auth)
-	// createdUser, err := client.UserPost(&model.User{Login: usernameToSave})
-	// if err != nil {
-	// 	logrus.Errorf("cannot save GimletD user: %s", err)
-	// 	http.Error(w, http.StatusText(500), 500)
-	// 	return
-	// }
+	user := &model.User{
+		Login:  usernameToSave,
+		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
+	}
 
-	createdUserString, err := []byte(""), nil //json.Marshal(createdUser)
+	err = store.CreateUser(user)
 	if err != nil {
-		logrus.Errorf("cannot serialize user: %s", err)
+		logrus.Errorf("cannot creat user %s: %s", user.Login, err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	token := token.New(token.UserToken, user.Login)
+	tokenStr, err := token.Sign(user.Secret)
+	if err != nil {
+		logrus.Errorf("couldn't create user token %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	// token is not saved as it is JWT
+	user.Token = tokenStr
+
+	userString, err := json.Marshal(user)
+	if err != nil {
+		logrus.Errorf("cannot serialize user %s: %s", user.Login, err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write(createdUserString)
+	w.Write(userString)
 }
 
 type App struct {

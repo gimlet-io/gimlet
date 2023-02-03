@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	fluxEvents "github.com/fluxcd/pkg/runtime/events"
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -41,21 +40,17 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
-	gitopsRepo := ctx.Value("gitopsRepo").(string)
-	gitopsRepos := ctx.Value("gitopsRepos").(map[string]*config.GitopsRepoConfig)
-
-	repoName, _, err := repoInfo(gitopsRepos, env, gitopsRepo)
+	store := r.Context().Value("store").(*store.Store)
+	repoName, _, err := gitopsRepoForEnv(store, env)
 	if err != nil {
-		log.Warnf("could not find repository in GITOPS_REPOS for %s and GITOPS_REPO did not provide a default repository", env)
-		notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
+		log.Error(err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
-	// TODO
-	// eventSinkHub := ctx.Value("eventSinkHub").(*streaming.EventSinkHub)
-	// eventSinkHub.BroadcastEvent(gitopsCommit)
+	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
+	notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
 
-	store := ctx.Value("store").(*store.Store)
 	err = store.SaveOrUpdateGitopsCommit(gitopsCommit)
 	if err != nil {
 		log.Errorf("could not save or update gitops commit: %s", err)

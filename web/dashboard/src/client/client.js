@@ -75,8 +75,6 @@ export default class GimletClient {
 
   installAgent = (envName) => this.postWithAxios(`/api/envs/${envName}/installAgent`, JSON.stringify({}));
 
-  enableDeploymentAutomation = (envName) => this.postWithAxios(`/api/envs/${envName}/enableDeploymentAutomation`, JSON.stringify({}));
-
   getWithAxios = async (path) => {
     try {
       const { data } = await axios.get(path, {

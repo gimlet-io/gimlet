@@ -2,21 +2,19 @@ package server
 
 import (
 	"bytes"
-	// "context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	// "github.com/gimlet-io/gimlet-cli/pkg/client"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
 	// "golang.org/x/oauth2"

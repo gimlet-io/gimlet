@@ -20,6 +20,8 @@ One off SQLs:
 update users set admin=true where login='laszlocph';
 ```
 
+- gitopsRepos and gitopsRepo env vars support needs to be done: it should bootstrap an env entry, or we deprecate it
+
 ##
 
 ## Overview

@@ -16,7 +16,7 @@ import (
 
 type ReleaseStateWorker struct {
 	GitopsRepo      string
-	RepoCache       *gitops.GitopsRepoCache
+	RepoCache       *nativeGit.RepoCache
 	Releases        *prometheus.GaugeVec
 	Perf            *prometheus.HistogramVec
 	GitopsRepos     map[string]*config.GitopsRepoConfig
@@ -63,14 +63,16 @@ func processRepo(
 	gitopsRepoConfig *config.GitopsRepoConfig,
 	releases *prometheus.GaugeVec,
 	perf *prometheus.HistogramVec,
-	repoCache *gitops.GitopsRepoCache,
+	repoCache *nativeGit.RepoCache,
 ) error {
 	t0 := time.Now()
-	repo := repoCache.InstanceForRead(gitopsRepoConfig.GitopsRepo)
+	repo, err := repoCache.InstanceForRead(gitopsRepoConfig.GitopsRepo)
+	if err != nil {
+		return err
+	}
 	perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
 	var envs []string
-	var err error
 	if gitopsRepoConfig.RepoPerEnv {
 		envs = []string{gitopsRepoConfig.Env}
 	} else {
