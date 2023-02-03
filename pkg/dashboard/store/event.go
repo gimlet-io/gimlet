@@ -14,7 +14,7 @@ func (db *Store) SaveOrUpdateEvent(event *model.Event) error {
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return meddler.Insert(db, "events", event)
+			return meddler.Insert(db, "kubernetes_events", event)
 		default:
 			return err
 		}
@@ -27,7 +27,7 @@ func (db *Store) SaveOrUpdateEvent(event *model.Event) error {
 	storedEvent.AlertState = event.AlertState
 	storedEvent.AlertStateTimestamp = event.AlertStateTimestamp
 
-	return meddler.Update(db, "events", storedEvent)
+	return meddler.Update(db, "kubernetes_events", storedEvent)
 }
 
 func (db *Store) Event(name string) (*model.Event, error) {

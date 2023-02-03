@@ -160,7 +160,6 @@ WHERE name = $1;
 		DeletePodByName: `
 DELETE FROM pods where name = $1;
 `,
-<<<<<<< HEAD
 		SelectUnprocessedEvents: `
 SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
 FROM events
@@ -179,20 +178,6 @@ SELECT id, sha, status, status_desc, created, env
 FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
-=======
-		SelectEventByName: `
-SELECT id, first_timestamp, count, name, status, status_desc, alert_state, alert_state_timestamp
-FROM events
-WHERE name = $1;
-`,
-		SelectPendingEvents: `
-SELECT id, first_timestamp, count, name, status, status_desc, alert_state, alert_state_timestamp
-FROM events
-WHERE alert_state LIKE 'Pending';
-`,
-		DeleteEventByName: `
-DELETE FROM events where name = $1;
->>>>>>> 71d476f (Alerts WIP)
 `,
 	},
 }

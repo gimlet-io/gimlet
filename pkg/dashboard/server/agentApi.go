@@ -268,6 +268,7 @@ func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdat
 
 	if update.Event == agent.EventPodDeleted {
 		alertStateManager.Delete(update.Subject)
+		alertStateManager.DeleteEvent(update.Subject)
 		return
 	}
 

@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
 type WarningEventMessage struct {
-	Event api.Event
+	Event model.KubernetesEvent
 }
 
 func (we *WarningEventMessage) AsSlackMessage() (*slackMessage, error) {
@@ -17,7 +17,7 @@ func (we *WarningEventMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s", we.Event.Name, we.Event.Status)
+	msg.Text = fmt.Sprintf("Warning event on %s with status %s", we.Event.Name, we.Event.Status)
 	msg.Blocks = append(msg.Blocks,
 		Block{
 			Type: section,
@@ -60,14 +60,14 @@ func (we *WarningEventMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s", we.Event.Name, we.Event.Status)
+	msg.Text = fmt.Sprintf("Warning event on %s with status %s", we.Event.Name, we.Event.Status)
 	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", we.Event.StatusDesc)
 	msg.Embed.Color = 15158332
 
 	return msg, nil
 }
 
-func MessageFromWarningEvent(event api.Event) Message {
+func MessageFromWarningEvent(event model.KubernetesEvent) Message {
 	return &WarningEventMessage{
 		Event: event,
 	}

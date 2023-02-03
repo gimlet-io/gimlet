@@ -290,3 +290,58 @@ func TestNotificationSending(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 }
+
+func TestTrackEvents(t *testing.T) {
+	store := store.NewTest()
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+	event1 := api.Event{Namespace: "ns1", Name: "pod1"}
+	event2 := api.Event{Namespace: "ns1", Name: "pod2"}
+	events := []api.Event{event1, event2}
+
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
+	p.trackEvents(events)
+
+	expected := []model.Event{
+		{Name: "ns1/pod1", AlertState: "Pending"},
+		{Name: "ns1/pod2", AlertState: "Pending"},
+	}
+	for _, event := range expected {
+		e, _ := store.Event(event.Name)
+
+		assert.Equal(t, event.Name, e.Name)
+		assert.Equal(t, event.AlertState, e.AlertState)
+	}
+}
+
+func TestSetFiringStatesForEvents(t *testing.T) {
+	store := store.NewTest()
+	defer func() {
+		store.Close()
+	}()
+
+	fiveMinutesAgo := time.Now().Add(-5 * time.Minute).Unix()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+	event1 := api.Event{Namespace: "ns1", Name: "pod1", FirstTimestamp: fiveMinutesAgo, Count: 4}
+	event2 := api.Event{Namespace: "ns1", Name: "pod2", FirstTimestamp: fiveMinutesAgo, Count: 6}
+	events := []api.Event{event1, event2}
+
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
+	p.trackEvents(events)
+	p.setFiringStateForEvents()
+
+	expected := []model.Event{
+		{Name: "ns1/pod1", AlertState: "Pending"},
+		{Name: "ns1/pod2", AlertState: "Firing"},
+	}
+	for _, event := range expected {
+		e, _ := store.Event(event.Name)
+
+		assert.Equal(t, event.Name, e.Name)
+		assert.Equal(t, event.AlertState, e.AlertState)
+	}
+}

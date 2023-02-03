@@ -33,6 +33,7 @@ func (p alertStateManager) TrackEvents(events []api.Event) {
 func (p alertStateManager) Run() {
 	for {
 		p.setFiringState()
+		p.setFiringStateForEvents()
 		time.Sleep(p.waitTime * time.Minute)
 	}
 }
@@ -44,13 +45,29 @@ func (p alertStateManager) Delete(podName string) {
 	}
 }
 
+func (p alertStateManager) DeleteEvent(name string) {
+	err := p.store.DeleteEvent(name)
+	if err != nil && err != sql.ErrNoRows {
+		logrus.Errorf("could't delete event: %s", err)
+	}
+}
+
+func (p alertStateManager) Alerts() ([]*model.Alert, error) {
+	alerts, err := p.store.Alerts()
+	if err != nil {
+		return nil, err
+	}
+
+	return alerts, nil
+}
+
 func (p alertStateManager) trackStates(pods []*api.Pod) {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		currentTime := time.Now().Unix()
 		alertState := "Pending"
 
-		if p.alreadyAlerted(podName) || p.statusNotChanged(podName, pod.Status) {
+		if p.podAlreadyAlerted(podName) || p.statusNotChanged(podName, pod.Status) {
 			continue
 		}
 
@@ -73,20 +90,25 @@ func (p alertStateManager) trackStates(pods []*api.Pod) {
 
 func (p alertStateManager) trackEvents(events []api.Event) {
 	for _, event := range events {
-		fmt.Println(event)
-		//TODO save to db
-	}
-}
+		eventName := fmt.Sprintf("%s/%s", event.Namespace, event.Name)
+		currentTime := time.Now().Unix()
 
-func (p alertStateManager) setFiringStateForEvents() {
-	events, err := p.store.PendingEvents()
-	if err != nil {
-		logrus.Errorf("could't get pods from db: %s", err)
-	}
+		if p.eventAlreadyAlerted(eventName) || p.eventCountLessThanSaved(eventName, event.Count) {
+			continue
+		}
 
-	for _, event := range events {
-		//TODO magic happens here
-		fmt.Println(event)
+		err := p.store.SaveOrUpdateEvent(&model.Event{
+			FirstTimestamp:      event.FirstTimestamp,
+			Count:               event.Count,
+			Name:                eventName,
+			Status:              event.Status,
+			StatusDesc:          event.StatusDesc,
+			AlertState:          "Pending",
+			AlertStateTimestamp: currentTime,
+		})
+		if err != nil {
+			logrus.Errorf("could't save or update event: %s", err)
+		}
 	}
 }
 
@@ -111,6 +133,59 @@ func (p alertStateManager) setFiringState() {
 			if err != nil {
 				logrus.Errorf("could't save or update pod: %s", err)
 			}
+
+			err = p.store.SaveOrUpdateAlert(&model.Alert{
+				Type:       "pod",
+				Name:       pod.Name,
+				Env:        "TODO", //TODO or deployment name
+				Repo:       "TODO",
+				Status:     pod.Status,
+				StatusDesc: pod.StatusDesc,
+				Fired:      time.Now().Unix(),
+			})
+			if err != nil {
+				logrus.Errorf("could't save or update alert: %s", err)
+			}
+		}
+	}
+}
+
+func (p alertStateManager) setFiringStateForEvents() {
+	events, err := p.store.PendingEvents()
+	if err != nil {
+		logrus.Errorf("could't get pods from db: %s", err)
+	}
+
+	for _, event := range events {
+		if p.countPerMinuteMoreThanOne(event.FirstTimestamp, event.Count) {
+			msg := notifications.MessageFromWarningEvent(*event)
+			p.notifManager.Broadcast(msg)
+
+			err := p.store.SaveOrUpdateEvent(&model.Event{
+				FirstTimestamp:      event.FirstTimestamp,
+				Count:               event.Count,
+				Name:                event.Name,
+				Status:              event.Status,
+				StatusDesc:          event.StatusDesc,
+				AlertState:          "Firing",
+				AlertStateTimestamp: event.AlertStateTimestamp,
+			})
+			if err != nil {
+				logrus.Errorf("could't save or update pod: %s", err)
+			}
+
+			err = p.store.SaveOrUpdateAlert(&model.Alert{
+				Type:       "event",
+				Name:       event.Name,
+				Env:        "TODO", //TODO or deployment name
+				Repo:       "TODO",
+				Status:     event.Status,
+				StatusDesc: event.StatusDesc,
+				Fired:      time.Now().Unix(),
+			})
+			if err != nil {
+				logrus.Errorf("could't save or update alert: %s", err)
+			}
 		}
 	}
 }
@@ -122,7 +197,7 @@ func (p alertStateManager) waiTimeIsSoonerThan(alertTimestamp int64) bool {
 	return podAlertTime.Before(managerWaitTime)
 }
 
-func (p alertStateManager) alreadyAlerted(podName string) bool {
+func (p alertStateManager) podAlreadyAlerted(podName string) bool {
 	pod, err := p.store.Pod(podName)
 	if err == sql.ErrNoRows {
 		return false
@@ -132,6 +207,30 @@ func (p alertStateManager) alreadyAlerted(podName string) bool {
 	}
 
 	return pod.AlertState == "Firing"
+}
+
+func (p alertStateManager) eventAlreadyAlerted(eventName string) bool {
+	event, err := p.store.Event(eventName)
+	if err == sql.ErrNoRows {
+		return false
+	} else if err != nil {
+		logrus.Errorf("could't get pod from db: %s", err)
+		return false
+	}
+
+	return event.AlertState == "Firing"
+}
+
+func (p alertStateManager) eventCountLessThanSaved(eventName string, count int32) bool {
+	event, err := p.store.Event(eventName)
+	if err == sql.ErrNoRows {
+		return false
+	} else if err != nil {
+		logrus.Errorf("could't get pod from db: %s", err)
+		return false
+	}
+
+	return event.Count > count
 }
 
 func (p alertStateManager) statusNotChanged(podName string, podStatus string) bool {
@@ -144,6 +243,13 @@ func (p alertStateManager) statusNotChanged(podName string, podStatus string) bo
 	}
 
 	return podStatus == podFromDb.Status
+}
+
+func (p alertStateManager) countPerMinuteMoreThanOne(firstTimestamp int64, count int32) bool {
+	firstTimestampSinceInMinutes := time.Since(time.Unix(firstTimestamp, 0)).Minutes()
+	countPerMinute := float64(count) / firstTimestampSinceInMinutes
+
+	return countPerMinute >= 1 && count >= 6
 }
 
 func podErrorState(status string) bool {

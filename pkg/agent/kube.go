@@ -114,7 +114,7 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	var typeWarningEvents []api.Alert
+	var typeWarningEvents []api.Event
 	for _, svc := range integratedServices {
 		for _, deployment := range allDeployments.Items {
 			if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
@@ -123,13 +123,13 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 						pod.Namespace == deployment.Namespace {
 						for _, event := range events.Items {
 							if event.Type == "Warning" && (event.InvolvedObject.Name == pod.Name || event.InvolvedObject.Name == deployment.Name) {
-								typeWarningEvents = append(typeWarningEvents, api.Alert{
-									LastSeen:            event.LastTimestamp.Unix(),
-									DeploymentName:      deployment.Name,
-									DeploymentNamespace: deployment.Namespace,
-									Reason:              event.Reason,
-									Object:              event.InvolvedObject.Name,
-									Message:             event.Message,
+								typeWarningEvents = append(typeWarningEvents, api.Event{
+									FirstTimestamp: event.FirstTimestamp.Unix(),
+									Count:          count(event),
+									Namespace:      event.Namespace,
+									Name:           event.InvolvedObject.Name,
+									Status:         event.Reason,
+									StatusDesc:     event.Message,
 								})
 							}
 						}
@@ -399,4 +399,13 @@ func isError(podStatus string) bool {
 		}
 	}
 	return true
+}
+
+func count(e v1.Event) int32 {
+	if e.Series != nil {
+		return e.Series.Count
+	} else if e.Count > 1 {
+		return e.Count
+	}
+	return 0
 }
