@@ -102,8 +102,6 @@ export function rootReducer(state = initialState, action) {
   switch (action.type) {
     case ACTION_TYPE_STREAMING:
       return processStreamingEvent(state, action.payload)
-    case ACTION_TYPE_GITOPS_REPO:
-      return eventHandlers.gitopsRepo(state, action.payload);
     case ACTION_TYPE_GIT_REPOS:
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:

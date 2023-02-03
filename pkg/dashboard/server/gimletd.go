@@ -7,47 +7,13 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )
-
-func gitopsRepo(w http.ResponseWriter, r *http.Request) {
-
-	// TODO
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-
-	// client := client.NewClient(config.GimletD.URL, auth)
-	// gitopsRepo, err := client.GitopsRepoGet()
-	// if err != nil {
-	// 	logrus.Errorf("cannot get gitops repo: %s", err)
-	// 	http.Error(w, http.StatusText(500), 500)
-	// 	return
-	// }
-
-	gitopsRepoString, err := json.Marshal(map[string]interface{}{
-		"gitopsRepo": gitopsRepo,
-	})
-	if err != nil {
-		logrus.Errorf("cannot serialize gitopsRepo: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(gitopsRepoString)
-}
 
 func saveUser(w http.ResponseWriter, r *http.Request) {
 	var usernameToSave string
@@ -159,107 +125,6 @@ func orderRolloutHistoryFromAscending(rolloutHistory []*Env) []*Env {
 	}
 
 	return orderedRolloutHistory
-}
-
-func gatherEnvsFromAgents(agentHub *streaming.AgentHub) []*api.ConnectedAgent {
-	envs := []*api.ConnectedAgent{}
-	for _, a := range agentHub.Agents {
-		for _, stack := range a.Stacks {
-			stack.Env = a.Name
-		}
-		envs = append(envs, &api.ConnectedAgent{
-			Name:   a.Name,
-			Stacks: a.Stacks,
-		})
-	}
-	return envs
-}
-
-func rollback(w http.ResponseWriter, r *http.Request) {
-	var rollbackRequest dx.RollbackRequest
-	err := json.NewDecoder(r.Body).Decode(&rollbackRequest)
-	if err != nil {
-		logrus.Errorf("cannot decode rollback request: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-	// adminClient := client.NewClient(config.GimletD.URL, auth)
-
-	// user := ctx.Value("user").(*model.User)
-	// gimletdUser, err := adminClient.UserGet(user.Login, true)
-	// if err != nil {
-	// 	logrus.Errorf("cannot find gimletd user: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// oauth2Config = new(oauth2.Config)
-	// auth = oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: gimletdUser.Token,
-	// 	},
-	// )
-	// impersonatedClient := client.NewClient(config.GimletD.URL, auth)
-
-	// trackingID, err := impersonatedClient.RollbackPost(
-	// 	rollbackRequest.Env,
-	// 	rollbackRequest.App,
-	// 	rollbackRequest.TargetSHA,
-	// )
-	// if err != nil {
-	// 	logrus.Errorf("cannot post rollback: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	trackingString, err := json.Marshal(map[string]interface{}{
-		// "trackingId": trackingID,
-	})
-	if err != nil {
-		logrus.Errorf("cannot serialize trackingId: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(trackingString)
-}
-
-func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-	// client := client.NewClient(config.GimletD.URL, auth)
-
-	// gitopsCommits, err := client.GitopsCommitsGet(config.GimletD.TOKEN)
-	// if err != nil {
-	// 	logrus.Errorf("cannot get gitops commits: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// gitopsCommitsString, err := json.Marshal(gitopsCommits)
-	// if err != nil {
-	// 	logrus.Errorf("cannot serialize gitopsCommits: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	w.WriteHeader(http.StatusOK)
-	// w.Write(gitopsCommitsString)
 }
 
 func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store) ([]*Commit, error) {

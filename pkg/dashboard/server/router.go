@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -123,14 +122,7 @@ func gimletdRoutes(r *chi.Mux) {
 		r.Get("/api/eventReleaseTrack", getEventReleaseTrack)
 		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
 		r.Post("/api/flux-events", fluxEvent)
-		r.Get("/api/gitopsCommits", getGitopsCommitsGimletd)
-
-		r.Get("/api/gitopsRepo", func(w http.ResponseWriter, r *http.Request) {
-			gitopsRepo := r.Context().Value("gitopsRepo").(string)
-			gitopsRepoJson, _ := json.Marshal(GitopsRepoResult{GitopsRepo: gitopsRepo})
-			w.WriteHeader(http.StatusOK)
-			w.Write(gitopsRepoJson)
-		})
+		r.Get("/api/gitopsCommits", getGitopsCommits)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -149,7 +141,6 @@ func userRoutes(r *chi.Mux) {
 		r.Use(session.SetCSRF())
 		r.Use(session.MustUser())
 
-		r.Get("/api/gitopsRepo", gitopsRepo)
 		r.Get("/api/agents", agents)
 		r.Get("/api/user", user)
 		r.Post("/api/saveUser", saveUser)
@@ -160,8 +151,6 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)
-		r.Post("/api/rollback", rollback)
-		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/irregularPods", getIrregularPods)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)

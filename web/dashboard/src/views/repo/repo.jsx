@@ -301,7 +301,7 @@ export default class Repo extends Component {
     };
     this.props.gimletClient.rollback(env, app, rollbackTo)
       .then(data => {
-        target.trackingId = data.trackingId;
+        target.trackingId = data.id;
         setTimeout(() => {
           this.checkDeployStatus(target);
         }, 500);

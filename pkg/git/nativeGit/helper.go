@@ -135,7 +135,7 @@ func NativePush(repoPath string, privateKeyPath string, branch string) error {
 }
 
 func NativePushWithToken(repoPath, ownerAndrepo, token, branch string) error {
-	url := fmt.Sprintf("https://%s@github.com/%s.git", token, ownerAndrepo)
+	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, ownerAndrepo)
 
 	err := execCommand(repoPath, "git", "pull", url, "--rebase")
 	if err != nil {

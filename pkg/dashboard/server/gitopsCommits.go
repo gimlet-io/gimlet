@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func getGitopsCommitsGimletd(w http.ResponseWriter, r *http.Request) {
+func getGitopsCommits(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 

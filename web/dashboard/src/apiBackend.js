@@ -20,9 +20,6 @@ export default class APIBackend extends Component {
       return;
     }
 
-    this.props.gimletClient.getGitopsRepo()
-      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_REPO, payload: data }), () => {/* Generic error handler deals with it */
-      });
     this.props.gimletClient.getAgents()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_AGENTS, payload: data }), () => {/* Generic error handler deals with it */
       });

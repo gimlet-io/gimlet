@@ -15,8 +15,6 @@ export default class GimletClient {
 
   saveUser = (userName) => this.postWithAxios("/api/saveUser", JSON.stringify(userName));
 
-  getGitopsRepo = () => this.get('/api/gitopsRepo');
-
   getAgents = () => this.get('/api/agents');
 
   getEnvs = () => this.get('/api/envs');
@@ -63,7 +61,7 @@ export default class GimletClient {
 
   deploy = (artifactId, env, app) => this.post('/api/releases', JSON.stringify({ env, app, artifactId }));
 
-  rollback = (env, app, rollbackTo) => this.post('/api/rollback', JSON.stringify({ env, app, targetSHA: rollbackTo }));
+  rollback = (env, app, rollbackTo) => this.post(`/api/rollback?env=${env}&app=${app}&sha=${rollbackTo}`);
 
   getDeployStatus = (trackingId) => this.get(`/api/eventReleaseTrack?id=${trackingId}`);
 
