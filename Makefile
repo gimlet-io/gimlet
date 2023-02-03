@@ -32,7 +32,6 @@ test-with-postgres:
 	docker stop testpostgres || true
 	docker run --rm -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 --name testpostgres -d postgres
 
-	DATABASE_DRIVER=postgres DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/gimletd/store/...
 	DATABASE_DRIVER=postgres DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/...
 
 	docker stop testpostgres || true
