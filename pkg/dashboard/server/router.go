@@ -37,7 +37,7 @@ func SetupRouter(
 	repoCache *nativeGit.RepoCache,
 	podStateManager *podStateManager,
 	notificationsManager notifications.Manager,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	perf *prometheus.HistogramVec,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
@@ -64,8 +64,8 @@ func SetupRouter(
 	r.Use(middleware.WithValue("podStateManager", podStateManager))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
-	r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
-	r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
+	// r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
+	// r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
 	r.Use(middleware.WithValue("perf", perf))
 
 	r.Use(cors.Handler(cors.Options{

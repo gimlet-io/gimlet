@@ -84,14 +84,14 @@ func main() {
 	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
-	if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
-		log.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
-	}
+	// if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
+	// 	log.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
+	// }
 
-	parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	if err != nil {
-		log.Fatal("could not parse gitops repositories")
-	}
+	// parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
+	// if err != nil {
+	// 	log.Fatal("could not parse gitops repositories")
+	// }
 
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
@@ -113,7 +113,7 @@ func main() {
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
 		config.GitopsRepo,
-		parsedGitopsRepos,
+		// parsedGitopsRepos,
 		config.GitopsRepoDeployKeyPath,
 		tokenManager,
 		notificationsManager,
@@ -127,12 +127,12 @@ func main() {
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			GitopsRepo:      config.GitopsRepo,
-			GitopsRepos:     parsedGitopsRepos,
-			DefaultRepoName: config.GitopsRepo,
-			RepoCache:       dashboardRepoCache,
-			Releases:        releases,
-			Perf:            perf,
+			// GitopsRepo: config.GitopsRepo,
+			// GitopsRepos:     parsedGitopsRepos,
+			// DefaultRepoName: config.GitopsRepo,
+			RepoCache: dashboardRepoCache,
+			Releases:  releases,
+			Perf:      perf,
 		}
 		go releaseStateWorker.Run()
 	}
@@ -161,7 +161,7 @@ func main() {
 		dashboardRepoCache,
 		podStateManager,
 		notificationsManager,
-		parsedGitopsRepos,
+		// parsedGitopsRepos,
 		perf,
 	)
 

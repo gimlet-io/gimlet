@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -28,9 +27,9 @@ import (
 )
 
 type GitopsWorker struct {
-	store                   *store.Store
-	gitopsRepo              string
-	parsedGitopsRepos       map[string]*config.GitopsRepoConfig
+	store      *store.Store
+	gitopsRepo string
+	// parsedGitopsRepos       map[string]*config.GitopsRepoConfig
 	gitopsRepoDeployKeyPath string
 	tokenManager            customScm.NonImpersonatedTokenManager
 	notificationsManager    notifications.Manager
@@ -42,7 +41,7 @@ type GitopsWorker struct {
 func NewGitopsWorker(
 	store *store.Store,
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	notificationsManager notifications.Manager,
@@ -51,9 +50,9 @@ func NewGitopsWorker(
 	perf *prometheus.HistogramVec,
 ) *GitopsWorker {
 	return &GitopsWorker{
-		store:                   store,
-		gitopsRepo:              gitopsRepo,
-		parsedGitopsRepos:       parsedGitopsRepos,
+		store:      store,
+		gitopsRepo: gitopsRepo,
+		// parsedGitopsRepos:       parsedGitopsRepos,
 		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
 		notificationsManager:    notificationsManager,
 		tokenManager:            tokenManager,
@@ -76,7 +75,7 @@ func (w *GitopsWorker) Run() {
 			w.eventsProcessed.Inc()
 			processEvent(w.store,
 				w.gitopsRepo,
-				w.parsedGitopsRepos,
+				// w.parsedGitopsRepos,
 				w.gitopsRepoDeployKeyPath,
 				w.tokenManager,
 				event,
@@ -93,7 +92,7 @@ func (w *GitopsWorker) Run() {
 func processEvent(
 	store *store.Store,
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	event *model.Event,
@@ -113,7 +112,7 @@ func processEvent(
 	case model.ArtifactCreatedEvent:
 		results, err = processArtifactEvent(
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			repoCache,
 			gitopsRepoDeployKeyPath,
 			token,
@@ -125,7 +124,7 @@ func processEvent(
 		results, err = processReleaseEvent(
 			store,
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			repoCache,
 			gitopsRepoDeployKeyPath,
 			token,
@@ -135,7 +134,7 @@ func processEvent(
 	case model.RollbackRequestedEvent:
 		results, err = processRollbackEvent(
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
@@ -145,7 +144,7 @@ func processEvent(
 	case model.BranchDeletedEvent:
 		results, err = processBranchDeletedEvent(
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
@@ -210,7 +209,7 @@ func processEvent(
 
 func processBranchDeletedEvent(
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	event *model.Event,
@@ -256,7 +255,7 @@ func processBranchDeletedEvent(
 
 		sha, err := cloneTemplateDeleteAndPush(
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			env.Cleanup,
@@ -284,7 +283,7 @@ func processBranchDeletedEvent(
 func processReleaseEvent(
 	store *store.Store,
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
@@ -354,7 +353,7 @@ func processReleaseEvent(
 
 		sha, err := cloneTemplateWriteAndPush(
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
@@ -380,7 +379,7 @@ func processReleaseEvent(
 
 func processRollbackEvent(
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	event *model.Event,
@@ -473,7 +472,7 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 
 func processArtifactEvent(
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
@@ -533,7 +532,7 @@ func processArtifactEvent(
 
 		sha, err := cloneTemplateWriteAndPush(
 			gitopsRepo,
-			parsedGitopsRepos,
+			// parsedGitopsRepos,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
@@ -577,7 +576,7 @@ func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact)
 
 func cloneTemplateWriteAndPush(
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
@@ -628,7 +627,7 @@ func cloneTemplateWriteAndPush(
 
 func cloneTemplateDeleteAndPush(
 	gitopsRepo string,
-	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
+	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
 	cleanupPolicy *dx.Cleanup,

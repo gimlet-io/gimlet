@@ -19,7 +19,7 @@ import (
 func Test_artifact(t *testing.T) {
 	store := store.NewTest()
 
-	router := server.SetupRouter(&config.Config{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil, nil)
+	router := server.SetupRouter(&config.Config{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil)
 	server := httptest.NewServer(router)
 	defer server.Close()
 

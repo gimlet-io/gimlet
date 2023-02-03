@@ -15,45 +15,45 @@ import (
 )
 
 type ReleaseStateWorker struct {
-	GitopsRepo      string
-	RepoCache       *nativeGit.RepoCache
-	Releases        *prometheus.GaugeVec
-	Perf            *prometheus.HistogramVec
-	GitopsRepos     map[string]*config.GitopsRepoConfig
-	DefaultRepoName string
+	// GitopsRepo      string
+	RepoCache *nativeGit.RepoCache
+	Releases  *prometheus.GaugeVec
+	Perf      *prometheus.HistogramVec
+	// GitopsRepos map[string]*config.GitopsRepoConfig
+	// DefaultRepoName string
 }
 
 func (w *ReleaseStateWorker) Run() {
 	for {
 		t0 := time.Now()
-		for _, repoConfig := range w.GitopsRepos {
-			err := processRepo(
-				repoConfig,
-				w.Releases,
-				w.Perf,
-				w.RepoCache,
-			)
-			if err != nil {
-				logrus.Warnf("could not process state of %s gitops repo: %s", repoConfig.GitopsRepo, err)
-				time.Sleep(30 * time.Second)
-				continue
+		// for _, repoConfig := range w.GitopsRepos {
+		// 	err := processRepo(
+		// 		repoConfig,
+		// 		w.Releases,
+		// 		w.Perf,
+		// 		w.RepoCache,
+		// 	)
+		// 	if err != nil {
+		// 		logrus.Warnf("could not process state of %s gitops repo: %s", repoConfig.GitopsRepo, err)
+		// 		time.Sleep(30 * time.Second)
+		// 		continue
 
-			}
-		}
-		if w.DefaultRepoName != "" {
-			err := processRepo(
-				&config.GitopsRepoConfig{
-					GitopsRepo: w.DefaultRepoName,
-					RepoPerEnv: false,
-				},
-				w.Releases,
-				w.Perf,
-				w.RepoCache,
-			)
-			if err != nil {
-				logrus.Warnf("could not process state of %s gitops repo", w.DefaultRepoName)
-			}
-		}
+		// 	}
+		// }
+		// if w.DefaultRepoName != "" {
+		// 	err := processRepo(
+		// 		&config.GitopsRepoConfig{
+		// 			GitopsRepo: w.DefaultRepoName,
+		// 			RepoPerEnv: false,
+		// 		},
+		// 		w.Releases,
+		// 		w.Perf,
+		// 		w.RepoCache,
+		// 	)
+		// 	if err != nil {
+		// 		logrus.Warnf("could not process state of %s gitops repo", w.DefaultRepoName)
+		// 	}
+		// }
 		w.Perf.WithLabelValues("releaseState_run").Observe(time.Since(t0).Seconds())
 		time.Sleep(30 * time.Second)
 	}
