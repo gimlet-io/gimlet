@@ -120,8 +120,8 @@ func broadcastAgentDisconnectedEvent(clientHub *streaming.ClientHub, a *streamin
 }
 
 func events(w http.ResponseWriter, r *http.Request) {
-	var kubernetesEvents []api.Alert
-	err := json.NewDecoder(r.Body).Decode(&kubernetesEvents)
+	var events []api.Event
+	err := json.NewDecoder(r.Body).Decode(&events)
 	if err != nil {
 		logrus.Errorf("cannot decode kubernetes events: %s", err)
 		http.Error(w, http.StatusText(400), 400)
@@ -129,12 +129,8 @@ func events(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.KubernetesEventsEvent{
-		StreamingEvent:   streaming.StreamingEvent{Event: streaming.KubernetesEventsString},
-		KubernetesEvents: kubernetesEvents,
-	})
-	clientHub.Broadcast <- jsonString
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
+	alertStateManager.TrackEvents(events)
 }
 
 func state(w http.ResponseWriter, r *http.Request) {
@@ -186,24 +182,6 @@ func state(w http.ResponseWriter, r *http.Request) {
 	jsonString, _ := json.Marshal(streaming.EnvsUpdatedEvent{
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.EnvsUpdatedEventString},
 		Envs:           envs,
-	})
-	clientHub.Broadcast <- jsonString
-}
-
-func irregularPods(w http.ResponseWriter, r *http.Request) {
-	var irregularPods []api.Alert
-	err := json.NewDecoder(r.Body).Decode(&irregularPods)
-	if err != nil {
-		logrus.Errorf("cannot decode kubernetes events: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.IrregularPodsEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.IrregularPodsString},
-		IrregularPods:  irregularPods,
 	})
 	clientHub.Broadcast <- jsonString
 }

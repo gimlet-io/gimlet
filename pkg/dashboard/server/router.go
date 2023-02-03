@@ -144,12 +144,11 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/stopPodLogs", stopPodLogs)
-		r.Get("/api/events", getEvents)
 		r.Get("/api/alerts", getAlerts)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)
-		r.Get("/api/irregularPods", getIrregularPods)
+		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)
 		r.Get("/api/repo/{owner}/{name}/pullRequests", getPullRequests)
@@ -176,7 +175,6 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
-		r.Post("/agent/irregularPods", irregularPods)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 

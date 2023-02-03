@@ -278,19 +278,8 @@ export function updateCommitStatus(state, event) {
   return state;
 }
 
-export function kubernetesEvents(state, event) {
-  if (event.kubernetesEvents) {
-    state.kubernetesAlerts = [...state.kubernetesAlerts, ...event.kubernetesEvents];
-  }
-
-  return state;
-}
-
-export function irregularPods(state, event) {
-  if (event.irregularPods) {
-    state.kubernetesAlerts = [...state.kubernetesAlerts, ...event.irregularPods];
-  }
-
+export function alerts(state, payload) {
+  state.alerts = payload;
   return state;
 }
 
