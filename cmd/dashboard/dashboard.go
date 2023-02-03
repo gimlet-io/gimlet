@@ -178,6 +178,7 @@ func main() {
 		notificationsManager,
 		parsedGitopsRepos,
 		perf,
+		gimletdRepoCache,
 	)
 
 	go func() {

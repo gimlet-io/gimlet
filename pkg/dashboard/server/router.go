@@ -8,6 +8,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -40,6 +41,7 @@ func SetupRouter(
 	notificationsManager notifications.Manager,
 	parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	perf *prometheus.HistogramVec,
+	gitopsRepoCache *gitops.GitopsRepoCache,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -67,7 +69,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
 	r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
-	r.Use(middleware.WithValue("gitopsRepoCache", repoCache))
+	r.Use(middleware.WithValue("gitopsRepoCache", gitopsRepoCache))
 	r.Use(middleware.WithValue("perf", perf))
 
 	r.Use(cors.Handler(cors.Options{
