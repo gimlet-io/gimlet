@@ -182,6 +182,25 @@ func getEvents(w http.ResponseWriter, r *http.Request) {
 	agentHub.GetEvents()
 }
 
+func getAlerts(w http.ResponseWriter, r *http.Request) {
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
+	alerts, err := alertStateManager.Alerts()
+	if err != nil {
+		logrus.Errorf("cannot get alerts from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	alertsString, err := json.Marshal(alerts)
+	if err != nil {
+		logrus.Errorf("cannot serialize alerts: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(alertsString)
+}
+
 func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {
 	for _, env := range envs {
 		if env.StackConfig == nil {

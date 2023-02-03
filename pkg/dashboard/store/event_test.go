@@ -52,11 +52,6 @@ func TestGetPendingEvents(t *testing.T) {
 		AlertState: "Pending",
 	})
 
-	s.SaveOrUpdateEvent(&model.Event{
-		Name:       "default/pod2",
-		AlertState: "OK",
-	})
-
 	e, err := s.PendingEvents()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(e))

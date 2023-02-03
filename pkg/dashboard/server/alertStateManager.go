@@ -134,7 +134,7 @@ func (p alertStateManager) setFiringState() {
 				logrus.Errorf("could't save or update pod: %s", err)
 			}
 
-			err = p.store.SaveOrUpdateAlert(&model.Alert{
+			err = p.store.SaveAlert(&model.Alert{
 				Type:       "pod",
 				Name:       pod.Name,
 				Env:        "TODO", //TODO or deployment name
@@ -144,7 +144,7 @@ func (p alertStateManager) setFiringState() {
 				Fired:      time.Now().Unix(),
 			})
 			if err != nil {
-				logrus.Errorf("could't save or update alert: %s", err)
+				logrus.Errorf("could't save alert: %s", err)
 			}
 		}
 	}
@@ -171,10 +171,10 @@ func (p alertStateManager) setFiringStateForEvents() {
 				AlertStateTimestamp: event.AlertStateTimestamp,
 			})
 			if err != nil {
-				logrus.Errorf("could't save or update pod: %s", err)
+				logrus.Errorf("could't save or update event: %s", err)
 			}
 
-			err = p.store.SaveOrUpdateAlert(&model.Alert{
+			err = p.store.SaveAlert(&model.Alert{
 				Type:       "event",
 				Name:       event.Name,
 				Env:        "TODO", //TODO or deployment name
@@ -184,7 +184,7 @@ func (p alertStateManager) setFiringStateForEvents() {
 				Fired:      time.Now().Unix(),
 			})
 			if err != nil {
-				logrus.Errorf("could't save or update alert: %s", err)
+				logrus.Errorf("could't save alert: %s", err)
 			}
 		}
 	}

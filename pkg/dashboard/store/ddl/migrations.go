@@ -38,6 +38,8 @@ const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 const createTablePods = "create-table-pods"
 const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
+const createTableKubernetesEvents = "create-table-kubernetes-events"
+const createTableAlerts = "create-table-alerts"
 
 type migration struct {
 	name string
@@ -218,6 +220,35 @@ UNIQUE(id)
 );
 `,
 		},
+		{
+			name: createTableKubernetesEvents,
+			stmt: `
+CREATE TABLE IF NOT EXISTS kubernetes_events (
+id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
+name				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableAlerts,
+			stmt: `
+CREATE TABLE IF NOT EXISTS alerts (
+id				INTEGER PRIMARY KEY AUTOINCREMENT,
+type			TEXT,
+name			TEXT,
+deployment_name TEXT,
+status			TEXT,
+status_desc 	TEXT,
+fired			INTEGER,
+resolved 		INTEGER,
+count 			INTEGER,
+UNIQUE(id)
+);
+`,
+		},
 	},
 	"postgres": {
 		{
@@ -387,6 +418,35 @@ status      TEXT,
 status_desc TEXT,
 created 	INTEGER DEFAULT 0,
 env 		TEXT DEFAULT '',
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableKubernetesEvents,
+			stmt: `
+CREATE TABLE IF NOT EXISTS kubernetes_events (
+id          		  SERIAL,
+name				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableAlerts,
+			stmt: `
+CREATE TABLE IF NOT EXISTS alerts (
+id				SERIAL,
+type			TEXT,
+name			TEXT,
+deployment_name TEXT,
+status			TEXT,
+status_desc 	TEXT,
+fired			INTEGER,
+resolved 		INTEGER,
+count 			INTEGER,
 UNIQUE(id)
 );
 `,

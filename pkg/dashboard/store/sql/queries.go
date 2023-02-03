@@ -30,6 +30,11 @@ const SelectUnprocessedEvents = "select-unprocessed-events"
 const UpdateEventStatus = "update-event-status"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
+const SelectEventByName = "select-event-by-name"
+const SelectPendingEvents = "select-pending-events"
+const DeleteEventByName = "delete-event-by-name"
+const SelectAllAlerts = "select-all-alerts"
+const DeleteAlertByNameAndType = "delete-alert-by-name-and-type"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -105,6 +110,13 @@ FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
 `,
+		SelectAllAlerts: `
+SELECT * FROM alerts;
+`,
+		DeleteAlertByNameAndType: `
+DELETE FROM alerts WHERE name = $1
+AND type = $2;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -178,6 +190,13 @@ SELECT id, sha, status, status_desc, created, env
 FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
+`,
+		SelectAllAlerts: `
+SELECT * FROM alerts;
+`,
+		DeleteAlertByNameAndType: `
+DELETE FROM alerts WHERE name = $1
+AND type = $2;
 `,
 	},
 }
