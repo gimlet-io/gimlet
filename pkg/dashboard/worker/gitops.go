@@ -428,7 +428,7 @@ func processRollbackEvent(
 	head, _ := repo.Head()
 	err = nativeGit.NativePushWithToken(repoTmpPath, repoName, nonImpersonatedToken, head.Name().Short())
 	if err != nil {
-		logrus.Error("could not push to git with native command: %s", err)
+		logrus.Errorf("could not push to git with native command: %s", err)
 		return nil, fmt.Errorf("could not push to git. Check server logs")
 	}
 	gitopsRepoCache.Invalidate(repoName)
