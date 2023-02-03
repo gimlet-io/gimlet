@@ -11,7 +11,7 @@ export default class GimletClient {
 
   getUser = () => this.get('/api/user');
 
-  getUsers = () => this.get('/api/listUsers');
+  getUsers = () => this.get('/api/users');
 
   saveUser = (userName) => this.postWithAxios("/api/saveUser", JSON.stringify(userName));
 
@@ -22,8 +22,6 @@ export default class GimletClient {
   getEnvs = () => this.get('/api/envs');
 
   getGitRepos = () => this.get('/api/gitRepos');
-
-  getGimletD = () => this.get('/api/gimletd');
 
   getGitopsCommits = () => this.getWithAxios("/api/gitopsCommits");
 

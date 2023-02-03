@@ -36,7 +36,7 @@ func defaults(c *Config) {
 		c.Chart.Repo = "https://chart.onechart.dev"
 	}
 	if c.Chart.Version == "" {
-		c.Chart.Version = "0.38.0"
+		c.Chart.Version = "0.41.0"
 	}
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"

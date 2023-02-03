@@ -11,6 +11,17 @@
   <img alt="Gimlet" src="https://github.com/gimlet-io/gimlet-documentation/blob/main/public/logo.svg" width="200">
 </picture>
 
+
+##
+
+One off SQLs:
+
+```
+update users set admin=true where login='laszlocph';
+```
+
+##
+
 ## Overview
 
 With Gimlet, you can build and run your developer platform on Kubernetes.

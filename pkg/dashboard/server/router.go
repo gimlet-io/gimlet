@@ -153,8 +153,6 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/gitopsRepo", gitopsRepo)
 		r.Get("/api/agents", agents)
 		r.Get("/api/user", user)
-		r.Get("/api/gimletd", gimletdBasicInfo)
-		r.Get("/api/listUsers", listUsers)
 		r.Post("/api/saveUser", saveUser)
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)

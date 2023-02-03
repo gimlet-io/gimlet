@@ -49,40 +49,6 @@ func gitopsRepo(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsRepoString)
 }
 
-func gimletdBasicInfo(w http.ResponseWriter, r *http.Request) {
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-
-	// client := client.NewClient(config.GimletD.URL, auth)
-	// gimletdUser, err := client.UserGet(user.Login, true)
-	// if err != nil && strings.Contains(err.Error(), "Not Found") {
-	// 	gimletdUser, err = client.UserPost(&model.User{Login: user.Login})
-	// }
-	// if err != nil {
-	// 	logrus.Errorf("cannot get GimletD user: %s", err)
-	// 	http.Error(w, http.StatusText(500), 500)
-	// 	return
-	// }
-
-	userString, err := json.Marshal(map[string]interface{}{
-		"url": "",
-		// "user": gimletdUser,
-	})
-	if err != nil {
-		logrus.Errorf("cannot serialize user: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(userString)
-}
-
 func saveUser(w http.ResponseWriter, r *http.Request) {
 	var usernameToSave string
 	err := json.NewDecoder(r.Body).Decode(&usernameToSave)
@@ -117,29 +83,6 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(createdUserString)
-}
-
-func listUsers(w http.ResponseWriter, r *http.Request) {
-	// oauth2Config := new(oauth2.Config)
-	// auth := oauth2Config.Client(
-	// 	context.Background(),
-	// 	&oauth2.Token{
-	// 		AccessToken: config.GimletD.TOKEN,
-	// 	},
-	// )
-
-	// client := client.NewClient(config.GimletD.URL, auth)
-	// gimletdUsers, err := client.UsersGet()
-	// if err != nil {
-	// 	logrus.Errorf("cannot get GimletD users: %s", err)
-	// 	http.Error(w, http.StatusText(500), 500)
-	// 	return
-	// }
-
-	usersString := []byte("") //json.Marshal(gimletdUsers)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(usersString)
 }
 
 type App struct {
