@@ -86,6 +86,7 @@ func SetupRouter(
 	agentRoutes(r, agentWSHub)
 	userRoutes(r)
 	githubOAuthRoutes(config, r)
+	gimletdRoutes(r)
 
 	r.Get("/logout", logout)
 

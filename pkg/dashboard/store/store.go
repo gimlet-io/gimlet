@@ -77,7 +77,7 @@ func open(driver, config, encryptionKey string) *sql.DB {
 func NewTest() *Store {
 	var (
 		driver        = "sqlite3"
-		config        = "file::memory:?cache=shared"
+		config        = "file::memory:"
 		encryptionKey = "the-key-has-to-be-32-bytes-long!"
 	)
 	if os.Getenv("DATABASE_DRIVER") != "" {
