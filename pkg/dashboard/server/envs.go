@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -20,11 +21,13 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -199,7 +202,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	token, gitUser, _ := tokenManager.Token()
+	gitToken, gitUser, _ := tokenManager.Token()
 	org := config.Org()
 
 	db := r.Context().Value("store").(*store.Store)
@@ -239,7 +242,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		orgRepos,
 		environment.InfraRepo,
 		user.AccessToken,
-		token,
+		gitToken,
 		user.Login,
 		gitServiceImpl,
 	)
@@ -253,7 +256,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		orgRepos,
 		environment.AppsRepo,
 		user.AccessToken,
-		token,
+		gitToken,
 		user.Login,
 		gitServiceImpl,
 	)
@@ -273,7 +276,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		environment.Name,
 		environment.InfraRepo,
 		bootstrapConfig.RepoPerEnv,
-		token,
+		gitToken,
 		true,
 		scmURL,
 	)
@@ -288,7 +291,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		environment.Name,
 		environment.AppsRepo,
 		bootstrapConfig.RepoPerEnv,
-		token,
+		gitToken,
 		false,
 		scmURL,
 	)
@@ -298,14 +301,35 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	fluxUser := &model.User{
+		Login:  "flux-" + bootstrapConfig.EnvName,
+		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
+	}
+
+	err = store.CreateUser(user)
+	if err != nil {
+		logrus.Errorf("cannot create user %s: %s", user.Login, err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	token := token.New(token.UserToken, fluxUser.Login)
+	tokenStr, err := token.Sign(fluxUser.Secret)
+	if err != nil {
+		logrus.Errorf("couldn't create user token %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	notificationsFileName, err := BootstrapNotifications(
 		gitRepoCache,
 		config.Host,
-		config.AdminToken,
+		tokenStr,
 		environment.Name,
 		environment.AppsRepo,
 		bootstrapConfig.RepoPerEnv,
-		token,
+		gitToken,
 		gitUser,
 		scmURL,
 	)
