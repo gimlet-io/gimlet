@@ -21,6 +21,7 @@ func TestUserCRUD(t *testing.T) {
 		Repos:            []string{"first", "second"},
 		FavoriteRepos:    []string{"first", "second"},
 		FavoriteServices: []string{"first", "second"},
+		Admin:            true,
 	}
 
 	err := s.CreateUser(&user)
@@ -37,6 +38,7 @@ func TestUserCRUD(t *testing.T) {
 	assert.Equal(t, user.Repos, u.Repos)
 	assert.Equal(t, user.FavoriteRepos, u.FavoriteRepos)
 	assert.Equal(t, user.FavoriteServices, u.FavoriteServices)
+	assert.Equal(t, user.Admin, u.Admin)
 
 	users, err := s.Users()
 	assert.Nil(t, err)

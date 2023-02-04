@@ -111,7 +111,7 @@ LIMIT 20;
 SELECT 1;
 `,
 		SelectUserByLogin: `
-SELECT id, login, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
+SELECT id, login, secret, admin, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users
 WHERE login = $1;
 `,
