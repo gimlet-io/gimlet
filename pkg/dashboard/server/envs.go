@@ -307,9 +307,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
 	}
 
-	err = db.CreateUser(user)
+	err = db.CreateUser(fluxUser)
 	if err != nil {
-		logrus.Errorf("cannot create user %s: %s", user.Login, err)
+		logrus.Errorf("cannot create user %s: %s", fluxUser.Login, err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
