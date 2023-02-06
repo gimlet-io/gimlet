@@ -150,23 +150,33 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	// artifacts, err := client.ArtifactsGet(
-	// 	"", "",
-	// 	nil,
-	// 	"",
-	// 	[]string{sha},
-	// 	0, 0,
-	// 	nil, nil,
-	// )
-	// if err != nil {
-	// 	logrus.Errorf("cannot get artifacts: %s", err)
-	// 	return
-	// }
+	events, err := dao.Artifacts(
+		"", "",
+		nil,
+		"",
+		[]string{sha},
+		0, 0,
+		nil, nil,
+	)
+	if err != nil {
+		logrus.Errorf("cannot get artifacts: %s", err)
+		return
+	}
+
+	artifacts := []*dx.Artifact{}
+	for _, a := range events {
+		artifact, err := model.ToArtifact(a)
+		if err != nil {
+			logrus.Errorf("cannot deserialize artifact: %s", err)
+			return
+		}
+		artifacts = append(artifacts, artifact)
+	}
 
 	artifactsBySha := map[string]*dx.Artifact{}
-	// for _, a := range artifacts {
-	// 	artifactsBySha[a.Version.SHA] = a
-	// }
+	for _, a := range artifacts {
+		artifactsBySha[a.Version.SHA] = a
+	}
 
 	deployTargets := []*model.DeployTarget{}
 	for _, c := range commits {
