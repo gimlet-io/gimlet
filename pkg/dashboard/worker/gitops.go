@@ -920,7 +920,7 @@ func saveAndBroadcastGitopsCommit(
 		Env:        env,
 	}
 
-	broadcastGitopsCommitEvent(clientHub, gitopsCommitToSave)
+	streaming.BroadcastGitopsCommitEvent(clientHub, gitopsCommitToSave)
 
 	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
 	if err != nil {
@@ -940,12 +940,4 @@ func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
 		}
 	}
 	return "", false, fmt.Errorf("no such environment: %s", env)
-}
-
-func broadcastGitopsCommitEvent(clientHub *streaming.ClientHub, gitopsCommit model.GitopsCommit) {
-	jsonString, _ := json.Marshal(streaming.GitopsEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.GitopsCommitEventString},
-		GitopsCommit:   gitopsCommit,
-	})
-	clientHub.Broadcast <- jsonString
 }

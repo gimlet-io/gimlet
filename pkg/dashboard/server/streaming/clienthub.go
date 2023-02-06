@@ -6,10 +6,13 @@ package streaming
 
 import (
 	"bytes"
-	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
+	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -182,4 +185,12 @@ func (h *ClientHub) Run() {
 			}
 		}
 	}
+}
+
+func BroadcastGitopsCommitEvent(clientHub *ClientHub, gitopsCommit model.GitopsCommit) {
+	jsonString, _ := json.Marshal(GitopsEvent{
+		StreamingEvent: StreamingEvent{Event: GitopsCommitEventString},
+		GitopsCommit:   gitopsCommit,
+	})
+	clientHub.Broadcast <- jsonString
 }

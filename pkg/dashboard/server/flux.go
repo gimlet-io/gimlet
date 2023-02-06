@@ -11,6 +11,7 @@ import (
 	fluxEvents "github.com/fluxcd/pkg/runtime/events"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -50,6 +51,9 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
 	notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
+
+	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
+	streaming.BroadcastGitopsCommitEvent(clientHub, *gitopsCommit)
 
 	err = store.SaveOrUpdateGitopsCommit(gitopsCommit)
 	if err != nil {
