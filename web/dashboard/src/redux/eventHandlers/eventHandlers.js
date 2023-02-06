@@ -332,6 +332,7 @@ export function settings(state, payload) {
   state.settings.releaseHistorySinceDays = payload.releaseHistorySinceDays;
   state.settings.scmUrl = payload.scmUrl;
   state.settings.userflowToken = payload.userflowToken;
+  state.settings.host = payload.host;
   return state;
 }
 
