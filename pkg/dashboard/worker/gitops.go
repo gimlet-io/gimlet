@@ -13,6 +13,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
@@ -35,6 +36,7 @@ type GitopsWorker struct {
 	notificationsManager    notifications.Manager
 	eventsProcessed         prometheus.Counter
 	repoCache               *nativeGit.RepoCache
+	clientHub               *streaming.ClientHub
 	perf                    *prometheus.HistogramVec
 }
 
@@ -47,6 +49,7 @@ func NewGitopsWorker(
 	notificationsManager notifications.Manager,
 	eventsProcessed prometheus.Counter,
 	repoCache *nativeGit.RepoCache,
+	clientHub *streaming.ClientHub,
 	perf *prometheus.HistogramVec,
 ) *GitopsWorker {
 	return &GitopsWorker{
@@ -58,6 +61,7 @@ func NewGitopsWorker(
 		tokenManager:            tokenManager,
 		eventsProcessed:         eventsProcessed,
 		repoCache:               repoCache,
+		clientHub:               clientHub,
 		perf:                    perf,
 	}
 }
@@ -81,6 +85,7 @@ func (w *GitopsWorker) Run() {
 				event,
 				w.notificationsManager,
 				w.repoCache,
+				w.clientHub,
 				w.perf,
 			)
 		}
@@ -98,6 +103,7 @@ func processEvent(
 	event *model.Event,
 	notificationsManager notifications.Manager,
 	repoCache *nativeGit.RepoCache,
+	clientHub *streaming.ClientHub,
 	perf *prometheus.HistogramVec,
 ) {
 	var token string
@@ -181,7 +187,7 @@ func processEvent(
 		} else {
 			env = result.Manifest.Env
 		}
-		saveAndBroadcastGitopsCommit(result.GitopsRef, env, event, store)
+		saveAndBroadcastGitopsCommit(result.GitopsRef, env, event, store, clientHub)
 	}
 
 	// send out notifications
@@ -900,6 +906,7 @@ func saveAndBroadcastGitopsCommit(
 	env string,
 	event *model.Event,
 	store *store.Store,
+	clientHub *streaming.ClientHub,
 ) {
 	if sha == "" {
 		return
@@ -913,8 +920,7 @@ func saveAndBroadcastGitopsCommit(
 		Env:        env,
 	}
 
-	// TODO
-	// eventSinkHub.BroadcastEvent(&gitopsCommitToSave)
+	broadcastGitopsCommitEvent(clientHub, gitopsCommitToSave)
 
 	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
 	if err != nil {
@@ -934,4 +940,12 @@ func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
 		}
 	}
 	return "", false, fmt.Errorf("no such environment: %s", env)
+}
+
+func broadcastGitopsCommitEvent(clientHub *streaming.ClientHub, gitopsCommit model.GitopsCommit) {
+	jsonString, _ := json.Marshal(streaming.GitopsEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.GitopsCommitEventString},
+		GitopsCommit:   gitopsCommit,
+	})
+	clientHub.Broadcast <- jsonString
 }

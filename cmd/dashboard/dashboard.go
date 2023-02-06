@@ -119,7 +119,7 @@ func main() {
 		notificationsManager,
 		eventsProcessed,
 		dashboardRepoCache,
-		// eventSinkHub,
+		clientHub,
 		perf,
 	)
 	go gitopsWorker.Run()
