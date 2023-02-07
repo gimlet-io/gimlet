@@ -23,6 +23,7 @@ type Service struct {
 
 type Pod struct {
 	Name              string `json:"name"`
+	DeploymentName    string `json:"deploymentName"`
 	Namespace         string `json:"namespace"`
 	Status            string `json:"status"`
 	StatusDescription string `json:"statusDescription"`
@@ -60,19 +61,10 @@ type Event struct {
 	FirstTimestamp int64  `json:"firstTimestamp"`
 	Count          int32  `json:"count"`
 	Name           string `json:"name"`
+	DeploymentName string `json:"deploymentName"`
 	Namespace      string `json:"namespace"`
 	Status         string `json:"status"`
 	StatusDesc     string `json:"statusDesc"`
-}
-
-// TODO deprecated
-type Alert struct {
-	LastSeen            int64  `json:"lastSeen"`
-	DeploymentName      string `json:"deploymentName"`
-	DeploymentNamespace string `json:"deploymentNamespace"`
-	Reason              string `json:"reason"`
-	Object              string `json:"object"`
-	Message             string `json:"message"`
 }
 
 type GitopsEnv struct {

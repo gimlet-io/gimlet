@@ -128,6 +128,7 @@ func KubeEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 									Count:          count(event),
 									Namespace:      event.Namespace,
 									Name:           event.InvolvedObject.Name,
+									DeploymentName: deployment.Name,
 									Status:         event.Reason,
 									StatusDesc:     event.Message,
 								})
@@ -213,7 +214,7 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 				if "CrashLoopBackOff" == podStatus || "Error" == podStatus {
 					podLogs = logs(e, pod)
 				}
-				pods = append(pods, &api.Pod{Name: pod.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs})
+				pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs})
 			}
 
 			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Pods: pods, SHA: sha}

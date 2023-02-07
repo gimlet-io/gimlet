@@ -79,12 +79,12 @@ DELETE FROM environments
 WHERE name = ?;
 `,
 		SelectPendingPods: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
 FROM pods
 WHERE alert_state LIKE 'Pending';
 `,
 		SelectPodByName: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
 FROM pods
 WHERE name = $1;
 `,
@@ -98,6 +98,16 @@ WHERE status='new' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		SelectEventByName: `
+SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
+FROM kubernetes_events
+WHERE name = $1;
+`,
+		SelectPendingEvents: `
+SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
+FROM kubernetes_events
+WHERE alert_state LIKE 'Pending';
 `,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created
@@ -160,12 +170,12 @@ DELETE FROM environments
 WHERE name = $1;
 `,
 		SelectPendingPods: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
 FROM pods
 WHERE alert_state LIKE 'Pending';
 `,
 		SelectPodByName: `
-SELECT id, name, status, status_desc, alert_state, alert_state_timestamp
+SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
 FROM pods
 WHERE name = $1;
 `,
@@ -179,6 +189,16 @@ WHERE status='new' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		SelectEventByName: `
+SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
+FROM kubernetes_events
+WHERE name = $1;
+`,
+		SelectPendingEvents: `
+SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
+FROM kubernetes_events
+WHERE alert_state LIKE 'Pending';
 `,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created

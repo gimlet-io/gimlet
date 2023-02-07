@@ -149,7 +149,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
 }
 
 function kubernetesAlertsByDeploymentName(kubernetesAlerts, deploymentName) {
-  return kubernetesAlerts.filter(event => event.deploymentName === deploymentName)
+  return kubernetesAlerts.filter(event => event.deploymentName.split("/")[1] === deploymentName)
 }
 
 function fileName(fileInfos, appName) {

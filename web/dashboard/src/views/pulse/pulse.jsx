@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
 import Releases from './releases';
-import { ACTION_TYPE_ALERTS } from '../../redux/redux';
 
 export default class Pulse extends Component {
   constructor(props) {
@@ -12,7 +11,7 @@ export default class Pulse extends Component {
       envs: reduxState.envs,
       releaseStatuses: reduxState.releaseStatuses,
       releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays,
-      alerts : reduxState.alerts,
+      alerts : decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents),
       scmUrl: reduxState.settings.scmUrl
     }
 
@@ -22,7 +21,7 @@ export default class Pulse extends Component {
       this.setState({ envs: reduxState.envs });
       this.setState({ releaseStatuses: reduxState.releaseStatuses });
       this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
-      this.setState({ alerts: reduxState.alerts });
+      this.setState({ alerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents) });
       this.setState({ scmUrl: reduxState.settings.scmUrl });
     });
   }
@@ -98,14 +97,14 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
             </div>
             {!hideButton &&
               <>
-                {alert.env && <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
+                {alert.envName && <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
                   <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-200">
-                    {alert.env}
+                    {alert.envName}
                   </span>
                 </div>}
-                {alert.repo && <div className="absolute bottom-0 right-0 p-2 space-x-2">
+                {alert.repoName && <div className="absolute bottom-0 right-0 p-2 space-x-2">
                   <button className="inline-flex items-center px-3 py-0.5 rounded-md text-sm font-medium bg-blue-400 text-slate-50"
-                    onClick={() => history.push(`/repo/${alert.repo}/${alert.envName}/${alert.deploymentName}`)}
+                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${alert.deploymentName.split("/")[1]}`)}
                   >
                     Jump there
                   </button>
@@ -119,11 +118,13 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
   )
 }
 
-export function decorateKubernetesAlertsWithEnvAndRepo(kubernetesAlerts, connectedAgents) {
-  kubernetesAlerts.forEach(alert => {
+export function decorateKubernetesAlertsWithEnvAndRepo(alerts, connectedAgents) {
+  alerts.forEach(alert => {
+    const deploymentNamespace = alert.deploymentName.split("/")[0]
+    const deploymentName = alert.deploymentName.split("/")[1]
     for (const env in connectedAgents) {
       connectedAgents[env].stacks.forEach(stack => {
-        if (alert.deploymentNamespace === stack.deployment.namespace && alert.deploymentName === stack.deployment.name) {
+        if (deploymentNamespace === stack.deployment.namespace && deploymentName === stack.deployment.name) {
           alert.envName = stack.env;
           alert.repoName = stack.repo;
         }
@@ -131,7 +132,7 @@ export function decorateKubernetesAlertsWithEnvAndRepo(kubernetesAlerts, connect
     }
   })
 
-  return kubernetesAlerts;
+  return alerts;
 }
 
 function dateLabel(lastSeen) {

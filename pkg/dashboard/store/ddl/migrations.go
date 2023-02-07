@@ -38,8 +38,11 @@ const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 const createTablePods = "create-table-pods"
 const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
+const addDeploymentNameToPodsTable = "add-deployment-name-to-pods-table"
 const createTableKubernetesEvents = "create-table-kubernetes-events"
+const addDeploymentNameToKubernetesEventsTable = "add-deployment-name-to-kubernetes-events-table"
 const createTableAlerts = "create-table-alerts"
+const addDeploymentNameToAlertsTable = "add-deployment-name-to-alerts-table"
 
 type migration struct {
 	name string
@@ -219,6 +222,8 @@ env 		TEXT DEFAULT '',
 UNIQUE(id)
 );
 `,
+			name: addDeploymentNameToPodsTable,
+			stmt: `ALTER TABLE pods ADD COLUMN deployment_name TEXT;`,
 		},
 		{
 			name: createTableKubernetesEvents,
@@ -226,6 +231,7 @@ UNIQUE(id)
 CREATE TABLE IF NOT EXISTS kubernetes_events (
 id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
 name				  TEXT,
+deployment_name 	  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
 UNIQUE(id)
@@ -421,6 +427,8 @@ env 		TEXT DEFAULT '',
 UNIQUE(id)
 );
 `,
+			name: addDeploymentNameToPodsTable,
+			stmt: `ALTER TABLE pods ADD COLUMN deployment_name TEXT;`,
 		},
 		{
 			name: createTableKubernetesEvents,
@@ -428,6 +436,7 @@ UNIQUE(id)
 CREATE TABLE IF NOT EXISTS kubernetes_events (
 id          		  SERIAL,
 name				  TEXT,
+deployment_name 	  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
 UNIQUE(id)

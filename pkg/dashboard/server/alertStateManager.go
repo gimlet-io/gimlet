@@ -8,18 +8,20 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
 )
 
 type alertStateManager struct {
 	notifManager notifications.Manager
+	agentHub     *streaming.AgentHub
 	store        store.Store
 	waitTime     time.Duration
 }
 
-func NewAlertStateManager(notifManager notifications.Manager, store store.Store, waitTime time.Duration) *alertStateManager {
-	return &alertStateManager{notifManager: notifManager, store: store, waitTime: waitTime}
+func NewAlertStateManager(notifManager notifications.Manager, agentHub *streaming.AgentHub, store store.Store, waitTime time.Duration) *alertStateManager {
+	return &alertStateManager{notifManager: notifManager, agentHub: agentHub, store: store, waitTime: waitTime}
 }
 
 func (p alertStateManager) Track(pods []*api.Pod) {
@@ -32,6 +34,7 @@ func (p alertStateManager) TrackEvents(events []api.Event) {
 
 func (p alertStateManager) Run() {
 	for {
+		p.agentHub.GetEvents()
 		p.setFiringState()
 		p.setFiringStateForEvents()
 		time.Sleep(p.waitTime * time.Minute)
@@ -64,6 +67,7 @@ func (p alertStateManager) Alerts() ([]*model.Alert, error) {
 func (p alertStateManager) trackStates(pods []*api.Pod) {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
+		deploymentName := fmt.Sprintf("%s/%s", pod.Namespace, pod.DeploymentName)
 		currentTime := time.Now().Unix()
 		alertState := "Pending"
 
@@ -77,6 +81,7 @@ func (p alertStateManager) trackStates(pods []*api.Pod) {
 
 		err := p.store.SaveOrUpdatePod(&model.Pod{
 			Name:                podName,
+			DeploymentName:      deploymentName,
 			Status:              pod.Status,
 			StatusDesc:          pod.StatusDescription,
 			AlertState:          alertState,
@@ -91,6 +96,7 @@ func (p alertStateManager) trackStates(pods []*api.Pod) {
 func (p alertStateManager) trackEvents(events []api.Event) {
 	for _, event := range events {
 		eventName := fmt.Sprintf("%s/%s", event.Namespace, event.Name)
+		deploymentName := fmt.Sprintf("%s/%s", event.Namespace, event.DeploymentName)
 		currentTime := time.Now().Unix()
 
 		if p.eventAlreadyAlerted(eventName) || p.eventCountLessThanSaved(eventName, event.Count) {
@@ -101,6 +107,7 @@ func (p alertStateManager) trackEvents(events []api.Event) {
 			FirstTimestamp:      event.FirstTimestamp,
 			Count:               event.Count,
 			Name:                eventName,
+			DeploymentName:      deploymentName,
 			Status:              event.Status,
 			StatusDesc:          event.StatusDesc,
 			AlertState:          "Pending",
@@ -135,13 +142,12 @@ func (p alertStateManager) setFiringState() {
 			}
 
 			err = p.store.SaveAlert(&model.Alert{
-				Type:       "pod",
-				Name:       pod.Name,
-				Env:        "TODO", //TODO or deployment name
-				Repo:       "TODO",
-				Status:     pod.Status,
-				StatusDesc: pod.StatusDesc,
-				Fired:      time.Now().Unix(),
+				Type:           "pod",
+				Name:           pod.Name,
+				DeploymentName: pod.DeploymentName,
+				Status:         pod.Status,
+				StatusDesc:     pod.StatusDesc,
+				Fired:          time.Now().Unix(),
 			})
 			if err != nil {
 				logrus.Errorf("could't save alert: %s", err)
@@ -175,13 +181,12 @@ func (p alertStateManager) setFiringStateForEvents() {
 			}
 
 			err = p.store.SaveAlert(&model.Alert{
-				Type:       "event",
-				Name:       event.Name,
-				Env:        "TODO", //TODO or deployment name
-				Repo:       "TODO",
-				Status:     event.Status,
-				StatusDesc: event.StatusDesc,
-				Fired:      time.Now().Unix(),
+				Type:           "event",
+				Name:           event.Name,
+				DeploymentName: event.DeploymentName,
+				Status:         event.Status,
+				StatusDesc:     event.StatusDesc,
+				Fired:          time.Now().Unix(),
 			})
 			if err != nil {
 				logrus.Errorf("could't save alert: %s", err)
