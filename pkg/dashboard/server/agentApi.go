@@ -240,17 +240,17 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 }
 
 func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdate) {
-	deploymentParts := strings.Split(update.Deployment, "/")
-	deployment := deploymentParts[1]
-	parts := strings.Split(update.Subject, "/")
-	namespace := parts[0]
-	name := parts[1]
-
 	if update.Event == agent.EventPodDeleted {
 		alertStateManager.Delete(update.Subject)
 		alertStateManager.DeleteEvent(update.Subject)
 		return
 	}
+
+	deploymentParts := strings.Split(update.Deployment, "/")
+	deployment := deploymentParts[1]
+	parts := strings.Split(update.Subject, "/")
+	namespace := parts[0]
+	name := parts[1]
 
 	alertStateManager.Track([]*api.Pod{
 		{
