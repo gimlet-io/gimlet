@@ -40,9 +40,7 @@ const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const addDeploymentNameToPodsTable = "add-deployment-name-to-pods-table"
 const createTableKubernetesEvents = "create-table-kubernetes-events"
-const addDeploymentNameToKubernetesEventsTable = "add-deployment-name-to-kubernetes-events-table"
 const createTableAlerts = "create-table-alerts"
-const addDeploymentNameToAlertsTable = "add-deployment-name-to-alerts-table"
 
 type migration struct {
 	name string

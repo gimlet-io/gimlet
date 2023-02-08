@@ -46,12 +46,22 @@ func (p alertStateManager) Delete(podName string) {
 	if err != nil && err != sql.ErrNoRows {
 		logrus.Errorf("could't delete pod: %s", err)
 	}
+
+	err = p.store.DeleteAlert(podName, "pod")
+	if err != nil && err != sql.ErrNoRows {
+		logrus.Errorf("could't delete alert: %s", err)
+	}
 }
 
 func (p alertStateManager) DeleteEvent(name string) {
 	err := p.store.DeleteEvent(name)
 	if err != nil && err != sql.ErrNoRows {
 		logrus.Errorf("could't delete event: %s", err)
+	}
+
+	err = p.store.DeleteAlert(name, "event")
+	if err != nil && err != sql.ErrNoRows {
+		logrus.Errorf("could't delete alert: %s", err)
 	}
 }
 

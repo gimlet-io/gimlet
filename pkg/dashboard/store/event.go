@@ -22,6 +22,7 @@ func (db *Store) SaveOrUpdateEvent(event *model.Event) error {
 
 	storedEvent.FirstTimestamp = event.FirstTimestamp
 	storedEvent.Count = event.Count
+	storedEvent.DeploymentName = event.DeploymentName
 	storedEvent.Status = event.Status
 	storedEvent.StatusDesc = event.StatusDesc
 	storedEvent.AlertState = event.AlertState

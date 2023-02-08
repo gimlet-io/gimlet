@@ -104,7 +104,7 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
                 </div>}
                 {alert.repoName && <div className="absolute bottom-0 right-0 p-2 space-x-2">
                   <button className="inline-flex items-center px-3 py-0.5 rounded-md text-sm font-medium bg-blue-400 text-slate-50"
-                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${alert.deploymentName.split("/")[1]}`)}
+                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${parseDeploymentName(alert.deploymentName)}`)}
                   >
                     Jump there
                   </button>
@@ -153,3 +153,7 @@ function dateLabel(lastSeen) {
     </div>
   );
 }
+
+export const parseDeploymentName = deployment => {
+  return deployment.split("/")[1];
+};

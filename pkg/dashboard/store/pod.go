@@ -49,6 +49,7 @@ func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
 		}
 	}
 
+	storedPod.DeploymentName = pod.DeploymentName
 	storedPod.Status = pod.Status
 	storedPod.StatusDesc = pod.StatusDesc
 	storedPod.AlertState = pod.AlertState
