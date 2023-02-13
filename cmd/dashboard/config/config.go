@@ -67,10 +67,14 @@ type Config struct {
 	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
 	UserflowToken           string `envconfig:"USERFLOW_TOKEN"`
 
-	PrintAdminToken         bool   `envconfig:"PRINT_ADMIN_TOKEN"`
-	AdminToken              string `envconfig:"ADMIN_TOKEN"`
-	GitopsRepo              string `envconfig:"GITOPS_REPO"`
-	GitopsRepos             string `envconfig:"GITOPS_REPOS"`
+	PrintAdminToken bool   `envconfig:"PRINT_ADMIN_TOKEN"`
+	AdminToken      string `envconfig:"ADMIN_TOKEN"`
+
+	// Deprecated, use BootstrapEnv instead
+	GitopsRepo string `envconfig:"GITOPS_REPO"`
+	// Deprecated, use BootstrapEnv instead
+	GitopsRepos string `envconfig:"GITOPS_REPOS"`
+
 	GitopsRepoDeployKeyPath string `envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
 	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 	ReleaseStats            string `envconfig:"RELEASE_STATS"`

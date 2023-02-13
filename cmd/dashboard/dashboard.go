@@ -64,7 +64,7 @@ func main() {
 		panic(err)
 	}
 
-	err = bootstrapEnvs(config.BootstrapEnv, store)
+	err = bootstrapEnvs(config.BootstrapEnv, store, "")
 	if err != nil {
 		panic(err)
 	}
@@ -84,16 +84,24 @@ func main() {
 	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
-	// TODO: check how these vars can init db envs, and how installer works, and how to deprecate these
+	if config.GitopsRepo != "" || config.GitopsRepoDeployKeyPath != "" {
+		panic("GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH are deprecated." +
+			"Please use BOOTSTRAP_ENV instead, or create gitops environment configurations on the Gimlet dashboard.")
+	}
 
-	// if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
-	// 	log.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
-	// }
-
-	// parsedGitopsRepos, err := parseGitopsRepos(config.GitopsRepos)
-	// if err != nil {
-	// 	log.Fatal("could not parse gitops repositories")
-	// }
+	if config.GitopsRepos != "" {
+		log.Info("Bootstrapping gitops environments from deprecated GITOPS_REPOS variable")
+		err = bootstrapEnvs(
+			config.BootstrapEnv,
+			store,
+			config.GitopsRepos,
+		)
+		if err != nil {
+			panic(err)
+		}
+		log.Info("Gitops environments bootstrapped, remove the deprecated GITOPS_REPO* vars. They are now written to the Gimlet database." +
+			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
+	}
 
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
@@ -196,7 +204,11 @@ func parseEnvs(envString string) ([]*model.Environment, error) {
 	return envs, nil
 }
 
-func bootstrapEnvs(envString string, store *store.Store) error {
+func bootstrapEnvs(
+	envString string,
+	store *store.Store,
+	gitopsRepos string,
+) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
 		return err
@@ -206,6 +218,12 @@ func bootstrapEnvs(envString string, store *store.Store) error {
 	if err != nil {
 		return err
 	}
+
+	deprecatedGitopsReposToEnvs, err := parseGitopsRepos(gitopsRepos)
+	if err != nil {
+		return err
+	}
+	envsToBootstrap = append(envsToBootstrap, deprecatedGitopsReposToEnvs...)
 
 	for _, envToBootstrap := range envsToBootstrap {
 		if !envExists(envsInDB, envToBootstrap.Name) {
@@ -264,8 +282,8 @@ func parseChannelMap(config *config.Config) map[string]string {
 	return channelMap
 }
 
-func parseGitopsRepos(gitopsReposString string) (map[string]*config.GitopsRepoConfig, error) {
-	gitopsRepos := map[string]*config.GitopsRepoConfig{}
+func parseGitopsRepos(gitopsReposString string) ([]*model.Environment, error) {
+	envs := []*model.Environment{}
 	splitGitopsRepos := strings.Split(gitopsReposString, ";")
 
 	for _, gitopsReposString := range splitGitopsRepos {
@@ -281,14 +299,14 @@ func parseGitopsRepos(gitopsReposString string) (map[string]*config.GitopsRepoCo
 			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
 		}
 
-		singleGitopsRepo := &config.GitopsRepoConfig{
-			Env:           parsedGitopsReposString.Get("env"),
-			RepoPerEnv:    repoPerEnv,
-			GitopsRepo:    parsedGitopsReposString.Get("gitopsRepo"),
-			DeployKeyPath: parsedGitopsReposString.Get("deployKeyPath"),
+		env := &model.Environment{
+			Name:       parsedGitopsReposString.Get("env"),
+			RepoPerEnv: repoPerEnv,
+			AppsRepo:   parsedGitopsReposString.Get("gitopsRepo"),
+			InfraRepo:  "migrated from Gimletd config, ask on Discord how to migrate",
 		}
-		gitopsRepos[singleGitopsRepo.Env] = singleGitopsRepo
+		envs = append(envs, env)
 	}
 
-	return gitopsRepos, nil
+	return envs, nil
 }
