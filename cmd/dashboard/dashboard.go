@@ -136,6 +136,7 @@ func main() {
 			RepoCache: dashboardRepoCache,
 			Releases:  releases,
 			Perf:      perf,
+			Store:     store,
 		}
 		go releaseStateWorker.Run()
 	}

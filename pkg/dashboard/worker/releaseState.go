@@ -7,6 +7,8 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -15,67 +17,59 @@ import (
 )
 
 type ReleaseStateWorker struct {
-	// GitopsRepo      string
 	RepoCache *nativeGit.RepoCache
 	Releases  *prometheus.GaugeVec
 	Perf      *prometheus.HistogramVec
-	// GitopsRepos map[string]*config.GitopsRepoConfig
-	// DefaultRepoName string
+	Store     *store.Store
+	Config    *config.Config
 }
 
-// TODO implement it based on env table
 func (w *ReleaseStateWorker) Run() {
 	for {
 		t0 := time.Now()
-		// for _, repoConfig := range w.GitopsRepos {
-		// 	err := processRepo(
-		// 		repoConfig,
-		// 		w.Releases,
-		// 		w.Perf,
-		// 		w.RepoCache,
-		// 	)
-		// 	if err != nil {
-		// 		logrus.Warnf("could not process state of %s gitops repo: %s", repoConfig.GitopsRepo, err)
-		// 		time.Sleep(30 * time.Second)
-		// 		continue
 
-		// 	}
-		// }
-		// if w.DefaultRepoName != "" {
-		// 	err := processRepo(
-		// 		&config.GitopsRepoConfig{
-		// 			GitopsRepo: w.DefaultRepoName,
-		// 			RepoPerEnv: false,
-		// 		},
-		// 		w.Releases,
-		// 		w.Perf,
-		// 		w.RepoCache,
-		// 	)
-		// 	if err != nil {
-		// 		logrus.Warnf("could not process state of %s gitops repo", w.DefaultRepoName)
-		// 	}
-		// }
+		envsInDB, err := w.Store.GetEnvironments()
+		if err != nil {
+			logrus.Warnf("could not get envs: %s", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+
+		for _, env := range envsInDB {
+			err = processRepo(
+				env,
+				w.Releases,
+				w.Perf,
+				w.RepoCache,
+				w.Config.ScmURL(),
+			)
+			if err != nil {
+				logrus.Warnf("could not process state of %s gitops repo", env.Name)
+			}
+		}
+
 		w.Perf.WithLabelValues("releaseState_run").Observe(time.Since(t0).Seconds())
 		time.Sleep(30 * time.Second)
 	}
 }
 
 func processRepo(
-	gitopsRepoConfig *config.GitopsRepoConfig,
+	processEnv *model.Environment,
 	releases *prometheus.GaugeVec,
 	perf *prometheus.HistogramVec,
 	repoCache *nativeGit.RepoCache,
+	scmUrl string,
 ) error {
 	t0 := time.Now()
-	repo, err := repoCache.InstanceForRead(gitopsRepoConfig.GitopsRepo)
+	repo, err := repoCache.InstanceForRead(processEnv.AppsRepo)
 	if err != nil {
 		return err
 	}
 	perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
 	var envs []string
-	if gitopsRepoConfig.RepoPerEnv {
-		envs = []string{gitopsRepoConfig.Env}
+	if processEnv.RepoPerEnv {
+		envs = []string{processEnv.Name}
 	} else {
 		envs, err = gitops.Envs(repo)
 		if err != nil {
@@ -86,7 +80,7 @@ func processRepo(
 	releases.Reset()
 	for _, env := range envs {
 		t1 := time.Now()
-		appReleases, err := gitops.Status(repo, "", env, gitopsRepoConfig.RepoPerEnv, perf)
+		appReleases, err := gitops.Status(repo, "", env, processEnv.RepoPerEnv, perf)
 		if err != nil {
 			logrus.Errorf("cannot get status: %s", err)
 			time.Sleep(30 * time.Second)
@@ -95,7 +89,7 @@ func processRepo(
 		perf.WithLabelValues("releaseState_appReleases").Observe(time.Since(t1).Seconds())
 
 		envPath := env
-		if gitopsRepoConfig.RepoPerEnv {
+		if processEnv.RepoPerEnv {
 			envPath = ""
 		}
 
@@ -112,7 +106,7 @@ func processRepo(
 			}
 			perf.WithLabelValues("releaseState_appRelease").Observe(time.Since(t2).Seconds())
 
-			gitopsRef := fmt.Sprintf("https://github.com/%s/commit/%s", gitopsRepoConfig.GitopsRepo, commit.Hash.String())
+			gitopsRef := fmt.Sprintf(scmUrl+"/%s/commit/%s", processEnv.AppsRepo, commit.Hash.String())
 			created := commit.Committer.When
 
 			if release != nil {
