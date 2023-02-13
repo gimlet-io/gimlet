@@ -23,6 +23,7 @@ type ReleaseStateWorker struct {
 	// DefaultRepoName string
 }
 
+// TODO implement it based on env table
 func (w *ReleaseStateWorker) Run() {
 	for {
 		t0 := time.Now()

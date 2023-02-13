@@ -84,6 +84,8 @@ func main() {
 	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
+	// TODO: check how these vars can init db envs, and how installer works, and how to deprecate these
+
 	// if (config.GitopsRepo == "" || config.GitopsRepoDeployKeyPath == "") && config.GitopsRepos == "" {
 	// 	log.Fatal("Either GITOPS_REPO with GITOPS_REPO_DEPLOY_KEY_PATH or GITOPS_REPOS must be set")
 	// }
@@ -107,13 +109,9 @@ func main() {
 	go dashboardRepoCache.Run()
 	log.Info("repo cache initialized")
 
-	// eventSinkHub := streaming.NewEventSinkHub(config)
-	// go eventSinkHub.Run()
-
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
 		config.GitopsRepo,
-		// parsedGitopsRepos,
 		config.GitopsRepoDeployKeyPath,
 		tokenManager,
 		notificationsManager,
@@ -127,9 +125,6 @@ func main() {
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			// GitopsRepo: config.GitopsRepo,
-			// GitopsRepos:     parsedGitopsRepos,
-			// DefaultRepoName: config.GitopsRepo,
 			RepoCache: dashboardRepoCache,
 			Releases:  releases,
 			Perf:      perf,
@@ -148,8 +143,6 @@ func main() {
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
 
-	// go gimletdCommunication(*config, clientHub) // TODO: remove this
-
 	r := server.SetupRouter(
 		config,
 		agentHub,
@@ -161,7 +154,6 @@ func main() {
 		dashboardRepoCache,
 		podStateManager,
 		notificationsManager,
-		// parsedGitopsRepos,
 		perf,
 	)
 
