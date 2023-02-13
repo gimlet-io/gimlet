@@ -219,7 +219,8 @@ created 	INTEGER DEFAULT 0,
 env 		TEXT DEFAULT '',
 UNIQUE(id)
 );
-`,
+`},
+		{
 			name: addDeploymentNameToPodsTable,
 			stmt: `ALTER TABLE pods ADD COLUMN deployment_name TEXT;`,
 		},
@@ -229,7 +230,6 @@ UNIQUE(id)
 CREATE TABLE IF NOT EXISTS kubernetes_events (
 id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
 name				  TEXT,
-deployment_name 	  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
 UNIQUE(id)
@@ -425,6 +425,8 @@ env 		TEXT DEFAULT '',
 UNIQUE(id)
 );
 `,
+		},
+		{
 			name: addDeploymentNameToPodsTable,
 			stmt: `ALTER TABLE pods ADD COLUMN deployment_name TEXT;`,
 		},
@@ -434,7 +436,6 @@ UNIQUE(id)
 CREATE TABLE IF NOT EXISTS kubernetes_events (
 id          		  SERIAL,
 name				  TEXT,
-deployment_name 	  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
 UNIQUE(id)

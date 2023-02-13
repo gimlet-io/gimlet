@@ -15,8 +15,7 @@ func TestEventCRUD(t *testing.T) {
 	}()
 
 	event := model.Event{
-		Name:  "default/pod1",
-		Count: 1,
+		Name: "default/pod1",
 	}
 
 	err := s.SaveOrUpdateEvent(&event)
@@ -26,33 +25,9 @@ func TestEventCRUD(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, event.Name, e.Name)
 
-	s.SaveOrUpdateEvent(&model.Event{
-		Name:  "default/pod1",
-		Count: 2,
-	})
-
-	e, _ = s.Event(event.Name)
-	assert.Equal(t, int32(2), e.Count)
-
 	err = s.DeleteEvent(event.Name)
 	assert.Nil(t, err)
 
 	_, err = s.Event(event.Name)
 	assert.Equal(t, sql.ErrNoRows, err)
-}
-
-func TestGetPendingEvents(t *testing.T) {
-	s := NewTest()
-	defer func() {
-		s.Close()
-	}()
-
-	s.SaveOrUpdateEvent(&model.Event{
-		Name:       "default/pod2",
-		AlertState: "Pending",
-	})
-
-	e, err := s.PendingEvents()
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(e))
 }

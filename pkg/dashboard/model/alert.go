@@ -8,4 +8,6 @@ type Alert struct {
 	Status         string `json:"status,omitempty"  meddler:"status"`
 	StatusDesc     string `json:"statusDesc,omitempty"  meddler:"status_desc"`
 	Fired          int64  `json:"fired,omitempty"  meddler:"fired"`
+	Resolved       int64  `json:"resolved,omitempty"  meddler:"resolved"`
+	Count          int32  `json:"count"  meddler:"count"`
 }

@@ -25,9 +25,13 @@ func TestAlertCRUD(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(alerts))
 
-	err = s.DeleteAlert(alert.Name, alert.Type)
+	a, err := s.Alert(alert.Name, alert.Type)
 	assert.Nil(t, err)
+	assert.Equal(t, alert.Name, a.Name)
 
 	alerts, _ = s.Alerts()
 	assert.Equal(t, 0, len(alerts))
+
 }
+
+//TODO write test for pending alerts

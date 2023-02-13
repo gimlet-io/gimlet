@@ -22,13 +22,28 @@ func (db *Store) Alerts() ([]*model.Alert, error) {
 	return data, err
 }
 
+func (db *Store) Alert(name string, alertType string) (*model.Alert, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectAlertByNameAndType)
+	alert := new(model.Alert)
+	err := meddler.QueryRow(db, alert, stmt, name, alertType)
+
+	return alert, err
+}
+
 func (db *Store) SaveAlert(alert *model.Alert) error {
 	return meddler.Insert(db, "alerts", alert)
 }
 
-func (db *Store) DeleteAlert(name string, alertType string) error {
-	stmt := queries.Stmt(db.driver, queries.DeleteAlertByNameAndType)
-	_, err := db.Exec(stmt, name, alertType)
+func (db *Store) PendingAlertsByType(alertType string) ([]*model.Alert, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectPendingAlertsByType)
+	data := []*model.Alert{}
+	err := meddler.QueryAll(db, &data, stmt, alertType)
 
-	return err
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return data, err
 }

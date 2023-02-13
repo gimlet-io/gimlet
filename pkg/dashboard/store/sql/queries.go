@@ -23,7 +23,6 @@ const SelectKeyValue = "select-key-value"
 const SelectEnvironments = "select-environments"
 const SelectEnvironment = "select-environment"
 const DeleteEnvironment = "delete-environment"
-const SelectPendingPods = "select-pending-pods"
 const SelectPodByName = "select-pod-by-name"
 const DeletePodByName = "delete-pod-by-name"
 const SelectUnprocessedEvents = "select-unprocessed-events"
@@ -31,10 +30,10 @@ const UpdateEventStatus = "update-event-status"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectEventByName = "select-event-by-name"
-const SelectPendingEvents = "select-pending-events"
 const DeleteEventByName = "delete-event-by-name"
 const SelectAllAlerts = "select-all-alerts"
-const DeleteAlertByNameAndType = "delete-alert-by-name-and-type"
+const SelectAlertByNameAndType = "select-alert-by-name-and-type"
+const SelectPendingAlertsByType = "select-pending-alerts-by-type"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -78,13 +77,8 @@ WHERE name = $1;
 DELETE FROM environments
 WHERE name = ?;
 `,
-		SelectPendingPods: `
-SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
-FROM pods
-WHERE alert_state LIKE 'Pending';
-`,
 		SelectPodByName: `
-SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
+SELECT id, name, status, status_desc
 FROM pods
 WHERE name = $1;
 `,
@@ -104,11 +98,6 @@ SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, a
 FROM kubernetes_events
 WHERE name = $1;
 `,
-		SelectPendingEvents: `
-SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
-FROM kubernetes_events
-WHERE alert_state LIKE 'Pending';
-`,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created
 FROM gitops_commits
@@ -120,12 +109,23 @@ FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
 `,
+		DeleteEventByName: `
+DELETE FROM kubernetes_events where name = $1;
+`,
 		SelectAllAlerts: `
 SELECT * FROM alerts;
 `,
-		DeleteAlertByNameAndType: `
-DELETE FROM alerts WHERE name = $1
+		SelectAlertByNameAndType: `
+SELECT id, type, name, deployment_name, status, status_desc, fired, resolved
+FROM alerts
+WHERE name = $1
 AND type = $2;
+`,
+		SelectPendingAlertsByType: `
+SELECT type, name, deployment_name, status, status_desc, fired, resolved, count
+FROM alerts
+WHERE status LIKE 'Pending'
+AND type = $1;
 `,
 	},
 	"postgres": {
@@ -169,11 +169,6 @@ WHERE name = $1;
 DELETE FROM environments
 WHERE name = $1;
 `,
-		SelectPendingPods: `
-SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
-FROM pods
-WHERE alert_state LIKE 'Pending';
-`,
 		SelectPodByName: `
 SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
 FROM pods
@@ -195,11 +190,6 @@ SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, a
 FROM kubernetes_events
 WHERE name = $1;
 `,
-		SelectPendingEvents: `
-SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
-FROM kubernetes_events
-WHERE alert_state LIKE 'Pending';
-`,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created
 FROM gitops_commits
@@ -211,12 +201,23 @@ FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
 `,
+		DeleteEventByName: `
+DELETE FROM kubernetes_events where name = $1;
+`,
 		SelectAllAlerts: `
 SELECT * FROM alerts;
 `,
-		DeleteAlertByNameAndType: `
-DELETE FROM alerts WHERE name = $1
+		SelectAlertByNameAndType: `
+SELECT id, type, name, deployment_name, status, status_desc, fired, resolved
+FROM alerts
+WHERE name = $1
 AND type = $2;
+`,
+		SelectPendingAlertsByType: `
+SELECT type, name, deployment_name, status, status_desc, fired, resolved, count
+FROM alerts
+WHERE status LIKE 'Pending'
+AND type = $1;
 `,
 	},
 }

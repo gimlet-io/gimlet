@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -148,7 +149,12 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
 	for _, stack := range stacks {
-		alertStateManager.Track(stack.Deployment.Pods)
+		err := alertStateManager.TrackPods(stack.Deployment.Pods)
+		if err != nil {
+			logrus.Errorf("cannot track pods: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
@@ -198,7 +204,12 @@ func update(w http.ResponseWriter, r *http.Request) {
 
 	if strings.Contains(update.Event, "pod") {
 		alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
-		handlePodUpdate(alertStateManager, update)
+		err := handlePodUpdate(alertStateManager, update)
+		if err != nil {
+			logrus.Errorf("cannot handle pod update: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
 
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)
@@ -239,11 +250,17 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdate) {
+func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdate) error {
 	if update.Event == agent.EventPodDeleted {
-		alertStateManager.Delete(update.Subject)
-		alertStateManager.DeleteEvent(update.Subject)
-		return
+		err := alertStateManager.DeletePod(update.Subject)
+		if err != nil && err != sql.ErrNoRows {
+			return err
+		}
+
+		err = alertStateManager.DeleteEvent(update.Subject)
+		if err != nil && err != sql.ErrNoRows {
+			return err
+		}
 	}
 
 	deploymentParts := strings.Split(update.Deployment, "/")
@@ -252,7 +269,7 @@ func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdat
 	namespace := parts[0]
 	name := parts[1]
 
-	alertStateManager.Track([]*api.Pod{
+	return alertStateManager.TrackPods([]*api.Pod{
 		{
 			Namespace:         namespace,
 			Name:              name,
