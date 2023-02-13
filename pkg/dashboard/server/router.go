@@ -64,8 +64,6 @@ func SetupRouter(
 	r.Use(middleware.WithValue("podStateManager", podStateManager))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
-	// r.Use(middleware.WithValue("gitopsRepo", config.GitopsRepo))
-	// r.Use(middleware.WithValue("gitopsRepos", parsedGitopsRepos))
 	r.Use(middleware.WithValue("perf", perf))
 
 	r.Use(cors.Handler(cors.Options{
@@ -265,8 +263,4 @@ func mustAgent(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-type GitopsRepoResult struct {
-	GitopsRepo string `json:"gitopsRepo"`
 }

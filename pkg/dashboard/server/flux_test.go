@@ -21,8 +21,6 @@ import (
 func Test_fluxEvent(t *testing.T) {
 	notificationsManager := notifications.NewDummyManager()
 	gitopsRepos := map[string]*config.GitopsRepoConfig{}
-	// config := config.Config{}
-	// eventSinkHub := streaming.NewEventSinkHub(&config)
 
 	event := fluxEvents.Event{
 		InvolvedObject: corev1.ObjectReference{
@@ -51,7 +49,6 @@ func Test_fluxEvent(t *testing.T) {
 		ctx = context.WithValue(ctx, "gitopsRepo", "my/gitops")
 		ctx = context.WithValue(ctx, "gitopsRepos", gitopsRepos)
 		ctx = context.WithValue(ctx, "store", store.NewTest())
-		// ctx = context.WithValue(ctx, "eventSinkHub", eventSinkHub)
 		return ctx
 	}, "/path", string(body))
 	assert.Nil(t, err)

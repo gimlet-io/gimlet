@@ -29,7 +29,6 @@ func Test_MustUser(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		// nil,
 	)
 	server := httptest.NewServer(router)
 	defer server.Close()
@@ -52,10 +51,6 @@ func Test_MustUser(t *testing.T) {
 	err = store.CreateUser(user)
 	assert.Nil(t, err)
 
-	tokenInstance := token.New(token.UserToken, user.Login)
-	tokenStr, err := tokenInstance.Sign(user.Secret)
-	assert.Nil(t, err)
-
 	user = &model.User{
 		Login: "user",
 		Secret: base32.StdEncoding.EncodeToString(
@@ -65,8 +60,8 @@ func Test_MustUser(t *testing.T) {
 	err = store.CreateUser(user)
 	assert.Nil(t, err)
 
-	tokenInstance = token.New(token.UserToken, user.Login)
-	tokenStr, err = tokenInstance.Sign(user.Secret)
+	tokenInstance := token.New(token.UserToken, user.Login)
+	tokenStr, err := tokenInstance.Sign(user.Secret)
 	assert.Nil(t, err)
 
 	resp, err = http.Get(server.URL + "/api/artifacts?access_token=" + tokenStr)
