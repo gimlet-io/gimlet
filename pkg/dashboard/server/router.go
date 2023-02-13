@@ -37,7 +37,6 @@ func SetupRouter(
 	repoCache *nativeGit.RepoCache,
 	podStateManager *podStateManager,
 	notificationsManager notifications.Manager,
-	// parsedGitopsRepos map[string]*config.GitopsRepoConfig,
 	perf *prometheus.HistogramVec,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
