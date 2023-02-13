@@ -81,7 +81,7 @@ type Client interface {
 	UsersGet() ([]*model.User, error)
 
 	// GitopsCommitsGet returns the recent 1§ gitops commits
-	GitopsCommitsGet(gimletdToken string) (*[]*model.GitopsCommit, error)
+	GitopsCommitsGet(token string) (*[]*model.GitopsCommit, error)
 
 	// UserPost creates a user
 	UserPost(user *model.User) (*model.User, error)

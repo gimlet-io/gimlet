@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/rvflash/elapsed"
 	"github.com/urfave/cli/v2"
@@ -21,18 +21,18 @@ var releaseListCmd = cli.Command{
 	UsageText: `gimlet release list \
      --app my-app \
      --env staging \
-     --server http://gimletd.mycompany.com
+     --server http://gimlet.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "server",
-			Usage:    "GimletD server URL, GIMLET_SERVER environment variable alternatively",
+			Usage:    "Gimlet server URL, GIMLET_SERVER environment variable alternatively",
 			EnvVars:  []string{"GIMLET_SERVER"},
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "token",
-			Usage:    "GimletD server api token, GIMLET_TOKEN environment variable alternatively",
+			Usage:    "Gimlet server api token, GIMLET_TOKEN environment variable alternatively",
 			EnvVars:  []string{"GIMLET_TOKEN"},
 			Required: true,
 		},

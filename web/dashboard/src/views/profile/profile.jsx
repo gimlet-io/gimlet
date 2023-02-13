@@ -30,7 +30,6 @@ export default class Profile extends Component {
 
       this.setState({ user: reduxState.user });
       this.setState({ users: reduxState.users });
-      this.setState({ gimletd: reduxState.gimletd });
       this.setState({ application: reduxState.application });
       this.setState({ settings: reduxState.settings });
     });

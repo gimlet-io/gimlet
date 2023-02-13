@@ -57,24 +57,6 @@ jobs:
       env:
         VERSION: "ci-build"
 
-  gimletd:
-    name: 🏗️ Build GimletD
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.19
-    - name: ⬇️ Check out code into the Go module directory
-      uses: actions/checkout@v1
-      with:
-        fetch-depth: 5
-    - name: 🏗️ Build GimletD
-      run: make build-gimletd
-      env:
-        VERSION: "ci-build"
-
   agent:
     name: 🏗️ Build Agent
     runs-on: ubuntu-latest

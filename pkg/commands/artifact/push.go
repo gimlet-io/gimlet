@@ -14,10 +14,10 @@ import (
 
 var artifactPushCmd = cli.Command{
 	Name:  "push",
-	Usage: "Pushes a release artifact to GimletD",
+	Usage: "Pushes a release artifact to Gimlet",
 	UsageText: `gimlet artifact push \
      -f artifact.json \
-     --server http://gimletd.mycompany.com
+     --server http://gimlet.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -28,13 +28,13 @@ var artifactPushCmd = cli.Command{
 		},
 		&cli.StringFlag{
 			Name:     "server",
-			Usage:    "GimletD server URL, GIMLET_SERVER environment variable alternatively",
+			Usage:    "Gimlet server URL, GIMLET_SERVER environment variable alternatively",
 			EnvVars:  []string{"GIMLET_SERVER"},
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "token",
-			Usage:    "GimletD server api token, GIMLET_TOKEN environment variable alternatively",
+			Usage:    "Gimlet server api token, GIMLET_TOKEN environment variable alternatively",
 			EnvVars:  []string{"GIMLET_TOKEN"},
 			Required: true,
 		},

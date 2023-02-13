@@ -213,11 +213,6 @@ export function application(state, application) {
   return state;
 }
 
-export function gimletd(state, gimletd) {
-  state.gimletd = gimletd;
-  return state;
-}
-
 export function schemas(state, schemas) {
   state.defaultChart = schemas;
   return state;
