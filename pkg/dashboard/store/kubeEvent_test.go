@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestKubernetesEventCRUD(t *testing.T) {
+func TestKubeEventCRUD(t *testing.T) {
 	s := NewTest()
 	defer func() {
 		s.Close()

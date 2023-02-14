@@ -14,7 +14,7 @@ func (db *Store) SaveOrUpdateKubeEvent(event *model.KubeEvent) error {
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return meddler.Insert(db, "kubernetes_events", event)
+			return meddler.Insert(db, "kube_events", event)
 		default:
 			return err
 		}
@@ -23,7 +23,7 @@ func (db *Store) SaveOrUpdateKubeEvent(event *model.KubeEvent) error {
 	storedEvent.Status = event.Status
 	storedEvent.StatusDesc = event.StatusDesc
 
-	return meddler.Update(db, "kubernetes_events", storedEvent)
+	return meddler.Update(db, "kube_events", storedEvent)
 }
 
 func (db *Store) KubeEvent(name string) (*model.KubeEvent, error) {
