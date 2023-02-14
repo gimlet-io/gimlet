@@ -30,12 +30,19 @@ func (a AlertStateManager) Run() {
 		a.agentHub.GetEvents()
 
 		var thresholds []threshold
-		alerts, err := a.store.PendingAlerts()
+		alerts, err := a.store.PendingAlertsByType("pod")
 		if err != nil {
 			logrus.Errorf("couldn't get pending alerts: %s", err)
 		}
 		for _, alert := range alerts {
-			thresholds = append(thresholds, toThreshold(alert))
+			thresholds = append(thresholds, podTypeToThreshold(alert, a.waitTime))
+		}
+		alerts, err = a.store.PendingAlertsByType("event")
+		if err != nil {
+			logrus.Errorf("couldn't get pending alerts: %s", err)
+		}
+		for _, alert := range alerts {
+			thresholds = append(thresholds, eventTypeToThreshold(alert, 6, 1))
 		}
 
 		err = a.setFiringState(thresholds)

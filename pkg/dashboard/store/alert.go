@@ -44,10 +44,10 @@ func (db *Store) SetFiringStatusForAlert(name string, alertType string) error {
 	return meddler.Update(db, "alerts", storedAlert)
 }
 
-func (db *Store) PendingAlerts() ([]*model.Alert, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectPendingAlerts)
+func (db *Store) PendingAlertsByType(alertType string) ([]*model.Alert, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectPendingAlertsByType)
 	data := []*model.Alert{}
-	err := meddler.QueryAll(db, &data, stmt)
+	err := meddler.QueryAll(db, &data, stmt, alertType)
 
 	if err == sql.ErrNoRows {
 		return nil, nil

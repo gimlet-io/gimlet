@@ -37,6 +37,7 @@ func TestGetPendingAlerts(t *testing.T) {
 	}()
 
 	alert1 := model.Alert{
+		Type:   "pod",
 		Name:   "default/pod1",
 		Status: "Pending",
 	}
@@ -49,7 +50,7 @@ func TestGetPendingAlerts(t *testing.T) {
 	s.SaveAlert(&alert1)
 	s.SaveAlert(&alert2)
 
-	pendingAlerts, err := s.PendingAlerts()
+	pendingAlerts, err := s.PendingAlertsByType(alert1.Type)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(pendingAlerts))
 }
