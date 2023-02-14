@@ -24,37 +24,55 @@ func NewAlertStateManager(notifManager notifications.Manager, agentHub *streamin
 	return &alertStateManager{notifManager: notifManager, agentHub: agentHub, store: store, waitTime: waitTime}
 }
 
-func (p alertStateManager) TrackPods(pods []*api.Pod) error {
-	return p.trackPods(pods)
+func (a alertStateManager) TrackPods(pods []*api.Pod) error {
+	return a.trackPods(pods)
 }
 
-func (p alertStateManager) TrackEvents(events []api.Event) error {
-	return p.trackEvents(events)
+func (a alertStateManager) TrackEvents(events []api.Event) error {
+	return a.trackEvents(events)
 }
 
-func (p alertStateManager) Run() {
+func (a alertStateManager) Run() {
 	for {
-		p.agentHub.GetEvents()
-		// TODO error handling
-		p.setFiringStateForPods()
-		p.setFiringStateForEvents()
-		time.Sleep(p.waitTime * time.Minute)
+		a.agentHub.GetEvents()
+
+		thresholdPods, err := a.podThresholdsFromAlerts("pod")
+		if err != nil {
+			logrus.Errorf("could't save or update pod: %s", err)
+		}
+
+		err = a.setFiringState(thresholdPods)
+		if err != nil {
+			logrus.Errorf("could't save or update pod: %s", err)
+		}
+
+		thresholdEvents, err := a.eventThresholdsFromAlerts("event")
+		if err != nil {
+			logrus.Errorf("could't save or update pod: %s", err)
+		}
+
+		err = a.setFiringState(thresholdEvents)
+		if err != nil {
+			logrus.Errorf("could't save or update pod: %s", err)
+		}
+
+		time.Sleep(a.waitTime * time.Minute)
 	}
 }
 
-func (p alertStateManager) DeletePod(podName string) error {
-	return p.store.DeletePod(podName)
+func (a alertStateManager) DeletePod(podName string) error {
+	return a.store.DeletePod(podName)
 }
 
-func (p alertStateManager) DeleteEvent(name string) error {
-	return p.store.DeleteEvent(name)
+func (a alertStateManager) DeleteEvent(name string) error {
+	return a.store.DeleteEvent(name)
 }
 
-func (p alertStateManager) Alerts() ([]*model.Alert, error) {
-	return p.store.Alerts()
+func (a alertStateManager) Alerts() ([]*model.Alert, error) {
+	return a.store.Alerts()
 }
 
-func (p alertStateManager) trackPods(pods []*api.Pod) error {
+func (a alertStateManager) trackPods(pods []*api.Pod) error {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 		deploymentName := fmt.Sprintf("%s/%s", pod.Namespace, pod.DeploymentName)
@@ -62,7 +80,7 @@ func (p alertStateManager) trackPods(pods []*api.Pod) error {
 		alertState := "Pending"
 		alertType := "pod"
 
-		if p.alreadyAlerted(podName, alertType) || p.statusNotChanged(podName, pod.Status) {
+		if a.alreadyAlerted(podName, alertType) || a.statusNotChanged(podName, pod.Status) {
 			continue
 		}
 
@@ -70,7 +88,7 @@ func (p alertStateManager) trackPods(pods []*api.Pod) error {
 			alertState = "OK"
 		}
 
-		err := p.store.SaveOrUpdatePod(&model.Pod{
+		err := a.store.SaveOrUpdatePod(&model.Pod{
 			Name:       podName,
 			Status:     pod.Status,
 			StatusDesc: pod.StatusDescription,
@@ -79,7 +97,7 @@ func (p alertStateManager) trackPods(pods []*api.Pod) error {
 			return err
 		}
 
-		err = p.store.SaveAlert(&model.Alert{
+		err = a.store.SaveAlert(&model.Alert{
 			Type:           alertType,
 			Name:           podName,
 			DeploymentName: deploymentName,
@@ -94,18 +112,18 @@ func (p alertStateManager) trackPods(pods []*api.Pod) error {
 	return nil
 }
 
-func (p alertStateManager) trackEvents(events []api.Event) error {
+func (a alertStateManager) trackEvents(events []api.Event) error {
 	for _, event := range events {
 		eventName := fmt.Sprintf("%s/%s", event.Namespace, event.Name)
 		deploymentName := fmt.Sprintf("%s/%s", event.Namespace, event.DeploymentName)
 		alertState := "Pending"
 		alertType := "event"
 
-		if p.alreadyAlerted(eventName, alertType) {
+		if a.alreadyAlerted(eventName, alertType) {
 			continue
 		}
 
-		err := p.store.SaveOrUpdateEvent(&model.Event{
+		err := a.store.SaveOrUpdateEvent(&model.Event{
 			Name:       eventName,
 			Status:     event.Status,
 			StatusDesc: event.StatusDesc,
@@ -114,7 +132,7 @@ func (p alertStateManager) trackEvents(events []api.Event) error {
 			return err
 		}
 
-		err = p.store.SaveAlert(&model.Alert{
+		err = a.store.SaveAlert(&model.Alert{
 			Type:           alertType,
 			Name:           eventName,
 			DeploymentName: deploymentName,
@@ -130,20 +148,39 @@ func (p alertStateManager) trackEvents(events []api.Event) error {
 	return nil
 }
 
-func (p alertStateManager) setFiringStateForPods() error {
-	pods, err := p.store.PendingAlertsByType("pod")
+func (a alertStateManager) podThresholdsFromAlerts(alertType string) ([]threshold, error) {
+	var thresholds []threshold
+	alerts, err := a.store.PendingAlertsByType(alertType)
 	if err != nil {
-		return err
+		return thresholds, err
 	}
 
-	for _, pod := range pods {
-		t := p.thresholdFromPod(*pod)
+	for _, alert := range alerts {
+		thresholds = append(thresholds, thresholdFromPod(*alert, a.waitTime))
+	}
+	return thresholds, nil
+}
 
+func (a alertStateManager) eventThresholdsFromAlerts(alertType string) ([]threshold, error) {
+	var thresholds []threshold
+	alerts, err := a.store.PendingAlertsByType(alertType)
+	if err != nil {
+		return thresholds, err
+	}
+
+	for _, alert := range alerts {
+		thresholds = append(thresholds, thresholdFromEvent(*alert))
+	}
+	return thresholds, nil
+}
+
+func (a alertStateManager) setFiringState(thresholds []threshold) error {
+	for _, t := range thresholds {
 		if t.isFired() {
-			msg := notifications.MessageFromAlert(*pod)
-			p.notifManager.Broadcast(msg)
+			msg := notifications.MessageFromAlert(t.model())
+			a.notifManager.Broadcast(msg)
 
-			err := p.store.SaveAlert(&model.Alert{
+			err := a.store.SaveAlert(&model.Alert{
 				// TODO update alert with status "Firing"
 			})
 			if err != nil {
@@ -154,48 +191,8 @@ func (p alertStateManager) setFiringStateForPods() error {
 	return nil
 }
 
-func (p alertStateManager) setFiringStateForEvents() error {
-	events, err := p.store.PendingAlertsByType("event")
-	if err != nil {
-		return err
-	}
-
-	for _, event := range events {
-		t := p.thresholdFromEvent(*event)
-
-		if t.isFired() {
-			msg := notifications.MessageFromAlert(*event)
-			p.notifManager.Broadcast(msg)
-
-			err := p.store.SaveAlert(&model.Alert{
-				// TODO update alert with status "Firing"
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (p alertStateManager) thresholdFromPod(pod model.Alert) threshold {
-	return &podStrategy{
-		timestamp: pod.Fired,
-		waitTime:  p.waitTime,
-	}
-}
-
-func (p alertStateManager) thresholdFromEvent(event model.Alert) threshold {
-	return &eventStrategy{
-		timestamp:              event.Fired,
-		count:                  event.Count,
-		expectedCountPerMinute: 1, // TODO make it configurable
-		expectedCount:          6, // TODO make it configurable
-	}
-}
-
-func (p alertStateManager) alreadyAlerted(name string, alertType string) bool {
-	alert, err := p.store.Alert(name, alertType)
+func (a alertStateManager) alreadyAlerted(name string, alertType string) bool {
+	alert, err := a.store.Alert(name, alertType)
 	if err == sql.ErrNoRows {
 		return false
 	} else if err != nil {
@@ -206,8 +203,8 @@ func (p alertStateManager) alreadyAlerted(name string, alertType string) bool {
 	return alert.Status == "Fired"
 }
 
-func (p alertStateManager) statusNotChanged(podName string, podStatus string) bool {
-	podFromDb, err := p.store.Pod(podName)
+func (a alertStateManager) statusNotChanged(podName string, podStatus string) bool {
+	podFromDb, err := a.store.Pod(podName)
 	if err == sql.ErrNoRows {
 		return false
 	} else if err != nil {
