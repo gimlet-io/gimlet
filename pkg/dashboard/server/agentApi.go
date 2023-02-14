@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -130,7 +131,7 @@ func events(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
-	alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 	alertStateManager.TrackEvents(events)
 }
 
@@ -147,7 +148,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 	for _, stack := range stacks {
 		err := alertStateManager.TrackPods(stack.Deployment.Pods)
 		if err != nil {
@@ -203,7 +204,7 @@ func update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if strings.Contains(update.Event, "pod") {
-		alertStateManager, _ := r.Context().Value("alertStateManager").(*alertStateManager)
+		alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 		err := handlePodUpdate(alertStateManager, update)
 		if err != nil {
 			logrus.Errorf("cannot handle pod update: %s", err)
@@ -250,7 +251,7 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(alertStateManager *alertStateManager, update api.StackUpdate) error {
+func handlePodUpdate(alertStateManager *alert.AlertStateManager, update api.StackUpdate) error {
 	if update.Event == agent.EventPodDeleted {
 		err := alertStateManager.DeletePod(update.Subject)
 		if err != nil && err != sql.ErrNoRows {

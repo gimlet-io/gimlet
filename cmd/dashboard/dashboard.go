@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
@@ -72,7 +73,7 @@ func main() {
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
 
-	alertStateManager := server.NewAlertStateManager(notificationsManager, agentHub, *store, 2)
+	alertStateManager := alert.NewAlertStateManager(notificationsManager, agentHub, *store, 2)
 	go alertStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)

@@ -33,7 +33,7 @@ const SelectEventByName = "select-event-by-name"
 const DeleteEventByName = "delete-event-by-name"
 const SelectAllAlerts = "select-all-alerts"
 const SelectAlertByNameAndType = "select-alert-by-name-and-type"
-const SelectPendingAlertsByType = "select-pending-alerts-by-type"
+const SelectPendingAlerts = "select-pending-alerts"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -121,11 +121,10 @@ FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
-		SelectPendingAlertsByType: `
+		SelectPendingAlerts: `
 SELECT type, name, deployment_name, status, status_desc, fired, resolved, count
 FROM alerts
-WHERE status LIKE 'Pending'
-AND type = $1;
+WHERE status LIKE 'Pending';
 `,
 	},
 	"postgres": {
@@ -213,11 +212,10 @@ FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
-		SelectPendingAlertsByType: `
+		SelectPendingAlerts: `
 SELECT type, name, deployment_name, status, status_desc, fired, resolved, count
 FROM alerts
-WHERE status LIKE 'Pending'
-AND type = $1;
+WHERE status LIKE 'Pending';
 `,
 	},
 }

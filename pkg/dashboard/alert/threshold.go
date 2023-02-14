@@ -1,4 +1,4 @@
-package server
+package alert
 
 import (
 	"time"
@@ -8,7 +8,7 @@ import (
 
 type threshold interface {
 	isFired() bool
-	model() model.Alert
+	toAlert() model.Alert
 }
 
 type podStrategy struct {
@@ -23,37 +23,38 @@ type eventStrategy struct {
 }
 
 func (s podStrategy) isFired() bool {
-	podAlertTime := time.Unix(s.pod.Fired, 0)
+	podAlertTime := time.Unix(s.pod.LastStateChange, 0)
 	managerWaitTime := time.Now().Add(-time.Minute * s.waitTime)
 
 	return podAlertTime.Before(managerWaitTime)
 }
 
 func (s eventStrategy) isFired() bool {
-	firstTimestampSinceInMinutes := time.Since(time.Unix(s.event.Fired, 0)).Minutes()
+	firstTimestampSinceInMinutes := time.Since(time.Unix(s.event.LastStateChange, 0)).Minutes()
 	countPerMinute := float64(s.event.Count) / firstTimestampSinceInMinutes
 
 	return countPerMinute >= s.expectedCountPerMinute && s.event.Count >= s.expectedCount
 }
 
-func (s podStrategy) model() model.Alert {
+func (s podStrategy) toAlert() model.Alert {
 	return s.pod
 }
 
-func (s eventStrategy) model() model.Alert {
+func (s eventStrategy) toAlert() model.Alert {
 	return s.event
 }
 
-func thresholdFromPod(pod model.Alert, waitTime time.Duration) threshold {
-	return &podStrategy{
-		pod:      pod,
-		waitTime: waitTime,
+// TODO check if can be more good to look at it
+func toThreshold(a *model.Alert) threshold {
+	if a.Type == "pod" {
+		return &podStrategy{
+			pod:      *a,
+			waitTime: 1, // TODO make it configurable
+		}
 	}
-}
 
-func thresholdFromEvent(event model.Alert) threshold {
 	return &eventStrategy{
-		event:                  event,
+		event:                  *a,
 		expectedCountPerMinute: 1, // TODO make it configurable
 		expectedCount:          6, // TODO make it configurable
 	}
