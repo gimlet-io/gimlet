@@ -8,26 +8,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEventCRUD(t *testing.T) {
+func TestKubernetesEventCRUD(t *testing.T) {
 	s := NewTest()
 	defer func() {
 		s.Close()
 	}()
 
-	event := model.Event{
+	event := model.KubeEvent{
 		Name: "default/pod1",
 	}
 
-	err := s.SaveOrUpdateEvent(&event)
+	err := s.SaveOrUpdateKubeEvent(&event)
 	assert.Nil(t, err)
 
-	e, err := s.Event(event.Name)
+	e, err := s.KubeEvent(event.Name)
 	assert.Nil(t, err)
 	assert.Equal(t, event.Name, e.Name)
 
 	err = s.DeleteEvent(event.Name)
 	assert.Nil(t, err)
 
-	_, err = s.Event(event.Name)
+	_, err = s.KubeEvent(event.Name)
 	assert.Equal(t, sql.ErrNoRows, err)
 }

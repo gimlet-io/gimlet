@@ -47,18 +47,6 @@ func (a AlertStateManager) Run() {
 	}
 }
 
-func (a AlertStateManager) DeletePod(podName string) error {
-	return a.store.DeletePod(podName)
-}
-
-func (a AlertStateManager) DeleteEvent(name string) error {
-	return a.store.DeleteEvent(name)
-}
-
-func (a AlertStateManager) Alerts() ([]*model.Alert, error) {
-	return a.store.Alerts()
-}
-
 func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 	for _, pod := range pods {
 		podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
@@ -71,11 +59,6 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			continue
 		}
 
-		// TODO not to save if ok the state
-		if !podErrorState(pod.Status) {
-			alertState = "OK"
-		}
-
 		err := a.store.SaveOrUpdatePod(&model.Pod{
 			Name:       podName,
 			Status:     pod.Status,
@@ -85,16 +68,18 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			return err
 		}
 
-		err = a.store.SaveAlert(&model.Alert{
-			Type:            alertType,
-			Name:            podName,
-			DeploymentName:  deploymentName,
-			Status:          alertState,
-			StatusDesc:      pod.StatusDescription,
-			LastStateChange: currentTime,
-		})
-		if err != nil {
-			return err
+		if podErrorState(pod.Status) {
+			err := a.store.SaveAlert(&model.Alert{
+				Type:            alertType,
+				Name:            podName,
+				DeploymentName:  deploymentName,
+				Status:          alertState,
+				StatusDesc:      pod.StatusDescription,
+				LastStateChange: currentTime,
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -111,7 +96,7 @@ func (a AlertStateManager) TrackEvents(events []api.Event) error {
 			continue
 		}
 
-		err := a.store.SaveOrUpdateEvent(&model.Event{
+		err := a.store.SaveOrUpdateKubeEvent(&model.KubeEvent{
 			Name:       eventName,
 			Status:     event.Status,
 			StatusDesc: event.StatusDesc,
@@ -139,12 +124,11 @@ func (a AlertStateManager) TrackEvents(events []api.Event) error {
 func (a AlertStateManager) setFiringState(thresholds []threshold) error {
 	for _, t := range thresholds {
 		if t.isFired() {
-			msg := notifications.MessageFromAlert(t.toAlert())
+			alert := t.toAlert()
+			msg := notifications.MessageFromAlert(alert)
 			a.notifManager.Broadcast(msg)
 
-			err := a.store.SaveAlert(&model.Alert{
-				// TODO update alert with status "Firing"
-			})
+			err := a.store.UpdateAlert(&alert)
 			if err != nil {
 				return err
 			}

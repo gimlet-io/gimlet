@@ -29,8 +29,8 @@ const SelectUnprocessedEvents = "select-unprocessed-events"
 const UpdateEventStatus = "update-event-status"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
-const SelectEventByName = "select-event-by-name"
-const DeleteEventByName = "delete-event-by-name"
+const SelectKubeEventByName = "select-kube-event-by-name"
+const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAllAlerts = "select-all-alerts"
 const SelectAlertByNameAndType = "select-alert-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
@@ -93,11 +93,6 @@ WHERE status='new' order by created ASC limit 10;
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
 `,
-		SelectEventByName: `
-SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
-FROM kubernetes_events
-WHERE name = $1;
-`,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created
 FROM gitops_commits
@@ -109,20 +104,25 @@ FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
 `,
-		DeleteEventByName: `
-DELETE FROM kubernetes_events where name = $1;
+		SelectKubeEventByName: `
+SELECT id, name, status, status_desc
+FROM kube_events
+WHERE name = $1;
+`,
+		DeleteKubeEventByName: `
+DELETE FROM kube_events where name = $1;
 `,
 		SelectAllAlerts: `
 SELECT * FROM alerts;
 `,
 		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, fired, resolved
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT type, name, deployment_name, status, status_desc, fired, resolved, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
@@ -169,7 +169,7 @@ DELETE FROM environments
 WHERE name = $1;
 `,
 		SelectPodByName: `
-SELECT id, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
+SELECT id, name, status, status_desc
 FROM pods
 WHERE name = $1;
 `,
@@ -184,11 +184,6 @@ WHERE status='new' order by created ASC limit 10;
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
 `,
-		SelectEventByName: `
-SELECT id, first_timestamp, count, name, deployment_name, status, status_desc, alert_state, alert_state_timestamp
-FROM kubernetes_events
-WHERE name = $1;
-`,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created
 FROM gitops_commits
@@ -200,20 +195,25 @@ FROM gitops_commits
 ORDER BY created DESC
 LIMIT 20;
 `,
-		DeleteEventByName: `
-DELETE FROM kubernetes_events where name = $1;
+		SelectKubeEventByName: `
+SELECT id, name, status, status_desc
+FROM kube_events
+WHERE name = $1;
+`,
+		DeleteKubeEventByName: `
+DELETE FROM kube_events where name = $1;
 `,
 		SelectAllAlerts: `
 SELECT * FROM alerts;
 `,
 		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, fired, resolved
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT type, name, deployment_name, status, status_desc, fired, resolved, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE status LIKE 'Pending';
 `,

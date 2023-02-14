@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -174,8 +173,8 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAlerts(w http.ResponseWriter, r *http.Request) {
-	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
-	alerts, err := alertStateManager.Alerts()
+	db := r.Context().Value("store").(*store.Store)
+	alerts, err := db.Alerts()
 	if err != nil {
 		logrus.Errorf("cannot get alerts from database: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

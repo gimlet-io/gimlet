@@ -8,8 +8,8 @@ import (
 	"github.com/russross/meddler"
 )
 
-func (db *Store) SaveOrUpdateEvent(event *model.Event) error {
-	storedEvent, err := db.Event(event.Name)
+func (db *Store) SaveOrUpdateKubeEvent(event *model.KubeEvent) error {
+	storedEvent, err := db.KubeEvent(event.Name)
 
 	if err != nil {
 		switch err {
@@ -26,16 +26,16 @@ func (db *Store) SaveOrUpdateEvent(event *model.Event) error {
 	return meddler.Update(db, "kubernetes_events", storedEvent)
 }
 
-func (db *Store) Event(name string) (*model.Event, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectEventByName)
-	alert := new(model.Event)
-	err := meddler.QueryRow(db, alert, stmt, name)
+func (db *Store) KubeEvent(name string) (*model.KubeEvent, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectKubeEventByName)
+	event := new(model.KubeEvent)
+	err := meddler.QueryRow(db, event, stmt, name)
 
-	return alert, err
+	return event, err
 }
 
 func (db *Store) DeleteEvent(name string) error {
-	stmt := queries.Stmt(db.driver, queries.DeleteEventByName)
+	stmt := queries.Stmt(db.driver, queries.DeleteKubeEventByName)
 	_, err := db.Exec(stmt, name)
 
 	return err

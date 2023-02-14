@@ -132,7 +132,12 @@ func events(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
-	alertStateManager.TrackEvents(events)
+	err = alertStateManager.TrackEvents(events)
+	if err != nil {
+		logrus.Errorf("cannot track events: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 }
 
 func state(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +210,8 @@ func update(w http.ResponseWriter, r *http.Request) {
 
 	if strings.Contains(update.Event, "pod") {
 		alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
-		err := handlePodUpdate(alertStateManager, update)
+		db := r.Context().Value("store").(*store.Store)
+		err := handlePodUpdate(alertStateManager, db, update)
 		if err != nil {
 			logrus.Errorf("cannot handle pod update: %s", err)
 			http.Error(w, http.StatusText(500), 500)
@@ -251,14 +257,14 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(alertStateManager *alert.AlertStateManager, update api.StackUpdate) error {
+func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
 	if update.Event == agent.EventPodDeleted {
-		err := alertStateManager.DeletePod(update.Subject)
+		err := db.DeletePod(update.Subject)
 		if err != nil && err != sql.ErrNoRows {
 			return err
 		}
 
-		err = alertStateManager.DeleteEvent(update.Subject)
+		err = db.DeleteEvent(update.Subject)
 		if err != nil && err != sql.ErrNoRows {
 			return err
 		}

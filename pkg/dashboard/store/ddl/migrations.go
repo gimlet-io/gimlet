@@ -38,8 +38,7 @@ const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 const createTablePods = "create-table-pods"
 const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
-const addDeploymentNameToPodsTable = "add-deployment-name-to-pods-table"
-const createTableKubernetesEvents = "create-table-kubernetes-events"
+const createTableKubeEvents = "create-table-kube-events"
 const createTableAlerts = "create-table-alerts"
 
 type migration struct {
@@ -219,15 +218,12 @@ created 	INTEGER DEFAULT 0,
 env 		TEXT DEFAULT '',
 UNIQUE(id)
 );
-`},
-		{
-			name: addDeploymentNameToPodsTable,
-			stmt: `ALTER TABLE pods ADD COLUMN deployment_name TEXT;`,
+`,
 		},
 		{
-			name: createTableKubernetesEvents,
+			name: createTableKubeEvents,
 			stmt: `
-CREATE TABLE IF NOT EXISTS kubernetes_events (
+CREATE TABLE IF NOT EXISTS kube_events (
 id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
 name				  TEXT,
 status      		  TEXT,
@@ -240,15 +236,14 @@ UNIQUE(id)
 			name: createTableAlerts,
 			stmt: `
 CREATE TABLE IF NOT EXISTS alerts (
-id				INTEGER PRIMARY KEY AUTOINCREMENT,
-type			TEXT,
-name			TEXT,
-deployment_name TEXT,
-status			TEXT,
-status_desc 	TEXT,
-fired			INTEGER,
-resolved 		INTEGER,
-count 			INTEGER,
+id				  INTEGER PRIMARY KEY AUTOINCREMENT,
+type			  TEXT,
+name			  TEXT,
+deployment_name   TEXT,
+status			  TEXT,
+status_desc 	  TEXT,
+last_state_change INTEGER,
+count			  INTEGER,
 UNIQUE(id)
 );
 `,
@@ -427,13 +422,9 @@ UNIQUE(id)
 `,
 		},
 		{
-			name: addDeploymentNameToPodsTable,
-			stmt: `ALTER TABLE pods ADD COLUMN deployment_name TEXT;`,
-		},
-		{
-			name: createTableKubernetesEvents,
+			name: createTableKubeEvents,
 			stmt: `
-CREATE TABLE IF NOT EXISTS kubernetes_events (
+CREATE TABLE IF NOT EXISTS kube_events (
 id          		  SERIAL,
 name				  TEXT,
 status      		  TEXT,
@@ -446,15 +437,14 @@ UNIQUE(id)
 			name: createTableAlerts,
 			stmt: `
 CREATE TABLE IF NOT EXISTS alerts (
-id				SERIAL,
-type			TEXT,
-name			TEXT,
-deployment_name TEXT,
-status			TEXT,
-status_desc 	TEXT,
-fired			INTEGER,
-resolved 		INTEGER,
-count 			INTEGER,
+id				  SERIAL,
+type			  TEXT,
+name			  TEXT,
+deployment_name   TEXT,
+status			  TEXT,
+status_desc 	  TEXT,
+last_state_change INTEGER,
+count			  INTEGER,
 UNIQUE(id)
 );
 `,
