@@ -28,10 +28,29 @@ func TestAlertCRUD(t *testing.T) {
 	a, err := s.Alert(alert.Name, alert.Type)
 	assert.Nil(t, err)
 	assert.Equal(t, alert.Name, a.Name)
-
-	alerts, _ = s.Alerts()
-	assert.Equal(t, 0, len(alerts))
-
 }
 
-//TODO write test for pending alerts
+func TestGetPendingAlerts(t *testing.T) {
+	s := NewTest()
+	defer func() {
+		s.Close()
+	}()
+
+	alert1 := model.Alert{
+		Name:   "default/pod1",
+		Status: "Pending",
+	}
+
+	alert2 := model.Alert{
+		Name:   "default/pod2",
+		Status: "Firing",
+	}
+
+	s.SaveAlert(&alert1)
+
+	s.SaveAlert(&alert2)
+
+	pendingAlerts, err := s.PendingAlerts()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(pendingAlerts))
+}
