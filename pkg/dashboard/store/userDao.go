@@ -14,9 +14,24 @@ func (db *Store) User(login string) (*model.User, error) {
 	return data, err
 }
 
+// Users returns all users in the database
+func (db *Store) Users() ([]*model.User, error) {
+	stmt := sql.Stmt(db.driver, sql.SelectAllUser)
+	var data []*model.User
+	err := meddler.QueryAll(db, &data, stmt)
+	return data, err
+}
+
 // CreateUser stores a new user in the database
 func (db *Store) CreateUser(user *model.User) error {
 	return meddler.Insert(db, "users", user)
+}
+
+// DeleteUser deletes a user in the database
+func (db *Store) DeleteUser(login string) error {
+	stmt := sql.Stmt(db.driver, sql.DeleteUser)
+	_, err := db.Exec(stmt, login)
+	return err
 }
 
 // UpdateUser updates a user in the database

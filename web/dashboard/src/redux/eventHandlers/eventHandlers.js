@@ -8,11 +8,6 @@ export function agentDisconnected(state, event) {
   return state;
 }
 
-export function gitopsRepo(state, event) {
-  state.settings.gitopsRepo = event.gitopsRepo;
-  return state;
-}
-
 export function gitRepos(state, event) {
   state.gitRepos = event;
   return state;
@@ -218,11 +213,6 @@ export function application(state, application) {
   return state;
 }
 
-export function gimletd(state, gimletd) {
-  state.gimletd = gimletd;
-  return state;
-}
-
 export function schemas(state, schemas) {
   state.defaultChart = schemas;
   return state;
@@ -334,7 +324,10 @@ export function repoMetas(state, payload) {
 }
 
 export function settings(state, payload) {
-  state.settings = payload.releaseHistorySinceDays;
+  state.settings.releaseHistorySinceDays = payload.releaseHistorySinceDays;
+  state.settings.scmUrl = payload.scmUrl;
+  state.settings.userflowToken = payload.userflowToken;
+  state.settings.host = payload.host;
   return state;
 }
 

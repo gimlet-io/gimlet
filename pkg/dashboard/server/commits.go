@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
@@ -97,8 +96,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config := ctx.Value("config").(*config.Config)
-	commits, err = decorateCommitsWithGimletArtifacts(commits, config)
+	commits, err = decorateCommitsWithGimletArtifacts(commits, dao)
 	if err != nil {
 		logrus.Warnf("cannot get deplyotargets: %s", err)
 	}
@@ -309,7 +307,7 @@ func squashCommitStatuses(commits []*Commit) []*Commit {
 	var commitsWithSquashedStatuses []*Commit
 
 	for _, commit := range commits {
-		statusMap := map[string]model.Status{}
+		statusMap := map[string]model.CommitStatus{}
 		for _, s := range commit.Status.Contexts {
 			// Statuses are returned in reverse chronological order
 			// we only keep the latest
@@ -320,7 +318,7 @@ func squashCommitStatuses(commits []*Commit) []*Commit {
 			statusMap[s.Context] = s
 		}
 
-		commit.Status.Contexts = []model.Status{}
+		commit.Status.Contexts = []model.CommitStatus{}
 		for _, status := range statusMap {
 			commit.Status.Contexts = append(commit.Status.Contexts, status)
 		}

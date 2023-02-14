@@ -257,7 +257,7 @@ export default class Repo extends Component {
                 }, () => {/* Generic error handler deals with it */ }
                 );
 
-              this.props.gimletClient.getReleaseStatuses(result.env, 10)
+              this.props.gimletClient.getReleases(result.env, 10)
                 .then(data => {
                   this.props.store.dispatch({
                     type: ACTION_TYPE_RELEASE_STATUSES,
@@ -279,7 +279,7 @@ export default class Repo extends Component {
     this.props.gimletClient.deploy(target.artifactId, target.env, target.app)
       .then(data => {
         target.sha = sha;
-        target.trackingId = data.trackingId;
+        target.trackingId = data.id;
         setTimeout(() => {
           this.checkDeployStatus(target);
         }, 500);
@@ -301,7 +301,7 @@ export default class Repo extends Component {
     };
     this.props.gimletClient.rollback(env, app, rollbackTo)
       .then(data => {
-        target.trackingId = data.trackingId;
+        target.trackingId = data.id;
         setTimeout(() => {
           this.checkDeployStatus(target);
         }, 500);

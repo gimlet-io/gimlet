@@ -38,7 +38,6 @@ fixtures/k3s/kubeconfig.yaml
 
 .vscode/settings.json
 
-gimletd.sqlite
 gimlet-dashboard.sqlite
 
 __debug_bin

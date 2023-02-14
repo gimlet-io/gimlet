@@ -3,18 +3,21 @@ package server
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/laszlocph/go-login/login/logger"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/laszlocph/go-login/login/github"
 	"github.com/laszlocph/go-login/login/gitlab"
@@ -33,6 +36,8 @@ func SetupRouter(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
 	podStateManager *podStateManager,
+	notificationsManager notifications.Manager,
+	perf *prometheus.HistogramVec,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -45,6 +50,7 @@ func SetupRouter(
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.NoCache)
+	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(middleware.WithValue("agentHub", agentHub))
 	r.Use(middleware.WithValue("clientHub", clientHub))
@@ -56,9 +62,14 @@ func SetupRouter(
 	r.Use(middleware.WithValue("agentJWT", tokenString))
 	r.Use(middleware.WithValue("podStateManager", podStateManager))
 
+	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
+	r.Use(middleware.WithValue("perf", perf))
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000"},
-		AllowedMethods:   []string{"GET", "POST"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000", config.Host},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
@@ -70,6 +81,7 @@ func SetupRouter(
 	agentRoutes(r, agentWSHub)
 	userRoutes(r)
 	githubOAuthRoutes(config, r)
+	gimletdRoutes(r)
 
 	r.Get("/logout", logout)
 
@@ -93,17 +105,41 @@ func SetupRouter(
 	return r
 }
 
+func gimletdRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustUser())
+		r.Post("/api/artifact", saveArtifact)
+		r.Get("/api/artifacts", getArtifacts)
+		r.Get("/api/releases", getReleases)
+		r.Get("/api/status", getStatus)
+		r.Post("/api/releases", release)
+		r.Post("/api/rollback", performRollback)
+		r.Post("/api/delete", delete)
+		r.Get("/api/eventReleaseTrack", getEventReleaseTrack)
+		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
+		r.Post("/api/flux-events", fluxEvent)
+		r.Get("/api/gitopsCommits", getGitopsCommits)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustAdmin())
+		r.Get("/api/user/{login}", getUser)
+		r.Post("/api/user", saveUserGimletD)
+		r.Delete("/api/user/{login}", deleteUser)
+		r.Get("/api/users", getUsers)
+	})
+}
+
 func userRoutes(r *chi.Mux) {
 	r.Group(func(r chi.Router) {
 		r.Use(session.SetUser())
 		r.Use(session.SetCSRF())
 		r.Use(session.MustUser())
 
-		r.Get("/api/gitopsRepo", gitopsRepo)
 		r.Get("/api/agents", agents)
 		r.Get("/api/user", user)
-		r.Get("/api/gimletd", gimletdBasicInfo)
-		r.Get("/api/listUsers", listUsers)
 		r.Post("/api/saveUser", saveUser)
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)
@@ -111,13 +147,7 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/events", getEvents)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/settings", settings)
-		r.Get("/api/repo/{owner}/{name}/env/{env}/app/{app}/rolloutHistory", rolloutHistoryPerApp)
-		r.Get("/api/env/{env}/releaseStatuses", releaseStatuses)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)
-		r.Post("/api/deploy", deploy)
-		r.Post("/api/rollback", rollback)
-		r.Get("/api/deployStatus", deployStatus)
-		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/irregularPods", getIrregularPods)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)
@@ -134,7 +164,6 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
 		r.Post(("/api/envs/{env}/installAgent"), installAgent)
-		r.Post(("/api/envs/{env}/enableDeploymentAutomation"), enableDeploymentAutomation)
 	})
 }
 

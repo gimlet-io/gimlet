@@ -17,7 +17,6 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
@@ -25,6 +24,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"

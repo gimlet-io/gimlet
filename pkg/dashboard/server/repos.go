@@ -210,6 +210,7 @@ func settings(w http.ResponseWriter, r *http.Request) {
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
 		"scmUrl":                  config.ScmURL(),
 		"userflowToken":           config.UserflowToken,
+		"host":                    config.Host,
 	}
 
 	settingsString, err := json.Marshal(settings)

@@ -31,8 +31,8 @@ type Commit struct {
 }
 
 type CombinedStatus struct {
-	State    string   `json:"state"`
-	Contexts []Status `json:"statuses"`
+	State    string         `json:"state"`
+	Contexts []CommitStatus `json:"statuses"`
 }
 
 type DeployTarget struct {
@@ -41,7 +41,7 @@ type DeployTarget struct {
 	ArtifactId string `json:"artifactId"`
 }
 
-type Status struct {
+type CommitStatus struct {
 	Context     string `json:"context"`
 	CreatedAt   string `json:"createdAt"`
 	State       string `json:"state"`

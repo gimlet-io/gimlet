@@ -11,13 +11,14 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
@@ -29,6 +30,17 @@ import (
 func user(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
+
+	token := token.New(token.UserToken, user.Login)
+	tokenStr, err := token.Sign(user.Secret)
+	if err != nil {
+		logrus.Errorf("couldn't generate JWT token %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	// token is not saved as it is JWT
+	user.Token = tokenStr
+
 	userString, err := json.Marshal(user)
 	if err != nil {
 		logrus.Errorf("cannot serialize user: %s", err)

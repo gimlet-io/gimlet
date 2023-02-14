@@ -17,12 +17,11 @@ export default class Profile extends Component {
     let reduxState = this.props.store.getState();
     this.state = {
       user: reduxState.user,
-      gimletd: reduxState.gimletd,
       application: reduxState.application,
       users: reduxState.users,
       input: "",
       saveButtonTriggered: false,
-      scmUrl: reduxState.settings.scmUrl
+      settings: reduxState.settings
     }
 
     // handling API and streaming state changes
@@ -31,9 +30,8 @@ export default class Profile extends Component {
 
       this.setState({ user: reduxState.user });
       this.setState({ users: reduxState.users });
-      this.setState({ gimletd: reduxState.gimletd });
       this.setState({ application: reduxState.application });
-      this.setState({ scmUrl: reduxState.settings.scmUrl });
+      this.setState({ settings: reduxState.settings });
     });
   }
 
@@ -98,7 +96,7 @@ export default class Profile extends Component {
   }
 
   render() {
-    const { user, users, gimletd, scmUrl } = this.state
+    const { user, users, settings } = this.state
 
     const sortedUsers = this.sortAlphabetically(users);
 
@@ -107,9 +105,7 @@ export default class Profile extends Component {
       return null;
     }
 
-    user.imageUrl = `${scmUrl}/${user.login}.png?size=128`;
-
-    const gimletdIntegrationEnabled = gimletd !== undefined;
+    user.imageUrl = `${settings.scmUrl}/${user.login}.png?size=128`;
 
     return (
       <div>
@@ -134,55 +130,53 @@ export default class Profile extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              {scmUrl === "https://github.com" && githubAppSettings(this.state.application.name, this.state.application.appSettingsURL, this.state.application.installationURL)}
-              {gimletdIntegrationEnabled &&
-                <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 my-4">
-                  <div className="px-4 py-5 sm:px-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Gimlet CLI access
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Follow the steps to set up CLI access
-                    </p>
-                  </div>
-                  <div className="px-4 py-5 sm:p-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Installation on Linux / Mac
-                    </h3>
-                    <code
-                      className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
-                      {`curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.20.0/gimlet-$(uname)-$(uname -m) -o gimlet
+              {settings.scmUrl === "https://github.com" && githubAppSettings(this.state.application.name, this.state.application.appSettingsURL, this.state.application.installationURL)}
+              <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 my-4">
+                <div className="px-4 py-5 sm:px-6">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Gimlet CLI access
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Follow the steps to set up CLI access
+                  </p>
+                </div>
+                <div className="px-4 py-5 sm:p-6">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Installation on Linux / Mac
+                  </h3>
+                  <code
+                    className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
+                    {`curl -L https://github.com/gimlet-io/gimlet-cli/releases/download/v0.20.0/gimlet-$(uname)-$(uname -m) -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version`}
-                    </code>
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Setting the API Key
-                    </h3>
-                    <code
-                      className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
-                      {`mkdir -p ~/.gimlet
+                  </code>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Setting the API Key
+                  </h3>
+                  <code
+                    className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
+                    {`mkdir -p ~/.gimlet
 
 cat << EOF > ~/.gimlet/config
-export GIMLET_SERVER=${gimletd.url}
-export GIMLET_TOKEN=${gimletd.user.token}
+export GIMLET_SERVER=${settings.host}
+export GIMLET_TOKEN=${user.token}
 EOF
-                      
+
 source ~/.gimlet/config`}
-                    </code>
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Getting the latest releases
-                    </h3>
-                    <code
-                      className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
-                      {`gimlet release status --env staging`}
-                    </code>
-                  </div>
+                  </code>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Getting the latest releases
+                  </h3>
+                  <code
+                    className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
+                    {`gimlet release status --env staging`}
+                  </code>
                 </div>
-              }
+              </div>
               {this.so}
               {users &&
-                userList(sortedUsers, DefaultProfilePicture, scmUrl)
+                userList(sortedUsers, DefaultProfilePicture, settings.scmUrl)
               }
               <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                 <div className="px-4 py-5 sm:px-6">
@@ -207,42 +201,10 @@ source ~/.gimlet/config`}
               {dashboardVersion(this.state.application)}
             </div>
           </div>
-          {
-            !gimletdIntegrationEnabled &&
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 my-8">
-              {integrateGimletD()}
-            </div>
-          }
         </main >
       </div >
     )
   }
-}
-
-function integrateGimletD() {
-  return (
-    // eslint-disable-next-line
-    <a
-      href="https://gimlet.io/docs/gimletd-configuration-reference"
-      target="_blank"
-      className="relative block w-full border-2 border-gray-300
-              border-dashed rounded-lg p-12 text-center hover:border-gray-400
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="mx-auto h-12 w-12 text-gray-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-
-      <span className="mt-2 block text-lg leading-6 font-medium text-gray-900">Integrate GimletD</span>
-    </a>
-  )
 }
 
 function githubAppSettings(appName, appSettingsURL, installationURL) {

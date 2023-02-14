@@ -40,14 +40,6 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
-            "name": "GimletD",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "cmd/gimletd",
-            "envFile": "${workspaceFolder}/.env"
-        },
-        {
             "name": "Gimlet Dashboard",
             "type": "go",
             "request": "launch",

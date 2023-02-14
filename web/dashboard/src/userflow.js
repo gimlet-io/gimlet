@@ -16,8 +16,6 @@ const Userflow = ({ store }) => {
     if (settings && settings.userflowToken
         && user
         && !userflowInitiated) {
-      console.log("userflow init")
-      console.log(settings.userflowToken)
       userflow.init(settings.userflowToken)
       userflow.identify(user.login)
       setUserflowInitiated(true)

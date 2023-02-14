@@ -1,27 +1,24 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
-	"runtime"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
-	"github.com/cenkalti/backoff"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -62,49 +59,51 @@ func main() {
 
 	store := store.New(config.Database.Driver, config.Database.Config)
 
-	err = bootstrapEnvs(config.BootstrapEnv, store)
+	err = setupAdminUser(config, store)
 	if err != nil {
 		panic(err)
 	}
 
-	notificationsManager := notifications.NewManager()
-	if config.Notifications.Provider == "slack" {
-		notificationsManager.AddProvider(slackNotificationProvider(config))
+	err = bootstrapEnvs(config.BootstrapEnv, store, "")
+	if err != nil {
+		panic(err)
 	}
-	if config.Notifications.Provider == "discord" {
-		notificationsManager.AddProvider(discordNotificationProvider(config))
-	}
-	go notificationsManager.Run()
+
+	gitSvc, tokenManager := initTokenManager(config)
+	notificationsManager := initNotifications(config, tokenManager)
 
 	podStateManager := server.NewPodStateManager(notificationsManager, *store, 2)
 	go podStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
-	var gitSvc customScm.CustomGitService
-	var tokenManager customScm.NonImpersonatedTokenManager
+	stopCh := make(chan struct{})
+	defer close(stopCh)
 
-	if config.IsGithub() {
-		gitSvc = &customGithub.GithubClient{}
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			config.Github.AppID,
-			config.Github.InstallationID,
-			config.Github.PrivateKey.String(),
+	gimletdStopCh := make(chan os.Signal, 1)
+	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	waitCh := make(chan struct{})
+
+	if config.GitopsRepo != "" || config.GitopsRepoDeployKeyPath != "" {
+		panic("GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH are deprecated." +
+			"Please use BOOTSTRAP_ENV instead, or create gitops environment configurations on the Gimlet dashboard.")
+	}
+
+	if config.GitopsRepos != "" {
+		log.Info("Bootstrapping gitops environments from deprecated GITOPS_REPOS variable")
+		err = bootstrapEnvs(
+			config.BootstrapEnv,
+			store,
+			config.GitopsRepos,
 		)
 		if err != nil {
 			panic(err)
 		}
-	} else if config.IsGitlab() {
-		gitSvc = &customGitlab.GitlabClient{
-			BaseURL: config.ScmURL(),
-		}
-		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
+		log.Info("Gitops environments bootstrapped, remove the deprecated GITOPS_REPO* vars. They are now written to the Gimlet database." +
+			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
-	stopCh := make(chan struct{})
-	defer close(stopCh)
-
-	repoCache, err := nativeGit.NewRepoCache(
+	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
 		config.RepoCachePath,
@@ -115,14 +114,43 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go repoCache.Run()
+	go dashboardRepoCache.Run()
 	log.Info("repo cache initialized")
+
+	gitopsWorker := worker.NewGitopsWorker(
+		store,
+		config.GitopsRepo,
+		config.GitopsRepoDeployKeyPath,
+		tokenManager,
+		notificationsManager,
+		eventsProcessed,
+		dashboardRepoCache,
+		clientHub,
+		perf,
+	)
+	go gitopsWorker.Run()
+	log.Info("Gitops worker started")
+
+	if config.ReleaseStats == "enabled" {
+		releaseStateWorker := &worker.ReleaseStateWorker{
+			RepoCache: dashboardRepoCache,
+			Releases:  releases,
+			Perf:      perf,
+			Store:     store,
+		}
+		go releaseStateWorker.Run()
+	}
+
+	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
+		tokenManager,
+		config.RepoCachePath,
+		store,
+	)
+	go branchDeleteEventWorker.Run()
 
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
-
-	go gimletdCommunication(*config, clientHub)
 
 	r := server.SetupRouter(
 		config,
@@ -132,32 +160,21 @@ func main() {
 		store,
 		gitSvc,
 		tokenManager,
-		repoCache,
+		dashboardRepoCache,
 		podStateManager,
+		notificationsManager,
+		perf,
 	)
-	err = http.ListenAndServe(":9000", r)
-	log.Error(err)
-}
 
-// helper function configures the logging.
-func initLogger(c *config.Config) {
-	log.SetReportCaller(true)
+	go func() {
+		err = http.ListenAndServe(":9000", r)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
-	customFormatter := &log.TextFormatter{
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			filename := path.Base(f.File)
-			return "", fmt.Sprintf("[%s:%d]", filename, f.Line)
-		},
-	}
-	customFormatter.FullTimestamp = true
-	log.SetFormatter(customFormatter)
-
-	if c.Logging.Debug {
-		log.SetLevel(log.DebugLevel)
-	}
-	if c.Logging.Trace {
-		log.SetLevel(log.TraceLevel)
-	}
+	<-waitCh
+	log.Info("Successfully cleaned up resources. Stopping.")
 }
 
 func parseEnvs(envString string) ([]*model.Environment, error) {
@@ -188,7 +205,11 @@ func parseEnvs(envString string) ([]*model.Environment, error) {
 	return envs, nil
 }
 
-func bootstrapEnvs(envString string, store *store.Store) error {
+func bootstrapEnvs(
+	envString string,
+	store *store.Store,
+	gitopsRepos string,
+) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
 		return err
@@ -198,6 +219,12 @@ func bootstrapEnvs(envString string, store *store.Store) error {
 	if err != nil {
 		return err
 	}
+
+	deprecatedGitopsReposToEnvs, err := parseGitopsRepos(gitopsRepos)
+	if err != nil {
+		return err
+	}
+	envsToBootstrap = append(envsToBootstrap, deprecatedGitopsReposToEnvs...)
 
 	for _, envToBootstrap := range envsToBootstrap {
 		if !envExists(envsInDB, envToBootstrap.Name) {
@@ -222,55 +249,6 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 	}
 
 	return false
-}
-
-func gimletdCommunication(config config.Config, clientHub *streaming.ClientHub) {
-	for {
-		done := make(chan bool)
-
-		var events chan map[string]interface{}
-		var err error
-		operation := func() error {
-			events, err = registerGimletdEventSink(config.GimletD.URL, config.GimletD.TOKEN)
-			if err != nil {
-				log.Errorf("could not connect to Gimletd: %s", err.Error())
-				return fmt.Errorf("could not connect to Gimletd: %s", err.Error())
-			}
-			return nil
-		}
-		backoffStrategy := backoff.NewExponentialBackOff()
-		err = backoff.Retry(operation, backoffStrategy)
-		if err != nil {
-			log.Errorf("resetting backoff: %s", err)
-			continue
-		}
-
-		log.Info("Connected to Gimletd")
-
-		go func(events chan map[string]interface{}) {
-			for {
-				e, more := <-events
-				if more {
-					log.Debugf("event received: %v", e)
-
-					if e["type"] == "gitopsCommit" {
-						jsonString, _ := json.Marshal(streaming.GitopsEvent{
-							StreamingEvent: streaming.StreamingEvent{Event: streaming.GitopsCommitEventString},
-							GitopsCommit:   e["gitopsCommit"],
-						})
-						clientHub.Broadcast <- jsonString
-					}
-				} else {
-					log.Info("event stream closed")
-					done <- true
-					return
-				}
-			}
-		}(events)
-
-		<-done
-		log.Info("Disconnected from Gimletd")
-	}
 }
 
 func slackNotificationProvider(config *config.Config) *notifications.SlackProvider {
@@ -303,4 +281,33 @@ func parseChannelMap(config *config.Config) map[string]string {
 		}
 	}
 	return channelMap
+}
+
+func parseGitopsRepos(gitopsReposString string) ([]*model.Environment, error) {
+	envs := []*model.Environment{}
+	splitGitopsRepos := strings.Split(gitopsReposString, ";")
+
+	for _, gitopsReposString := range splitGitopsRepos {
+		if gitopsReposString == "" {
+			continue
+		}
+		parsedGitopsReposString, err := url.ParseQuery(gitopsReposString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+		repoPerEnv, err := strconv.ParseBool(parsedGitopsReposString.Get("repoPerEnv"))
+		if err != nil {
+			return nil, fmt.Errorf("invalid gitopsRepos format: %s", err)
+		}
+
+		env := &model.Environment{
+			Name:       parsedGitopsReposString.Get("env"),
+			RepoPerEnv: repoPerEnv,
+			AppsRepo:   parsedGitopsReposString.Get("gitopsRepo"),
+			InfraRepo:  "migrated from Gimletd config, ask on Discord how to migrate",
+		}
+		envs = append(envs, env)
+	}
+
+	return envs, nil
 }

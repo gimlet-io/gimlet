@@ -95,6 +95,7 @@ func getOrCreateUser(store *store.Store, scmUser *scm.User, token *login.Token) 
 				Login:        scmUser.Login,
 				Name:         scmUser.Name,
 				Email:        scmUser.Email,
+				Admin:        true,
 				AccessToken:  token.Access,
 				RefreshToken: token.Refresh,
 				Expires:      token.Expires.Unix(),

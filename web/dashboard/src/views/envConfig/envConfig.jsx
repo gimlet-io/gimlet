@@ -138,13 +138,7 @@ class EnvConfig extends Component {
   ensureRepoAssociationExists(repoName, repoMetas) {
     if (this.state.defaultState && repoMetas) {
       if (!this.state.defaultState.gitSha) {
-        if (repoMetas.githubActions) {
-          this.setGitSha("{{ .GITHUB_SHA }}");
-        }
-
-        if (repoMetas.circleCi) {
-          this.setGitSha("{{ .CIRCLE_SHA1 }}");
-        }
+          this.setGitSha("{{ .SHA }}");
       }
 
       if (!this.state.defaultState.gitRepository) {

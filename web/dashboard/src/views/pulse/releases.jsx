@@ -6,7 +6,7 @@ import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 export default class Releases extends Component {
     componentDidMount() {
         let { gimletClient, store, env } = this.props;
-        gimletClient.getReleaseStatuses(env, 3)
+        gimletClient.getReleases(env, 3)
             .then(data => {
                 store.dispatch({
                     type: ACTION_TYPE_RELEASE_STATUSES,

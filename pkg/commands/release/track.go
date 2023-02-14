@@ -9,8 +9,8 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
@@ -19,18 +19,18 @@ var releaseTrackCmd = cli.Command{
 	Name:  "track",
 	Usage: "Track rollback and release requests",
 	UsageText: `gimlet release track <id>
-     --server http://gimletd.mycompany.com
+     --server http://gimlet.mycompany.com
      --token c012367f6e6f71de17ae4c6a7baac2e9`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "server",
-			Usage:    "GimletD server URL, GIMLET_SERVER environment variable alternatively",
+			Usage:    "Gimlet server URL, GIMLET_SERVER environment variable alternatively",
 			EnvVars:  []string{"GIMLET_SERVER"},
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "token",
-			Usage:    "GimletD server api token, GIMLET_TOKEN environment variable alternatively",
+			Usage:    "Gimlet server api token, GIMLET_TOKEN environment variable alternatively",
 			EnvVars:  []string{"GIMLET_TOKEN"},
 			Required: true,
 		},

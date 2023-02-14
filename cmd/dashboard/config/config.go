@@ -36,7 +36,13 @@ func defaults(c *Config) {
 		c.Chart.Repo = "https://chart.onechart.dev"
 	}
 	if c.Chart.Version == "" {
-		c.Chart.Version = "0.38.0"
+		c.Chart.Version = "0.41.0"
+	}
+	if c.GitSSHAddressFormat == "" {
+		c.GitSSHAddressFormat = "git@github.com:%s.git"
+	}
+	if c.ReleaseStats == "" {
+		c.ReleaseStats = "disabled"
 	}
 }
 
@@ -53,7 +59,6 @@ type Config struct {
 	Github                  Github
 	Gitlab                  Gitlab
 	Database                Database
-	GimletD                 GimletD
 	Notifications           Notifications
 	Chart                   Chart
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
@@ -61,6 +66,18 @@ type Config struct {
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
 	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
 	UserflowToken           string `envconfig:"USERFLOW_TOKEN"`
+
+	PrintAdminToken bool   `envconfig:"PRINT_ADMIN_TOKEN"`
+	AdminToken      string `envconfig:"ADMIN_TOKEN"`
+
+	// Deprecated, use BootstrapEnv instead
+	GitopsRepo string `envconfig:"GITOPS_REPO"`
+	// Deprecated, use BootstrapEnv instead
+	GitopsRepos string `envconfig:"GITOPS_REPOS"`
+
+	GitopsRepoDeployKeyPath string `envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
+	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
+	ReleaseStats            string `envconfig:"RELEASE_STATS"`
 }
 
 // Logging provides the logging configuration.
@@ -101,16 +118,18 @@ type Database struct {
 	Config string `envconfig:"DATABASE_CONFIG"`
 }
 
-type GimletD struct {
-	URL   string `envconfig:"GIMLETD_URL"`
-	TOKEN string `envconfig:"GIMLETD_TOKEN"`
-}
-
 type Notifications struct {
 	Provider       string `envconfig:"NOTIFICATIONS_PROVIDER"`
 	Token          string `envconfig:"NOTIFICATIONS_TOKEN"`
 	DefaultChannel string `envconfig:"NOTIFICATIONS_DEFAULT_CHANNEL"`
 	ChannelMapping string `envconfig:"NOTIFICATIONS_CHANNEL_MAPPING"`
+}
+
+type GitopsRepoConfig struct {
+	Env           string
+	RepoPerEnv    bool
+	GitopsRepo    string
+	DeployKeyPath string
 }
 
 func (c *Config) IsGithub() bool {

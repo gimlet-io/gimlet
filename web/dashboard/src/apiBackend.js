@@ -2,8 +2,7 @@ import { Component } from 'react';
 import {
   ACTION_TYPE_AGENTS,
   ACTION_TYPE_ENVS,
-  ACTION_TYPE_GIMLETD, ACTION_TYPE_GIT_REPOS,
-  ACTION_TYPE_GITOPS_REPO,
+  ACTION_TYPE_GIT_REPOS,
   ACTION_TYPE_GITOPS_COMMITS,
   ACTION_TYPE_USER,
   ACTION_TYPE_USERS,
@@ -20,9 +19,6 @@ export default class APIBackend extends Component {
       return;
     }
 
-    this.props.gimletClient.getGitopsRepo()
-      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_REPO, payload: data }), () => {/* Generic error handler deals with it */
-      });
     this.props.gimletClient.getAgents()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_AGENTS, payload: data }), () => {/* Generic error handler deals with it */
       });
@@ -40,9 +36,6 @@ export default class APIBackend extends Component {
       });
     this.props.gimletClient.getGitRepos()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GIT_REPOS, payload: data }), () => {/* Generic error handler deals with it */
-      });
-    this.props.gimletClient.getGimletD()
-      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GIMLETD, payload: data }), () => {/* Generic error handler deals with it */
       });
       this.props.gimletClient.getGitopsCommits()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_COMMITS, payload: data }), () => {/* Generic error handler deals with it */

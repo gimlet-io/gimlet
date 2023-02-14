@@ -27,8 +27,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
 )
 
 const (
@@ -370,11 +370,11 @@ func (c *client) UsersGet() ([]*model.User, error) {
 }
 
 // GitopsCommitsGet returns the recent 20 gitops commits
-func (c *client) GitopsCommitsGet(gimletdToken string) (*[]*model.GitopsCommit, error) {
+func (c *client) GitopsCommitsGet(token string) (*[]*model.GitopsCommit, error) {
 	uri := fmt.Sprintf(pathGitopsCommits, c.addr)
 
 	result := new([]*model.GitopsCommit)
-	err := c.get(uri+"?="+gimletdToken, result)
+	err := c.get(uri+"?="+token, result)
 	if err != nil {
 		return nil, err
 	}

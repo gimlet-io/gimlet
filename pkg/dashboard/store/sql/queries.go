@@ -16,6 +16,8 @@ package sql
 
 const Dummy = "dummy"
 const SelectUserByLogin = "select-user-by-login"
+const SelectAllUser = "select-all-user"
+const DeleteUser = "deleteUser"
 const SelectCommitsByRepo = "select-commits-by-repo"
 const SelectKeyValue = "select-key-value"
 const SelectEnvironments = "select-environments"
@@ -24,6 +26,10 @@ const DeleteEnvironment = "delete-environment"
 const SelectPendingPods = "select-pending-pods"
 const SelectPodByName = "select-pod-by-name"
 const DeletePodByName = "delete-pod-by-name"
+const SelectUnprocessedEvents = "select-unprocessed-events"
+const UpdateEventStatus = "update-event-status"
+const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
+const SelectGitopsCommits = "select-gitops-commits"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -31,9 +37,16 @@ var queries = map[string]map[string]string{
 SELECT 1;
 `,
 		SelectUserByLogin: `
-SELECT id, login, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
+SELECT id, login, secret, admin, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users
 WHERE login = $1;
+`,
+		SelectAllUser: `
+SELECT id, login, secret, admin
+FROM users;
+`,
+		DeleteUser: `
+DELETE FROM users where login = $1;
 `,
 		SelectCommitsByRepo: `
 SELECT id, repo, sha, url, author, author_pic, message, created, tags, status
@@ -73,15 +86,41 @@ WHERE name = $1;
 		DeletePodByName: `
 DELETE FROM pods where name = $1;
 `,
+		SelectUnprocessedEvents: `
+SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
+FROM events
+WHERE status='new' order by created ASC limit 10;
+`,
+		UpdateEventStatus: `
+UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		SelectGitopsCommitBySha: `
+SELECT id, sha, status, status_desc, created
+FROM gitops_commits
+WHERE sha = $1;
+`,
+		SelectGitopsCommits: `
+SELECT id, sha, status, status_desc, created, env
+FROM gitops_commits
+ORDER BY created DESC
+LIMIT 20;
+`,
 	},
 	"postgres": {
 		Dummy: `
 SELECT 1;
 `,
 		SelectUserByLogin: `
-SELECT id, login, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
+SELECT id, login, secret, admin, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users
 WHERE login = $1;
+`,
+		SelectAllUser: `
+SELECT id, login, secret, admin
+FROM users;
+`,
+		DeleteUser: `
+DELETE FROM users where login = $1;
 `,
 		SelectCommitsByRepo: `
 SELECT id, repo, sha, url, author, author_pic, message, created, tags, status
@@ -120,6 +159,25 @@ WHERE name = $1;
 `,
 		DeletePodByName: `
 DELETE FROM pods where name = $1;
+`,
+		SelectUnprocessedEvents: `
+SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
+FROM events
+WHERE status='new' order by created ASC limit 10;
+`,
+		UpdateEventStatus: `
+UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		SelectGitopsCommitBySha: `
+SELECT id, sha, status, status_desc, created
+FROM gitops_commits
+WHERE sha = $1;
+`,
+		SelectGitopsCommits: `
+SELECT id, sha, status, status_desc, created, env
+FROM gitops_commits
+ORDER BY created DESC
+LIMIT 20;
 `,
 	},
 }

@@ -8,7 +8,6 @@ export const ACTION_TYPE_ENVS = 'envs';
 export const ACTION_TYPE_USER = 'user';
 export const ACTION_TYPE_USERS = 'users';
 export const ACTION_TYPE_APPLICATION = 'application';
-export const ACTION_TYPE_GIMLETD = 'gimletd';
 export const ACTION_TYPE_CHARTSCHEMA = 'chartSchema';
 export const ACTION_TYPE_SEARCH = 'search';
 export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
@@ -102,8 +101,6 @@ export function rootReducer(state = initialState, action) {
   switch (action.type) {
     case ACTION_TYPE_STREAMING:
       return processStreamingEvent(state, action.payload)
-    case ACTION_TYPE_GITOPS_REPO:
-      return eventHandlers.gitopsRepo(state, action.payload);
     case ACTION_TYPE_GIT_REPOS:
       return eventHandlers.gitRepos(state, action.payload);
     case ACTION_TYPE_AGENTS:
@@ -128,8 +125,6 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.users(state, action.payload)
     case ACTION_TYPE_APPLICATION:
       return eventHandlers.application(state, action.payload)
-    case ACTION_TYPE_GIMLETD:
-      return eventHandlers.gimletd(state, action.payload)
     case ACTION_TYPE_CHARTSCHEMA:
       return eventHandlers.schemas(state, action.payload)
     case ACTION_TYPE_SEARCH:
@@ -158,7 +153,7 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.saveRepoPullRequest(state, action.payload)
     case ACTION_TYPE_REPO_METAS:
       return eventHandlers.repoMetas(state, action.payload)
-      case ACTION_TYPE_SETTINGS:
+    case ACTION_TYPE_SETTINGS:
         return eventHandlers.settings(state, action.payload)
     case ACTION_TYPE_DEPLOY:
       return eventHandlers.deploy(state, action.payload)

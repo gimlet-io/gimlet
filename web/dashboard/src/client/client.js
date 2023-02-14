@@ -11,11 +11,9 @@ export default class GimletClient {
 
   getUser = () => this.get('/api/user');
 
-  getUsers = () => this.get('/api/listUsers');
+  getUsers = () => this.get('/api/users');
 
   saveUser = (userName) => this.postWithAxios("/api/saveUser", JSON.stringify(userName));
-
-  getGitopsRepo = () => this.get('/api/gitopsRepo');
 
   getAgents = () => this.get('/api/agents');
 
@@ -23,15 +21,13 @@ export default class GimletClient {
 
   getGitRepos = () => this.get('/api/gitRepos');
 
-  getGimletD = () => this.get('/api/gimletd');
-
   getGitopsCommits = () => this.getWithAxios("/api/gitopsCommits");
 
   getSettings = () => this.getWithAxios("/api/settings");
 
-  getRolloutHistoryPerApp = (owner, name, env, app) => this.get(`/api/repo/${owner}/${name}/env/${env}/app/${app}/rolloutHistory`);
+  getRolloutHistoryPerApp = (owner, name, env, app) => this.get(`/api/releases?env=${env}&app=${app}&git-repo=${owner}/${name}&limit=10&reverse=true`);
 
-  getReleaseStatuses = (env, limit) => this.getWithAxios(`/api/env/${env}/releaseStatuses?limit=${limit}`);
+  getReleases = (env, limit) => this.getWithAxios(`/api/releases?env=${env}&limit=${limit}&reverse=true`);
 
   getCommits = (owner, name, branch, fromHash) => this.get(`/api/repo/${owner}/${name}/commits?branch=${branch}&fromHash=${fromHash}`);
 
@@ -63,11 +59,11 @@ export default class GimletClient {
 
   deleteEnvFromDB = (envName) => this.postWithAxios("/api/deleteEnvFromDB", JSON.stringify(envName));
 
-  deploy = (artifactId, env, app) => this.post('/api/deploy', JSON.stringify({ env, app, artifactId }));
+  deploy = (artifactId, env, app) => this.post('/api/releases', JSON.stringify({ env, app, artifactId }));
 
-  rollback = (env, app, rollbackTo) => this.post('/api/rollback', JSON.stringify({ env, app, targetSHA: rollbackTo }));
+  rollback = (env, app, rollbackTo) => this.post(`/api/rollback?env=${env}&app=${app}&sha=${rollbackTo}`);
 
-  getDeployStatus = (trackingId) => this.get(`/api/deployStatus?trackingId=${trackingId}`);
+  getDeployStatus = (trackingId) => this.get(`/api/eventReleaseTrack?id=${trackingId}`);
 
   saveFavoriteRepos = (favoriteRepos) => this.post('/api/saveFavoriteRepos', JSON.stringify({ favoriteRepos }));
 
@@ -76,8 +72,6 @@ export default class GimletClient {
   saveInfrastructureComponents = (env, infrastructureComponents) => this.postWithAxios('/api/environments', JSON.stringify({ env, infrastructureComponents }));
 
   installAgent = (envName) => this.postWithAxios(`/api/envs/${envName}/installAgent`, JSON.stringify({}));
-
-  enableDeploymentAutomation = (envName) => this.postWithAxios(`/api/envs/${envName}/enableDeploymentAutomation`, JSON.stringify({}));
 
   getWithAxios = async (path) => {
     try {

@@ -55,10 +55,10 @@ func (c *GitlabClient) FetchCommits(
 					logrus.Warnf("couldn't fetch commit status (%s): %s", sha, err)
 				}
 
-				contexts := []model.Status{}
+				contexts := []model.CommitStatus{}
 				for _, s := range statuses {
 					state := fromGitlabStatus(s.Status)
-					contexts = append(contexts, model.Status{
+					contexts = append(contexts, model.CommitStatus{
 						State:       state,
 						Context:     s.Name,
 						CreatedAt:   s.CreatedAt.Format(time.RFC3339),

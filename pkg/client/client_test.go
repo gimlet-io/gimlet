@@ -2,26 +2,24 @@ package client
 
 import (
 	"encoding/base32"
-	"github.com/gimlet-io/gimlet-cli/cmd/gimletd/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/server"
-	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
-	"github.com/gimlet-io/gimlet-cli/pkg/gimletd/store"
-	"github.com/gorilla/securecookie"
-	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
 	"testing"
-)
 
-import (
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
+	"github.com/gorilla/securecookie"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
 
 func Test_artifact(t *testing.T) {
 	store := store.NewTest()
 
-	router := server.SetupRouter(&config.Config{}, store, nil, nil, nil, nil, nil)
+	router := server.SetupRouter(&config.Config{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil)
 	server := httptest.NewServer(router)
 	defer server.Close()
 

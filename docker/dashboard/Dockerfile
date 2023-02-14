@@ -12,6 +12,7 @@ RUN addgroup -S gimlet-dashboard && adduser -S gimlet-dashboard -G gimlet-dashbo
 ADD docker/dashboard/known_hosts /etc/ssh/ssh_known_hosts
 
 RUN mkdir /var/lib/gimlet-dashboard
+RUN chown gimlet-dashboard:gimlet-dashboard /var/lib/gimlet-dashboard
 WORKDIR /gimlet-dashboard
 
 ARG TARGETPLATFORM
