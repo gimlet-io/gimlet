@@ -60,7 +60,7 @@ func (am *AlertMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.Status)
+	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.Name)
 	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", am.Alert.StatusDesc)
 	msg.Embed.Color = 15158332
 
