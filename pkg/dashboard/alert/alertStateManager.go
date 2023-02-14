@@ -128,7 +128,7 @@ func (a AlertStateManager) setFiringState(thresholds []threshold) error {
 			msg := notifications.MessageFromAlert(alert)
 			a.notifManager.Broadcast(msg)
 
-			err := a.store.UpdateAlert(&alert)
+			err := a.store.SetFiringStatusForAlert(alert.Name, alert.Type)
 			if err != nil {
 				return err
 			}
@@ -146,7 +146,7 @@ func (a AlertStateManager) alreadyAlerted(name string, alertType string) bool {
 		return false
 	}
 
-	return alert.Status == "Fired"
+	return alert.Status == "Firing"
 }
 
 func (a AlertStateManager) statusNotChanged(podName string, podStatus string) bool {

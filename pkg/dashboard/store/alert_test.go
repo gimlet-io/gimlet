@@ -47,10 +47,30 @@ func TestGetPendingAlerts(t *testing.T) {
 	}
 
 	s.SaveAlert(&alert1)
-
 	s.SaveAlert(&alert2)
 
 	pendingAlerts, err := s.PendingAlerts()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(pendingAlerts))
+}
+
+func TestSetFiringStatusForAlert(t *testing.T) {
+	s := NewTest()
+	defer func() {
+		s.Close()
+	}()
+
+	alert1 := model.Alert{
+		Type:   "pod",
+		Name:   "default/pod1",
+		Status: "Pending",
+	}
+
+	s.SaveAlert(&alert1)
+
+	err := s.SetFiringStatusForAlert(alert1.Name, alert1.Type)
+	assert.Nil(t, err)
+
+	a, _ := s.Alert(alert1.Name, alert1.Type)
+	assert.Equal(t, "Firing", a.Status)
 }

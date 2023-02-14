@@ -34,16 +34,14 @@ func (db *Store) SaveAlert(alert *model.Alert) error {
 	return meddler.Insert(db, "alerts", alert)
 }
 
-// TODO update the status for the alert to 'Firing'
-func (db *Store) UpdateAlert(alert *model.Alert) error {
-	// storedAlert, err := db.Alert(name, alertType)
-	// if err != nil {
-	// 	return err
-	// }
+func (db *Store) SetFiringStatusForAlert(name string, alertType string) error {
+	storedAlert, err := db.Alert(name, alertType)
+	if err != nil {
+		return err
+	}
 
-	// storedAlert.Status = "Fired"
-	// return meddler.Update(db, "alerts", storedAlert)
-	return nil
+	storedAlert.Status = "Firing"
+	return meddler.Update(db, "alerts", storedAlert)
 }
 
 func (db *Store) PendingAlerts() ([]*model.Alert, error) {
