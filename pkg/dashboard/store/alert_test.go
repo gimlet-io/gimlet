@@ -50,7 +50,7 @@ func TestGetPendingAlerts(t *testing.T) {
 	s.SaveAlert(&alert1)
 	s.SaveAlert(&alert2)
 
-	pendingAlerts, err := s.PendingAlertsByType(alert1.Type)
+	pendingAlerts, err := s.PendingAlerts()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(pendingAlerts))
 }

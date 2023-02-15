@@ -44,13 +44,14 @@ func (s eventStrategy) toAlert() model.Alert {
 	return s.event
 }
 
-func podTypeToThreshold(a *model.Alert, waitTime time.Duration) threshold {
-	return &podStrategy{
-		pod:      *a,
-		waitTime: waitTime,
+func ToThreshold(a *model.Alert, waitTime time.Duration, expectedCount int32, expectedCountPerMinute float64) threshold {
+	if a.Type == "pod" {
+		return &podStrategy{
+			pod:      *a,
+			waitTime: waitTime,
+		}
 	}
-}
-func eventTypeToThreshold(a *model.Alert, expectedCount int32, expectedCountPerMinute float64) threshold {
+
 	return &eventStrategy{
 		event:                  *a,
 		expectedCount:          expectedCount,
