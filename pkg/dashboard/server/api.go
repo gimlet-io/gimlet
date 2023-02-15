@@ -174,7 +174,7 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 
 func getAlerts(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value("store").(*store.Store)
-	alerts, err := db.Alerts()
+	alerts, err := db.FiringAlerts()
 	if err != nil {
 		logrus.Errorf("cannot get alerts from database: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

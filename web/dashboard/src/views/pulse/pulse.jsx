@@ -88,7 +88,7 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
-                  {alert.name} {alert.status}
+                  {alert.name} {alert.type} alert
                 </p>
                 <p>
                   {alert.statusDesc}
@@ -110,7 +110,7 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
                   </button>
                 </div>}
               </>}
-            {dateLabel(alert.fired)}
+            {dateLabel(alert.lastStateChange)}
           </div>
         )
       })}

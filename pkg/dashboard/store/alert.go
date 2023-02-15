@@ -8,8 +8,8 @@ import (
 	"github.com/russross/meddler"
 )
 
-func (db *Store) Alerts() ([]*model.Alert, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectAllAlerts)
+func (db *Store) FiringAlerts() ([]*model.Alert, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectFiringAlerts)
 	data := []*model.Alert{}
 	err := meddler.QueryAll(db, &data, stmt)
 

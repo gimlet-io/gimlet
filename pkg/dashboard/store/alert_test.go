@@ -14,14 +14,15 @@ func TestAlertCRUD(t *testing.T) {
 	}()
 
 	alert := model.Alert{
-		Type: "pod",
-		Name: "default/pod1",
+		Type:   "pod",
+		Name:   "default/pod1",
+		Status: "Firing",
 	}
 
 	err := s.SaveOrUpdateAlert(&alert)
 	assert.Nil(t, err)
 
-	alerts, err := s.Alerts()
+	alerts, err := s.FiringAlerts()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(alerts))
 

@@ -31,7 +31,7 @@ const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
-const SelectAllAlerts = "select-all-alerts"
+const SelectFiringAlerts = "select-firing-alerts"
 const SelectAlertByNameAndType = "select-alert-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
 
@@ -112,8 +112,10 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
-		SelectAllAlerts: `
-SELECT * FROM alerts;
+		SelectFiringAlerts: `
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+FROM alerts
+WHERE status LIKE 'Firing';
 `,
 		SelectAlertByNameAndType: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
@@ -203,8 +205,10 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
-		SelectAllAlerts: `
-SELECT * FROM alerts;
+		SelectFiringAlerts: `
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+FROM alerts
+WHERE status LIKE 'Firing';
 `,
 		SelectAlertByNameAndType: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
