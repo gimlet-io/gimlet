@@ -176,8 +176,6 @@ id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
 name				  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
-alert_state 		  TEXT,
-alert_state_timestamp INTEGER,
 UNIQUE(id)
 );
 `,
@@ -377,8 +375,6 @@ id          		  SERIAL,
 name  				  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
-alert_state 		  TEXT,
-alert_state_timestamp INTEGER,
 UNIQUE(id)
 );
 `,

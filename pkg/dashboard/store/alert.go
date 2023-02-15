@@ -30,17 +30,23 @@ func (db *Store) Alert(name string, alertType string) (*model.Alert, error) {
 	return alert, err
 }
 
-func (db *Store) SaveAlert(alert *model.Alert) error {
-	return meddler.Insert(db, "alerts", alert)
-}
+func (db *Store) SaveOrUpdateAlert(alert *model.Alert) error {
+	storedAlert, err := db.Alert(alert.Name, alert.Type)
 
-func (db *Store) SetFiringStatusForAlert(name string, alertType string) error {
-	storedAlert, err := db.Alert(name, alertType)
 	if err != nil {
-		return err
+		switch err {
+		case sql.ErrNoRows:
+			return meddler.Insert(db, "alerts", alert)
+		default:
+			return err
+		}
 	}
 
-	storedAlert.Status = "Firing"
+	storedAlert.DeploymentName = alert.DeploymentName
+	storedAlert.Status = alert.Status
+	storedAlert.StatusDesc = alert.StatusDesc
+	storedAlert.LastStateChange = alert.LastStateChange
+	storedAlert.Count = alert.Count
 	return meddler.Update(db, "alerts", storedAlert)
 }
 

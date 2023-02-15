@@ -69,7 +69,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 		}
 
 		if podErrorState(pod.Status) {
-			err := a.store.SaveAlert(&model.Alert{
+			err := a.store.SaveOrUpdateAlert(&model.Alert{
 				Type:            alertType,
 				Name:            podName,
 				DeploymentName:  deploymentName,
@@ -105,7 +105,7 @@ func (a AlertStateManager) TrackEvents(events []api.Event) error {
 			return err
 		}
 
-		err = a.store.SaveAlert(&model.Alert{
+		err = a.store.SaveOrUpdateAlert(&model.Alert{
 			Type:            alertType,
 			Name:            eventName,
 			DeploymentName:  deploymentName,
@@ -128,7 +128,15 @@ func (a AlertStateManager) setFiringState(thresholds []threshold) error {
 			msg := notifications.MessageFromAlert(alert)
 			a.notifManager.Broadcast(msg)
 
-			err := a.store.SetFiringStatusForAlert(alert.Name, alert.Type)
+			err := a.store.SaveOrUpdateAlert(&model.Alert{
+				Type:            alert.Type,
+				Name:            alert.Name,
+				DeploymentName:  alert.DeploymentName,
+				Status:          "Firing",
+				StatusDesc:      alert.StatusDesc,
+				LastStateChange: time.Now().Unix(),
+				Count:           alert.Count,
+			})
 			if err != nil {
 				return err
 			}
