@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/alecthomas/assert"
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 )
 
@@ -20,13 +18,12 @@ func TestTrackPods(t *testing.T) {
 	}()
 
 	dummyNotificationsManager := notifications.NewDummyManager()
-	agentHub := streaming.NewAgentHub(&config.Config{})
 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
 	pods := []*api.Pod{&pod1, &pod2, &pod3}
 
-	p := NewAlertStateManager(dummyNotificationsManager, agentHub, *store, 2)
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	p.TrackPods(pods)
 
 	expectedPods := []model.Pod{
@@ -57,12 +54,11 @@ func TestTrackEvents(t *testing.T) {
 	}()
 
 	dummyNotificationsManager := notifications.NewDummyManager()
-	agentHub := streaming.NewAgentHub(&config.Config{})
 	event1 := api.Event{Namespace: "ns1", Name: "pod1"}
 	event2 := api.Event{Namespace: "ns1", Name: "pod2"}
 	events := []api.Event{event1, event2}
 
-	p := NewAlertStateManager(dummyNotificationsManager, agentHub, *store, 2)
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	p.TrackEvents(events)
 
 	expectedEvents := []model.KubeEvent{
@@ -94,8 +90,7 @@ func TestSetFiringState(t *testing.T) {
 
 	currentTime := time.Now()
 	dummyNotificationsManager := notifications.NewDummyManager()
-	agentHub := streaming.NewAgentHub(&config.Config{})
-	a := NewAlertStateManager(dummyNotificationsManager, agentHub, *store, 2)
+	a := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	alert1 := model.Alert{Name: "n/p1", Type: "pod", Status: "Pending", LastStateChange: currentTime.Add(-1 * time.Minute).Unix()}
 	alert2 := model.Alert{Name: "n/p2", Type: "pod", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
 	alert3 := model.Alert{Name: "n/p1", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-4 * time.Minute).Unix(), Count: 5}
@@ -154,7 +149,6 @@ func TestNotificationSending(t *testing.T) {
 	}()
 
 	notificationsManager := notifications.NewManager()
-	agentHub := streaming.NewAgentHub(&config.Config{})
 
 	notificationsManager.AddProvider(&notifications.DiscordProvider{
 		Token:     "",
@@ -163,7 +157,7 @@ func TestNotificationSending(t *testing.T) {
 
 	go notificationsManager.Run()
 
-	p := NewAlertStateManager(notificationsManager, agentHub, *store, 2)
+	p := NewAlertStateManager(notificationsManager, *store, 2)
 
 	var thresholds []threshold
 	currentTime := time.Now()

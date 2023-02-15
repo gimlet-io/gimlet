@@ -91,9 +91,11 @@ func main() {
 	podController := agent.PodController(kubeEnv, config.Host, config.AgentKey)
 	deploymentController := agent.DeploymentController(kubeEnv, config.Host, config.AgentKey)
 	ingressController := agent.IngressController(kubeEnv, config.Host, config.AgentKey)
+	eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
 	go podController.Run(1, stopCh)
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
+	go eventController.Run(1, stopCh)
 
 	messages := make(chan *streaming.WSMessage)
 
@@ -205,8 +207,6 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
 						stopPodLogs(runningLogStreams, namespace, svc)
-					case "events":
-						go agent.KubeEvents(kubeEnv, config.Host, config.AgentKey)
 					}
 				} else {
 					log.Info("event stream closed")

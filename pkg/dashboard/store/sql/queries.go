@@ -115,7 +115,8 @@ DELETE FROM kube_events where name = $1;
 		SelectFiringAlerts: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
-WHERE status LIKE 'Firing';
+WHERE status LIKE 'Firing'
+ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
@@ -208,7 +209,8 @@ DELETE FROM kube_events where name = $1;
 		SelectFiringAlerts: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
-WHERE status LIKE 'Firing';
+WHERE status LIKE 'Firing'
+ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count

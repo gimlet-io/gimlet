@@ -8,27 +8,22 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
 )
 
 type AlertStateManager struct {
 	notifManager notifications.Manager
-	agentHub     *streaming.AgentHub
 	store        store.Store
 	waitTime     time.Duration
 }
 
-func NewAlertStateManager(notifManager notifications.Manager, agentHub *streaming.AgentHub, store store.Store, waitTime time.Duration) *AlertStateManager {
-	return &AlertStateManager{notifManager: notifManager, agentHub: agentHub, store: store, waitTime: waitTime}
+func NewAlertStateManager(notifManager notifications.Manager, store store.Store, waitTime time.Duration) *AlertStateManager {
+	return &AlertStateManager{notifManager: notifManager, store: store, waitTime: waitTime}
 }
 
 func (a AlertStateManager) Run() {
 	for {
-		// TODO investigate, there is already fetching events from (in) the agent
-		a.agentHub.GetEvents()
-
 		var thresholds []threshold
 		alerts, err := a.store.PendingAlerts()
 		if err != nil {
