@@ -12,13 +12,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var expectedNumbers = map[string]expected{
-	"ImagePullBackOff": {
-		waitTime:       2,
-		Count:          6,
-		CountPerMinute: 1,
-	},
-	// TODO insert different type of errors
+func getExpectedNumbers() map[string]expected {
+	return map[string]expected{
+		"ImagePullBackOff": {
+			waitTime:       2,
+			Count:          6,
+			CountPerMinute: 1,
+		},
+		// TODO insert different type of errors
+	}
 }
 
 type expected struct {
@@ -50,7 +52,7 @@ func (a AlertStateManager) Run() {
 				logrus.Errorf("couldn't get status from alert: %s", err)
 				continue
 			}
-			expected := expectedNumbers[status]
+			expected := getExpectedNumbers()[status]
 			thresholds = append(thresholds, ToThreshold(alert, expected.waitTime, expected.Count, expected.CountPerMinute))
 		}
 
