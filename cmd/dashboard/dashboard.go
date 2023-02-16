@@ -137,6 +137,7 @@ func main() {
 			Releases:  releases,
 			Perf:      perf,
 			Store:     store,
+			Config:    config,
 		}
 		go releaseStateWorker.Run()
 	}
