@@ -12,6 +12,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var expectedNumbers = map[string]expected{
+	"ImagePullBackOff": {
+		waitTime:       2,
+		Count:          6,
+		CountPerMinute: 1,
+	},
+	// TODO insert different type of errors
+}
+
+type expected struct {
+	waitTime       time.Duration
+	Count          int32
+	CountPerMinute float64
+}
+
 type AlertStateManager struct {
 	notifManager notifications.Manager
 	store        store.Store
@@ -30,7 +45,13 @@ func (a AlertStateManager) Run() {
 			logrus.Errorf("couldn't get pending alerts: %s", err)
 		}
 		for _, alert := range alerts {
-			thresholds = append(thresholds, ToThreshold(alert, a.waitTime, 6, 1))
+			status, err := a.status(alert.Name, alert.Type)
+			if err != nil {
+				logrus.Errorf("couldn't get status from alert: %s", err)
+				continue
+			}
+			expected := expectedNumbers[status]
+			thresholds = append(thresholds, ToThreshold(alert, expected.waitTime, expected.Count, expected.CountPerMinute))
 		}
 
 		err = a.setFiringState(thresholds)
@@ -138,6 +159,24 @@ func (a AlertStateManager) setFiringState(thresholds []threshold) error {
 		}
 	}
 	return nil
+}
+
+func (a AlertStateManager) status(name string, alertType string) (string, error) {
+	if alertType == "pod" {
+		pod, err := a.store.Pod(name)
+		if err != nil {
+			logrus.Errorf("couldn't get pod from db: %s", err)
+			return "", err
+		}
+		return pod.Status, nil
+	}
+
+	event, err := a.store.KubeEvent(name)
+	if err != nil {
+		logrus.Errorf("couldn't get kube event from db: %s", err)
+		return "", err
+	}
+	return event.Status, nil
 }
 
 func (a AlertStateManager) alreadyAlerted(name string, alertType string) bool {

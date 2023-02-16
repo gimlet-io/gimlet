@@ -178,6 +178,7 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 
 		log.Info("Connected to Gimlet")
 		go sendState(kubeEnv, config.Host, config.AgentKey)
+		go sendEvents(kubeEnv, config.Host, config.AgentKey)
 
 		runningLogStreams := map[string]chan int{}
 
@@ -189,6 +190,7 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 					switch e["action"] {
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
+						go sendEvents(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
@@ -261,6 +263,44 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	}
 
 	log.Info("init state sent")
+}
+
+func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
+	events, err := kubeEnv.WarningEvents("")
+	if err != nil {
+		log.Errorf("could not get events from k8s apiServer: %v", err)
+		return
+	}
+
+	eventsString, err := json.Marshal(events)
+	if err != nil {
+		log.Errorf("could not serialize k8s events: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/events", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(eventsString))
+	if err != nil {
+		log.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	log.Info("init events sent")
 }
 
 func stopPodLogs(
