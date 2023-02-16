@@ -23,15 +23,15 @@ type eventStrategy struct {
 }
 
 func (s podStrategy) isFired() bool {
-	podAlertTime := time.Unix(s.pod.LastStateChange, 0)
-	managerWaitTime := time.Now().Add(-time.Minute * s.waitTime)
+	podLastStateChangeTime := time.Unix(s.pod.LastStateChange, 0)
+	waitTime := time.Now().Add(-time.Minute * s.waitTime)
 
-	return podAlertTime.Before(managerWaitTime)
+	return podLastStateChangeTime.Before(waitTime)
 }
 
 func (s eventStrategy) isFired() bool {
-	firstTimestampSinceInMinutes := time.Since(time.Unix(s.event.LastStateChange, 0)).Minutes()
-	countPerMinute := float64(s.event.Count) / firstTimestampSinceInMinutes
+	lastStateChangeInMinutes := time.Since(time.Unix(s.event.LastStateChange, 0)).Minutes()
+	countPerMinute := float64(s.event.Count) / lastStateChangeInMinutes
 
 	return countPerMinute >= s.expectedCountPerMinute && s.event.Count >= s.expectedCount
 }

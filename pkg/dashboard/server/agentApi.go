@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -259,15 +258,7 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 
 func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
 	if update.Event == agent.EventPodDeleted {
-		err := db.DeletePod(update.Subject)
-		if err != nil && err != sql.ErrNoRows {
-			return err
-		}
-
-		err = db.DeleteEvent(update.Subject)
-		if err != nil && err != sql.ErrNoRows {
-			return err
-		}
+		return nil
 	}
 
 	deploymentParts := strings.Split(update.Deployment, "/")

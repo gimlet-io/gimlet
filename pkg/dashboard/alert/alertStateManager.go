@@ -19,6 +19,11 @@ func getExpectedNumbers() map[string]expected {
 			Count:          6,
 			CountPerMinute: 1,
 		},
+		"Failed": {
+			waitTime:       2,
+			Count:          6,
+			CountPerMinute: 1,
+		},
 		// TODO insert different type of errors
 	}
 }
@@ -167,7 +172,6 @@ func (a AlertStateManager) status(name string, alertType string) (string, error)
 	if alertType == "pod" {
 		pod, err := a.store.Pod(name)
 		if err != nil {
-			logrus.Errorf("couldn't get pod from db: %s", err)
 			return "", err
 		}
 		return pod.Status, nil
@@ -175,7 +179,6 @@ func (a AlertStateManager) status(name string, alertType string) (string, error)
 
 	event, err := a.store.KubeEvent(name)
 	if err != nil {
-		logrus.Errorf("couldn't get kube event from db: %s", err)
 		return "", err
 	}
 	return event.Status, nil
