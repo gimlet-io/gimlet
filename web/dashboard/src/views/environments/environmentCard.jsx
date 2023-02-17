@@ -254,14 +254,21 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
-            message: "Agent config was written to the gitops environment"
+            message: "Pull request was created",
+            link: data.createdPr.link
           }
         });
         store.dispatch({
-          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data
+          type: ACTION_TYPE_SAVE_ENV_PULLREQUEST, payload: {
+            envName: data.envName,
+            createdPr: data.createdPr
+          }
         });
-        setStack(data.config)
-        setStackNonDefaultValues(data.config)
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: envName, payload: data.stackConfig
+        });
+        setStack(data.stackConfig.config)
+        setStackNonDefaultValues(data.stackConfig.config)
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
