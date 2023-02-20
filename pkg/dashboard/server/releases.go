@@ -516,6 +516,10 @@ func gitopsCommitMetasFromHash(store *store.Store, gitopsRef string) (string, st
 	gitopsCommit, err := store.GitopsCommit(gitopsRef)
 	if err != nil {
 		logrus.Warnf("cannot get gitops commit: %s", err)
+		return "", "", 0
+	}
+	if gitopsCommit == nil {
+		return "", "", 0
 	}
 
 	return gitopsCommit.Status, gitopsCommit.StatusDesc, gitopsCommit.Created
