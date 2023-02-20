@@ -47,6 +47,10 @@ func (m EncryptionMeddler) PreWrite(field interface{}) (saveValue interface{}, e
 }
 
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
+	if len(key) == 0 {
+		return plaintext, nil
+	}
+
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -66,6 +70,10 @@ func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 }
 
 func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+	if len(key) == 0 {
+		return ciphertext, nil
+	}
+
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err

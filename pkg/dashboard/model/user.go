@@ -24,16 +24,16 @@ type User struct {
 	Email string `json:"-"  meddler:"email"`
 
 	// GithubToken is the Github oauth token
-	AccessToken string `json:"-"  meddler:"access_token"`
+	AccessToken string `json:"-"  meddler:"access_token,encrypted"`
 
 	// RefreshToken is the Github refresh token
-	RefreshToken string `json:"-"  meddler:"refresh_token"`
+	RefreshToken string `json:"-"  meddler:"refresh_token,encrypted"`
 
 	// Expires is the Github token expiry date
 	Expires int64 `json:"-"  meddler:"expires"`
 
 	// Secret is the PEM formatted RSA private key used to sign JWT and CSRF tokens
-	Secret string `json:"-" meddler:"secret"`
+	Secret string `json:"-" meddler:"secret,encrypted"`
 
 	Repos []string `json:"-" meddler:"repos,json"`
 

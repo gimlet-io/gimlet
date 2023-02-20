@@ -31,9 +31,9 @@ type Store struct {
 
 // New creates a database connection for the given driver and datasource
 // and returns a new Store.
-func New(driver, config string) *Store {
+func New(driver, config, encryptionKey string) *Store {
 	return &Store{
-		DB:     open(driver, config, ""),
+		DB:     open(driver, config, encryptionKey),
 		driver: driver,
 		config: config,
 	}
@@ -69,6 +69,42 @@ func open(driver, config, encryptionKey string) *sql.DB {
 		logrus.Fatalln("migration failed")
 	}
 	return db
+}
+
+// NewTest creates a new database connection for testing purposes.
+// The database driver and connection string are provided by
+// environment variables, with fallback to in-memory sqlite.
+func NewTestWithoutEncryption() *Store {
+	var (
+		driver        = "sqlite3"
+		config        = "file::memory:"
+		encryptionKey = ""
+	)
+	if os.Getenv("DATABASE_DRIVER") != "" {
+		driver = os.Getenv("DATABASE_DRIVER")
+		config = os.Getenv("DATABASE_CONFIG")
+	}
+	store := &Store{
+		DB:     open(driver, config, encryptionKey),
+		driver: driver,
+		config: config,
+	}
+
+	// if not in-memory DB, recreate tables between tests
+	if driver != "sqlite3" {
+		store.Exec(`
+drop table migrations;
+drop table users;
+drop table commits;
+drop table key_values;
+drop table environments;
+drop table events;
+drop table gitops_commits;
+`)
+		setupDatabase(driver, store.DB)
+	}
+
+	return store
 }
 
 // NewTest creates a new database connection for testing purposes.
@@ -140,7 +176,5 @@ func setupMeddler(driver, encryptionKey string) {
 		meddler.Default = meddler.PostgreSQL
 	}
 
-	if encryptionKey != "" {
-		meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey})
-	}
+	meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey})
 }

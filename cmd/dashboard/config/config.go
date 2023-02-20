@@ -114,8 +114,9 @@ type Chart struct {
 }
 
 type Database struct {
-	Driver string `envconfig:"DATABASE_DRIVER"`
-	Config string `envconfig:"DATABASE_CONFIG"`
+	Driver        string `envconfig:"DATABASE_DRIVER"`
+	Config        string `envconfig:"DATABASE_CONFIG"`
+	EncryptionKey string `envconfig:"DATABASE_ENCRYPTION_KEY"`
 }
 
 type Notifications struct {

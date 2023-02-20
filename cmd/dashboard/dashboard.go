@@ -57,7 +57,11 @@ func main() {
 	agentWSHub := streaming.NewAgentWSHub(*clientHub)
 	go agentWSHub.Run()
 
-	store := store.New(config.Database.Driver, config.Database.Config)
+	store := store.New(
+		config.Database.Driver,
+		config.Database.Config,
+		config.Database.EncryptionKey,
+	)
 
 	err = setupAdminUser(config, store)
 	if err != nil {
