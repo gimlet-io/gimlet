@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BootstrapGuide } from 'shared-components';
+import BootstrapGuide from './bootstrapGuide';
 import StreamingBackend from './streamingBackend';
 import GimletCLIClient from './client';
 

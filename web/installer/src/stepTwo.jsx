@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { StackUI, SeparateEnvironments } from 'shared-components';
+import StackUI from './stack-ui';
+import SeparateEnvironments from './separateEnvironments';
 
 const StepTwo = ({ getContext }) => {
   const [context, setContext] = useState({
