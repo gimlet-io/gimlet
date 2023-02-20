@@ -3,8 +3,7 @@ module.exports = {
     './src/**/*.{js,jsx,ts,tsx}',
     './public/index.html',
     './src/**/*.css',
-    './node_modules/helm-react-ui/src/**/*.js',
-    './node_modules/shared-components/**/*.js'
+    './node_modules/helm-react-ui/src/**/*.js'
   ],
   theme: {
     extend: {},
