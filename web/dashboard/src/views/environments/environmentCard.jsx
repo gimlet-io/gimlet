@@ -4,6 +4,7 @@ import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
+import GitopsAutomationGuide from './gitopsAutomationGuide';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
@@ -484,6 +485,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   controllerGenerated={false}
                   scmUrl={scmUrl}
                 />
+                <GitopsAutomationGuide />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
               </>
             }
