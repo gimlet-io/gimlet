@@ -89,7 +89,7 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	circleCiConfigPath := ".circleci"
-	circleCiShipperCommand := "gimlet/gimlet-artifact-createn"
+	circleCiShipperCommand := "gimlet/gimlet-artifact-create"
 	hasCircleCiConfig, hasCircleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
