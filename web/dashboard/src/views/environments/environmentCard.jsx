@@ -1,7 +1,9 @@
 import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
-import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
+import StackUI from './stack-ui';
+import BootstrapGuide from './bootstrapGuide';
+import SeparateEnvironments from './separateEnvironments';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
