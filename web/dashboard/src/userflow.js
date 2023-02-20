@@ -16,7 +16,7 @@ const Userflow = ({ store }) => {
   useEffect(() => {
     if (userflowToken && login && !userflowInitiated) {
       userflow.init(userflowToken)
-      userflow.identify(login)
+      userflow.identify(window.location.hostname + "/" + login)
       setUserflowInitiated(true)
     }
   }, [userflowToken, login, userflowInitiated]);
