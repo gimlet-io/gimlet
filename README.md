@@ -11,19 +11,6 @@
   <img alt="Gimlet" src="https://github.com/gimlet-io/gimlet-documentation/blob/main/public/logo.svg" width="200">
 </picture>
 
-
-##
-
-One off SQLs:
-
-```
-update users set admin=true where login='laszlocph';
-```
-
-- gitopsRepos and gitopsRepo env vars support needs to be done: it should bootstrap an env entry, or we deprecate it
-
-##
-
 ## Overview
 
 With Gimlet, you can build and run your developer platform on Kubernetes.
