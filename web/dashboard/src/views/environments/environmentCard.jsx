@@ -379,7 +379,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div ref={ref} className="px-4 py-5 sm:px-6">
         <div className="flex justify-between">
           <div className="inline-flex">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 pr-1">
+            <h3 className="text-lg leading-6 capitalize font-medium text-gray-900 pr-1">
               {env.name}
             </h3>
             <span title={isOnline ? "Connected" : "Disconnected"}>
