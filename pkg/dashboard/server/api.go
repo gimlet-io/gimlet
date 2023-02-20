@@ -447,9 +447,10 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lowerCaseEnvNameToSave := strings.ToLower(envNameToSave)
 	db := r.Context().Value("store").(*store.Store)
 	envToSave := &model.Environment{
-		Name: envNameToSave,
+		Name: lowerCaseEnvNameToSave,
 	}
 	err = db.CreateEnvironment(envToSave)
 	if err != nil {
@@ -459,7 +460,7 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(envNameToSave))
+	w.Write([]byte(lowerCaseEnvNameToSave))
 }
 
 func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {

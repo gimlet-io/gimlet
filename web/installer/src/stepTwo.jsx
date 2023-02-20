@@ -243,6 +243,7 @@ const StepTwo = ({ getContext }) => {
               appsRepo={apps}
               setInfraRepo={setInfra}
               setAppsRepo={setApps}
+              envName={env}
             />
             <input type="hidden" name="repoPerEnv" value={repoPerEnv} />
 
