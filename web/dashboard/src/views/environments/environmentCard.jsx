@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
-import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
+import { XCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
@@ -347,20 +347,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             To initialize this environment, bootstrap the gitops repository first
           </p>
         </div>
-        <div className="mt-4 rounded-md bg-blue-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-            </div>
-            <div className="ml-3 md:justify-between">
-              <p className="text-sm text-blue-500">
-                By default, infrastructure manifests of this environment will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder of the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span> git repository,
-                <br />
-                and application manifests will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder of the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-apps</span> git repository
-              </p>
-            </div>
-          </div>
-        </div>
         <SeparateEnvironments
           repoPerEnv={repoPerEnv}
           setRepoPerEnv={setRepoPerEnv}
@@ -368,6 +354,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           appsRepo={appsRepo}
           setInfraRepo={setInfraRepo}
           setAppsRepo={setAppsRepo}
+          envName={env.name}
         />
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
