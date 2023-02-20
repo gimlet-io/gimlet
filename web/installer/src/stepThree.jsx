@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import BootstrapGuide from './bootstrapGuide';
+import GitopsAutomationGuide from './gitopsAutomationGuide';
 import StreamingBackend from './streamingBackend';
 import GimletCLIClient from './client';
 
@@ -153,6 +154,7 @@ const StepThree = ({ getContext }) => {
                                 controllerGenerated={false}
                                 scmUrl={context.scmUrl}
                             />
+                            <GitopsAutomationGuide />
                             <div className="rounded-md bg-blue-50 p-4 mb-4 overflow-hidden">
                                 <ul className="break-all text-sm text-blue-700 space-y-2">
                                     <li>👉 Add the following deploy key to your Git provider to the <a href={`${context.scmUrl}/${context.appsRepo}` + (context.scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{context.appsRepo}</a> repository <span className="font-bold">with write access</span>.</li>
