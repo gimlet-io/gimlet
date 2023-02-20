@@ -589,7 +589,7 @@ class EnvConfig extends Component {
                   </h3>
                   <div className="w-full mb-16">
                     <CopiableCodeSnippet
-                      copiable={true}
+                      copiable
                       code={
                         `cat << EOF > manifest.yaml
 ${YAML.stringify(nonDefaultConfigFile)}EOF
