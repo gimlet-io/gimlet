@@ -70,13 +70,14 @@ func GenerateManifests(
 		secretFileName = secretName + ".yaml"
 
 		syncOpts := sync.Options{
-			Interval:     15 * time.Second,
-			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
-			Name:         gitopsRepoName,
-			Secret:       secretName,
-			Namespace:    "flux-system",
-			Branch:       branch,
-			ManifestFile: gitopsRepoFileName,
+			Interval:             15 * time.Second,
+			URL:                  fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
+			Name:                 gitopsRepoName,
+			Secret:               secretName,
+			Namespace:            "flux-system",
+			Branch:               branch,
+			ManifestFile:         gitopsRepoFileName,
+			GenerateDependencies: shouldGenerateDependencies,
 		}
 
 		syncOpts.TargetPath = env
