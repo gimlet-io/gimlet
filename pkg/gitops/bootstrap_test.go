@@ -29,6 +29,7 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 	}
 
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := "staging"
 	singleEnv := false
 	shouldGenerateKustomizationAndRepo := true
@@ -37,6 +38,7 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -74,6 +76,7 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 		return
 	}
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := ""
 	singleEnv := true
 	shouldGenerateKustomizationAndRepo := true
@@ -82,6 +85,7 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -120,6 +124,7 @@ func Test_generateManifestWithController(t *testing.T) {
 	}
 
 	shouldGenerateController := true
+	shouldGenerateDependencies := true
 	env := "staging"
 	singleEnv := false
 	shouldGenerateKustomizationAndRepo := true
@@ -128,6 +133,7 @@ func Test_generateManifestWithController(t *testing.T) {
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -156,6 +162,7 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 	}
 
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := ""
 	singleEnv := true
 	shouldGenerateKustomizationAndRepo := false
@@ -164,6 +171,7 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -197,6 +205,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 	}
 
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := ""
 	singleEnv := true
 	shouldGenerateKustomizationAndRepo := true
@@ -205,6 +214,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		dirToWrite,

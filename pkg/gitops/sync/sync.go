@@ -66,28 +66,31 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 		return nil, err
 	}
 
-	gvk = kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
-	kustomizationDependencies := kustomizev1.Kustomization{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       gvk.Kind,
-			APIVersion: gvk.GroupVersion().String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", options.Name, "dependencies"),
-			Namespace: options.Namespace,
-		},
-		Spec: kustomizev1.KustomizationSpec{
-			Interval: metav1.Duration{
-				Duration: 24 * time.Hour,
+	var kustomizationDependencies kustomizev1.Kustomization
+	if options.GenerateDependencies {
+		gvk = kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
+		kustomizationDependencies = kustomizev1.Kustomization{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       gvk.Kind,
+				APIVersion: gvk.GroupVersion().String(),
 			},
-			Path:  DependenciesPath(options.TargetPath),
-			Prune: true,
-			SourceRef: kustomizev1.CrossNamespaceSourceReference{
-				Kind: sourcev1.GitRepositoryKind,
-				Name: options.Name,
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s", options.Name, "dependencies"),
+				Namespace: options.Namespace,
 			},
-			Validation: "client",
-		},
+			Spec: kustomizev1.KustomizationSpec{
+				Interval: metav1.Duration{
+					Duration: 24 * time.Hour,
+				},
+				Path:  DependenciesPath(options.TargetPath),
+				Prune: true,
+				SourceRef: kustomizev1.CrossNamespaceSourceReference{
+					Kind: sourcev1.GitRepositoryKind,
+					Name: options.Name,
+				},
+				Validation: "client",
+			},
+		}
 	}
 
 	ksDepData, err := yaml.Marshal(kustomizationDependencies)
@@ -115,12 +118,15 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 				Name: options.Name,
 			},
 			Validation: "client",
-			DependsOn: []meta.NamespacedObjectReference{
-				{
-					Name: fmt.Sprintf("%s-%s", options.Name, "dependencies"),
-				},
-			},
 		},
+	}
+
+	if options.GenerateDependencies {
+		kustomization.Spec.DependsOn = []meta.NamespacedObjectReference{
+			{
+				Name: fmt.Sprintf("%s-%s", options.Name, "dependencies"),
+			},
+		}
 	}
 
 	ksData, err := yaml.Marshal(kustomization)
@@ -128,9 +134,14 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 		return nil, err
 	}
 
+	content := fmt.Sprintf("---\n%s---\n%s", resourceToString(gitData), resourceToString(ksData))
+	if options.GenerateDependencies {
+		content += fmt.Sprintf("---\n%s", resourceToString(ksDepData))
+	}
+
 	return &manifestgen.Manifest{
 		Path:    path.Join(options.TargetPath, options.Namespace, options.ManifestFile),
-		Content: fmt.Sprintf("---\n%s---\n%s---\n%s", resourceToString(gitData), resourceToString(ksDepData), resourceToString(ksData)),
+		Content: content,
 	}, nil
 }
 

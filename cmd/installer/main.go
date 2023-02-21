@@ -593,6 +593,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		repoPerEnv,
 		installationToken,
 		true,
+		true,
 		data.scmURL,
 	)
 	if err != nil {
@@ -604,6 +605,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		appsRepo,
 		repoPerEnv,
 		installationToken,
+		false,
 		false,
 		data.scmURL,
 	)

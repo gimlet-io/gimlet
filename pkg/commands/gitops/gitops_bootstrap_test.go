@@ -23,6 +23,7 @@ func Test_guidingTextWithoutController(t *testing.T) {
 	publicKey := "12345"
 	noController := true
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := "staging"
 	singleEnv := false
 	gitopsRepoPath := dirToWrite
@@ -33,6 +34,7 @@ func Test_guidingTextWithoutController(t *testing.T) {
 
 	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		gitopsRepoPath,
@@ -77,6 +79,7 @@ func Test_guidingTextWithoutControllerAndSingleEnv(t *testing.T) {
 	publicKey := "12345"
 	noController := true
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := ""
 	singleEnv := true
 	gitopsRepoPath := dirToWrite
@@ -87,6 +90,7 @@ func Test_guidingTextWithoutControllerAndSingleEnv(t *testing.T) {
 
 	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		gitopsRepoPath,
@@ -131,6 +135,7 @@ func Test_guidingTextWithController(t *testing.T) {
 	publicKey := "12345"
 	noController := false
 	shouldGenerateController := false
+	shouldGenerateDependencies := true
 	env := "staging"
 	singleEnv := false
 	gitopsRepoPath := dirToWrite
@@ -141,6 +146,7 @@ func Test_guidingTextWithController(t *testing.T) {
 
 	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		env,
 		singleEnv,
 		gitopsRepoPath,

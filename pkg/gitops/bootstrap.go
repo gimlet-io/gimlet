@@ -18,6 +18,7 @@ import (
 
 func GenerateManifests(
 	shouldGenerateController bool,
+	shouldGenerateDependencies bool,
 	env string,
 	singleEnv bool,
 	gitopsRepoPath string,
@@ -69,13 +70,14 @@ func GenerateManifests(
 		secretFileName = secretName + ".yaml"
 
 		syncOpts := sync.Options{
-			Interval:     15 * time.Second,
-			URL:          fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
-			Name:         gitopsRepoName,
-			Secret:       secretName,
-			Namespace:    "flux-system",
-			Branch:       branch,
-			ManifestFile: gitopsRepoFileName,
+			Interval:             15 * time.Second,
+			URL:                  fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
+			Name:                 gitopsRepoName,
+			Secret:               secretName,
+			Namespace:            "flux-system",
+			Branch:               branch,
+			ManifestFile:         gitopsRepoFileName,
+			GenerateDependencies: shouldGenerateDependencies,
 		}
 
 		syncOpts.TargetPath = env
@@ -92,13 +94,15 @@ func GenerateManifests(
 			return "", "", "", fmt.Errorf("cannot write git manifests %s", err)
 		}
 
-		err = os.MkdirAll(path.Join(gitopsRepoPath, env, "dependencies"), os.ModePerm)
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot create dependencies folder %s", err)
-		}
-		err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "dependencies", ".sourceignore"), []byte(""), os.ModePerm)
-		if err != nil {
-			return "", "", "", fmt.Errorf("cannot populate dependencies folder %s", err)
+		if shouldGenerateDependencies {
+			err = os.MkdirAll(path.Join(gitopsRepoPath, env, "dependencies"), os.ModePerm)
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot create dependencies folder %s", err)
+			}
+			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "dependencies", ".sourceignore"), []byte(""), os.ModePerm)
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot populate dependencies folder %s", err)
+			}
 		}
 
 		if shouldGenerateDeployKey {
