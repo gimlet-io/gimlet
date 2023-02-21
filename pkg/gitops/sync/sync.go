@@ -118,12 +118,15 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 				Name: options.Name,
 			},
 			Validation: "client",
-			DependsOn: []meta.NamespacedObjectReference{
-				{
-					Name: fmt.Sprintf("%s-%s", options.Name, "dependencies"),
-				},
-			},
 		},
+	}
+
+	if options.GenerateDependencies {
+		kustomization.Spec.DependsOn = []meta.NamespacedObjectReference{
+			{
+				Name: fmt.Sprintf("%s-%s", options.Name, "dependencies"),
+			},
+		}
 	}
 
 	ksData, err := yaml.Marshal(kustomization)
