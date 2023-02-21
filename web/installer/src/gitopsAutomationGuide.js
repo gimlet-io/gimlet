@@ -25,7 +25,7 @@ flux-system   gitops-repo-gimlet-bootstraping-tutorial-dependencies   127m   Tru
                     Now that the gitops automation is in place, every manifest you put in the gitops repositories will be applied on the cluster by the gitops controller.
                 </li>
                 <li className="text-lg font-bold text-blue-800 pt-8">Need to debug Flux?</li>
-                <li>If <code>`kustomizations`</code> or <code>`gitrepositories`</code> are not in ready state, you get an error message in their status.</li>
+                <li>If <code>`kustomizations`</code> or <code>`gitrepositories`</code> are not in ready state, you can see the error message if you run `kubectl describe` on them.</li>
                 <li>If you need to further debug their behavior, you can check Flux logs in the <code>`flux-system`</code> namespace.</li>
                 <code className="block whitespace-pre overflow-x-scroll font-mono text-xs my-4 p-2 bg-blue-100 text-blue-500 rounded">
                     {`kubectl logs -f deploy/kustomize-controller -n flux-system
