@@ -66,9 +66,9 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 		return nil, err
 	}
 
+	gvk = kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
 	var kustomizationDependencies kustomizev1.Kustomization
 	if options.GenerateDependencies {
-		gvk = kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
 		kustomizationDependencies = kustomizev1.Kustomization{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       gvk.Kind,
