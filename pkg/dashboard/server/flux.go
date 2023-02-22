@@ -13,6 +13,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -55,6 +56,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 	streaming.BroadcastGitopsCommitEvent(clientHub, *gitopsCommit)
 
+	logrus.Info("Saving gitops commit")
 	err = store.SaveOrUpdateGitopsCommit(gitopsCommit)
 	if err != nil {
 		log.Errorf("could not save or update gitops commit: %s", err)

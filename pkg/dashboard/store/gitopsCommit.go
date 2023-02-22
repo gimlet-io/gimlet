@@ -6,6 +6,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	queries "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
 	"github.com/russross/meddler"
+	"github.com/sirupsen/logrus"
 )
 
 func (db *Store) GitopsCommit(sha string) (*model.GitopsCommit, error) {
@@ -87,12 +88,14 @@ func (db *Store) saveOrUpdateGitopsCommitWithTx(gitopsCommit *model.GitopsCommit
 		return err
 	}
 
+	logrus.Infof("gtopscommitstatus: %s", savedGitopsCommit.Status)
 	if savedGitopsCommit.Status == model.ReconciliationSucceeded ||
 		savedGitopsCommit.Status == model.ReconciliationFailed ||
 		savedGitopsCommit.Status == model.ValidationFailed {
 		return nil // don't update state, commit was applied already
 	}
 
+	logrus.Infof("gtopscommitstatus updating to %s", gitopsCommit.Status)
 	savedGitopsCommit.Status = gitopsCommit.Status
 	savedGitopsCommit.StatusDesc = gitopsCommit.StatusDesc
 	savedGitopsCommit.Created = gitopsCommit.Created
