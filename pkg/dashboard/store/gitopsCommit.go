@@ -37,6 +37,37 @@ func (db *Store) GitopsCommits() ([]*model.GitopsCommit, error) {
 }
 
 func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) error {
+	if db.driver != "sqlite3" {
+		return db.saveOrUpdateGitopsCommitWithTx(gitopsCommit)
+	} else {
+		return db.saveOrUpdateGitopsCommitWithoutTx(gitopsCommit)
+	}
+}
+
+func (db *Store) saveOrUpdateGitopsCommitWithoutTx(gitopsCommit *model.GitopsCommit) error {
+	stmt := queries.Stmt(db.driver, queries.SelectGitopsCommitBySha)
+	savedGitopsCommit := new(model.GitopsCommit)
+	err := meddler.QueryRow(db, savedGitopsCommit, stmt, gitopsCommit.Sha)
+	if err == sql.ErrNoRows {
+		return meddler.Insert(db, "gitops_commits", gitopsCommit)
+	} else if err != nil {
+		return err
+	}
+
+	if savedGitopsCommit.Status == model.ReconciliationSucceeded ||
+		savedGitopsCommit.Status == model.ReconciliationFailed ||
+		savedGitopsCommit.Status == model.ValidationFailed {
+		return nil // don't update state, commit was applied already
+	}
+
+	savedGitopsCommit.Status = gitopsCommit.Status
+	savedGitopsCommit.StatusDesc = gitopsCommit.StatusDesc
+	savedGitopsCommit.Created = gitopsCommit.Created
+	savedGitopsCommit.Env = gitopsCommit.Env
+	return meddler.Update(db, "gitops_commits", savedGitopsCommit)
+}
+
+func (db *Store) saveOrUpdateGitopsCommitWithTx(gitopsCommit *model.GitopsCommit) error {
 	stmt := queries.Stmt(db.driver, queries.SelectGitopsCommitBySha)
 	savedGitopsCommit := new(model.GitopsCommit)
 	tx, err := db.Begin()
