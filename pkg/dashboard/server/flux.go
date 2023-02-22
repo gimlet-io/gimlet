@@ -86,7 +86,10 @@ func asGitopsCommit(event fluxEvents.Event, env string) (*model.GitopsCommit, er
 func parseRev(rev string) string {
 	parts := strings.Split(rev, "/")
 	if len(parts) != 2 {
-		return "n/a"
+		parts = strings.Split(rev, ":")
+		if len(parts) != 2 {
+			return "n/a"
+		}
 	}
 
 	return parts[1]
