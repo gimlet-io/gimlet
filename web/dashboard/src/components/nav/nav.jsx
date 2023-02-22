@@ -126,14 +126,6 @@ export default class Nav extends Component {
                   >
                     Community
                   </a>
-                  <a
-                    href="https://book.gimlet.io"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-gray-500 inline-flex items-center px-1 pt-1 text-sm relative"
-                  >
-                    Book
-                  </a>
                 </div>
                 <div className="hidden sm:ml-2 sm:flex sm:items-center">
                   {/*<button*/}
