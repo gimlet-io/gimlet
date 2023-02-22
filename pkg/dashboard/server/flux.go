@@ -13,7 +13,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -50,17 +49,21 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	stateUpdated, err := store.SaveOrUpdateGitopsCommit(gitopsCommit)
+	if err != nil {
+		log.Errorf("could not save or update gitops commit: %s", err)
+	}
+
+	if !stateUpdated {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(""))
+	}
+
 	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
 	notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
 
 	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 	streaming.BroadcastGitopsCommitEvent(clientHub, *gitopsCommit)
-
-	logrus.Info("Saving gitops commit")
-	err = store.SaveOrUpdateGitopsCommit(gitopsCommit)
-	if err != nil {
-		log.Errorf("could not save or update gitops commit: %s", err)
-	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(""))
@@ -70,7 +73,10 @@ func asGitopsCommit(event fluxEvents.Event, env string) (*model.GitopsCommit, er
 	if _, ok := event.Metadata["revision"]; !ok {
 		return nil, fmt.Errorf("could not extract gitops sha from Flux message: %s", event)
 	}
-	sha := parseRev(event.Metadata["revision"])
+	sha, err := parseRev(event.Metadata["revision"])
+	if err != nil {
+		return nil, err
+	}
 
 	statusDesc := event.Message
 
@@ -83,14 +89,14 @@ func asGitopsCommit(event fluxEvents.Event, env string) (*model.GitopsCommit, er
 	}, nil
 }
 
-func parseRev(rev string) string {
+func parseRev(rev string) (string, error) {
 	parts := strings.Split(rev, "/")
 	if len(parts) != 2 {
 		parts = strings.Split(rev, ":")
 		if len(parts) != 2 {
-			return "n/a"
+			return "", fmt.Errorf("could not parse revision: %s", rev)
 		}
 	}
 
-	return parts[1]
+	return parts[1], nil
 }

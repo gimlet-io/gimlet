@@ -6,7 +6,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	queries "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
 	"github.com/russross/meddler"
-	"github.com/sirupsen/logrus"
 )
 
 func (db *Store) GitopsCommit(sha string) (*model.GitopsCommit, error) {
@@ -37,7 +36,7 @@ func (db *Store) GitopsCommits() ([]*model.GitopsCommit, error) {
 	return data, err
 }
 
-func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) error {
+func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) (bool, error) {
 	if db.driver != "sqlite3" {
 		return db.saveOrUpdateGitopsCommitWithTx(gitopsCommit)
 	} else {
@@ -45,35 +44,35 @@ func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) erro
 	}
 }
 
-func (db *Store) saveOrUpdateGitopsCommitWithoutTx(gitopsCommit *model.GitopsCommit) error {
+func (db *Store) saveOrUpdateGitopsCommitWithoutTx(gitopsCommit *model.GitopsCommit) (bool, error) {
 	stmt := queries.Stmt(db.driver, queries.SelectGitopsCommitBySha)
 	savedGitopsCommit := new(model.GitopsCommit)
 	err := meddler.QueryRow(db, savedGitopsCommit, stmt, gitopsCommit.Sha)
 	if err == sql.ErrNoRows {
-		return meddler.Insert(db, "gitops_commits", gitopsCommit)
+		return true, meddler.Insert(db, "gitops_commits", gitopsCommit)
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	if savedGitopsCommit.Status == model.ReconciliationSucceeded ||
 		savedGitopsCommit.Status == model.ReconciliationFailed ||
 		savedGitopsCommit.Status == model.ValidationFailed {
-		return nil // don't update state, commit was applied already
+		return false, nil // don't update state, commit was applied already
 	}
 
 	savedGitopsCommit.Status = gitopsCommit.Status
 	savedGitopsCommit.StatusDesc = gitopsCommit.StatusDesc
 	savedGitopsCommit.Created = gitopsCommit.Created
 	savedGitopsCommit.Env = gitopsCommit.Env
-	return meddler.Update(db, "gitops_commits", savedGitopsCommit)
+	return true, meddler.Update(db, "gitops_commits", savedGitopsCommit)
 }
 
-func (db *Store) saveOrUpdateGitopsCommitWithTx(gitopsCommit *model.GitopsCommit) error {
+func (db *Store) saveOrUpdateGitopsCommitWithTx(gitopsCommit *model.GitopsCommit) (bool, error) {
 	stmt := queries.Stmt(db.driver, queries.SelectGitopsCommitBySha)
 	savedGitopsCommit := new(model.GitopsCommit)
 	tx, err := db.Begin()
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer tx.Rollback()
 
@@ -81,28 +80,26 @@ func (db *Store) saveOrUpdateGitopsCommitWithTx(gitopsCommit *model.GitopsCommit
 	if err == sql.ErrNoRows {
 		err = meddler.Insert(db, "gitops_commits", gitopsCommit)
 		if err != nil {
-			return err
+			return false, err
 		}
-		return tx.Commit()
+		return true, tx.Commit()
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
-	logrus.Infof("gtopscommitstatus: %s", savedGitopsCommit.Status)
 	if savedGitopsCommit.Status == model.ReconciliationSucceeded ||
 		savedGitopsCommit.Status == model.ReconciliationFailed ||
 		savedGitopsCommit.Status == model.ValidationFailed {
-		return nil // don't update state, commit was applied already
+		return false, nil // don't update state, commit was applied already
 	}
 
-	logrus.Infof("gtopscommitstatus updating to %s", gitopsCommit.Status)
 	savedGitopsCommit.Status = gitopsCommit.Status
 	savedGitopsCommit.StatusDesc = gitopsCommit.StatusDesc
 	savedGitopsCommit.Created = gitopsCommit.Created
 	savedGitopsCommit.Env = gitopsCommit.Env
 	err = meddler.Update(db, "gitops_commits", savedGitopsCommit)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return tx.Commit()
+	return true, tx.Commit()
 }

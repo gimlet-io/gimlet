@@ -71,9 +71,9 @@ func testPostEndpoint(handlerFunc http.HandlerFunc, cn contextFunc, path string,
 }
 
 func Test_parseRev(t *testing.T) {
-	parsed := parseRev("main/1234567890")
+	parsed, _ := parseRev("main/1234567890")
 	assert.Equal(t, "1234567890", parsed)
 
-	parsed = parseRev("main@sha1:69b59063470310ebbd88a9156325322a124e55a3")
+	parsed, _ = parseRev("main@sha1:69b59063470310ebbd88a9156325322a124e55a3")
 	assert.Equal(t, "69b59063470310ebbd88a9156325322a124e55a3", parsed)
 }
