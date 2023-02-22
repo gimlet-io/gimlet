@@ -21,6 +21,8 @@ export default class GimletClient {
 
   getGitRepos = () => this.get('/api/gitRepos');
 
+  refreshRepos = () => this.get('/api/refreshRepos');
+
   getGitopsCommits = () => this.getWithAxios("/api/gitopsCommits");
 
   getSettings = () => this.getWithAxios("/api/settings");

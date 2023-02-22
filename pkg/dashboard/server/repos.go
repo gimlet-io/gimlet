@@ -63,6 +63,59 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	w.Write(reposString)
 }
 
+func refreshRepos(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user := ctx.Value("user").(*model.User)
+	dao := ctx.Value("store").(*store.Store)
+	config := ctx.Value("config").(*config.Config)
+
+	user, err := dao.User(user.Login)
+	if err != nil {
+		logrus.Errorf("cannot get user from db: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	go updateUserRepos(config, dao, user)
+
+	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
+		user.AccessToken = token.Token
+		user.RefreshToken = token.Refresh
+		user.Expires = token.Expires.Unix()
+		err := dao.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("could not refresh user's oauth access_token")
+		}
+	})
+
+	userRepos, err := goScmHelper.UserRepos(user.AccessToken, user.RefreshToken, time.Unix(user.Expires, 0))
+	if err != nil {
+		logrus.Warnf("cannot get user repos: %s", err)
+		return
+	}
+
+	userHasAccessToReposDb := hasPrefix(user.Repos, config.Org())
+	userHasAccessToReposGit := hasPrefix(userRepos, config.Org())
+	repoDiffs := diff(userHasAccessToReposDb, userHasAccessToReposGit)
+	added, deleted := repoDifferences(userHasAccessToReposDb, userHasAccessToReposGit, repoDiffs)
+
+	refresh := map[string]interface{}{
+		"repos":   userHasAccessToReposGit,
+		"added":   added,
+		"deleted": deleted,
+	}
+
+	refreshString, err := json.Marshal(refresh)
+	if err != nil {
+		logrus.Errorf("cannot serialize refresh: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(refreshString)
+}
+
 func updateOrgRepos(ctx context.Context) {
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
@@ -222,4 +275,53 @@ func settings(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write([]byte(settingsString))
+}
+
+func repoDifferences(dbRepos, gitRepos, repoDiffs []string) (added, deleted []string) {
+	added = make([]string, 0, len(repoDiffs))
+	deleted = make([]string, 0, len(repoDiffs))
+	for _, repo := range repoDiffs {
+		if contains(dbRepos, repo) {
+			deleted = append(deleted, repo)
+		}
+
+		if contains(gitRepos, repo) {
+			added = append(added, repo)
+		}
+	}
+
+	return added, deleted
+}
+
+func contains(elems []string, v string) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func diff(slice1 []string, slice2 []string) []string {
+	var diff []string
+
+	for i := 0; i < 2; i++ {
+		for _, s1 := range slice1 {
+			found := false
+			for _, s2 := range slice2 {
+				if s1 == s2 {
+					found = true
+					break
+				}
+			}
+			if !found {
+				diff = append(diff, s1)
+			}
+		}
+		if i == 0 {
+			slice1, slice2 = slice2, slice1
+		}
+	}
+
+	return diff
 }
