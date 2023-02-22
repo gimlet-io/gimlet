@@ -922,7 +922,7 @@ func saveAndBroadcastGitopsCommit(
 
 	streaming.BroadcastGitopsCommitEvent(clientHub, gitopsCommitToSave)
 
-	err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
+	_, err := store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
 	if err != nil {
 		logrus.Warnf("could not save or update gitops commit: %s", err)
 	}

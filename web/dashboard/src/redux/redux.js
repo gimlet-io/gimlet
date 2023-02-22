@@ -204,6 +204,7 @@ function processStreamingEvent(state, event) {
     case EVENT_STALE_REPO_DATA:
       return eventHandlers.staleRepoData(state, event);
     case EVENT_GITOPS_COMMIT_EVENT:
+      console.log(event);
       return eventHandlers.updateGitopsCommits(state, event);
     case EVENT_COMMIT_STATUS_UPDATED:
       return eventHandlers.updateCommitStatus(state, event);

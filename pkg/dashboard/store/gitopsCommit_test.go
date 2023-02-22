@@ -17,11 +17,11 @@ func TestGitopsCommitCRUD(t *testing.T) {
 		Sha: "sha",
 	}
 
-	err := s.SaveOrUpdateGitopsCommit(gitopsCommit)
+	_, err := s.SaveOrUpdateGitopsCommit(gitopsCommit)
 	assert.Nil(t, err)
 
 	gitopsCommit.Status = "aStatus"
-	err = s.SaveOrUpdateGitopsCommit(gitopsCommit)
+	_, err = s.SaveOrUpdateGitopsCommit(gitopsCommit)
 	assert.Nil(t, err)
 
 	savedGitopsCommit, err := s.GitopsCommit("sha")
