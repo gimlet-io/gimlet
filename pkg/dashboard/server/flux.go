@@ -57,6 +57,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	if !stateUpdated {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(""))
+		return
 	}
 
 	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
