@@ -1,10 +1,10 @@
-# name: 🧪 Preview
-# on:
-#   push:
-#     branches-ignore:
-#       - "main"
+name: 🧪 Preview
+on:
+  push:
+    branches-ignore:
+      - "main"
 
-# jobs:
+jobs: {}
 #   preview-build:
 #     name: 🧪 Preview
 #     runs-on: ubuntu-latest
