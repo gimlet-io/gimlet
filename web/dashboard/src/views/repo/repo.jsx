@@ -243,31 +243,33 @@ export default class Repo extends Component {
           }
           if (gitopsCommitsApplied) {
             for (const result of deployRequest.results) {
-              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
-              .then(data => {
-                  this.props.store.dispatch({
-                    type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-                      owner: owner,
-                      repo: repo,
-                      env: result.env,
-                      app: result.app,
-                      releases: data,
-                    }
-                  });
-                }, () => {/* Generic error handler deals with it */ }
-                );
-
-              this.props.gimletClient.getReleases(result.env, 10)
+              setTimeout(() => {
+                this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
                 .then(data => {
-                  this.props.store.dispatch({
-                    type: ACTION_TYPE_RELEASE_STATUSES,
-                    payload: {
-                      envName: result.env,
-                      data: data,
-                    }
-                  });
-                }, () => {/* Generic error handler deals with it */
-                })
+                    this.props.store.dispatch({
+                      type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+                        owner: owner,
+                        repo: repo,
+                        env: result.env,
+                        app: result.app,
+                        releases: data,
+                      }
+                    });
+                  }, () => {/* Generic error handler deals with it */ }
+                  );
+
+                this.props.gimletClient.getReleases(result.env, 10)
+                  .then(data => {
+                    this.props.store.dispatch({
+                      type: ACTION_TYPE_RELEASE_STATUSES,
+                      payload: {
+                        envName: result.env,
+                        data: data,
+                      }
+                    });
+                  }, () => {/* Generic error handler deals with it */
+                  })
+                }, 300);
             }
           }
         }
