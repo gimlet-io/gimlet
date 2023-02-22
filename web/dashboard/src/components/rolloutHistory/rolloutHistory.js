@@ -151,8 +151,8 @@ at ${exactDate}`;
 }
 
 export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl) {
-  const exactGitopsCommitCreatedDate = format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
-  let gitopsCommitCreatedDateLabel = formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
+  const exactGitopsCommitCreatedDate = rollout.gitopsCommitCreated === 0 ? "" : format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
+  let gitopsCommitCreatedDateLabel = rollout.gitopsCommitCreated === 0 ? "" : formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
 
   let rounding = "";
   let status = rollout.gitopsCommitStatus.includes("NotReady") ? "Applying" : "Trailing";
