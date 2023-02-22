@@ -151,7 +151,6 @@ at ${exactDate}`;
 }
 
 export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl) {
-  console.log(rollout)
   const exactGitopsCommitCreatedDate = !rollout.gitopsCommitCreated ? "" : format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
   let gitopsCommitCreatedDateLabel = !rollout.gitopsCommitCreated ? "" : formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
 
