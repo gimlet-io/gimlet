@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
 import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
+import RefreshRepos from './refreshRepos';
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -21,6 +22,7 @@ export default class Repositories extends Component {
       agents: reduxState.settings.agents,
       appSettingsURL: reduxState.application.appSettingsURL,
       repositoriesLoading: true,
+      isClosed: true,
     }
 
     // handling API and streaming state changes
@@ -170,6 +172,42 @@ export default class Repositories extends Component {
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
+            <div className="space-y-2">
+              <button className="flex text-blue-500 hover:text-blue-700"
+                onClick={() => {
+                  this.setState((prevState) => {
+                    return {
+                      isClosed: !prevState.isClosed
+                    }
+                  })
+                }}
+              >
+                fetch
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 cursor-pointer my-auto"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d={
+                      this.state.isClosed
+                        ? "M9 5l7 7-7 7"
+                        : "M19 9l-7 7-7-7"
+                    }
+                  />
+                </svg>
+              </button>
+              {!this.state.isClosed &&
+                <RefreshRepos
+                  gimletClient={this.props.gimletClient}
+                  store={this.props.store}
+                />}
+            </div>
           </div>
         </header>
         <main>
@@ -204,7 +242,7 @@ export default class Repositories extends Component {
 
 }
 
-const Spinner = () => {
+export const Spinner = () => {
   return (
     <div className="max-w-7xl grid place-items-center mx-auto px-4 sm:px-6 lg:px-8">
       <div role="status">

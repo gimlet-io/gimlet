@@ -8,6 +8,9 @@ module.exports = {
     './node_modules/helm-react-ui/src/**/*.js'
   ],
   theme: {
+    minHeight: {
+      '200px': '200px',
+    },
     extend: {
       colors: {
         green : colors.emerald,

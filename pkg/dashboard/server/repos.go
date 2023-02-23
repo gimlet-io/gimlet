@@ -63,6 +63,42 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	w.Write(reposString)
 }
 
+func refreshRepos(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user := ctx.Value("user").(*model.User)
+	dao := ctx.Value("store").(*store.Store)
+	config := ctx.Value("config").(*config.Config)
+
+	user, err := dao.User(user.Login)
+	if err != nil {
+		logrus.Errorf("cannot get user from db: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	userReposDb := hasPrefix(user.Repos, config.Org())
+	userRepos := updateUserRepos(config, dao, user)
+	userReposWithAccess := hasPrefix(userRepos, config.Org())
+	added := difference(userReposWithAccess, userReposDb)
+	deleted := difference(userReposDb, userReposWithAccess)
+
+	repos := map[string]interface{}{
+		"userRepos": userReposWithAccess,
+		"added":     added,
+		"deleted":   deleted,
+	}
+
+	reposString, err := json.Marshal(repos)
+	if err != nil {
+		logrus.Errorf("cannot serialize repos: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(reposString)
+}
+
 func updateOrgRepos(ctx context.Context) {
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
@@ -91,7 +127,7 @@ func updateOrgRepos(ctx context.Context) {
 	}
 }
 
-func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) {
+func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
 	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
 		user.AccessToken = token.Token
 		user.RefreshToken = token.Refresh
@@ -104,30 +140,16 @@ func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) 
 	userRepos, err := goScmHelper.UserRepos(user.AccessToken, user.RefreshToken, time.Unix(user.Expires, 0))
 	if err != nil {
 		logrus.Warnf("cannot get user repos: %s", err)
-		return
+		return nil
 	}
 
 	user.Repos = userRepos
 	err = dao.UpdateUser(user)
 	if err != nil {
 		logrus.Warnf("cannot get user repos: %s", err)
-		return
+		return nil
 	}
-}
-
-func intersection(s1, s2 []string) (inter []string) {
-	hash := make(map[string]bool)
-	for _, e := range s1 {
-		hash[e] = true
-	}
-	for _, e := range s2 {
-		// If elements present in the hashmap then append intersection list.
-		if hash[e] {
-			inter = append(inter, e)
-		}
-	}
-
-	return
+	return userRepos
 }
 
 func hasPrefix(repos []string, prefix string) []string {
@@ -222,4 +244,19 @@ func settings(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write([]byte(settingsString))
+}
+
+// returns the elements in `slice1` that aren't in `slice2`
+func difference(slice1 []string, slice2 []string) []string {
+	mb := make(map[string]struct{}, len(slice2))
+	for _, x := range slice2 {
+		mb[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range slice1 {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
 }
