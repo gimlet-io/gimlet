@@ -76,44 +76,27 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go updateUserRepos(config, dao, user)
+	userReposDb := hasPrefix(user.Repos, config.Org())
+	userRepos := updateUserRepos(config, dao, user)
+	userReposWithAccess := hasPrefix(userRepos, config.Org())
+	added := difference(userReposWithAccess, userReposDb)
+	deleted := difference(userReposDb, userReposWithAccess)
 
-	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
-		user.AccessToken = token.Token
-		user.RefreshToken = token.Refresh
-		user.Expires = token.Expires.Unix()
-		err := dao.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("could not refresh user's oauth access_token")
-		}
-	})
-
-	userRepos, err := goScmHelper.UserRepos(user.AccessToken, user.RefreshToken, time.Unix(user.Expires, 0))
-	if err != nil {
-		logrus.Warnf("cannot get user repos: %s", err)
-		return
+	repos := map[string]interface{}{
+		"userRepos": userReposWithAccess,
+		"added":     added,
+		"deleted":   deleted,
 	}
 
-	userHasAccessToReposDb := hasPrefix(user.Repos, config.Org())
-	userHasAccessToReposGit := hasPrefix(userRepos, config.Org())
-	repoDiffs := diff(userHasAccessToReposDb, userHasAccessToReposGit)
-	added, deleted := repoDifferences(userHasAccessToReposDb, userHasAccessToReposGit, repoDiffs)
-
-	refresh := map[string]interface{}{
-		"repos":   userHasAccessToReposGit,
-		"added":   added,
-		"deleted": deleted,
-	}
-
-	refreshString, err := json.Marshal(refresh)
+	reposString, err := json.Marshal(repos)
 	if err != nil {
-		logrus.Errorf("cannot serialize refresh: %s", err)
+		logrus.Errorf("cannot serialize repos: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
 	w.WriteHeader(200)
-	w.Write(refreshString)
+	w.Write(reposString)
 }
 
 func updateOrgRepos(ctx context.Context) {
@@ -144,7 +127,7 @@ func updateOrgRepos(ctx context.Context) {
 	}
 }
 
-func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) {
+func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
 	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
 		user.AccessToken = token.Token
 		user.RefreshToken = token.Refresh
@@ -157,15 +140,16 @@ func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) 
 	userRepos, err := goScmHelper.UserRepos(user.AccessToken, user.RefreshToken, time.Unix(user.Expires, 0))
 	if err != nil {
 		logrus.Warnf("cannot get user repos: %s", err)
-		return
+		return nil
 	}
 
 	user.Repos = userRepos
 	err = dao.UpdateUser(user)
 	if err != nil {
 		logrus.Warnf("cannot get user repos: %s", err)
-		return
+		return nil
 	}
+	return userRepos
 }
 
 func hasPrefix(repos []string, prefix string) []string {
@@ -262,51 +246,17 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(settingsString))
 }
 
-func repoDifferences(dbRepos, gitRepos, repoDiffs []string) (added, deleted []string) {
-	added = make([]string, 0, len(repoDiffs))
-	deleted = make([]string, 0, len(repoDiffs))
-	for _, repo := range repoDiffs {
-		if contains(dbRepos, repo) {
-			deleted = append(deleted, repo)
-		}
-
-		if contains(gitRepos, repo) {
-			added = append(added, repo)
-		}
+// returns the elements in `slice1` that aren't in `slice2`
+func difference(slice1 []string, slice2 []string) []string {
+	mb := make(map[string]struct{}, len(slice2))
+	for _, x := range slice2 {
+		mb[x] = struct{}{}
 	}
-
-	return added, deleted
-}
-
-func contains(elems []string, v string) bool {
-	for _, s := range elems {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
-func diff(slice1 []string, slice2 []string) []string {
 	var diff []string
-
-	for i := 0; i < 2; i++ {
-		for _, s1 := range slice1 {
-			found := false
-			for _, s2 := range slice2 {
-				if s1 == s2 {
-					found = true
-					break
-				}
-			}
-			if !found {
-				diff = append(diff, s1)
-			}
-		}
-		if i == 0 {
-			slice1, slice2 = slice2, slice1
+	for _, x := range slice1 {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
 		}
 	}
-
 	return diff
 }

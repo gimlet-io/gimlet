@@ -170,45 +170,45 @@ export default class Repositories extends Component {
     return (
       <div>
         <header>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
-            <button
-              onClick={() => {
-                this.setState((prevState) => {
-                  return {
-                    isClosed: !prevState.isClosed
-                  }
-                })
-              }}
-              className="flex items-stretch select-none text-3xl font-bold leading-tight text-gray-900">
-              fetch
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 cursor-pointer my-auto"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            <div className="space-y-2">
+              <button className="flex text-blue-500 hover:text-blue-700"
+                onClick={() => {
+                  this.setState((prevState) => {
+                    return {
+                      isClosed: !prevState.isClosed
+                    }
+                  })
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d={
-                    this.state.isClosed
-                      ? "M9 5l7 7-7 7"
-                      : "M19 9l-7 7-7-7"
-                  }
-                />
-              </svg>
-            </button>
+                fetch
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 cursor-pointer my-auto"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d={
+                      this.state.isClosed
+                        ? "M9 5l7 7-7 7"
+                        : "M19 9l-7 7-7-7"
+                    }
+                  />
+                </svg>
+              </button>
+              {!this.state.isClosed &&
+                <RefreshRepos
+                  gimletClient={this.props.gimletClient}
+                  store={this.props.store}
+                />}
+            </div>
           </div>
-          {!this.state.isClosed &&
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-              <RefreshRepos
-                gimletClient={this.props.gimletClient}
-                store={this.props.store}
-              />
-            </div>}
         </header>
         <main>
           {this.state.repositoriesLoading ?

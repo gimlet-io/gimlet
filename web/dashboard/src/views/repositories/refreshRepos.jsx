@@ -6,15 +6,15 @@ const RefreshRepos = ({ gimletClient, store }) => {
   const [added, setAdded] = useState(null)
   const [deleted, setDeleted] = useState(null)
   const [reposLoading, setReposLoading] = useState(false)
+
   const refresh = () => {
     setReposLoading(true);
     gimletClient.refreshRepos()
       .then(data => {
-        console.log(data);
         data.added ? setAdded(data.added) : setAdded([]);
         data.deleted ? setDeleted(data.deleted) : setDeleted([]);
         store.dispatch({
-          type: ACTION_TYPE_GIT_REPOS, payload: data.repos
+          type: ACTION_TYPE_GIT_REPOS, payload: data.userRepos
         });
         setReposLoading(false);
       }, () => {
@@ -24,7 +24,7 @@ const RefreshRepos = ({ gimletClient, store }) => {
   }
 
   return (
-    <div className="p-6 bg-white overflow-hidden shadow rounded-lg">
+    <div className="p-6 bg-white overflow-hidden shadow rounded-lg space-y-4">
       <button
         onClick={() => refresh()}
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
@@ -44,7 +44,7 @@ const RefreshRepos = ({ gimletClient, store }) => {
           />
           {
             added?.length === 0 && deleted?.length === 0 &&
-            <div>There are no repository changes.</div>
+            <p className="text-sm text-gray-800">Currently there are no created or deleted repositories.</p>
           }
         </>
       }
@@ -62,7 +62,7 @@ const RenderRepos = ({ repos, color }) => {
   }
 
   return (
-    <ul className={`mt-8 mx-8 grid grid-cols-3 list-disc gap-4 ${colors[color]} font-medium`}>
+    <ul className={`px-6 text-sm list-disc ${colors[color]} font-bold`}>
       {repos.map(repo => <li key={repo}>{repo}</li>)}
     </ul>
   )
