@@ -168,21 +168,6 @@ func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) 
 	}
 }
 
-func intersection(s1, s2 []string) (inter []string) {
-	hash := make(map[string]bool)
-	for _, e := range s1 {
-		hash[e] = true
-	}
-	for _, e := range s2 {
-		// If elements present in the hashmap then append intersection list.
-		if hash[e] {
-			inter = append(inter, e)
-		}
-	}
-
-	return
-}
-
 func hasPrefix(repos []string, prefix string) []string {
 	filtered := []string{}
 	for _, r := range repos {
