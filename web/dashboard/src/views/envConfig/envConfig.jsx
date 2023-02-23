@@ -399,7 +399,7 @@ class EnvConfig extends Component {
             </svg>
           </a>
         </h2>
-        <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${config}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
+        <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push(`/repo/${repoName}`)}>
           &laquo; back
         </button>
 
