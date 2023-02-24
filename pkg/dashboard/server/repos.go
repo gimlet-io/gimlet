@@ -228,11 +228,18 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 func settings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+
+	provider := "github"
+	if config.IsGitlab() {
+		provider = "gitlab"
+	}
+
 	settings := map[string]interface{}{
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
 		"scmUrl":                  config.ScmURL(),
 		"userflowToken":           config.UserflowToken,
 		"host":                    config.Host,
+		"provider":                provider,
 	}
 
 	settingsString, err := json.Marshal(settings)

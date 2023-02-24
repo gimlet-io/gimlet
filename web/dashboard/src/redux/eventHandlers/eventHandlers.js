@@ -328,6 +328,7 @@ export function settings(state, payload) {
   state.settings.scmUrl = payload.scmUrl;
   state.settings.userflowToken = payload.userflowToken;
   state.settings.host = payload.host;
+  state.settings.provider = payload.provider;
   return state;
 }
 
