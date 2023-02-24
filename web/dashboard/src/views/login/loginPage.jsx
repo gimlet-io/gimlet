@@ -34,6 +34,10 @@ const LoginPage = () => {
                       Sign in with {provider}
                     </button>
                   </div>
+                  <div className="text-center font-light text-gray-700 flex flex-wrap justify-center">
+                    By logging in, you're agreeing to our
+                    <a href="https://gimlet.io/tos" className="hover:underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
+                  </div>
                 </div>
               </div>
             </div>
