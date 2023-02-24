@@ -24,7 +24,7 @@ const Userflow = ({ store }) => {
       })
       setUserflowInitiated(true)
     }
-  }, [userflowToken, login, userflowInitiated]);
+  }, [userflowToken, login, userflowInitiated, provider]);
 
   return null;
 }
