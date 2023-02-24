@@ -1,37 +1,10 @@
-import { useState } from "react";
-import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 import { Spinner } from "./repositories";
 
-const RefreshRepos = ({ gimletClient, store }) => {
-  const [added, setAdded] = useState(null)
-  const [deleted, setDeleted] = useState(null)
-  const [reposLoading, setReposLoading] = useState(false)
-
-  const refresh = () => {
-    setReposLoading(true);
-    gimletClient.refreshRepos()
-      .then(data => {
-        data.added ? setAdded(data.added) : setAdded([]);
-        data.deleted ? setDeleted(data.deleted) : setDeleted([]);
-        store.dispatch({
-          type: ACTION_TYPE_GIT_REPOS, payload: data.userRepos
-        });
-        setReposLoading(false);
-      }, () => {
-        setReposLoading(false);
-        /* Generic error handler deals with it */
-      });
-  }
-
+const RefreshRepos = ({ added, deleted, repositoriesRefreshing, installationURL }) => {
   return (
-    <div className="p-6 bg-white overflow-hidden shadow rounded-lg space-y-4 min-h-200px">
-      <button
-        onClick={() => refresh()}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        Refresh repositories
-      </button>
+    <div className="p-6 bg-white overflow-hidden shadow rounded-lg space-y-4">
       <div>
-        {reposLoading ?
+        {repositoriesRefreshing ?
           <Spinner />
           :
           <>
@@ -45,7 +18,16 @@ const RefreshRepos = ({ gimletClient, store }) => {
             />
             {
               added?.length === 0 && deleted?.length === 0 &&
-              <p className="text-sm text-gray-800 py-8">No new repositories found. Repository list is up to date.</p>
+              <div className="py-2 flex flex-wrap">
+                <p className="text-sm text-gray-800">No new repositories found. Repository list is up to date.</p>
+                <a
+                  href={installationURL}
+                  rel="noreferrer"
+                  target="_blank"
+                  className="mt-1 text-sm text-gray-500 hover:text-gray-600">
+                  Check the application installation settings here.
+                </a>
+              </div>
             }
           </>
         }
