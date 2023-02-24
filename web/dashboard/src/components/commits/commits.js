@@ -70,7 +70,7 @@ const Commits = ({ commits, connectedAgents, deployHandler, owner, repo, gimletC
               <div>
                 <div className="text-sm">
                   <p href="#" className="font-semibold text-gray-800">{commit.message}
-                    <span>
+                    <span class="commitStatus">
                       {
                         commit.status && commit.status.statuses &&
                         commit.status.statuses.map(status => (
