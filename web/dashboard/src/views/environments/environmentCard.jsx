@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
-import { XCircleIcon } from '@heroicons/react/solid'
+import { InformationCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
@@ -410,14 +410,14 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         {hasGitopsRepo ?
           <>
             {!isOnline && !gimletAgentConfigured &&
-              <div className="rounded-md bg-red-50 p-4">
+              <div className="rounded-md bg-blue-50 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">This environment is disconnected</h3>
-                    <div className="mt-2 text-sm text-red-700">
+                    <h3 className="text-sm font-medium text-blue-800">This environment is disconnected</h3>
+                    <div className="mt-2 text-sm text-blue-700">
                       Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
                       Or use the <span
                         className="font-medium cursor-pointer"
