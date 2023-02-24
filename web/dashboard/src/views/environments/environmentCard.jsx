@@ -409,7 +409,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div className="px-4 py-5 sm:px-6">
         {hasGitopsRepo ?
           <>
-            {!isOnline && !gimletAgentConfigured &&
+            {!isOnline && !gimletAgentConfigured && !bootstrapMessage &&
               <div className="rounded-md bg-blue-50 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
