@@ -16,19 +16,16 @@ const RefreshRepos = ({ added, deleted, repositoriesRefreshing, installationURL 
               color="red"
               repos={deleted}
             />
-            {
-              added?.length === 0 && deleted?.length === 0 &&
-              <div className="py-2 flex flex-wrap">
-                <p className="text-sm text-gray-800">No new repositories found. Repository list is up to date.</p>
-                <a
-                  href={installationURL}
-                  rel="noreferrer"
-                  target="_blank"
-                  className="mt-1 text-sm text-gray-500 hover:text-gray-600">
-                  Check the application installation settings here.
-                </a>
-              </div>
-            }
+            <div className="py-2 flex flex-wrap">
+              { added?.length === 0 && deleted?.length === 0 &&
+              <p className="text-sm text-gray-800">No new repositories found. Repository list is up to date.</p>
+              }
+              Missing a repository? You may need to grant Gimlet access to more repositories on the <a
+                href={installationURL}
+                rel="noreferrer"
+                target="_blank"
+                className="mt-1 text-sm text-gray-500 hover:text-gray-600">Github application installation settings</a>.
+            </div>
           </>
         }
       </div>
