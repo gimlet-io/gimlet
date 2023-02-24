@@ -173,7 +173,7 @@ export default class Repositories extends Component {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
             <div className="space-y-2">
-              <button className="flex text-blue-500 hover:text-blue-700"
+              <button className="flex textgray-500 hover:text-gray-700 mt-2"
                 onClick={() => {
                   this.setState((prevState) => {
                     return {
@@ -182,25 +182,7 @@ export default class Repositories extends Component {
                   })
                 }}
               >
-                fetch
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 cursor-pointer my-auto"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d={
-                      this.state.isClosed
-                        ? "M9 5l7 7-7 7"
-                        : "M19 9l-7 7-7-7"
-                    }
-                  />
-                </svg>
+                Refresh repsitories
               </button>
               {!this.state.isClosed &&
                 <RefreshRepos

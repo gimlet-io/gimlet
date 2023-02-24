@@ -28,7 +28,7 @@ const RefreshRepos = ({ gimletClient, store }) => {
       <button
         onClick={() => refresh()}
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        Refresh repos
+        Refresh repositories
       </button>
       <div>
         {reposLoading ?
@@ -45,7 +45,7 @@ const RefreshRepos = ({ gimletClient, store }) => {
             />
             {
               added?.length === 0 && deleted?.length === 0 &&
-              <p className="text-sm text-gray-800 py-8">Currently there are no created or deleted repositories.</p>
+              <p className="text-sm text-gray-800 py-8">No new repositories found. Repository list is up to date.</p>
             }
           </>
         }
