@@ -161,13 +161,13 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
 }
 
 const filterDeployTargets = (deployTargets, envs) => {
-  if (!deployTargets || !envs || !deployTargets.length || !envs.length) {
+  if (!deployTargets || !envs) {
     return undefined;
   }
 
   const filteredTargets = deployTargets.filter(deployTarget => envs.includes(deployTarget.env));
 
-  if (!filteredTargets.length) {
+  if (filteredTargets.length === 0) {
     return undefined;
   }
 
