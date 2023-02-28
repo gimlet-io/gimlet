@@ -81,6 +81,7 @@ export default class Repo extends Component {
     this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
     this.linkToDeployment = this.linkToDeployment.bind(this)
     this.newConfig = this.newConfig.bind(this)
+    this.envNames = this.envNames.bind(this)
   }
 
   componentDidMount() {
@@ -385,6 +386,10 @@ export default class Repo extends Component {
     return this.state.kubernetesAlerts.filter(event => event.envName === envName)
   }
 
+  envNames(envs) {
+    return envs.map(env => env["name"]);
+  }
+
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -467,6 +472,7 @@ export default class Repo extends Component {
                   {commits &&
                     <Commits
                       commits={commits[repoName]}
+                      envs={this.envNames(envs)}
                       connectedAgents={filteredEnvs}
                       deployHandler={this.deploy}
                       repo={repo}
