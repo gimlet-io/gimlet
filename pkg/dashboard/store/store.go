@@ -31,9 +31,9 @@ type Store struct {
 
 // New creates a database connection for the given driver and datasource
 // and returns a new Store.
-func New(driver, config, encryptionKey string) *Store {
+func New(driver, config, encryptionKey, encryptionKeyNew string) *Store {
 	return &Store{
-		DB:     open(driver, config, encryptionKey),
+		DB:     open(driver, config, encryptionKey, encryptionKeyNew),
 		driver: driver,
 		config: config,
 	}
@@ -46,7 +46,7 @@ func From(db *sql.DB) *Store {
 
 // open opens a new database connection with the specified
 // driver and connection string and returns a store.
-func open(driver, config, encryptionKey string) *sql.DB {
+func open(driver, config, encryptionKey, encryptionKeyNew string) *sql.DB {
 	db, err := sql.Open(driver, config)
 	if err != nil {
 		logrus.Errorln(err)
@@ -57,7 +57,7 @@ func open(driver, config, encryptionKey string) *sql.DB {
 		db.SetMaxIdleConns(0)
 	}
 
-	setupMeddler(driver, encryptionKey)
+	setupMeddler(driver, encryptionKey, encryptionKeyNew)
 
 	if err := pingDatabase(db); err != nil {
 		logrus.Errorln(err)
@@ -74,54 +74,17 @@ func open(driver, config, encryptionKey string) *sql.DB {
 // NewTest creates a new database connection for testing purposes.
 // The database driver and connection string are provided by
 // environment variables, with fallback to in-memory sqlite.
-func NewTestWithoutEncryption() *Store {
+func NewTest(encryptionKey, encryptionKeyNew string) *Store {
 	var (
-		driver        = "sqlite3"
-		config        = "file::memory:"
-		encryptionKey = ""
+		driver = "sqlite3"
+		config = "file::memory:"
 	)
 	if os.Getenv("DATABASE_DRIVER") != "" {
 		driver = os.Getenv("DATABASE_DRIVER")
 		config = os.Getenv("DATABASE_CONFIG")
 	}
 	store := &Store{
-		DB:     open(driver, config, encryptionKey),
-		driver: driver,
-		config: config,
-	}
-
-	// if not in-memory DB, recreate tables between tests
-	if driver != "sqlite3" {
-		store.Exec(`
-drop table migrations;
-drop table users;
-drop table commits;
-drop table key_values;
-drop table environments;
-drop table events;
-drop table gitops_commits;
-`)
-		setupDatabase(driver, store.DB)
-	}
-
-	return store
-}
-
-// NewTest creates a new database connection for testing purposes.
-// The database driver and connection string are provided by
-// environment variables, with fallback to in-memory sqlite.
-func NewTest() *Store {
-	var (
-		driver        = "sqlite3"
-		config        = "file::memory:"
-		encryptionKey = "the-key-has-to-be-32-bytes-long!"
-	)
-	if os.Getenv("DATABASE_DRIVER") != "" {
-		driver = os.Getenv("DATABASE_DRIVER")
-		config = os.Getenv("DATABASE_CONFIG")
-	}
-	store := &Store{
-		DB:     open(driver, config, encryptionKey),
+		DB:     open(driver, config, encryptionKey, encryptionKeyNew),
 		driver: driver,
 		config: config,
 	}
@@ -166,7 +129,7 @@ func setupDatabase(driver string, db *sql.DB) error {
 
 // helper function to setup the meddler default driver
 // based on the selected driver name.
-func setupMeddler(driver, encryptionKey string) {
+func setupMeddler(driver, encryptionKey, encryptionKeyNew string) {
 	switch driver {
 	case "sqlite3":
 		meddler.Default = meddler.SQLite
@@ -176,5 +139,5 @@ func setupMeddler(driver, encryptionKey string) {
 		meddler.Default = meddler.PostgreSQL
 	}
 
-	meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey})
+	meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey, EncryptionKeyNew: encryptionKeyNew})
 }

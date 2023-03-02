@@ -8,7 +8,7 @@ import (
 )
 
 func TestGitopsCommitCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

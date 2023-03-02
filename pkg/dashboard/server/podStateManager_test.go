@@ -14,7 +14,7 @@ import (
 )
 
 func TestGetPendingPods(t *testing.T) {
-	s := store.NewTest()
+	s := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -39,7 +39,7 @@ func TestGetPendingPods(t *testing.T) {
 }
 
 func TestDeletePod(t *testing.T) {
-	s := store.NewTest()
+	s := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -57,7 +57,7 @@ func TestDeletePod(t *testing.T) {
 }
 
 func TestSavePodState(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -82,7 +82,7 @@ func TestSavePodState(t *testing.T) {
 }
 
 func TestGetPodFromDB(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -100,7 +100,7 @@ func TestGetPodFromDB(t *testing.T) {
 }
 
 func TestTrackStates(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -127,7 +127,7 @@ func TestTrackStates(t *testing.T) {
 }
 
 func TestPodAlertStates(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -167,7 +167,7 @@ func TestPodAlertStates(t *testing.T) {
 }
 
 func TestSetPodAlertStatesToFiring(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -196,7 +196,7 @@ func TestSetPodAlertStatesToFiring(t *testing.T) {
 }
 
 func TestPodAlertStateTimestampOverwrite(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -263,7 +263,7 @@ func TestPodFailedMessage(t *testing.T) {
 
 func TestNotificationSending(t *testing.T) {
 	t.Skip("Skipping notification sending")
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()

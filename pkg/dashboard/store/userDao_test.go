@@ -9,7 +9,7 @@ import (
 )
 
 func TestUserCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -53,7 +53,9 @@ func TestUserCRUD(t *testing.T) {
 }
 
 func TestUserWithoutEncryption(t *testing.T) {
-	s := NewTestWithoutEncryption()
+	encryptionKey := ""
+	encryptionKeyNew := ""
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

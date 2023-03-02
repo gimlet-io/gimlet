@@ -33,7 +33,9 @@ func TestParseEnvs_Empty(t *testing.T) {
 }
 
 func TestBootstrapEnvs(t *testing.T) {
-	s := store.NewTest()
+	encryptionKey := "the-key-has-to-be-32-bytes-long!"
+	encryptionKeyNew := ""
+	s := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

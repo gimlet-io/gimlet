@@ -9,7 +9,7 @@ import (
 )
 
 func TestCommitCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -35,7 +35,7 @@ func TestCommitCRUD(t *testing.T) {
 }
 
 func TestBulkCommitCreate(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -57,7 +57,7 @@ func TestBulkCommitCreate(t *testing.T) {
 }
 
 func TestBulkQuery(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

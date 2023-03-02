@@ -15,8 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	encryptionKey    = "the-key-has-to-be-32-bytes-long!"
+	encryptionKeyNew = ""
+)
+
 func Test_saveArtifact(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 
 	artifactStr := `
 {
@@ -57,7 +62,7 @@ func Test_saveArtifact(t *testing.T) {
 }
 
 func Test_getArtifacts(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -72,7 +77,7 @@ func Test_getArtifacts(t *testing.T) {
 }
 
 func Test_getArtifactsLimitOffset(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -88,7 +93,7 @@ func Test_getArtifactsLimitOffset(t *testing.T) {
 }
 
 func Test_getArtifactsBranch(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -104,7 +109,7 @@ func Test_getArtifactsBranch(t *testing.T) {
 }
 
 func Test_getArtifactsApp(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -119,7 +124,7 @@ func Test_getArtifactsApp(t *testing.T) {
 }
 
 func Test_getArtifactsPR(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -135,7 +140,7 @@ func Test_getArtifactsPR(t *testing.T) {
 }
 
 func Test_getArtifactsSha(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -151,7 +156,7 @@ func Test_getArtifactsSha(t *testing.T) {
 }
 
 func Test_getArtifactsHashes(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	_, body, err := testEndpoint(getArtifacts, func(ctx context.Context) context.Context {
@@ -168,7 +173,7 @@ func Test_getArtifactsHashes(t *testing.T) {
 }
 
 func Test_getArtifactsSince(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	setupArtifacts(store)
 
 	time.Sleep(1 * time.Second)
