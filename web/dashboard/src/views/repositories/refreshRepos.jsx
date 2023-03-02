@@ -16,15 +16,15 @@ const RefreshRepos = ({ added, deleted, repositoriesRefreshing, installationURL 
               color="red"
               repos={deleted}
             />
-            <div className="py-2 flex flex-wrap">
+            <div className="flex flex-wrap text-sm text-gray-800">
               { added?.length === 0 && deleted?.length === 0 &&
-              <p className="text-sm text-gray-800">No new repositories found. Repository list is up to date.</p>
+              <p className="mb-2">No new repositories found.</p>
               }
-              Missing a repository? You may need to grant Gimlet access to more repositories on the <a
+              <p>Missing a repository?<br />You may need to grant Gimlet access to more repositories on the <a
                 href={installationURL}
                 rel="noreferrer"
                 target="_blank"
-                className="mt-1 text-sm text-gray-500 hover:text-gray-600">Github application installation settings</a>.
+                className="text-blue-700 hover:text-blue-500 cursor-pointer">Github application installation settings</a> page.</p>
             </div>
           </>
         }

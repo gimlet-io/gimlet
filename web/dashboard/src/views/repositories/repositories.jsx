@@ -174,17 +174,7 @@ export default class Repositories extends Component {
       )
     });
 
-    const emptyState = search.filter !== '' ?
-      emptyStateNoMatchingService()
-      :
-      (<p className="text-xs text-gray-800">
-        You don't have any repositories. Most likely you haven't granted access to any repositories on the Github OAuth screen.
-        <button
-            onClick={() => window.open(this.state.application.appSettingsURL)}
-            className="text-xs text-gray-800 hover:text-gray-900 cursor-pointer">
-            Check application settings here.
-          </button>
-        </p>);
+    const emptyState = search.filter !== '' ? emptyStateNoMatchingService() : null;
 
     return (
       <div>
@@ -192,13 +182,13 @@ export default class Repositories extends Component {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
             <div className="space-y-2">
-              <button className="flex textgray-500 hover:text-gray-700 mt-2"
+              <button className="flex text-xs text-gray-700 hover:text-blue-700 mt-2"
                 onClick={() => {
                   this.setState({ isOpen: true });
                   this.refresh();
                 }}
               >
-                Refresh repsitories
+                Refresh repositories
               </button>
               {isOpen &&
                 <RefreshRepos
