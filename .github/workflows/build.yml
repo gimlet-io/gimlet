@@ -25,9 +25,13 @@ jobs:
       run: make test-dashboard-frontend
     - name: 🤞 Test
       run: |
+        git config --global user.email "git@gimlet.io"
+	      git config --global user.name "Github Actions"
         make test
     - name: 🐘 Test with Postgres store
       run: |
+        git config --global user.email "git@gimlet.io"
+	      git config --global user.name "Github Actions"
         make test-with-postgres
 
   cli:
