@@ -24,14 +24,25 @@ test-prep:
 	git config --global user.name "Github Actions"
 
 test: test-prep
-	go test -timeout 60s $(shell go list ./... )
+	go test -timeout 60s $(shell go list ./...)
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestEncryption
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestReEncryption
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestInitEncryption
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestUnquote
+
 test-dashboard-frontend:
 	(cd web/dashboard; npm install; npm run test)
 test-with-postgres:
 	docker stop testpostgres || true
 	docker run --rm -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 --name testpostgres -d postgres
 
-	DATABASE_DRIVER=postgres DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable go test -count=1 -timeout 60s github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/...
+	export DATABASE_DRIVER=postgres
+	export DATABASE_CONFIG=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
+
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestEncryption
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestReEncryption
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestInitEncryption
+	go test -timeout 60s -tags=encryption github.com/gimlet-io/gimlet-cli/pkg/dashboard/store -run TestUnquote
 
 	docker stop testpostgres || true
 

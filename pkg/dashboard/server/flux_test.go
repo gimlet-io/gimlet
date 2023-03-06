@@ -48,7 +48,7 @@ func Test_fluxEvent(t *testing.T) {
 		ctx = context.WithValue(ctx, "notificationsManager", notificationsManager)
 		ctx = context.WithValue(ctx, "gitopsRepo", "my/gitops")
 		ctx = context.WithValue(ctx, "gitopsRepos", gitopsRepos)
-		ctx = context.WithValue(ctx, "store", store.NewTest())
+		ctx = context.WithValue(ctx, "store", store.NewTest(encryptionKey, encryptionKeyNew))
 		return ctx
 	}, "/path", string(body))
 	assert.Nil(t, err)

@@ -8,7 +8,7 @@ import (
 )
 
 func TestEnvironmentCreateAndGetAll(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -52,7 +52,7 @@ func TestEnvironmentCreateAndGetAll(t *testing.T) {
 }
 
 func TestEnvironmentDelete(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

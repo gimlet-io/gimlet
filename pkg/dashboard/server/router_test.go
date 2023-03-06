@@ -15,7 +15,7 @@ import (
 )
 
 func Test_MustUser(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 
 	router := SetupRouter(
 		&config.Config{},

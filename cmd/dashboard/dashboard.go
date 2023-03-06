@@ -61,7 +61,13 @@ func main() {
 		config.Database.Driver,
 		config.Database.Config,
 		config.Database.EncryptionKey,
+		config.Database.EncryptionKeyNew,
 	)
+
+	err = reencrypt(store, config.Database.EncryptionKeyNew)
+	if err != nil {
+		panic(err)
+	}
 
 	err = setupAdminUser(config, store)
 	if err != nil {

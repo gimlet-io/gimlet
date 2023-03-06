@@ -13,6 +13,8 @@ import (
 type EncryptionMeddler struct {
 	// Has to be 32 bytes long
 	EnryptionKey string
+	// Has to be 32 bytes long
+	EncryptionKeyNew string
 }
 
 // PreRead is called before a Scan operation for fields that have the EncryptionMeddler
@@ -29,11 +31,23 @@ func (m EncryptionMeddler) PostRead(fieldAddr, scanTarget interface{}) error {
 	}
 	raw := *ptr
 
-	unquoted, err := strconv.Unquote(string([]byte(raw)))
-	if err != nil {
-		return err
+	var plaintextBytes []byte
+	var err error
+	if len(m.EnryptionKey) == 0 {
+		unquoted, _ := strconv.Unquote(raw)
+		if unquoted != "" {
+			return fmt.Errorf("reading encrypted data without key is not allowed")
+		}
+		plaintextBytes = []byte(raw)
+	} else {
+		var unquoted string
+		unquoted, err = strconv.Unquote(string([]byte(raw)))
+		if err != nil {
+			return err
+		}
+		plaintextBytes, err = decrypt([]byte(unquoted), []byte(m.EnryptionKey))
 	}
-	plaintextBytes, err := decrypt([]byte(unquoted), []byte(m.EnryptionKey))
+
 	fieldAddrStringPtr := fieldAddr.(*string)
 	*fieldAddrStringPtr = string(plaintextBytes)
 	return err
@@ -41,16 +55,19 @@ func (m EncryptionMeddler) PostRead(fieldAddr, scanTarget interface{}) error {
 
 // PreWrite is called before an Insert or Update operation for fields that have the EncryptionMeddler
 func (m EncryptionMeddler) PreWrite(field interface{}) (saveValue interface{}, err error) {
-	encrypted, err := encrypt([]byte(field.(string)), []byte(m.EnryptionKey))
+	if len(m.EnryptionKey) == 0 && len(m.EncryptionKeyNew) == 0 {
+		return field.(string), nil
+	}
+	encryptionKey := m.EnryptionKey
+	if len(m.EncryptionKeyNew) != 0 {
+		encryptionKey = m.EncryptionKeyNew
+	}
+	encrypted, err := encrypt([]byte(field.(string)), []byte(encryptionKey))
 	quoted := strconv.Quote(string(encrypted))
 	return quoted, err
 }
 
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
-	if len(key) == 0 {
-		return plaintext, nil
-	}
-
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -70,10 +87,6 @@ func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 }
 
 func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
-	if len(key) == 0 {
-		return ciphertext, nil
-	}
-
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err

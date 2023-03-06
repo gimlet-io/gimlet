@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"fmt"
+	"os"
 	"path"
 	"runtime"
 
@@ -137,4 +138,25 @@ func initLogger(c *config.Config) {
 	if c.Logging.Trace {
 		logrus.SetLevel(logrus.TraceLevel)
 	}
+}
+
+func reencrypt(store *store.Store, encryptionKeyNew string) error {
+	if encryptionKeyNew == "" {
+		return nil
+	}
+
+	users, err := store.EverytingFromUsers()
+	if err != nil {
+		return err
+	}
+	for _, u := range users {
+		store.UpdateUser(u)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Println("db field re-encryption is done, please replace the value of DATABASE_ENCRYPTION_KEY with the value of DATABASE_ENCRYPTION_KEY_NEW, and delete DATABASE_ENCRYPTION_KEY_NEW environment variable")
+	os.Exit(0)
+	return nil
 }
