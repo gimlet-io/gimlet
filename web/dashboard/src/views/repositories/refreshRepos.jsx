@@ -16,11 +16,11 @@ const RefreshRepos = ({ added, deleted, repositoriesRefreshing, installationURL 
               color="red"
               repos={deleted}
             />
-            <div className="flex flex-wrap text-sm text-gray-800">
+            <div className="text-sm text-gray-800">
               { added?.length === 0 && deleted?.length === 0 &&
-              <p className="mb-2">No new repositories found.</p>
+              <p className="mb-4">No new repositories found.</p>
               }
-              <p>Missing a repository?<br />You may need to grant Gimlet access to more repositories on the <a
+              <p className="text-xs">Missing a repository?<br />You may need to grant Gimlet access to more repositories on the <a
                 href={installationURL}
                 rel="noreferrer"
                 target="_blank"

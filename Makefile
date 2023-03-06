@@ -20,8 +20,6 @@ test-prep:
 	touch cmd/installer/web/main.css
 	touch cmd/installer/web/index.html
 	touch cmd/installer/web/favicon.ico
-	git config --global user.email "git@gimlet.io"
-	git config --global user.name "Github Actions"
 
 test: test-prep
 	go test -timeout 60s $(shell go list ./...)

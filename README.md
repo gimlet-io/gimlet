@@ -96,4 +96,3 @@ gimlet manifest template -f staging.yaml -o manifests.yaml
 ## Youtube playlist on building a full developer platform
 
 [Building a developer platform on CIVO Cloud with Gimlet and gitops](https://youtube.com/playlist?list=PLjJkiSWPwuPJeIEOn5BWMFdxSSpiQPQ4P)
-
