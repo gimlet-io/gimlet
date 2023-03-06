@@ -18,7 +18,6 @@ jobs:
       with:
         go-version: 1.19
 
-    # Get values for cache paths to be used in later steps
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
@@ -31,14 +30,12 @@ jobs:
     - name: 🤞 Test Dashboard Frontend
       run: make test-dashboard-frontend
 
-    # Cache go build cache, used to speedup go test
     - name: Go Build Cache
       uses: actions/cache@v2
       with:
         path: ${{ steps.go-cache-paths.outputs.go-build }}
         key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
 
-    # Cache go mod cache, used to speedup builds
     - name: Go Mod Cache
       uses: actions/cache@v2
       with:
@@ -69,11 +66,24 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 16.1.0
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: ⬇️ Check out code into the Go module directory
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         fetch-depth: 5
-
+    - name: Go Build Cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - name: Go Mod Cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
     - name: 🏗️ Build chart configure frontend
       run: make build-cli-frontend
     - name: 🏗️ Build stack frontend
@@ -92,10 +102,24 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.19
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: ⬇️ Check out code into the Go module directory
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         fetch-depth: 5
+    - name: Go Build Cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - name: Go Mod Cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
     - name: 🏗️ Build Gimlet Agent
       run: make build-agent
       env:
@@ -110,10 +134,24 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.19
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: ⬇️ Check out code into the Go module directory
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         fetch-depth: 5
+    - name: Go Build Cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - name: Go Mod Cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
     - name: 🏗️ Build Dashboard
       run: make build-dashboard
       env:
