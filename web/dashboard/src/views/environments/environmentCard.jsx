@@ -409,30 +409,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div className="px-4 py-5 sm:px-6">
         {hasGitopsRepo ?
           <>
-            {!isOnline && !gimletAgentConfigured && !bootstrapMessage &&
-              <div className="rounded-md bg-blue-50 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">This environment is disconnected</h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
-                      Or use the <span
-                        className="font-medium cursor-pointer"
-                        onClick={(e) => {
-                          // eslint-disable-next-line no-restricted-globals
-                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
-                            configureAgent(env.name, e);
-                        }}
-                      >1-click-config</span>.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-
             <div className="sm:hidden">
               <label htmlFor="tabs" className="sr-only">
                 Select a tab
@@ -449,8 +425,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </select>
             </div>
             {bootstrapMessage &&
-              <>
-                <h3 className="text-2xl font-bold p-2 mt-4 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
+              <div className="mb-4">
+                <h3 className="text-2xl font-bold p-2 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
                   repoPath={bootstrapMessage.infraRepo}
@@ -474,7 +450,30 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 />
                 <GitopsAutomationGuide />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
-              </>
+              </div>
+            }
+            {!isOnline && !gimletAgentConfigured &&
+              <div className="rounded-md bg-blue-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">This environment is disconnected</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
+                      Or use the <span
+                        className="font-medium cursor-pointer"
+                        onClick={(e) => {
+                          // eslint-disable-next-line no-restricted-globals
+                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
+                            configureAgent(env.name, e);
+                        }}
+                      >1-click-config</span>.
+                    </div>
+                  </div>
+                </div>
+              </div>
             }
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
