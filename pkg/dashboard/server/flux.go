@@ -60,7 +60,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	gitopsRepoCache := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	perf := ctx.Value("perf").(*prometheus.HistogramVec)
-	err = updateUntrackedReleasesForEnvironment(gitopsRepoCache, perf, store, repoName, env, event.Message, repoPerEnv)
+	err = updateGitopsCommitStatuses(gitopsRepoCache, perf, store, repoName, env, event.Message, repoPerEnv)
 	if err != nil {
 		log.Errorf("cannot update releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -115,7 +115,7 @@ func parseRev(rev string) (string, error) {
 	return parts[1], nil
 }
 
-func updateUntrackedReleasesForEnvironment(
+func updateGitopsCommitStatuses(
 	gitopsRepoCache *nativeGit.RepoCache,
 	perf *prometheus.HistogramVec,
 	store *store.Store,
