@@ -7,17 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	fluxEvents "github.com/fluxcd/pkg/runtime/events"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,7 +45,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	store := r.Context().Value("store").(*store.Store)
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, env)
+	repoName, _, err := gitopsRepoForEnv(store, env)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -59,8 +58,8 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitopsRepoCache := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	perf := ctx.Value("perf").(*prometheus.HistogramVec)
-	err = updateGitopsCommitStatuses(gitopsRepoCache, perf, store, repoName, env, event.Message, repoPerEnv)
+	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
+	err = updateGitopsCommitStatuses(clientHub, gitopsRepoCache, store, gitopsCommit, repoName)
 	if err != nil {
 		log.Errorf("cannot update releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -76,7 +75,6 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
 	notificationsManager.Broadcast(notifications.NewMessage(repoName, gitopsCommit, env))
 
-	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 	streaming.BroadcastGitopsCommitEvent(clientHub, *gitopsCommit)
 
 	w.WriteHeader(http.StatusOK)
@@ -116,42 +114,63 @@ func parseRev(rev string) (string, error) {
 }
 
 func updateGitopsCommitStatuses(
+	clientHub *streaming.ClientHub,
 	gitopsRepoCache *nativeGit.RepoCache,
-	perf *prometheus.HistogramVec,
 	store *store.Store,
-	repoName, env, eventMessage string,
-	repoPerEnv bool,
+	gitopsCommit *model.GitopsCommit,
+	repoName string,
 ) error {
-	since := time.Now().Add(-24 * time.Hour)
-	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
-	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
+	repo, err := gitopsRepoCache.InstanceForRead(repoName)
 	if err != nil {
 		return err
 	}
 
-	releases, err := gitops.Releases(repo, "", env, repoPerEnv, &since, nil, 10, "", perf)
+	commitWalker, err := repo.Log(&git.LogOptions{})
 	if err != nil {
 		return err
 	}
 
-	for _, r := range releases {
-		gitopsCommit, err := store.GitopsCommit(r.GitopsRef)
+	err = commitWalker.ForEach(func(c *object.Commit) error {
+		hashString := c.Hash.String()
+		if hashString == gitopsCommit.Sha {
+			return nil
+		}
+
+		gitopsCommitFromDb, err := store.GitopsCommit(hashString)
 		if err != nil {
-			log.Warnf("cannot get gitops commit: %s", err)
-			continue
+			log.Warn("cannot get gitops commit: %s", err)
+			return nil
 		}
-		if gitopsCommit == nil || gitopsCommit.Status == dx.NotReconciled {
-			_, err := store.SaveOrUpdateGitopsCommit(&model.GitopsCommit{
-				Sha:        r.GitopsRef,
-				Status:     dx.ReconciliationSucceeded,
-				StatusDesc: eventMessage,
-				Created:    r.Created,
-				Env:        env,
-			})
-			if err != nil {
-				log.Warnf("could not save or update gitops commit: %s", err)
-			}
+
+		if gitopsCommitFromDb != nil &&
+			(gitopsCommitFromDb.Status == dx.ValidationFailed ||
+				gitopsCommitFromDb.Status == dx.ReconciliationFailed ||
+				gitopsCommitFromDb.Status == dx.HealthCheckFailed ||
+				gitopsCommitFromDb.Status == dx.ReconciliationSucceeded) {
+			return fmt.Errorf("%s", "EOF")
 		}
+
+		gitopsCommitToSave := model.GitopsCommit{
+			Sha:        hashString,
+			Status:     gitopsCommit.Status,
+			StatusDesc: gitopsCommit.StatusDesc,
+			Created:    gitopsCommit.Created,
+			Env:        gitopsCommit.Env,
+		}
+
+		_, err = store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
+		if err != nil {
+			log.Warnf("could not save or update gitops commit: %s", err)
+			return nil
+		}
+		streaming.BroadcastGitopsCommitEvent(clientHub, gitopsCommitToSave)
+
+		return nil
+	})
+	if err != nil &&
+		err.Error() != "EOF" {
+		return err
 	}
+
 	return nil
 }
