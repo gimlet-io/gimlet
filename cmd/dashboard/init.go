@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"regexp"
 	"runtime"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
@@ -159,4 +161,28 @@ func reencrypt(store *store.Store, encryptionKeyNew string) error {
 	fmt.Println("db field re-encryption is done, please replace the value of DATABASE_ENCRYPTION_KEY with the value of DATABASE_ENCRYPTION_KEY_NEW, and delete DATABASE_ENCRYPTION_KEY_NEW environment variable")
 	os.Exit(0)
 	return nil
+}
+
+type customFormatter struct{}
+
+func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	message := entry.Message
+	entry.Message = hideAccessToken(message)
+
+	formatter := &logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339,
+	}
+	formatted, err := formatter.Format(entry)
+
+	return []byte(formatted), err
+}
+
+func hideAccessToken(message string) string {
+	pattern := `access_token=([^& ]+)`
+	r, err := regexp.Compile(pattern)
+	if err != nil {
+		return message
+	}
+	return r.ReplaceAllString(message, "access_token=***")
 }

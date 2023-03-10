@@ -11,11 +11,13 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_MustUser(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	logger := logrus.Logger{}
 
 	router := SetupRouter(
 		&config.Config{},
@@ -29,6 +31,7 @@ func Test_MustUser(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		&logger,
 	)
 	server := httptest.NewServer(router)
 	defer server.Close()
