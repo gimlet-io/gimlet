@@ -150,7 +150,7 @@ func updateGitopsCommitStatuses(
 
 		gitopsCommitFromDb, err := store.GitopsCommit(hashString)
 		if err != nil {
-			log.Warn("cannot get gitops commit: %s", err)
+			log.Warnf("cannot get gitops commit: %s", err)
 			return nil
 		}
 
