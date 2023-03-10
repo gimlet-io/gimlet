@@ -12,6 +12,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
@@ -20,8 +21,9 @@ func Test_artifact(t *testing.T) {
 	encryptionKey := "the-key-has-to-be-32-bytes-long!"
 	encryptionKeyNew := ""
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	logger := logrus.Logger{}
 
-	router := server.SetupRouter(&config.Config{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil)
+	router := server.SetupRouter(&config.Config{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil, &logger)
 	server := httptest.NewServer(router)
 	defer server.Close()
 
