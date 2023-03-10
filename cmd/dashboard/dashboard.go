@@ -163,6 +163,9 @@ func main() {
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
 
+	logger := log.New()
+	logger.Formatter = &customFormatter{}
+
 	r := server.SetupRouter(
 		config,
 		agentHub,
@@ -175,6 +178,7 @@ func main() {
 		podStateManager,
 		notificationsManager,
 		perf,
+		logger,
 	)
 
 	go func() {

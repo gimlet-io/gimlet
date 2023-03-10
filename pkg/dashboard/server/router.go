@@ -38,6 +38,7 @@ func SetupRouter(
 	podStateManager *podStateManager,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
+	logger *log.Logger,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -47,7 +48,7 @@ func SetupRouter(
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: logger}))
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.NoCache)
 	r.Use(middleware.Timeout(60 * time.Second))
