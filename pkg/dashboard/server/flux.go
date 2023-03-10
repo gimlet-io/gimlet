@@ -59,7 +59,7 @@ func fluxEvent(w http.ResponseWriter, r *http.Request) {
 
 	gitopsRepoCache := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
-	err = updateGitopsCommitStatuses(clientHub, gitopsRepoCache, store, gitopsCommit, repoName)
+	err = updateGitopsCommitStatuses(clientHub, gitopsRepoCache, store, event, repoName, env)
 	if err != nil {
 		log.Errorf("cannot update releases: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -117,9 +117,17 @@ func updateGitopsCommitStatuses(
 	clientHub *streaming.ClientHub,
 	gitopsRepoCache *nativeGit.RepoCache,
 	store *store.Store,
-	gitopsCommit *model.GitopsCommit,
-	repoName string,
+	event fluxEvents.Event,
+	repoName, env string,
 ) error {
+	if _, ok := event.Metadata["revision"]; !ok {
+		return fmt.Errorf("could not extract gitops sha from Flux message: %s", event)
+	}
+	eventHash, err := parseRev(event.Metadata["revision"])
+	if err != nil {
+		return err
+	}
+
 	repo, err := gitopsRepoCache.InstanceForRead(repoName)
 	if err != nil {
 		return err
@@ -132,7 +140,7 @@ func updateGitopsCommitStatuses(
 
 	err = commitWalker.ForEach(func(c *object.Commit) error {
 		hashString := c.Hash.String()
-		if hashString == gitopsCommit.Sha {
+		if hashString == eventHash {
 			return nil
 		}
 
@@ -152,10 +160,10 @@ func updateGitopsCommitStatuses(
 
 		gitopsCommitToSave := model.GitopsCommit{
 			Sha:        hashString,
-			Status:     gitopsCommit.Status,
-			StatusDesc: gitopsCommit.StatusDesc,
-			Created:    gitopsCommit.Created,
-			Env:        gitopsCommit.Env,
+			Status:     event.Reason,
+			StatusDesc: event.Message,
+			Created:    event.Timestamp.Unix(),
+			Env:        env,
 		}
 
 		_, err = store.SaveOrUpdateGitopsCommit(&gitopsCommitToSave)
