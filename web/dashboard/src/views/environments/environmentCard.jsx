@@ -293,7 +293,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl))
     })
 
     return (
