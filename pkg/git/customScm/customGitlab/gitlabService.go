@@ -155,6 +155,10 @@ func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser 
 	return err
 }
 
+func (c *GitlabClient) AddDeployKeyToRepo(orgToken, userToken, repo, loggedInUser, keyTitle, keyValue string, readOnly bool) error {
+	return nil
+}
+
 func fromGitlabStatus(gitlabStatus string) string {
 	// https://docs.gitlab.com/ee/api/commits.html#set-the-pipeline-status-of-a-commit
 	// https://github.com/gimlet-io/gimlet/blob/1997f9f8f08ccff96828b239b5126632b47dee77/web/dashboard/src/components/commits/commits.js#L183

@@ -287,6 +287,22 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	err = gitServiceImpl.AddDeployKeyToRepo(
+		gitToken,
+		user.AccessToken,
+		environment.InfraRepo,
+		user.Login,
+		"gimlet-key",
+		infraPublicKey,
+		true,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
 		environment.Name,
@@ -296,6 +312,21 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		false,
 		false,
 		scmURL,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	err = gitServiceImpl.AddDeployKeyToRepo(
+		gitToken,
+		user.AccessToken,
+		environment.AppsRepo,
+		user.Login,
+		"gimlet-key",
+		appsPublicKey,
+		false,
 	)
 	if err != nil {
 		logrus.Error(err)
