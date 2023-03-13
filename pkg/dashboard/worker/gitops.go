@@ -358,8 +358,7 @@ func processReleaseEvent(
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
-		}
-		if sha == "" {
+		} else if sha == "" {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = "No changes made to the gitops state. Maybe this is the current version already?"
 		}
