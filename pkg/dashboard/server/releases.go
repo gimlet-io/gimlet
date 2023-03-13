@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -91,9 +92,15 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	store := r.Context().Value("store").(*store.Store)
 	repoName, repoPerEnv, err := gitopsRepoForEnv(store, env)
 	if err != nil {
-		logrus.Error(err)
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
+		if strings.Contains(err.Error(), "no such apps repo") {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("[]"))
+			return
+		} else {
+			logrus.Error(err)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
 	}
 
 	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
@@ -201,6 +208,9 @@ func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
 
 	for _, e := range envsFromDB {
 		if e.Name == env {
+			if e.AppsRepo == "" {
+				return "", false, fmt.Errorf("no such apps repo: %s", env)
+			}
 			return e.AppsRepo, e.RepoPerEnv, nil
 		}
 	}
