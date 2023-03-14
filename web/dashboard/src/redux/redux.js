@@ -35,6 +35,7 @@ export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
 export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
+export const ACTION_TYPE_ALERTS = 'alerts'
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
@@ -45,8 +46,6 @@ export const EVENT_ENVS_UPDATED = 'envsUpdated';
 export const EVENT_STALE_REPO_DATA = 'staleRepoData';
 export const EVENT_GITOPS_COMMIT_EVENT = 'gitopsCommit';
 export const EVENT_COMMIT_STATUS_UPDATED = 'commitStatusUpdated';
-export const EVENT_KUBERNETES_EVENTS = 'kubernetesEvents';
-export const EVENT_IRREGULAR_PODS = 'irregularPods';
 
 export const EVENT_POD_CREATED = 'podCreated';
 export const EVENT_POD_UPDATED = 'podUpdated';
@@ -82,8 +81,7 @@ export const initialState = {
   fileInfos: [],
   envs: [],
   gitopsCommits: [],
-  kubernetesAlerts: [],
-  irregularPods: [],
+  alerts: [],
   popupWindow: {
     visible: false,
     finished: false,
@@ -139,6 +137,8 @@ export function rootReducer(state = initialState, action) {
         return eventHandlers.updateCommits(state, action.payload)
     case ACTION_TYPE_BRANCHES:
       return eventHandlers.branches(state, action.payload)
+      case ACTION_TYPE_ALERTS:
+        return eventHandlers.alerts(state, action.payload)
     case ACTION_TYPE_ENVCONFIGS:
       return eventHandlers.envConfigs(state, action.payload)
     case ACTION_TYPE_ADD_ENVCONFIG:
@@ -208,10 +208,6 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateGitopsCommits(state, event);
     case EVENT_COMMIT_STATUS_UPDATED:
       return eventHandlers.updateCommitStatus(state, event);
-      case EVENT_KUBERNETES_EVENTS:
-        return eventHandlers.kubernetesEvents(state, event);
-      case EVENT_IRREGULAR_PODS:
-        return eventHandlers.irregularPods(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;

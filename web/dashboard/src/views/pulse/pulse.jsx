@@ -11,7 +11,7 @@ export default class Pulse extends Component {
       envs: reduxState.envs,
       releaseStatuses: reduxState.releaseStatuses,
       releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays,
-      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents),
+      alerts : decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents),
       scmUrl: reduxState.settings.scmUrl
     }
 
@@ -21,7 +21,7 @@ export default class Pulse extends Component {
       this.setState({ envs: reduxState.envs });
       this.setState({ releaseStatuses: reduxState.releaseStatuses });
       this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
-      this.setState({ kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents) });
+      this.setState({ alerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents) });
       this.setState({ scmUrl: reduxState.settings.scmUrl });
     });
   }
@@ -38,7 +38,7 @@ export default class Pulse extends Component {
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
               {<KubernetesAlertBox
-                alerts={this.state.kubernetesAlerts}
+                alerts={this.state.alerts}
                 history={this.props.history}
               />}
               <h3 className="text-2xl font-semibold leading-tight text-gray-900 mt-16 mb-8">Environments</h3>
@@ -84,14 +84,14 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
     <ul className="space-y-2 text-sm text-red-800">
       {alerts.map(alert => {
         return (
-          <div key={`${alert.object} ${alert.message}`} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${alert.type} ${alert.name}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
-                  {alert.object} {alert.reason}
+                  {alert.name} {alert.type} alert
                 </p>
                 <p>
-                  {alert.message}
+                  {alert.statusDesc}
                 </p>
               </span>
             </div>
@@ -104,13 +104,13 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
                 </div>}
                 {alert.repoName && <div className="absolute bottom-0 right-0 p-2 space-x-2">
                   <button className="inline-flex items-center px-3 py-0.5 rounded-md text-sm font-medium bg-blue-400 text-slate-50"
-                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${alert.deploymentName}`)}
+                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${parseDeploymentName(alert.deploymentName)}`)}
                   >
                     Jump there
                   </button>
                 </div>}
               </>}
-            {dateLabel(alert.lastSeen)}
+            {dateLabel(alert.lastStateChange)}
           </div>
         )
       })}
@@ -118,11 +118,13 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
   )
 }
 
-export function decorateKubernetesAlertsWithEnvAndRepo(kubernetesAlerts, connectedAgents) {
-  kubernetesAlerts.forEach(alert => {
+export function decorateKubernetesAlertsWithEnvAndRepo(alerts, connectedAgents) {
+  alerts.forEach(alert => {
+    const deploymentNamespace = alert.deploymentName.split("/")[0]
+    const deploymentName = alert.deploymentName.split("/")[1]
     for (const env in connectedAgents) {
       connectedAgents[env].stacks.forEach(stack => {
-        if (alert.deploymentNamespace === stack.deployment.namespace && alert.deploymentName === stack.deployment.name) {
+        if (deploymentNamespace === stack.deployment.namespace && deploymentName === stack.deployment.name) {
           alert.envName = stack.env;
           alert.repoName = stack.repo;
         }
@@ -130,7 +132,7 @@ export function decorateKubernetesAlertsWithEnvAndRepo(kubernetesAlerts, connect
     }
   })
 
-  return kubernetesAlerts;
+  return alerts;
 }
 
 function dateLabel(lastSeen) {
@@ -151,3 +153,7 @@ function dateLabel(lastSeen) {
     </div>
   );
 }
+
+export const parseDeploymentName = deployment => {
+  return deployment.split("/")[1];
+};

@@ -8,20 +8,6 @@ import (
 	"github.com/russross/meddler"
 )
 
-func (db *Store) PendingPods() ([]*model.Pod, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectPendingPods)
-	data := []*model.Pod{}
-	err := meddler.QueryAll(db, &data, stmt)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	return data, err
-}
-
 func (db *Store) Pod(name string) (*model.Pod, error) {
 	stmt := queries.Stmt(db.driver, queries.SelectPodByName)
 	pod := new(model.Pod)
@@ -51,8 +37,6 @@ func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
 
 	storedPod.Status = pod.Status
 	storedPod.StatusDesc = pod.StatusDesc
-	storedPod.AlertState = pod.AlertState
-	storedPod.AlertStateTimestamp = pod.AlertStateTimestamp
 
 	return meddler.Update(db, "pods", storedPod)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -35,7 +36,7 @@ func SetupRouter(
 	gitService customScm.CustomGitService,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
-	podStateManager *podStateManager,
+	alertStateManager *alert.AlertStateManager,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
@@ -61,7 +62,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("agentJWT", tokenString))
-	r.Use(middleware.WithValue("podStateManager", podStateManager))
+	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))
@@ -145,12 +146,12 @@ func userRoutes(r *chi.Mux) {
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/stopPodLogs", stopPodLogs)
-		r.Get("/api/events", getEvents)
+		r.Get("/api/alerts", getAlerts)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/refreshRepos", refreshRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)
-		r.Get("/api/irregularPods", getIrregularPods)
+		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)
 		r.Get("/api/repo/{owner}/{name}/pullRequests", getPullRequests)
@@ -177,7 +178,6 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
-		r.Post("/agent/irregularPods", irregularPods)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 

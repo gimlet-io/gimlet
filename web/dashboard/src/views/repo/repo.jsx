@@ -40,7 +40,7 @@ export default class Repo extends Component {
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests[repoName],
-      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents).filter(event => event.repoName === repoName)
+      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName)
     }
 
     // handling API and streaming state changes
@@ -58,7 +58,7 @@ export default class Repo extends Component {
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests[repoName],
-        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.kubernetesAlerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
+        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl
       });
 

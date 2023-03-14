@@ -158,11 +158,6 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
-func getIrregularPods(w http.ResponseWriter, r *http.Request) {
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.GetIrregularPods()
-}
-
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	serviceName := r.URL.Query().Get("serviceName")
@@ -179,9 +174,23 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	agentHub.StopPodLogs(namespace, serviceName)
 }
 
-func getEvents(w http.ResponseWriter, r *http.Request) {
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.GetEvents()
+func getAlerts(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value("store").(*store.Store)
+	alerts, err := db.FiringAlerts()
+	if err != nil {
+		logrus.Errorf("cannot get alerts from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	alertsString, err := json.Marshal(alerts)
+	if err != nil {
+		logrus.Errorf("cannot serialize alerts: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(alertsString)
 }
 
 func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {

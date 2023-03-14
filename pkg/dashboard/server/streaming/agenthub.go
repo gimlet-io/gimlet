@@ -56,21 +56,6 @@ func (h *AgentHub) ForceStateSend() {
 	}
 }
 
-func (h *AgentHub) GetIrregularPods() {
-	irregularPods := map[string]interface{}{
-		"action": "irregularPods",
-	}
-
-	irregularPodsString, err := json.Marshal(irregularPods)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, a := range h.Agents {
-		a.EventChannel <- []byte(irregularPodsString)
-	}
-}
-
 func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 	podlogsRequest := map[string]interface{}{
 		"action":      "podLogs",
@@ -102,21 +87,6 @@ func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
 
 	for _, a := range h.Agents {
 		a.EventChannel <- []byte(podlogsRequestString)
-	}
-}
-
-func (h *AgentHub) GetEvents() {
-	kubeEvents := map[string]interface{}{
-		"action": "events",
-	}
-
-	kubeEventsString, err := json.Marshal(kubeEvents)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, a := range h.Agents {
-		a.EventChannel <- []byte(kubeEventsString)
 	}
 }
 

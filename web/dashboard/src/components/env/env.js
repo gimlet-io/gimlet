@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import ServiceDetail from "../serviceDetail/serviceDetail";
+import { parseDeploymentName } from "../../views/pulse/pulse";
 
 export class Env extends Component {
   constructor(props) {
@@ -149,7 +150,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
 }
 
 function kubernetesAlertsByDeploymentName(kubernetesAlerts, deploymentName) {
-  return kubernetesAlerts.filter(event => event.deploymentName === deploymentName)
+  return kubernetesAlerts.filter(event => parseDeploymentName(event.deploymentName) === deploymentName)
 }
 
 function fileName(fileInfos, appName) {

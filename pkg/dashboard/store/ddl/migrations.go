@@ -38,6 +38,8 @@ const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 const createTablePods = "create-table-pods"
 const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
+const createTableKubeEvents = "create-table-kube-events"
+const createTableAlerts = "create-table-alerts"
 
 type migration struct {
 	name string
@@ -174,8 +176,6 @@ id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
 name				  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
-alert_state 		  TEXT,
-alert_state_timestamp INTEGER,
 UNIQUE(id)
 );
 `,
@@ -214,6 +214,34 @@ status      TEXT,
 status_desc TEXT,
 created 	INTEGER DEFAULT 0,
 env 		TEXT DEFAULT '',
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableKubeEvents,
+			stmt: `
+CREATE TABLE IF NOT EXISTS kube_events (
+id          		  INTEGER PRIMARY KEY AUTOINCREMENT,
+name				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableAlerts,
+			stmt: `
+CREATE TABLE IF NOT EXISTS alerts (
+id				  INTEGER PRIMARY KEY AUTOINCREMENT,
+type			  TEXT,
+name			  TEXT,
+deployment_name   TEXT,
+status			  TEXT,
+status_desc 	  TEXT,
+last_state_change INTEGER,
+count			  INTEGER,
 UNIQUE(id)
 );
 `,
@@ -347,8 +375,6 @@ id          		  SERIAL,
 name  				  TEXT,
 status      		  TEXT,
 status_desc 		  TEXT,
-alert_state 		  TEXT,
-alert_state_timestamp INTEGER,
 UNIQUE(id)
 );
 `,
@@ -387,6 +413,34 @@ status      TEXT,
 status_desc TEXT,
 created 	INTEGER DEFAULT 0,
 env 		TEXT DEFAULT '',
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableKubeEvents,
+			stmt: `
+CREATE TABLE IF NOT EXISTS kube_events (
+id          		  SERIAL,
+name				  TEXT,
+status      		  TEXT,
+status_desc 		  TEXT,
+UNIQUE(id)
+);
+`,
+		},
+		{
+			name: createTableAlerts,
+			stmt: `
+CREATE TABLE IF NOT EXISTS alerts (
+id				  SERIAL,
+type			  TEXT,
+name			  TEXT,
+deployment_name   TEXT,
+status			  TEXT,
+status_desc 	  TEXT,
+last_state_change INTEGER,
+count			  INTEGER,
 UNIQUE(id)
 );
 `,

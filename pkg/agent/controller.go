@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	log "github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -249,6 +250,36 @@ func sendUpdate(host string, agentKey string, env string, update interface{}) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Errorf("could not send state update: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+}
+
+func sendEvents(host string, agentKey string, events []api.Event) {
+	typeWarningEventsString, err := json.Marshal(events)
+	if err != nil {
+		log.Errorf("could not serialize k8s events: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/events", host)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(typeWarningEventsString))
+	if err != nil {
+		log.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
 		return
 	}
 }

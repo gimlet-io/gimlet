@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -120,8 +121,8 @@ func broadcastAgentDisconnectedEvent(clientHub *streaming.ClientHub, a *streamin
 }
 
 func events(w http.ResponseWriter, r *http.Request) {
-	var kubernetesEvents []api.Alert
-	err := json.NewDecoder(r.Body).Decode(&kubernetesEvents)
+	var events []api.Event
+	err := json.NewDecoder(r.Body).Decode(&events)
 	if err != nil {
 		logrus.Errorf("cannot decode kubernetes events: %s", err)
 		http.Error(w, http.StatusText(400), 400)
@@ -129,12 +130,13 @@ func events(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.KubernetesEventsEvent{
-		StreamingEvent:   streaming.StreamingEvent{Event: streaming.KubernetesEventsString},
-		KubernetesEvents: kubernetesEvents,
-	})
-	clientHub.Broadcast <- jsonString
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
+	err = alertStateManager.TrackEvents(events)
+	if err != nil {
+		logrus.Errorf("cannot track events: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 }
 
 func state(w http.ResponseWriter, r *http.Request) {
@@ -150,9 +152,14 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 	for _, stack := range stacks {
-		podStateManager.Track(stack.Deployment.Pods)
+		err := alertStateManager.TrackPods(stack.Deployment.Pods)
+		if err != nil {
+			logrus.Errorf("cannot track pods: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
@@ -190,24 +197,6 @@ func state(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
-func irregularPods(w http.ResponseWriter, r *http.Request) {
-	var irregularPods []api.Alert
-	err := json.NewDecoder(r.Body).Decode(&irregularPods)
-	if err != nil {
-		logrus.Errorf("cannot decode kubernetes events: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.IrregularPodsEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.IrregularPodsString},
-		IrregularPods:  irregularPods,
-	})
-	clientHub.Broadcast <- jsonString
-}
-
 func update(w http.ResponseWriter, r *http.Request) {
 	var update api.StackUpdate
 	err := json.NewDecoder(r.Body).Decode(&update)
@@ -219,8 +208,14 @@ func update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if strings.Contains(update.Event, "pod") {
-		podStateManager, _ := r.Context().Value("podStateManager").(*podStateManager)
-		handlePodUpdate(podStateManager, update)
+		alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
+		db := r.Context().Value("store").(*store.Store)
+		err := handlePodUpdate(alertStateManager, db, update)
+		if err != nil {
+			logrus.Errorf("cannot handle pod update: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
 
 	update = decorateDeploymentUpdateWithCommitMessage(update, r)
@@ -261,20 +256,22 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(podStateManager *podStateManager, update api.StackUpdate) {
+func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
+	if update.Event == agent.EventPodDeleted {
+		return nil
+	}
+
+	deploymentParts := strings.Split(update.Deployment, "/")
+	deployment := deploymentParts[1]
 	parts := strings.Split(update.Subject, "/")
 	namespace := parts[0]
 	name := parts[1]
 
-	if update.Event == agent.EventPodDeleted {
-		podStateManager.Delete(update.Subject)
-		return
-	}
-
-	podStateManager.Track([]*api.Pod{
+	return alertStateManager.TrackPods([]*api.Pod{
 		{
 			Namespace:         namespace,
 			Name:              name,
+			DeploymentName:    deployment,
 			Status:            update.Status,
 			StatusDescription: update.ErrorCause,
 		},
