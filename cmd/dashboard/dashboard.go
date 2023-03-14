@@ -58,7 +58,17 @@ func main() {
 	agentWSHub := streaming.NewAgentWSHub(*clientHub)
 	go agentWSHub.Run()
 
-	store := store.New(config.Database.Driver, config.Database.Config)
+	store := store.New(
+		config.Database.Driver,
+		config.Database.Config,
+		config.Database.EncryptionKey,
+		config.Database.EncryptionKeyNew,
+	)
+
+	err = reencrypt(store, config.Database.EncryptionKeyNew)
+	if err != nil {
+		panic(err)
+	}
 
 	err = setupAdminUser(config, store)
 	if err != nil {
@@ -138,6 +148,7 @@ func main() {
 			Releases:  releases,
 			Perf:      perf,
 			Store:     store,
+			Config:    config,
 		}
 		go releaseStateWorker.Run()
 	}
@@ -153,6 +164,9 @@ func main() {
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
 	go http.ListenAndServe(":9001", metricsRouter)
 
+	logger := log.New()
+	logger.Formatter = &customFormatter{}
+
 	r := server.SetupRouter(
 		config,
 		agentHub,
@@ -165,6 +179,7 @@ func main() {
 		alertStateManager,
 		notificationsManager,
 		perf,
+		logger,
 	)
 
 	go func() {

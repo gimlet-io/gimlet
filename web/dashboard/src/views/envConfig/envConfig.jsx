@@ -399,7 +399,7 @@ class EnvConfig extends Component {
             </svg>
           </a>
         </h2>
-        <button className="text-gray-500 hover:text-gray-700" onClick={() => window.location.href.indexOf(`${env}#`) > -1 ? this.props.history.go(-2) : this.props.history.go(-1)}>
+        <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push(`/repo/${repoName}`)}>
           &laquo; back
         </button>
 
@@ -589,7 +589,7 @@ class EnvConfig extends Component {
                   </h3>
                   <div className="w-full mb-16">
                     <CopiableCodeSnippet
-                      copiable={true}
+                      copiable
                       code={
                         `cat << EOF > manifest.yaml
 ${YAML.stringify(nonDefaultConfigFile)}EOF

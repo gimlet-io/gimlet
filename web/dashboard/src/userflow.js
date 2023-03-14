@@ -2,27 +2,29 @@ import { useEffect, useState } from 'react';
 import userflow from 'userflow.js'
 
 const Userflow = ({ store }) => {
-  let reduxState = store.getState();
-  const [user, setUser] = useState(reduxState.user)
-  const [settings, setSettings] = useState(reduxState.settings)
+  const reduxState = store.getState();
+  const [login, setLogin] = useState(reduxState.user?.login)
+  const [userflowToken, setUserflowToken] = useState(reduxState.settings.userflowToken)
   const [userflowInitiated, setUserflowInitiated] = useState(false)
+  const [provider, setProvider] = useState(reduxState.settings.provider);
 
   store.subscribe(() => {
-    setUser(reduxState.user)
-    setSettings(reduxState.settings)
+    const reduxState = store.getState();
+    setLogin(reduxState.user?.login)
+    setUserflowToken(reduxState.settings.userflowToken)
+    setProvider(reduxState.settings.provider)
   });
 
   useEffect(() => {
-    if (settings && settings.userflowToken
-        && user
-        && !userflowInitiated) {
-      userflow.init(settings.userflowToken)
-      userflow.identify(user.login)
+    if (userflowToken && login && !userflowInitiated) {
+      userflow.init(userflowToken)
+      userflow.identify(window.location.hostname + "/" + login, {
+        host: window.location.hostname,
+        scm: provider,
+      })
       setUserflowInitiated(true)
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [userflowToken, login, userflowInitiated, provider]);
 
   return null;
 }

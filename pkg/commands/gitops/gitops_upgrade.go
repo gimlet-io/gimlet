@@ -79,6 +79,7 @@ func Upgrade(c *cli.Context) error {
 	env := c.String("env")
 	_, _, _, err = gitops.GenerateManifests(
 		!noController,
+		true,
 		env,
 		singleEnv,
 		gitopsRepoPath,

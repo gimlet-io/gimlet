@@ -65,6 +65,7 @@ func Bootstrap(c *cli.Context) error {
 	env := c.String("env")
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		!noController,
+		true,
 		env,
 		singleEnv,
 		gitopsRepoPath,

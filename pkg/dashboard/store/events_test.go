@@ -12,7 +12,7 @@ import (
 )
 
 func TestEventCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -58,7 +58,7 @@ func TestEventCRUD(t *testing.T) {
 }
 
 func TestAdvancedArtifactQueries(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

@@ -48,7 +48,7 @@ func Test_fluxEvent(t *testing.T) {
 		ctx = context.WithValue(ctx, "notificationsManager", notificationsManager)
 		ctx = context.WithValue(ctx, "gitopsRepo", "my/gitops")
 		ctx = context.WithValue(ctx, "gitopsRepos", gitopsRepos)
-		ctx = context.WithValue(ctx, "store", store.NewTest())
+		ctx = context.WithValue(ctx, "store", store.NewTest(encryptionKey, encryptionKeyNew))
 		return ctx
 	}, "/path", string(body))
 	assert.Nil(t, err)
@@ -68,4 +68,12 @@ func testPostEndpoint(handlerFunc http.HandlerFunc, cn contextFunc, path string,
 	handler.ServeHTTP(rr, req)
 
 	return rr.Code, rr.Body.String(), nil
+}
+
+func Test_parseRev(t *testing.T) {
+	parsed, _ := parseRev("main/1234567890")
+	assert.Equal(t, "1234567890", parsed)
+
+	parsed, _ = parseRev("main@sha1:69b59063470310ebbd88a9156325322a124e55a3")
+	assert.Equal(t, "69b59063470310ebbd88a9156325322a124e55a3", parsed)
 }

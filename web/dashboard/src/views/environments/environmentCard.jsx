@@ -1,7 +1,10 @@
 import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
-import { InformationCircleIcon, XCircleIcon } from '@heroicons/react/solid'
-import { StackUI, BootstrapGuide, SeparateEnvironments } from 'shared-components';
+import { InformationCircleIcon } from '@heroicons/react/solid'
+import StackUI from './stack-ui';
+import BootstrapGuide from './bootstrapGuide';
+import SeparateEnvironments from './separateEnvironments';
+import GitopsAutomationGuide from './gitopsAutomationGuide';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
@@ -252,14 +255,21 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
-            message: "Agent config was written to the gitops environment"
+            message: "Pull request was created",
+            link: data.createdPr.link
           }
         });
         store.dispatch({
-          type: ACTION_TYPE_ENVUPDATED, name: env.name, payload: data
+          type: ACTION_TYPE_SAVE_ENV_PULLREQUEST, payload: {
+            envName: data.envName,
+            createdPr: data.createdPr
+          }
         });
-        setStack(data.config)
-        setStackNonDefaultValues(data.config)
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: envName, payload: data.stackConfig
+        });
+        setStack(data.stackConfig.config)
+        setStackNonDefaultValues(data.stackConfig.config)
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
@@ -283,7 +293,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout))
+      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl))
     })
 
     return (
@@ -338,20 +348,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             To initialize this environment, bootstrap the gitops repository first
           </p>
         </div>
-        <div className="mt-4 rounded-md bg-blue-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-            </div>
-            <div className="ml-3 md:justify-between">
-              <p className="text-sm text-blue-500">
-                By default, infrastructure manifests of this environment will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder of the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-infra</span> git repository,
-                <br />
-                and application manifests will be placed in the <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded">{env.name}</span> folder of the shared <span className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">gitops-apps</span> git repository
-              </p>
-            </div>
-          </div>
-        </div>
         <SeparateEnvironments
           repoPerEnv={repoPerEnv}
           setRepoPerEnv={setRepoPerEnv}
@@ -359,6 +355,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           appsRepo={appsRepo}
           setInfraRepo={setInfraRepo}
           setAppsRepo={setAppsRepo}
+          envName={env.name}
         />
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
@@ -383,7 +380,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div ref={ref} className="px-4 py-5 sm:px-6">
         <div className="flex justify-between">
           <div className="inline-flex">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 pr-1">
+            <h3 className="text-lg leading-6 capitalize font-medium text-gray-900 pr-1">
               {env.name}
             </h3>
             <span title={isOnline ? "Connected" : "Disconnected"}>
@@ -412,30 +409,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       <div className="px-4 py-5 sm:px-6">
         {hasGitopsRepo ?
           <>
-            {!isOnline && !gimletAgentConfigured &&
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">This environment is disconnected</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
-                      Or use the <span
-                        className="font-medium cursor-pointer"
-                        onClick={(e) => {
-                          // eslint-disable-next-line no-restricted-globals
-                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
-                            configureAgent(env.name, e);
-                        }}
-                      >1-click-config</span>.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-
             <div className="sm:hidden">
               <label htmlFor="tabs" className="sr-only">
                 Select a tab
@@ -452,8 +425,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </select>
             </div>
             {bootstrapMessage &&
-              <>
-                <h3 className="text-2xl font-bold p-2 mt-4 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
+              <div className="mb-4">
+                <h3 className="text-2xl font-bold p-2 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
                   repoPath={bootstrapMessage.infraRepo}
@@ -475,8 +448,32 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   controllerGenerated={false}
                   scmUrl={scmUrl}
                 />
+                <GitopsAutomationGuide />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
-              </>
+              </div>
+            }
+            {!isOnline && !gimletAgentConfigured &&
+              <div className="rounded-md bg-blue-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">This environment is disconnected</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
+                      Or use the <span
+                        className="font-medium cursor-pointer"
+                        onClick={(e) => {
+                          // eslint-disable-next-line no-restricted-globals
+                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
+                            configureAgent(env.name, e);
+                        }}
+                      >1-click-config</span>.
+                    </div>
+                  </div>
+                </div>
+              </div>
             }
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">

@@ -278,6 +278,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		bootstrapConfig.RepoPerEnv,
 		gitToken,
 		true,
+		true,
 		scmURL,
 	)
 	if err != nil {
@@ -293,6 +294,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		bootstrapConfig.RepoPerEnv,
 		gitToken,
 		false,
+		false,
 		scmURL,
 	)
 	if err != nil {
@@ -303,7 +305,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fluxUser := &model.User{
-		Login:  "flux-" + bootstrapConfig.EnvName,
+		Login:  fmt.Sprintf(fluxPattern, bootstrapConfig.EnvName),
 		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
 	}
 
@@ -372,6 +374,7 @@ func BootstrapEnv(
 	repoPerEnv bool,
 	token string,
 	shouldGenerateController bool,
+	shouldGenerateDependencies bool,
 	scmURL string,
 ) (string, string, string, error) {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
@@ -399,6 +402,7 @@ func BootstrapEnv(
 	scmHost := strings.Split(scmURL, "://")[1]
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
+		shouldGenerateDependencies,
 		envName,
 		repoPerEnv,
 		tmpPath,
@@ -638,6 +642,27 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	headBranch, err := nativeGit.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
+	if err != nil {
+		logrus.Errorf("cannot generate branch name: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+	if err != nil {
+		logrus.Errorf("cannot checkout branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file: %s", err)
@@ -662,9 +687,35 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	goScm := genericScm.NewGoScmHelper(config, nil)
+	user := ctx.Value("user").(*model.User)
+	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch,
+		fmt.Sprintf("[Gimlet Dashboard] `%s` infrastructure components change", env.Name),
+		fmt.Sprintf("@%s is editing the infrastructure components on `%s`", user.Login, env.Name))
+	if err != nil {
+		logrus.Errorf("cannot create pr: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	gitRepoCache.Invalidate(env.InfraRepo)
 
-	stackConfigString, err := json.Marshal(stackConfig)
+	response := map[string]interface{}{
+		"envName": env.Name,
+		"createdPr": &api.PR{
+			Sha:     createdPR.Sha,
+			Link:    createdPR.Link,
+			Title:   createdPR.Title,
+			Source:  createdPR.Source,
+			Number:  createdPR.Number,
+			Author:  createdPR.Author.Login,
+			Created: int(createdPR.Created.Unix()),
+			Updated: int(createdPR.Updated.Unix()),
+		},
+		"stackConfig": stackConfig,
+	}
+
+	responseString, err := json.Marshal(response)
 	if err != nil {
 		logrus.Errorf("cannot serialize stack config: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -672,5 +723,5 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(stackConfigString))
+	w.Write([]byte(responseString))
 }

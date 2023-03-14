@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
 import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
+import RefreshRepos from './refreshRepos';
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -19,8 +20,12 @@ export default class Repositories extends Component {
       favorites: favoriteRepos,
       search: reduxState.search,
       agents: reduxState.settings.agents,
-      appSettingsURL: reduxState.application.appSettingsURL,
+      application: reduxState.application,
       repositoriesLoading: true,
+      repositoriesRefreshing: false,
+      isOpen: false,
+      added: null,
+      deleted: null,
     }
 
     // handling API and streaming state changes
@@ -36,7 +41,7 @@ export default class Repositories extends Component {
       this.setState({ search: reduxState.search });
       this.setState({ agents: reduxState.settings.agents });
       this.setState({ favorites: favoriteRepos });
-      this.setState({ appSettingsURL: reduxState.application.appSettingsURL });
+      this.setState({ application: reduxState.application });
     });
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
@@ -104,8 +109,24 @@ export default class Repositories extends Component {
     this.props.history.push(`/repo/${repo}`)
   }
 
+  refresh() {
+    this.setState({ repositoriesRefreshing: true });
+    this.props.gimletClient.refreshRepos()
+      .then(data => {
+        data.added ? this.setState({ added: data.added }) : this.setState({ added: [] });
+        data.deleted ? this.setState({ deleted: data.deleted }) : this.setState({ deleted: [] });
+        this.props.store.dispatch({
+          type: ACTION_TYPE_GIT_REPOS, payload: data.userRepos
+        });
+        this.setState({ repositoriesRefreshing: false });
+      }, () => {
+        this.setState({ repositoriesRefreshing: false });
+        /* Generic error handler deals with it */
+      });
+  }
+
   render() {
-    const { repositories, search, favorites } = this.state;
+    const { repositories, search, favorites, isOpen } = this.state;
 
     let filteredRepositories = {};
     for (const repoName of Object.keys(repositories)) {
@@ -153,23 +174,30 @@ export default class Repositories extends Component {
       )
     });
 
-    const emptyState = search.filter !== '' ?
-      emptyStateNoMatchingService()
-      :
-      (<p className="text-xs text-gray-800">
-        You don't have any repositories. Most likely you haven't granted access to any repositories on the Github OAuth screen.
-        <button
-            onClick={() => window.open(this.state.appSettingsURL)}
-            className="text-xs text-gray-800 hover:text-gray-900 cursor-pointer">
-            Check application settings here.
-          </button>
-        </p>);
+    const emptyState = search.filter !== '' ? emptyStateNoMatchingService() : null;
 
     return (
       <div>
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
+            <div className="space-y-2">
+              <button className="flex text-xs text-gray-700 hover:text-blue-700 mt-2"
+                onClick={() => {
+                  this.setState({ isOpen: true });
+                  this.refresh();
+                }}
+              >
+                Refresh repositories
+              </button>
+              {isOpen &&
+                <RefreshRepos
+                  added={this.state.added}
+                  deleted={this.state.deleted}
+                  repositoriesRefreshing={this.state.repositoriesRefreshing}
+                  installationURL={this.state.application.installationURL}
+                />}
+            </div>
           </div>
         </header>
         <main>
@@ -204,7 +232,7 @@ export default class Repositories extends Component {
 
 }
 
-const Spinner = () => {
+export const Spinner = () => {
   return (
     <div className="max-w-7xl grid place-items-center mx-auto px-4 sm:px-6 lg:px-8">
       <div role="status">

@@ -22,6 +22,14 @@ func (db *Store) Users() ([]*model.User, error) {
 	return data, err
 }
 
+// Users returns all field from all users in the database, included the encrypted data
+func (db *Store) EverytingFromUsers() ([]*model.User, error) {
+	stmt := sql.Stmt(db.driver, sql.SelectEverytingFromUsers)
+	var data []*model.User
+	err := meddler.QueryAll(db, &data, stmt)
+	return data, err
+}
+
 // CreateUser stores a new user in the database
 func (db *Store) CreateUser(user *model.User) error {
 	return meddler.Insert(db, "users", user)

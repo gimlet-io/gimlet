@@ -96,6 +96,12 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if repoName == "" {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+		return
+	}
+
 	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
@@ -516,6 +522,10 @@ func gitopsCommitMetasFromHash(store *store.Store, gitopsRef string) (string, st
 	gitopsCommit, err := store.GitopsCommit(gitopsRef)
 	if err != nil {
 		logrus.Warnf("cannot get gitops commit: %s", err)
+		return "", "", 0
+	}
+	if gitopsCommit == nil {
+		return "", "", 0
 	}
 
 	return gitopsCommit.Status, gitopsCommit.StatusDesc, gitopsCommit.Created

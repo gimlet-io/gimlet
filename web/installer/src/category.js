@@ -1,9 +1,9 @@
 import './style.css'
-import React, {Component} from 'react'
-import {Tile} from "./tile";
+import React, { Component } from 'react'
+import { Tile } from './tile';
 import HelmUI from "helm-react-ui";
-import {XIcon} from "@heroicons/react/outline";
-import {Remarkable} from "remarkable";
+import { XIcon } from "@heroicons/react/outline";
+import { Remarkable } from "remarkable";
 
 export class Category extends Component {
   constructor(props) {
@@ -21,7 +21,7 @@ export class Category extends Component {
     this.setState(prevState => ({
       toggleState: {
         ...prevState.toggleState,
-        [category]: prevState.toggleState[category] == component ? undefined : component
+        [category]: prevState.toggleState[category] === component ? undefined : component
       },
       tabState: {
         ...prevState.tabState,
@@ -40,7 +40,7 @@ export class Category extends Component {
   }
 
   render() {
-    let {toggleState} = this.state
+    let { toggleState } = this.state
 
     const {
       category,
@@ -92,7 +92,7 @@ export class Category extends Component {
       )
     })
 
-    if (selectedComponentName !== undefined){
+    if (selectedComponentName !== undefined) {
       if (typeof selectedComponent.schema !== 'object') {
         selectedComponent.schema = JSON.parse(selectedComponent.schema)
       }
@@ -118,7 +118,7 @@ export class Category extends Component {
     const md = new Remarkable();
     const gettingStartedPanel = selectedComponentName === undefined ? null : (
       <div className="py-6 px-4 space-y-6 sm:p-6">
-        <div className="prose" dangerouslySetInnerHTML={{__html: md.render(selectedComponent.onePager)}}/>
+        <div className="prose" dangerouslySetInnerHTML={{ __html: md.render(selectedComponent.onePager) }} />
       </div>
     );
 
@@ -134,45 +134,45 @@ export class Category extends Component {
         </div>
         <div className="my-2">
           {selectedComponentName !== undefined &&
-          <div className="px-8 py-4 shadow sm:rounded-md sm:overflow-hidden bg-white relative">
-            <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
-              <span
-                className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                onClick={() => this.toggleComponent(category.id, selectedComponent.variable)}
-              >
-                <span className="sr-only">Close</span>
-                <XIcon className="h-6 w-6" aria-hidden="true"/>
-              </span>
-            </div>
-            <div>
-              <div className="hidden sm:block">
-                <div className="border-b border-gray-200">
-                  <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <span
-                       className={tabState[selectedComponentName] == 'getting-started' ? selectedTabStyle : notSelectedTabStyle}
-                       aria-current={tabState[selectedComponentName] == 'getting-started' ? 'page' : undefined}
-                       onClick={() => this.switchTab(selectedComponentName, 'getting-started')}
-                    >
-                      Getting Started
-                    </span>
-                    <span
-                       className={tabState[selectedComponentName] == 'config' ? selectedTabStyle : notSelectedTabStyle}
-                       aria-current={tabState[selectedComponentName] == 'config' ? 'page' : undefined}
-                       onClick={() => this.switchTab(selectedComponentName, 'config')}
-                    >
-                      Config
-                    </span>
-                  </nav>
+            <div className="px-8 py-4 shadow sm:rounded-md sm:overflow-hidden bg-white relative">
+              <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
+                <span
+                  className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  onClick={() => this.toggleComponent(category.id, selectedComponent.variable)}
+                >
+                  <span className="sr-only">Close</span>
+                  <XIcon className="h-6 w-6" aria-hidden="true" />
+                </span>
+              </div>
+              <div>
+                <div className="hidden sm:block">
+                  <div className="border-b border-gray-200">
+                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                      <span
+                        className={tabState[selectedComponentName] === 'getting-started' ? selectedTabStyle : notSelectedTabStyle}
+                        aria-current={tabState[selectedComponentName] === 'getting-started' ? 'page' : undefined}
+                        onClick={() => this.switchTab(selectedComponentName, 'getting-started')}
+                      >
+                        Getting Started
+                      </span>
+                      <span
+                        className={tabState[selectedComponentName] === 'config' ? selectedTabStyle : notSelectedTabStyle}
+                        aria-current={tabState[selectedComponentName] === 'config' ? 'page' : undefined}
+                        onClick={() => this.switchTab(selectedComponentName, 'config')}
+                      >
+                        Config
+                      </span>
+                    </nav>
+                  </div>
                 </div>
               </div>
+              {tabState[selectedComponentName] === 'getting-started' &&
+                gettingStartedPanel
+              }
+              {tabState[selectedComponentName] === 'config' &&
+                componentConfigPanel
+              }
             </div>
-            {tabState[selectedComponentName] == 'getting-started' &&
-              gettingStartedPanel
-            }
-            {tabState[selectedComponentName] == 'config' &&
-              componentConfigPanel
-            }
-          </div>
           }
         </div>
       </div>

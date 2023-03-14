@@ -27,6 +27,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const fluxPattern = "flux-%s"
+
 func user(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
@@ -456,9 +458,10 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lowerCaseEnvNameToSave := strings.ToLower(envNameToSave)
 	db := r.Context().Value("store").(*store.Store)
 	envToSave := &model.Environment{
-		Name: envNameToSave,
+		Name: lowerCaseEnvNameToSave,
 	}
 	err = db.CreateEnvironment(envToSave)
 	if err != nil {
@@ -468,7 +471,7 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(envNameToSave))
+	w.Write([]byte(lowerCaseEnvNameToSave))
 }
 
 func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
@@ -484,6 +487,14 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	err = db.DeleteEnvironment(envNameToDelete)
 	if err != nil {
 		logrus.Errorf("cannot delete environment to database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	fluxUser := fmt.Sprintf(fluxPattern, envNameToDelete)
+	err = db.DeleteUser(fluxUser)
+	if err != nil {
+		logrus.Errorf("cannot delete user %s: %s", fluxUser, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

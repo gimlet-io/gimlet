@@ -81,6 +81,7 @@ export default class Repo extends Component {
     this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
     this.linkToDeployment = this.linkToDeployment.bind(this)
     this.newConfig = this.newConfig.bind(this)
+    this.envNames = this.envNames.bind(this)
   }
 
   componentDidMount() {
@@ -243,31 +244,33 @@ export default class Repo extends Component {
           }
           if (gitopsCommitsApplied) {
             for (const result of deployRequest.results) {
-              this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
-              .then(data => {
-                  this.props.store.dispatch({
-                    type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-                      owner: owner,
-                      repo: repo,
-                      env: result.env,
-                      app: result.app,
-                      releases: data,
-                    }
-                  });
-                }, () => {/* Generic error handler deals with it */ }
-                );
-
-              this.props.gimletClient.getReleases(result.env, 10)
+              setTimeout(() => {
+                this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
                 .then(data => {
-                  this.props.store.dispatch({
-                    type: ACTION_TYPE_RELEASE_STATUSES,
-                    payload: {
-                      envName: result.env,
-                      data: data,
-                    }
-                  });
-                }, () => {/* Generic error handler deals with it */
-                })
+                    this.props.store.dispatch({
+                      type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+                        owner: owner,
+                        repo: repo,
+                        env: result.env,
+                        app: result.app,
+                        releases: data,
+                      }
+                    });
+                  }, () => {/* Generic error handler deals with it */ }
+                  );
+
+                this.props.gimletClient.getReleases(result.env, 10)
+                  .then(data => {
+                    this.props.store.dispatch({
+                      type: ACTION_TYPE_RELEASE_STATUSES,
+                      payload: {
+                        envName: result.env,
+                        data: data,
+                      }
+                    });
+                  }, () => {/* Generic error handler deals with it */
+                  })
+                }, 300);
             }
           }
         }
@@ -341,6 +344,7 @@ export default class Repo extends Component {
 
   ciConfigAndShipperStatuses(repoName) {
     const { repoMetas } = this.state;
+    const shipper = repoMetas.githubActionsShipper || repoMetas.circleCiShipper
     let shipperColor = "text-gray-500";
     let ciConfigColor = "text-gray-500";
     let ciConfig = "";
@@ -352,28 +356,25 @@ export default class Repo extends Component {
       ciConfigColor = "text-green-500";
       ciConfig = ".circleci"
     }
-    if (repoMetas.hasShipper) {
+    if (shipper) {
       shipperColor = "text-green-500";
     }
 
     return (
       <>
-        {repoMetas.githubActions || repoMetas.circleCi ?
-          <a href={`${this.state.scmUrl}/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer">
+        <span title={repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}>
+          <a href={`${this.state.scmUrl}/${repoName}/tree/main/${ciConfig}`} target="_blank" rel="noopener noreferrer" className={(!repoMetas.githubActions && !repoMetas.circleCi) && "cursor-default pointer-events-none"}>
             <svg xmlns="http://www.w3.org/2000/svg" className={`inline ml-1 h-4 w-4 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
             </svg>
           </a>
-          :
-          <svg xmlns="http://www.w3.org/2000/svg" className={`inline ml-1 h-4 w-4 ${ciConfigColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            <title>{repoMetas.githubActions || repoMetas.circleCi ? "This repository has CI config" : "This repository doesn't have CI config"}</title>
-          </svg>}
-        <svg xmlns="http://www.w3.org/2000/svg" className={`inline ml-1 h-4 w-4 ${shipperColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-          <title>{repoMetas.hasShipper ? "This repository has shipper" : "This repository doesn't have shipper"}</title>
-        </svg>
+        </span>
+        <span title={shipper ? "This repository has shipper" : "This repository doesn't have shipper"}>
+          <a href={`${this.state.scmUrl}/${repoName}/tree/main/${ciConfig}/${shipper}`} target="_blank" rel="noopener noreferrer" className={(!repoMetas.githubActionsShipper && !repoMetas.circleCiShipper) && "cursor-default pointer-events-none"}>
+            <svg xmlns="http://www.w3.org/2000/svg" className={`inline ml-1 h-4 w-4 ${shipperColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />          </svg>
+          </a>
+        </span>
       </>)
   }
 
@@ -383,6 +384,10 @@ export default class Repo extends Component {
 
   kubernetesAlertsByEnv(envName) {
     return this.state.kubernetesAlerts.filter(event => event.envName === envName)
+  }
+
+  envNames(envs) {
+    return envs.map(env => env["name"]);
   }
 
   render() {
@@ -467,6 +472,7 @@ export default class Repo extends Component {
                   {commits &&
                     <Commits
                       commits={commits[repoName]}
+                      envs={this.envNames(envs)}
                       connectedAgents={filteredEnvs}
                       deployHandler={this.deploy}
                       repo={repo}

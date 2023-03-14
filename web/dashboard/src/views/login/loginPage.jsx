@@ -15,26 +15,36 @@ const LoginPage = () => {
   }, [getProvider]);
 
   return (
-    <>
-      <div className="py-12">
-        <img className="h-16 mx-auto" src={gimletHeader} alt="gimlet-logo" />
-        <div className="mt-8 mx-2 sm:mx-auto sm:max-w-md bg-white py-8 px-4 shadow sm:px-10">
-          <button
-            onClick={() => {
-              window.location.replace(`/auth?appState=https://${window.location.hostname}/auth`);
-            }}
-            type="button"
-            className="inline-flex items-center justify-center w-full px-6 py-3 rounded-md text-white
-                      bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-yellow-500 hover:to-pink-500
-                      shadow-lg
-                      "
-          >
-            {providerLogo(provider)}
-            <span>Sign in with {provider}</span>
-          </button>
+    <div className="fixed flex inset-0 bg-gray-100">
+      <div className="max-w-7xl m-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="sm:mx-auto sm:max-w-md py-8 px-4 bg-white shadow-md sm:px-10">
+                <div className="my-8">
+                  <img className="h-16 mx-auto" src={gimletHeader} alt="gimlet-logo" />
+                  <div className="my-16 space-y-4  text-base font-medium text-gray-700">
+                    <button
+                      onClick={() => {
+                        window.location.replace(`/auth?appState=https://${window.location.hostname}/auth`);
+                      }}
+                      className="inline-flex items-center justify-center w-full font-medium px-20 py-3 rounded border border-gray-300 hover:bg-gray-50 shadow-sm"
+                    >
+                      {providerLogo(provider)}
+                      Sign in with {provider}
+                    </button>
+                  </div>
+                  <div className="text-center font-light text-gray-700 flex flex-wrap justify-center">
+                    By logging in, you're agreeing to our
+                    <a href="https://gimlet.io/tos" className="hover:underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -51,37 +61,21 @@ const getProvider = async () => {
 const providerLogo = (provider) => {
   if (provider === "GitHub") {
     return (
-      <svg
-        className="mr-2 -ml-1 w-4 h-4"
-        aria-hidden="true"
-        focusable="false"
-        data-prefix="fab"
-        data-icon="github"
-        role="img"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 496 512"
-      >
-        <path
-          fill="currentColor"
-          d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3 .3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5 .3-6.2 2.3zm44.2-1.7c-2.9 .7-4.9 2.6-4.6 4.9 .3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3 .7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3 .3 2.9 2.3 3.9 1.6 1 3.6 .7 4.3-.7 .7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3 .7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3 .7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"
-        ></path>
+      <svg width="32" height="32" className="mr-2" viewBox="0 -3 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
+        <path d="M128.001 0C57.317 0 0 57.307 0 128.001c0 56.554 36.676 104.535 87.535 121.46 6.397 1.185 8.746-2.777 8.746-6.158 0-3.052-.12-13.135-.174-23.83-35.61 7.742-43.124-15.103-43.124-15.103-5.823-14.795-14.213-18.73-14.213-18.73-11.613-7.944.876-7.78.876-7.78 12.853.902 19.621 13.19 19.621 13.19 11.417 19.568 29.945 13.911 37.249 10.64 1.149-8.272 4.466-13.92 8.127-17.116-28.431-3.236-58.318-14.212-58.318-63.258 0-13.975 5-25.394 13.188-34.358-1.329-3.224-5.71-16.242 1.24-33.874 0 0 10.749-3.44 35.21 13.121 10.21-2.836 21.16-4.258 32.038-4.307 10.878.049 21.837 1.47 32.066 4.307 24.431-16.56 35.165-13.12 35.165-13.12 6.967 17.63 2.584 30.65 1.255 33.873 8.207 8.964 13.173 20.383 13.173 34.358 0 49.163-29.944 59.988-58.447 63.157 4.591 3.972 8.682 11.762 8.682 23.704 0 17.126-.148 30.91-.148 35.126 0 3.407 2.304 7.398 8.792 6.14C219.37 232.5 256 184.537 256 128.002 256 57.307 198.691 0 128.001 0Zm-80.06 182.34c-.282.636-1.283.827-2.194.39-.929-.417-1.45-1.284-1.15-1.922.276-.655 1.279-.838 2.205-.399.93.418 1.46 1.293 1.139 1.931Zm6.296 5.618c-.61.566-1.804.303-2.614-.591-.837-.892-.994-2.086-.375-2.66.63-.566 1.787-.301 2.626.591.838.903 1 2.088.363 2.66Zm4.32 7.188c-.785.545-2.067.034-2.86-1.104-.784-1.138-.784-2.503.017-3.05.795-.547 2.058-.055 2.861 1.075.782 1.157.782 2.522-.019 3.08Zm7.304 8.325c-.701.774-2.196.566-3.29-.49-1.119-1.032-1.43-2.496-.726-3.27.71-.776 2.213-.558 3.315.49 1.11 1.03 1.45 2.505.701 3.27Zm9.442 2.81c-.31 1.003-1.75 1.459-3.199 1.033-1.448-.439-2.395-1.613-2.103-2.626.301-1.01 1.747-1.484 3.207-1.028 1.446.436 2.396 1.602 2.095 2.622Zm10.744 1.193c.036 1.055-1.193 1.93-2.715 1.95-1.53.034-2.769-.82-2.786-1.86 0-1.065 1.202-1.932 2.733-1.958 1.522-.03 2.768.818 2.768 1.868Zm10.555-.405c.182 1.03-.875 2.088-2.387 2.37-1.485.271-2.861-.365-3.05-1.386-.184-1.056.893-2.114 2.376-2.387 1.514-.263 2.868.356 3.061 1.403Z" fill="#161614" />
       </svg>
     )
   }
 
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="mr-2 -ml-1 w-5 h-5 icon icon-tabler icon-tabler-brand-gitlab"
-      viewBox="0 0 24 24"
-      strokeWidth="2"
-      stroke="currentColor"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-      <path d="M21 14l-9 7l-9 -7l3 -11l3 7h6l3 -7z" />
+    <svg width="32" height="32" className="mr-2" viewBox="0 -10 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
+      <path d="m128.075 236.075 47.104-144.97H80.97l47.104 144.97Z" fill="#E24329" />
+      <path d="M128.075 236.074 80.97 91.104H14.956l113.119 144.97Z" fill="#FC6D26" />
+      <path d="M14.956 91.104.642 135.16a9.752 9.752 0 0 0 3.542 10.903l123.891 90.012-113.12-144.97Z" fill="#FCA326" />
+      <path d="M14.956 91.105H80.97L52.601 3.79c-1.46-4.493-7.816-4.492-9.275 0l-28.37 87.315Z" fill="#E24329" />
+      <path d="m128.075 236.074 47.104-144.97h66.015l-113.12 144.97Z" fill="#FC6D26" />
+      <path d="m241.194 91.104 14.314 44.056a9.752 9.752 0 0 1-3.543 10.903l-123.89 90.012 113.119-144.97Z" fill="#FCA326" />
+      <path d="M241.194 91.105h-66.015l28.37-87.315c1.46-4.493 7.816-4.492 9.275 0l28.37 87.315Z" fill="#E24329" />
     </svg>
   )
 }

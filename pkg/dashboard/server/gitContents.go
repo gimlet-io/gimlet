@@ -81,7 +81,7 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 
 	githubActionsConfigPath := filepath.Join(".github", "workflows")
 	githubActionsShipperCommand := "gimlet-io/gimlet-artifact-shipper-action"
-	hasGithubActionsConfig, hasGithubActionsShipper, err := hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
+	hasGithubActionsConfig, githubActionsShipper, err := hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -89,8 +89,8 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	circleCiConfigPath := ".circleci"
-	circleCiShipperCommand := "gimlet/gimlet-artifact-createn"
-	hasCircleCiConfig, hasCircleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
+	circleCiShipperCommand := "gimlet/gimlet-artifact-create"
+	hasCircleCiConfig, circleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -129,10 +129,11 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoM := gitRepoMetas{
-		GithubActions: hasGithubActionsConfig,
-		CircleCi:      hasCircleCiConfig,
-		HasShipper:    hasGithubActionsShipper || hasCircleCiShipper,
-		FileInfos:     fileInfos,
+		GithubActions:        hasGithubActionsConfig,
+		CircleCi:             hasCircleCiConfig,
+		GithubActionsShipper: githubActionsShipper,
+		CircleCiShipper:      circleCiShipper,
+		FileInfos:            fileInfos,
 	}
 
 	gitRepoMString, err := json.Marshal(gitRepoM)
@@ -272,10 +273,11 @@ type fileInfo struct {
 }
 
 type gitRepoMetas struct {
-	GithubActions bool       `json:"githubActions"`
-	CircleCi      bool       `json:"circleCi"`
-	HasShipper    bool       `json:"hasShipper"`
-	FileInfos     []fileInfo `json:"fileInfos"`
+	GithubActions        bool       `json:"githubActions"`
+	CircleCi             bool       `json:"circleCi"`
+	GithubActionsShipper *string    `json:"githubActionsShipper"`
+	CircleCiShipper      *string    `json:"circleCiShipper"`
+	FileInfos            []fileInfo `json:"fileInfos"`
 }
 
 // envConfig fetches all environment configs from source control for a repo
@@ -602,33 +604,40 @@ func hasRepo(orgRepos []string, repo string) bool {
 	return false
 }
 
-func hasShipper(files map[string]string, shipperCommand string) bool {
-	for _, file := range files {
-		if strings.Contains(file, shipperCommand) {
-			return true
+func findShipper(files map[string]string, shipperCommand string) *string {
+	for fileName, fileContent := range files {
+		if strings.Contains(fileContent, shipperCommand) {
+			lines := strings.Split(fileContent, "\n")
+			for i, line := range lines {
+				if strings.Contains(line, shipperCommand) {
+					lineNumber := i + 1
+					shipper := fmt.Sprintf("%s#L%d", fileName, lineNumber)
+					return &shipper
+				}
+			}
 		}
 	}
-	return false
+	return nil
 }
 
-func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCommand string) (bool, bool, error) {
+func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCommand string) (bool, *string, error) {
 	branch, err := helper.HeadBranch(repo)
 	if err != nil {
-		return false, false, err
+		return false, nil, err
 	}
 
 	ciConfigFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ciConfigPath)
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
-			return false, false, err
+			return false, nil, err
 		}
 	}
 
 	if len(ciConfigFiles) == 0 {
-		return false, false, nil
+		return false, nil, nil
 	}
 
-	return true, hasShipper(ciConfigFiles, shipperCommand), nil
+	return true, findShipper(ciConfigFiles, shipperCommand), nil
 }
 
 func generateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {

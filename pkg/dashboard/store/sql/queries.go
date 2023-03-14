@@ -16,6 +16,7 @@ package sql
 
 const Dummy = "dummy"
 const SelectUserByLogin = "select-user-by-login"
+const SelectEverytingFromUsers = "select-everything-from-users"
 const SelectAllUser = "select-all-user"
 const DeleteUser = "deleteUser"
 const SelectCommitsByRepo = "select-commits-by-repo"
@@ -47,6 +48,10 @@ WHERE login = $1;
 `,
 		SelectAllUser: `
 SELECT id, login, secret, admin
+FROM users;
+`,
+		SelectEverytingFromUsers: `
+SELECT id, login, admin, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users;
 `,
 		DeleteUser: `
@@ -141,6 +146,10 @@ WHERE login = $1;
 `,
 		SelectAllUser: `
 SELECT id, login, secret, admin
+FROM users;
+`,
+		SelectEverytingFromUsers: `
+SELECT id, login, admin, name, email, access_token, refresh_token, expires, secret, repos, favorite_repos, favorite_services
 FROM users;
 `,
 		DeleteUser: `
