@@ -192,27 +192,21 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						go sendState(kubeEnv, config.Host, config.AgentKey)
 						go sendEvents(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
-						namespace := e["namespace"].(string)
-						svc := e["serviceName"].(string)
-
-						stopCh := make(chan int)
-						runningLogStreams[namespace+"/"+svc] = stopCh
-
 						go podLogs(
 							kubeEnv,
 							e["namespace"].(string),
 							e["serviceName"].(string),
 							messages,
-							stopCh,
+							runningLogStreams,
 						)
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
-						stopPodLogs(runningLogStreams, namespace, svc)
+						go stopPodLogs(runningLogStreams, namespace, svc)
 					}
 				} else {
 					log.Info("event stream closed")
-					stopAllPodLogs(runningLogStreams)
+					go stopAllPodLogs(runningLogStreams)
 					done <- true
 					return
 				}
@@ -328,7 +322,7 @@ func podLogs(
 	namespace string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
-	stopChannel chan int,
+	runningLogStreams map[string]chan int,
 ) {
 
 	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
@@ -363,7 +357,7 @@ func podLogs(
 					for _, pod := range allPods.Items {
 						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
 							pod.Namespace == deployment.Namespace {
-							streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, stopChannel)
+							streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, runningLogStreams)
 							return
 						}
 					}
@@ -389,7 +383,14 @@ func httpClient() *http.Client {
 	}
 }
 
-func streamPodLogs(kubeEnv *agent.KubeEnv, namespace string, pod string, serviceName string, messages chan *streaming.WSMessage, stopChannel chan int) {
+func streamPodLogs(
+	kubeEnv *agent.KubeEnv,
+	namespace string,
+	pod string,
+	serviceName string,
+	messages chan *streaming.WSMessage,
+	runningLogStreams map[string]chan int,
+) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
 		TailLines: &count,
@@ -404,8 +405,11 @@ func streamPodLogs(kubeEnv *agent.KubeEnv, namespace string, pod string, service
 	}
 	defer podLogs.Close()
 
+	stopCh := make(chan int)
+	runningLogStreams[namespace+"/"+serviceName] = stopCh
+
 	go func() {
-		<-stopChannel
+		<-stopCh
 		podLogs.Close()
 	}()
 
