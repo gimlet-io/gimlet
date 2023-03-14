@@ -305,7 +305,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fluxUser := &model.User{
-		Login:  "flux-" + bootstrapConfig.EnvName,
+		Login:  fmt.Sprintf(fluxPattern, bootstrapConfig.EnvName),
 		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
 	}
 
