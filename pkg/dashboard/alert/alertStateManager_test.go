@@ -11,8 +11,13 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 )
 
+var (
+	encryptionKey    = "the-key-has-to-be-32-bytes-long!"
+	encryptionKeyNew = ""
+)
+
 func TestTrackPods(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -48,7 +53,7 @@ func TestTrackPods(t *testing.T) {
 }
 
 func TestTrackEvents(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -83,7 +88,7 @@ func TestTrackEvents(t *testing.T) {
 }
 
 func TestSetFiringState(t *testing.T) {
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()
@@ -143,7 +148,7 @@ func TestPodFailedMessage(t *testing.T) {
 
 func TestNotificationSending(t *testing.T) {
 	t.Skip("Skipping notification sending")
-	store := store.NewTest()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
 	}()

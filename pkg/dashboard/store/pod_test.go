@@ -9,7 +9,7 @@ import (
 )
 
 func TestPodCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

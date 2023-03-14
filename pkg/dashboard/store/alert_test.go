@@ -8,7 +8,7 @@ import (
 )
 
 func TestAlertCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
@@ -32,7 +32,7 @@ func TestAlertCRUD(t *testing.T) {
 }
 
 func TestGetPendingAlerts(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()

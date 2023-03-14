@@ -9,7 +9,7 @@ import (
 )
 
 func TestKubeEventCRUD(t *testing.T) {
-	s := NewTest()
+	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		s.Close()
 	}()
