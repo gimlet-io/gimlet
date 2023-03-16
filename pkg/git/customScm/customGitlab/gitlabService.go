@@ -2,6 +2,7 @@ package customGitlab
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -155,8 +156,30 @@ func (c *GitlabClient) CreateRepository(owner string, repo string, loggedInUser 
 	return err
 }
 
-func (c *GitlabClient) AddDeployKeyToRepo(orgToken, userToken, repo, loggedInUser, keyTitle, keyValue string, readOnly bool) error {
-	return nil
+func (c *GitlabClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error {
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(c.BaseURL))
+	if err != nil {
+		return err
+	}
+
+	projects, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{
+		Search: &repo,
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(projects) == 0 {
+		return fmt.Errorf("project not found: %s", repo)
+	}
+
+	projectID := projects[0].ID
+	_, _, err = git.DeployKeys.AddDeployKey(projectID, &gitlab.AddDeployKeyOptions{
+		Title:   &keyTitle,
+		Key:     &keyValue,
+		CanPush: &canWrite,
+	})
+	return err
 }
 
 func fromGitlabStatus(gitlabStatus string) string {
