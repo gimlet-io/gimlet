@@ -429,7 +429,7 @@ func BootstrapEnv(
 		owner,
 		repository,
 		token,
-		"gimlet-key",
+		"flux",
 		publicKey,
 		deployKeyCanWrite,
 	)
