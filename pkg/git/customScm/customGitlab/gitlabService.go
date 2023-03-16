@@ -175,6 +175,14 @@ func (c *GitlabClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 	}
 
 	projectID := projects[0].ID
+	keys, _, err := git.DeployKeys.ListProjectDeployKeys(projectID, nil)
+	if err != nil {
+		return err
+	}
+	if len(keys) != 0 {
+		return nil
+	}
+
 	_, _, err = git.DeployKeys.AddDeployKey(projectID, &gitlab.AddDeployKeyOptions{
 		Title:   &keyTitle,
 		Key:     &keyValue,
