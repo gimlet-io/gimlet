@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
@@ -391,23 +390,12 @@ func (c *GithubClient) CreateRepository(owner string, repo string, loggedInUser 
 	return err
 }
 
-func (c *GithubClient) AddDeployKeyToRepo(orgToken, userToken, repo, loggedInUser, keyTitle, keyValue string, readOnly bool) error {
-	owner := ""
-	parts := strings.Split(repo, "/")
-	if len(parts) == 2 {
-		owner = parts[0]
-		repo = parts[1]
-	}
-
-	token := orgToken
-	if owner == loggedInUser {
-		token = userToken
-	}
-
+func (c *GithubClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(context.Background(), ts)
 	client := github.NewClient(tc)
 
+	readOnly := !canWrite
 	githubKey := &github.Key{
 		Title:    &keyTitle,
 		Key:      &keyValue,
