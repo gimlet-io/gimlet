@@ -639,11 +639,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	gimletDashboardConfig["bootstrapEnv"] = fmt.Sprintf("name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s", envName, repoPerEnv, infraRepo, appsRepo)
 
 	data.infraGitopsRepoFileName = infraGitopsRepoFileName
-	data.infraPublicKey = infraPublicKey
 	data.infraSecretFileName = infraSecretFileName
 
 	data.appsGitopsRepoFileName = appsGitopsRepoFileName
-	data.appsPublicKey = appsPublicKey
 	data.appsSecretFileName = appsSecretFileName
 
 	data.notificationsFileName = notificationsFileName

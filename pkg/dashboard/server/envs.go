@@ -289,7 +289,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
 	appsGitopsRepoFileName, appsSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
@@ -351,11 +350,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		"envName":                 bootstrapConfig.EnvName,
 		"repoPerEnv":              bootstrapConfig.RepoPerEnv,
 		"infraRepo":               environment.InfraRepo,
-		"infraPublicKey":          infraPublicKey,
 		"infraSecretFileName":     infraSecretFileName,
 		"infraGitopsRepoFileName": infraGitopsRepoFileName,
 		"appsRepo":                environment.AppsRepo,
-		"appsPublicKey":           appsPublicKey,
 		"appsSecretFileName":      appsSecretFileName,
 		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
 		"notificationsFileName":   notificationsFileName,

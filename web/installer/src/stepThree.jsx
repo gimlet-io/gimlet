@@ -137,7 +137,6 @@ const StepThree = ({ getContext }) => {
                                 envName={context.envName}
                                 repoPath={context.infraRepo}
                                 repoPerEnv={context.repoPerEnv}
-                                publicKey={context.infraPublicKey}
                                 secretFileName={context.infraSecretFileName}
                                 gitopsRepoFileName={context.infraGitopsRepoFileName}
                                 controllerGenerated={true}
@@ -147,7 +146,6 @@ const StepThree = ({ getContext }) => {
                                 envName={context.envName}
                                 repoPath={context.appsRepo}
                                 repoPerEnv={context.repoPerEnv}
-                                publicKey={context.appsPublicKey}
                                 secretFileName={context.appsSecretFileName}
                                 gitopsRepoFileName={context.appsGitopsRepoFileName}
                                 notificationsFileName={context.notificationsFileName}
