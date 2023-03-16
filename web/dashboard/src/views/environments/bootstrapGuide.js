@@ -2,7 +2,6 @@ import React from 'react'
 
 const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, secretFileName, gitopsRepoFileName, controllerGenerated, scmUrl }) => {
     const repoName = parseRepoName(repoPath);
-    const deployKeySettingsUrl = `${scmUrl}/${repoPath}` + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
     let type = "";
 
     if (repoPath.includes("apps")) {

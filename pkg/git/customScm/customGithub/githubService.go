@@ -396,12 +396,10 @@ func (c *GithubClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 	client := github.NewClient(tc)
 
 	readOnly := !canWrite
-	githubKey := &github.Key{
+	_, _, err := client.Repositories.CreateKey(context.Background(), owner, repo, &github.Key{
 		Title:    &keyTitle,
 		Key:      &keyValue,
-		ReadOnly: github.Bool(readOnly),
-	}
-
-	_, _, err := client.Repositories.CreateKey(context.Background(), owner, repo, githubKey)
+		ReadOnly: &readOnly,
+	})
 	return err
 }
