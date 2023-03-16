@@ -163,7 +163,8 @@ func (c *GitlabClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 	}
 
 	projects, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{
-		Search: &repo,
+		Search:     &repo,
+		Membership: gitlab.Bool(true),
 	})
 	if err != nil {
 		return err
