@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -80,9 +81,9 @@ func GenerateManifests(
 			GenerateDependencies: shouldGenerateDependencies,
 		}
 
-		syncOpts.TargetPath = env
+		syncOpts.TargetPath = filepath.Join(env, "flux")
 		if singleEnv {
-			syncOpts.TargetPath = ""
+			syncOpts.TargetPath = "flux"
 		}
 		syncManifest, err := sync.Generate(syncOpts)
 		if err != nil {
