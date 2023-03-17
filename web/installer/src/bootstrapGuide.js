@@ -1,8 +1,7 @@
 import React from 'react'
 
-const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, publicKey, secretFileName, gitopsRepoFileName, controllerGenerated, scmUrl }) => {
+const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, secretFileName, gitopsRepoFileName, controllerGenerated, scmUrl }) => {
     const repoName = parseRepoName(repoPath);
-    const deployKeySettingsUrl = `${scmUrl}/${repoPath}` + (scmUrl === "https://github.com" ? "/settings/keys" : "/-/settings/repository#js-deploy-keys-settings")
     let type = "";
 
     if (repoPath.includes("apps")) {
@@ -21,17 +20,6 @@ const BootstrapGuide = ({ envName, notificationsFileName, repoPath, repoPerEnv, 
                     <li>cd {repoName}</li>
                 </ul>
 
-                <li>👉 Add the following deploy key to your Git provider to the <a href={deployKeySettingsUrl} rel="noreferrer" target="_blank" className="font-medium hover:text-blue-900">{repoName}</a> repository</li>
-                <li className="text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">{publicKey}</li>
-                <li>( Don't know how to do it?
-                    <a
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-blue-900 mx-1 hover:underline"
-                        href="https://gimlet.io/docs/bootstrap-gitops-automation-with-gimlet-cli#add-deploy-key-to-gitops-repo">
-                        click here
-                    </a>)
-                </li>
                 <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
                 <ul className="list-none text-xs font-mono bg-blue-100 font-medium text-blue-500 px-1 py-1 rounded">
                     {controllerGenerated &&

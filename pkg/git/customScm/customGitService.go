@@ -11,4 +11,5 @@ type CustomGitService interface {
 	OrgRepos(installationToken string) ([]string, error)
 	GetAppNameAndAppSettingsURLs(installationToken string, ctx context.Context) (string, string, string, error)
 	CreateRepository(owner string, name string, loggedInUser string, orgToken string, token string) error
+	AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error
 }

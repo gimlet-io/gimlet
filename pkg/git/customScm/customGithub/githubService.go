@@ -389,3 +389,25 @@ func (c *GithubClient) CreateRepository(owner string, repo string, loggedInUser 
 	_, _, err := client.Repositories.Create(context.Background(), owner, r)
 	return err
 }
+
+func (c *GithubClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	keys, _, err := client.Repositories.ListKeys(context.Background(), owner, repo, nil)
+	if err != nil {
+		return err
+	}
+	if len(keys) != 0 {
+		return nil
+	}
+
+	readOnly := !canWrite
+	_, _, err = client.Repositories.CreateKey(context.Background(), owner, repo, &github.Key{
+		Title:    &keyTitle,
+		Key:      &keyValue,
+		ReadOnly: &readOnly,
+	})
+	return err
+}

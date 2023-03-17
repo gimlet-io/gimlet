@@ -271,14 +271,16 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	scmURL := config.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := BootstrapEnv(
+	infraGitopsRepoFileName, infraSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
+		gitServiceImpl,
 		environment.Name,
 		environment.InfraRepo,
 		bootstrapConfig.RepoPerEnv,
 		gitToken,
 		true,
 		true,
+		false,
 		scmURL,
 	)
 	if err != nil {
@@ -287,14 +289,16 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := BootstrapEnv(
+	appsGitopsRepoFileName, appsSecretFileName, err := BootstrapEnv(
 		gitRepoCache,
+		gitServiceImpl,
 		environment.Name,
 		environment.AppsRepo,
 		bootstrapConfig.RepoPerEnv,
 		gitToken,
 		false,
 		false,
+		true,
 		scmURL,
 	)
 	if err != nil {
@@ -346,11 +350,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		"envName":                 bootstrapConfig.EnvName,
 		"repoPerEnv":              bootstrapConfig.RepoPerEnv,
 		"infraRepo":               environment.InfraRepo,
-		"infraPublicKey":          infraPublicKey,
 		"infraSecretFileName":     infraSecretFileName,
 		"infraGitopsRepoFileName": infraGitopsRepoFileName,
 		"appsRepo":                environment.AppsRepo,
-		"appsPublicKey":           appsPublicKey,
 		"appsSecretFileName":      appsSecretFileName,
 		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
 		"notificationsFileName":   notificationsFileName,
@@ -369,14 +371,16 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 func BootstrapEnv(
 	gitRepoCache *nativeGit.RepoCache,
+	gitServiceImpl customScm.CustomGitService,
 	envName string,
 	repoName string,
 	repoPerEnv bool,
 	token string,
 	shouldGenerateController bool,
 	shouldGenerateDependencies bool,
+	deployKeyCanWrite bool,
 	scmURL string,
-) (string, string, string, error) {
+) (string, string, error) {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
@@ -384,10 +388,10 @@ func BootstrapEnv(
 			repo, tmpPath, err = initRepo(scmURL, repoName)
 			defer os.RemoveAll(tmpPath)
 			if err != nil {
-				return "", "", "", fmt.Errorf("cannot init empty repo: %s", err)
+				return "", "", fmt.Errorf("cannot init empty repo: %s", err)
 			}
 		} else {
-			return "", "", "", fmt.Errorf("cannot get repo: %s", err)
+			return "", "", fmt.Errorf("cannot get repo: %s", err)
 		}
 	}
 
@@ -396,7 +400,7 @@ func BootstrapEnv(
 	}
 	headBranch, err := nativeGit.HeadBranch(repo)
 	if err != nil {
-		return "", "", "", fmt.Errorf("cannot get head branch: %s", err)
+		return "", "", fmt.Errorf("cannot get head branch: %s", err)
 	}
 
 	scmHost := strings.Split(scmURL, "://")[1]
@@ -412,17 +416,30 @@ func BootstrapEnv(
 		headBranch,
 	)
 	if err != nil {
-		return "", "", "", fmt.Errorf("cannot generate manifest: %s", err)
+		return "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
 	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Bootstrapping")
 	if err != nil {
-		return "", "", "", fmt.Errorf("cannot stage commit and push: %s", err)
+		return "", "", fmt.Errorf("cannot stage commit and push: %s", err)
+	}
+
+	owner, repository := parseRepo(repoName)
+	err = gitServiceImpl.AddDeployKeyToRepo(
+		owner,
+		repository,
+		token,
+		"flux",
+		publicKey,
+		deployKeyCanWrite,
+	)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot add deploy key to repo: %s", err)
 	}
 
 	gitRepoCache.Invalidate(repoName)
 
-	return gitopsRepoFileName, publicKey, secretFileName, nil
+	return gitopsRepoFileName, secretFileName, nil
 }
 
 func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
@@ -724,4 +741,10 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(responseString))
+}
+
+func parseRepo(repoName string) (string, string) {
+	owner := strings.Split(repoName, "/")[0]
+	repo := strings.Split(repoName, "/")[1]
+	return owner, repo
 }

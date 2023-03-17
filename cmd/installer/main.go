@@ -586,27 +586,31 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	go gitRepoCache.Run()
 	data.repoCache = gitRepoCache
 
-	infraGitopsRepoFileName, infraPublicKey, infraSecretFileName, err := server.BootstrapEnv(
+	infraGitopsRepoFileName, infraSecretFileName, err := server.BootstrapEnv(
 		gitRepoCache,
+		gitSvc,
 		envName,
 		infraRepo,
 		repoPerEnv,
 		installationToken,
 		true,
 		true,
+		false,
 		data.scmURL,
 	)
 	if err != nil {
 		panic(err)
 	}
-	appsGitopsRepoFileName, appsPublicKey, appsSecretFileName, err := server.BootstrapEnv(
+	appsGitopsRepoFileName, appsSecretFileName, err := server.BootstrapEnv(
 		gitRepoCache,
+		gitSvc,
 		envName,
 		appsRepo,
 		repoPerEnv,
 		installationToken,
 		false,
 		false,
+		true,
 		data.scmURL,
 	)
 	if err != nil {
@@ -635,11 +639,9 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	gimletDashboardConfig["bootstrapEnv"] = fmt.Sprintf("name=%s&repoPerEnv=%t&infraRepo=%s&appsRepo=%s", envName, repoPerEnv, infraRepo, appsRepo)
 
 	data.infraGitopsRepoFileName = infraGitopsRepoFileName
-	data.infraPublicKey = infraPublicKey
 	data.infraSecretFileName = infraSecretFileName
 
 	data.appsGitopsRepoFileName = appsGitopsRepoFileName
-	data.appsPublicKey = appsPublicKey
 	data.appsSecretFileName = appsSecretFileName
 
 	data.notificationsFileName = notificationsFileName
