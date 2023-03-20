@@ -424,7 +424,7 @@ func BootstrapEnv(
 		return "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
-	owner, repository := parseRepo(repoName)
+	owner, repository := ParseRepo(repoName)
 	err = gitServiceImpl.AddDeployKeyToRepo(
 		owner,
 		repository,
@@ -743,7 +743,7 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(responseString))
 }
 
-func parseRepo(repoName string) (string, string) {
+func ParseRepo(repoName string) (string, string) {
 	owner := strings.Split(repoName, "/")[0]
 	repo := strings.Split(repoName, "/")[1]
 	return owner, repo
