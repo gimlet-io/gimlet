@@ -589,16 +589,20 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	err = kustomizationTemplateAndWrite(
+	kustomizationHash, err := kustomizationTemplateAndWrite(
 		repo,
 		manifest,
-		githubChartAccessToken,
 		repoName,
-		repoTmpPath,
 		repoPerEnv,
 	)
 	if err != nil {
 		return "", err
+	}
+	if kustomizationHash != "" {
+		err := nativeGit.PushWithToken(repo, githubChartAccessToken)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	sha, err := gitopsTemplateAndWrite(
@@ -941,14 +945,12 @@ func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
 func kustomizationTemplateAndWrite(
 	repo *git.Repository,
 	manifest *dx.Manifest,
-	githubToken string,
 	repoName string,
-	repoTmpPath string,
 	repoPerEnv bool,
-) error {
+) (string, error) {
 	w, err := repo.Worktree()
 	if err != nil {
-		return fmt.Errorf("cannot get worktree %s", err)
+		return "", fmt.Errorf("cannot get worktree %s", err)
 	}
 
 	owner, repository := server.ParseRepo(repoName)
@@ -959,27 +961,19 @@ func kustomizationTemplateAndWrite(
 		kustomizationName,
 		repoPerEnv)
 	if err != nil {
-		return fmt.Errorf("cannot generate kustomization: %s", err)
-	}
-	_, err = kustomizationManifest.WriteFile(repoTmpPath)
-	if err != nil {
-		return fmt.Errorf("cannot write kustomization manifest: %s", err)
+		return "", fmt.Errorf("cannot generate kustomization: %s", err)
 	}
 	err = nativeGit.StageFile(w, kustomizationManifest.Content, kustomizationManifest.Path)
 	if err != nil {
-		return fmt.Errorf("cannot stage file: %s", err)
+		return "", fmt.Errorf("cannot stage file: %s", err)
 	}
 	empty, err := nativeGit.NothingToCommit(repo)
 	if err != nil {
-		return fmt.Errorf("cannot determine git status: %s", err)
+		return "", fmt.Errorf("cannot determine git status: %s", err)
 	}
 	if empty {
-		return nil
+		return "", nil
 	}
 
-	_, err = nativeGit.Commit(repo, fmt.Sprintf("[Gimlet] %s/%s %s", manifest.Env, manifest.App, "automated deploy"))
-	if err != nil {
-		return fmt.Errorf("cannot commit:%s", err)
-	}
-	return nativeGit.PushWithToken(repo, githubToken)
+	return nativeGit.Commit(repo, fmt.Sprintf("[Gimlet] %s/%s %s", manifest.Env, manifest.App, "automated deploy"))
 }
