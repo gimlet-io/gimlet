@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -210,6 +211,53 @@ func GenerateProviderAndAlert(
 	return &manifestgen.Manifest{
 		Path:    path.Join(targetPath, namespace, fileName),
 		Content: fmt.Sprintf("%s---\n%s", resourceToString(providerData), resourceToString(alertData)),
+	}, nil
+}
+
+func GenerateKustomizationForApp(
+	app string,
+	env string,
+	kustomizationName string,
+	singleEnv bool,
+) (*manifestgen.Manifest, error) {
+	filePath := filepath.Join(env, "flux")
+	kustomizationPath := filepath.Join(env, app)
+	if singleEnv {
+		filePath = "flux"
+		kustomizationPath = app
+	}
+	gvk := kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
+	kustomization := kustomizev1.Kustomization{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       gvk.Kind,
+			APIVersion: gvk.GroupVersion().String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      kustomizationName,
+			Namespace: "flux-system",
+		},
+		Spec: kustomizev1.KustomizationSpec{
+			Interval: metav1.Duration{
+				Duration: 24 * time.Hour,
+			},
+			Path:  fmt.Sprintf("./%s", strings.TrimPrefix(kustomizationPath, "./")),
+			Prune: true,
+			SourceRef: kustomizev1.CrossNamespaceSourceReference{
+				Kind: sourcev1.GitRepositoryKind,
+				Name: kustomizationName,
+			},
+			Validation: "client",
+		},
+	}
+
+	ksData, err := yaml.Marshal(kustomization)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manifestgen.Manifest{
+		Path:    path.Join(filePath, fmt.Sprintf("kustomization-%s.yaml", app)),
+		Content: fmt.Sprintf("---\n%s", resourceToString(ksData)),
 	}, nil
 }
 
