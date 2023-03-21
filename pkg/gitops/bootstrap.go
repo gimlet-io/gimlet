@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -64,9 +65,9 @@ func GenerateManifests(
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
 
-		gitopsRepoName = fmt.Sprintf("gitops-repo-%s", uniqueName(singleEnv, owner, repoName, env))
+		gitopsRepoName = fmt.Sprintf("gitops-repo-%s", UniqueName(singleEnv, owner, repoName, env))
 		gitopsRepoFileName = gitopsRepoName + ".yaml"
-		secretName := fmt.Sprintf("deploy-key-%s", uniqueName(singleEnv, owner, repoName, env))
+		secretName := fmt.Sprintf("deploy-key-%s", UniqueName(singleEnv, owner, repoName, env))
 		secretFileName = secretName + ".yaml"
 
 		syncOpts := sync.Options{
@@ -80,9 +81,11 @@ func GenerateManifests(
 			GenerateDependencies: shouldGenerateDependencies,
 		}
 
-		syncOpts.TargetPath = env
+		syncOpts.DependenciesPath = env
+		syncOpts.TargetPath = filepath.Join(env, "flux")
 		if singleEnv {
-			syncOpts.TargetPath = ""
+			syncOpts.DependenciesPath = ""
+			syncOpts.TargetPath = "flux"
 		}
 		syncManifest, err := sync.Generate(syncOpts)
 		if err != nil {
@@ -121,7 +124,7 @@ func GenerateManifests(
 	return gitopsRepoFileName, publicKey, secretFileName, nil
 }
 
-func uniqueName(singleEnv bool, owner string, repoName string, env string) string {
+func UniqueName(singleEnv bool, owner string, repoName string, env string) string {
 	if len(owner) > 10 {
 		owner = owner[:10]
 	}
@@ -151,8 +154,8 @@ func GenerateManifestProviderAndAlert(
 ) (string, error) {
 	_, owner, repoName := ParseRepoURL(gitopsRepoUrl)
 
-	kustomizationName := fmt.Sprintf("gitops-repo-%s", uniqueName(singleEnv, owner, repoName, env))
-	notificationsName := fmt.Sprintf("notifications-%s", uniqueName(singleEnv, owner, repoName, env))
+	kustomizationName := fmt.Sprintf("gitops-repo-%s", UniqueName(singleEnv, owner, repoName, env))
+	notificationsName := fmt.Sprintf("notifications-%s", UniqueName(singleEnv, owner, repoName, env))
 	notificationsFileName := notificationsName + ".yaml"
 
 	syncManifest, err := sync.GenerateProviderAndAlert(

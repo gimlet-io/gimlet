@@ -70,3 +70,26 @@ func TestGenerateNotificationProvider(t *testing.T) {
 
 	fmt.Println(output.Content)
 }
+
+func TestGenerateKustomizationForApp(t *testing.T) {
+	appName := "testApp"
+	envName := "staging"
+	kustomizationName := "gitops-repo-gimlet-io-gitops-staging-infra"
+	singleEnv := true
+
+	output, err := GenerateKustomizationForApp(
+		appName,
+		envName,
+		kustomizationName,
+		singleEnv,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(output.Content, kustomizev1.GroupVersion.String()) {
+		t.Errorf("apiVersion '%s' not found", kustomizev1.GroupVersion.String())
+	}
+
+	fmt.Println(output.Content)
+}

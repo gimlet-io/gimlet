@@ -28,6 +28,7 @@ type Options struct {
 	Branch               string
 	Secret               string
 	TargetPath           string
+	DependenciesPath     string
 	ManifestFile         string
 	GitImplementation    string
 	RecurseSubmodules    bool

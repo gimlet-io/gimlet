@@ -13,11 +13,14 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	bootstrap "github.com/gimlet-io/gimlet-cli/pkg/gitops"
+	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -586,6 +589,16 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
+	_, err = kustomizationTemplateAndWrite(
+		repo,
+		manifest,
+		repoName,
+		repoPerEnv,
+	)
+	if err != nil {
+		return "", err
+	}
+
 	sha, err := gitopsTemplateAndWrite(
 		repo,
 		manifest,
@@ -921,4 +934,40 @@ func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
 		}
 	}
 	return "", false, fmt.Errorf("no such environment: %s", env)
+}
+
+func kustomizationTemplateAndWrite(
+	repo *git.Repository,
+	manifest *dx.Manifest,
+	repoName string,
+	repoPerEnv bool,
+) (string, error) {
+	w, err := repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("cannot get worktree %s", err)
+	}
+
+	owner, repository := server.ParseRepo(repoName)
+	kustomizationName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
+	kustomizationManifest, err := sync.GenerateKustomizationForApp(
+		manifest.App,
+		manifest.Env,
+		kustomizationName,
+		repoPerEnv)
+	if err != nil {
+		return "", fmt.Errorf("cannot generate kustomization: %s", err)
+	}
+	err = nativeGit.StageFile(w, kustomizationManifest.Content, kustomizationManifest.Path)
+	if err != nil {
+		return "", fmt.Errorf("cannot stage file: %s", err)
+	}
+	empty, err := nativeGit.NothingToCommit(repo)
+	if err != nil {
+		return "", fmt.Errorf("cannot determine git status: %s", err)
+	}
+	if empty {
+		return "", nil
+	}
+
+	return nativeGit.Commit(repo, fmt.Sprintf("[Gimlet] %s/%s %s", manifest.Env, manifest.App, "automated deploy"))
 }

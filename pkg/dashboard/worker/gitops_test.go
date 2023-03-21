@@ -568,3 +568,27 @@ func Test_cleanupTrigger(t *testing.T) {
 	})
 	assert.False(t, triggered, "Should not trigger on missing app")
 }
+
+func Test_kustomizationTemplateAndWrite(t *testing.T) {
+	m := &dx.Manifest{
+		Env: "staging",
+		App: "myapp",
+	}
+	repo, _ := git.Init(memory.NewStorage(), memfs.New())
+	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
+	repoName := "test/test-app"
+	repoPerEnv := false
+
+	_, err := kustomizationTemplateAndWrite(repo, m, repoName, repoPerEnv)
+	assert.Nil(t, err)
+
+	content, _ := nativeGit.Content(repo, "staging/flux/kustomization-myapp.yaml")
+	assert.True(t, len(content) > 1)
+
+	repoPerEnv = true
+	_, err = kustomizationTemplateAndWrite(repo, m, repoName, repoPerEnv)
+	assert.Nil(t, err)
+
+	content, _ = nativeGit.Content(repo, "flux/kustomization-myapp.yaml")
+	assert.True(t, len(content) > 1)
+}
