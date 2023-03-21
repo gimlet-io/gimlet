@@ -83,7 +83,7 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 				Interval: metav1.Duration{
 					Duration: 24 * time.Hour,
 				},
-				Path:  DependenciesPath(options.TargetPath),
+				Path:  DependenciesPath(options.DependenciesPath),
 				Prune: true,
 				SourceRef: kustomizev1.CrossNamespaceSourceReference{
 					Kind: sourcev1.GitRepositoryKind,

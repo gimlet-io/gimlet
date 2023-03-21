@@ -81,6 +81,10 @@ func GenerateManifests(
 			GenerateDependencies: shouldGenerateDependencies,
 		}
 
+		syncOpts.DependenciesPath = env
+		if singleEnv {
+			syncOpts.DependenciesPath = ""
+		}
 		syncOpts.TargetPath = filepath.Join(env, "flux")
 		if singleEnv {
 			syncOpts.TargetPath = "flux"
