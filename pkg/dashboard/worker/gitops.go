@@ -589,7 +589,7 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	_, err = kustomizationTemplateAndWrite(
+	kustomizationSha, err := kustomizationTemplateAndWrite(
 		repo,
 		manifest,
 		repoName,
@@ -610,7 +610,7 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	if sha != "" { // if there is a change to push
+	if sha != "" || kustomizationSha != "" { // if there is a change to push
 		operation := func() error {
 			return nativeGit.PushWithToken(repo, githubChartAccessToken)
 		}
