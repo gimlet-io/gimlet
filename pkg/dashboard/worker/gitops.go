@@ -589,7 +589,7 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	kustomizationHash, err := kustomizationTemplateAndWrite(
+	_, err = kustomizationTemplateAndWrite(
 		repo,
 		manifest,
 		repoName,
@@ -597,12 +597,6 @@ func cloneTemplateWriteAndPush(
 	)
 	if err != nil {
 		return "", err
-	}
-	if kustomizationHash != "" {
-		err := nativeGit.PushWithToken(repo, githubChartAccessToken)
-		if err != nil {
-			return "", err
-		}
 	}
 
 	sha, err := gitopsTemplateAndWrite(
