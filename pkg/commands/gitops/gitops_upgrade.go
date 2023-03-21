@@ -41,6 +41,10 @@ var gitopsUpgradeCmd = cli.Command{
 			Usage: "to not bootstrap the FluxV2 gitops controller, only the GitRepository and Kustomization to add a new source",
 		},
 		&cli.BoolFlag{
+			Name:  "no-dependencies",
+			Usage: "if you dont't want to use dependencies for Flux",
+		},
+		&cli.BoolFlag{
 			Name:  "no-kustomization",
 			Usage: "if you don't want to upgrade your Flux repo and folder config",
 		},
@@ -73,13 +77,14 @@ func Upgrade(c *cli.Context) error {
 	}
 
 	noController := c.Bool("no-controller")
+	noDependencies := c.Bool("no-dependencies")
 	noKustomization := c.Bool("no-kustomization")
 	noDeployKey := c.Bool("no-deploykey")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
 	_, _, _, err = gitops.GenerateManifests(
 		!noController,
-		true,
+		!noDependencies,
 		env,
 		singleEnv,
 		gitopsRepoPath,
