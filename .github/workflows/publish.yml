@@ -1,9 +1,9 @@
-name: 🚀 Publish Dashboard
+name: 🚀 Publish Gimlet
 
 on:
   push:
     tags:
-      - 'dashboard-v*'
+      - 'gimlet-v*'
 
 jobs:
   publish:
@@ -27,12 +27,12 @@ jobs:
         if [[ $GITHUB_REF == refs/tags/* ]]
         then
             tag=${GITHUB_REF##refs/tags/}
-            v=${tag##dashboard-}
+            v=${tag##gimlet-}
             echo "::set-output name=version::$v"
         else
             echo "::set-output name=version::$GITHUB_SHA"
         fi
-    - name: 🏗️ Build dashboard frontend
+    - name: 🏗️ Build frontend
       run: make build-dashboard-frontend
     - name: Dist
       run: make dist-dashboard
@@ -45,7 +45,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: Dashboard ${{ steps.version.outputs.version }}
+        release_name: Gimlet ${{ steps.version.outputs.version }}
         draft: false
         prerelease: false
     - name: Set up QEMU
@@ -58,7 +58,7 @@ jobs:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.PAT }} # `PAT` is a secret that contains your Personal Access Token with `write:packages` scope
-    - name: Build and push Dashboard image
+    - name: Build and push Gimlet image
       uses: docker/build-push-action@v2
       with:
         context: .
@@ -66,7 +66,7 @@ jobs:
         platforms: linux/amd64,linux/arm64/v8
         push: true
         tags: |
-          ghcr.io/gimlet-io/gimlet-dashboard:${{ steps.version.outputs.version }}
+          ghcr.io/gimlet-io/gimlet-:${{ steps.version.outputs.version }}
     - name: Build and push Agent image
       uses: docker/build-push-action@v2
       with:
@@ -75,4 +75,4 @@ jobs:
         platforms: linux/amd64,linux/arm64/v8
         push: true
         tags: |
-          ghcr.io/gimlet-io/gimlet-dashboard:agent-${{ steps.version.outputs.version }}
+          ghcr.io/gimlet-io/gimlet-:agent-${{ steps.version.outputs.version }}
