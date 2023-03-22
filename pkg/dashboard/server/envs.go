@@ -281,6 +281,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		true,
 		true,
 		false,
+		false,
 		scmURL,
 	)
 	if err != nil {
@@ -298,6 +299,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		gitToken,
 		false,
 		false,
+		true,
 		true,
 		scmURL,
 	)
@@ -378,6 +380,7 @@ func BootstrapEnv(
 	token string,
 	shouldGenerateController bool,
 	shouldGenerateDependencies bool,
+	kustomizationPerApp bool,
 	deployKeyCanWrite bool,
 	scmURL string,
 ) (string, string, error) {
@@ -407,6 +410,7 @@ func BootstrapEnv(
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		shouldGenerateController,
 		shouldGenerateDependencies,
+		kustomizationPerApp,
 		envName,
 		repoPerEnv,
 		tmpPath,

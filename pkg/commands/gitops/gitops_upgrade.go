@@ -45,6 +45,10 @@ var gitopsUpgradeCmd = cli.Command{
 			Usage: "if you dont't want to use dependencies for Flux",
 		},
 		&cli.BoolFlag{
+			Name:  "kustomization-per-app",
+			Usage: "if set, the Kustomization target path will be the Flux folder",
+		},
+		&cli.BoolFlag{
 			Name:  "no-kustomization",
 			Usage: "if you don't want to upgrade your Flux repo and folder config",
 		},
@@ -78,6 +82,7 @@ func Upgrade(c *cli.Context) error {
 
 	noController := c.Bool("no-controller")
 	noDependencies := c.Bool("no-dependencies")
+	kustomizationPerApp := c.Bool("kustomization-per-app")
 	noKustomization := c.Bool("no-kustomization")
 	noDeployKey := c.Bool("no-deploykey")
 	singleEnv := c.Bool("single-env")
@@ -85,6 +90,7 @@ func Upgrade(c *cli.Context) error {
 	_, _, _, err = gitops.GenerateManifests(
 		!noController,
 		!noDependencies,
+		kustomizationPerApp,
 		env,
 		singleEnv,
 		gitopsRepoPath,

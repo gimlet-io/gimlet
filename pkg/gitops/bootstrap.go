@@ -20,6 +20,7 @@ import (
 func GenerateManifests(
 	shouldGenerateController bool,
 	shouldGenerateDependencies bool,
+	kustomizationPerApp bool,
 	env string,
 	singleEnv bool,
 	gitopsRepoPath string,
@@ -87,7 +88,7 @@ func GenerateManifests(
 			syncOpts.DependenciesPath = ""
 			syncOpts.TargetPath = ""
 		}
-		if !shouldGenerateController {
+		if kustomizationPerApp {
 			syncOpts.TargetPath = filepath.Join(env, "flux")
 			if singleEnv {
 				syncOpts.TargetPath = "flux"
@@ -152,6 +153,9 @@ func UniqueName(singleEnv bool, owner string, repoName string, env string) strin
 func UniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {
 	if len(owner) > 10 {
 		owner = owner[:10]
+	}
+	if len(repoName) > 10 {
+		repoName = repoName[10:]
 	}
 
 	uniqueName := fmt.Sprintf("%s-%s-%s-%s-%s",
