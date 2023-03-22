@@ -218,6 +218,7 @@ func GenerateKustomizationForApp(
 	app string,
 	env string,
 	kustomizationName string,
+	sourceName string,
 	singleEnv bool,
 ) (*manifestgen.Manifest, error) {
 	filePath := filepath.Join(env, "flux")
@@ -244,7 +245,7 @@ func GenerateKustomizationForApp(
 			Prune: true,
 			SourceRef: kustomizev1.CrossNamespaceSourceReference{
 				Kind: sourcev1.GitRepositoryKind,
-				Name: kustomizationName,
+				Name: sourceName,
 			},
 			Validation: "client",
 		},

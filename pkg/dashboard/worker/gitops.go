@@ -948,11 +948,13 @@ func kustomizationTemplateAndWrite(
 	}
 
 	owner, repository := server.ParseRepo(repoName)
-	kustomizationName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
+	kustomizationName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App))
+	sourceName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
 	kustomizationManifest, err := sync.GenerateKustomizationForApp(
 		manifest.App,
 		manifest.Env,
 		kustomizationName,
+		sourceName,
 		repoPerEnv)
 	if err != nil {
 		return "", fmt.Errorf("cannot generate kustomization: %s", err)

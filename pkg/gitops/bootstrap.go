@@ -149,6 +149,29 @@ func UniqueName(singleEnv bool, owner string, repoName string, env string) strin
 	return uniqueName
 }
 
+func UniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {
+	if len(owner) > 10 {
+		owner = owner[:10]
+	}
+
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s-%s",
+		strings.ToLower(owner),
+		strings.ToLower(repoName),
+		strings.ToLower(env),
+		strings.ToLower(namespace),
+		strings.ToLower(appName),
+	)
+	if singleEnv {
+		uniqueName = fmt.Sprintf("%s-%s-%s-%s",
+			strings.ToLower(owner),
+			strings.ToLower(repoName),
+			strings.ToLower(namespace),
+			strings.ToLower(appName),
+		)
+	}
+	return uniqueName
+}
+
 func GenerateManifestProviderAndAlert(
 	env string,
 	targetPath string,
