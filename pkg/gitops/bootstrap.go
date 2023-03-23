@@ -154,9 +154,7 @@ func UniqueKustomizationName(singleEnv bool, owner string, repoName string, env 
 	if len(owner) > 10 {
 		owner = owner[:10]
 	}
-	if len(repoName) > 10 {
-		repoName = repoName[10:]
-	}
+	repoName = strings.TrimPrefix(repoName, "gitops-")
 
 	uniqueName := fmt.Sprintf("%s-%s-%s-%s-%s",
 		strings.ToLower(owner),
