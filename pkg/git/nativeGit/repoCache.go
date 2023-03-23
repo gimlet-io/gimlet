@@ -205,7 +205,7 @@ func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, 
 		_, err = r.clone(repoName)
 		go r.registerWebhook(repoName)
 	}
-	r.lock.Unlock()
+	defer r.lock.Unlock()
 	if err != nil {
 		return nil, "", err
 	}
@@ -230,6 +230,11 @@ func (r *RepoCache) CleanupWrittenRepo(path string) error {
 
 func (r *RepoCache) Invalidate(repoName string) {
 	r.invalidateCh <- repoName
+}
+
+func (r *RepoCache) InvalidateNow(repoName string) {
+	logrus.Infof("invalidating repocace now for %s", repoName)
+	r.syncGitRepo(repoName)
 }
 
 func (r *RepoCache) clone(repoName string) (*git.Repository, error) {

@@ -424,7 +424,7 @@ func processRollbackEvent(
 		logrus.Errorf("could not push to git with native command: %s", err)
 		return nil, fmt.Errorf("could not push to git. Check server logs")
 	}
-	gitopsRepoCache.Invalidate(repoName)
+	gitopsRepoCache.InvalidateNow(repoName)
 
 	rollbackResults := []model.Result{}
 
@@ -612,14 +612,15 @@ func cloneTemplateWriteAndPush(
 
 	if sha != "" || kustomizationSha != "" { // if there is a change to push
 		operation := func() error {
-			return nativeGit.PushWithToken(repo, githubChartAccessToken)
+			head, _ := repo.Head()
+			return nativeGit.NativePushWithToken(repoTmpPath, repoName, githubChartAccessToken, head.Name().Short())
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.Invalidate(repoName)
+		gitopsRepoCache.InvalidateNow(repoName)
 	}
 
 	perf.WithLabelValues("gitops_cloneTemplateWriteAndPush").Observe(float64(time.Since(t0).Seconds()))
@@ -669,11 +670,12 @@ func cloneTemplateDeleteAndPush(
 	sha, err := nativeGit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
-		err = nativeGit.PushWithToken(repo, nonImpersonatedToken)
+		head, _ := repo.Head()
+		err = nativeGit.NativePushWithToken(repoTmpPath, repoName, nonImpersonatedToken, head.Name().Short())
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.Invalidate(repoName)
+		gitopsRepoCache.InvalidateNow(repoName)
 	}
 
 	return sha, nil
