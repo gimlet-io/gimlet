@@ -84,7 +84,7 @@ func main() {
 	notificationsManager := initNotifications(config, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
-	go alertStateManager.Run()
+	// go alertStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
