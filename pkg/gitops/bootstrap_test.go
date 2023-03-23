@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/alecthomas/assert"
 )
 
 func Test_parseRepoURL(t *testing.T) {
@@ -272,4 +274,19 @@ func Test_generateManifestProviderAndAlert(t *testing.T) {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
 	}
+}
+
+func Test_uniqueKustomizationName(t *testing.T) {
+	singleEnv := false
+	owner := "gimlet-io"
+	repoName := "gitops-staging-infra"
+	env := "staging"
+	namespace := "my-team"
+	appName := "myapp"
+	uniqueName := UniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
+	assert.Equal(t, "gimlet-io-staging-infra-staging-my-team-myapp", uniqueName)
+
+	singleEnv = true
+	uniqueName = UniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
+	assert.Equal(t, "gimlet-io-staging-infra-my-team-myapp", uniqueName)
 }
