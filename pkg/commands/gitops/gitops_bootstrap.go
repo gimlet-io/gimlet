@@ -44,11 +44,11 @@ var gitopsBootstrapCmd = cli.Command{
 		},
 		&cli.BoolFlag{
 			Name:  "no-dependencies",
-			Usage: "if you dont't want to use dependencies for Flux",
+			Usage: "to not provision a dependencies folder, if you dont't want to have a two-phase gitops apply",
 		},
 		&cli.BoolFlag{
 			Name:  "kustomization-per-app",
-			Usage: "if set, the Kustomization target path will be the Flux folder",
+			Usage: "to apply only the flux/ folder in gitops. Separate kustomization objects must be created to apply other folders. Used in `*-apps` repos",
 		},
 	},
 }
