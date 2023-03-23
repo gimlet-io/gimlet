@@ -39,6 +39,7 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
 		shouldGenerateDependencies,
+		true,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -86,6 +87,7 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
 		shouldGenerateDependencies,
+		true,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -134,6 +136,7 @@ func Test_generateManifestWithController(t *testing.T) {
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
 		shouldGenerateDependencies,
+		true,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -172,6 +175,7 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
 		shouldGenerateDependencies,
+		true,
 		env,
 		singleEnv,
 		dirToWrite,
@@ -215,6 +219,7 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 	_, _, _, err = GenerateManifests(
 		shouldGenerateController,
 		shouldGenerateDependencies,
+		true,
 		env,
 		singleEnv,
 		dirToWrite,

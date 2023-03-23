@@ -72,15 +72,17 @@ func TestGenerateNotificationProvider(t *testing.T) {
 }
 
 func TestGenerateKustomizationForApp(t *testing.T) {
-	appName := "testApp"
+	appName := "test-app"
 	envName := "staging"
-	kustomizationName := "gitops-repo-gimlet-io-gitops-staging-infra"
+	kustomizationName := "gitops-repo-gimlet-io-gitops-staging-infra-staging-test-app"
+	sourceName := "gitops-repo-gimlet-io-gitops-staging-infra"
 	singleEnv := true
 
 	output, err := GenerateKustomizationForApp(
 		appName,
 		envName,
 		kustomizationName,
+		sourceName,
 		singleEnv,
 	)
 	if err != nil {

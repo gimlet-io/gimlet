@@ -596,6 +596,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		true,
 		true,
 		false,
+		false,
 		data.scmURL,
 	)
 	if err != nil {
@@ -610,6 +611,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		installationToken,
 		false,
 		false,
+		true,
 		true,
 		data.scmURL,
 	)

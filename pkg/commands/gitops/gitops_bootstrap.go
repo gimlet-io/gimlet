@@ -42,6 +42,14 @@ var gitopsBootstrapCmd = cli.Command{
 			Name:  "no-controller",
 			Usage: "to not bootstrap the FluxV2 gitops controller, only the GitRepository and Kustomization to add a new source",
 		},
+		&cli.BoolFlag{
+			Name:  "no-dependencies",
+			Usage: "to not provision a dependencies folder, if you dont't want to have a two-phase gitops apply",
+		},
+		&cli.BoolFlag{
+			Name:  "kustomization-per-app",
+			Usage: "to apply only the flux/ folder in gitops. Separate kustomization objects must be created to apply other folders. Used in `*-apps` repos",
+		},
 	},
 }
 
@@ -61,11 +69,14 @@ func Bootstrap(c *cli.Context) error {
 	fmt.Fprintf(os.Stderr, "%v Generating manifests\n", emoji.HourglassNotDone)
 
 	noController := c.Bool("no-controller")
+	noDependencies := c.Bool("no-dependencies")
+	kustomizationPerApp := c.Bool("kustomization-per-app")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
 	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
 		!noController,
-		true,
+		!noDependencies,
+		kustomizationPerApp,
 		env,
 		singleEnv,
 		gitopsRepoPath,
