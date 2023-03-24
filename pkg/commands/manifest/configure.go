@@ -75,13 +75,11 @@ func configure(c *cli.Context) error {
 			return fmt.Errorf("cannot get helm chart info: %s", err)
 		}
 		m = dx.Manifest{
-			Namespace: "default",
 			Chart: dx.Chart{
 				Name:       chartName,
 				Repository: repoUrl,
 				Version:    chartVersion,
 			},
-			Values: map[string]interface{}{},
 		}
 	}
 

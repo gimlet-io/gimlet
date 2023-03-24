@@ -25,6 +25,7 @@ class App extends Component {
       app: "",
       defaultEnv: "",
       env: "",
+      namespace: "",
     }
     this.setValues = this.setValues.bind(this)
   }
@@ -54,7 +55,14 @@ class App extends Component {
       .then(response => {
         if (!response.ok && window !== undefined) {
           console.log("Using fixture")
-          return {}
+          return {
+            defaultApp: "",
+            app: "",
+            defaultEnv: "",
+            env: "",
+            namespace: "default",
+            values: {},
+          }
         }
         return response.json()
       })
@@ -63,8 +71,8 @@ class App extends Component {
         this.setState({ app: data.app });
         this.setState({ defaultEnv: data.env });
         this.setState({ env: data.env });
-        this.setState({ namespace: data.namespace });
-        this.setState({ values: data.values });
+        this.setState({ namespace: data.namespace || "default" });
+        this.setState({ values: data.values ?? {} });
       })
   }
 
@@ -138,7 +146,7 @@ class App extends Component {
                 className={this.state.defaultApp !== "" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
               />
             </div>
-            <div className="mt-8 mb-4 items-center">
+            <div className="mt-4 mb-4 items-center">
               <label htmlFor="appName" className={`${!this.state.env ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
                 Env name*
               </label>
@@ -152,7 +160,7 @@ class App extends Component {
                 className={this.state.defaultEnv !== "" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
               />
             </div>
-            <div className="mb-4 items-center">
+            <div className="mt-4 mb-8 items-center">
               <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
                 Namespace*
               </label>
