@@ -75,18 +75,6 @@ class App extends Component {
       namespace: this.state.namespace,
       values: this.state.nonDefaultValues,
     });
-
-    window.addEventListener('beforeunload', function (e) {
-      e.preventDefault();
-      e.returnValue = '';
-    });
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('beforeunload', function (e) {
-      e.preventDefault();
-      e.returnValue = '';
-    });
   }
 
   setValues (values, nonDefaultValues) {
@@ -108,19 +96,18 @@ class App extends Component {
 
     return (
       <div>
-        <StreamingBackend client={this.state.client}/>
-        {(this.state.app === "" || this.state.env === "" || this.state.namespace === "") ?
+        <StreamingBackend client={this.state.client} />
+        {(this.state.app === "" || this.state.env === "" || this.state.namespace === "") &&
           <div className="fixed top-0 right-0">
-          <span className="inline-flex rounded-md shadow-sm m-8">
-            <div
-              type="button"
-              className="cursor-default inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-red-600 transition ease-in-out duration-150"
-            >
-              Warning! Empty fields must be filled!
-            </div>
-          </span>
-        </div>
-        :
+            <span className="inline-flex rounded-md shadow-sm m-8">
+              <div
+                type="button"
+                className="cursor-default inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-red-600 transition ease-in-out duration-150"
+              >
+                Validation error!
+              </div>
+            </span>
+          </div>}
         <div className="fixed bottom-0 right-0">
           <span className="inline-flex rounded-md shadow-sm m-8">
             <button
@@ -134,9 +121,9 @@ class App extends Component {
               Close the browser when you are done, the values will be printed on the console
             </button>
           </span>
-        </div>}
+        </div>
         <div className="container mx-auto m-8">
-        <div className="y-6 px-2 sm:px-6 lg:py-0 lg:px-0">
+          <div className="y-6 px-2 sm:px-6 lg:py-0 lg:px-0">
             <div className="mt-8 mb-4 items-center">
               <label htmlFor="appName" className={`${!this.state.app ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
                 App name*

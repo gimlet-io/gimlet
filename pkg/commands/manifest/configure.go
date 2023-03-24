@@ -49,7 +49,7 @@ var manifestConfigureCmd = cli.Command{
 	},
 }
 
-type values struct {
+type manifestValues struct {
 	App       string                 `yaml:"app" json:"app"`
 	Env       string                 `yaml:"env" json:"env"`
 	Namespace string                 `yaml:"namespace" json:"namespace"`
@@ -70,9 +70,9 @@ func configure(c *cli.Context) error {
 			return fmt.Errorf("cannot unmarshal manifest: %s", err)
 		}
 	} else {
-		chartName, repoUrl, chartVersion, err := chartInfos(c.String("chart"))
+		chartName, repoUrl, chartVersion, err := helmChartInfo(c.String("chart"))
 		if err != nil {
-			return fmt.Errorf("cannot get chart infos: %s", err)
+			return fmt.Errorf("cannot get helm chart info: %s", err)
 		}
 		m = dx.Manifest{
 			Namespace: "default",
@@ -86,7 +86,8 @@ func configure(c *cli.Context) error {
 	}
 
 	var tmpChartName string
-	if strings.HasPrefix(m.Chart.Name, "git@") {
+	if strings.HasPrefix(m.Chart.Name, "git@") ||
+		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
 		tmpChartName, err = dx.CloneChartFromRepo(&m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
@@ -96,14 +97,13 @@ func configure(c *cli.Context) error {
 		tmpChartName = m.Chart.Name
 	}
 
-	data := map[string]interface{}{
-		"app":       m.App,
-		"env":       m.Env,
-		"namespace": m.Namespace,
-		"values":    m.Values,
+	values := manifestValues{
+		App:       m.App,
+		Env:       m.Env,
+		Namespace: m.Namespace,
+		Values:    m.Values,
 	}
-
-	dataJson, err := json.Marshal(data)
+	valuesJson, err := json.Marshal(values)
 	if err != nil {
 		return fmt.Errorf("cannot marshal values %s", err.Error())
 	}
@@ -128,7 +128,7 @@ func configure(c *cli.Context) error {
 		tmpChartName,
 		m.Chart.Repository,
 		m.Chart.Version,
-		dataJson,
+		valuesJson,
 		debugSchema,
 		debugUISchema,
 	)
@@ -136,16 +136,12 @@ func configure(c *cli.Context) error {
 		return err
 	}
 
-	var values values
-	err = yaml.Unmarshal(yamlBytes, &values)
+	var configuredValues manifestValues
+	err = yaml.Unmarshal(yamlBytes, &configuredValues)
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal configured values %s", err.Error())
 	}
-
-	m.App = values.App
-	m.Env = values.Env
-	m.Namespace = values.Namespace
-	m.Values = values.Values
+	setManifestValues(&m, configuredValues)
 
 	manifestString, err = yaml.Marshal(m)
 	if err != nil {
@@ -161,7 +157,7 @@ func configure(c *cli.Context) error {
 	return nil
 }
 
-func chartInfos(chart string) (string, string, string, error) {
+func helmChartInfo(chart string) (string, string, string, error) {
 	var repoUrl, chartName, chartVersion string
 	if chart != "" {
 		if strings.HasPrefix(chart, "git@") {
@@ -211,4 +207,11 @@ func chartInfos(chart string) (string, string, string, error) {
 
 	defaultChart := config.DefaultChart()
 	return defaultChart.Name, defaultChart.Repo, defaultChart.Version, nil
+}
+
+func setManifestValues(m *dx.Manifest, values manifestValues) {
+	m.App = values.App
+	m.Env = values.Env
+	m.Namespace = values.Namespace
+	m.Values = values.Values
 }
