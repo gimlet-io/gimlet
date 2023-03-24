@@ -80,7 +80,7 @@ class EnvConfig extends Component {
         configFile: (action === "new" ? {} : configFileContent),
         chartFromConfigFile: configFileContent.chart,
         appName: configFileContent.app,
-        namespace: configFileContent.namespace,
+        namespace: configFileContent.namespace ?? "default",
         defaultAppName: configFileContent.app,
         defaultNamespace: configFileContent.namespace,
 
