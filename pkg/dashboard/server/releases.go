@@ -102,7 +102,7 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite(repoName) // using a copy of the repo to avoid concurrent map writes error
+	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWriteWithHistory(repoName) // using a copy of the repo to avoid concurrent map writes error
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -168,7 +168,7 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, err := gitopsRepoCache.InstanceForRead(repoName)
+	repo, err := gitopsRepoCache.InstanceForReadWithHistory(repoName)
 	if err != nil {
 		logrus.Errorf("cannot get repocache: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -353,7 +353,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWrite(repoName)
+	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWriteWithHistory(repoName)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)

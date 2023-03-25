@@ -29,7 +29,7 @@ var FetchRefSpec = []config.RefSpec{
 
 type RepoCache struct {
 	tokenManager customScm.NonImpersonatedTokenManager
-	repos        map[string]*git.Repository
+	repos        map[string]repoData
 	stopCh       chan struct{}
 	invalidateCh chan string
 	cachePath    string
@@ -43,6 +43,11 @@ type RepoCache struct {
 	lock sync.Mutex
 }
 
+type repoData struct {
+	repo        *git.Repository
+	withHistory bool
+}
+
 func NewRepoCache(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
@@ -53,7 +58,7 @@ func NewRepoCache(
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
 		tokenManager: tokenManager,
-		repos:        map[string]*git.Repository{},
+		repos:        map[string]repoData{},
 		stopCh:       stopCh,
 		invalidateCh: make(chan string),
 		cachePath:    cachePath,
@@ -83,7 +88,7 @@ func NewRepoCache(
 			continue
 		}
 
-		repoCache.repos[strings.ReplaceAll(fileInfo.Name(), "%", "/")] = repo
+		repoCache.repos[strings.ReplaceAll(fileInfo.Name(), "%", "/")] = repoData{repo, false}
 	}
 
 	return repoCache, nil
@@ -119,9 +124,10 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return // preventing a race condition in cleanup
 	}
 
-	repo := r.repos[repoName]
+	repoData := r.repos[repoName]
+	repo := repoData.repo
 
-	err = repo.Fetch(&git.FetchOptions{
+	opts := &git.FetchOptions{
 		RefSpecs: FetchRefSpec,
 		Auth: &http.BasicAuth{
 			Username: user,
@@ -130,7 +136,12 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		Depth: 100,
 		Tags:  git.NoTags,
 		Prune: true,
-	})
+	}
+	if repoData.withHistory {
+		opts.Depth = 0
+	}
+
+	err = repo.Fetch(opts)
 	if err == git.NoErrAlreadyUpToDate {
 		return
 	}
@@ -181,12 +192,26 @@ func (r *RepoCache) cleanRepo(repoName string) {
 }
 
 func (r *RepoCache) InstanceForRead(repoName string) (instance *git.Repository, err error) {
+	return r.instanceForRead(repoName, false)
+}
+
+func (r *RepoCache) InstanceForReadWithHistory(repoName string) (instance *git.Repository, err error) {
+	return r.instanceForRead(repoName, true)
+}
+
+func (r *RepoCache) instanceForRead(repoName string, withHistory bool) (instance *git.Repository, err error) {
 	r.lock.Lock()
-	if repo, ok := r.repos[repoName]; ok {
-		instance = repo
+	if repoData, ok := r.repos[repoName]; ok {
+		if withHistory && !repoData.withHistory {
+			repoData, err = r.clone(repoName, withHistory)
+			instance = repoData.repo
+			go r.registerWebhook(repoName)
+		} else {
+			instance = repoData.repo
+		}
 	} else {
-		repo, err = r.clone(repoName)
-		instance = repo
+		repoData, err = r.clone(repoName, withHistory)
+		instance = repoData.repo
 		go r.registerWebhook(repoName)
 	}
 	r.lock.Unlock()
@@ -195,14 +220,27 @@ func (r *RepoCache) InstanceForRead(repoName string) (instance *git.Repository, 
 }
 
 func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, error) {
+	return r.instanceForWrite(repoName, false)
+}
+
+func (r *RepoCache) InstanceForWriteWithHistory(repoName string) (*git.Repository, string, error) {
+	return r.instanceForWrite(repoName, true)
+}
+
+func (r *RepoCache) instanceForWrite(repoName string, withHistory bool) (*git.Repository, string, error) {
 	tmpPath, err := ioutil.TempDir("", "gitops-")
 	if err != nil {
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
 
 	r.lock.Lock()
-	if _, ok := r.repos[repoName]; !ok {
-		_, err = r.clone(repoName)
+	if repoData, ok := r.repos[repoName]; ok {
+		if withHistory && !repoData.withHistory {
+			_, err = r.clone(repoName, withHistory)
+			go r.registerWebhook(repoName)
+		}
+	} else {
+		_, err = r.clone(repoName, withHistory)
 		go r.registerWebhook(repoName)
 	}
 	defer r.lock.Unlock()
@@ -237,9 +275,9 @@ func (r *RepoCache) InvalidateNow(repoName string) {
 	r.syncGitRepo(repoName)
 }
 
-func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
+func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 	if repoName == "" {
-		return nil, fmt.Errorf("repo name is mandatory")
+		return repoData{}, fmt.Errorf("repo name is mandatory")
 	}
 
 	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
@@ -247,12 +285,12 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 	os.RemoveAll(repoPath)
 	err := os.MkdirAll(repoPath, Dir_RWX_RX_R)
 	if err != nil {
-		return nil, errors.WithMessage(err, "couldn't create folder")
+		return repoData{}, errors.WithMessage(err, "couldn't create folder")
 	}
 
 	token, user, err := r.tokenManager.Token()
 	if err != nil {
-		return nil, errors.WithMessage(err, "couldn't get scm token")
+		return repoData{}, errors.WithMessage(err, "couldn't get scm token")
 	}
 
 	opts := &git.CloneOptions{
@@ -264,10 +302,13 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 		Depth: 100,
 		Tags:  git.NoTags,
 	}
+	if withHistory {
+		opts.Depth = 0
+	}
 
 	repo, err := git.PlainClone(repoPath, false, opts)
 	if err != nil {
-		return nil, errors.WithMessage(err, "couldn't clone")
+		return repoData{}, errors.WithMessage(err, "couldn't clone")
 	}
 
 	err = repo.Fetch(&git.FetchOptions{
@@ -279,12 +320,15 @@ func (r *RepoCache) clone(repoName string) (*git.Repository, error) {
 		Depth: 100,
 		Tags:  git.NoTags,
 	})
+	if withHistory {
+		opts.Depth = 0
+	}
 	if err != nil && err != git.NoErrAlreadyUpToDate {
-		return nil, errors.WithMessage(err, "couldn't fetch")
+		return repoData{}, errors.WithMessage(err, "couldn't fetch")
 	}
 
-	r.repos[repoName] = repo
-	return repo, nil
+	r.repos[repoName] = repoData{repo, withHistory}
+	return r.repos[repoName], nil
 }
 
 func (r *RepoCache) registerWebhook(repoName string) {
