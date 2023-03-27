@@ -57,7 +57,9 @@ export class Env extends Component {
         {this.state.isClosed ? null : (
           <>
             {renderPullRequests(pullRequests)}
-            <div className="bg-white shadow p-4 sm:p-6 lg:p-8">
+            <div className="bg-white shadow p-4 sm:p-6 lg:p-8 space-y-4">
+              {renderedServices.length === 10 &&
+              <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>}
               {renderedServices.length > 0
                 ?
                 <>
@@ -116,6 +118,10 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
     )
   })
 
+  if (services.length >= 10) {
+    return services.slice(0, 10);
+  }
+
   const configsWeHaventDeployed = configsWeHave.filter(config => !configsWeDeployed.includes(config));
 
   services.push(
@@ -146,7 +152,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
     }
     )
   )
-  return services
+  return services.slice(0, 10)
 }
 
 function kubernetesAlertsByDeploymentName(kubernetesAlerts, deploymentName) {
