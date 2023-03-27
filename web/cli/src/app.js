@@ -115,7 +115,7 @@ class App extends Component {
                 console.log(this.state.nonDefaultValues)
               }}
             >
-              Close the browser when you are done, the values will be printed on the console
+              Close the browser when you are done, the values will be written to the manifest file
             </button>
           </span>
         </div>
