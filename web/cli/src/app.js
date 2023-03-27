@@ -105,17 +105,6 @@ class App extends Component {
     return (
       <div>
         <StreamingBackend client={this.state.client} />
-        {(this.state.app === "" || this.state.env === "" || this.state.namespace === "") &&
-          <div className="fixed top-0 right-0">
-            <span className="inline-flex rounded-md shadow-sm m-8">
-              <div
-                type="button"
-                className="cursor-default inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-red-600 transition ease-in-out duration-150"
-              >
-                Validation error!
-              </div>
-            </span>
-          </div>}
         <div className="fixed bottom-0 right-0">
           <span className="inline-flex rounded-md shadow-sm m-8">
             <button
