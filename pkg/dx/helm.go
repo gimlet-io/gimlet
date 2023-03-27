@@ -109,7 +109,7 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 	}
 	if v, found := params["branch"]; found {
 		err = worktree.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewBranchReferenceName(v[0]),
+			Branch: plumbing.NewRemoteReferenceName("origin", v[0]),
 		})
 		if err != nil {
 			return "", fmt.Errorf("cannot checkout branch: %s", err)

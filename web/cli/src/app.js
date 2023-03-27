@@ -21,6 +21,11 @@ class App extends Component {
       client: client,
       values: {},
       nonDefaultValues: {},
+      defaultApp: "",
+      app: "",
+      defaultEnv: "",
+      env: "",
+      namespace: "",
     }
     this.setValues = this.setValues.bind(this)
   }
@@ -50,16 +55,38 @@ class App extends Component {
       .then(response => {
         if (!response.ok && window !== undefined) {
           console.log("Using fixture")
-          return {}
+          return {
+            defaultApp: "",
+            app: "",
+            defaultEnv: "",
+            env: "",
+            namespace: "default",
+            values: {},
+          }
         }
         return response.json()
       })
-      .then(data => this.setState({ values: data }))
+      .then(data => {
+        this.setState({ defaultApp: data.app });
+        this.setState({ app: data.app });
+        this.setState({ defaultEnv: data.env });
+        this.setState({ env: data.env });
+        this.setState({ namespace: data.namespace || "default" });
+        this.setState({ values: data.values ?? {} });
+      })
+  }
+
+  componentDidUpdate() {
+    this.state.client.saveValues({
+      app: this.state.app,
+      env: this.state.env,
+      namespace: this.state.namespace,
+      values: this.state.nonDefaultValues,
+    });
   }
 
   setValues (values, nonDefaultValues) {
     this.setState({ values: values, nonDefaultValues: nonDefaultValues })
-    this.state.client.saveValues(nonDefaultValues)
   }
 
   validationCallback (errors) {
@@ -77,7 +104,7 @@ class App extends Component {
 
     return (
       <div>
-        <StreamingBackend client={this.state.client}/>
+        <StreamingBackend client={this.state.client} />
         <div className="fixed bottom-0 right-0">
           <span className="inline-flex rounded-md shadow-sm m-8">
             <button
@@ -93,6 +120,49 @@ class App extends Component {
           </span>
         </div>
         <div className="container mx-auto m-8">
+          <div className="y-6 px-2 sm:px-6 lg:py-0 lg:px-0">
+            <div className="mt-8 mb-4 items-center">
+              <label htmlFor="appName" className={`${!this.state.app ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                App name*
+              </label>
+              <input
+                type="text"
+                name="appName"
+                id="appName"
+                disabled={this.state.defaultApp !== ""}
+                value={this.state.app}
+                onChange={e => { this.setState({ app: e.target.value }) }}
+                className={this.state.defaultApp !== "" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
+              />
+            </div>
+            <div className="mt-4 mb-4 items-center">
+              <label htmlFor="appName" className={`${!this.state.env ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                Env name*
+              </label>
+              <input
+                type="text"
+                name="appName"
+                id="appName"
+                disabled={this.state.defaultEnv !== ""}
+                value={this.state.env}
+                onChange={e => { this.setState({ env: e.target.value }) }}
+                className={this.state.defaultEnv !== "" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
+              />
+            </div>
+            <div className="mt-4 mb-8 items-center">
+              <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+                Namespace*
+              </label>
+              <input
+                type="text"
+                name="namespace"
+                id="namespace"
+                value={this.state.namespace}
+                onChange={e => { this.setState({ namespace: e.target.value }) }}
+                className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+              />
+            </div>
+          </div>
           <HelmUI
             schema={schema}
             config={helmUISchema}

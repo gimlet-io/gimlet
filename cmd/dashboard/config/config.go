@@ -16,6 +16,12 @@ func Environ() (*Config, error) {
 	return &cfg, err
 }
 
+func DefaultChart() Chart {
+	cfg := Config{}
+	defaults(&cfg)
+	return cfg.Chart
+}
+
 func defaults(c *Config) {
 	if c.Database.Driver == "" {
 		c.Database.Driver = "sqlite3"

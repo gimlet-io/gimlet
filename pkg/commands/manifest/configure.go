@@ -1,17 +1,22 @@
 package manifest
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	helmCLI "helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/helmpath"
+	"helm.sh/helm/v3/pkg/repo"
 )
 
 var manifestConfigureCmd = cli.Command{
@@ -27,11 +32,6 @@ var manifestConfigureCmd = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:    "output",
-			Aliases: []string{"o"},
-			Usage:   "output values file",
-		},
-		&cli.StringFlag{
 			Name:    "schema",
 			Aliases: []string{"s"},
 			Usage:   "schema file to render, made for schema development",
@@ -41,26 +41,51 @@ var manifestConfigureCmd = cli.Command{
 			Aliases: []string{"u"},
 			Usage:   "ui schema file to render, made for schema development",
 		},
+		&cli.StringFlag{
+			Name:    "chart",
+			Aliases: []string{"c"},
+			Usage:   "Helm chart to deploy",
+		},
 	},
 }
 
-var values map[string]interface{}
+type manifestValues struct {
+	App       string                 `yaml:"app" json:"app"`
+	Env       string                 `yaml:"env" json:"env"`
+	Namespace string                 `yaml:"namespace" json:"namespace"`
+	Values    map[string]interface{} `yaml:"values" json:"values"`
+}
 
 func configure(c *cli.Context) error {
 	manifestPath := c.String("file")
 	manifestString, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
 		return fmt.Errorf("cannot read manifest file")
 	}
 
 	var m dx.Manifest
-	err = yaml.Unmarshal(manifestString, &m)
-	if err != nil {
-		return fmt.Errorf("cannot unmarshal manifest")
+	if manifestString != nil {
+		err = yaml.Unmarshal(manifestString, &m)
+		if err != nil {
+			return fmt.Errorf("cannot unmarshal manifest: %s", err)
+		}
+	} else {
+		chartName, repoUrl, chartVersion, err := helmChartInfo(c.String("chart"))
+		if err != nil {
+			return fmt.Errorf("cannot get helm chart info: %s", err)
+		}
+		m = dx.Manifest{
+			Chart: dx.Chart{
+				Name:       chartName,
+				Repository: repoUrl,
+				Version:    chartVersion,
+			},
+		}
 	}
 
 	var tmpChartName string
-	if strings.HasPrefix(m.Chart.Name, "git@") {
+	if strings.HasPrefix(m.Chart.Name, "git@") ||
+		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
 		tmpChartName, err = dx.CloneChartFromRepo(&m, "")
 		if err != nil {
 			return fmt.Errorf("cannot fetch chart from git %s", err.Error())
@@ -70,7 +95,13 @@ func configure(c *cli.Context) error {
 		tmpChartName = m.Chart.Name
 	}
 
-	existingValuesJson, err := json.Marshal(m.Values)
+	values := manifestValues{
+		App:       m.App,
+		Env:       m.Env,
+		Namespace: m.Namespace,
+		Values:    m.Values,
+	}
+	valuesJson, err := json.Marshal(values)
 	if err != nil {
 		return fmt.Errorf("cannot marshal values %s", err.Error())
 	}
@@ -95,7 +126,7 @@ func configure(c *cli.Context) error {
 		tmpChartName,
 		m.Chart.Repository,
 		m.Chart.Version,
-		existingValuesJson,
+		valuesJson,
 		debugSchema,
 		debugUISchema,
 	)
@@ -103,26 +134,82 @@ func configure(c *cli.Context) error {
 		return err
 	}
 
-	err = yaml.Unmarshal(yamlBytes, &m.Values)
+	var configuredValues manifestValues
+	err = yaml.Unmarshal(yamlBytes, &configuredValues)
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal configured values %s", err.Error())
 	}
+	setManifestValues(&m, configuredValues)
 
-	yamlBuff := bytes.NewBuffer([]byte(""))
-	e := yaml.NewEncoder(yamlBuff)
-	e.SetIndent(2)
-	e.Encode(m)
-
-	outputPath := c.String("output")
-	if outputPath != "" {
-		err := ioutil.WriteFile(outputPath, yamlBuff.Bytes(), 0666)
-		if err != nil {
-			return fmt.Errorf("cannot write values file %s", err)
-		}
-	} else {
-		fmt.Println("---")
-		fmt.Println(yamlBuff.String())
+	manifestString, err = yaml.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("cannot marshal manifest")
 	}
 
+	err = ioutil.WriteFile(manifestPath, manifestString, 0666)
+	if err != nil {
+		return fmt.Errorf("cannot write values file %s", err)
+	}
+	fmt.Println("Manifest configuration succeeded")
+
 	return nil
+}
+
+func helmChartInfo(chart string) (string, string, string, error) {
+	var repoUrl, chartName, chartVersion string
+	if chart != "" {
+		if strings.HasPrefix(chart, "git@") {
+			chartName = chart
+		} else {
+			chartString := chart
+			chartLoader := action.NewShow(action.ShowChart)
+			var settings = helmCLI.New()
+			chartPath, err := chartLoader.ChartPathOptions.LocateChart(chartString, settings)
+			if err != nil {
+				return "", "", "", fmt.Errorf("could not load %s Helm chart", err.Error())
+			}
+
+			chart, err := loader.Load(chartPath)
+			if err != nil {
+				return "", "", "", fmt.Errorf("could not load %s Helm chart", err.Error())
+			}
+
+			chartName = chart.Name()
+			chartVersion = chart.Metadata.Version
+
+			chartParts := strings.Split(chartString, "/")
+			if len(chartParts) != 2 {
+				return "", "", "", fmt.Errorf("helm chart must be in the <repo>/<chart> format, try `helm repo ls` to find your chart")
+			}
+			repoName := chartParts[0]
+
+			var helmRepo *repo.Entry
+			f, err := repo.LoadFile(helmpath.ConfigPath("repositories.yaml"))
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot load Helm repositories")
+			}
+			for _, r := range f.Repositories {
+				if r.Name == repoName {
+					helmRepo = r
+					break
+				}
+			}
+
+			if helmRepo == nil {
+				return "", "", "", fmt.Errorf("cannot find Helm repository %s", repoName)
+			}
+			repoUrl = helmRepo.URL
+		}
+		return chartName, repoUrl, chartVersion, nil
+	}
+
+	defaultChart := config.DefaultChart()
+	return defaultChart.Name, defaultChart.Repo, defaultChart.Version, nil
+}
+
+func setManifestValues(m *dx.Manifest, values manifestValues) {
+	m.App = values.App
+	m.Env = values.Env
+	m.Namespace = values.Namespace
+	m.Values = values.Values
 }
