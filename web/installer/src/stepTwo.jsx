@@ -20,35 +20,6 @@ const StepTwo = ({ getContext }) => {
   const [apps, setApps] = useState('gitops-test-apps');
 
   useEffect(() => {
-    getContext().then(data => {
-      let environment = data.stackConfig.config.gimletd.environments[0]
-      environment.name = env
-      environment.repoPerEnv = repoPerEnv
-      environment.gitopsRepo = apps
-
-      setContext({
-        ...data,
-        stackConfig: {
-          ...data.stackConfig,
-          config: {
-            ...data.stackConfig.config,
-            gimletAgent: {
-              ...data.stackConfig.config.gimletAgent,
-              environment: env
-            },
-            gimletd: {
-              ...data.stackConfig.config.gimletd,
-              environments: [environment]
-            }
-          }
-        }
-      })
-    }).catch(err => {
-        console.error(`Error: ${err}`);
-      });
-  }, [getContext, apps, env, repoPerEnv]);
-
-  useEffect(() => {
     if (repoPerEnv) {
       setInfra(`gitops-${env}-infra`);
       setApps(`gitops-${env}-apps`);
@@ -56,37 +27,6 @@ const StepTwo = ({ getContext }) => {
       setInfra(`gitops-infra`);
       setApps(`gitops-apps`);
     }
-  }, [repoPerEnv, env]);
-
-  useEffect(() => {
-    setContext(oldContext => {
-      if (!oldContext) {
-        return null;
-      }
-
-      let environment = oldContext.stackConfig.config.gimletd.environments[0]
-      environment.name = env
-      environment.repoPerEnv = repoPerEnv
-      environment.gitopsRepo = repoPerEnv ? `gitops-${env}-apps` : `gitops-apps`
-
-      return {
-        ...oldContext,
-        stackConfig: {
-          ...oldContext.stackConfig,
-          config: {
-            ...oldContext.stackConfig.config,
-            gimletAgent: {
-              ...oldContext.stackConfig.config.gimletAgent,
-              environment: env
-            },
-            gimletd: {
-              ...oldContext.stackConfig.config.gimletd,
-              environments: [environment]
-            }
-          }
-        }
-      }
-    })
   }, [repoPerEnv, env]);
 
   if (!context) {
@@ -246,21 +186,6 @@ const StepTwo = ({ getContext }) => {
               envName={env}
             />
             <input type="hidden" name="repoPerEnv" value={repoPerEnv} />
-
-            <div className='mt-8 mb-16'>
-              {context.stackDefinition && context.stackConfig &&
-              <StackUI
-                stack={context.stackConfig.config}
-                stackDefinition={context.stackDefinition}
-                setValues={setValues}
-                validationCallback={validationCallback}
-                categoriesToRender={['cloud', 'ingress', 'gimlet']}
-                componentsToRender={['civo', 'k3s', 'nginx', 'gimletd', 'gimletAgent', 'gimletDashboard']}
-                hideTitle={true}
-              />
-              }
-            </div>
-            <input type="hidden" name="stackConfig" value={JSON.stringify(context.stackConfig.config)} />
 
             <div className="p-0 flow-root my-8">
               <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
