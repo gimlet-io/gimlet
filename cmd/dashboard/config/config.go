@@ -84,6 +84,8 @@ type Config struct {
 	GitopsRepoDeployKeyPath string `envconfig:"GITOPS_REPO_DEPLOY_KEY_PATH"`
 	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 	ReleaseStats            string `envconfig:"RELEASE_STATS"`
+
+	TermsOfServiceFeatureFlag bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 }
 
 // Logging provides the logging configuration.

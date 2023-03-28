@@ -5,14 +5,16 @@ import axios from "axios";
 
 const LoginPage = () => {
   const [provider, setProvider] = useState("");
+  const [termsOfServiceFeatureFlag, setTermsOfServiceFeatureFlag] = useState(false);
   useEffect(() => {
-    getProvider().then(data => {
-      setProvider(data);
+    getFlags().then(data => {
+      setProvider(data.provider);
+      setTermsOfServiceFeatureFlag(data.termsOfServiceFeatureFlag);
     }).catch(err => {
       console.error(`Error: ${err}`);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getProvider]);
+  }, [getFlags]);
 
   return (
     <div className="fixed flex inset-0 bg-gray-100">
@@ -34,10 +36,10 @@ const LoginPage = () => {
                       Sign in with {provider}
                     </button>
                   </div>
-                  <div className="text-center font-light text-gray-700 flex flex-wrap justify-center">
+                  {termsOfServiceFeatureFlag && <div className="text-center font-light text-gray-700 flex flex-wrap justify-center">
                     By logging in, you're agreeing to our
                     <a href="https://gimlet.io/tos" className="hover:underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
-                  </div>
+                  </div>}
                 </div>
               </div>
             </div>
@@ -48,9 +50,9 @@ const LoginPage = () => {
   );
 };
 
-const getProvider = async () => {
+const getFlags = async () => {
   try {
-    const resp = await axios.get('/provider');
+    const resp = await axios.get('/flags');
     return await resp.data;
   } catch (err) {
     // Handle Error Here
