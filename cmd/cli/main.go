@@ -10,7 +10,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/manifest"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/release"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/seal"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/stack"
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/urfave/cli/v2"
@@ -25,7 +24,6 @@ func main() {
 		Commands: []*cli.Command{
 			&chart.Command,
 			&gitops.Command,
-			&seal.Command,
 			&manifest.Command,
 			&artifact.Command,
 			&release.Command,
