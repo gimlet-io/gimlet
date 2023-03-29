@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import StackUI from './stack-ui';
 import SeparateEnvironments from './separateEnvironments';
 
 const StepTwo = ({ getContext }) => {
@@ -43,29 +42,6 @@ const StepTwo = ({ getContext }) => {
       }
     } else {
       return context.stackConfig.config.nginx
-    }
-  }
-
-  const setValues = (variable, values, nonDefaultValues) => {
-    const nginx = disableNginxIfK3s(variable, values, nonDefaultValues)
-
-    setContext({
-      ...context,
-      stackConfig: {
-        ...context.stackConfig,
-        config: {
-          ...context.stackConfig.config,
-          [variable]: nonDefaultValues,
-          nginx: nginx
-        }
-      }
-    })
-  }
-
-  const validationCallback = (variable, validationErrors) => {
-    if (validationErrors !== null) {
-      console.log(validationErrors)
-      alert(validationErrors)
     }
   }
 
