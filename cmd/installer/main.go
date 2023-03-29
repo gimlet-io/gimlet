@@ -79,10 +79,10 @@ func main() {
 	r.Use(middleware.Logger)
 
 	stackUrl := stack.DefaultStackURL
-	// latestTag, _ := stack.LatestVersion(stackUrl)
-	// if latestTag != "" {
-	stackUrl = stackUrl + "?branch=latest-gimlet" // + latestTag
-	// }
+	latestTag, _ := stack.LatestVersion(stackUrl)
+	if latestTag != "" {
+		stackUrl = stackUrl + latestTag
+	}
 
 	stackConfig := &dx.StackConfig{
 		Stack: dx.StackRef{
