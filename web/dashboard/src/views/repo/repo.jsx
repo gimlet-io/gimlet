@@ -439,7 +439,7 @@ export default class Repo extends Component {
                     envName={envName}
                     env={filteredEnvs[envName]}
                     repoRolloutHistory={repoRolloutHistory}
-                    envConfigs={limitedEnvConfigs(envConfigs[envName])}
+                    envConfigs={envConfigs[envName]}
                     navigateToConfigEdit={this.navigateToConfigEdit}
                     linkToDeployment={this.linkToDeployment}
                     newConfig={this.newConfig}
@@ -502,16 +502,10 @@ function stacks(connectedAgents, envName) {
   for (const agentName of Object.keys(connectedAgents)) {
     const agent = connectedAgents[agentName];
     if (agentName === envName) {
-      return agent.stacks.slice(0, 10);
+      return agent.stacks;
     }
   }
   return [];
-}
-
-function limitedEnvConfigs(envConfigs) {
-  if (envConfigs) {
-    return envConfigs.slice(0, 10)
-  }
 }
 
 function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, searchFilter) {
