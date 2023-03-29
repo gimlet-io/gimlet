@@ -32,19 +32,6 @@ const StepTwo = ({ getContext }) => {
     return null;
   }
 
-  const disableNginxIfK3s = (variable, values, nonDefaultValues) => {
-    if (variable === 'nginx') {
-      return nonDefaultValues
-    } else if (variable === 'k3s' && values.enabled) {
-      return {
-        ...context.stackConfig.config.nginx,
-        enabled: false
-      }
-    } else {
-      return context.stackConfig.config.nginx
-    }
-  }
-
   return (
     <div className="mt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
