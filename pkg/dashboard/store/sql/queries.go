@@ -110,7 +110,7 @@ ORDER BY created DESC
 LIMIT 20;
 `,
 		SelectKubeEventByName: `
-SELECT id, name, status, status_desc
+SELECT id, name, status, status_desc, count
 FROM kube_events
 WHERE name = $1;
 `,
@@ -118,19 +118,19 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Firing'
 ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
@@ -208,7 +208,7 @@ ORDER BY created DESC
 LIMIT 20;
 `,
 		SelectKubeEventByName: `
-SELECT id, name, status, status_desc
+SELECT id, name, status, status_desc, count
 FROM kube_events
 WHERE name = $1;
 `,
@@ -216,19 +216,19 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Firing'
 ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Pending';
 `,

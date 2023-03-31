@@ -22,6 +22,7 @@ func (db *Store) SaveOrUpdateKubeEvent(event *model.KubeEvent) error {
 
 	storedEvent.Status = event.Status
 	storedEvent.StatusDesc = event.StatusDesc
+	storedEvent.Count = event.Count
 
 	return meddler.Update(db, "kube_events", storedEvent)
 }

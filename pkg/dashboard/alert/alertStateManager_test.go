@@ -87,7 +87,7 @@ func TestTrackEvents(t *testing.T) {
 	}
 }
 
-func TestSetFiringState(t *testing.T) {
+func TestEvaluatePendingAlerts(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -98,27 +98,29 @@ func TestSetFiringState(t *testing.T) {
 	a := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	alert1 := model.Alert{Name: "n/p1", Type: "pod", Status: "Pending", LastStateChange: currentTime.Add(-1 * time.Minute).Unix()}
 	alert2 := model.Alert{Name: "n/p2", Type: "pod", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
-	alert3 := model.Alert{Name: "n/p1", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-4 * time.Minute).Unix(), Count: 5}
-	alert4 := model.Alert{Name: "n/p2", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix(), Count: 7}
+	alert3 := model.Alert{Name: "n/e1", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-4 * time.Minute).Unix()}
+	alert4 := model.Alert{Name: "n/e2", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
 	alerts := []model.Alert{alert1, alert2, alert3, alert4}
-
 	for _, alert := range alerts {
-		store.SaveOrUpdateAlert(&alert)
+		store.CreateAlert(&alert)
 	}
 
-	var thresholds []threshold
-	for _, alert := range alerts {
-		thresholds = append(thresholds, ToThreshold(&alert, a.waitTime, 6, 1))
-	}
+	pod1 := model.Pod{Name: "n/p1", Status: "ImagePullBackOff", StatusDesc: "blabla"}
+	store.SaveOrUpdatePod(&pod1)
+	pod2 := model.Pod{Name: "n/p2", Status: "ImagePullBackOff", StatusDesc: "blabla"}
+	store.SaveOrUpdatePod(&pod2)
+	event1 := model.KubeEvent{Name: "n/e1", Status: "Failed", StatusDesc: "blabla", Count: 5}
+	store.SaveOrUpdateKubeEvent(&event1)
+	event2 := model.KubeEvent{Name: "n/e2", Status: "Failed", StatusDesc: "blabla", Count: 7}
+	store.SaveOrUpdateKubeEvent(&event2)
 
-	err := a.setFiringState(thresholds)
-	assert.Nil(t, err)
+	a.evaluatePendingAlerts()
 
 	expected := []model.Alert{
 		{Name: "n/p1", Type: "pod", Status: "Pending"},
 		{Name: "n/p2", Type: "pod", Status: "Firing"},
-		{Name: "n/p1", Type: "event", Status: "Pending"},
-		{Name: "n/p2", Type: "event", Status: "Firing"},
+		{Name: "n/e1", Type: "event", Status: "Pending"},
+		{Name: "n/e2", Type: "event", Status: "Firing"},
 	}
 	for _, alert := range expected {
 		a, _ := store.Alert(alert.Name, alert.Type)
@@ -146,30 +148,30 @@ func TestPodFailedMessage(t *testing.T) {
 	assert.Contains(t, "pod ns1/pod1 failed", slackMsg.Text)
 }
 
-func TestNotificationSending(t *testing.T) {
-	t.Skip("Skipping notification sending")
-	store := store.NewTest(encryptionKey, encryptionKeyNew)
-	defer func() {
-		store.Close()
-	}()
+// func TestNotificationSending(t *testing.T) {
+// 	t.Skip("Skipping notification sending")
+// 	store := store.NewTest(encryptionKey, encryptionKeyNew)
+// 	defer func() {
+// 		store.Close()
+// 	}()
 
-	notificationsManager := notifications.NewManager()
+// 	notificationsManager := notifications.NewManager()
 
-	notificationsManager.AddProvider(&notifications.DiscordProvider{
-		Token:     "",
-		ChannelID: "",
-	})
+// 	notificationsManager.AddProvider(&notifications.DiscordProvider{
+// 		Token:     "",
+// 		ChannelID: "",
+// 	})
 
-	go notificationsManager.Run()
+// 	go notificationsManager.Run()
 
-	p := NewAlertStateManager(notificationsManager, *store, 2)
+// 	p := NewAlertStateManager(notificationsManager, *store, 2)
 
-	var thresholds []threshold
-	currentTime := time.Now()
-	alert1 := model.Alert{Name: "n/p2", Type: "pod", Status: "Pending", StatusDesc: "Back-off pulling image", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
-	thresholds = append(thresholds, ToThreshold(&alert1, p.waitTime, 6, 1))
+// 	var thresholds []threshold
+// 	currentTime := time.Now()
+// 	alert1 := model.Alert{Name: "n/p2", Type: "pod", Status: "Pending", StatusDesc: "Back-off pulling image", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
+// 	thresholds = append(thresholds, ToThreshold(&alert1, p.waitTime, 6, 1))
 
-	p.setFiringState(thresholds)
+// 	p.setFiringState(thresholds)
 
-	time.Sleep(5 * time.Second)
-}
+// 	time.Sleep(5 * time.Second)
+// }

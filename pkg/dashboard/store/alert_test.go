@@ -19,7 +19,7 @@ func TestAlertCRUD(t *testing.T) {
 		Status: "Firing",
 	}
 
-	err := s.SaveOrUpdateAlert(&alert)
+	err := s.CreateAlert(&alert)
 	assert.Nil(t, err)
 
 	alerts, err := s.FiringAlerts()
@@ -48,8 +48,8 @@ func TestGetPendingAlerts(t *testing.T) {
 		Status: "Firing",
 	}
 
-	s.SaveOrUpdateAlert(&alert1)
-	s.SaveOrUpdateAlert(&alert2)
+	s.CreateAlert(&alert1)
+	s.CreateAlert(&alert2)
 
 	pendingAlerts, err := s.PendingAlerts()
 	assert.Nil(t, err)

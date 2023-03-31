@@ -23,20 +23,20 @@ func (db *Store) DeletePod(name string) error {
 	return err
 }
 
-func (db *Store) SaveOrUpdatePod(pod *model.Pod) error {
+func (db *Store) SaveOrUpdatePod(pod *model.Pod) (*model.Pod, error) {
 	storedPod, err := db.Pod(pod.Name)
 
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return meddler.Insert(db, "pods", pod)
+			return pod, meddler.Insert(db, "pods", pod)
 		default:
-			return err
+			return nil, err
 		}
 	}
 
 	storedPod.Status = pod.Status
 	storedPod.StatusDesc = pod.StatusDesc
 
-	return meddler.Update(db, "pods", storedPod)
+	return storedPod, meddler.Update(db, "pods", storedPod)
 }

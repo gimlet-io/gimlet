@@ -19,7 +19,7 @@ func TestPodCRUD(t *testing.T) {
 		Status: "Running",
 	}
 
-	err := s.SaveOrUpdatePod(&pod)
+	_, err := s.SaveOrUpdatePod(&pod)
 	assert.Nil(t, err)
 
 	p, err := s.Pod(pod.Name)

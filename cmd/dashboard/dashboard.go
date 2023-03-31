@@ -83,8 +83,8 @@ func main() {
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
 
-	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
-	// go alertStateManager.Run()
+	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, config.AlertEvaluationFrequencySeconds)
+	go alertStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
 

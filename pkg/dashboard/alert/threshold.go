@@ -7,54 +7,36 @@ import (
 )
 
 type threshold interface {
-	isFired() bool
-	toAlert() model.Alert
+	isReached(relatedObject interface{}, alert *model.Alert) bool
 }
 
-type podStrategy struct {
-	pod      model.Alert
+type podThreshold struct {
 	waitTime time.Duration
 }
 
-type eventStrategy struct {
-	event                  model.Alert
+type eventThreshold struct {
 	expectedCountPerMinute float64
-	expectedCount          int32
+	expectedCount          int
 }
 
-func (s podStrategy) isFired() bool {
-	podLastStateChangeTime := time.Unix(s.pod.LastStateChange, 0)
-	waitTime := time.Now().Add(-time.Minute * s.waitTime)
+type noopThreshold struct {
+}
+
+func (p podThreshold) isReached(relatedObject interface{}, alert *model.Alert) bool {
+	podLastStateChangeTime := time.Unix(alert.LastStateChange, 0)
+	waitTime := time.Now().Add(-time.Minute * p.waitTime)
 
 	return podLastStateChangeTime.Before(waitTime)
 }
 
-func (s eventStrategy) isFired() bool {
-	lastStateChangeInMinutes := time.Since(time.Unix(s.event.LastStateChange, 0)).Minutes()
-	countPerMinute := float64(s.event.Count) / lastStateChangeInMinutes
+func (e eventThreshold) isReached(relatedObject interface{}, alert *model.Alert) bool {
+	event := relatedObject.(*model.KubeEvent)
+	lastStateChangeInMinutes := time.Since(time.Unix(alert.LastStateChange, 0)).Minutes()
+	countPerMinute := float64(event.Count) / lastStateChangeInMinutes
 
-	return countPerMinute >= s.expectedCountPerMinute && s.event.Count >= s.expectedCount
+	return countPerMinute >= e.expectedCountPerMinute && event.Count >= e.expectedCount
 }
 
-func (s podStrategy) toAlert() model.Alert {
-	return s.pod
-}
-
-func (s eventStrategy) toAlert() model.Alert {
-	return s.event
-}
-
-func ToThreshold(a *model.Alert, waitTime time.Duration, expectedCount int32, expectedCountPerMinute float64) threshold {
-	if a.Type == "pod" {
-		return &podStrategy{
-			pod:      *a,
-			waitTime: waitTime,
-		}
-	}
-
-	return &eventStrategy{
-		event:                  *a,
-		expectedCount:          expectedCount,
-		expectedCountPerMinute: expectedCountPerMinute,
-	}
+func (n noopThreshold) isReached(relatedObject interface{}, alert *model.Alert) bool {
+	return false
 }

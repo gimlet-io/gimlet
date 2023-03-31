@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	queries "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
@@ -30,23 +31,20 @@ func (db *Store) Alert(name string, alertType string) (*model.Alert, error) {
 	return alert, err
 }
 
-func (db *Store) SaveOrUpdateAlert(alert *model.Alert) error {
+func (db *Store) CreateAlert(alert *model.Alert) error {
+	return meddler.Insert(db, "alerts", alert)
+}
+
+func (db *Store) UpdateAlert(alert *model.Alert) error {
 	storedAlert, err := db.Alert(alert.Name, alert.Type)
 
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			return meddler.Insert(db, "alerts", alert)
-		default:
-			return err
-		}
+		return err
 	}
 
-	storedAlert.DeploymentName = alert.DeploymentName
 	storedAlert.Status = alert.Status
 	storedAlert.StatusDesc = alert.StatusDesc
-	storedAlert.LastStateChange = alert.LastStateChange
-	storedAlert.Count = alert.Count
+	storedAlert.LastStateChange = time.Now().Unix()
 	return meddler.Update(db, "alerts", storedAlert)
 }
 
