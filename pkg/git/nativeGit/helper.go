@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluxcd/flux2/pkg/manifestgen"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -424,6 +425,7 @@ func Folder(repo *git.Repository, path string) (map[string]string, error) {
 func CommitFilesToGit(
 	repo *git.Repository,
 	files map[string]string,
+	kustomizationManifest *manifestgen.Manifest,
 	env string,
 	app string,
 	repoPerEnv bool,
@@ -465,6 +467,13 @@ func CommitFilesToGit(
 		}
 
 		err = StageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
+		if err != nil {
+			return "", fmt.Errorf("cannot stage file %s", err)
+		}
+	}
+
+	if kustomizationManifest != nil {
+		err = StageFile(w, kustomizationManifest.Content, kustomizationManifest.Path)
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}

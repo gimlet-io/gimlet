@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/fluxcd/flux2/pkg/manifestgen"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -227,7 +228,7 @@ func processBranchDeletedEvent(
 			continue
 		}
 
-		repoName, _, err := gitopsRepoForEnv(store, env.Env)
+		repoName, _, _, err := gitopsRepoForEnv(store, env.Env)
 		if err != nil {
 			return nil, err
 		}
@@ -314,7 +315,7 @@ func processReleaseEvent(
 			continue
 		}
 
-		repoName, _, err := gitopsRepoForEnv(store, manifest.Env)
+		repoName, _, _, err := gitopsRepoForEnv(store, manifest.Env)
 		if err != nil {
 			return deployResults, err
 		}
@@ -386,7 +387,7 @@ func processRollbackEvent(
 		return nil, fmt.Errorf("cannot parse release request with id: %s", event.ID)
 	}
 
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, rollbackRequest.Env)
+	repoName, repoPerEnv, _, err := gitopsRepoForEnv(store, rollbackRequest.Env)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +495,7 @@ func processArtifactEvent(
 			continue
 		}
 
-		repoName, _, err := gitopsRepoForEnv(dao, manifest.Env)
+		repoName, _, _, err := gitopsRepoForEnv(dao, manifest.Env)
 		if err != nil {
 			return deployResults, err
 		}
@@ -578,7 +579,7 @@ func cloneTemplateWriteAndPush(
 ) (string, error) {
 	t0 := time.Now()
 
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, manifest.Env)
+	repoName, repoPerEnv, kustomizationPerApp, err := gitopsRepoForEnv(store, manifest.Env)
 	if err != nil {
 		return "", err
 	}
@@ -589,14 +590,16 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	kustomizationSha, err := kustomizationTemplateAndWrite(
-		repo,
-		manifest,
-		repoName,
-		repoPerEnv,
-	)
-	if err != nil {
-		return "", err
+	var kustomizationManifest *manifestgen.Manifest
+	if kustomizationPerApp {
+		kustomizationManifest, err = kustomizationTemplate(
+			manifest,
+			repoName,
+			repoPerEnv,
+		)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	sha, err := gitopsTemplateAndWrite(
@@ -605,12 +608,13 @@ func cloneTemplateWriteAndPush(
 		releaseMeta,
 		githubChartAccessToken,
 		repoPerEnv,
+		kustomizationManifest,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	if sha != "" || kustomizationSha != "" { // if there is a change to push
+	if sha != "" { // if there is a change to push
 		operation := func() error {
 			head, _ := repo.Head()
 			return nativeGit.NativePushWithToken(repoTmpPath, repoName, githubChartAccessToken, head.Name().Short())
@@ -637,7 +641,7 @@ func cloneTemplateDeleteAndPush(
 	nonImpersonatedToken string,
 	store *store.Store,
 ) (string, error) {
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, env)
+	repoName, repoPerEnv, kustomizationPerApp, err := gitopsRepoForEnv(store, env)
 	if err != nil {
 		return "", err
 	}
@@ -742,6 +746,7 @@ func gitopsTemplateAndWrite(
 	release *dx.Release,
 	tokenForChartClone string,
 	repoPerEnv bool,
+	kustomizationManifest *manifestgen.Manifest,
 ) (string, error) {
 	if strings.HasPrefix(manifest.Chart.Name, "git@") {
 		return "", fmt.Errorf("only HTTPS git repo urls supported in GimletD for git based charts")
@@ -774,6 +779,7 @@ func gitopsTemplateAndWrite(
 	sha, err := nativeGit.CommitFilesToGit(
 		repo,
 		files,
+		kustomizationManifest,
 		manifest.Env,
 		manifest.App,
 		repoPerEnv,
@@ -924,56 +930,34 @@ func saveAndBroadcastGitopsCommit(
 	}
 }
 
-func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
+func gitopsRepoForEnv(db *store.Store, env string) (string, bool, bool, error) {
 	envsFromDB, err := db.GetEnvironments()
 	if err != nil {
-		return "", false, fmt.Errorf("cannot get environments from database: %s", err)
+		return "", false, false, fmt.Errorf("cannot get environments from database: %s", err)
 	}
 
 	for _, e := range envsFromDB {
 		if e.Name == env {
-			return e.AppsRepo, e.RepoPerEnv, nil
+			return e.AppsRepo, e.RepoPerEnv, e.KustomizationPerApp, nil
 		}
 	}
-	return "", false, fmt.Errorf("no such environment: %s", env)
+	return "", false, false, fmt.Errorf("no such environment: %s", env)
 }
 
-func kustomizationTemplateAndWrite(
-	repo *git.Repository,
+func kustomizationTemplate(
 	manifest *dx.Manifest,
 	repoName string,
 	repoPerEnv bool,
-) (string, error) {
-	w, err := repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("cannot get worktree %s", err)
-	}
-
+) (*manifestgen.Manifest, error) {
 	owner, repository := server.ParseRepo(repoName)
 	kustomizationName := uniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App)
 	sourceName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
-	kustomizationManifest, err := sync.GenerateKustomizationForApp(
+	return sync.GenerateKustomizationForApp(
 		manifest.App,
 		manifest.Env,
 		kustomizationName,
 		sourceName,
 		repoPerEnv)
-	if err != nil {
-		return "", fmt.Errorf("cannot generate kustomization: %s", err)
-	}
-	err = nativeGit.StageFile(w, kustomizationManifest.Content, kustomizationManifest.Path)
-	if err != nil {
-		return "", fmt.Errorf("cannot stage file: %s", err)
-	}
-	empty, err := nativeGit.NothingToCommit(repo)
-	if err != nil {
-		return "", fmt.Errorf("cannot determine git status: %s", err)
-	}
-	if empty {
-		return "", nil
-	}
-
-	return nativeGit.Commit(repo, fmt.Sprintf("[Gimlet] %s/%s %s", manifest.Env, manifest.App, "automated deploy"))
 }
 
 func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {
