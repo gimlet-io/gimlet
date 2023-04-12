@@ -4,6 +4,7 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
+import KustomizationPerApp from './kustomizationPerApp';
 import GitopsAutomationGuide from './gitopsAutomationGuide';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
@@ -20,6 +21,7 @@ import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true)
+  const [kustomizationPerApp, setKustomizationPerApp] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
@@ -175,14 +177,14 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       })
   }
 
-  const bootstrapGitops = (envName, repoPerEnv) => {
+  const bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp) => {
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Bootstrapping..."
       }
     });
 
-    gimletClient.bootstrapGitops(envName, repoPerEnv, infraRepo, appsRepo)
+    gimletClient.bootstrapGitops(envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo)
       .then((data) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
@@ -348,6 +350,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             To initialize this environment, bootstrap the gitops repository first
           </p>
         </div>
+        <KustomizationPerApp
+          kustomizationPerApp={kustomizationPerApp}
+          setKustomizationPerApp={setKustomizationPerApp}
+        />
         <SeparateEnvironments
           repoPerEnv={repoPerEnv}
           setRepoPerEnv={setRepoPerEnv}
@@ -360,7 +366,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
             <button
-              onClick={() => bootstrapGitops(env.name, repoPerEnv)}
+              onClick={() => bootstrapGitops(env.name, repoPerEnv, kustomizationPerApp)}
               disabled={popupWindow.visible}
               className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
             >

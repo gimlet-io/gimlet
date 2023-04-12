@@ -223,6 +223,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	environment.RepoPerEnv = bootstrapConfig.RepoPerEnv
+	environment.KustomizationPerApp = bootstrapConfig.KusomizationPerApp
 	err = db.UpdateEnvironment(environment)
 	if err != nil {
 		logrus.Errorf("cannot update environment: %s", err)
@@ -299,7 +300,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		gitToken,
 		false,
 		false,
-		true,
+		environment.KustomizationPerApp,
 		true,
 		scmURL,
 	)

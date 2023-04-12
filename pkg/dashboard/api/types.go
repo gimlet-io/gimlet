@@ -77,10 +77,11 @@ type GitopsEnv struct {
 }
 
 type GitopsBootstrapConfig struct {
-	EnvName    string `json:"envName"`
-	RepoPerEnv bool   `json:"repoPerEnv"`
-	InfraRepo  string `json:"infraRepo"`
-	AppsRepo   string `json:"appsRepo"`
+	EnvName            string `json:"envName"`
+	RepoPerEnv         bool   `json:"repoPerEnv"`
+	KusomizationPerApp bool   `json:"kustomizationPerApp"`
+	InfraRepo          string `json:"infraRepo"`
+	AppsRepo           string `json:"appsRepo"`
 }
 
 type Stack struct {
