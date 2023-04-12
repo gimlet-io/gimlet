@@ -657,6 +657,21 @@ func cloneTemplateDeleteAndPush(
 		path = cleanupPolicy.AppToCleanup
 	}
 
+	if kustomizationPerApp {
+		kustomizationFilePath := filepath.Join(env, "flux", fmt.Sprintf("kustomization-%s.yaml", cleanupPolicy.AppToCleanup))
+		if repoPerEnv {
+			kustomizationFilePath = filepath.Join("flux", fmt.Sprintf("kustomization-%s.yaml", cleanupPolicy.AppToCleanup))
+		}
+		worktree, err := repo.Worktree()
+		if err != nil {
+			return "", err
+		}
+		_, err = worktree.Remove(kustomizationFilePath)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	err = nativeGit.DelDir(repo, path)
 	if err != nil {
 		return "", err
