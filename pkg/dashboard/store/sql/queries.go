@@ -118,19 +118,19 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE status LIKE 'Firing'
 ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
@@ -216,19 +216,19 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE status LIKE 'Firing'
 ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE status LIKE 'Pending';
 `,

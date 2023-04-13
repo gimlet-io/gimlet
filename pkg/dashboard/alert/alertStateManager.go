@@ -14,7 +14,8 @@ import (
 
 var podTresholds map[string]podThreshold = map[string]podThreshold{
 	"ImagePullBackOff": {
-		waitTime: 2,
+		waitTime:      60,
+		resolveStates: []string{"Running", "Error", "TODO"},
 	},
 }
 
@@ -57,6 +58,7 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 	}
 
 	for _, alert := range alerts {
+		fmt.Printf("%s (%s)\n", alert.Name, alert.Status)
 		var t threshold
 		var relatedObject interface{}
 		switch alert.Type {
@@ -96,7 +98,9 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 			msg := notifications.MessageFromAlert(*alert)
 			a.notifManager.Broadcast(msg)
 		}
+		fmt.Printf("%s (%s)\n", alert.Name, alert.Status)
 	}
+	fmt.Println("----------------------")
 }
 
 func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
@@ -112,9 +116,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			continue
 		}
 
-		if relatedAlert != nil && relatedAlert.IsFiring() {
-			continue
-		}
+		fmt.Printf("%s (%s)\n", podName, pod.Status)
 
 		storedPod, err := a.store.SaveOrUpdatePod(&model.Pod{
 			Name:       podName,
@@ -126,40 +128,51 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 		}
 
 		if storedPod.IsInErrorState() {
-			if relatedAlert != nil {
-				relatedAlert.Status = model.ALERT_STATE_PENDING
-				err = a.store.UpdateAlert(relatedAlert)
-				if err != nil {
-					return err
-				}
-			} else {
+			if relatedAlert == nil {
 				err := a.store.CreateAlert(&model.Alert{
 					Type:            model.ALERT_OBJECT_TYPE_POD,
 					Name:            podName,
 					DeploymentName:  deploymentName,
 					Status:          model.ALERT_STATE_PENDING,
-					StatusDesc:      pod.StatusDescription,
 					LastStateChange: time.Now().Unix(),
 				})
 				if err != nil {
 					return err
 				}
 			}
+			continue
+		}
+
+		if relatedAlert != nil &&
+			relatedAlert.Status != model.ALERT_STATE_RESOLVED {
+			treshold := podTresholds[relatedAlert.ObjectStatus]
+			if 
+
+			relatedAlert.Status = model.ALERT_STATE_RESOLVED
+			err = a.store.UpdateAlert(relatedAlert)
+			if err != nil {
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
 func (a AlertStateManager) TrackEvents(events []api.Event) error {
+	if 1 == 1 {
+		return nil
+	}
 	for _, event := range events {
-		eventName := fmt.Sprintf("%s/%s", event.Namespace, event.Name)
+		relatedObjectName := fmt.Sprintf("%s/%s", event.Namespace, event.Name)
 		deploymentName := fmt.Sprintf("%s/%s", event.Namespace, event.DeploymentName)
-		relatedAlert, err := a.relatedAlert(eventName, model.ALERT_OBJECT_TYPE_EVENT)
+		// fmt.Printf("%s - %s X %d\n\t%s\n", relatedObjectName, event.Status, event.Count, event.StatusDesc)
+		relatedAlert, err := a.relatedAlert(relatedObjectName, model.ALERT_OBJECT_TYPE_EVENT)
 		if err != nil {
 			return err
 		}
 
-		if a.statusNotChanged(eventName, event.Status) {
+		if a.statusNotChanged(relatedObjectName, event.Status) {
 			continue
 		}
 
@@ -168,7 +181,7 @@ func (a AlertStateManager) TrackEvents(events []api.Event) error {
 		}
 
 		err = a.store.SaveOrUpdateKubeEvent(&model.KubeEvent{
-			Name:       eventName,
+			Name:       relatedObjectName,
 			Status:     event.Status,
 			StatusDesc: event.StatusDesc,
 			Count:      int(event.Count),
@@ -185,11 +198,11 @@ func (a AlertStateManager) TrackEvents(events []api.Event) error {
 			}
 		} else {
 			err := a.store.CreateAlert(&model.Alert{
-				Type:            model.ALERT_OBJECT_TYPE_EVENT,
-				Name:            eventName,
-				DeploymentName:  deploymentName,
-				Status:          model.ALERT_STATE_PENDING,
-				StatusDesc:      event.StatusDesc,
+				Type:           model.ALERT_OBJECT_TYPE_EVENT,
+				Name:           relatedObjectName,
+				DeploymentName: deploymentName,
+				Status:         model.ALERT_STATE_PENDING,
+				// StatusDesc:      event.StatusDesc,
 				LastStateChange: time.Now().Unix(),
 			})
 			if err != nil {

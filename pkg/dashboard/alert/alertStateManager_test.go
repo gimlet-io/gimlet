@@ -16,7 +16,31 @@ var (
 	encryptionKeyNew = ""
 )
 
-func TestTrackPods(t *testing.T) {
+func TestTrackPods_UpdatesPodState(t *testing.T) {
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
+	pods := []*api.Pod{&pod1}
+
+	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
+	p.TrackPods(pods)
+
+	expectedPods := []model.Pod{
+		{Name: "ns1/pod1", Status: "Running"},
+	}
+	for _, pod := range expectedPods {
+		p, _ := store.Pod(pod.Name)
+
+		assert.Equal(t, p.Name, pod.Name)
+		assert.Equal(t, p.Status, pod.Status)
+	}
+}
+
+func TestTrackPods_ErrorStateCreatesPendingAlert(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -30,17 +54,6 @@ func TestTrackPods(t *testing.T) {
 
 	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
 	p.TrackPods(pods)
-
-	expectedPods := []model.Pod{
-		{Name: "ns1/pod1"},
-		{Name: "ns1/pod2"},
-		{Name: "ns2/pod3"},
-	}
-	for _, pod := range expectedPods {
-		p, _ := store.Pod(pod.Name)
-
-		assert.Equal(t, p.Name, pod.Name)
-	}
 
 	expectedAlerts := []model.Alert{
 		{Name: "ns1/pod2", Type: "pod", Status: "Pending"},
@@ -131,9 +144,9 @@ func TestEvaluatePendingAlerts(t *testing.T) {
 func TestPodFailedMessage(t *testing.T) {
 	msgPodFailed := notifications.AlertMessage{
 		Alert: model.Alert{
-			Type:       "pod",
-			Name:       "ns1/pod1",
-			StatusDesc: "Container failed",
+			Type: "pod",
+			Name: "ns1/pod1",
+			// StatusDesc: "Container failed",
 		},
 	}
 

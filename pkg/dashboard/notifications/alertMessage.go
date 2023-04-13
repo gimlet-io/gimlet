@@ -33,7 +33,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 			Elements: []Text{
 				{
 					Type: markdown,
-					Text: fmt.Sprintf(":exclamation: %s", am.Alert.StatusDesc),
+					Text: fmt.Sprintf(":exclamation: %s", "am.Alert.StatusDesc"),
 				},
 			},
 		},
@@ -61,7 +61,7 @@ func (am *AlertMessage) AsDiscordMessage() (*discordMessage, error) {
 	}
 
 	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.Name)
-	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", am.Alert.StatusDesc)
+	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", "am.Alert.StatusDesc")
 	msg.Embed.Color = 15158332
 
 	return msg, nil

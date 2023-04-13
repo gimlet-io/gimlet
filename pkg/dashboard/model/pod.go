@@ -12,3 +12,15 @@ func (p *Pod) IsInErrorState() bool {
 		p.Status != "Succeeded" && p.Status != "Unknown" && p.Status != "ContainerCreating" &&
 		p.Status != "PodInitializing"
 }
+
+func (p *Pod) IsRunning() bool {
+	return p.Status != "Running" && p.Status != "Pending" && p.Status != "Terminating" &&
+		p.Status != "Succeeded" && p.Status != "Unknown" && p.Status != "ContainerCreating" &&
+		p.Status != "PodInitializing"
+}
+
+func (p *Pod) IsConfigError() bool {
+	return p.Status != "Running" && p.Status != "Pending" && p.Status != "Terminating" &&
+		p.Status != "Succeeded" && p.Status != "Unknown" && p.Status != "ContainerCreating" &&
+		p.Status != "PodInitializing"
+}

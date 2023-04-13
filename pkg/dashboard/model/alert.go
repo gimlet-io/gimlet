@@ -13,12 +13,14 @@ type Alert struct {
 	// TODO rename this to ObjectType
 	Type string `json:"type,omitempty"  meddler:"type"`
 	// TODO rename this to ObjectName
-	Name           string `json:"name,omitempty"  meddler:"name"`
-	DeploymentName string `json:"deploymentName,omitempty"  meddler:"deployment_name"`
+	Name             string `json:"name,omitempty"  meddler:"name"`
+	DeploymentName   string `json:"deploymentName,omitempty"  meddler:"deployment_name"`
+	ObjectStatus     string `json:"objectStatus,omitempty"  meddler:"object_status"`
+	ObjectStatusDesc string `json:"objectStatusDesc,omitempty"  meddler:"object_status_desc"`
 
-	Status          string `json:"status,omitempty"  meddler:"status"`
-	StatusDesc      string `json:"statusDesc,omitempty"  meddler:"status_desc"`
-	LastStateChange int64  `json:"lastStateChange,omitempty"  meddler:"last_state_change"`
+	Status string `json:"status,omitempty"  meddler:"status"`
+	// StatusDesc      string `json:"statusDesc,omitempty"  meddler:"status_desc"`
+	LastStateChange int64 `json:"lastStateChange,omitempty"  meddler:"last_state_change"`
 }
 
 func (a *Alert) IsFiring() bool {

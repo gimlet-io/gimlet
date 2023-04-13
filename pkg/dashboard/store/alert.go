@@ -43,7 +43,7 @@ func (db *Store) UpdateAlert(alert *model.Alert) error {
 	}
 
 	storedAlert.Status = alert.Status
-	storedAlert.StatusDesc = alert.StatusDesc
+	// storedAlert.StatusDesc = alert.StatusDesc
 	storedAlert.LastStateChange = time.Now().Unix()
 	return meddler.Update(db, "alerts", storedAlert)
 }
