@@ -364,6 +364,31 @@ func (c *GithubClient) GetAppOwner(appToken string) (string, error) {
 	return *appinfo.Owner.Login, err
 }
 
+func (c *GithubClient) GetUserPrimaryEmail(appToken string) (string, error) {
+	client := github.NewClient(
+		&http.Client{
+			Transport: &transport{
+				underlyingTransport: http.DefaultTransport,
+				token:               appToken,
+			},
+		},
+	)
+
+	var primaryUserEmail string
+	githubUserMails, _, err := client.Users.ListEmails(context.Background(), &github.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, githubUserMail := range githubUserMails {
+		if *githubUserMail.Primary {
+			primaryUserEmail = githubUserMail.GetEmail()
+		}
+	}
+
+	return primaryUserEmail, err
+}
+
 func (c *GithubClient) CreateRepository(owner string, repo string, loggedInUser string, orgToken string, userToken string) error {
 	token := orgToken
 	if owner == loggedInUser {
