@@ -25,7 +25,7 @@ const KustomizationPerApp = ({ kustomizationPerApp, setKustomizationPerApp }) =>
                 </Switch>
             </div>
         </div>
-        <div className="text-sm text-gray-500 leading-loose">To apply only the flux/ folder in gitops. Separate kustomization objects must be created to apply other folders. Used in application git repos.</div>
+        <div className="text-sm text-gray-500 leading-loose">Enable it for each application to have a separate deployment pipeline. This is a more robust setup, but generates potentially hundreds of kustomization files. One per application.</div>
     </div>)
 };
 
