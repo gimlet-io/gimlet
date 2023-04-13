@@ -786,6 +786,10 @@ func gitopsTemplateAndWrite(
 
 	files := dx.SplitHelmOutput(map[string]string{"manifest.yaml": templatedManifests})
 
+	if kustomizationManifest != nil {
+		files[kustomizationManifest.Path] = kustomizationManifest.Content
+	}
+
 	releaseString, err := json.Marshal(release)
 	if err != nil {
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
@@ -794,7 +798,6 @@ func gitopsTemplateAndWrite(
 	sha, err := nativeGit.CommitFilesToGit(
 		repo,
 		files,
-		kustomizationManifest,
 		manifest.Env,
 		manifest.App,
 		repoPerEnv,

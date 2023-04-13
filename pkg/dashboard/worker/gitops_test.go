@@ -477,7 +477,6 @@ func initHistory(repo *git.Repository) {
 		map[string]string{
 			"file": `0`,
 		},
-		nil,
 		"staging",
 		"my-app",
 		false,
@@ -490,7 +489,6 @@ func initHistory(repo *git.Repository) {
 		map[string]string{
 			"file": `1`,
 		},
-		nil,
 		"staging",
 		"my-app",
 		false,
@@ -503,7 +501,6 @@ func initHistory(repo *git.Repository) {
 		map[string]string{
 			"file": `2`,
 		},
-		nil,
 		"staging",
 		"my-app",
 		false,
@@ -516,7 +513,6 @@ func initHistory(repo *git.Repository) {
 		map[string]string{
 			"file": `3`,
 		},
-		nil,
 		"staging",
 		"my-app",
 		false,

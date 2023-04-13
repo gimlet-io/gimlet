@@ -80,6 +80,6 @@ func write(c *cli.Context) error {
 	}
 	files = dx.SplitHelmOutput(files)
 
-	_, err = nativeGit.CommitFilesToGit(repo, files, nil, env, app, repoPerEnv, message, "")
+	_, err = nativeGit.CommitFilesToGit(repo, files, env, app, repoPerEnv, message, "")
 	return err
 }
