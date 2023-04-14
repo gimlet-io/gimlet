@@ -11,8 +11,7 @@ type threshold interface {
 }
 
 type podThreshold struct {
-	waitTime      time.Duration //amount of time a pending alert is not firing
-	resolveStates []string      // states that resolve firing alerts
+	waitTime time.Duration //amount of time a pending alert is not firing
 }
 
 type eventThreshold struct {
@@ -20,10 +19,10 @@ type eventThreshold struct {
 	expectedCount          int
 }
 
-type noopThreshold struct {
+type zeroThreshold struct {
 }
 
-func (p podThreshold) isReached(relatedObject interface{}, alert *model.Alert) bool {
+func (p podThreshold) isReached(_ interface{}, alert *model.Alert) bool {
 	podLastStateChangeTime := time.Unix(alert.LastStateChange, 0)
 	waitTime := time.Now().Add(-time.Second * p.waitTime)
 
@@ -38,6 +37,6 @@ func (e eventThreshold) isReached(relatedObject interface{}, alert *model.Alert)
 	return countPerMinute >= e.expectedCountPerMinute && event.Count >= e.expectedCount
 }
 
-func (n noopThreshold) isReached(relatedObject interface{}, alert *model.Alert) bool {
-	return false
+func (z zeroThreshold) isReached(relatedObject interface{}, alert *model.Alert) bool {
+	return true
 }

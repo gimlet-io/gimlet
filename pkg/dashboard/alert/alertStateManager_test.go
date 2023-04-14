@@ -56,12 +56,12 @@ func TestTrackPods_ErrorStateCreatesPendingAlert(t *testing.T) {
 	p.TrackPods(pods)
 
 	expectedAlerts := []model.Alert{
-		{Name: "ns1/pod2", Type: "pod", Status: "Pending"},
+		{ObjectName: "ns1/pod2", ObjectType: "pod", Status: "Pending"},
 	}
 	for _, alert := range expectedAlerts {
-		a, _ := store.Alert(alert.Name, alert.Type)
+		a, _ := store.Alerts(alert.ObjectName, alert.ObjectType)
 
-		assert.Equal(t, a.Status, alert.Status)
+		assert.Equal(t, a[0].Status, alert.Status)
 	}
 }
 
@@ -90,13 +90,13 @@ func TestTrackEvents(t *testing.T) {
 	}
 
 	expectedAlerts := []model.Alert{
-		{Name: "ns1/pod1", Type: "event", Status: "Pending"},
-		{Name: "ns1/pod2", Type: "event", Status: "Pending"},
+		{ObjectName: "ns1/pod1", ObjectType: "event", Status: "Pending"},
+		{ObjectName: "ns1/pod2", ObjectType: "event", Status: "Pending"},
 	}
 	for _, alert := range expectedAlerts {
-		a, _ := store.Alert(alert.Name, alert.Type)
+		a, _ := store.Alerts(alert.ObjectName, alert.ObjectType)
 
-		assert.Equal(t, alert.Status, a.Status)
+		assert.Equal(t, alert.Status, a[0].Status)
 	}
 }
 
@@ -109,10 +109,10 @@ func TestEvaluatePendingAlerts(t *testing.T) {
 	currentTime := time.Now()
 	dummyNotificationsManager := notifications.NewDummyManager()
 	a := NewAlertStateManager(dummyNotificationsManager, *store, 2)
-	alert1 := model.Alert{Name: "n/p1", Type: "pod", Status: "Pending", LastStateChange: currentTime.Add(-1 * time.Minute).Unix()}
-	alert2 := model.Alert{Name: "n/p2", Type: "pod", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
-	alert3 := model.Alert{Name: "n/e1", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-4 * time.Minute).Unix()}
-	alert4 := model.Alert{Name: "n/e2", Type: "event", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
+	alert1 := model.Alert{ObjectName: "n/p1", ObjectType: "pod", Status: "Pending", LastStateChange: currentTime.Add(-1 * time.Minute).Unix()}
+	alert2 := model.Alert{ObjectName: "n/p2", ObjectType: "pod", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
+	alert3 := model.Alert{ObjectName: "n/e1", ObjectType: "event", Status: "Pending", LastStateChange: currentTime.Add(-4 * time.Minute).Unix()}
+	alert4 := model.Alert{ObjectName: "n/e2", ObjectType: "event", Status: "Pending", LastStateChange: currentTime.Add(-3 * time.Minute).Unix()}
 	alerts := []model.Alert{alert1, alert2, alert3, alert4}
 	for _, alert := range alerts {
 		store.CreateAlert(&alert)
@@ -130,22 +130,22 @@ func TestEvaluatePendingAlerts(t *testing.T) {
 	a.evaluatePendingAlerts()
 
 	expected := []model.Alert{
-		{Name: "n/p1", Type: "pod", Status: "Pending"},
-		{Name: "n/p2", Type: "pod", Status: "Firing"},
-		{Name: "n/e1", Type: "event", Status: "Pending"},
-		{Name: "n/e2", Type: "event", Status: "Firing"},
+		{ObjectName: "n/p1", ObjectType: "pod", Status: "Pending"},
+		{ObjectName: "n/p2", ObjectType: "pod", Status: "Firing"},
+		{ObjectName: "n/e1", ObjectType: "event", Status: "Pending"},
+		{ObjectName: "n/e2", ObjectType: "event", Status: "Firing"},
 	}
 	for _, alert := range expected {
-		a, _ := store.Alert(alert.Name, alert.Type)
-		assert.Equal(t, alert.Status, a.Status)
+		a, _ := store.Alerts(alert.ObjectName, alert.ObjectType)
+		assert.Equal(t, alert.Status, a[0].Status)
 	}
 }
 
 func TestPodFailedMessage(t *testing.T) {
 	msgPodFailed := notifications.AlertMessage{
 		Alert: model.Alert{
-			Type: "pod",
-			Name: "ns1/pod1",
+			ObjectType: "pod",
+			ObjectName: "ns1/pod1",
 			// StatusDesc: "Container failed",
 		},
 	}

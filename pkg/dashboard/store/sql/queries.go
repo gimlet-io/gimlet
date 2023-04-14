@@ -33,8 +33,10 @@ const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectFiringAlerts = "select-firing-alerts"
-const SelectAlertByNameAndType = "select-alert-by-name-and-type"
+const SelectAlertsByNameAndType = "select-alerts-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
+const DeleteAlertById = "DeleteAlertById"
+const UpdateAlertStatus = "UpdateAlertStatus"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -118,22 +120,26 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change
+SELECT id, type, name, status, object_status, object_status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Firing'
 ORDER BY last_state_change desc;
 `,
-		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, last_state_change
+		SelectAlertsByNameAndType: `
+SELECT id, type, name, status, object_status, object_status_desc, last_state_change
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change
+SELECT id, type, name, status, object_status, object_status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
+		DeleteAlertById: `
+DELETE FROM alerts where id = $1;`,
+		UpdateAlertStatus: `
+UPDATE alerts SET status = $1 WHERE id = $2;`,
 	},
 	"postgres": {
 		Dummy: `
@@ -216,21 +222,25 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change
+SELECT id, type, name, status, object_status, object_status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Firing'
 ORDER BY last_state_change desc;
 `,
-		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, last_state_change
+		SelectAlertsByNameAndType: `
+SELECT id, type, name, status, object_status, object_status_desc, last_state_change
 FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change
+SELECT id, type, name, status, object_status, object_status_desc, last_state_change
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
+		DeleteAlertById: `
+DELETE FROM alerts where id = $1;`,
+		UpdateAlertStatus: `
+UPDATE alerts SET status = $1 WHERE id = $2;`,
 	},
 }

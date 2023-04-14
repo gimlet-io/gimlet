@@ -41,6 +41,8 @@ const createTableGitopsCommits = "create-table-gitopsCommits"
 const createTableKubeEvents = "create-table-kube-events"
 const createTableAlerts = "create-table-alerts"
 const addCountColumnToKubeEventsTable = "addCountColumnToKubeEventsTable"
+const addObjectStatusToAlertsTable = "addObjectStatusToAlertsTable"
+const addObjectStatusDescToAlertsTable = "addObjectStatusDescToAlertsTable"
 
 type migration struct {
 	name string
@@ -251,6 +253,14 @@ UNIQUE(id)
 			name: addCountColumnToKubeEventsTable,
 			stmt: `ALTER TABLE kube_events ADD COLUMN count INTEGER default 0;`,
 		},
+		{
+			name: addObjectStatusToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN object_status TEXT default '';`,
+		},
+		{
+			name: addObjectStatusDescToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN object_status_desc TEXT default '';`,
+		},
 	},
 	"postgres": {
 		{
@@ -453,6 +463,14 @@ UNIQUE(id)
 		{
 			name: addCountColumnToKubeEventsTable,
 			stmt: `ALTER TABLE kube_events ADD COLUMN count INTEGER default 0;`,
+		},
+		{
+			name: addObjectStatusToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN object_status TEXT default '';`,
+		},
+		{
+			name: addObjectStatusDescToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN object_status_desc TEXT default '';`,
 		},
 	},
 }

@@ -10,17 +10,13 @@ const ALERT_OBJECT_TYPE_EVENT = "event"
 type Alert struct {
 	ID int64 `json:"-"  meddler:"id,pk"`
 
-	// TODO rename this to ObjectType
-	Type string `json:"type,omitempty"  meddler:"type"`
-	// TODO rename this to ObjectName
-	Name             string `json:"name,omitempty"  meddler:"name"`
-	DeploymentName   string `json:"deploymentName,omitempty"  meddler:"deployment_name"`
+	ObjectType       string `json:"type,omitempty"  meddler:"type"` // TODO rename this to object_type in db
+	ObjectName       string `json:"name,omitempty"  meddler:"name"` // TODO rename this to object_name in db
 	ObjectStatus     string `json:"objectStatus,omitempty"  meddler:"object_status"`
 	ObjectStatusDesc string `json:"objectStatusDesc,omitempty"  meddler:"object_status_desc"`
 
-	Status string `json:"status,omitempty"  meddler:"status"`
-	// StatusDesc      string `json:"statusDesc,omitempty"  meddler:"status_desc"`
-	LastStateChange int64 `json:"lastStateChange,omitempty"  meddler:"last_state_change"`
+	Status          string `json:"status,omitempty"  meddler:"status"`
+	LastStateChange int64  `json:"lastStateChange,omitempty"  meddler:"last_state_change"`
 }
 
 func (a *Alert) IsFiring() bool {

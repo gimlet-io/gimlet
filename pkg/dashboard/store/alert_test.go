@@ -14,9 +14,9 @@ func TestAlertCRUD(t *testing.T) {
 	}()
 
 	alert := model.Alert{
-		Type:   "pod",
-		Name:   "default/pod1",
-		Status: "Firing",
+		ObjectType: "pod",
+		ObjectName: "default/pod1",
+		Status:     "Firing",
 	}
 
 	err := s.CreateAlert(&alert)
@@ -26,9 +26,9 @@ func TestAlertCRUD(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(alerts))
 
-	a, err := s.Alert(alert.Name, alert.Type)
+	a, err := s.Alerts(alert.ObjectName, alert.ObjectType)
 	assert.Nil(t, err)
-	assert.Equal(t, alert.Name, a.Name)
+	assert.Equal(t, alert.ObjectName, a[0].ObjectName)
 }
 
 func TestGetPendingAlerts(t *testing.T) {
@@ -38,14 +38,14 @@ func TestGetPendingAlerts(t *testing.T) {
 	}()
 
 	alert1 := model.Alert{
-		Type:   "pod",
-		Name:   "default/pod1",
-		Status: "Pending",
+		ObjectType: "pod",
+		ObjectName: "default/pod1",
+		Status:     "Pending",
 	}
 
 	alert2 := model.Alert{
-		Name:   "default/pod2",
-		Status: "Firing",
+		ObjectName: "default/pod2",
+		Status:     "Firing",
 	}
 
 	s.CreateAlert(&alert1)

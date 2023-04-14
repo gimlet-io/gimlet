@@ -210,7 +210,7 @@ func update(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(update.Event, "pod") {
 		alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 		db := r.Context().Value("store").(*store.Store)
-		err := handlePodUpdate(alertStateManager, db, update)
+		err := notifyAlertManager(alertStateManager, db, update)
 		if err != nil {
 			logrus.Errorf("cannot handle pod update: %s", err)
 			http.Error(w, http.StatusText(500), 500)
@@ -256,8 +256,9 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
+func notifyAlertManager(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
 	if update.Event == agent.EventPodDeleted {
+		alertStateManager.PodDeleted(update.Subject)
 		return nil
 	}
 

@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	queries "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
@@ -23,29 +22,37 @@ func (db *Store) FiringAlerts() ([]*model.Alert, error) {
 	return data, err
 }
 
-func (db *Store) Alert(name string, alertType string) (*model.Alert, error) {
-	stmt := queries.Stmt(db.driver, queries.SelectAlertByNameAndType)
-	alert := new(model.Alert)
-	err := meddler.QueryRow(db, alert, stmt, name, alertType)
+func (db *Store) Alerts(objectName string, objectType string) ([]*model.Alert, error) {
+	stmt := queries.Stmt(db.driver, queries.SelectAlertsByNameAndType)
 
-	return alert, err
+	data := []*model.Alert{}
+	err := meddler.QueryAll(db, &data, stmt, objectName, objectType)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return data, err
 }
 
 func (db *Store) CreateAlert(alert *model.Alert) error {
 	return meddler.Insert(db, "alerts", alert)
 }
 
-func (db *Store) UpdateAlert(alert *model.Alert) error {
-	storedAlert, err := db.Alert(alert.Name, alert.Type)
+func (db *Store) DeleteAlert(id int64) error {
+	stmt := queries.Stmt(db.driver, queries.DeleteAlertById)
+	_, err := db.Exec(stmt, id)
 
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	storedAlert.Status = alert.Status
-	// storedAlert.StatusDesc = alert.StatusDesc
-	storedAlert.LastStateChange = time.Now().Unix()
-	return meddler.Update(db, "alerts", storedAlert)
+func (db *Store) UpdateAlertStatus(id int64, status string) error {
+	stmt := queries.Stmt(db.driver, queries.UpdateAlertStatus)
+	_, err := db.Exec(stmt, status, id)
+
+	return err
 }
 
 func (db *Store) PendingAlerts() ([]*model.Alert, error) {
