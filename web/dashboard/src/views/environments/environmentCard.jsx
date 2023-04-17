@@ -457,7 +457,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </div>
             }
             {!isOnline && !gimletAgentConfigured &&
-              <div className="rounded-md bg-blue-50 p-4">
+              <div className="rounded-md bg-blue-50 p-4 mb-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
@@ -479,6 +479,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 </div>
               </div>
             }
+            <div className="mb-1 text-sm text-gray-500">
+              {env.repoPerEnv && <span className="flex"><p className="mr-1 font-medium">Separate environments by git repositories setting</p> is enabled for this environment.</span>}
+              {env.kustomizationPerApp && <span className="flex"><p className="mr-1 font-medium">Kustomization per app setting</p> is enabled for this environment.</span>}
+            </div>
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">

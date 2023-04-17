@@ -69,7 +69,7 @@ FROM key_values
 WHERE key = $1;
 `,
 		SelectEnvironments: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app
 FROM environments
 ORDER BY name asc;
 `,
@@ -167,7 +167,7 @@ FROM key_values
 WHERE key = $1;
 `,
 		SelectEnvironments: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app
 FROM environments
 ORDER BY name asc;
 `,
