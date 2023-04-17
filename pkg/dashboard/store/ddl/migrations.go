@@ -172,11 +172,7 @@ CREATE TABLE IF NOT EXISTS key_values (
 		},
 		{
 			name: addKustomizationPerAppToEnvironmentsTable,
-			stmt: `ALTER TABLE environments ADD COLUMN kustomization_per_app TEXT;`,
-		},
-		{
-			name: defaultValueForKustomizationPerApp,
-			stmt: `update environments set kustomization_per_app=false where kustomization_per_app is null;`,
+			stmt: `ALTER TABLE environments ADD COLUMN kustomization_per_app BOOLEAN DEFAULT 1;`,
 		},
 		{
 			name: createTablePods,
@@ -379,11 +375,7 @@ CREATE TABLE IF NOT EXISTS key_values (
 		},
 		{
 			name: addKustomizationPerAppToEnvironmentsTable,
-			stmt: `ALTER TABLE environments ADD COLUMN kustomization_per_app TEXT;`,
-		},
-		{
-			name: defaultValueForKustomizationPerApp,
-			stmt: `update environments set kustomization_per_app=false where kustomization_per_app is null;`,
+			stmt: `ALTER TABLE environments ADD COLUMN kustomization_per_app BOOLEAN DEFAULT 1;`,
 		},
 		{
 			name: createTablePods,
