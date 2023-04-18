@@ -38,10 +38,10 @@ HOST=$HOST ./gimlet-installer
 
 echo " ✅ Installer stopped"
 
-until [ $(kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A | grep gitops-repo | grep True | wc -l) -eq 4 ]
+until [ $(kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A | grep gitops-repo | grep True | wc -l) -eq 3 ]
 do
   echo ""
-  echo " 🧐 Waiting for all four gitops kustomizations become ready, ctrl+c to abort"
+  echo " 🧐 Waiting for all three gitops kustomizations become ready, ctrl+c to abort"
   echo ""
   echo "$ kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A"
   kubectl get kustomizations.kustomize.toolkit.fluxcd.io -A | grep -w 'gitops-repo\|READY'
