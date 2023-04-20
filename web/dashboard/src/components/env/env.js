@@ -166,12 +166,12 @@ function fileName(fileInfos, appName) {
 }
 
 function emptyState(searchFilter, envConfigs, newConfig, envName, repoName) {
+  if (!envConfigs) {
+    return emptyStateDeployThisRepo(newConfig, envName, repoName);
+  }
+
   if (searchFilter !== '') {
     return emptyStateSearch()
-  } else {
-    if (!envConfigs) {
-      return emptyStateDeployThisRepo(newConfig, envName, repoName);
-    }
   }
 }
 
