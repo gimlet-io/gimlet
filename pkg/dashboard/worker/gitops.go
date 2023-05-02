@@ -952,8 +952,6 @@ func kustomizationTemplateAndWrite(
 	owner, repository := server.ParseRepo(repoName)
 	kustomizationName := uniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App)
 	sourceName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
-	// TODO fix on branch fix/kustomization-per-app (per-app kustomizations were broken as generated as they didn't reference an existing GitRepository)
-	// TODO sourceName = gitops.GitopsRepoFileNameFromRepo(repoTmpPath, fluxPath)
 	kustomizationManifest, err := sync.GenerateKustomizationForApp(
 		manifest.App,
 		manifest.Env,
