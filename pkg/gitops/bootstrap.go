@@ -11,7 +11,9 @@ import (
 
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
+	"github.com/go-git/go-git/v5"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -67,10 +69,20 @@ func GenerateManifests(
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
 
-		gitopsRepoName = fmt.Sprintf("gitops-repo-%s", UniqueName(singleEnv, owner, repoName, env))
-		gitopsRepoFileName = gitopsRepoName + ".yaml"
+		gitopsRepoName = uniqueGitopsRepoName(singleEnv, owner, repoName, env)
+		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s.yaml", UniqueName(singleEnv, owner, repoName, env))
 		secretName := fmt.Sprintf("deploy-key-%s", UniqueName(singleEnv, owner, repoName, env))
 		secretFileName = secretName + ".yaml"
+
+		fluxPath := filepath.Join(env, "flux")
+		if singleEnv {
+			fluxPath = "flux"
+		}
+		existingGitopsRepoFileName := GitopsRepoFileNameFromRepo(gitopsRepoPath, fluxPath)
+		if existingGitopsRepoFileName != "" {
+			gitopsRepoName = strings.TrimSuffix(existingGitopsRepoFileName, ".yaml")
+			gitopsRepoFileName = existingGitopsRepoFileName
+		}
 
 		syncOpts := sync.Options{
 			Interval:             15 * time.Second,
@@ -90,10 +102,7 @@ func GenerateManifests(
 			syncOpts.TargetPath = ""
 		}
 		if kustomizationPerApp {
-			syncOpts.TargetPath = filepath.Join(env, "flux")
-			if singleEnv {
-				syncOpts.TargetPath = "flux"
-			}
+			syncOpts.TargetPath = fluxPath
 		}
 		syncManifest, err := sync.Generate(syncOpts)
 		if err != nil {
@@ -151,25 +160,21 @@ func UniqueName(singleEnv bool, owner string, repoName string, env string) strin
 	return uniqueName
 }
 
-func UniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {
+func uniqueGitopsRepoName(singleEnv bool, owner string, repoName string, env string) string {
 	if len(owner) > 10 {
 		owner = owner[:10]
 	}
 	repoName = strings.TrimPrefix(repoName, "gitops-")
 
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s-%s",
+	uniqueName := fmt.Sprintf("%s-%s-%s",
 		strings.ToLower(owner),
 		strings.ToLower(repoName),
 		strings.ToLower(env),
-		strings.ToLower(namespace),
-		strings.ToLower(appName),
 	)
 	if singleEnv {
-		uniqueName = fmt.Sprintf("%s-%s-%s-%s",
+		uniqueName = fmt.Sprintf("%s-%s",
 			strings.ToLower(owner),
 			strings.ToLower(repoName),
-			strings.ToLower(namespace),
-			strings.ToLower(appName),
 		)
 	}
 	return uniqueName
@@ -254,4 +259,20 @@ func generateDeployKey(host string, name string) (string, []byte, error) {
 
 	yamlString, err := yaml.Marshal(secret)
 	return string(publicKeyBytes), yamlString, err
+}
+
+func GitopsRepoFileNameFromRepo(repoPath string, contentPath string) string {
+	repo, err := git.PlainOpen(repoPath)
+	if err == git.ErrRepositoryNotExists {
+		return ""
+	}
+	branch, _ := helper.HeadBranch(repo)
+
+	files, _ := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, contentPath)
+	for fileName := range files {
+		if strings.Contains(fileName, "gitops-repo") {
+			return fileName
+		}
+	}
+	return ""
 }

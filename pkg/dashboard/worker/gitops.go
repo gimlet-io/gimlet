@@ -950,7 +950,7 @@ func kustomizationTemplateAndWrite(
 	}
 
 	owner, repository := server.ParseRepo(repoName)
-	kustomizationName := bootstrap.UniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App)
+	kustomizationName := uniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App)
 	sourceName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
 	kustomizationManifest, err := sync.GenerateKustomizationForApp(
 		manifest.App,
@@ -974,4 +974,28 @@ func kustomizationTemplateAndWrite(
 	}
 
 	return nativeGit.Commit(repo, fmt.Sprintf("[Gimlet] %s/%s %s", manifest.Env, manifest.App, "automated deploy"))
+}
+
+func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {
+	if len(owner) > 10 {
+		owner = owner[:10]
+	}
+	repoName = strings.TrimPrefix(repoName, "gitops-")
+
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s-%s",
+		strings.ToLower(owner),
+		strings.ToLower(repoName),
+		strings.ToLower(env),
+		strings.ToLower(namespace),
+		strings.ToLower(appName),
+	)
+	if singleEnv {
+		uniqueName = fmt.Sprintf("%s-%s-%s-%s",
+			strings.ToLower(owner),
+			strings.ToLower(repoName),
+			strings.ToLower(namespace),
+			strings.ToLower(appName),
+		)
+	}
+	return uniqueName
 }
