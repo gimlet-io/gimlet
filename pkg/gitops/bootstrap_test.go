@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/alecthomas/assert"
+	"gotest.tools/assert"
 )
 
 func Test_parseRepoURL(t *testing.T) {
@@ -281,12 +281,10 @@ func Test_uniqueKustomizationName(t *testing.T) {
 	owner := "gimlet-io"
 	repoName := "gitops-staging-infra"
 	env := "staging"
-	namespace := "my-team"
-	appName := "myapp"
-	uniqueName := UniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
-	assert.Equal(t, "gimlet-io-staging-infra-staging-my-team-myapp", uniqueName)
+	uniqueName := uniqueKustomizationName(singleEnv, owner, repoName, env)
+	assert.Equal(t, "gimlet-io-staging-infra-staging", uniqueName)
 
 	singleEnv = true
-	uniqueName = UniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
-	assert.Equal(t, "gimlet-io-staging-infra-my-team-myapp", uniqueName)
+	uniqueName = uniqueKustomizationName(singleEnv, owner, repoName, env)
+	assert.Equal(t, "gimlet-io-staging-infra", uniqueName)
 }

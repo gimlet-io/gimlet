@@ -592,3 +592,18 @@ func Test_kustomizationTemplateAndWrite(t *testing.T) {
 	content, _ = nativeGit.Content(repo, "flux/kustomization-myapp.yaml")
 	assert.True(t, len(content) > 1)
 }
+
+func Test_uniqueKustomizationName(t *testing.T) {
+	singleEnv := false
+	owner := "gimlet-io"
+	repoName := "gitops-staging-infra"
+	env := "staging"
+	namespace := "my-team"
+	appName := "myapp"
+	uniqueName := uniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
+	assert.Equal(t, "gimlet-io-staging-infra-staging-my-team-myapp", uniqueName)
+
+	singleEnv = true
+	uniqueName = uniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
+	assert.Equal(t, "gimlet-io-staging-infra-my-team-myapp", uniqueName)
+}
