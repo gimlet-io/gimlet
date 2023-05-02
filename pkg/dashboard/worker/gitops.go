@@ -595,6 +595,7 @@ func cloneTemplateWriteAndPush(
 		kustomizationManifest, err = kustomizationTemplate(
 			manifest,
 			envFromStore.AppsRepo,
+			repoTmpPath,
 			envFromStore.RepoPerEnv,
 		)
 		if err != nil {
@@ -951,11 +952,22 @@ func saveAndBroadcastGitopsCommit(
 func kustomizationTemplate(
 	manifest *dx.Manifest,
 	repoName string,
+	repoPath string,
 	repoPerEnv bool,
 ) (*manifestgen.Manifest, error) {
 	owner, repository := server.ParseRepo(repoName)
 	kustomizationName := uniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App)
-	sourceName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
+	fluxPath := filepath.Join(manifest.Env, "flux")
+	if repoPerEnv {
+		fluxPath = "flux"
+	}
+
+	gitopsRepoFileName := bootstrap.GitopsRepoFileNameFromRepo(repoPath, fluxPath)
+	sourceName := strings.TrimSuffix(gitopsRepoFileName, ".yaml")
+	if sourceName == "" {
+		sourceName = bootstrap.UniqueGitopsRepoName(repoPerEnv, owner, repoName, manifest.Env)
+	}
+
 	return sync.GenerateKustomizationForApp(
 		manifest.App,
 		manifest.Env,

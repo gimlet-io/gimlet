@@ -570,6 +570,13 @@ func Test_cleanupTrigger(t *testing.T) {
 }
 
 func Test_kustomizationTemplateAndWrite(t *testing.T) {
+	dirToWrite, err := ioutil.TempDir("/tmp", "gimlet")
+	defer os.RemoveAll(dirToWrite)
+	if err != nil {
+		t.Errorf("Cannot create directory")
+		return
+	}
+
 	m := &dx.Manifest{
 		Env: "staging",
 		App: "myapp",
@@ -577,13 +584,13 @@ func Test_kustomizationTemplateAndWrite(t *testing.T) {
 	repoName := "test/test-app"
 	repoPerEnv := false
 
-	kustomization, err := kustomizationTemplate(m, repoName, repoPerEnv)
+	kustomization, err := kustomizationTemplate(m, repoName, dirToWrite, repoPerEnv)
 	assert.Nil(t, err)
 	assert.True(t, kustomization != nil)
 	assert.Equal(t, "staging/flux/kustomization-myapp.yaml", kustomization.Path)
 
 	repoPerEnv = true
-	kustomization, err = kustomizationTemplate(m, repoName, repoPerEnv)
+	kustomization, err = kustomizationTemplate(m, repoName, dirToWrite, repoPerEnv)
 	assert.Nil(t, err)
 	assert.True(t, kustomization != nil)
 	assert.Equal(t, "flux/kustomization-myapp.yaml", kustomization.Path)
