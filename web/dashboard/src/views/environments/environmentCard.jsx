@@ -65,7 +65,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const [tabs, setTabs] = useState([
-    { name: "Gitops repositories", current: tab === "" },
+    { name: "Gitops configs", current: tab === "" },
     { name: "Infrastructure components", current: tab === "components" },
     { name: "Gitops commits", current: tab === "gitops-commits" }
   ]);
@@ -211,22 +211,34 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       return null;
     }
 
+    const isRepoPerEnvEnabled = env.repoPerEnv ? "enabled" : "disabled";
+    const isKustomizationPerAppEnabled = env.kustomizationPerApp ? "enabled" : "disabled";
+
     return (
-      <div className="mt-4">
-        {gitopsRepositories.map((gitopsRepo) =>
-        (
-          <div className="flex" key={gitopsRepo.href}>
-            <a className="mb-1 font-mono text-sm text-gray-500 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}
-              <svg xmlns="http://www.w3.org/2000/svg"
-                className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
-                viewBox="0 0 24 24">
-                <path d="M0 0h24v24H0z" fill="none" />
-                <path
-                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-              </svg>
-            </a>
+      <div className="mt-4 text-sm text-gray-500">
+        <div className="mb-2">
+          <span className="flex"><p className="mr-1 font-medium">Kustomization per app setting</p> is {isKustomizationPerAppEnabled} for this environment.</span>
+          <span className="flex"><p className="mr-1 font-medium">Separate environments by git repositories setting</p> is {isRepoPerEnvEnabled} for this environment.</span>
+        </div>
+        <div className="mb-1">
+          <span>Gitops repositories:</span>
+          <div className="ml-4 mt-2 font-mono">
+            {gitopsRepositories.map((gitopsRepo) =>
+            (
+              <div className="flex" key={gitopsRepo.href}>
+                <a className="mb-1 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
+                    viewBox="0 0 24 24">
+                    <path d="M0 0h24v24H0z" fill="none" />
+                    <path
+                      d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                  </svg>
+                </a>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     )
   }
@@ -479,10 +491,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 </div>
               </div>
             }
-            <div className="mb-1 text-sm text-gray-500">
-              {env.repoPerEnv && <span className="flex"><p className="mr-1 font-medium">Separate environments by git repositories setting</p> is enabled for this environment.</span>}
-              {env.kustomizationPerApp && <span className="flex"><p className="mr-1 font-medium">Kustomization per app setting</p> is enabled for this environment.</span>}
-            </div>
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
