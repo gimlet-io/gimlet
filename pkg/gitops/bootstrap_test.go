@@ -276,15 +276,15 @@ func Test_generateManifestProviderAndAlert(t *testing.T) {
 	}
 }
 
-func Test_uniqueKustomizationName(t *testing.T) {
+func Test_uniqueGitopsRepoName(t *testing.T) {
 	singleEnv := false
 	owner := "gimlet-io"
 	repoName := "gitops-staging-infra"
 	env := "staging"
-	uniqueName := uniqueKustomizationName(singleEnv, owner, repoName, env)
+	uniqueName := uniqueGitopsRepoName(singleEnv, owner, repoName, env)
 	assert.Equal(t, "gimlet-io-staging-infra-staging", uniqueName)
 
 	singleEnv = true
-	uniqueName = uniqueKustomizationName(singleEnv, owner, repoName, env)
+	uniqueName = uniqueGitopsRepoName(singleEnv, owner, repoName, env)
 	assert.Equal(t, "gimlet-io-staging-infra", uniqueName)
 }

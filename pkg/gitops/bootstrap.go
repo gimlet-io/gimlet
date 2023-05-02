@@ -69,7 +69,7 @@ func GenerateManifests(
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
 
-		gitopsRepoName = uniqueKustomizationName(singleEnv, owner, repoName, env)
+		gitopsRepoName = uniqueGitopsRepoName(singleEnv, owner, repoName, env)
 		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s.yaml", UniqueName(singleEnv, owner, repoName, env))
 		secretName := fmt.Sprintf("deploy-key-%s", UniqueName(singleEnv, owner, repoName, env))
 		secretFileName = secretName + ".yaml"
@@ -160,7 +160,7 @@ func UniqueName(singleEnv bool, owner string, repoName string, env string) strin
 	return uniqueName
 }
 
-func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env string) string {
+func uniqueGitopsRepoName(singleEnv bool, owner string, repoName string, env string) string {
 	if len(owner) > 10 {
 		owner = owner[:10]
 	}
