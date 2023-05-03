@@ -215,14 +215,14 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     const isKustomizationPerAppEnabled = env.kustomizationPerApp ? "enabled" : "disabled";
 
     return (
-      <div className="mt-4 text-sm text-gray-500">
-        <div className="mb-2">
-          <span className="flex"><p className="mr-1 font-medium">Kustomization per app setting</p> is {isKustomizationPerAppEnabled} for this environment.</span>
-          <span className="flex"><p className="mr-1 font-medium">Separate environments by git repositories setting</p> is {isRepoPerEnvEnabled} for this environment.</span>
+      <div className="mt-4 text-sm text-gray-500 px-2">
+        <div className="space-y-1">
+          <span className="flex"><p className="mr-1 font-semibold text-gray-600">Kustomization per app setting</p> is {isKustomizationPerAppEnabled} for this environment.</span>
+          <span className="flex"><p className="mr-1 font-semibold text-gray-600">Separate environments by git repositories setting</p> is {isRepoPerEnvEnabled} for this environment.</span>
         </div>
-        <div className="mb-1">
-          <span>Gitops repositories:</span>
-          <div className="ml-4 mt-2 font-mono">
+        <div className="mt-4 mb-1">
+          <span className="font-bold text-gray-600">Gitops repositories</span>
+          <div className="ml-4 mt-1 font-mono">
             {gitopsRepositories.map((gitopsRepo) =>
             (
               <div className="flex" key={gitopsRepo.href}>
