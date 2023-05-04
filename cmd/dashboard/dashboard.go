@@ -42,14 +42,17 @@ func main() {
 		log.Traceln(config.String())
 	}
 
-	if config.Host == "" {
-		panic(fmt.Errorf("please provide the HOST variable"))
-	}
+	// TODO host is used in OAuth, agent-dash communication, flux-dash communication, and on the frontend
+	// if config.Host == "" {
+	// 	panic(fmt.Errorf("please provide the HOST variable"))
+	// }
+
 	if config.JWTSecret == "" {
-		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
+		// TODO JWT secret should be generated if not provided, then persisted in the DB backed config module
+		// panic(fmt.Errorf("please provide the JWT_SECRET variable"))
 	}
 
-	agentHub := streaming.NewAgentHub(config)
+	agentHub := streaming.NewAgentHub()
 	go agentHub.Run()
 
 	clientHub := streaming.NewClientHub()
@@ -155,16 +158,17 @@ func main() {
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
 
-	if config.ReleaseStats == "enabled" {
-		releaseStateWorker := &worker.ReleaseStateWorker{
-			RepoCache: dashboardRepoCache,
-			Releases:  releases,
-			Perf:      perf,
-			Store:     store,
-			Config:    config,
-		}
-		go releaseStateWorker.Run()
-	}
+	// TODO
+	// if config.ReleaseStats == "enabled" {
+	// 	releaseStateWorker := &worker.ReleaseStateWorker{
+	// 		RepoCache: dashboardRepoCache,
+	// 		Releases:  releases,
+	// 		Perf:      perf,
+	// 		Store:     store,
+	// 		Config:    config,
+	// 	}
+	// 	go releaseStateWorker.Run()
+	// }
 
 	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
 		tokenManager,
