@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/fluxcd/flux2/pkg/manifestgen"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -227,7 +228,7 @@ func processBranchDeletedEvent(
 			continue
 		}
 
-		repoName, _, err := gitopsRepoForEnv(store, env.Env)
+		envFromStore, err := store.GetEnvironment(env.Env)
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +236,7 @@ func processBranchDeletedEvent(
 		result := model.Result{
 			Manifest:    env,
 			TriggeredBy: "policy",
-			GitopsRepo:  repoName,
+			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
 		err = env.Cleanup.ResolveVars(map[string]string{
@@ -314,7 +315,7 @@ func processReleaseEvent(
 			continue
 		}
 
-		repoName, _, err := gitopsRepoForEnv(store, manifest.Env)
+		envFromStore, err := store.GetEnvironment(manifest.Env)
 		if err != nil {
 			return deployResults, err
 		}
@@ -324,7 +325,7 @@ func processReleaseEvent(
 			Artifact:    artifact,
 			TriggeredBy: releaseRequest.TriggeredBy,
 			Status:      model.Success,
-			GitopsRepo:  repoName,
+			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
 		err = manifest.ResolveVars(artifact.CollectVariables())
@@ -386,13 +387,13 @@ func processRollbackEvent(
 		return nil, fmt.Errorf("cannot parse release request with id: %s", event.ID)
 	}
 
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, rollbackRequest.Env)
+	envFromStore, err := store.GetEnvironment(rollbackRequest.Env)
 	if err != nil {
 		return nil, err
 	}
 
 	t0 := time.Now().UnixNano()
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(repoName)
+	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
@@ -404,7 +405,7 @@ func processRollbackEvent(
 	err = revertTo(
 		rollbackRequest.Env,
 		rollbackRequest.App,
-		repoPerEnv,
+		envFromStore.RepoPerEnv,
 		repo,
 		repoTmpPath,
 		rollbackRequest.TargetSHA,
@@ -419,12 +420,12 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = nativeGit.NativePushWithToken(repoTmpPath, repoName, nonImpersonatedToken, head.Name().Short())
+	err = nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, nonImpersonatedToken, head.Name().Short())
 	if err != nil {
 		logrus.Errorf("could not push to git with native command: %s", err)
 		return nil, fmt.Errorf("could not push to git. Check server logs")
 	}
-	gitopsRepoCache.InvalidateNow(repoName)
+	gitopsRepoCache.InvalidateNow(envFromStore.AppsRepo)
 
 	rollbackResults := []model.Result{}
 
@@ -434,7 +435,7 @@ func processRollbackEvent(
 			TriggeredBy:     rollbackRequest.TriggeredBy,
 			Status:          model.Success,
 			GitopsRef:       hash,
-			GitopsRepo:      repoName,
+			GitopsRepo:      envFromStore.AppsRepo,
 		})
 	}
 
@@ -494,7 +495,7 @@ func processArtifactEvent(
 			continue
 		}
 
-		repoName, _, err := gitopsRepoForEnv(dao, manifest.Env)
+		envFromStore, err := dao.GetEnvironment(manifest.Env)
 		if err != nil {
 			return deployResults, err
 		}
@@ -504,7 +505,7 @@ func processArtifactEvent(
 			Artifact:    artifact,
 			TriggeredBy: "policy",
 			Status:      model.Success,
-			GitopsRepo:  repoName,
+			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
 		err = manifest.ResolveVars(artifact.CollectVariables())
@@ -578,25 +579,28 @@ func cloneTemplateWriteAndPush(
 ) (string, error) {
 	t0 := time.Now()
 
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, manifest.Env)
+	envFromStore, err := store.GetEnvironment(manifest.Env)
 	if err != nil {
 		return "", err
 	}
 
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(repoName)
+	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
 
-	kustomizationSha, err := kustomizationTemplateAndWrite(
-		repo,
-		manifest,
-		repoName,
-		repoPerEnv,
-	)
-	if err != nil {
-		return "", err
+	var kustomizationManifest *manifestgen.Manifest
+	if envFromStore.KustomizationPerApp {
+		kustomizationManifest, err = kustomizationTemplate(
+			manifest,
+			envFromStore.AppsRepo,
+			repoTmpPath,
+			envFromStore.RepoPerEnv,
+		)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	sha, err := gitopsTemplateAndWrite(
@@ -604,23 +608,24 @@ func cloneTemplateWriteAndPush(
 		manifest,
 		releaseMeta,
 		githubChartAccessToken,
-		repoPerEnv,
+		envFromStore.RepoPerEnv,
+		kustomizationManifest,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	if sha != "" || kustomizationSha != "" { // if there is a change to push
+	if sha != "" { // if there is a change to push
 		operation := func() error {
 			head, _ := repo.Head()
-			return nativeGit.NativePushWithToken(repoTmpPath, repoName, githubChartAccessToken, head.Name().Short())
+			return nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, githubChartAccessToken, head.Name().Short())
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.InvalidateNow(repoName)
+		gitopsRepoCache.InvalidateNow(envFromStore.AppsRepo)
 	}
 
 	perf.WithLabelValues("gitops_cloneTemplateWriteAndPush").Observe(float64(time.Since(t0).Seconds()))
@@ -637,20 +642,35 @@ func cloneTemplateDeleteAndPush(
 	nonImpersonatedToken string,
 	store *store.Store,
 ) (string, error) {
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, env)
+	envFromStore, err := store.GetEnvironment(env)
 	if err != nil {
 		return "", err
 	}
 
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(repoName)
+	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
 
 	path := filepath.Join(env, cleanupPolicy.AppToCleanup)
-	if repoPerEnv {
+	if envFromStore.RepoPerEnv {
 		path = cleanupPolicy.AppToCleanup
+	}
+
+	if envFromStore.KustomizationPerApp {
+		kustomizationFilePath := filepath.Join(env, "flux", fmt.Sprintf("kustomization-%s.yaml", cleanupPolicy.AppToCleanup))
+		if envFromStore.RepoPerEnv {
+			kustomizationFilePath = filepath.Join("flux", fmt.Sprintf("kustomization-%s.yaml", cleanupPolicy.AppToCleanup))
+		}
+		worktree, err := repo.Worktree()
+		if err != nil {
+			return "", err
+		}
+		_, err = worktree.Remove(kustomizationFilePath)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	err = nativeGit.DelDir(repo, path)
@@ -671,11 +691,11 @@ func cloneTemplateDeleteAndPush(
 
 	if sha != "" { // if there is a change to push
 		head, _ := repo.Head()
-		err = nativeGit.NativePushWithToken(repoTmpPath, repoName, nonImpersonatedToken, head.Name().Short())
+		err = nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, nonImpersonatedToken, head.Name().Short())
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.InvalidateNow(repoName)
+		gitopsRepoCache.InvalidateNow(envFromStore.AppsRepo)
 	}
 
 	return sha, nil
@@ -742,6 +762,7 @@ func gitopsTemplateAndWrite(
 	release *dx.Release,
 	tokenForChartClone string,
 	repoPerEnv bool,
+	kustomizationManifest *manifestgen.Manifest,
 ) (string, error) {
 	if strings.HasPrefix(manifest.Chart.Name, "git@") {
 		return "", fmt.Errorf("only HTTPS git repo urls supported in GimletD for git based charts")
@@ -765,6 +786,10 @@ func gitopsTemplateAndWrite(
 	logrus.Infof("Helm template took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
 	files := dx.SplitHelmOutput(map[string]string{"manifest.yaml": templatedManifests})
+
+	if kustomizationManifest != nil {
+		files[kustomizationManifest.Path] = kustomizationManifest.Content
+	}
 
 	releaseString, err := json.Marshal(release)
 	if err != nil {
@@ -924,56 +949,31 @@ func saveAndBroadcastGitopsCommit(
 	}
 }
 
-func gitopsRepoForEnv(db *store.Store, env string) (string, bool, error) {
-	envsFromDB, err := db.GetEnvironments()
-	if err != nil {
-		return "", false, fmt.Errorf("cannot get environments from database: %s", err)
-	}
-
-	for _, e := range envsFromDB {
-		if e.Name == env {
-			return e.AppsRepo, e.RepoPerEnv, nil
-		}
-	}
-	return "", false, fmt.Errorf("no such environment: %s", env)
-}
-
-func kustomizationTemplateAndWrite(
-	repo *git.Repository,
+func kustomizationTemplate(
 	manifest *dx.Manifest,
 	repoName string,
+	repoPath string,
 	repoPerEnv bool,
-) (string, error) {
-	w, err := repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("cannot get worktree %s", err)
-	}
-
+) (*manifestgen.Manifest, error) {
 	owner, repository := server.ParseRepo(repoName)
 	kustomizationName := uniqueKustomizationName(repoPerEnv, owner, repository, manifest.Env, manifest.Namespace, manifest.App)
-	sourceName := fmt.Sprintf("gitops-repo-%s", bootstrap.UniqueName(repoPerEnv, owner, repository, manifest.Env))
-	kustomizationManifest, err := sync.GenerateKustomizationForApp(
+	fluxPath := filepath.Join(manifest.Env, "flux")
+	if repoPerEnv {
+		fluxPath = "flux"
+	}
+
+	_, gitopsRepoMetaName := bootstrap.GitopsRepoFileAndMetaNameFromRepo(repoPath, fluxPath)
+	sourceName := gitopsRepoMetaName
+	if sourceName == "" {
+		sourceName = bootstrap.UniqueGitopsRepoName(repoPerEnv, owner, repoName, manifest.Env)
+	}
+
+	return sync.GenerateKustomizationForApp(
 		manifest.App,
 		manifest.Env,
 		kustomizationName,
 		sourceName,
 		repoPerEnv)
-	if err != nil {
-		return "", fmt.Errorf("cannot generate kustomization: %s", err)
-	}
-	err = nativeGit.StageFile(w, kustomizationManifest.Content, kustomizationManifest.Path)
-	if err != nil {
-		return "", fmt.Errorf("cannot stage file: %s", err)
-	}
-	empty, err := nativeGit.NothingToCommit(repo)
-	if err != nil {
-		return "", fmt.Errorf("cannot determine git status: %s", err)
-	}
-	if empty {
-		return "", nil
-	}
-
-	return nativeGit.Commit(repo, fmt.Sprintf("[Gimlet] %s/%s %s", manifest.Env, manifest.App, "automated deploy"))
 }
 
 func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {

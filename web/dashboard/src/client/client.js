@@ -53,7 +53,7 @@ export default class GimletClient {
 
   getAlerts = () => this.getWithAxios("/api/alerts");
   
-  bootstrapGitops = (envName, repoPerEnv, infraRepo, appsRepo) => this.postWithAxios('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, infraRepo, appsRepo }));
+  bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo) => this.postWithAxios('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo }));
 
   saveEnvToDB = (envName) => this.postWithAxios("/api/saveEnvToDB", JSON.stringify(envName));
 

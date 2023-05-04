@@ -463,6 +463,13 @@ func CommitFilesToGit(
 		if !strings.HasSuffix(content, "\n") {
 			content = content + "\n"
 		}
+		if strings.Contains(path, fmt.Sprintf("kustomization-%s.yaml", app)) {
+			err = StageFile(w, content, path)
+			if err != nil {
+				return "", fmt.Errorf("cannot stage file %s", err)
+			}
+			continue
+		}
 
 		err = StageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
 		if err != nil {

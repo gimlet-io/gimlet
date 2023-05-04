@@ -281,10 +281,10 @@ func Test_uniqueGitopsRepoName(t *testing.T) {
 	owner := "gimlet-io"
 	repoName := "gitops-staging-infra"
 	env := "staging"
-	uniqueName := uniqueGitopsRepoName(singleEnv, owner, repoName, env)
+	uniqueName := UniqueGitopsRepoName(singleEnv, owner, repoName, env)
 	assert.Equal(t, "gimlet-io-staging-infra-staging", uniqueName)
 
 	singleEnv = true
-	uniqueName = uniqueGitopsRepoName(singleEnv, owner, repoName, env)
+	uniqueName = UniqueGitopsRepoName(singleEnv, owner, repoName, env)
 	assert.Equal(t, "gimlet-io-staging-infra", uniqueName)
 }

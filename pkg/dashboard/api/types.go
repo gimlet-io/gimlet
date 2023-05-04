@@ -71,16 +71,19 @@ type GitopsEnv struct {
 	Name                        string                 `json:"name"`
 	InfraRepo                   string                 `json:"infraRepo"`
 	AppsRepo                    string                 `json:"appsRepo"`
+	RepoPerEnv                  bool                   `json:"repoPerEnv"`
+	KustomizationPerApp         bool                   `json:"kustomizationPerApp"`
 	StackConfig                 *dx.StackConfig        `json:"stackConfig"`
 	StackDefinition             map[string]interface{} `json:"stackDefinition"`
 	DeploymentAutomationEnabled bool                   `json:"deploymentAutomationEnabled"`
 }
 
 type GitopsBootstrapConfig struct {
-	EnvName    string `json:"envName"`
-	RepoPerEnv bool   `json:"repoPerEnv"`
-	InfraRepo  string `json:"infraRepo"`
-	AppsRepo   string `json:"appsRepo"`
+	EnvName            string `json:"envName"`
+	RepoPerEnv         bool   `json:"repoPerEnv"`
+	KusomizationPerApp bool   `json:"kustomizationPerApp"`
+	InfraRepo          string `json:"infraRepo"`
+	AppsRepo           string `json:"appsRepo"`
 }
 
 type Stack struct {

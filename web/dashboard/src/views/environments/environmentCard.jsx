@@ -4,6 +4,7 @@ import { InformationCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
+import KustomizationPerApp from './kustomizationPerApp';
 import GitopsAutomationGuide from './gitopsAutomationGuide';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
@@ -20,6 +21,7 @@ import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
 const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true)
+  const [kustomizationPerApp, setKustomizationPerApp] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
   const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
@@ -63,7 +65,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
   }
 
   const [tabs, setTabs] = useState([
-    { name: "Gitops repositories", current: tab === "" },
+    { name: "Gitops configs", current: tab === "" },
     { name: "Infrastructure components", current: tab === "components" },
     { name: "Gitops commits", current: tab === "gitops-commits" }
   ]);
@@ -175,14 +177,14 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       })
   }
 
-  const bootstrapGitops = (envName, repoPerEnv) => {
+  const bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp) => {
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Bootstrapping..."
       }
     });
 
-    gimletClient.bootstrapGitops(envName, repoPerEnv, infraRepo, appsRepo)
+    gimletClient.bootstrapGitops(envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo)
       .then((data) => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
@@ -209,22 +211,34 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       return null;
     }
 
+    const isRepoPerEnvEnabled = env.repoPerEnv ? "enabled" : "disabled";
+    const isKustomizationPerAppEnabled = env.kustomizationPerApp ? "enabled" : "disabled";
+
     return (
-      <div className="mt-4">
-        {gitopsRepositories.map((gitopsRepo) =>
-        (
-          <div className="flex" key={gitopsRepo.href}>
-            <a className="mb-1 font-mono text-sm text-gray-500 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}
-              <svg xmlns="http://www.w3.org/2000/svg"
-                className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
-                viewBox="0 0 24 24">
-                <path d="M0 0h24v24H0z" fill="none" />
-                <path
-                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-              </svg>
-            </a>
+      <div className="mt-4 text-sm text-gray-500 px-2">
+        <div className="space-y-1">
+          <span className="flex"><p className="mr-1 font-semibold text-gray-600">Kustomization per app setting</p> is {isKustomizationPerAppEnabled} for this environment.</span>
+          <span className="flex"><p className="mr-1 font-semibold text-gray-600">Separate environments by git repositories setting</p> is {isRepoPerEnvEnabled} for this environment.</span>
+        </div>
+        <div className="mt-4 mb-1">
+          <span className="font-bold text-gray-600">Gitops repositories</span>
+          <div className="ml-4 mt-1 font-mono">
+            {gitopsRepositories.map((gitopsRepo) =>
+            (
+              <div className="flex" key={gitopsRepo.href}>
+                <a className="mb-1 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
+                    viewBox="0 0 24 24">
+                    <path d="M0 0h24v24H0z" fill="none" />
+                    <path
+                      d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                  </svg>
+                </a>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     )
   }
@@ -348,6 +362,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             To initialize this environment, bootstrap the gitops repository first
           </p>
         </div>
+        <KustomizationPerApp
+          kustomizationPerApp={kustomizationPerApp}
+          setKustomizationPerApp={setKustomizationPerApp}
+        />
         <SeparateEnvironments
           repoPerEnv={repoPerEnv}
           setRepoPerEnv={setRepoPerEnv}
@@ -360,7 +378,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
             <button
-              onClick={() => bootstrapGitops(env.name, repoPerEnv)}
+              onClick={() => bootstrapGitops(env.name, repoPerEnv, kustomizationPerApp)}
               disabled={popupWindow.visible}
               className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
             >
@@ -451,7 +469,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </div>
             }
             {!isOnline && !gimletAgentConfigured &&
-              <div className="rounded-md bg-blue-50 p-4">
+              <div className="rounded-md bg-blue-50 p-4 mb-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />

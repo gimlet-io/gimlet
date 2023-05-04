@@ -130,6 +130,8 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			Name:                        env.Name,
 			InfraRepo:                   env.InfraRepo,
 			AppsRepo:                    env.AppsRepo,
+			RepoPerEnv:                  env.RepoPerEnv,
+			KustomizationPerApp:         env.KustomizationPerApp,
 			StackConfig:                 stackConfig,
 			StackDefinition:             stackDefinition,
 			DeploymentAutomationEnabled: false,

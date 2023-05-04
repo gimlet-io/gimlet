@@ -11,9 +11,11 @@ import (
 
 	"github.com/fluxcd/flux2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
 	"github.com/go-git/go-git/v5"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -69,7 +71,7 @@ func GenerateManifests(
 	if shouldGenerateKustomizationAndRepo {
 		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
 
-		gitopsRepoName = uniqueGitopsRepoName(singleEnv, owner, repoName, env)
+		gitopsRepoName = UniqueGitopsRepoName(singleEnv, owner, repoName, env)
 		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s.yaml", UniqueName(singleEnv, owner, repoName, env))
 		secretName := fmt.Sprintf("deploy-key-%s", UniqueName(singleEnv, owner, repoName, env))
 		secretFileName = secretName + ".yaml"
@@ -78,9 +80,9 @@ func GenerateManifests(
 		if singleEnv {
 			fluxPath = "flux"
 		}
-		existingGitopsRepoFileName := GitopsRepoFileNameFromRepo(gitopsRepoPath, fluxPath)
+		existingGitopsRepoFileName, existingGitopsRepoMetaName := GitopsRepoFileAndMetaNameFromRepo(gitopsRepoPath, fluxPath)
 		if existingGitopsRepoFileName != "" {
-			gitopsRepoName = strings.TrimSuffix(existingGitopsRepoFileName, ".yaml")
+			gitopsRepoName = existingGitopsRepoMetaName
 			gitopsRepoFileName = existingGitopsRepoFileName
 		}
 
@@ -160,7 +162,7 @@ func UniqueName(singleEnv bool, owner string, repoName string, env string) strin
 	return uniqueName
 }
 
-func uniqueGitopsRepoName(singleEnv bool, owner string, repoName string, env string) string {
+func UniqueGitopsRepoName(singleEnv bool, owner string, repoName string, env string) string {
 	if len(owner) > 10 {
 		owner = owner[:10]
 	}
@@ -261,18 +263,24 @@ func generateDeployKey(host string, name string) (string, []byte, error) {
 	return string(publicKeyBytes), yamlString, err
 }
 
-func GitopsRepoFileNameFromRepo(repoPath string, contentPath string) string {
+func GitopsRepoFileAndMetaNameFromRepo(repoPath string, contentPath string) (string, string) {
+	var gitRepo sourcev1.GitRepository
+	var gitopsRepoFileName string
 	repo, err := git.PlainOpen(repoPath)
 	if err == git.ErrRepositoryNotExists {
-		return ""
+		return "", ""
 	}
 	branch, _ := helper.HeadBranch(repo)
 
 	files, _ := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, contentPath)
-	for fileName := range files {
+	for fileName, fileContent := range files {
 		if strings.Contains(fileName, "gitops-repo") {
-			return fileName
+			gitopsRepoFileName = fileName
+			err := yaml.Unmarshal([]byte(fileContent), &gitRepo)
+			if err != nil {
+				logrus.Warnf("couldn't unmarshal %s: %s", fileName, err)
+			}
 		}
 	}
-	return ""
+	return gitopsRepoFileName, gitRepo.ObjectMeta.Name
 }
