@@ -90,6 +90,9 @@ build-stack-frontend:
 	@cp web/stack/dist/index.html pkg/commands/stack/web/
 build-dashboard-frontend:
 	(cd web/dashboard; npm install; npm run build)
+	rm -rf cmd/dashboard/web/build
+	mkdir -p cmd/dashboard/web/build
+	@cp -r web/dashboard/build/* cmd/dashboard/web/build
 build-installer-frontend:
 	(cd web/installer; npm install; npm run build)
 	@cp web/installer/build/main.js cmd/installer/web/
