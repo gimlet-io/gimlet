@@ -35,6 +35,7 @@ const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectFiringAlerts = "select-firing-alerts"
 const SelectAlertByNameAndType = "select-alert-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
+const SelectConfigByKey = "select-config-by-key"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -134,6 +135,11 @@ SELECT id, type, name, deployment_name, status, status_desc, last_state_change, 
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
+		SelectConfigByKey: `
+SELECT id, key, value
+FROM config
+WHERE key = $1;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -231,6 +237,11 @@ AND type = $2;
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE status LIKE 'Pending';
+`,
+		SelectConfigByKey: `
+SELECT id, key, value
+FROM config
+WHERE key = $1;
 `,
 	},
 }
