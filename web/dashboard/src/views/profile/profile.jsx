@@ -130,7 +130,6 @@ export default class Profile extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              {settings.scmUrl === "https://github.com" && githubAppSettings(this.state.application.name, this.state.application.appSettingsURL, this.state.application.installationURL)}
               <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 my-4">
                 <div className="px-4 py-5 sm:px-6">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -205,36 +204,6 @@ source ~/.gimlet/config`}
       </div >
     )
   }
-}
-
-function githubAppSettings(appName, appSettingsURL, installationURL) {
-  return (
-    <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">
-          Github Application
-        </h3>
-      </div>
-      <div className="px-4 py-5 sm:px-6">
-        <div className="inline-grid">
-          <span
-            onClick={() => window.open(appSettingsURL)}
-            className="mt-1 text-sm text-gray-500 hover:text-gray-600 cursor-pointer">
-            Settings for {appName}
-          </span>
-          <span>
-            <a
-              href={installationURL}
-              rel="noreferrer"
-              target="_blank"
-              className="mt-1 text-sm text-gray-500 hover:text-gray-600">
-              Application installation
-            </a>
-          </span>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 function dashboardVersion(application) {

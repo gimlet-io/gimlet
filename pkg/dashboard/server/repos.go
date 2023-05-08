@@ -229,8 +229,10 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 
-	provider := "github"
-	if config.IsGitlab() {
+	var provider string
+	if config.IsGithub() {
+		provider = "github"
+	} else if config.IsGitlab() {
 		provider = "gitlab"
 	}
 

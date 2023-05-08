@@ -95,6 +95,9 @@ func SetupRouter(
 
 	r.Post("/hook", hook)
 
+	r.Get("/created", created)
+	r.Get("/installed", installed)
+
 	r.Get("/flags", getFlags)
 
 	filesDir := http.Dir("./web/build")
@@ -103,6 +106,7 @@ func SetupRouter(
 	fileServer(r, "/repositories", filesDir)
 	fileServer(r, "/pulse", filesDir)
 	fileServer(r, "/profile", filesDir)
+	fileServer(r, "/settings", filesDir)
 	fileServer(r, "/repo", filesDir)
 	fileServer(r, "/environments", filesDir)
 

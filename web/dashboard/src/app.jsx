@@ -9,6 +9,7 @@ import GimletClient from "./client/client";
 import Repositories from "./views/repositories/repositories";
 import APIBackend from "./apiBackend";
 import Profile from "./views/profile/profile";
+import Settings from "./views/settings/settings";
 import Pulse from "./views/pulse/pulse";
 import Repo from "./views/repo/repo";
 import DeployStatus from "./components/deployStatus/deployStatus";
@@ -56,6 +57,7 @@ export default class App extends Component {
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
     const FooterWithLocation = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
+    const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
 
     return (
       <Router>
@@ -87,6 +89,10 @@ export default class App extends Component {
 
               <Route path="/profile">
                 <ProfileWithRouting store={store} />
+              </Route>
+
+              <Route path="/settings">
+                <SettingsWithRouting store={store} />
               </Route>
 
               <Route path="/login">
