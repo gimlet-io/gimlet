@@ -97,6 +97,7 @@ func SetupRouter(
 
 	r.Get("/created", created)
 	r.Get("/installed", installed)
+	r.Post("/gitlabInit", gitlabInit)
 
 	r.Get("/flags", getFlags)
 

@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/sirupsen/logrus"
+	"github.com/xanzy/go-gitlab"
 )
 
 func created(w http.ResponseWriter, r *http.Request) {
@@ -42,13 +48,16 @@ func created(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	//TODO save to DB through PersistentConfig
-
-	// data.id = fmt.Sprintf("%.0f", appInfo["id"].(float64))
-	// data.clientId = appInfo["client_id"].(string)
-	// data.clientSecret = appInfo["client_secret"].(string)
-	// data.pem = appInfo["pem"].(string)
-	// data.slug = appInfo["slug"].(string)
+	ctx := r.Context()
+	persistentConfig := ctx.Value("config").(*config.PersistentConfig)
+	persistentConfig.Save(&config.Config{
+		Github: config.Github{
+			AppID:        appInfo["id"].(string),
+			PrivateKey:   appInfo["pem"].(config.Multiline),
+			ClientID:     appInfo["client_id"].(string),
+			ClientSecret: appInfo["client_secret"].(string),
+		},
+	})
 
 	http.Redirect(w, r, fmt.Sprintf("https://github.com/apps/%s/installations/new", appInfo["slug"].(string)), http.StatusSeeOther)
 }
@@ -61,25 +70,85 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	formValues := r.Form
 	fmt.Println(formValues)
 
-	// TODO save installationID to DB through PersistentConfig
+	ctx := r.Context()
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenString, err := tokenManager.AppToken()
+	if err != nil {
+		panic(err)
+	}
 
-	// data.installationId = formValues.Get("installation_id")
+	gitSvc := &customGithub.GithubClient{}
+	appOwner, err := gitSvc.GetAppOwner(tokenString)
+	if err != nil {
+		logrus.Errorf("cannot get app info: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
-	// TODO get the org or app owner
+	persistentConfig := ctx.Value("config").(*config.PersistentConfig)
+	persistentConfig.Save(&config.Config{
+		Github: config.Github{
+			InstallationID: formValues.Get("installation_id"),
+			Org:            appOwner,
+		},
+	})
 
-	// tokenString, err := tokenManager.AppToken()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// gitSvc := &customGithub.GithubClient{}
-	// appOwner, err := gitSvc.GetAppOwner(tokenString)
-	// if err != nil {
-	// 	logrus.Errorf("cannot get app info: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
-	// data.appOwner = appOwner
+	clientId, err := persistentConfig.Get("CLIENT_ID")
+	if err != nil {
+		logrus.Errorf("cannot get client id: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
-	// TODO get the client id
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", "TODO clientId"), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", clientId), http.StatusSeeOther)
+}
+
+func gitlabInit(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	formValues := r.Form
+	fmt.Println(formValues)
+
+	gitlabUrl := formValues.Get("gitlabUrl")
+	token := formValues.Get("token")
+	appId := formValues.Get("appId")
+	appSecret := formValues.Get("appSecret")
+
+	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(gitlabUrl))
+	if err != nil {
+		panic(err)
+	}
+
+	user, _, err := git.Users.CurrentUser()
+	if err != nil {
+		panic(err)
+	}
+
+	var org string
+	if user.Bot {
+		groups, _, err := git.Groups.ListGroups(&gitlab.ListGroupsOptions{})
+		if err != nil {
+			panic(err)
+		}
+		org = groups[0].FullPath
+	} else {
+		org = user.Username
+	}
+
+	ctx := r.Context()
+	persistentConfig := ctx.Value("config").(*config.PersistentConfig)
+	persistentConfig.Save(&config.Config{
+		Gitlab: config.Gitlab{
+			ClientID:     appId,
+			ClientSecret: appSecret,
+			AdminToken:   token,
+			Org:          org,
+			URL:          formValues.Get("gitlabUrl"),
+		},
+	})
+
+	// TODO check whats next
+	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
 }
