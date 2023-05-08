@@ -1,12 +1,18 @@
 package store
 
 import (
+	"fmt"
+
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
 	"github.com/russross/meddler"
 )
 
 func (db *Store) SaveConfig(config *model.Config) error {
+	valueFromDb, _ := db.GetConfigValue(config.Key)
+	if valueFromDb != "" {
+		return fmt.Errorf("config with key %s already exists in db and cannot be overwritten", config.Key)
+	}
 	return meddler.Insert(db, "config", config)
 }
 

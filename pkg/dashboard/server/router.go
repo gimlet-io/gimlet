@@ -38,6 +38,7 @@ func SetupRouter(
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
 	alertStateManager *alert.AlertStateManager,
+	persistentConfig *config.PersistentConfig,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
@@ -65,6 +66,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("agentJWT", tokenString))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
+	r.Use(middleware.WithValue("persistentConfig", persistentConfig))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))
