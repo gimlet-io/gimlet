@@ -21,10 +21,7 @@ func TestConfigCreateAndRead(t *testing.T) {
 	err := s.SaveConfig(&config)
 	assert.Nil(t, err)
 
-	configValueFromDb, err := s.GetConfigValue("ORG")
+	configsValueFromDb, err := s.GetConfigs()
 	assert.Nil(t, err)
-	assert.Equal(t, config.Value, configValueFromDb)
-
-	err = s.SaveConfig(&config)
-	assert.Error(t, err, "Expected SaveConfig to return an error for existing key")
+	assert.Equal(t, 1, len(configsValueFromDb))
 }

@@ -36,6 +36,7 @@ const SelectFiringAlerts = "select-firing-alerts"
 const SelectAlertByNameAndType = "select-alert-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
 const SelectConfigByKey = "select-config-by-key"
+const SelectConfigs = "select-configs"
 
 var queries = map[string]map[string]string{
 	"sqlite3": {
@@ -140,6 +141,9 @@ SELECT id, key, value
 FROM config
 WHERE key = $1;
 `,
+		SelectConfigs: `
+SELECT key, value FROM config;
+`,
 	},
 	"postgres": {
 		Dummy: `
@@ -242,6 +246,9 @@ WHERE status LIKE 'Pending';
 SELECT id, key, value
 FROM config
 WHERE key = $1;
+`,
+		SelectConfigs: `
+SELECT key, value FROM config;
 `,
 	},
 }

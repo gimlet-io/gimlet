@@ -87,6 +87,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	config, err = persistentConfig.Get()
+	if err != nil {
+		panic(err)
+	}
 
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)

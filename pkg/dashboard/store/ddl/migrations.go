@@ -264,7 +264,7 @@ CREATE TABLE IF NOT EXISTS config (
 	id        INTEGER PRIMARY KEY AUTOINCREMENT,
 	key       TEXT,
 	value      TEXT,
-	UNIQUE(key)
+	UNIQUE(id)
 	);
 `,
 		},
@@ -482,7 +482,7 @@ CREATE TABLE IF NOT EXISTS config (
 	id        SERIAL,
 	key       TEXT,
 	value      TEXT,
-	UNIQUE(key)
+	UNIQUE(id)
 	);
 `,
 		},

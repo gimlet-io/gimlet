@@ -6,8 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	dash_config "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
@@ -49,11 +48,11 @@ func created(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	persistentConfig := ctx.Value("config").(*config.PersistentConfig)
-	persistentConfig.Save(&config.Config{
-		Github: config.Github{
+	persistentConfig := ctx.Value("config").(*dash_config.PersistentConfig)
+	persistentConfig.Save(&dash_config.Config{
+		Github: dash_config.Github{
 			AppID:        appInfo["id"].(string),
-			PrivateKey:   appInfo["pem"].(config.Multiline),
+			PrivateKey:   appInfo["pem"].(dash_config.Multiline),
 			ClientID:     appInfo["client_id"].(string),
 			ClientSecret: appInfo["client_secret"].(string),
 		},
@@ -71,7 +70,18 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(formValues)
 
 	ctx := r.Context()
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	persistentConfig := ctx.Value("config").(*dash_config.PersistentConfig)
+	config, err := persistentConfig.Get()
+	if err != nil {
+		logrus.Errorf("cannot get persistent config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	tokenManager, err := customGithub.NewGithubOrgTokenManager(config.Github.AppID, config.Github.InstallationID, config.Github.PrivateKey.String())
+	if err != nil {
+		panic(err)
+	}
 	tokenString, err := tokenManager.AppToken()
 	if err != nil {
 		panic(err)
@@ -85,22 +95,14 @@ func installed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	persistentConfig := ctx.Value("config").(*config.PersistentConfig)
-	persistentConfig.Save(&config.Config{
-		Github: config.Github{
+	persistentConfig.Save(&dash_config.Config{
+		Github: dash_config.Github{
 			InstallationID: formValues.Get("installation_id"),
 			Org:            appOwner,
 		},
 	})
 
-	clientId, err := persistentConfig.Get("CLIENT_ID")
-	if err != nil {
-		logrus.Errorf("cannot get client id: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", clientId), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", config.Github.ClientID), http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {
@@ -138,17 +140,16 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	persistentConfig := ctx.Value("config").(*config.PersistentConfig)
-	persistentConfig.Save(&config.Config{
-		Gitlab: config.Gitlab{
+	persistentConfig := ctx.Value("config").(*dash_config.PersistentConfig)
+	persistentConfig.Save(&dash_config.Config{
+		Gitlab: dash_config.Gitlab{
 			ClientID:     appId,
 			ClientSecret: appSecret,
 			AdminToken:   token,
 			Org:          org,
-			URL:          formValues.Get("gitlabUrl"),
+			URL:          gitlabUrl,
 		},
 	})
 
-	// TODO check whats next
-	http.Redirect(w, r, "/step-2", http.StatusSeeOther)
+	http.Redirect(w, r, "/repositories", http.StatusSeeOther)
 }
