@@ -1,8 +1,8 @@
 package config
 
 import (
+	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -29,42 +29,44 @@ func (p *PersistentConfig) Get(key string) string {
 	return config.Value
 }
 
-func (p *PersistentConfig) Save(config *model.Config) error {
-	return p.dao.SaveConfig(config)
+func (p *PersistentConfig) Save(key string, value string) error {
+	return p.dao.SaveConfig(&model.Config{
+		Key:   key,
+		Value: value,
+	})
 }
 
 func (p *PersistentConfig) saveConfigFile(config *Config) error {
-	configs := map[string]string{}
-	t := reflect.TypeOf(*config)
+	configs := make(map[string]string)
+
+	v := reflect.ValueOf(config).Elem()
+	t := v.Type()
+
 	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("envconfig")
-		value := reflect.ValueOf(*config).Field(i)
+		field := v.Field(i)
+		tag := t.Field(i).Tag.Get("envconfig")
 
-		if value.Kind() == reflect.Struct {
-			for j := 0; j < value.NumField(); j++ {
-				nestedField := value.Type().Field(j)
-				nestedTag := nestedField.Tag.Get("envconfig")
-				nestedValue := value.Field(j)
-
-				if !nestedValue.IsZero() {
-					if nestedValue.Kind() == reflect.Bool {
-						configs[nestedTag] = strconv.FormatBool(nestedValue.Bool())
-					} else if nestedValue.Kind() == reflect.Int {
-						configs[nestedTag] = strconv.FormatInt(nestedValue.Int(), 10)
-					} else {
-						configs[nestedTag] = nestedValue.String()
-					}
-				}
+		if !field.IsZero() {
+			switch field.Kind() {
+			case reflect.Bool, reflect.Int:
+				configs[tag] = fmt.Sprintf("%v", field.Interface())
+			default:
+				configs[tag] = field.String()
 			}
-		} else {
-			if !value.IsZero() {
-				if value.Kind() == reflect.Bool {
-					configs[tag] = strconv.FormatBool(value.Bool())
-				} else if value.Kind() == reflect.Int {
-					configs[tag] = strconv.FormatInt(value.Int(), 10)
-				} else {
-					configs[tag] = value.String()
+		}
+
+		if field.Kind() == reflect.Struct {
+			for j := 0; j < field.NumField(); j++ {
+				nestedField := field.Field(j)
+				nestedTag := t.Field(i).Tag.Get("envconfig")
+
+				if !nestedField.IsZero() {
+					switch nestedField.Kind() {
+					case reflect.Bool, reflect.Int:
+						configs[nestedTag] = fmt.Sprintf("%v", nestedField.Interface())
+					default:
+						configs[nestedTag] = nestedField.String()
+					}
 				}
 			}
 		}

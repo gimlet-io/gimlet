@@ -84,10 +84,10 @@ func main() {
 	}
 
 	// TODO replace with config.Config
-	// persistentConfig, err := dash_config.NewPersistentConfig(store, config)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	persistentConfig, err := dash_config.NewPersistentConfig(store, config)
+	if err != nil {
+		panic(err)
+	}
 
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
@@ -192,6 +192,7 @@ func main() {
 
 	r := server.SetupRouter(
 		config,
+		persistentConfig,
 		agentHub,
 		clientHub,
 		agentWSHub,

@@ -6,6 +6,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -44,18 +49,13 @@ func created(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	// GITHUB_APP_ID
-	id := fmt.Sprintf("%.0f", appInfo["id"].(float64))
-	// GITHUB_CLIENT_ID
-	clientId := appInfo["client_id"].(string)
-	// GITHUB_CLIENT_SECRET
-	clientSecret := appInfo["client_secret"].(string)
-	// GITHUB_PRIVATE_KEY
-	pem := appInfo["pem"].(string)
-	fmt.Println(id)
-	fmt.Println(clientId)
-	fmt.Println(clientSecret)
-	fmt.Println(pem)
+	// TODO error handling
+	ctx := r.Context()
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config.Save(store.GithubAppID, fmt.Sprintf("%.0f", appInfo["id"].(float64)))
+	config.Save(store.GithubClientID, appInfo["client_id"].(string))
+	config.Save(store.GithubClientSecret, appInfo["client_secret"].(string))
+	config.Save(store.GithubPrivateKey, appInfo["pem"].(string))
 	slug := appInfo["slug"].(string)
 
 	http.Redirect(w, r, fmt.Sprintf("https://github.com/apps/%s/installations/new", slug), http.StatusSeeOther)
@@ -68,32 +68,34 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	}
 	formValues := r.Form
 	fmt.Println(formValues)
-
-	// GITHUB_INSTALLATION_ID
 	installationId := formValues.Get("installation_id")
-	fmt.Println(installationId)
 
-	// // TODO pem, id, installationId will come from the persistentConfig
-	// privateKey := config.Multiline(data.pem)
-	// tokenManager, err := customGithub.NewGithubOrgTokenManager(data.id, data.installationId, privateKey.String())
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// tokenString, err := tokenManager.AppToken()
-	// if err != nil {
-	// 	panic(err)
-	// }
+	ctx := r.Context()
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	// TODO error handling
+	config.Save(store.GithubInstallationID, installationId)
 
-	// gitSvc := &customGithub.GithubClient{}
-	// // GITHUB_ORG
-	// appOwner, err := gitSvc.GetAppOwner(tokenString)
-	// if err != nil {
-	// 	logrus.Errorf("cannot get app info: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	return
-	// }
+	tokenManager, err := customGithub.NewGithubOrgTokenManager(config.Get(store.GithubAppID), installationId, config.Get(store.GithubPrivateKey))
+	if err != nil {
+		panic(err)
+	}
+	tokenString, err := tokenManager.AppToken()
+	if err != nil {
+		panic(err)
+	}
 
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", "TODO config clientId"), http.StatusSeeOther)
+	gitSvc := &customGithub.GithubClient{}
+	appOwner, err := gitSvc.GetAppOwner(tokenString)
+	if err != nil {
+		logrus.Errorf("cannot get app info: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	// TODO error handling
+	config.Save(store.GithubOrg, appOwner)
+
+	httputil.DelCookie(w, r, "user_sess")
+	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", config.Get(store.GithubClientID)), http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {
@@ -130,17 +132,15 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 		org = user.Username
 	}
 
-	// TODO save the config to persistentConfig
-	// GITLAB_CLIENT_ID
-	fmt.Println(appId)
-	// GITLAB_CLIENT_SECRET
-	fmt.Println(appSecret)
-	// GITLAB_ORG
-	fmt.Println(org)
-	// GITLAB_URL
-	fmt.Println(gitlabUrl)
-	// GITLAB_ADMIN_TOKEN
-	fmt.Println(token)
+	// TODO error handling
+	ctx := r.Context()
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config.Save(store.GitlabClientID, appId)
+	config.Save(store.GitlabClientSecret, appSecret)
+	config.Save(store.GitlabOrg, org)
+	config.Save(store.GitlabURL, gitlabUrl)
+	config.Save(store.GitlabAdminToken, token)
 
-	http.Redirect(w, r, "/repositories", http.StatusSeeOther)
+	httputil.DelCookie(w, r, "user_sess")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -23,7 +23,7 @@ func Test_artifact(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	logger := logrus.Logger{}
 
-	router := server.SetupRouter(&config.Config{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil, &logger)
+	router := server.SetupRouter(&config.Config{}, nil, nil, nil, nil, store, nil, nil, nil, nil, nil, nil, &logger)
 	server := httptest.NewServer(router)
 	defer server.Close()
 

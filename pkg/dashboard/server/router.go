@@ -29,6 +29,7 @@ var agentAuth *jwtauth.JWTAuth
 
 func SetupRouter(
 	config *config.Config,
+	persistentConfig *config.PersistentConfig,
 	agentHub *streaming.AgentHub,
 	clientHub *streaming.ClientHub,
 	agentWSHub *streaming.AgentWSHub,
@@ -59,6 +60,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("clientHub", clientHub))
 	r.Use(middleware.WithValue("store", store))
 	r.Use(middleware.WithValue("config", config))
+	r.Use(middleware.WithValue("persistentConfig", persistentConfig))
 	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
