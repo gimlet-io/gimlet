@@ -24,7 +24,7 @@ const (
 )
 
 func (db *Store) SaveConfig(config *model.Config) error {
-	configFromDb, _ := db.getConfig(config.Key)
+	configFromDb, _ := db.GetConfig(config.Key)
 	if configFromDb.Key != "" {
 		if unchangeable(configFromDb.Key) {
 			return fmt.Errorf("config with key %s already exists in db and cannot be overwritten", configFromDb.Key)
@@ -35,17 +35,10 @@ func (db *Store) SaveConfig(config *model.Config) error {
 	return meddler.Insert(db, "config", config)
 }
 
-func (db *Store) getConfig(key string) (*model.Config, error) {
+func (db *Store) GetConfig(key string) (*model.Config, error) {
 	stmt := sql.Stmt(db.driver, sql.SelectConfigByKey)
 	data := new(model.Config)
 	err := meddler.QueryRow(db, data, stmt, key)
-	return data, err
-}
-
-func (db *Store) GetConfigs() ([]*model.Config, error) {
-	stmt := sql.Stmt(db.driver, sql.SelectConfigs)
-	var data []*model.Config
-	err := meddler.QueryAll(db, &data, stmt)
 	return data, err
 }
 

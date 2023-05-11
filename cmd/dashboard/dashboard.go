@@ -83,14 +83,11 @@ func main() {
 		panic(err)
 	}
 
-	persistentConfig, err := dash_config.NewPersistentConfig(store, config)
-	if err != nil {
-		panic(err)
-	}
-	config, err = persistentConfig.Get()
-	if err != nil {
-		panic(err)
-	}
+	// TODO replace with config.Config
+	// persistentConfig, err := dash_config.NewPersistentConfig(store, config)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
@@ -204,7 +201,6 @@ func main() {
 		dashboardRepoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,
-		persistentConfig,
 		notificationsManager,
 		perf,
 		logger,

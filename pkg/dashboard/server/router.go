@@ -38,7 +38,6 @@ func SetupRouter(
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
 	alertStateManager *alert.AlertStateManager,
-	persistentConfig *config.PersistentConfig,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
@@ -88,6 +87,7 @@ func SetupRouter(
 	userRoutes(r)
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
+	adminKeyAuthRoutes(r)
 
 	r.Get("/logout", logout)
 
@@ -97,9 +97,9 @@ func SetupRouter(
 
 	r.Post("/hook", hook)
 
-	r.Get("/created", created)
-	r.Get("/installed", installed)
-	r.Post("/gitlabInit", gitlabInit)
+	r.Get("/settings/created", created)
+	r.Get("/settings/installed", installed)
+	r.Post("/settings/gitlabInit", gitlabInit)
 
 	r.Get("/flags", getFlags)
 
@@ -236,6 +236,13 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 			http.HandlerFunc(auth),
 		))
 	}
+}
+
+func adminKeyAuthRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Post("/admin-key-auth", adminKeyAuth)
+	})
 }
 
 // static files from a http.FileSystem

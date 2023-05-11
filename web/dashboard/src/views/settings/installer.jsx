@@ -76,7 +76,7 @@ const Installer = () => {
                     <h2 className="text-xl font-sans font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate mb-4">Gitlab.com</h2>
                     <p className="">Gimlet Dashboard uses personal or group access tokens to integrate with Gitlab.
                         Gimlet will also need an OAuth application to handle OAuth based authentication.</p>
-                    <form action="/gitlabInit" method="post">
+                    <form action="/settings/gitlabInit" method="post">
                         <div className="text-gray-700">
                             <div className="flex mt-4">
                                 <div className="font-medium self-center">Gitlab URL</div>

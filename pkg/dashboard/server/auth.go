@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"encoding/base32"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -66,6 +67,39 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.RedirectHandler("/", http.StatusSeeOther).ServeHTTP(w, r)
+}
+
+func adminKeyAuth(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	formValues := r.Form
+	adminKey := formValues.Get("token")
+	ctx := r.Context()
+	// persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	if adminKey != "e07ec49bf9eb22d2a995b140" { // persistentConfig.Get(config.AdminKey)
+		log.Errorf("token is not valid")
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	store := ctx.Value("store").(*store.Store)
+	admin, err := store.User("admin")
+	if err != nil {
+		log.Errorf("cannot get user from db: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = setSessionCookie(w, r, admin)
+	if err != nil {
+		log.Errorf("cannot set session cookie: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func validateOrganizationMembership(orgList []*scm.Organization, org string, userName string) bool {

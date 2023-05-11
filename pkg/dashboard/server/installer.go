@@ -6,9 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	dash_config "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -47,18 +44,21 @@ func created(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	ctx := r.Context()
-	persistentConfig := ctx.Value("config").(*dash_config.PersistentConfig)
-	persistentConfig.Save(&dash_config.Config{
-		Github: dash_config.Github{
-			AppID:        appInfo["id"].(string),
-			PrivateKey:   appInfo["pem"].(dash_config.Multiline),
-			ClientID:     appInfo["client_id"].(string),
-			ClientSecret: appInfo["client_secret"].(string),
-		},
-	})
+	// GITHUB_APP_ID
+	id := fmt.Sprintf("%.0f", appInfo["id"].(float64))
+	// GITHUB_CLIENT_ID
+	clientId := appInfo["client_id"].(string)
+	// GITHUB_CLIENT_SECRET
+	clientSecret := appInfo["client_secret"].(string)
+	// GITHUB_PRIVATE_KEY
+	pem := appInfo["pem"].(string)
+	fmt.Println(id)
+	fmt.Println(clientId)
+	fmt.Println(clientSecret)
+	fmt.Println(pem)
+	slug := appInfo["slug"].(string)
 
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/apps/%s/installations/new", appInfo["slug"].(string)), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("https://github.com/apps/%s/installations/new", slug), http.StatusSeeOther)
 }
 
 func installed(w http.ResponseWriter, r *http.Request) {
@@ -69,40 +69,31 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	formValues := r.Form
 	fmt.Println(formValues)
 
-	ctx := r.Context()
-	persistentConfig := ctx.Value("config").(*dash_config.PersistentConfig)
-	config, err := persistentConfig.Get()
-	if err != nil {
-		logrus.Errorf("cannot get persistent config: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	// GITHUB_INSTALLATION_ID
+	installationId := formValues.Get("installation_id")
+	fmt.Println(installationId)
 
-	tokenManager, err := customGithub.NewGithubOrgTokenManager(config.Github.AppID, config.Github.InstallationID, config.Github.PrivateKey.String())
-	if err != nil {
-		panic(err)
-	}
-	tokenString, err := tokenManager.AppToken()
-	if err != nil {
-		panic(err)
-	}
+	// // TODO pem, id, installationId will come from the persistentConfig
+	// privateKey := config.Multiline(data.pem)
+	// tokenManager, err := customGithub.NewGithubOrgTokenManager(data.id, data.installationId, privateKey.String())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// tokenString, err := tokenManager.AppToken()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	gitSvc := &customGithub.GithubClient{}
-	appOwner, err := gitSvc.GetAppOwner(tokenString)
-	if err != nil {
-		logrus.Errorf("cannot get app info: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	// gitSvc := &customGithub.GithubClient{}
+	// // GITHUB_ORG
+	// appOwner, err := gitSvc.GetAppOwner(tokenString)
+	// if err != nil {
+	// 	logrus.Errorf("cannot get app info: %s", err)
+	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 	return
+	// }
 
-	persistentConfig.Save(&dash_config.Config{
-		Github: dash_config.Github{
-			InstallationID: formValues.Get("installation_id"),
-			Org:            appOwner,
-		},
-	})
-
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", config.Github.ClientID), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", "TODO config clientId"), http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {
@@ -139,17 +130,17 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 		org = user.Username
 	}
 
-	ctx := r.Context()
-	persistentConfig := ctx.Value("config").(*dash_config.PersistentConfig)
-	persistentConfig.Save(&dash_config.Config{
-		Gitlab: dash_config.Gitlab{
-			ClientID:     appId,
-			ClientSecret: appSecret,
-			AdminToken:   token,
-			Org:          org,
-			URL:          gitlabUrl,
-		},
-	})
+	// TODO save the config to persistentConfig
+	// GITLAB_CLIENT_ID
+	fmt.Println(appId)
+	// GITLAB_CLIENT_SECRET
+	fmt.Println(appSecret)
+	// GITLAB_ORG
+	fmt.Println(org)
+	// GITLAB_URL
+	fmt.Println(gitlabUrl)
+	// GITLAB_ADMIN_TOKEN
+	fmt.Println(token)
 
 	http.Redirect(w, r, "/repositories", http.StatusSeeOther)
 }

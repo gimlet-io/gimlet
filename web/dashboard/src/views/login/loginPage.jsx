@@ -7,6 +7,7 @@ const LoginPage = () => {
   const [token, setToken] = useState("");
   const [provider, setProvider] = useState("");
   const [termsOfServiceFeatureFlag, setTermsOfServiceFeatureFlag] = useState(false);
+
   useEffect(() => {
     getFlags().then(data => {
       setProvider(data.provider);
@@ -26,26 +27,33 @@ const LoginPage = () => {
               <div className="sm:mx-auto sm:max-w-md py-8 px-4 bg-white shadow-md sm:px-10">
                 <div className="my-8">
                   <img className="h-16 mx-auto" src={gimletHeader} alt="gimlet-logo" />
-                  <div className="my-16 space-y-4  text-base font-medium text-gray-700">
+                  <div className="my-16 text-base font-medium text-gray-700">
                     {loginButton(provider)}
                     {provider === "" &&
-                      <div className="space-y-4">
-                        <input
-                          type="text"
-                          name="meta-name"
-                          id="meta-name"
-                          value={token}
-                          onChange={e => setToken(e.target.value)}
-                          className="block rounded-md border-gray-300 py-3 shadow-sm w-full"
-                        />
-                        <button
-                          onClick={() => console.log(token)} // TODO auth with admin token
-                          disabled={token === ""}
-                          className={(token === "" && "cursor-not-allowed") + " inline-flex items-center justify-center w-full font-medium px-20 py-3 rounded border border-gray-300 hover:bg-gray-50 shadow-sm"}
-                        >
-                          Sign in with admin key
-                        </button>
-                      </div>
+                      <form action="/admin-key-auth" method="post">
+                        <div className="space-y-8">
+                          <div className="space-y-1">
+                            <label htmlFor="token" className="text-gray-700 mr-4 block text-sm font-medium">
+                              Admin key
+                            </label>
+                            <input
+                              type="text"
+                              name="token"
+                              id="token"
+                              value={token}
+                              onChange={e => setToken(e.target.value)}
+                              className="block w-full p-3 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={token === ""}
+                            className={(token === "" && "cursor-not-allowed") + " inline-flex items-center justify-center w-full font-medium px-20 py-3 rounded border border-gray-300 bg-gray-700 hover:bg-gray-600 shadow-sm text-base text-gray-100"}
+                          >
+                            Sign in with admin key
+                          </button>
+                        </div>
+                      </form>
                     }
                   </div>
                   {termsOfServiceFeatureFlag && <div className="text-center font-light text-gray-700 flex flex-wrap justify-center">

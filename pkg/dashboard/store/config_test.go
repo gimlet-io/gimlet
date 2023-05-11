@@ -14,14 +14,14 @@ func TestConfigCreateAndRead(t *testing.T) {
 	}()
 
 	config := model.Config{
-		Key:   "ORG",
+		Key:   GithubOrg,
 		Value: "gimlet-io",
 	}
 
 	err := s.SaveConfig(&config)
 	assert.Nil(t, err)
 
-	configsValueFromDb, err := s.GetConfigs()
+	configFromDb, err := s.GetConfig(GithubOrg)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(configsValueFromDb))
+	assert.Equal(t, config.Value, configFromDb.Value)
 }

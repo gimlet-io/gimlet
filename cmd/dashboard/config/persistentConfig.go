@@ -17,62 +17,23 @@ func NewPersistentConfig(dao *store.Store, config *Config) (*PersistentConfig, e
 	p := &PersistentConfig{
 		dao: dao,
 	}
-	err := p.Save(config)
+	err := p.saveConfigFile(config)
 	return p, err
 }
 
-func (p *PersistentConfig) Get() (*Config, error) {
-	configsFromDb, err := p.dao.GetConfigs()
+func (p *PersistentConfig) Get(key string) string {
+	config, err := p.dao.GetConfig(key)
 	if err != nil {
-		logrus.Error("cannot get configs from db")
+		logrus.Error("cannot get config from db: %s", err)
 	}
-
-	config := &Config{}
-	t := reflect.TypeOf(*config)
-	for _, v := range configsFromDb {
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			tag := field.Tag.Get("envconfig")
-			value := reflect.ValueOf(config).Elem().Field(i)
-
-			if value.Kind() == reflect.Struct {
-				for j := 0; j < value.NumField(); j++ {
-					nestedField := value.Type().Field(j)
-					nestedTag := nestedField.Tag.Get("envconfig")
-					nestedValue := value.FieldByIndex([]int{j})
-
-					if nestedTag == v.Key {
-						if nestedValue.Kind() == reflect.Bool {
-							boolValue, _ := strconv.ParseBool(v.Value)
-							nestedValue.SetBool(boolValue)
-						} else if nestedValue.Kind() == reflect.Int {
-							intValue, _ := strconv.ParseInt(v.Value, 10, 64)
-							nestedValue.SetInt(intValue)
-						} else {
-							nestedValue.SetString(v.Value)
-						}
-					}
-				}
-			} else {
-				if tag == v.Key {
-					if value.Kind() == reflect.Bool {
-						boolValue, _ := strconv.ParseBool(v.Value)
-						value.SetBool(boolValue)
-					} else if value.Kind() == reflect.Int {
-						intValue, _ := strconv.ParseInt(v.Value, 10, 64)
-						value.SetInt(intValue)
-					} else {
-						value.SetString(v.Value)
-					}
-				}
-			}
-		}
-	}
-
-	return config, nil
+	return config.Value
 }
 
-func (p *PersistentConfig) Save(config *Config) error {
+func (p *PersistentConfig) Save(config *model.Config) error {
+	return p.dao.SaveConfig(config)
+}
+
+func (p *PersistentConfig) saveConfigFile(config *Config) error {
 	configs := map[string]string{}
 	t := reflect.TypeOf(*config)
 	for i := 0; i < t.NumField(); i++ {
