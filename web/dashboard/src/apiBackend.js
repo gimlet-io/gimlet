@@ -17,9 +17,16 @@ export default class APIBackend extends Component {
   componentDidMount() {
     console.log(this.props.location.pathname);
 
-    if (this.props.location.pathname.startsWith('/login') ||
-      this.props.location.pathname.startsWith('/settings')) {
+    if (this.props.location.pathname.startsWith('/login')) {
       return;
+    }
+
+    if (this.props.location.pathname.startsWith('/settings')) {
+      this.props.gimletClient.getSettings()
+      .then(data => {
+        this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data })}, () => {/* Generic error handler deals with it */
+      });
+      return
     }
 
     this.props.gimletClient.getAgents()

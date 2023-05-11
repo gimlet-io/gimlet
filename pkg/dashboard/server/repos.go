@@ -19,6 +19,12 @@ import (
 func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
+	// TODO, this prevents a program error, if we auth with admin key
+	if user.AccessToken == "" {
+		logrus.Errorf("missing access token for user %s", user.Login)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
 
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)

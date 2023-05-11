@@ -103,38 +103,42 @@ export default class Settings extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 sm:px-0">
-              {settings.scmUrl === "https://github.com" &&
-                githubAppSettings(application.name, application.appSettingsURL, application.installationURL)}
-              {(!settings.provider || settings.provider === "") &&
-                gimletInstaller()}
-              {users &&
-                userList(sortedUsers, DefaultProfilePicture, settings.scmUrl)
-              }
-              <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                <div className="px-4 py-5 sm:px-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
-                </div>
-                <div className="px-4 py-5 sm:px-6">
-                  <input
-                    onChange={e => this.setState({ input: e.target.value })}
-                    className="shadow appearance-none border rounded w-full my-4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="environment"
-                    type="text"
-                    value={input}
-                    placeholder="Please enter a username" />
-                  <div className="p-0 flow-root">
-                    <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
-                      <button
-                        disabled={input === "" || saveButtonTriggered}
-                        onClick={() => this.save()}
-                        className={(input === "" || saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}>
-                        Create
-                      </button>
-                    </span>
+              {(!settings.provider || settings.provider === "")
+                ?
+                gimletInstaller()
+                :
+                <div>
+                  {settings.scmUrl === "https://github.com" &&
+                    githubAppSettings(application.name, application.appSettingsURL, application.installationURL)}
+                  {users &&
+                    userList(sortedUsers, DefaultProfilePicture, settings.scmUrl)
+                  }
+                  <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                    <div className="px-4 py-5 sm:px-6">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
+                    </div>
+                    <div className="px-4 py-5 sm:px-6">
+                      <input
+                        onChange={e => this.setState({ input: e.target.value })}
+                        className="shadow appearance-none border rounded w-full my-4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="environment"
+                        type="text"
+                        value={input}
+                        placeholder="Please enter a username" />
+                      <div className="p-0 flow-root">
+                        <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+                          <button
+                            disabled={input === "" || saveButtonTriggered}
+                            onClick={() => this.save()}
+                            className={(input === "" || saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}>
+                            Create
+                          </button>
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              {dashboardVersion(application)}
+                  {dashboardVersion(application)}
+                </div>}
             </div>
           </div>
         </main >
