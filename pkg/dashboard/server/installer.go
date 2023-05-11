@@ -95,7 +95,7 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	config.Save(store.GithubOrg, appOwner)
 
 	httputil.DelCookie(w, r, "user_sess")
-	http.Redirect(w, r, fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s", config.Get(store.GithubClientID)), http.StatusSeeOther)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {
@@ -142,5 +142,5 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	config.Save(store.GitlabAdminToken, token)
 
 	httputil.DelCookie(w, r, "user_sess")
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
