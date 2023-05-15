@@ -649,3 +649,90 @@ func generateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength
 
 	return fmt.Sprintf("%s-%s", defaultBranchName, hex.EncodeToString(b)), nil
 }
+
+func UpdateRepoEnvConfigsChartVersion(
+	repoCache *nativeGit.RepoCache,
+	goScm *genericScm.GoScmHelper,
+	token string,
+	repoName string,
+) error {
+	prList, err := goScm.ListOpenPRs(token, repoName)
+	if err != nil {
+		return fmt.Errorf("cannot list pull requests: %s", err)
+	}
+	for _, pullRequest := range prList {
+		if strings.HasPrefix(pullRequest.Source, "gimlet-chart-update") {
+			return nil
+		}
+	}
+
+	repo, tmpPath, err := repoCache.InstanceForWrite(repoName)
+	if err != nil {
+		os.RemoveAll(tmpPath)
+		return fmt.Errorf("could not open %s: %s", repoName, err)
+	}
+
+	headBranch, err := helper.HeadBranch(repo)
+	if err != nil {
+		return fmt.Errorf("cannot get head branch: %s", err)
+	}
+
+	sourceBranch, err := generateBranchNameWithUniqueHash("gimlet-chart-update", 4)
+	if err != nil {
+		return fmt.Errorf("cannot generate branch name: %s", err)
+	}
+
+	err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+	if err != nil {
+		return fmt.Errorf("cannot checkout branch: %s", err)
+	}
+
+	existingEnvConfigs, err := existingEnvConfigs(repo, headBranch)
+	if err != nil {
+		return fmt.Errorf("cannot get existing configs: %s", err)
+	}
+
+	defaultChartVersion := config.DefaultChart().Version
+	for fileName, content := range existingEnvConfigs {
+		if content.Chart.Repository == "" {
+			continue
+		}
+		content.Chart.Version = defaultChartVersion
+
+		// marshall and ident the manifest
+		var toSaveBuffer bytes.Buffer
+		yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
+		yamlEncoder.SetIndent(2)
+		err = yamlEncoder.Encode(&content)
+		if err != nil {
+			return fmt.Errorf("cannot serialize manifest: %s", err)
+		}
+
+		_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), nativeGit.Dir_RWX_RX_R)
+		err = os.WriteFile(filepath.Join(tmpPath, fmt.Sprintf(".gimlet/%s", fileName)), toSaveBuffer.Bytes(), nativeGit.Dir_RWX_RX_R)
+		if err != nil {
+			return fmt.Errorf("cannot write file: %s", err)
+		}
+	}
+
+	empty, err := nativeGit.NothingToCommit(repo)
+	if err != nil {
+		return fmt.Errorf("cannot get git state: %s", err)
+	}
+	if empty {
+		return nil
+	}
+
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] deployment configurations chart reference verison update")
+	if err != nil {
+		return fmt.Errorf("cannot stage, commit and push: %s", err)
+	}
+
+	_, _, err = goScm.CreatePR(token, repoName, sourceBranch, headBranch,
+		fmt.Sprintf("[Gimlet Dashboard] Upgrade deployment configurations chart reference verison to %s", defaultChartVersion),
+		fmt.Sprintf("deployment configurations chart reference verison upgrade to %s", defaultChartVersion))
+	if err != nil {
+		return fmt.Errorf("cannot create pull request: %s", err)
+	}
+	return nil
+}

@@ -128,6 +128,16 @@ func main() {
 	go dashboardRepoCache.Run()
 	log.Info("repo cache initialized")
 
+	if config.ChartVersionUpdaterFeatureFlag {
+		chartVersionUpdater := worker.NewChartVersionUpdater(
+			gitSvc,
+			tokenManager,
+			dashboardRepoCache,
+			goScm,
+		)
+		go chartVersionUpdater.Run()
+	}
+
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
 		config.GitopsRepo,
