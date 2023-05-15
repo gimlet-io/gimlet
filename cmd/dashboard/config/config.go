@@ -85,7 +85,8 @@ type Config struct {
 	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 	ReleaseStats            string `envconfig:"RELEASE_STATS"`
 
-	TermsOfServiceFeatureFlag bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
+	TermsOfServiceFeatureFlag      bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
+	ChartVersionUpdaterFeatureFlag bool `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 }
 
 // Logging provides the logging configuration.
