@@ -54,3 +54,7 @@ func (c *ChartVersionUpdater) Run() {
 		time.Sleep(24 * time.Hour)
 	}
 }
+
+func updateChartVersion(manifestString string, latestVersion string) string {
+	return manifestString
+}
