@@ -62,6 +62,7 @@ func (c *ChartVersionUpdater) Run() {
 }
 
 func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, repoName string) error {
+	logrus.Infof("evaluating %s for chart version update", repoName)
 	prList, err := c.goScm.ListOpenPRs(token, repoName)
 	if err != nil {
 		return fmt.Errorf("cannot list pull requests: %s", err)
@@ -129,17 +130,18 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		return nil
 	}
 
-	err = server.StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] deployment configurations chart reference version update")
+	err = server.StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Deployment template update")
 	if err != nil {
 		return fmt.Errorf("cannot stage, commit and push: %s", err)
 	}
 
 	_, _, err = c.goScm.CreatePR(token, repoName, sourceBranch, headBranch,
-		"[Gimlet Dashboard] Upgrade deployment configurations chart reference version",
-		"deployment configurations chart reference version upgrade")
+		"[Gimlet] Deployment template update",
+		"This is an automated Pull Request that updates the Helm chart version in Gimlet manifests.")
 	if err != nil {
 		return fmt.Errorf("cannot create pull request: %s", err)
 	}
+	logrus.Infof("pull request created for %s with chart version update", repoName)
 	return nil
 }
 
