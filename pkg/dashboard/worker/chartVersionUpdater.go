@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
@@ -8,6 +10,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/sirupsen/logrus"
+	giturl "github.com/whilp/git-urls"
 )
 
 type ChartVersionUpdater struct {
@@ -55,6 +58,21 @@ func (c *ChartVersionUpdater) Run() {
 	}
 }
 
-func updateChartVersion(manifestString string, latestVersion string) string {
-	return manifestString
+func updateChartVersion(raw string, latestVersion string) string {
+	gitAddress, _ := giturl.Parse(latestVersion)
+	gitUrl := strings.ReplaceAll(latestVersion, gitAddress.RawQuery, "")
+	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
+
+	lines := strings.Split(raw, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, fmt.Sprintf("  name: %s", gitUrl)) {
+			lines[i] = fmt.Sprintf("  name: %s", latestVersion)
+			break
+		}
+		if strings.HasPrefix(line, "  version:") {
+			lines[i] = fmt.Sprintf("  version: %s", latestVersion)
+			break
+		}
+	}
+	return strings.Join(lines, "\n")
 }
