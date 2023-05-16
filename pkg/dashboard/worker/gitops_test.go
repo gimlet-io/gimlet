@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -410,6 +411,48 @@ cleanup:
 		Environments: []*dx.Manifest{&many},
 	}
 	assert.True(t, a.HasCleanupPolicy())
+}
+
+func Test_keepFieldOrder(t *testing.T) {
+	raw := `app: 'gimlet-dashboard'
+env: staging
+namespace: 'default'
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.39.0
+values:
+  containerPort: 9000
+  gitRepository: gimlet-io/gimlet
+  gitSha: '{{ .SHA }}'
+  image:
+    repository: ghcr.io/gimlet-io/gimlet
+    tag: v0.15.6
+    pullPolicy: Always
+  probe:
+    enabled: true
+    path: /health
+  volumes:
+    - name: repo-cache
+      path: /tmp/gimlet-dashboard
+      size: 5Gi
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+    tlsEnabled: true
+    host: 'gimlet.gimlet.io'
+`
+
+	var manifest dx.Manifest
+	yaml.Unmarshal([]byte(raw), &manifest)
+
+	var toSaveBuffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(&manifest)
+	assert.Nil(t, err)
+	fmt.Println(raw)
+	fmt.Println(toSaveBuffer.String())
 }
 
 func Test_revertTo(t *testing.T) {
