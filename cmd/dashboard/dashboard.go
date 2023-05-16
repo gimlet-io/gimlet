@@ -134,6 +134,7 @@ func main() {
 			tokenManager,
 			dashboardRepoCache,
 			goScm,
+			config.Chart,
 		)
 		go chartVersionUpdater.Run()
 	}

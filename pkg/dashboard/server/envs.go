@@ -117,7 +117,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
+	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
 	if err != nil {
 		logrus.Errorf("cannot generate branch name: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -671,7 +671,7 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
+	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
 	if err != nil {
 		logrus.Errorf("cannot generate branch name: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
