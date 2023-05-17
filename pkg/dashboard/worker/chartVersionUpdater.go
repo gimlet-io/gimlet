@@ -2,8 +2,10 @@ package worker
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -149,11 +151,17 @@ func updateChartVersion(raw string, latestVersion string) string {
 	gitAddress, _ := giturl.Parse(latestVersion)
 	gitUrl := strings.ReplaceAll(latestVersion, gitAddress.RawQuery, "")
 	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
+	params, _ := url.ParseQuery(gitAddress.RawQuery)
+	var latestHash string
+	if v, found := params["sha"]; found {
+		latestHash = fmt.Sprintf("sha=%s", v[0])
+	}
 
 	lines := strings.Split(raw, "\n")
 	for i, line := range lines {
 		if strings.HasPrefix(line, fmt.Sprintf("  name: %s", gitUrl)) {
-			lines[i] = fmt.Sprintf("  name: %s", latestVersion)
+			regex := regexp.MustCompile(`sha=([^& ]+)`)
+			lines[i] = regex.ReplaceAllString(line, latestHash)
 			break
 		}
 		if strings.HasPrefix(line, "  version:") {

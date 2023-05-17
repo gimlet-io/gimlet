@@ -71,3 +71,22 @@ values: {}
 	assert.Empty(t, updatedManifest.Chart.Version)
 	assert.Empty(t, updatedManifest.Chart.Repository)
 }
+
+func Test_updatingOnlyTheHashInHelmChartGitRepo(t *testing.T) {
+	raw := `app: 'gimlet-dashboard'
+env: staging
+namespace: 'default'
+chart:
+  name: git@github.com:gimlet-io/onechart.git?sha=a988d33fdff367d6f8efddfeb311b2b1c74c8ff2&path=/charts/cron-job/
+values: {}
+`
+
+	latestVersion := "git@github.com:gimlet-io/onechart.git?sha=abcdef&path=/charts/onechart/"
+
+	updated := updateChartVersion(raw, latestVersion)
+
+	var updatedManifest dx.Manifest
+	yaml.Unmarshal([]byte(updated), &updatedManifest)
+
+	assert.Equal(t, "git@github.com:gimlet-io/onechart.git?sha=abcdef&path=/charts/cron-job/", updatedManifest.Chart.Name)
+}
