@@ -35,11 +35,11 @@ func Test_updatingHelmChartInGitRepoHTTPSScheme(t *testing.T) {
 env: staging
 namespace: 'default'
 chart:
-  name: https://github.com/raffle-ai/onechart.git?sha=a988d33fdff367d6f8efddfeb311b2b1c74c8ff2&path=/charts/onechart/
+  name: https://github.com/my-fork/onechart.git?sha=a988d33fdff367d6f8efddfeb311b2b1c74c8ff2&path=/charts/onechart/
 values: {}
 `
 
-	latestVersion := "https://github.com/raffle-ai/onechart.git?sha=abcdef&path=/charts/onechart/"
+	latestVersion := "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/"
 
 	updated := updateChartVersion(raw, latestVersion)
 
