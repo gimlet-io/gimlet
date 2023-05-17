@@ -473,7 +473,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate branch name to write changes on
-	sourceBranch, err := generateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
 	if err != nil {
 		logrus.Errorf("cannot generate branch name: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -640,7 +640,7 @@ func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCom
 	return true, findShipper(ciConfigFiles, shipperCommand), nil
 }
 
-func generateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {
+func GenerateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {
 	b := make([]byte, uniqieHashlength)
 	_, err := rand.Read(b)
 	if err != nil {
