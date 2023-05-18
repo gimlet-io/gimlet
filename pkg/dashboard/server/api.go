@@ -349,7 +349,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chartReference := defaultChartFromConfig(config)
+	chartReference := chartFromConfig(config)
 
 	schemas := map[string]interface{}{}
 	schemas["schema"] = schema
@@ -369,7 +369,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 
 func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.Manifest, error) {
 	defaultManifest := &dx.Manifest{
-		Chart: defaultChartFromConfig(config),
+		Chart: chartFromConfig(config),
 	}
 
 	branch, err := helper.HeadBranch(repo)
@@ -406,7 +406,7 @@ func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.M
 	return defaultManifest, nil
 }
 
-func defaultChartFromConfig(config *config.Config) dx.Chart {
+func chartFromConfig(config *config.Config) dx.Chart {
 	if strings.HasPrefix(config.Chart.Name, "git@") ||
 		strings.Contains(config.Chart.Name, ".git") {
 		return dx.Chart{
