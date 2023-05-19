@@ -31,6 +31,7 @@ func Test_MustUser(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		&logger,
 	)
 	server := httptest.NewServer(router)

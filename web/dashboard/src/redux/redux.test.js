@@ -70,8 +70,8 @@ test('should set PR list', () => {
 
   let reduced = rootReducer(initialState, prListUpdated);
 
-  expect(Object.keys(reduced.pullRequests[repo]["staging"]).length).toEqual(1);
-  expect(reduced.pullRequests[repo]["staging"][0].link).toEqual("http://doesnotexist");
+  expect(Object.keys(reduced.pullRequests.configChanges[repo]["staging"]).length).toEqual(1);
+  expect(reduced.pullRequests.configChanges[repo]["staging"][0].link).toEqual("http://doesnotexist");
 });
 
 test('should save single repo PR', () => {

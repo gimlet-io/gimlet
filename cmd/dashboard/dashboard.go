@@ -128,12 +128,14 @@ func main() {
 	go dashboardRepoCache.Run()
 	log.Info("repo cache initialized")
 
+	chartUpdatePullRequests := map[string]interface{}{}
 	if config.ChartVersionUpdaterFeatureFlag {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			gitSvc,
 			tokenManager,
 			dashboardRepoCache,
 			goScm,
+			&chartUpdatePullRequests,
 			config.Chart,
 		)
 		go chartVersionUpdater.Run()
@@ -187,6 +189,7 @@ func main() {
 		gitSvc,
 		tokenManager,
 		dashboardRepoCache,
+		&chartUpdatePullRequests,
 		alertStateManager,
 		notificationsManager,
 		perf,

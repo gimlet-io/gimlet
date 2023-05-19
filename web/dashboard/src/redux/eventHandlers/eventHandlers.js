@@ -108,8 +108,13 @@ export function envPullRequests(state, payload) {
 }
 
 export function repoPullRequests(state, payload) {
-  state.pullRequests[payload.repoName] = payload.data;
+  state.pullRequests.configChanges[payload.repoName] = payload.data;
   return state;
+}
+
+export function chartUpdatePullRequests(state, payload) {
+  state.pullRequests.chartUpdates = payload;
+  return state
 }
 
 export function saveEnvPullRequest(state, payload) {

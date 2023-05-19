@@ -3,6 +3,7 @@ import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
 import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 import RefreshRepos from './refreshRepos';
+import { renderChartUpdatePullRequests } from '../pulse/pulse';
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -21,6 +22,7 @@ export default class Repositories extends Component {
       search: reduxState.search,
       agents: reduxState.settings.agents,
       application: reduxState.application,
+      chartUpdatePullRequests: reduxState.pullRequests.chartUpdates,
       repositoriesLoading: true,
       repositoriesRefreshing: false,
       isOpen: false,
@@ -42,6 +44,7 @@ export default class Repositories extends Component {
       this.setState({ agents: reduxState.settings.agents });
       this.setState({ favorites: favoriteRepos });
       this.setState({ application: reduxState.application });
+      this.setState({ chartUpdatePullRequests: reduxState.pullRequests.chartUpdates });
     });
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
@@ -179,25 +182,28 @@ export default class Repositories extends Component {
     return (
       <div>
         <header>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
-            <div className="space-y-2">
-              <button className="flex text-xs text-gray-700 hover:text-blue-700 mt-2"
-                onClick={() => {
-                  this.setState({ isOpen: true });
-                  this.refresh();
-                }}
-              >
-                Refresh repositories
-              </button>
-              {isOpen &&
-                <RefreshRepos
-                  added={this.state.added}
-                  deleted={this.state.deleted}
-                  repositoriesRefreshing={this.state.repositoriesRefreshing}
-                  installationURL={this.state.application.installationURL}
-                />}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <div>
+              <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
+              <div className="space-y-2">
+                <button className="flex text-xs text-gray-700 hover:text-blue-700 mt-2"
+                  onClick={() => {
+                    this.setState({ isOpen: true });
+                    this.refresh();
+                  }}
+                >
+                  Refresh repositories
+                </button>
+                {isOpen &&
+                  <RefreshRepos
+                    added={this.state.added}
+                    deleted={this.state.deleted}
+                    repositoriesRefreshing={this.state.repositoriesRefreshing}
+                    installationURL={this.state.application.installationURL}
+                  />}
+              </div>
             </div>
+            {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
           </div>
         </header>
         <main>
