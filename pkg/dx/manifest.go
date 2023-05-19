@@ -37,9 +37,9 @@ type Target struct {
 }
 
 type Chart struct {
-	Repository string `yaml:"repository" json:"repository"`
+	Repository string `yaml:"repository,omitempty" json:"repository,omitempty"`
 	Name       string `yaml:"name" json:"name"`
-	Version    string `yaml:"version" json:"version"`
+	Version    string `yaml:"version,omitempty" json:"version,omitempty"`
 }
 
 type Deploy struct {
