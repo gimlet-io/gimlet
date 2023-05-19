@@ -95,7 +95,7 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
   }
 
   return (
-    <div className="rounded-md bg-blue-100 p-4">
+    <div className="rounded-md bg-blue-50 p-4">
       <div className="flex">
         <div className="flex-shrink-0">
           <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
