@@ -211,6 +211,21 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	w.Write(pullRequestsString)
 }
 
+func getChartUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	chartUpdatePullRequests := ctx.Value("chartUpdatePullRequests").(*map[string]interface{})
+
+	pullRequestsString, err := json.Marshal(chartUpdatePullRequests)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(pullRequestsString)
+}
+
 func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)

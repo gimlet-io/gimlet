@@ -27,6 +27,8 @@ export default class GimletClient {
 
   getSettings = () => this.getWithAxios("/api/settings");
 
+  getChartUpdatePullRequests = () => this.getWithAxios("/api/chartUpdatePullRequests");
+  
   getRolloutHistoryPerApp = (owner, name, env, app) => this.get(`/api/releases?env=${env}&app=${app}&git-repo=${owner}/${name}&limit=10&reverse=true`);
 
   getReleases = (env, limit) => this.getWithAxios(`/api/releases?env=${env}&limit=${limit}&reverse=true`);

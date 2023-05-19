@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
 import Releases from './releases';
+import { InformationCircleIcon } from '@heroicons/react/solid'
 
 export default class Pulse extends Component {
   constructor(props) {
@@ -11,8 +12,9 @@ export default class Pulse extends Component {
       envs: reduxState.envs,
       releaseStatuses: reduxState.releaseStatuses,
       releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays,
-      alerts : decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents),
-      scmUrl: reduxState.settings.scmUrl
+      alerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents),
+      scmUrl: reduxState.settings.scmUrl,
+      chartUpdatePullRequests: reduxState.pullRequests.chartUpdates,
     }
 
     this.props.store.subscribe(() => {
@@ -23,6 +25,7 @@ export default class Pulse extends Component {
       this.setState({ releaseHistorySinceDays: reduxState.settings.releaseHistorySinceDays });
       this.setState({ alerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents) });
       this.setState({ scmUrl: reduxState.settings.scmUrl });
+      this.setState({ chartUpdatePullRequests: reduxState.pullRequests.chartUpdates });
     });
   }
 
@@ -37,11 +40,12 @@ export default class Pulse extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
+              {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
               {<KubernetesAlertBox
                 alerts={this.state.alerts}
                 history={this.props.history}
               />}
-              <h3 className="text-2xl font-semibold leading-tight text-gray-900 mt-16 mb-8">Environments</h3>
+              <h3 className="text-2xl font-semibold leading-tight text-gray-900 mt-8 mb-8">Environments</h3>
               <div className="my-8">
                 {this.state.envs.length > 0 ?
                   <div className="flow-root space-y-8">
@@ -72,6 +76,40 @@ export default class Pulse extends Component {
 export function emptyStateNoMatchingService() {
   return (
     <p className="text-base text-gray-800">No service matches the search</p>
+  )
+}
+
+export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
+  if (JSON.stringify(chartUpdatePullRequests) === "{}") {
+    return null
+  }
+
+  const prList = [];
+  for (const [repoName, pullRequest] of Object.entries(chartUpdatePullRequests)) {
+    prList.push(
+      <li key={pullRequest.sha}>
+        <a href={pullRequest.link} target="_blank" rel="noopener noreferrer">
+          <span className="font-medium">{repoName}</span>: {pullRequest.title}
+        </a>
+      </li>)
+  }
+
+  return (
+    <div className="rounded-md bg-blue-100 p-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+        </div>
+        <div className="ml-3 flex-1 text-blue-700 md:flex md:justify-between">
+          <div className="text-xs flex flex-col">
+            <span className="font-semibold text-sm">Helm chart version updates:</span>
+            <ul className="list-disc list-inside text-xs ml-2">
+              {prList}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

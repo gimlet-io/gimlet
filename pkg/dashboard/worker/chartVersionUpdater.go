@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
@@ -21,11 +22,12 @@ import (
 )
 
 type ChartVersionUpdater struct {
-	gitSvc       customScm.CustomGitService
-	tokenManager customScm.NonImpersonatedTokenManager
-	repoCache    *helper.RepoCache
-	goScm        *genericScm.GoScmHelper
-	chart        config.Chart
+	gitSvc            customScm.CustomGitService
+	tokenManager      customScm.NonImpersonatedTokenManager
+	repoCache         *helper.RepoCache
+	goScm             *genericScm.GoScmHelper
+	chartUpdatePrList *map[string]interface{}
+	chart             config.Chart
 }
 
 func NewChartVersionUpdater(
@@ -33,19 +35,22 @@ func NewChartVersionUpdater(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *helper.RepoCache,
 	goScm *genericScm.GoScmHelper,
+	chartUpdatePrList *map[string]interface{},
 	chart config.Chart,
 ) *ChartVersionUpdater {
 	return &ChartVersionUpdater{
-		gitSvc:       gitSvc,
-		tokenManager: tokenManager,
-		repoCache:    repoCache,
-		goScm:        goScm,
-		chart:        chart,
+		gitSvc:            gitSvc,
+		tokenManager:      tokenManager,
+		repoCache:         repoCache,
+		goScm:             goScm,
+		chartUpdatePrList: chartUpdatePrList,
+		chart:             chart,
 	}
 }
 
 func (c *ChartVersionUpdater) Run() {
 	for {
+		(*c.chartUpdatePrList) = map[string]interface{}{}
 		token, _, _ := c.tokenManager.Token()
 		repos, err := c.gitSvc.OrgRepos(token)
 		if err != nil {
@@ -71,6 +76,11 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 	}
 	for _, pullRequest := range prList {
 		if strings.HasPrefix(pullRequest.Source, "gimlet-chart-update") {
+			(*c.chartUpdatePrList)[repoName] = &api.PR{
+				Sha:   pullRequest.Sha,
+				Link:  pullRequest.Link,
+				Title: pullRequest.Title,
+			}
 			return nil
 		}
 	}
@@ -137,11 +147,16 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		return fmt.Errorf("cannot stage, commit and push: %s", err)
 	}
 
-	_, _, err = c.goScm.CreatePR(token, repoName, sourceBranch, headBranch,
+	createdPr, _, err := c.goScm.CreatePR(token, repoName, sourceBranch, headBranch,
 		"[Gimlet] Deployment template update",
 		"This is an automated Pull Request that updates the Helm chart version in Gimlet manifests.")
 	if err != nil {
 		return fmt.Errorf("cannot create pull request: %s", err)
+	}
+	(*c.chartUpdatePrList)[repoName] = &api.PR{
+		Sha:   createdPr.Sha,
+		Link:  createdPr.Link,
+		Title: createdPr.Title,
 	}
 	logrus.Infof("pull request created for %s with chart version update", repoName)
 	return nil

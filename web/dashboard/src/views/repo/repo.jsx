@@ -39,7 +39,7 @@ export default class Repo extends Component {
       envs: reduxState.envs,
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
-      pullRequests: reduxState.pullRequests[repoName],
+      pullRequests: reduxState.pullRequests.configChanges[repoName],
       kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName)
     }
 
@@ -57,7 +57,7 @@ export default class Repo extends Component {
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
-        pullRequests: reduxState.pullRequests[repoName],
+        pullRequests: reduxState.pullRequests.configChanges[repoName],
         kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl
       });
