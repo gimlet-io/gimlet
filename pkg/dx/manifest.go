@@ -18,6 +18,7 @@ type Manifest struct {
 	Deploy                *Deploy                `yaml:"deploy,omitempty" json:"deploy,omitempty"`
 	Cleanup               *Cleanup               `yaml:"cleanup,omitempty" json:"cleanup,omitempty"`
 	Chart                 Chart                  `yaml:"chart" json:"chart"`
+	Tenant                Tenant                 `yaml:"tenant,omitempty" json:"tenant,omitempty"`
 	Values                map[string]interface{} `yaml:"values" json:"values"`
 	StrategicMergePatches string                 `yaml:"strategicMergePatches" json:"strategicMergePatches"`
 	Json6902Patches       []Json6902Patch        `yaml:"json6902Patches" json:"json6902Patches"`
@@ -52,6 +53,10 @@ type Cleanup struct {
 	AppToCleanup string       `yaml:"app" json:"app"`
 	Event        CleanupEvent `yaml:"event" json:"event"`
 	Branch       string       `yaml:"branch,omitempty" json:"branch,omitempty"`
+}
+
+type Tenant struct {
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
 }
 
 func (m *Manifest) ResolveVars(vars map[string]string) error {

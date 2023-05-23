@@ -16,6 +16,8 @@ import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
 import { decorateKubernetesAlertsWithEnvAndRepo } from '../pulse/pulse';
+import { Menu } from '@headlessui/react'
+import { ChevronDownIcon } from '@heroicons/react/solid'
 
 export default class Repo extends Component {
   constructor(props) {
@@ -33,6 +35,7 @@ export default class Repo extends Component {
       branches: reduxState.branches,
       envConfigs: reduxState.envConfigs[repoName],
       selectedBranch: '',
+      selectedTenant: '',
       settings: reduxState.settings,
       refreshQueue: reduxState.repoRefreshQueue.filter(repo => repo === repoName).length,
       agents: reduxState.settings.agents,
@@ -390,6 +393,27 @@ export default class Repo extends Component {
     return envs.map(env => env["name"]);
   }
 
+  tenantsFromConfigs(envConfigs) {
+    let tenants = [];
+    for (const configs of Object.values(envConfigs)) {
+      configs.forEach(config => {
+        const tenantName = config.tenant.name;
+        if (tenantName && !tenants.includes(tenantName)) {
+          tenants.push(tenantName);
+        }
+      });
+    }
+    return tenants;
+  }
+
+  filteredConfigsByTenant(envConfigs, selectedTenant) {
+    let filteredConfigs = envConfigs;
+    if (selectedTenant !== "") {
+      filteredConfigs = envConfigs.filter(envConfig => envConfig.tenant.name === selectedTenant);
+    }
+    return filteredConfigs;
+  }
+
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -431,6 +455,53 @@ export default class Repo extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
+              <Menu as="span" className="relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  {this.state.selectedTenant === "" ? "Select tenant" : this.state.selectedTenant}
+                </Menu.Button>
+                <span className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      <Menu.Item key="all">
+                        {({ active }) => (
+                          <button
+                            onClick={() => this.setState({ selectedTenant: "" })}
+                            className={(
+                              active ? 'bg-yellow-100 text-gray-900' : 'bg-yellow-50 text-gray-700') +
+                              ' block px-4 py-2 text-sm w-full text-left'
+                            }
+                          >
+                            all tenants
+                          </button>
+                        )}
+                      </Menu.Item>
+                      {this.tenantsFromConfigs(envConfigs).map((tenant) => (
+                        <Menu.Item key={tenant}>
+                          {({ active }) => (
+                            <button
+                              onClick={() => this.setState({ selectedTenant: tenant })}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {tenant}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </span>
+              </Menu>
               <div>
                 {Object.keys(filteredEnvs).sort().map((envName) =>
                   <Env
@@ -439,7 +510,7 @@ export default class Repo extends Component {
                     envName={envName}
                     env={filteredEnvs[envName]}
                     repoRolloutHistory={repoRolloutHistory}
-                    envConfigs={envConfigs[envName]}
+                    envConfigs={this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)}
                     navigateToConfigEdit={this.navigateToConfigEdit}
                     linkToDeployment={this.linkToDeployment}
                     newConfig={this.newConfig}
