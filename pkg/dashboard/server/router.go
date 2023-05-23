@@ -34,8 +34,8 @@ func SetupRouter(
 	clientHub *streaming.ClientHub,
 	agentWSHub *streaming.AgentWSHub,
 	store *store.Store,
-	gitService customScm.CustomGitService,
-	tokenManager customScm.NonImpersonatedTokenManager,
+	gitService *customScm.CustomGitService,
+	tokenManager *customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
 	alertStateManager *alert.AlertStateManager,
@@ -90,6 +90,7 @@ func SetupRouter(
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
 	adminKeyAuthRoutes(r)
+	installerRoutes(r)
 
 	r.Get("/logout", logout)
 
@@ -98,10 +99,6 @@ func SetupRouter(
 	})
 
 	r.Post("/hook", hook)
-
-	r.Get("/settings/created", created)
-	r.Get("/settings/installed", installed)
-	r.Post("/settings/gitlabInit", gitlabInit)
 
 	r.Get("/flags", getFlags)
 
@@ -244,6 +241,16 @@ func adminKeyAuthRoutes(r *chi.Mux) {
 	r.Group(func(r chi.Router) {
 		r.Use(session.SetUser())
 		r.Post("/admin-key-auth", adminKeyAuth)
+	})
+}
+
+func installerRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustUser())
+		r.Get("/settings/created", created)
+		r.Get("/settings/installed", installed)
+		r.Post("/settings/gitlabInit", gitlabInit)
 	})
 }
 

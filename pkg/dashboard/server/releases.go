@@ -60,8 +60,15 @@ func getReleases(w http.ResponseWriter, r *http.Request) {
 	if since == nil {
 		// limiting query scope
 		// without these, for apps released just once, the whole history would be traversed
-		config := ctx.Value("config").(*config.Config)
-		t := time.Now().Add(-1 * time.Hour * 24 * time.Duration(config.ReleaseHistorySinceDays))
+		persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
+		releaseHistorySinceDaysString := persistentConfig.Get(store.ReleaseHistorySinceDays)
+		releaseHistorySinceDays, err := strconv.Atoi(releaseHistorySinceDaysString)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest)+" - "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		t := time.Now().Add(-1 * time.Hour * 24 * time.Duration(releaseHistorySinceDays))
 		since = &t
 	}
 	if val, ok := params["until"]; ok {
@@ -395,7 +402,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	err = nativeGit.NativePushWithToken(pathToCleanUp, repoName, token, head.Name().Short())
 	if err != nil {

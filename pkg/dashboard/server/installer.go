@@ -7,9 +7,10 @@ import (
 	"net/http"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
@@ -94,8 +95,12 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	// TODO error handling
 	config.Save(store.GithubOrg, appOwner)
 
-	httputil.DelCookie(w, r, "user_sess")
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	gitServiceImplFromCtx := ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManagerFromCtx := ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	(*gitServiceImplFromCtx) = &customGithub.GithubClient{}
+	(*tokenManagerFromCtx) = tokenManager
+
+	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {
@@ -141,6 +146,12 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	config.Save(store.GitlabURL, gitlabUrl)
 	config.Save(store.GitlabAdminToken, token)
 
-	httputil.DelCookie(w, r, "user_sess")
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	gitServiceImplFromCtx := ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManagerFromCtx := ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	(*gitServiceImplFromCtx) = &customGitlab.GitlabClient{
+		BaseURL: gitlabUrl,
+	}
+	(*tokenManagerFromCtx) = customGitlab.NewGitlabTokenManager(token)
+
+	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }

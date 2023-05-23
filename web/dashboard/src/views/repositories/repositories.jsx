@@ -211,7 +211,7 @@ export default class Repositories extends Component {
             <Spinner />
             :
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-              {favorites.length > 0 &&
+              {favorites?.length > 0 &&
                 <div className="px-4 pt-8 sm:px-0">
                   <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Favorites</h4>
                   <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -221,7 +221,7 @@ export default class Repositories extends Component {
               }
               <div className="px-4 pt-8 sm:px-0">
                 <div>
-                  {favorites.length > 0 &&
+                  {favorites?.length > 0 &&
                     <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
                   }
                   <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

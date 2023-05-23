@@ -8,6 +8,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/google/go-github/v37/github"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -315,9 +316,6 @@ func (c *GithubClient) OrgRepos(installationToken string) ([]string, error) {
 }
 
 func (c *GithubClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context.Context) (string, string, string, error) {
-
-	config := ctx.Value("config").(*config.Config)
-
 	client := github.NewClient(
 		&http.Client{
 			Transport: &transport{
@@ -332,7 +330,8 @@ func (c *GithubClient) GetAppNameAndAppSettingsURLs(appToken string, ctx context
 		return "", "", "", fmt.Errorf("cannot get info from App : %s", err)
 	}
 
-	installationID := config.Github.InstallationID
+	persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	installationID := persistentConfig.Get(store.GithubInstallationID)
 	installationIDint, err := strconv.ParseInt(installationID, 0, 64)
 	if err != nil {
 		return "", "", "", fmt.Errorf("cannot parse App Token : %s", err)

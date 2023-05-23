@@ -21,14 +21,6 @@ export default class APIBackend extends Component {
       return;
     }
 
-    if (this.props.location.pathname.startsWith('/settings')) {
-      this.props.gimletClient.getSettings()
-      .then(data => {
-        this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data })}, () => {/* Generic error handler deals with it */
-      });
-      return
-    }
-
     this.props.gimletClient.getAgents()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_AGENTS, payload: data }), () => {/* Generic error handler deals with it */
       });
@@ -53,7 +45,7 @@ export default class APIBackend extends Component {
       this.props.gimletClient.getSettings()
       .then(data => {
         this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data });
-        if (data.provider === "") {
+        if (data.provider === "" && !this.props.location.pathname.startsWith('/settings')) {
           window.location.replace("/settings");
         }
       }, () => {/* Generic error handler deals with it */

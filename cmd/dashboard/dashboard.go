@@ -89,7 +89,7 @@ func main() {
 		panic(err)
 	}
 
-	gitSvc, tokenManager := initTokenManager(config)
+	gitSvc, tokenManager := initTokenManager(config, persistentConfig) // TODO only one config input
 	notificationsManager := initNotifications(config, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
@@ -197,8 +197,8 @@ func main() {
 		clientHub,
 		agentWSHub,
 		store,
-		gitSvc,
-		tokenManager,
+		&gitSvc,
+		&tokenManager,
 		dashboardRepoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,

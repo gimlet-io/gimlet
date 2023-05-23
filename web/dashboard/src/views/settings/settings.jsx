@@ -109,7 +109,7 @@ export default class Settings extends Component {
                 :
                 <div>
                   {settings.scmUrl === "https://github.com" &&
-                    githubAppSettings(application.name, application.appSettingsURL, application.installationURL)}
+                    githubAppSettings(application)}
                   {users &&
                     userList(sortedUsers, DefaultProfilePicture, settings.scmUrl)
                   }
@@ -147,7 +147,11 @@ export default class Settings extends Component {
   }
 }
 
-function githubAppSettings(appName, appSettingsURL, installationURL) {
+function githubAppSettings(application) {
+  if (application.name === "") {
+    return null
+  }
+
   return (
     <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 my-4">
       <div className="px-4 py-5 sm:px-6">
@@ -158,13 +162,13 @@ function githubAppSettings(appName, appSettingsURL, installationURL) {
       <div className="px-4 py-5 sm:px-6">
         <div className="inline-grid">
           <span
-            onClick={() => window.open(appSettingsURL)}
+            onClick={() => window.open(application.appSettingsURL)}
             className="mt-1 text-sm text-gray-500 hover:text-gray-600 cursor-pointer">
-            Settings for {appName}
+            Settings for {application.name}
           </span>
           <span>
             <a
-              href={installationURL}
+              href={application.installationURL}
               rel="noreferrer"
               target="_blank"
               className="mt-1 text-sm text-gray-500 hover:text-gray-600">

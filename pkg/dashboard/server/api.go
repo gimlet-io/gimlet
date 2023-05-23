@@ -284,8 +284,8 @@ func agents(w http.ResponseWriter, r *http.Request) {
 
 func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	for _, env := range envs {
 		for _, stack := range env.Stacks {
@@ -307,7 +307,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -423,8 +423,8 @@ func chartFromConfig(config *config.Config) dx.Chart {
 
 func application(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 
 	tokenString, err := tokenManager.AppToken()
 	if err != nil {
@@ -514,13 +514,13 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 
 func getFlags(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	var provider string
-	termsOfServiceFeatureFlag := config.TermsOfServiceFeatureFlag
+	termsOfServiceFeatureFlag := config.Get(store.TermsOfServiceFeatureFlag)
 
-	if config.IsGithub() {
+	if config.Get(store.GithubClientID) != "" {
 		provider = "GitHub"
-	} else if config.IsGitlab() {
+	} else if config.Get(store.GitlabClientID) != "" {
 		provider = "GitLab"
 	}
 

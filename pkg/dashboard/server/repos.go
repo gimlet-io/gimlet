@@ -21,8 +21,8 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	user := ctx.Value("user").(*model.User)
 	// TODO, this prevents a program error, if we auth with admin key
 	if user.AccessToken == "" {
-		logrus.Errorf("missing access token for user %s", user.Login)
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
 		return
 	}
 
@@ -106,8 +106,8 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateOrgRepos(ctx context.Context) {
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
 	orgRepos, err := gitServiceImpl.OrgRepos(token)
@@ -233,20 +233,32 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 
 func settings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	// config := ctx.Value("config").(*config.Config)
 
 	var provider string
-	if config.IsGithub() {
+	if persistentConfig.Get(store.GithubAppID) != "" {
 		provider = "github"
-	} else if config.IsGitlab() {
+	} else if persistentConfig.Get(store.GitlabClientID) != "" {
 		provider = "gitlab"
 	}
 
+	var scmUrl string
+	if persistentConfig.Get(store.GithubAppID) != "" {
+		scmUrl = "https://github.com"
+	} else if persistentConfig.Get(store.GitlabClientID) != "" {
+		if persistentConfig.Get(store.GitlabURL) != "" {
+			scmUrl = persistentConfig.Get(store.GitlabURL)
+		} else {
+			scmUrl = "https://gitlab.com"
+		}
+	}
+
 	settings := map[string]interface{}{
-		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
-		"scmUrl":                  config.ScmURL(),
-		"userflowToken":           config.UserflowToken,
-		"host":                    config.Host,
+		"releaseHistorySinceDays": persistentConfig.Get(store.ReleaseHistorySinceDays),
+		"scmUrl":                  scmUrl,
+		"userflowToken":           persistentConfig.Get(store.UserflowToken),
+		"host":                    persistentConfig.Get(store.Host),
 		"provider":                provider,
 	}
 
