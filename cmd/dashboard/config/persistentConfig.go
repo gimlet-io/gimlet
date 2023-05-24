@@ -24,7 +24,7 @@ func NewPersistentConfig(dao *store.Store, config *Config) (*PersistentConfig, e
 func (p *PersistentConfig) Get(key string) string {
 	config, err := p.dao.GetConfig(key)
 	if err != nil {
-		logrus.Error("cannot get config from db: %s", err)
+		logrus.Warnf("cannot get config from db: %s", err)
 	}
 	return config.Value
 }
