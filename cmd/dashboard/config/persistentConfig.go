@@ -24,7 +24,7 @@ func NewPersistentConfig(dao *store.Store, config *Config) (*PersistentConfig, e
 func (p *PersistentConfig) Get(key string) string {
 	config, err := p.dao.GetConfig(key)
 	if err != nil {
-		logrus.Warnf("cannot get config from db: %s", err)
+		logrus.Warnf("cannot get config %s from db: %s", key, err)
 	}
 	return config.Value
 }
@@ -34,6 +34,37 @@ func (p *PersistentConfig) Save(key string, value string) error {
 		Key:   key,
 		Value: value,
 	})
+}
+
+func (p *PersistentConfig) IsGithub() bool {
+	return p.Get(store.GithubAppID) != ""
+}
+
+func (p *PersistentConfig) IsGitlab() bool {
+	return p.Get(store.GitlabClientID) != ""
+}
+
+func (p *PersistentConfig) Org() string {
+	if p.IsGithub() {
+		return p.Get(store.GithubOrg)
+	} else if p.IsGitlab() {
+		return p.Get(store.GitlabOrg)
+	}
+
+	return ""
+}
+
+func (p *PersistentConfig) ScmURL() string {
+	if p.IsGithub() {
+		return "https://github.com"
+	} else if p.IsGitlab() {
+		if p.Get(store.GitlabURL) != "" {
+			return p.Get(store.GitlabURL)
+		}
+		return "https://gitlab.com"
+	}
+
+	return ""
 }
 
 func (p *PersistentConfig) saveConfigFile(config *Config) error {

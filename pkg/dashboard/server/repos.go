@@ -19,7 +19,7 @@ import (
 func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
-	// TODO, this prevents a program error, if we auth with admin key
+	// TODO, this prevents a program error, if we auth with admin key, might rewrite to get access to repos, after admin install
 	if user.AccessToken == "" {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("[]"))
@@ -27,7 +27,7 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 
 	go updateUserRepos(config, dao, user)
 
@@ -73,7 +73,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 
 	user, err := dao.User(user.Login)
 	if err != nil {
@@ -133,7 +133,7 @@ func updateOrgRepos(ctx context.Context) {
 	}
 }
 
-func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
+func updateUserRepos(config *config.PersistentConfig, dao *store.Store, user *model.User) []string {
 	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
 		user.AccessToken = token.Token
 		user.RefreshToken = token.Refresh
@@ -233,32 +233,20 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 
 func settings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
-	// config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 
 	var provider string
-	if persistentConfig.Get(store.GithubAppID) != "" {
+	if config.IsGithub() {
 		provider = "github"
-	} else if persistentConfig.Get(store.GitlabClientID) != "" {
+	} else if config.IsGitlab() {
 		provider = "gitlab"
 	}
 
-	var scmUrl string
-	if persistentConfig.Get(store.GithubAppID) != "" {
-		scmUrl = "https://github.com"
-	} else if persistentConfig.Get(store.GitlabClientID) != "" {
-		if persistentConfig.Get(store.GitlabURL) != "" {
-			scmUrl = persistentConfig.Get(store.GitlabURL)
-		} else {
-			scmUrl = "https://gitlab.com"
-		}
-	}
-
 	settings := map[string]interface{}{
-		"releaseHistorySinceDays": persistentConfig.Get(store.ReleaseHistorySinceDays),
-		"scmUrl":                  scmUrl,
-		"userflowToken":           persistentConfig.Get(store.UserflowToken),
-		"host":                    persistentConfig.Get(store.Host),
+		"releaseHistorySinceDays": config.Get(store.ReleaseHistorySinceDays),
+		"scmUrl":                  config.ScmURL(),
+		"userflowToken":           config.Get(store.UserflowToken),
+		"host":                    config.Get(store.Host),
 		"provider":                provider,
 	}
 

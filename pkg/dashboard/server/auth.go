@@ -29,7 +29,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 	token := login.TokenFrom(ctx)
 
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	goScmHelper := genericScm.NewGoScmHelper(config, nil)
 	scmUser, err := goScmHelper.User(token.Access, token.Refresh)
 	if err != nil {
@@ -77,7 +77,7 @@ func adminKeyAuth(w http.ResponseWriter, r *http.Request) {
 	formValues := r.Form
 	adminKey := formValues.Get("token")
 	ctx := r.Context()
-	// persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	// TODO persistentConfig := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	if adminKey != "e07ec49bf9eb22d2a995b140" { // persistentConfig.Get(config.AdminKey)
 		log.Errorf("token is not valid")
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)

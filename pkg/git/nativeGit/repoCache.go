@@ -12,6 +12,7 @@ import (
 
 	dashboardConfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/go-scm/scm"
@@ -36,7 +37,7 @@ type RepoCache struct {
 
 	// For webhook registration
 	goScmHelper *genericScm.GoScmHelper
-	config      *dashboardConfig.Config
+	config      *dashboardConfig.PersistentConfig
 
 	clientHub *streaming.ClientHub
 
@@ -53,7 +54,7 @@ func NewRepoCache(
 	stopCh chan struct{},
 	cachePath string,
 	goScmHelper *genericScm.GoScmHelper,
-	config *dashboardConfig.Config,
+	config *dashboardConfig.PersistentConfig,
 	clientHub *streaming.ClientHub,
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
@@ -110,6 +111,10 @@ func (r *RepoCache) Run() {
 		case <-time.After(30 * time.Second):
 		}
 	}
+}
+
+func (r *RepoCache) SetTokenManager(tokenManager customScm.NonImpersonatedTokenManager) {
+	r.tokenManager = tokenManager
 }
 
 func (r *RepoCache) syncGitRepo(repoName string) {
@@ -344,9 +349,9 @@ func (r *RepoCache) registerWebhook(repoName string) {
 		return
 	}
 	err = r.goScmHelper.RegisterWebhook(
-		r.config.Host,
+		r.config.Get(store.Host),
 		token,
-		r.config.WebhookSecret,
+		r.config.Get(store.WebhookSecret),
 		owner,
 		repo,
 	)

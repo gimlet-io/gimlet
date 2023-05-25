@@ -26,7 +26,7 @@ import (
 func hook(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	goScmHelper := genericScm.NewGoScmHelper(config, nil)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
@@ -36,7 +36,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
 
 	webhook, err := goScmHelper.Parse(r, func(webhook scm.Webhook) (string, error) {
-		return config.WebhookSecret, nil
+		return config.Get(store.WebhookSecret), nil
 	})
 	if err != nil {
 		if config.IsGithub() {

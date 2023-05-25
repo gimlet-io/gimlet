@@ -77,26 +77,26 @@ func adminToken(config *config.Config) string {
 	}
 }
 
-func initTokenManager(config *config.Config, persistentConfig *config.PersistentConfig) (customScm.CustomGitService, customScm.NonImpersonatedTokenManager) {
+func initTokenManager(config *config.PersistentConfig) (customScm.CustomGitService, customScm.NonImpersonatedTokenManager) {
 	var gitSvc customScm.CustomGitService
 	var tokenManager customScm.NonImpersonatedTokenManager
 
-	if persistentConfig.Get(store.GithubClientID) != "" {
+	if config.IsGithub() {
 		gitSvc = &customGithub.GithubClient{}
 		var err error
 		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			persistentConfig.Get(store.GithubAppID),
-			persistentConfig.Get(store.GithubInstallationID),
-			persistentConfig.Get(store.GithubPrivateKey),
+			config.Get(store.GithubAppID),
+			config.Get(store.GithubInstallationID),
+			config.Get(store.GithubPrivateKey),
 		)
 		if err != nil {
 			panic(err)
 		}
-	} else if persistentConfig.Get(store.GitlabClientID) != "" {
+	} else if config.IsGitlab() {
 		gitSvc = &customGitlab.GitlabClient{
 			BaseURL: config.ScmURL(),
 		}
-		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
+		tokenManager = customGitlab.NewGitlabTokenManager(config.Get(store.GitlabAdminToken))
 	} else {
 		gitSvc = customScm.NewDummyGitService()
 		tokenManager = customScm.NewDummyTokenManager()

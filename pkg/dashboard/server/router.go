@@ -87,7 +87,7 @@ func SetupRouter(
 
 	agentRoutes(r, agentWSHub)
 	userRoutes(r)
-	githubOAuthRoutes(config, r)
+	githubOAuthRoutes(persistentConfig, r)
 	gimletdRoutes(r)
 	adminKeyAuthRoutes(r)
 	installerRoutes(r)
@@ -196,15 +196,16 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 	})
 }
 
-func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
+// TODO this runs only on start, but after we write configs to db, somehow have to rerun, to get auth
+func githubOAuthRoutes(config *config.PersistentConfig, r *chi.Mux) {
 	if config.IsGithub() {
 		dumper := logger.DiscardDumper()
-		if config.Github.Debug {
+		if config.Get(store.GithubDebug) == "true" {
 			dumper = logger.StandardDumper()
 		}
 		loginMiddleware := &github.Config{
-			ClientID:     config.Github.ClientID,
-			ClientSecret: config.Github.ClientSecret,
+			ClientID:     config.Get(store.GithubClientID),
+			ClientSecret: config.Get(store.GithubClientSecret),
 			// you don't need to provide scopes in your authorization request.
 			// Unlike traditional OAuth, the authorization token is limited to the permissions associated
 			// with your GitHub App and those of the user.
@@ -222,9 +223,9 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 	} else if config.IsGitlab() {
 		loginMiddleware := &gitlab.Config{
 			Server:       config.ScmURL(),
-			ClientID:     config.Gitlab.ClientID,
-			ClientSecret: config.Gitlab.ClientSecret,
-			RedirectURL:  config.Host + "/auth",
+			ClientID:     config.Get(store.GitlabClientID),
+			ClientSecret: config.Get(store.GitlabClientSecret),
+			RedirectURL:  config.Get(store.Host) + "/auth",
 			Scope:        []string{"api"},
 		}
 

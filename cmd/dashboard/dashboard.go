@@ -89,13 +89,13 @@ func main() {
 		panic(err)
 	}
 
-	gitSvc, tokenManager := initTokenManager(config, persistentConfig) // TODO only one config input
+	gitSvc, tokenManager := initTokenManager(persistentConfig)
 	notificationsManager := initNotifications(config, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
 
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	goScm := genericScm.NewGoScmHelper(persistentConfig, nil)
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
@@ -128,7 +128,7 @@ func main() {
 		stopCh,
 		config.RepoCachePath,
 		goScm,
-		config,
+		persistentConfig,
 		clientHub,
 	)
 	if err != nil {

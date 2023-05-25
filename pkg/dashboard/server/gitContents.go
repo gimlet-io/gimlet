@@ -153,7 +153,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
 
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
@@ -228,7 +228,7 @@ func getChartUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
 
 func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
@@ -396,7 +396,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	user := ctx.Value("user").(*model.User)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
