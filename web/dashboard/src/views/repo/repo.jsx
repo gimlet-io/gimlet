@@ -407,11 +407,17 @@ export default class Repo extends Component {
   }
 
   filteredConfigsByTenant(envConfigs, selectedTenant) {
-    let filteredConfigs = envConfigs;
-    if (selectedTenant !== "") {
-      filteredConfigs = envConfigs.filter(envConfig => envConfig.tenant.name === selectedTenant);
+    if (!envConfigs || !selectedTenant) {
+      return envConfigs;
     }
-    return filteredConfigs;
+
+    const filteredEnvs = envConfigs.filter(envConfig => envConfig.tenant.name === selectedTenant);
+    
+    if (filteredEnvs.length === 0) {
+      return undefined;
+    }
+
+    return filteredEnvs;
   }
 
   render() {
@@ -455,7 +461,7 @@ export default class Repo extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              <Menu as="span" className="relative inline-flex shadow-sm rounded-md align-middle">
+              <Menu as="span" className="relative inline-flex shadow-sm rounded-md align-middle mb-4">
                 <Menu.Button
                   className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >

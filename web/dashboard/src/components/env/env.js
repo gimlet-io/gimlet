@@ -166,7 +166,7 @@ function fileName(fileInfos, appName) {
 }
 
 function emptyState(searchFilter, envConfigs, newConfig, envName, repoName) {
-  if (!envConfigs || envConfigs.length === 0) {
+  if (!envConfigs) {
     return emptyStateDeployThisRepo(newConfig, envName, repoName);
   }
 
