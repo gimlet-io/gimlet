@@ -5,7 +5,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 
-const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl }) => {
+const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, apps }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
   const repoName = `${owner}/${repo}`
   const commitsRef = useRef();
@@ -114,7 +114,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                 connectedAgents={connectedAgents}
               />
               <DeployWidget
-                deployTargets={filterDeployTargets(commit.deployTargets, envs)}
+                deployTargets={filterDeployTargets(commit.deployTargets, envs, apps)}
                 deployHandler={deployHandler}
                 sha={commit.sha}
                 repo={repoName}
@@ -160,12 +160,13 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
   )
 }
 
-const filterDeployTargets = (deployTargets, envs) => {
+const filterDeployTargets = (deployTargets, envs, apps) => {
   if (!deployTargets || !envs) {
     return undefined;
   }
 
-  const filteredTargets = deployTargets.filter(deployTarget => envs.includes(deployTarget.env));
+  let filteredTargets = deployTargets.filter(deployTarget => envs.includes(deployTarget.env));
+  filteredTargets = filteredTargets.filter(deployTarget => apps.includes(deployTarget.app));
 
   if (filteredTargets.length === 0) {
     return undefined;

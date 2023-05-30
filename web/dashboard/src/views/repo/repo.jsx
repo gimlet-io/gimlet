@@ -420,6 +420,17 @@ export default class Repo extends Component {
     return filteredEnvs;
   }
 
+  filteredAppsByTenant(filteredEnvs, envConfigs) {
+    let filteredApps = []
+    Object.keys(filteredEnvs).forEach((envName) => {
+      const filteredConfigs = this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)
+      if (filteredConfigs) {
+        filteredConfigs.map((config) => filteredApps.push(config.app))
+      }
+    })
+    return filteredApps;
+  }
+
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -558,6 +569,7 @@ export default class Repo extends Component {
                       owner={owner}
                       branch={this.state.selectedBranch}
                       scmUrl={scmUrl}
+                      apps={this.filteredAppsByTenant(filteredEnvs, envConfigs)}
                     />
                   }
                 </div>
