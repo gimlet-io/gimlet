@@ -15,14 +15,14 @@ require (
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
 	github.com/fatih/color v1.15.0
-	github.com/fluxcd/flux2 v0.33.0
-	github.com/fluxcd/kustomize-controller/api v0.27.1
-	github.com/fluxcd/notification-controller/api v0.25.2
-	github.com/fluxcd/pkg/apis/meta v0.15.0
+	github.com/fluxcd/flux2 v0.35.0
+	github.com/fluxcd/kustomize-controller/api v0.29.0
+	github.com/fluxcd/notification-controller/api v0.27.0
+	github.com/fluxcd/pkg/apis/meta v0.16.0
 	github.com/fluxcd/pkg/runtime v0.18.0
 	github.com/fluxcd/pkg/sourceignore v0.2.0
 	github.com/fluxcd/pkg/ssh v0.6.0
-	github.com/fluxcd/source-controller/api v0.28.0
+	github.com/fluxcd/source-controller/api v0.30.0
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.4
@@ -60,9 +60,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.10.0
-	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.0
-	k8s.io/client-go v0.25.0
+	k8s.io/api v0.25.2
+	k8s.io/apimachinery v0.25.2
+	k8s.io/client-go v0.25.2
 	sigs.k8s.io/kustomize/api v0.12.1
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -70,6 +70,7 @@ require (
 require (
 	github.com/alecthomas/colour v0.1.0 // indirect
 	github.com/alecthomas/repr v0.0.0-20210801044451-80ca428c5142 // indirect
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/jwx/v2 v2.0.6 // indirect
@@ -126,10 +127,10 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v0.5.0 // indirect
-	github.com/fluxcd/pkg/kustomize v0.6.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v0.6.0 // indirect
+	github.com/fluxcd/pkg/kustomize v0.7.0 // indirect
 	github.com/fluxcd/pkg/untar v0.2.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
@@ -237,16 +238,16 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
-	k8s.io/apiextensions-apiserver v0.25.0 // indirect
-	k8s.io/apiserver v0.25.0 // indirect
+	k8s.io/apiextensions-apiserver v0.25.2 // indirect
+	k8s.io/apiserver v0.25.2 // indirect
 	k8s.io/cli-runtime v0.25.0 // indirect
-	k8s.io/component-base v0.25.0 // indirect
+	k8s.io/component-base v0.25.2 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/kubectl v0.25.0 // indirect
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 // indirect
 	oras.land/oras-go v1.2.0 // indirect
-	sigs.k8s.io/controller-runtime v0.12.3 // indirect
+	sigs.k8s.io/controller-runtime v0.13.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
