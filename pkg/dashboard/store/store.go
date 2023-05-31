@@ -12,8 +12,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	// MySQL driver
-	_ "github.com/go-sql-driver/mysql"
 	// PostgreSQL driver
 	_ "github.com/lib/pq"
 	// Sqlite driver
@@ -51,10 +49,6 @@ func open(driver, config, encryptionKey, encryptionKeyNew string) *sql.DB {
 	if err != nil {
 		logrus.Errorln(err)
 		logrus.Fatalln("database connection failed")
-	}
-	if driver == "mysql" {
-		// per issue https://github.com/go-sql-driver/mysql/issues/257
-		db.SetMaxIdleConns(0)
 	}
 
 	setupMeddler(driver, encryptionKey, encryptionKeyNew)
@@ -133,8 +127,6 @@ func setupMeddler(driver, encryptionKey, encryptionKeyNew string) {
 	switch driver {
 	case "sqlite3":
 		meddler.Default = meddler.SQLite
-	case "mysql":
-		meddler.Default = meddler.MySQL
 	case "postgres":
 		meddler.Default = meddler.PostgreSQL
 	}

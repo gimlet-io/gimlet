@@ -26,12 +26,11 @@ require (
 	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.4
-	github.com/go-chi/chi/v5 v5.0.7
-	github.com/go-chi/cors v1.2.0
-	github.com/go-chi/jwtauth/v5 v5.0.2
+	github.com/go-chi/chi/v5 v5.0.8
+	github.com/go-chi/cors v1.2.1
+	github.com/go-chi/jwtauth/v5 v5.1.0
 	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/go-github/v37 v37.0.0
@@ -72,6 +71,8 @@ require (
 	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
 	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/lestrrat-go/httprc v1.0.4 // indirect
+	github.com/lestrrat-go/jwx/v2 v2.0.6 // indirect
 )
 
 require (
@@ -107,7 +108,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dlclark/regexp2 v1.1.6 // indirect
 	github.com/docker/cli v20.10.17+incompatible // indirect
@@ -137,7 +138,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
-	github.com/goccy/go-json v0.7.6 // indirect
+	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -168,11 +169,9 @@ require (
 	github.com/kyokomi/emoji/v2 v2.2.8 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
-	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
-	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
-	github.com/lestrrat-go/httpcc v1.0.0 // indirect
-	github.com/lestrrat-go/iter v1.0.1 // indirect
-	github.com/lestrrat-go/jwx v1.2.6 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
+	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/iter v1.0.2 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
