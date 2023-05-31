@@ -117,6 +117,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 type DeployTarget struct {
 	App        string `json:"app"`
 	Env        string `json:"env"`
+	Tenant     string `json:"tenant"`
 	ArtifactId string `json:"artifactId"`
 }
 
