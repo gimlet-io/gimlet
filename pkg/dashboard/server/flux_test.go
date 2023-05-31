@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	fluxEvents "github.com/fluxcd/pkg/runtime/events"
+	fluxEvents "github.com/fluxcd/pkg/apis/event/v1beta1"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"

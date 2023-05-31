@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	fluxEvents "github.com/fluxcd/pkg/runtime/events"
+	fluxEvents "github.com/fluxcd/pkg/apis/event/v1beta1"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
