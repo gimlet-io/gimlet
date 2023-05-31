@@ -6,15 +6,15 @@ require (
 	cuelang.org/go v0.4.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/MichaelMure/go-term-markdown v0.1.4
-	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
+	github.com/alecthomas/assert v1.0.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
-	github.com/bwmarrin/discordgo v0.23.2
+	github.com/bwmarrin/discordgo v0.27.1
 	github.com/caarlos0/sshmarshal v0.0.0-20220308164159-9ddb9f83c6b3
-	github.com/cenkalti/backoff/v4 v4.1.2
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
-	github.com/fatih/color v1.13.0
+	github.com/fatih/color v1.15.0
 	github.com/fluxcd/flux2 v0.33.0
 	github.com/fluxcd/kustomize-controller/api v0.27.1
 	github.com/fluxcd/notification-controller/api v0.25.2
@@ -36,20 +36,20 @@ require (
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/securecookie v1.1.1
-	github.com/gorilla/websocket v1.4.2
-	github.com/joho/godotenv v1.4.0
+	github.com/gorilla/websocket v1.5.0
+	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/laszlocph/go-login v1.0.4-0.20200901120411-b6d05e420c8a
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/otiai10/copy v1.7.0
+	github.com/otiai10/copy v1.11.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/russross/meddler v1.0.1
-	github.com/rvflash/elapsed v0.2.0
-	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
-	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.0
+	github.com/rvflash/elapsed v0.3.0
+	github.com/shurcooL/githubv4 v0.0.0-20230424031643-6cea62ecd5a9
+	github.com/sirupsen/logrus v1.9.2
+	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -68,11 +68,12 @@ require (
 )
 
 require (
-	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
-	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
+	github.com/alecthomas/colour v0.1.0 // indirect
+	github.com/alecthomas/repr v0.0.0-20210801044451-80ca428c5142 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/jwx/v2 v2.0.6 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 )
 
 require (
@@ -176,8 +177,8 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
@@ -224,7 +225,7 @@ require (
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/image v0.0.0-20191206065243-da761ea9ff43 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
-	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
