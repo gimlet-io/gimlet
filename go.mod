@@ -7,12 +7,10 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/MichaelMure/go-term-markdown v0.1.4
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
-	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/caarlos0/sshmarshal v0.0.0-20220308164159-9ddb9f83c6b3
-	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
@@ -45,7 +43,6 @@ require (
 	github.com/laszlocph/go-login v1.0.4-0.20200901120411-b6d05e420c8a
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mdaverde/jsonpath v0.0.0-20180315003411-f4ae4b6f36b5
 	github.com/otiai10/copy v1.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
@@ -74,6 +71,7 @@ require (
 require (
 	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
 	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 )
 
 require (
@@ -187,7 +185,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/mkmik/multierror v0.3.0 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
