@@ -70,7 +70,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
               <div>
                 <div className="text-sm">
                   <p href="#" className="font-semibold text-gray-800">{commit.message}
-                    <span class="commitStatus">
+                    <span className="commitStatus">
                       {
                         commit.status && commit.status.statuses &&
                         commit.status.statuses.map(status => (
@@ -101,11 +101,6 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                     {dateLabel} ago
                   </a>
                 </p>
-              </div>
-              <div className="mt-2 text-sm text-gray-700">
-                <div className="ml-2 md:ml-4">
-
-                </div>
               </div>
             </div>
             <div className="pr-4">
