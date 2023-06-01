@@ -19,10 +19,10 @@ type Manifest struct {
 	Deploy                *Deploy                `yaml:"deploy,omitempty" json:"deploy,omitempty"`
 	Cleanup               *Cleanup               `yaml:"cleanup,omitempty" json:"cleanup,omitempty"`
 	Chart                 Chart                  `yaml:"chart" json:"chart"`
-	Values                map[string]interface{} `yaml:"values" json:"values"`
+	Values                map[string]interface{} `yaml:"values,omitempty" json:"values,omitempty"`
 	StrategicMergePatches string                 `yaml:"strategicMergePatches,omitempty" json:"strategicMergePatches,omitempty"`
 	Json6902Patches       []Json6902Patch        `yaml:"json6902Patches,omitempty" json:"json6902Patches,omitempty"`
-	Manifests             string                 `yaml:"manifests" json:"manifests"`
+	Manifests             string                 `yaml:"manifests,omitempty" json:"manifests,omitempty"`
 	Dependencies          []Dependency           `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
 }
 

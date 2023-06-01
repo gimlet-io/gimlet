@@ -119,11 +119,49 @@ dependencies:
 
 	var m Manifest
 	err := yaml.Unmarshal([]byte(manifestString), &m)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(m.Dependencies))
-	dep := m.Dependencies[0]
-	assert.Equal(t, "my-redis", dep.Name)
-	assert.Equal(t, "terraform", dep.Kind)
-	tfSpec := dep.Spec.(TFSpec)
-	assert.Equal(t, "https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache", tfSpec.Module)
+	if assert.NoError(t, err) {
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(m.Dependencies))
+		dep := m.Dependencies[0]
+		assert.Equal(t, "my-redis", dep.Name)
+		assert.Equal(t, "terraform", dep.Kind)
+		tfSpec := dep.Spec.(TFSpec)
+		assert.Equal(t, "https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache", tfSpec.Module)
+	}
+}
+
+func Test_dependencyMarshal(t *testing.T) {
+	m := Manifest{
+		App: "first",
+		Dependencies: []Dependency{
+			{
+				Name: "my-redis",
+				Kind: "terraform",
+				Spec: TFSpec{
+					Module: "a-git-url",
+					Values: map[string]interface{}{
+						"size": "1GB",
+					},
+				},
+			},
+		},
+	}
+
+	marshalledBytes, err := yaml.Marshal(m)
+	if assert.NoError(t, err) {
+		assert.Equal(t, `app: first
+chart:
+  name: ""
+dependencies:
+- kind: terraform
+  name: my-redis
+  spec:
+    module: a-git-url
+    values:
+      size: 1GB
+env: ""
+namespace: ""
+`, string(marshalledBytes))
+	}
+
 }
