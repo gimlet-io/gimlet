@@ -2,6 +2,7 @@ package dx
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -19,9 +20,10 @@ type Manifest struct {
 	Cleanup               *Cleanup               `yaml:"cleanup,omitempty" json:"cleanup,omitempty"`
 	Chart                 Chart                  `yaml:"chart" json:"chart"`
 	Values                map[string]interface{} `yaml:"values" json:"values"`
-	StrategicMergePatches string                 `yaml:"strategicMergePatches" json:"strategicMergePatches"`
-	Json6902Patches       []Json6902Patch        `yaml:"json6902Patches" json:"json6902Patches"`
+	StrategicMergePatches string                 `yaml:"strategicMergePatches,omitempty" json:"strategicMergePatches,omitempty"`
+	Json6902Patches       []Json6902Patch        `yaml:"json6902Patches,omitempty" json:"json6902Patches,omitempty"`
 	Manifests             string                 `yaml:"manifests" json:"manifests"`
+	Dependencies          []Dependency           `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
 }
 
 type Json6902Patch struct {
@@ -52,6 +54,38 @@ type Cleanup struct {
 	AppToCleanup string       `yaml:"app" json:"app"`
 	Event        CleanupEvent `yaml:"event" json:"event"`
 	Branch       string       `yaml:"branch,omitempty" json:"branch,omitempty"`
+}
+
+type Dependency struct {
+	Name string      `yaml:"name" json:"name"`
+	Kind string      `yaml:"kind" json:"kind"`
+	Spec interface{} `yaml:"spec" json:"spec"`
+}
+
+func (d *Dependency) UnmarshalJSON(data []byte) error {
+	var dat map[string]interface{}
+
+	if err := json.Unmarshal(data, &dat); err != nil {
+		return nil
+	}
+
+	d.Name = dat["name"].(string)
+	d.Kind = dat["kind"].(string)
+
+	switch d.Kind {
+	case "terraform":
+		dat = dat["spec"].(map[string]interface{})
+		d.Spec = TFSpec{
+			Module: dat["module"].(string),
+			Values: dat["values"].(map[string]interface{}),
+		}
+	}
+	return nil
+}
+
+type TFSpec struct {
+	Module string                 `yaml:"module" json:"module"`
+	Values map[string]interface{} `yaml:"values" json:"values"`
 }
 
 func (m *Manifest) ResolveVars(vars map[string]string) error {
@@ -147,7 +181,7 @@ func (c *Cleanup) ResolveVars(vars map[string]string) error {
 // adheres to the Kubernetes resource name spec:
 // a lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-',
 // and must start and end with an alphanumeric character
-//(e.g. 'my-name',  or '123-abc', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?')
+// (e.g. 'my-name',  or '123-abc', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?')
 func sanitizeDNSName(str string) string {
 	str = strings.ToLower(str)
 	r := regexp.MustCompile("[^0-9a-z]+")

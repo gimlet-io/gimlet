@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v2 "gopkg.in/yaml.v2"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 func Test_resolveVars(t *testing.T) {
@@ -103,4 +103,27 @@ app: hello
 	err = v2.Unmarshal([]byte(manifestString), &m)
 	assert.Nil(t, err)
 	assert.Equal(t, "hello", m.App)
+}
+
+func Test_dependencyUnmarshal(t *testing.T) {
+	manifestString := `
+app: hello
+dependencies:
+- name: my-redis
+  kind: terraform
+  spec:
+    module: https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache
+    values:
+      size: 1GB
+`
+
+	var m Manifest
+	err := yaml.Unmarshal([]byte(manifestString), &m)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(m.Dependencies))
+	dep := m.Dependencies[0]
+	assert.Equal(t, "my-redis", dep.Name)
+	assert.Equal(t, "terraform", dep.Kind)
+	tfSpec := dep.Spec.(TFSpec)
+	assert.Equal(t, "https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache", tfSpec.Module)
 }
