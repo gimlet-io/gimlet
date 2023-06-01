@@ -23,45 +23,41 @@ func Test_delete(t *testing.T) {
 
 	repo, _ := git.PlainInit(gitopsRepoPath, false)
 
-	g := goblin.Goblin(t)
-
-	const env = "staging"
-	const app = "my-app"
-
-	g.Describe("gimlet gitops delete", func() {
-		g.It("Should validate path exist", func() {
+	t.Run("gimlet gitops delete", func(t *testing.T) {
+		t.Run("Should validate path exist", func(t *testing.T) {
 			args := strings.Split("gimlet gitops delete", " ")
 			args = append(args, "--gitops-repo-path", "does-not-exist")
-			args = append(args, "--env", env)
-			args = append(args, "--app", app)
-			err = commands.Run(&Command, args)
-			g.Assert(strings.Contains(err.Error(), "is not a git repo")).IsTrue()
+			args = append(args, "--env", "staging")
+			args = append(args, "--app", "my-app")
+			err := commands.Run(&Command, args)
+			assert.Contains(t, err.Error(), "is not a git repo")
 		})
 
 		args := strings.Split("gimlet gitops delete", " ")
 		args = append(args, "--gitops-repo-path", gitopsRepoPath)
-		args = append(args, "--env", env)
-		args = append(args, "--app", app)
+		args = append(args, "--env", "staging")
+		args = append(args, "--app", "my-app")
 
-		g.It("Should stage and commit a folder", func() {
-			err = os.MkdirAll(filepath.Join(gitopsRepoPath, env, app), commands.Dir_RWX_RX_R)
-			ioutil.WriteFile(filepath.Join(gitopsRepoPath, env, app, "dummy"), []byte(""), commands.File_RW_RW_R)
-			err = nativeGit.StageFolder(repo, env)
-			g.Assert(err == nil).IsTrue()
+		t.Run("Should stage and commit a folder", func(t *testing.T) {
+			err := os.MkdirAll(filepath.Join(gitopsRepoPath, "staging", "my-app"), os.ModePerm)
+			assert.NoError(t, err)
+			err = ioutil.WriteFile(filepath.Join(gitopsRepoPath, "staging", "my-app", "dummy"), []byte(""), os.ModePerm)
+			assert.NoError(t, err)
+			err = nativeGit.StageFolder(repo, "staging")
+			assert.NoError(t, err)
 			_, err = nativeGit.Commit(repo, "")
-			g.Assert(err == nil).IsTrue()
+			assert.NoError(t, err)
 		})
 
-		g.It("Should delete path with a commit", func() {
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue()
+		t.Run("Should delete path with a commit", func(t *testing.T) {
+			err := commands.Run(&Command, args)
+			assert.NoError(t, err)
 
 			head, err := repo.Head()
-			g.Assert(err == nil).IsTrue()
+			assert.NoError(t, err)
 			lastCommit, err := repo.CommitObject(head.Hash())
-			g.Assert(err == nil).IsTrue()
-			g.Assert(lastCommit.Message).Equal(fmt.Sprintf("[Gimlet CLI delete] %s/%s %s", env, app, ""))
+			assert.NoError(t, err)
+			assert.Equal(t, fmt.Sprintf("[Gimlet CLI delete] %s/%s %s", "staging", "my-app", ""), lastCommit.Message)
 		})
-
 	})
 }

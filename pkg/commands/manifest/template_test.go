@@ -6,8 +6,7 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/franela/goblin"
+  
 	"github.com/gimlet-io/gimlet-cli/pkg/commands"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/stretchr/testify/assert"
@@ -366,268 +365,316 @@ configs: [ for instance in _instances {
 `
 
 func Test_template(t *testing.T) {
-	g := goblin.Goblin(t)
+	 t.Run("Should template a manifest file with remote chart", func(t *testing.T) {
+		manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(manifestFile.Name())
 
-	args := strings.Split("gimlet manifest template", " ")
+		templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(templatedFile.Name())
 
-	g.Describe("gimlet manifest template", func() {
-		g.It("Should template a manifest file with remote chart", func() {
-			g.Timeout(60 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
+		err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithRemoteHelmChart), commands.File_RW_RW_R)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithRemoteHelmChart), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
+		args := []string{"gimlet", "manifest", "template"}
+		args = append(args, "-f", manifestFile.Name())
+		args = append(args, "-o", templatedFile.Name())
 
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
+		err = commands.Run(&Command, args)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "myapp:1.1.0")).IsTrue("Templated manifest should have the image reference")
-			//fmt.Println(string(templated))
-		})
+		templated, err := ioutil.ReadFile(templatedFile.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		g.It("Should template a manifest file with local chart", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithLocalChart), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "hello-server:v0.1.0")).IsTrue("Templated manifest should have the image reference")
-			//fmt.Println(string(templated))
-		})
-
-		g.It("Should template a manifest file with a private git hosted chart", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithPrivateGitRepoHTTPS), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "replicas: 10")).IsTrue("should set replicas")
-			//fmt.Println(string(templated))
-		})
-		g.It("Should template a manifest file with a kustomize patch", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithKustomizePatch), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "mountPath: /azure-bucket")).IsTrue("the spec should contain volumeMounts")
-			// fmt.Println(string(templated))
-		})
-		g.It("Should template a manifest file with a kustomize json patch", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithKustomizeJsonPatch), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			// fmt.Println(string(templated))
-			g.Assert(strings.Contains(string(templated), "host: myapp.com")).
-				IsTrue("ingress url should have been replaced by kustomize json patch")
-		})
-		g.It("Should template a manifest file with Chart and raw yaml", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithChartAndRawYaml), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "type: LoadBalancer")).IsTrue("the service spec should contain type: LoadBalancer ")
-			g.Assert(strings.Contains(string(templated), "app.kubernetes.io/managed-by: Helm")).IsTrue("the resources should contain app.kubernetes.io/managed-by: Helm label")
-			// fmt.Println(string(templated))
-		})
-		g.It("Should template a manifest file with raw yaml and patch", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithRawYamlandPatch), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "mountPath: /azure-bucket")).IsTrue("the deployment spec should contain mountPath: /azure-bucket")
-			// fmt.Println(string(templated))
-		})
-		g.It("Should template a manifest file with raw yaml", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestwithRaWYaml), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "secretName: tls-myapp")).IsTrue("the ingress spec should contain secretName: tls-myapp")
-			// fmt.Println(string(templated))
-		})
-		g.It("Should template a cue file", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test-*.cue")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(cueTemplate), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "myapp-first")).IsTrue("should render two manifests")
-			g.Assert(strings.Contains(string(templated), "myapp-second")).IsTrue("should render two manifests")
-		})
+		assert.Contains(t, string(templated), "myapp:1.1.0", "Templated manifest should have the image reference")
 	})
+    t.Run("Should template a manifest file with local chart", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithLocalChart), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "hello-server:v0.1.0", "Templated manifest should have the image reference")
+    })
+    t.Run("Should template a manifest file with a private git hosted chart", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithPrivateGitRepoHTTPS), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "replicas: 10", "should set replicas")
+    })
+
+    t.Run("Should template a manifest file with a kustomize patch", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithKustomizePatch), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "mountPath: /azure-bucket", "the spec should contain volumeMounts")
+    })
+    t.Run("Should template a manifest file with a kustomize json patch", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithKustomizeJsonPatch), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "host: myapp.com", "ingress url should have been replaced by kustomize json patch")
+    })
+    t.Run("Should template a manifest file with Chart and raw yaml", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithChartAndRawYaml), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "type: LoadBalancer", "the service spec should contain type: LoadBalancer")
+      assert.Contains(t, string(templated), "app.kubernetes.io/managed-by: Helm", "the resources should contain app.kubernetes.io/managed-by: Helm label")
+    })
+
+    t.Run("Should template a manifest file with raw yaml and patch", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithRawYamlandPatch), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "mountPath: /azure-bucket", "the deployment spec should contain mountPath: /azure-bucket")
+    })
+    t.Run("Should template a manifest file with raw yaml", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(manifestwithRaWYaml), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "secretName: tls-myapp", "the ingress spec should contain secretName: tls-myapp")
+    })
+    t.Run("Should template a cue file", func(t *testing.T) {
+      manifestFile, err := ioutil.TempFile("", "gimlet-cli-test-*.cue")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(manifestFile.Name())
+    
+      templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
+      if err != nil {
+        t.Fatal(err)
+      }
+      defer os.Remove(templatedFile.Name())
+    
+      err = ioutil.WriteFile(manifestFile.Name(), []byte(cueTemplate), commands.File_RW_RW_R)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      args := []string{"gimlet", "manifest", "template"}
+      args = append(args, "-f", manifestFile.Name())
+      args = append(args, "-o", templatedFile.Name())
+    
+      err = commands.Run(&Command, args)
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      templated, err := ioutil.ReadFile(templatedFile.Name())
+      if err != nil {
+        t.Fatal(err)
+      }
+    
+      assert.Contains(t, string(templated), "myapp-first", "should render two manifests")
+      assert.Contains(t, string(templated), "myapp-second", "should render two manifests")
+    })
 }
 
 func Test_ProcessCue(t *testing.T) {

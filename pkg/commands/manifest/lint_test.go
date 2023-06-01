@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/franela/goblin"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands"
 )
 
@@ -53,34 +52,39 @@ values:
   replicas: 'string'
 `
 
-func Test_lint(t *testing.T) {
+func TestLint(t *testing.T) {
 	envFile, err := ioutil.TempFile("", "gimlet-cli-test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(envFile.Name())
-	ioutil.WriteFile(envFile.Name(), []byte(validEnv), commands.File_RW_RW_R)
+	ioutil.WriteFile(envFile.Name(), []byte(validEnv), 0644)
 
 	args := strings.Split("gimlet manifest lint", " ")
 	args = append(args, "-f", envFile.Name())
 
-	g := goblin.Goblin(t)
-	g.Describe("gimlet manifest lint", func() {
-		g.It("Should parse a gimlet manifest", func() {
-			g.Timeout(20 * time.Second)
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-		})
-		g.It("Should fail on parse error", func() {
-			ioutil.WriteFile(envFile.Name(), []byte(invalidEnv), commands.File_RW_RW_R)
-			err = commands.Run(&Command, args)
-			g.Assert(err != nil).IsTrue(err)
-		})
-		g.It("Should fail schema error", func() {
-			g.Timeout(60 * time.Second)
-			ioutil.WriteFile(envFile.Name(), []byte(invalidReplicaType), commands.File_RW_RW_R)
-			err = commands.Run(&Command, args)
-			g.Assert(err != nil).IsTrue(err)
-		})
+	t.Run("Should parse a gimlet manifest", func(t *testing.T) {
+		t.Timeout(20 * time.Second)
+		err = commands.Run(&Command, args)
+		if err != nil {
+			t.Errorf("Expected no error, but got: %v", err)
+		}
+	})
+
+	t.Run("Should fail on parse error", func(t *testing.T) {
+		ioutil.WriteFile(envFile.Name(), []byte(invalidEnv), 0644)
+		err = commands.Run(&Command, args)
+		if err == nil {
+			t.Error("Expected an error, but got nil")
+		}
+	})
+
+	t.Run("Should fail schema error", func(t *testing.T) {
+		t.Timeout(60 * time.Second)
+		ioutil.WriteFile(envFile.Name(), []byte(invalidReplicaType), 0644)
+		err = commands.Run(&Command, args)
+		if err == nil {
+			t.Error("Expected an error, but got nil")
+		}
 	})
 }
