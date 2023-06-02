@@ -9,13 +9,12 @@ const Installer = () => {
 
     const manifest = JSON.stringify({
         "name": "Gimlet Dashboard",
-        "url": url,
-        "callback_url": url + '/auth',
-        "hook_attributes": {
-            "url": url + '/hook'
-        },
+        "url": "https://gimlet.io",
         "redirect_url": url + '/created',
         "setup_url": url + '/installed',
+        "hook_attributes": {
+            "url": "https://nosuchapp.gimlet.io/nosuchthing/hook",
+        },
         "public": false,
         "default_permissions": {
             "administration": "write",
