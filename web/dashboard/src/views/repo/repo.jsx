@@ -16,12 +16,15 @@ import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
 import { decorateKubernetesAlertsWithEnvAndRepo } from '../pulse/pulse';
+import TenantSelector from './tenantSelector';
 
 export default class Repo extends Component {
   constructor(props) {
     super(props);
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
+
+    const queryParams = new URLSearchParams(this.props.location.search)
 
     // default state
     let reduxState = this.props.store.getState();
@@ -33,6 +36,7 @@ export default class Repo extends Component {
       branches: reduxState.branches,
       envConfigs: reduxState.envConfigs[repoName],
       selectedBranch: '',
+      selectedTenant: queryParams.get("tenant") ?? '',
       settings: reduxState.settings,
       refreshQueue: reduxState.repoRefreshQueue.filter(repo => repo === repoName).length,
       agents: reduxState.settings.agents,
@@ -82,6 +86,7 @@ export default class Repo extends Component {
     this.linkToDeployment = this.linkToDeployment.bind(this)
     this.newConfig = this.newConfig.bind(this)
     this.envNames = this.envNames.bind(this)
+    this.setSelectedTenant = this.setSelectedTenant.bind(this)
   }
 
   componentDidMount() {
@@ -279,7 +284,7 @@ export default class Repo extends Component {
   }
 
   deploy(target, sha, repo) {
-    this.props.gimletClient.deploy(target.artifactId, target.env, target.app)
+    this.props.gimletClient.deploy(target.artifactId, target.env, target.app, this.state.selectedTenant)
       .then(data => {
         target.sha = sha;
         target.trackingId = data.id;
@@ -323,7 +328,10 @@ export default class Repo extends Component {
 
   linkToDeployment(env, deployment) {
     const { owner, repo } = this.props.match.params;
-    this.props.history.push(`/repo/${owner}/${repo}/${env}/${deployment}`);
+    this.props.history.push({
+      pathname: `/repo/${owner}/${repo}/${env}/${deployment}`,
+      search: this.props.location.search
+    })
   }
 
   newConfig(env, config) {
@@ -390,6 +398,43 @@ export default class Repo extends Component {
     return envs.map(env => env["name"]);
   }
 
+  setSelectedTenant(tenant) {
+    this.setState({ selectedTenant: tenant });
+    const queryParam = tenant === "" ? tenant : `?tenant=${tenant}`
+
+    this.props.history.push({
+      pathname: this.props.location.pathname,
+      search: queryParam
+    })
+  }
+
+  tenantsFromConfigs(envConfigs) {
+    let tenants = [];
+    for (const configs of Object.values(envConfigs)) {
+      configs.forEach(config => {
+        const tenantName = config.tenant.name;
+        if (tenantName && !tenants.includes(tenantName)) {
+          tenants.push(tenantName);
+        }
+      });
+    }
+    return tenants;
+  }
+
+  filteredConfigsByTenant(envConfigs, selectedTenant) {
+    if (!envConfigs || !selectedTenant) {
+      return envConfigs;
+    }
+
+    const filteredEnvs = envConfigs.filter(envConfig => envConfig.tenant.name === selectedTenant);
+
+    if (filteredEnvs.length === 0) {
+      return undefined;
+    }
+
+    return filteredEnvs;
+  }
+
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -410,22 +455,29 @@ export default class Repo extends Component {
     return (
       <div>
         <header>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
-              <a href={`${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
-                  viewBox="0 0 24 24">
-                  <path d="M0 0h24v24H0z" fill="none" />
-                  <path
-                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-                </svg>
-              </a>
-              {this.ciConfigAndShipperStatuses(repoName)}
-            </h1>
-            <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.goBack()}>
-              &laquo; back
-            </button>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:flex items-start">
+            <div className='flex-1'>
+              <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
+                <a href={`${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
+                    viewBox="0 0 24 24">
+                    <path d="M0 0h24v24H0z" fill="none" />
+                    <path
+                      d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                  </svg>
+                </a>
+                {this.ciConfigAndShipperStatuses(repoName)}
+              </h1>
+              <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.goBack()}>
+                &laquo; back
+              </button>
+            </div>
+            <TenantSelector
+              tenants={this.tenantsFromConfigs(envConfigs)}
+              selectedTenant={this.state.selectedTenant}
+              setSelectedTenant={this.setSelectedTenant}
+            />
           </div>
         </header>
         <main>
@@ -439,7 +491,7 @@ export default class Repo extends Component {
                     envName={envName}
                     env={filteredEnvs[envName]}
                     repoRolloutHistory={repoRolloutHistory}
-                    envConfigs={envConfigs[envName]}
+                    envConfigs={this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)}
                     navigateToConfigEdit={this.navigateToConfigEdit}
                     linkToDeployment={this.linkToDeployment}
                     newConfig={this.newConfig}
@@ -481,6 +533,7 @@ export default class Repo extends Component {
                       owner={owner}
                       branch={this.state.selectedBranch}
                       scmUrl={scmUrl}
+                      tenant={this.state.selectedTenant}
                     />
                   }
                 </div>

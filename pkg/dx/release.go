@@ -35,6 +35,7 @@ type Release struct {
 type ReleaseRequest struct {
 	Env         string `json:"env"`
 	App         string `json:"app,omitempty"`
+	Tenant      string `json:"tenant"`
 	ArtifactID  string `json:"artifactId"`
 	TriggeredBy string `json:"triggeredBy"`
 }

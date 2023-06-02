@@ -5,7 +5,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 
-const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl }) => {
+const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
   const repoName = `${owner}/${repo}`
   const commitsRef = useRef();
@@ -70,7 +70,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
               <div>
                 <div className="text-sm">
                   <p href="#" className="font-semibold text-gray-800">{commit.message}
-                    <span class="commitStatus">
+                    <span className="commitStatus">
                       {
                         commit.status && commit.status.statuses &&
                         commit.status.statuses.map(status => (
@@ -102,11 +102,6 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                   </a>
                 </p>
               </div>
-              <div className="mt-2 text-sm text-gray-700">
-                <div className="ml-2 md:ml-4">
-
-                </div>
-              </div>
             </div>
             <div className="pr-4">
               <ReleaseBadges
@@ -114,7 +109,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                 connectedAgents={connectedAgents}
               />
               <DeployWidget
-                deployTargets={filterDeployTargets(commit.deployTargets, envs)}
+                deployTargets={filterDeployTargets(commit.deployTargets, envs, tenant)}
                 deployHandler={deployHandler}
                 sha={commit.sha}
                 repo={repoName}
@@ -160,12 +155,16 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
   )
 }
 
-const filterDeployTargets = (deployTargets, envs) => {
+const filterDeployTargets = (deployTargets, envs, tenant) => {
   if (!deployTargets || !envs) {
     return undefined;
   }
 
-  const filteredTargets = deployTargets.filter(deployTarget => envs.includes(deployTarget.env));
+  let filteredTargets = deployTargets.filter(deployTarget => envs.includes(deployTarget.env));
+
+  if (tenant !== "") {
+    filteredTargets = filteredTargets.filter(deployTarget => deployTarget.tenant === tenant);
+  }
 
   if (filteredTargets.length === 0) {
     return undefined;
