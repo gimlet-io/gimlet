@@ -113,10 +113,6 @@ func (r *RepoCache) Run() {
 	}
 }
 
-func (r *RepoCache) SetTokenManager(tokenManager customScm.NonImpersonatedTokenManager) {
-	r.tokenManager = tokenManager
-}
-
 func (r *RepoCache) syncGitRepo(repoName string) {
 	token, user, err := r.tokenManager.Token()
 	if err != nil {

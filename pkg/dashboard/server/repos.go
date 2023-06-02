@@ -21,8 +21,26 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	user := ctx.Value("user").(*model.User)
 	// TODO, this prevents a program error, if we auth with admin key, might rewrite to get access to repos, after admin install
 	if user.AccessToken == "" {
+		gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+		tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+		token, _, _ := tokenManager.Token()
+
+		orgRepos, err := gitServiceImpl.OrgRepos(token)
+		if err != nil {
+			logrus.Errorf("cannot get org repos: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		orgReposString, err := json.Marshal(orgRepos)
+		if err != nil {
+			logrus.Errorf("cannot serialize org repos: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("[]"))
+		w.Write(orgReposString)
 		return
 	}
 

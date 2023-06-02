@@ -11,7 +11,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
@@ -98,10 +97,8 @@ func installed(w http.ResponseWriter, r *http.Request) {
 
 	gitServiceImplFromCtx := ctx.Value("gitService").(*customScm.CustomGitService)
 	tokenManagerFromCtx := ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
-	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	(*gitServiceImplFromCtx) = &customGithub.GithubClient{}
-	(*tokenManagerFromCtx) = tokenManager
-	gitRepoCache.SetTokenManager(tokenManager)
+	*gitServiceImplFromCtx = &customGithub.GithubClient{}
+	*tokenManagerFromCtx = tokenManager
 	// TODO admin user need access to repos
 
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)

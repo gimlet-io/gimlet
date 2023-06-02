@@ -13,7 +13,9 @@ export default class Repositories extends Component {
     let reduxState = this.props.store.getState();
     let favoriteRepos = [];
     if (reduxState.user) {
-      favoriteRepos = reduxState.user.favoriteRepos;
+      if (reduxState.user.favoriteRepos) {
+        favoriteRepos = reduxState.user.favoriteRepos;
+      }
     }
 
     this.state = {
@@ -36,7 +38,9 @@ export default class Repositories extends Component {
 
       let favoriteRepos = [];
       if (reduxState.user) {
-        favoriteRepos = reduxState.user.favoriteRepos;
+        if (reduxState.user.favoriteRepos) {
+          favoriteRepos = reduxState.user.favoriteRepos;
+        }
       }
 
       this.setState({ repositories: this.mapToRepositories(reduxState.connectedAgents, reduxState.gitRepos) });
