@@ -1,6 +1,7 @@
 package dx
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -112,21 +113,23 @@ dependencies:
 - name: my-redis
   kind: terraform
   spec:
-    module: https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache
+    module:
+      url: https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache
     values:
       size: 1GB
+    secret: xx
 `
 
 	var m Manifest
 	err := yaml.Unmarshal([]byte(manifestString), &m)
 	if assert.NoError(t, err) {
-		assert.Nil(t, err)
 		assert.Equal(t, 1, len(m.Dependencies))
 		dep := m.Dependencies[0]
 		assert.Equal(t, "my-redis", dep.Name)
 		assert.Equal(t, "terraform", dep.Kind)
 		tfSpec := dep.Spec.(TFSpec)
-		assert.Equal(t, "https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache", tfSpec.Module)
+		assert.Equal(t, "https://github.com/gimlet-io/tfmodules?tag=v1.0.0&path=aws/elasticache", tfSpec.Module.Url)
+		assert.Equal(t, "xx", tfSpec.Secret)
 	}
 }
 
@@ -138,10 +141,13 @@ func Test_dependencyMarshal(t *testing.T) {
 				Name: "my-redis",
 				Kind: "terraform",
 				Spec: TFSpec{
-					Module: "a-git-url",
+					Module: Module{
+						Url: "a-git-url",
+					},
 					Values: map[string]interface{}{
 						"size": "1GB",
 					},
+					Secret: "xx",
 				},
 			},
 		},
@@ -156,12 +162,47 @@ dependencies:
 - kind: terraform
   name: my-redis
   spec:
-    module: a-git-url
+    module:
+      url: a-git-url
+    secret: xx
     values:
       size: 1GB
 env: ""
 namespace: ""
 `, string(marshalledBytes))
 	}
+}
 
+func Test_renderTFDependency(t *testing.T) {
+	manifestString := `
+app: hello
+manifests: |
+  ---
+  hello: yo
+dependencies:
+- name: my-redis
+  kind: terraform
+  spec:
+    module:
+      url: https://github.com/gimlet-io/tfmodules?sha=xyz&path=azure/postgresql-flexible-server-database
+      secret: gitDeployKey
+    values:
+      database: my-app
+      user: my-app
+    secret: db-admin-secret
+`
+
+	var m Manifest
+	err := yaml.Unmarshal([]byte(manifestString), &m)
+	if assert.NoError(t, err) {
+		renderredDep, err := renderDependency(m.Dependencies[0], &m)
+		if assert.NoError(t, err) {
+			assert.True(t, strings.Contains(string(renderredDep), "url: https://github.com/gimlet-io/tfmodule"), "git repo url must be set")
+			assert.True(t, strings.Contains(string(renderredDep), "commit: xyz"), "git tag must be set")
+			assert.True(t, strings.Contains(string(renderredDep), "kind: Terraform"), "terraform kind must be set")
+			assert.True(t, strings.Contains(string(renderredDep), "name: db-admin-secret"), "db secret must be set")
+			assert.True(t, strings.Contains(string(renderredDep), "value: my-app"), "values must be set")
+			fmt.Println(string(renderredDep))
+		}
+	}
 }
