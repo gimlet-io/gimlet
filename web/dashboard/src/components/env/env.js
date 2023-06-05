@@ -90,9 +90,11 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
     configsWeHave = envConfigs.map((config) => config.app);
   }
 
+  const filteredStacks = stacks.filter(stack => configsWeHave.includes(stack.service.name));
+
   let configsWeDeployed = [];
   // render services that are deployed on k8s
-  services = stacks.map((stack) => {
+  services = filteredStacks.map((stack) => {
     configsWeDeployed.push(stack.service.name);
     const configExists = configsWeHave.includes(stack.service.name)
     return (

@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -48,6 +47,6 @@ dependencies:
 	if assert.NoError(t, err) {
 		templated, _ := ioutil.ReadFile(templatedFile.Name())
 		assert.True(t, strings.Contains(string(templated), "kind: Terraform"), "terraform resource must be generated")
-		fmt.Println(string(templated))
+		// fmt.Println(string(templated))
 	}
 }

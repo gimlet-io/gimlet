@@ -1,7 +1,6 @@
 package dx
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -169,6 +168,7 @@ dependencies:
       size: 1GB
 env: ""
 namespace: ""
+tenant: {}
 `, string(marshalledBytes))
 	}
 }
@@ -202,7 +202,7 @@ dependencies:
 			assert.True(t, strings.Contains(string(renderredDep), "kind: Terraform"), "terraform kind must be set")
 			assert.True(t, strings.Contains(string(renderredDep), "name: db-admin-secret"), "db secret must be set")
 			assert.True(t, strings.Contains(string(renderredDep), "value: my-app"), "values must be set")
-			fmt.Println(string(renderredDep))
+			// fmt.Println(string(renderredDep))
 		}
 	}
 }

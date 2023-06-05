@@ -27,6 +27,7 @@ type Manifest struct {
 	Deploy                *Deploy                `yaml:"deploy,omitempty" json:"deploy,omitempty"`
 	Cleanup               *Cleanup               `yaml:"cleanup,omitempty" json:"cleanup,omitempty"`
 	Chart                 Chart                  `yaml:"chart" json:"chart"`
+	Tenant                Tenant                 `yaml:"tenant,omitempty" json:"tenant,omitempty"`
 	Values                map[string]interface{} `yaml:"values,omitempty" json:"values,omitempty"`
 	StrategicMergePatches string                 `yaml:"strategicMergePatches,omitempty" json:"strategicMergePatches,omitempty"`
 	Json6902Patches       []Json6902Patch        `yaml:"json6902Patches,omitempty" json:"json6902Patches,omitempty"`
@@ -110,6 +111,10 @@ type TFSpec struct {
 type Module struct {
 	Url    string `yaml:"url" json:"url"`
 	Secret string `yaml:"secret,omitempty" json:"secret,omitempty"`
+}
+
+type Tenant struct {
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
 }
 
 func (m *Manifest) ResolveVars(vars map[string]string) error {

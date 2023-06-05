@@ -315,6 +315,11 @@ func processReleaseEvent(
 			continue
 		}
 
+		if releaseRequest.Tenant != "" &&
+			manifest.Tenant.Name != releaseRequest.Tenant {
+			continue
+		}
+
 		envFromStore, err := store.GetEnvironment(manifest.Env)
 		if err != nil {
 			return deployResults, err

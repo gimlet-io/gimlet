@@ -240,6 +240,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
 		Env:         releaseRequest.Env,
 		App:         releaseRequest.App,
+		Tenant:      releaseRequest.Tenant,
 		ArtifactID:  releaseRequest.ArtifactID,
 		TriggeredBy: user.Login,
 	})
