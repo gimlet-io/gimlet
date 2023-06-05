@@ -34,7 +34,7 @@ require (
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
 	github.com/fatih/color v1.15.0
-	github.com/fluxcd/flux2/v2 v2.0.0-rc.4
+	github.com/fluxcd/flux2/v2 v2.0.0-rc.5
 	github.com/fluxcd/kustomize-controller/api v1.0.0-rc.4
 	github.com/fluxcd/notification-controller/api v1.0.0-rc.4
 	github.com/fluxcd/pkg/apis/event v0.5.0
@@ -42,7 +42,7 @@ require (
 	github.com/fluxcd/pkg/runtime v0.38.1
 	github.com/fluxcd/pkg/sourceignore v0.3.4
 	github.com/fluxcd/pkg/ssh v0.7.4
-	github.com/fluxcd/source-controller/api v1.0.0-rc.4
+	github.com/fluxcd/source-controller/api v1.0.0-rc.5
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.4
@@ -232,6 +232,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/weaveworks/tf-controller/api v0.0.0-20230601175619-7e9ed0753431
 	github.com/xanzy/go-gitlab v0.83.0
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

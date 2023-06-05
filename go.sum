@@ -244,6 +244,8 @@ github.com/felixge/httpsnoop v1.0.3 h1:s/nj+GCswXYzN5v2DpNMuMQYe+0DDwt5WVCU6CWBd
 github.com/flowstack/go-jsonschema v0.1.1/go.mod h1:yL7fNggx1o8rm9RlgXv7hTBWxdBM0rVwpMwimd3F3N0=
 github.com/fluxcd/flux2/v2 v2.0.0-rc.4 h1:tb/BRDleV6NKl0CnvlysAjw584CV2EPi7PTiT3qeAn0=
 github.com/fluxcd/flux2/v2 v2.0.0-rc.4/go.mod h1:fFwaEjIbdfaFC3dQLLCv8lGWjNaeFWrMtU6AZr+NuYk=
+github.com/fluxcd/flux2/v2 v2.0.0-rc.5 h1:TbPISzRpa79nx8N1UTvbx3T8y7isi69u+vJrJeMVCNg=
+github.com/fluxcd/flux2/v2 v2.0.0-rc.5/go.mod h1:FjHP8G+RDh/bv0gzaXTXwqbWCYuUjU0IqmCPsDhbHqE=
 github.com/fluxcd/kustomize-controller/api v1.0.0-rc.4 h1:e5dO5HaFISFNzhfi4zuPniE545vVnEi3VnSBcbxcZqU=
 github.com/fluxcd/kustomize-controller/api v1.0.0-rc.4/go.mod h1:UTJu1JMr+rkabWkUWMNiOeFeDu+4ZKfJIK+oqEwOjzc=
 github.com/fluxcd/notification-controller/api v1.0.0-rc.4 h1:bDqIirpscGUY0+1u+RKvTEmX43iiZ2xeQLz27FoJJD8=
@@ -268,6 +270,8 @@ github.com/fluxcd/pkg/tar v0.2.0 h1:HEUHgONQYsJGeZZ4x6h5nQU9Aox1I4T3bOp1faWTqf8=
 github.com/fluxcd/pkg/tar v0.2.0/go.mod h1:w0/TOC7kwBJhnSJn7TCABkc/I7ib1f2Yz6vOsbLBnhw=
 github.com/fluxcd/source-controller/api v1.0.0-rc.4 h1:fLfxQF7c5sMlmMFNCkgRKSfeRTETgeaf+DRmHs7NfV4=
 github.com/fluxcd/source-controller/api v1.0.0-rc.4/go.mod h1:W6tNXr3mRPhdc5+Jke9OZnuk/3THNzGzRJVhAtLfzss=
+github.com/fluxcd/source-controller/api v1.0.0-rc.5 h1:muoGOb/VitVEIOh877Ledi9AvibbyevPqvuH5byWU6g=
+github.com/fluxcd/source-controller/api v1.0.0-rc.5/go.mod h1:W6tNXr3mRPhdc5+Jke9OZnuk/3THNzGzRJVhAtLfzss=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/foxcpp/go-mockdns v1.0.0 h1:7jBqxd3WDWwi/6WhDvacvH1XsN3rOLXyHM1uhvIx6FI=
 github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf h1:NrF81UtW8gG2LBGkXFQFqlfNnvMt9WdB46sfdJY4oqc=
@@ -821,6 +825,8 @@ github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/urfave/cli/v2 v2.3.0 h1:qph92Y649prgesehzOrQjdWyxFOp/QVM+6imKHad91M=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
+github.com/weaveworks/tf-controller/api v0.0.0-20230601175619-7e9ed0753431 h1:iz0B5Sv+RSMjflZ3AIknGLJ5KyYZVSlELh+Bx3Whtow=
+github.com/weaveworks/tf-controller/api v0.0.0-20230601175619-7e9ed0753431/go.mod h1:/nU6MWmV9oOf5JDHDg3fWUzf3Udu714Te1MUtjRvmbo=
 github.com/whilp/git-urls v1.0.0 h1:95f6UMWN5FKW71ECsXRUd3FVYiXdrE7aX4NZKcPmIjU=
 github.com/whilp/git-urls v1.0.0/go.mod h1:J16SAmobsqc3Qcy98brfl5f5+e0clUvg1krgwk/qCfE=
 github.com/xanzy/go-gitlab v0.83.0 h1:37p0MpTPNbsTMKX/JnmJtY8Ch1sFiJzVF342+RvZEGw=
