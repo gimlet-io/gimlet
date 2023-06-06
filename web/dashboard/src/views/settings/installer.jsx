@@ -11,7 +11,8 @@ const Installer = () => {
         "name": "Gimlet Dashboard",
         "url": "https://gimlet.io",
         "redirect_url": url + '/created',
-        "setup_url": url + '/installed',
+        "callback_url": url + '/installed',
+        "request_oauth_on_install": true,
         "hook_attributes": {
             "url": "https://nosuchapp.gimlet.io/nosuchthing/hook",
         },
