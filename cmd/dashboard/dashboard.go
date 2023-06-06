@@ -90,7 +90,7 @@ func main() {
 	}
 
 	gitSvc, tokenManager := initTokenManager(persistentConfig)
-	notificationsManager := initNotifications(config, tokenManager)
+	notificationsManager := initNotifications(config, *tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
@@ -141,7 +141,7 @@ func main() {
 	if config.ChartVersionUpdaterFeatureFlag {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			gitSvc,
-			tokenManager,
+			*tokenManager,
 			dashboardRepoCache,
 			goScm,
 			&chartUpdatePullRequests,
@@ -154,7 +154,7 @@ func main() {
 		store,
 		config.GitopsRepo,
 		config.GitopsRepoDeployKeyPath,
-		tokenManager,
+		*tokenManager,
 		notificationsManager,
 		eventsProcessed,
 		dashboardRepoCache,
@@ -177,7 +177,7 @@ func main() {
 	// }
 
 	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
-		tokenManager,
+		*tokenManager,
 		config.RepoCachePath,
 		store,
 	)
@@ -198,7 +198,7 @@ func main() {
 		agentWSHub,
 		store,
 		&gitSvc,
-		&tokenManager,
+		tokenManager,
 		dashboardRepoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,

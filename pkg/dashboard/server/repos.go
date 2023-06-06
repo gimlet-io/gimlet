@@ -10,8 +10,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
-	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -19,35 +17,11 @@ import (
 func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
-	// TODO, this prevents a program error, if we auth with admin key, might rewrite to get access to repos, after admin install
-	if user.AccessToken == "" {
-		gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
-		tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
-		token, _, _ := tokenManager.Token()
-
-		orgRepos, err := gitServiceImpl.OrgRepos(token)
-		if err != nil {
-			logrus.Errorf("cannot get org repos: %s", err)
-			http.Error(w, http.StatusText(500), 500)
-			return
-		}
-
-		orgReposString, err := json.Marshal(orgRepos)
-		if err != nil {
-			logrus.Errorf("cannot serialize org repos: %s", err)
-			http.Error(w, http.StatusText(500), 500)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(orgReposString)
-		return
-	}
 
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 
-	go updateUserRepos(config, dao, user)
+	go updateUserRepos(ctx, dao, user)
 
 	timeout := time.After(45 * time.Second)
 	user, err := func() (*model.User, error) {
@@ -101,7 +75,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userReposDb := hasPrefix(user.Repos, config.Org())
-	userRepos := updateUserRepos(config, dao, user)
+	userRepos := updateUserRepos(ctx, dao, user)
 	userReposWithAccess := hasPrefix(userRepos, config.Org())
 	added := difference(userReposWithAccess, userReposDb)
 	deleted := difference(userReposDb, userReposWithAccess)
@@ -151,29 +125,24 @@ func updateOrgRepos(ctx context.Context) {
 	}
 }
 
-func updateUserRepos(config *config.PersistentConfig, dao *store.Store, user *model.User) []string {
-	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
-		user.AccessToken = token.Token
-		user.RefreshToken = token.Refresh
-		user.Expires = token.Expires.Unix()
-		err := dao.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("could not refresh user's oauth access_token")
-		}
-	})
-	userRepos, err := goScmHelper.UserRepos(user.AccessToken, user.RefreshToken, time.Unix(user.Expires, 0))
+func updateUserRepos(ctx context.Context, dao *store.Store, user *model.User) []string {
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	installationAccessRepos, err := gitServiceImpl.OrgRepos(token)
 	if err != nil {
-		logrus.Warnf("cannot get user repos: %s", err)
+		logrus.Warnf("cannot get org repos: %s", err)
 		return nil
 	}
 
-	user.Repos = userRepos
+	user.Repos = installationAccessRepos
 	err = dao.UpdateUser(user)
 	if err != nil {
 		logrus.Warnf("cannot get user repos: %s", err)
 		return nil
 	}
-	return userRepos
+	return installationAccessRepos
 }
 
 func hasPrefix(repos []string, prefix string) []string {

@@ -29,7 +29,7 @@ var FetchRefSpec = []config.RefSpec{
 }
 
 type RepoCache struct {
-	tokenManager customScm.NonImpersonatedTokenManager
+	tokenManager *customScm.NonImpersonatedTokenManager
 	repos        map[string]repoData
 	stopCh       chan struct{}
 	invalidateCh chan string
@@ -50,7 +50,7 @@ type repoData struct {
 }
 
 func NewRepoCache(
-	tokenManager customScm.NonImpersonatedTokenManager,
+	tokenManager *customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
 	cachePath string,
 	goScmHelper *genericScm.GoScmHelper,
@@ -114,7 +114,8 @@ func (r *RepoCache) Run() {
 }
 
 func (r *RepoCache) syncGitRepo(repoName string) {
-	token, user, err := r.tokenManager.Token()
+	tokenManager := *r.tokenManager
+	token, user, err := tokenManager.Token()
 	if err != nil {
 		logrus.Errorf("couldn't get scm token: %s", err)
 		return
@@ -289,7 +290,8 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		return repoData{}, errors.WithMessage(err, "couldn't create folder")
 	}
 
-	token, user, err := r.tokenManager.Token()
+	tokenManager := *r.tokenManager
+	token, user, err := tokenManager.Token()
 	if err != nil {
 		return repoData{}, errors.WithMessage(err, "couldn't get scm token")
 	}
@@ -335,7 +337,8 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 func (r *RepoCache) registerWebhook(repoName string) {
 	owner, repo := scm.Split(repoName)
 
-	token, _, err := r.tokenManager.Token()
+	tokenManager := *r.tokenManager
+	token, _, err := tokenManager.Token()
 	if err != nil {
 		logrus.Errorf("couldn't get scm token: %s", err)
 	}

@@ -77,7 +77,7 @@ func adminToken(config *config.Config) string {
 	}
 }
 
-func initTokenManager(config *config.PersistentConfig) (customScm.CustomGitService, customScm.NonImpersonatedTokenManager) {
+func initTokenManager(config *config.PersistentConfig) (customScm.CustomGitService, *customScm.NonImpersonatedTokenManager) {
 	var gitSvc customScm.CustomGitService
 	var tokenManager customScm.NonImpersonatedTokenManager
 
@@ -101,7 +101,7 @@ func initTokenManager(config *config.PersistentConfig) (customScm.CustomGitServi
 		gitSvc = customScm.NewDummyGitService()
 		tokenManager = customScm.NewDummyTokenManager()
 	}
-	return gitSvc, tokenManager
+	return gitSvc, &tokenManager
 }
 
 func initNotifications(
