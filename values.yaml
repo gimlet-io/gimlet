@@ -1,0 +1,6 @@
+containerPort: 5000
+image:
+  repository: registry
+  tag: "2"
+nodePortEnabled: true
+nodePort: 32447
