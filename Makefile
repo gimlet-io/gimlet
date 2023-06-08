@@ -50,6 +50,8 @@ build-agent:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
 build-dashboard:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
+build-image-builder:
+	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/image-builder github.com/gimlet-io/gimlet-cli/cmd/image-builder
 build-installer:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-installer github.com/gimlet-io/gimlet-cli/cmd/installer
 

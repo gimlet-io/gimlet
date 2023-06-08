@@ -55,6 +55,13 @@
             "program": "cmd/git-test",
         },
         {
+            "name": "Image Builder",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd/image-builder",
+        },
+        {
             "name": "Installer",
             "type": "go",
             "request": "launch",
