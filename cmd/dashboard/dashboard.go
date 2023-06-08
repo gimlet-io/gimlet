@@ -78,6 +78,8 @@ func main() {
 		panic(err)
 	}
 
+	go bootstrapBuiltInEnv(store)
+
 	err = bootstrapEnvs(config.BootstrapEnv, store, "")
 	if err != nil {
 		panic(err)

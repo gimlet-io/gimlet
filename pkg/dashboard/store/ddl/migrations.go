@@ -37,6 +37,8 @@ const addRepoPerEnvColumnToEnvironmentsTable = "addRepoPerEnvColumnToEnvironment
 const defaultValueForRepoPerEnv = "defaultValueForRepoPerEnv"
 const addKustomizationPerAppToEnvironmentsTable = "add-kustomization-per-app-to-environments-table"
 const defaultValueForKustomizationPerApp = "default-value-for-kustomization-per-app"
+const addBuiltInToEnvironmentsTable = "add-built-in-to-environments-table"
+const defaultValueForBuiltInToEnvironmentsTable = "default-value-for-built-in-to-environments-table"
 const createTablePods = "create-table-pods"
 const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
@@ -178,6 +180,14 @@ CREATE TABLE IF NOT EXISTS key_values (
 		{
 			name: defaultValueForKustomizationPerApp,
 			stmt: `update environments set kustomization_per_app=true where kustomization_per_app is null;`,
+		},
+		{
+			name: addBuiltInToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN built_in BOOLEAN;`,
+		},
+		{
+			name: defaultValueForBuiltInToEnvironmentsTable,
+			stmt: `update environments set built_in=false where built_in is null;`,
 		},
 		{
 			name: createTablePods,
@@ -396,6 +406,14 @@ CREATE TABLE IF NOT EXISTS key_values (
 		{
 			name: defaultValueForKustomizationPerApp,
 			stmt: `update environments set kustomization_per_app=true where kustomization_per_app is null;`,
+		},
+		{
+			name: addBuiltInToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN built_in BOOLEAN;`,
+		},
+		{
+			name: defaultValueForBuiltInToEnvironmentsTable,
+			stmt: `update environments set built_in=false where built_in is null;`,
 		},
 		{
 			name: createTablePods,

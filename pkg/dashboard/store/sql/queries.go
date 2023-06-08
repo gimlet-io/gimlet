@@ -70,12 +70,12 @@ FROM key_values
 WHERE key = $1;
 `,
 		SelectEnvironments: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
 FROM environments
 ORDER BY name asc;
 `,
 		SelectEnvironment: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
 FROM environments
 WHERE name = $1;
 `,
@@ -173,12 +173,12 @@ FROM key_values
 WHERE key = $1;
 `,
 		SelectEnvironments: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
 FROM environments
 ORDER BY name asc;
 `,
 		SelectEnvironment: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
 FROM environments
 WHERE name = $1;
 `,
