@@ -19,7 +19,7 @@ import {
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl, host, userToken }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true)
   const [kustomizationPerApp, setKustomizationPerApp] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
@@ -447,22 +447,8 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 <h3 className="text-2xl font-bold p-2 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
                 <BootstrapGuide
                   envName={bootstrapMessage.envName}
-                  repoPath={bootstrapMessage.infraRepo}
-                  repoPerEnv={bootstrapMessage.repoPerEnv}
-                  secretFileName={bootstrapMessage.infraSecretFileName}
-                  gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
-                  controllerGenerated={true}
-                  scmUrl={scmUrl}
-                />
-                <BootstrapGuide
-                  envName={bootstrapMessage.envName}
-                  repoPath={bootstrapMessage.appsRepo}
-                  repoPerEnv={bootstrapMessage.repoPerEnv}
-                  secretFileName={bootstrapMessage.appsSecretFileName}
-                  gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
-                  notificationsFileName={bootstrapMessage.notificationsFileName}
-                  controllerGenerated={false}
-                  scmUrl={scmUrl}
+                  host={host}
+                  token={userToken}
                 />
                 <GitopsAutomationGuide />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>

@@ -22,7 +22,7 @@ class Environments extends Component {
             user: reduxState.user,
             popupWindow: reduxState.popupWindow,
             releaseStatuses: reduxState.releaseStatuses,
-            scmUrl: reduxState.settings.scmUrl
+            settings: reduxState.settings
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -33,7 +33,7 @@ class Environments extends Component {
                 user: reduxState.user,
                 popupWindow: reduxState.popupWindow,
                 releaseStatuses: reduxState.releaseStatuses,
-                scmUrl: reduxState.settings.scmUrl
+                settings: reduxState.settings
             });
         });
 
@@ -63,7 +63,7 @@ class Environments extends Component {
     }
 
     getEnvironmentCards() {
-        const { connectedAgents, envs, releaseStatuses, popupWindow, scmUrl } = this.state;
+        const { connectedAgents, envs, releaseStatuses, popupWindow, settings, user } = this.state;
         const { environment, tab } = this.props.match.params;
         const sortedEnvs = this.sortingByName(envs);
 
@@ -81,7 +81,9 @@ class Environments extends Component {
                 releaseStatuses={releaseStatuses[env.name]}
                 popupWindow={popupWindow}
                 pullRequests={env.pullRequests}
-                scmUrl={scmUrl}
+                scmUrl={settings.scmUrl}
+                host={settings.host}
+                userToken={user.token}
             />))
         )
     }

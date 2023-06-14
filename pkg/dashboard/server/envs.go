@@ -272,7 +272,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	scmURL := config.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	infraGitopsRepoFileName, infraSecretFileName, err := BootstrapEnv(
+	_, _, err = BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
 		environment.Name,
@@ -291,7 +291,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	appsGitopsRepoFileName, appsSecretFileName, err := BootstrapEnv(
+	_, _, err = BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
 		environment.Name,
@@ -331,7 +331,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notificationsFileName, err := BootstrapNotifications(
+	_, err = BootstrapNotifications(
 		gitRepoCache,
 		config.Host,
 		tokenStr,
@@ -350,15 +350,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	guidingTexts := map[string]interface{}{
-		"envName":                 bootstrapConfig.EnvName,
-		"repoPerEnv":              bootstrapConfig.RepoPerEnv,
-		"infraRepo":               environment.InfraRepo,
-		"infraSecretFileName":     infraSecretFileName,
-		"infraGitopsRepoFileName": infraGitopsRepoFileName,
-		"appsRepo":                environment.AppsRepo,
-		"appsSecretFileName":      appsSecretFileName,
-		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
-		"notificationsFileName":   notificationsFileName,
+		"envName": bootstrapConfig.EnvName,
 	}
 
 	guidingTextsString, err := json.Marshal(guidingTexts)
