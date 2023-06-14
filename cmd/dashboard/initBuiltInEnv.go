@@ -62,8 +62,6 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot get head branch: %s", err)
 	}
 
-	// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
-	// Should come from configs
 	opts := gitops.DefaultManifestOpts()
 	opts.ShouldGenerateDeployKey = false
 	opts.ShouldGenerateBasicAuthSecret = true

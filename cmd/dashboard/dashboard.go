@@ -220,7 +220,7 @@ func main() {
 
 	if config.BuiltinEnvFeatureFlag {
 		time.Sleep(time.Millisecond * 100) // wait til the router is up
-		err = bootstrapBuiltInEnv(store, repoCache, gitUser)
+		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config.GitHost)
 		if err != nil {
 			panic(err)
 		}
