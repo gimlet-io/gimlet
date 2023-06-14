@@ -296,7 +296,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 	var auth *http.BasicAuth
 	var url string
 	if strings.HasPrefix(repoName, "builtin") {
-		url = fmt.Sprintf("%s/%s", r.config.GitHost, repoName)
+		url = fmt.Sprintf("http://%s/%s", r.config.GitHost, repoName)
 		auth = &http.BasicAuth{
 			Username: r.gitUser.Login,
 			Password: r.gitUser.Secret,

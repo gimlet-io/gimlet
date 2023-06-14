@@ -156,6 +156,8 @@ func processEvent(
 			event,
 			token,
 			store,
+			gitUser,
+			gitHost,
 		)
 	case model.BranchDeletedEvent:
 		results, err = processBranchDeletedEvent(
@@ -403,6 +405,8 @@ func processRollbackEvent(
 	event *model.Event,
 	nonImpersonatedToken string,
 	store *store.Store,
+	gitUser *model.User,
+	gitHost string,
 ) ([]model.Result, error) {
 	var rollbackRequest dx.RollbackRequest
 	err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
@@ -443,8 +447,12 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
+	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
+	if envFromStore.BuiltIn {
+		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, gitHost, envFromStore.AppsRepo)
+	}
 	err = nativeGit.NativePushWithToken(
-		fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo),
+		url,
 		repoTmpPath,
 		head.Name().Short(),
 	)
