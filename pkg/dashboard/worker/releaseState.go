@@ -21,7 +21,7 @@ type ReleaseStateWorker struct {
 	Releases  *prometheus.GaugeVec
 	Perf      *prometheus.HistogramVec
 	Store     *store.Store
-	Config    *config.Config
+	Config    *config.PersistentConfig
 }
 
 func (w *ReleaseStateWorker) Run() {

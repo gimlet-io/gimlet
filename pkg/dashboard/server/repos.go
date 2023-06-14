@@ -100,8 +100,8 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateOrgRepos(ctx context.Context) {
-	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
-	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
 	orgRepos, err := gitServiceImpl.OrgRepos(token)

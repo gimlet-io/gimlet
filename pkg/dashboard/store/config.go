@@ -61,7 +61,8 @@ const (
 	GitSSHAddressFormat     = "GIT_SSH_ADDRESS_FORMAT"
 	ReleaseStats            = "RELEASE_STATS"
 
-	TermsOfServiceFeatureFlag = "FEATURE_TERMS_OF_SERVICE"
+	TermsOfServiceFeatureFlag      = "FEATURE_TERMS_OF_SERVICE"
+	ChartVersionUpdaterFeatureFlag = "FEATURE_CHART_VERSION_UPDATER"
 )
 
 func (db *Store) SaveConfig(config *model.Config) error {

@@ -48,7 +48,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	db := r.Context().Value("store").(*store.Store)
-	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	user := ctx.Value("user").(*model.User)
@@ -200,8 +200,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
-	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
-	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	gitToken, gitUser, _ := tokenManager.Token()
 	org := config.Org()
 
@@ -699,7 +699,7 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
 	if err != nil {

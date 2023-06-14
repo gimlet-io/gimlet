@@ -34,8 +34,8 @@ func SetupRouter(
 	clientHub *streaming.ClientHub,
 	agentWSHub *streaming.AgentWSHub,
 	store *store.Store,
-	gitService *customScm.CustomGitService,
-	tokenManager *customScm.NonImpersonatedTokenManager,
+	gitService customScm.CustomGitService,
+	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
 	alertStateManager *alert.AlertStateManager,
@@ -43,6 +43,7 @@ func SetupRouter(
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
 ) *chi.Mux {
+	// TODO replace config.Config
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 	log.Infof("Agent JWT is %s\n", tokenString)
@@ -59,7 +60,6 @@ func SetupRouter(
 	r.Use(middleware.WithValue("agentHub", agentHub))
 	r.Use(middleware.WithValue("clientHub", clientHub))
 	r.Use(middleware.WithValue("store", store))
-	r.Use(middleware.WithValue("config", config))
 	r.Use(middleware.WithValue("persistentConfig", persistentConfig))
 	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
@@ -73,7 +73,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("perf", perf))
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000", config.Host},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000", config.Host}, // TODO replace config.Config
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -197,7 +197,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 func githubOAuthRoutes(config *config.PersistentConfig, r *chi.Mux) {
 	if config.IsGithub() {
 		dumper := logger.DiscardDumper()
-		if config.Get(store.GithubDebug) == "true" {
+		if config.GithubDebug() {
 			dumper = logger.StandardDumper()
 		}
 		loginMiddleware := &github.Config{

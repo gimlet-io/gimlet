@@ -403,7 +403,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	err = nativeGit.NativePushWithToken(pathToCleanUp, repoName, token, head.Name().Short())
 	if err != nil {

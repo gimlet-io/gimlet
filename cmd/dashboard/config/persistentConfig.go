@@ -75,6 +75,14 @@ func (p *PersistentConfig) GitlabDebug() bool {
 	return p.Get(store.GitlabDebug) == "true"
 }
 
+func (p *PersistentConfig) PrintAdminToken() bool {
+	return p.Get(store.PrintAdminToken) == "true"
+}
+
+func (p *PersistentConfig) ChartVersionUpdaterFeatureFlag() bool {
+	return p.Get(store.ChartVersionUpdaterFeatureFlag) == "true"
+}
+
 func (p *PersistentConfig) saveConfigFile(config *Config) error {
 	configs := map[string]string{}
 	t := reflect.TypeOf(*config)

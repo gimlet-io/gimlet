@@ -23,7 +23,7 @@ import (
 )
 
 // Creates an admin user and prints her access token, in case there are no users in the database
-func setupAdminUser(config *config.Config, store *store.Store) error {
+func setupAdminUser(config *config.PersistentConfig, store *store.Store) error {
 	admin, err := store.User("admin")
 
 	if err == sql.ErrNoRows {
@@ -44,7 +44,7 @@ func setupAdminUser(config *config.Config, store *store.Store) error {
 		return fmt.Errorf("couldn't list users to create admin user %s", err)
 	}
 
-	if config.PrintAdminToken {
+	if config.PrintAdminToken() {
 		err = printAdminToken(admin)
 		if err != nil {
 			return err
@@ -67,13 +67,14 @@ func printAdminToken(admin *model.User) error {
 	return nil
 }
 
-func adminToken(config *config.Config) string {
-	if config.AdminToken == "" {
+func adminToken(config *config.PersistentConfig) string {
+	adminToken := config.Get(store.AdminToken)
+	if adminToken == "" {
 		return base32.StdEncoding.EncodeToString(
 			securecookie.GenerateRandomKey(32),
 		)
 	} else {
-		return config.AdminToken
+		return adminToken
 	}
 }
 
@@ -105,20 +106,20 @@ func initTokenManager(config *config.PersistentConfig) (customScm.CustomGitServi
 }
 
 func initNotifications(
-	config *config.Config,
+	config *config.PersistentConfig,
 	tokenManager customScm.NonImpersonatedTokenManager,
 ) *notifications.ManagerImpl {
 	notificationsManager := notifications.NewManager()
-	if config.Notifications.Provider == "slack" {
+	if config.Get(store.NotificationsProvider) == "slack" {
 		notificationsManager.AddProvider(slackNotificationProvider(config))
 	}
-	if config.Notifications.Provider == "discord" {
+	if config.Get(store.NotificationsProvider) == "discord" {
 		notificationsManager.AddProvider(discordNotificationProvider(config))
 	}
 	if config.IsGithub() {
 		notificationsManager.AddProvider(notifications.NewGithubProvider(tokenManager))
 	} else if config.IsGitlab() {
-		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, config.Gitlab.URL))
+		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, config.Get(store.GitlabURL)))
 	}
 	go notificationsManager.Run()
 	return notificationsManager

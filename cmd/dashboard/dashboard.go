@@ -16,6 +16,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	dstore "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
@@ -42,14 +43,17 @@ func main() {
 		log.Traceln(config.String())
 	}
 
-	if config.Host == "" {
-		panic(fmt.Errorf("please provide the HOST variable"))
-	}
+	// TODO host is used in OAuth, agent-dash communication, flux-dash communication, and on the frontend
+	// if config.Host == "" {
+	// 	panic(fmt.Errorf("please provide the HOST variable"))
+	// }
+
 	if config.JWTSecret == "" {
-		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
+		// TODO JWT secret should be generated if not provided, then persisted in the DB backed config module
+		// panic(fmt.Errorf("please provide the JWT_SECRET variable"))
 	}
 
-	agentHub := streaming.NewAgentHub(config)
+	agentHub := streaming.NewAgentHub()
 	go agentHub.Run()
 
 	clientHub := streaming.NewClientHub()
@@ -65,29 +69,28 @@ func main() {
 		config.Database.EncryptionKeyNew,
 	)
 
-	err = reencrypt(store, config.Database.EncryptionKeyNew)
-	if err != nil {
-		panic(err)
-	}
-
-	err = setupAdminUser(config, store)
-	if err != nil {
-		panic(err)
-	}
-
-	err = bootstrapEnvs(config.BootstrapEnv, store, "")
-	if err != nil {
-		panic(err)
-	}
-
-	// TODO replace with config.Config
 	persistentConfig, err := dconfig.NewPersistentConfig(store, config)
 	if err != nil {
 		panic(err)
 	}
 
+	err = reencrypt(store, persistentConfig.Get(dstore.DatabaseEncryptionKeyNew))
+	if err != nil {
+		panic(err)
+	}
+
+	err = setupAdminUser(persistentConfig, store)
+	if err != nil {
+		panic(err)
+	}
+
+	err = bootstrapEnvs(persistentConfig.Get(dstore.BootstrapEnv), store, "")
+	if err != nil {
+		panic(err)
+	}
+
 	gitSvc, tokenManager := initTokenManager(persistentConfig)
-	notificationsManager := initNotifications(config, tokenManager)
+	notificationsManager := initNotifications(persistentConfig, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
@@ -101,17 +104,18 @@ func main() {
 	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
-	if config.GitopsRepo != "" || config.GitopsRepoDeployKeyPath != "" {
+	if persistentConfig.Get(dstore.GitopsRepo) != "" || persistentConfig.Get(dstore.GitopsRepoDeployKeyPath) != "" {
 		panic("GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH are deprecated." +
 			"Please use BOOTSTRAP_ENV instead, or create gitops environment configurations on the Gimlet dashboard.")
 	}
 
-	if config.GitopsRepos != "" {
+	gitopsRepos := persistentConfig.Get(dstore.GitopsRepos)
+	if gitopsRepos != "" {
 		log.Info("Bootstrapping gitops environments from deprecated GITOPS_REPOS variable")
 		err = bootstrapEnvs(
-			config.BootstrapEnv,
+			persistentConfig.Get(dstore.BootstrapEnv),
 			store,
-			config.GitopsRepos,
+			gitopsRepos,
 		)
 		if err != nil {
 			panic(err)
@@ -120,12 +124,13 @@ func main() {
 			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
+	repoCachePath := persistentConfig.Get(dstore.RepoCachePath)
 	host := persistentConfig.Get(dstore.Host)
 	webhookSecrets := persistentConfig.Get(dstore.WebhookSecret)
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
-		config.RepoCachePath,
+		repoCachePath,
 		host,
 		webhookSecrets,
 		goScm,
@@ -139,22 +144,27 @@ func main() {
 	log.Info("repo cache initialized")
 
 	chartUpdatePullRequests := map[string]interface{}{}
-	if config.ChartVersionUpdaterFeatureFlag {
+	if persistentConfig.ChartVersionUpdaterFeatureFlag() {
+		chart := dconfig.Chart{
+			Name:    persistentConfig.Get(dstore.ChartName),
+			Version: persistentConfig.Get(dstore.ChartVersion),
+		}
+
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			gitSvc,
 			tokenManager,
 			dashboardRepoCache,
 			goScm,
 			&chartUpdatePullRequests,
-			config.Chart,
+			chart,
 		)
 		go chartVersionUpdater.Run()
 	}
 
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
-		config.GitopsRepo,
-		config.GitopsRepoDeployKeyPath,
+		persistentConfig.Get(dstore.GitopsRepo),
+		persistentConfig.Get(dstore.GitopsRepoDeployKeyPath),
 		tokenManager,
 		notificationsManager,
 		eventsProcessed,
@@ -165,20 +175,20 @@ func main() {
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
 
-	if config.ReleaseStats == "enabled" {
+	if persistentConfig.Get(dstore.ReleaseStats) == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
 			RepoCache: dashboardRepoCache,
 			Releases:  releases,
 			Perf:      perf,
 			Store:     store,
-			Config:    config,
+			Config:    persistentConfig,
 		}
 		go releaseStateWorker.Run()
 	}
 
 	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
 		tokenManager,
-		config.RepoCachePath,
+		persistentConfig.Get(dstore.RepoCachePath),
 		store,
 	)
 	go branchDeleteEventWorker.Run()
@@ -197,8 +207,8 @@ func main() {
 		clientHub,
 		agentWSHub,
 		store,
-		&gitSvc,
-		&tokenManager,
+		gitSvc,
+		tokenManager,
 		dashboardRepoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,
@@ -292,30 +302,30 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 	return false
 }
 
-func slackNotificationProvider(config *dconfig.Config) *notifications.SlackProvider {
-	slackChannelMap := parseChannelMap(config)
+func slackNotificationProvider(config *dconfig.PersistentConfig) *notifications.SlackProvider {
+	slackChannelMap := parseChannelMap(config.Get(store.NotificationsChannelMapping))
 
 	return &notifications.SlackProvider{
-		Token:          config.Notifications.Token,
+		Token:          config.Get(store.NotificationsToken),
 		ChannelMapping: slackChannelMap,
-		DefaultChannel: config.Notifications.DefaultChannel,
+		DefaultChannel: config.Get(store.NotificationsDefaultChannel),
 	}
 }
 
-func discordNotificationProvider(config *dconfig.Config) *notifications.DiscordProvider {
-	discordChannelMapping := parseChannelMap(config)
+func discordNotificationProvider(config *dconfig.PersistentConfig) *notifications.DiscordProvider {
+	discordChannelMapping := parseChannelMap(config.Get(store.NotificationsChannelMapping))
 
 	return &notifications.DiscordProvider{
-		Token:          config.Notifications.Token,
+		Token:          config.Get(store.NotificationsToken),
 		ChannelMapping: discordChannelMapping,
-		ChannelID:      config.Notifications.DefaultChannel,
+		ChannelID:      config.Get(store.NotificationsDefaultChannel),
 	}
 }
 
-func parseChannelMap(config *dconfig.Config) map[string]string {
+func parseChannelMap(notificationsChannelMapping string) map[string]string {
 	channelMap := map[string]string{}
-	if config.Notifications.ChannelMapping != "" {
-		pairs := strings.Split(config.Notifications.ChannelMapping, ",")
+	if notificationsChannelMapping != "" {
+		pairs := strings.Split(notificationsChannelMapping, ",")
 		for _, p := range pairs {
 			keyValue := strings.Split(p, "=")
 			channelMap[keyValue[0]] = keyValue[1]
