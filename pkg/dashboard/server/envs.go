@@ -408,21 +408,18 @@ func BootstrapEnv(
 	}
 
 	scmHost := strings.Split(scmURL, "://")[1]
-	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		kustomizationPerApp,
-		envName,
-		repoPerEnv,
-		tmpPath,
-		true,
-		true,
-		false,
-		"",
-		"",
-		fmt.Sprintf("git@%s:%s.git", scmHost, repoName),
-		headBranch,
-	)
+	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(gitops.ManifestOpts{
+		ShouldGenerateController:           shouldGenerateController,
+		ShouldGenerateDependencies:         shouldGenerateDependencies,
+		KustomizationPerApp:                kustomizationPerApp,
+		Env:                                envName,
+		SingleEnv:                          repoPerEnv,
+		GitopsRepoPath:                     tmpPath,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		GitopsRepoUrl:                      fmt.Sprintf("git@%s:%s.git", scmHost, repoName),
+		Branch:                             headBranch,
+	})
 	if err != nil {
 		return "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}

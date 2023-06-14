@@ -21,21 +21,39 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func GenerateManifests(
-	shouldGenerateController bool,
-	shouldGenerateDependencies bool,
-	kustomizationPerApp bool,
-	env string,
-	singleEnv bool,
-	gitopsRepoPath string,
-	shouldGenerateKustomizationAndRepo bool,
-	shouldGenerateDeployKey bool,
-	shouldGenerateBasicAuthSecret bool,
-	basicAuthUser string,
-	basicAuthPassword,
-	gitopsRepoUrl string,
-	branch string,
-) (string, string, string, error) {
+type ManifestOpts struct {
+	ShouldGenerateController           bool
+	ShouldGenerateDependencies         bool
+	KustomizationPerApp                bool
+	Env                                string
+	SingleEnv                          bool
+	GitopsRepoPath                     string
+	ShouldGenerateKustomizationAndRepo bool
+	ShouldGenerateDeployKey            bool
+	GitopsRepoUrl                      string
+	Branch                             string
+	ShouldGenerateBasicAuthSecret      bool
+	BasicAuthUser                      string
+	BasicAuthPassword                  string
+}
+
+func DefaultManifestOpts() ManifestOpts {
+	return ManifestOpts{
+		ShouldGenerateController:           true,
+		ShouldGenerateDependencies:         true,
+		KustomizationPerApp:                false,
+		Env:                                "",
+		SingleEnv:                          true,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		Branch:                             "main",
+		ShouldGenerateBasicAuthSecret:      false,
+		BasicAuthUser:                      "",
+		BasicAuthPassword:                  "",
+	}
+}
+
+func GenerateManifests(opts ManifestOpts) (string, string, string, error) {
 	var (
 		publicKey          string
 		gitopsRepoName     string
@@ -45,54 +63,54 @@ func GenerateManifests(
 
 	installOpts := install.MakeDefaultOptions()
 	installOpts.ManifestFile = "flux.yaml"
-	installOpts.TargetPath = env
+	installOpts.TargetPath = opts.Env
 	installOpts.Version = "v0.41.2"
 
-	if !singleEnv && env == "" {
+	if !opts.SingleEnv && opts.Env == "" {
 		return "", "", "", fmt.Errorf("either `--env` or `--single-env` is mandatory")
 	}
-	if singleEnv && env != "" {
+	if opts.SingleEnv && opts.Env != "" {
 		return "", "", "", fmt.Errorf("`--env` and `--single-env` are mutually exclusive")
 	}
 
-	if singleEnv {
-		env = "."
+	if opts.SingleEnv {
+		opts.Env = "."
 	}
 
-	if shouldGenerateController {
+	if opts.ShouldGenerateController {
 		installManifest, err := install.Generate(installOpts, "")
 		if err != nil {
 			return "", "", "", fmt.Errorf("cannot generate installation manifests %s", err)
 		}
-		installManifest.Path = path.Join(env, "flux", installOpts.ManifestFile)
-		_, err = installManifest.WriteFile(gitopsRepoPath)
+		installManifest.Path = path.Join(opts.Env, "flux", installOpts.ManifestFile)
+		_, err = installManifest.WriteFile(opts.GitopsRepoPath)
 		if err != nil {
 			return "", "", "", fmt.Errorf("cannot write installation manifests %s", err)
 		}
 	}
 
-	if shouldGenerateKustomizationAndRepo {
+	if opts.ShouldGenerateKustomizationAndRepo {
 		var url, host, owner, repoName string
-		if strings.Contains(gitopsRepoUrl, "builtin-") {
-			url = gitopsRepoUrl
+		if strings.Contains(opts.GitopsRepoUrl, "builtin-") {
+			url = opts.GitopsRepoUrl
 			owner = "builtin"
-			repoName = strings.Split(gitopsRepoUrl, "/")[3]
+			repoName = strings.Split(opts.GitopsRepoUrl, "/")[3]
 			repoName = strings.Split(repoName, ".")[0]
 		} else {
-			host, owner, repoName = ParseRepoURL(gitopsRepoUrl)
+			host, owner, repoName = ParseRepoURL(opts.GitopsRepoUrl)
 			url = fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName)
 		}
 
-		gitopsRepoName = UniqueGitopsRepoName(singleEnv, owner, repoName, env)
-		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s.yaml", UniqueName(singleEnv, owner, repoName, env))
-		secretName := fmt.Sprintf("deploy-key-%s", UniqueName(singleEnv, owner, repoName, env))
+		gitopsRepoName = UniqueGitopsRepoName(opts.SingleEnv, owner, repoName, opts.Env)
+		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s.yaml", UniqueName(opts.SingleEnv, owner, repoName, opts.Env))
+		secretName := fmt.Sprintf("deploy-key-%s", UniqueName(opts.SingleEnv, owner, repoName, opts.Env))
 		secretFileName = secretName + ".yaml"
 
-		fluxPath := filepath.Join(env, "flux")
-		if singleEnv {
+		fluxPath := filepath.Join(opts.Env, "flux")
+		if opts.SingleEnv {
 			fluxPath = "flux"
 		}
-		existingGitopsRepoFileName, existingGitopsRepoMetaName := GitopsRepoFileAndMetaNameFromRepo(gitopsRepoPath, fluxPath)
+		existingGitopsRepoFileName, existingGitopsRepoMetaName := GitopsRepoFileAndMetaNameFromRepo(opts.GitopsRepoPath, fluxPath)
 		if existingGitopsRepoFileName != "" {
 			gitopsRepoName = existingGitopsRepoMetaName
 			gitopsRepoFileName = existingGitopsRepoFileName
@@ -104,59 +122,59 @@ func GenerateManifests(
 			Name:                 gitopsRepoName,
 			Secret:               secretName,
 			Namespace:            "flux-system",
-			Branch:               branch,
+			Branch:               opts.Branch,
 			ManifestFile:         gitopsRepoFileName,
-			GenerateDependencies: shouldGenerateDependencies,
+			GenerateDependencies: opts.ShouldGenerateDependencies,
 		}
 
-		syncOpts.DependenciesPath = env
-		syncOpts.TargetPath = env
-		if singleEnv {
+		syncOpts.DependenciesPath = opts.Env
+		syncOpts.TargetPath = opts.Env
+		if opts.SingleEnv {
 			syncOpts.DependenciesPath = ""
 			syncOpts.TargetPath = ""
 		}
-		if kustomizationPerApp {
+		if opts.KustomizationPerApp {
 			syncOpts.TargetPath = fluxPath
 		}
 		syncManifest, err := sync.Generate(syncOpts)
 		if err != nil {
 			return "", "", "", fmt.Errorf("cannot generate git manifests %s", err)
 		}
-		syncManifest.Path = path.Join(env, "flux", syncOpts.ManifestFile)
-		_, err = syncManifest.WriteFile(gitopsRepoPath)
+		syncManifest.Path = path.Join(opts.Env, "flux", syncOpts.ManifestFile)
+		_, err = syncManifest.WriteFile(opts.GitopsRepoPath)
 		if err != nil {
 			return "", "", "", fmt.Errorf("cannot write git manifests %s", err)
 		}
 
-		if shouldGenerateDependencies {
-			err = os.MkdirAll(path.Join(gitopsRepoPath, env, "dependencies"), os.ModePerm)
+		if opts.ShouldGenerateDependencies {
+			err = os.MkdirAll(path.Join(opts.GitopsRepoPath, opts.Env, "dependencies"), os.ModePerm)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot create dependencies folder %s", err)
 			}
-			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "dependencies", ".sourceignore"), []byte(""), os.ModePerm)
+			err = ioutil.WriteFile(path.Join(opts.GitopsRepoPath, opts.Env, "dependencies", ".sourceignore"), []byte(""), os.ModePerm)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot populate dependencies folder %s", err)
 			}
 		}
 
-		if shouldGenerateDeployKey {
+		if opts.ShouldGenerateDeployKey {
 			pKey, deployKeySecret, err := generateDeployKey(host, secretName)
 			publicKey = pKey
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
 			}
-			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
+			err = ioutil.WriteFile(path.Join(opts.GitopsRepoPath, opts.Env, "flux", secretFileName), deployKeySecret, os.ModePerm)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot write deploy key %s", err)
 			}
 		}
 
-		if shouldGenerateBasicAuthSecret {
-			basicAuthSecret, err := generateBasicAuthSecret(secretName, basicAuthUser, basicAuthPassword)
+		if opts.ShouldGenerateBasicAuthSecret {
+			basicAuthSecret, err := generateBasicAuthSecret(secretName, opts.BasicAuthUser, opts.BasicAuthPassword)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
 			}
-			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), basicAuthSecret, os.ModePerm)
+			err = ioutil.WriteFile(path.Join(opts.GitopsRepoPath, opts.Env, "flux", secretFileName), basicAuthSecret, os.ModePerm)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot write basic auth secret %s", err)
 			}

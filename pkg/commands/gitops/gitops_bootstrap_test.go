@@ -22,42 +22,31 @@ func Test_guidingTextWithoutController(t *testing.T) {
 	gitopsRepoPathName := "gitops-repo-path"
 	publicKey := "12345"
 	noController := true
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	kustomizationPerApp := true
-	env := "staging"
-	singleEnv := false
-	gitopsRepoPath := dirToWrite
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
-	branch := ""
 
-	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		kustomizationPerApp,
-		env,
-		singleEnv,
-		gitopsRepoPath,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		false,
-		"",
-		"",
-		gitopsRepoUrl,
-		branch,
-	)
+	opts := gitops.ManifestOpts{
+		ShouldGenerateController:           !noController,
+		ShouldGenerateDependencies:         true,
+		KustomizationPerApp:                true,
+		Env:                                "staging",
+		SingleEnv:                          false,
+		GitopsRepoPath:                     dirToWrite,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		GitopsRepoUrl:                      "git@github.com:gimlet/test-repo.git",
+		Branch:                             "",
+	}
+
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
 	}
 
-	guidingTextString := guidingText(gitopsRepoPathName, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+	guidingTextString := guidingText(gitopsRepoPathName, opts.Env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
-	secretFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/" + secretFileName
-	gitopsRepoFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/" + gitopsRepoFileName
-	withoutControllerGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/flux.yaml"
+	secretFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + opts.Env + "/flux/" + secretFileName
+	gitopsRepoFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + opts.Env + "/flux/" + gitopsRepoFileName
+	withoutControllerGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/" + opts.Env + "/flux/flux.yaml"
 
 	if !strings.Contains(guidingTextString, secretFileNameGuidingText) {
 		t.Errorf("Should contain specified string in deploy key path")
@@ -83,38 +72,27 @@ func Test_guidingTextWithoutControllerAndSingleEnv(t *testing.T) {
 	gitopsRepoPathName := "gitops-repo-path"
 	publicKey := "12345"
 	noController := true
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	kustomizationPerApp := true
-	env := ""
-	singleEnv := true
-	gitopsRepoPath := dirToWrite
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
-	branch := ""
 
-	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		kustomizationPerApp,
-		env,
-		singleEnv,
-		gitopsRepoPath,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		false,
-		"",
-		"",
-		gitopsRepoUrl,
-		branch,
-	)
+	opts := gitops.ManifestOpts{
+		ShouldGenerateController:           !noController,
+		ShouldGenerateDependencies:         true,
+		KustomizationPerApp:                true,
+		Env:                                "",
+		SingleEnv:                          true,
+		GitopsRepoPath:                     dirToWrite,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		GitopsRepoUrl:                      "git@github.com:gimlet/test-repo.git",
+		Branch:                             "",
+	}
+
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
 	}
 
-	guidingTextString := guidingText(gitopsRepoPathName, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+	guidingTextString := guidingText(gitopsRepoPathName, opts.Env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
 	secretFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/flux/" + secretFileName
 	gitopsRepoFileNameGuidingText := "kubectl apply -f " + gitopsRepoPathName + "/flux/" + gitopsRepoFileName
@@ -144,40 +122,29 @@ func Test_guidingTextWithController(t *testing.T) {
 	gitopsRepoPathName := "gitops-repo-path"
 	publicKey := "12345"
 	noController := false
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	kustomizationPerApp := true
-	env := "staging"
-	singleEnv := false
-	gitopsRepoPath := dirToWrite
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitopsRepoUrl := "git@github.com:gimlet/test-repo.git"
-	branch := ""
 
-	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		kustomizationPerApp,
-		env,
-		singleEnv,
-		gitopsRepoPath,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		false,
-		"",
-		"",
-		gitopsRepoUrl,
-		branch,
-	)
+	opts := gitops.ManifestOpts{
+		ShouldGenerateController:           !noController,
+		ShouldGenerateDependencies:         true,
+		KustomizationPerApp:                true,
+		Env:                                "staging",
+		SingleEnv:                          false,
+		GitopsRepoPath:                     dirToWrite,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		GitopsRepoUrl:                      "git@github.com:gimlet/test-repo.git",
+		Branch:                             "",
+	}
+
+	gitopsRepoFileName, _, secretFileName, err := gitops.GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
 	}
 
-	guidingTextString := guidingText(gitopsRepoPathName, env, publicKey, noController, secretFileName, gitopsRepoFileName)
+	guidingTextString := guidingText(gitopsRepoPathName, opts.Env, publicKey, noController, secretFileName, gitopsRepoFileName)
 
-	guidingTextWithoutControllerText := "kubectl apply -f " + gitopsRepoPathName + "/" + env + "/flux/flux.yaml"
+	guidingTextWithoutControllerText := "kubectl apply -f " + gitopsRepoPathName + "/" + opts.Env + "/flux/flux.yaml"
 
 	if !strings.Contains(guidingTextString, guidingTextWithoutControllerText) {
 		t.Errorf("Should contain line about flux.yaml creation")
