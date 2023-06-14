@@ -59,10 +59,12 @@ func bootstrapBuiltInEnv(
 	// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
 	// Should come from configs
 	opts := gitops.DefaultManifestOpts()
+	opts.ShouldGenerateDeployKey = false
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = "testuser"
 	opts.BasicAuthPassword = "49bec54a"
 	opts.GitopsRepoUrl = fmt.Sprintf("http://127.0.0.1:9000/%s", builtInEnv.InfraRepo)
+	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
 	_, _, _, err = gitops.GenerateManifests(opts)
 	if err != nil {
