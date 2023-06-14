@@ -653,8 +653,6 @@ func cloneTemplateWriteAndPush(
 			head, _ := repo.Head()
 			url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
 			if envFromStore.BuiltIn {
-				// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
-				// Should come from configs
 				url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, gitHost, envFromStore.AppsRepo)
 			}
 
