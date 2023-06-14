@@ -115,18 +115,24 @@ func main() {
 			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
-	dashboardRepoCache, err := nativeGit.NewRepoCache(
+	gitUser, err := setupGitUser(config, store)
+	if err != nil {
+		panic(err)
+	}
+
+	repoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
 		config.RepoCachePath,
 		goScm,
 		config,
 		clientHub,
+		gitUser,
 	)
 	if err != nil {
 		panic(err)
 	}
-	go dashboardRepoCache.Run()
+	go repoCache.Run()
 	log.Info("repo cache initialized")
 
 	chartUpdatePullRequests := map[string]interface{}{}
@@ -134,7 +140,7 @@ func main() {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			gitSvc,
 			tokenManager,
-			dashboardRepoCache,
+			repoCache,
 			goScm,
 			&chartUpdatePullRequests,
 			config.Chart,
@@ -149,16 +155,17 @@ func main() {
 		tokenManager,
 		notificationsManager,
 		eventsProcessed,
-		dashboardRepoCache,
+		repoCache,
 		clientHub,
 		perf,
+		gitUser,
 	)
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			RepoCache: dashboardRepoCache,
+			RepoCache: repoCache,
 			Releases:  releases,
 			Perf:      perf,
 			Store:     store,
@@ -181,7 +188,7 @@ func main() {
 	logger := log.New()
 	logger.Formatter = &customFormatter{}
 
-	gitServer, err := builtInGitServer()
+	gitServer, err := builtInGitServer(gitUser)
 	if err != nil {
 		panic(err)
 	}
@@ -194,7 +201,7 @@ func main() {
 		store,
 		gitSvc,
 		tokenManager,
-		dashboardRepoCache,
+		repoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,
 		notificationsManager,
@@ -212,7 +219,7 @@ func main() {
 
 	if config.BuiltinEnvFeatureFlag {
 		time.Sleep(time.Millisecond * 100) // wait til the router is up
-		err = bootstrapBuiltInEnv(store, dashboardRepoCache)
+		err = bootstrapBuiltInEnv(store, repoCache, gitUser)
 		if err != nil {
 			panic(err)
 		}

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/base32"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,18 +11,21 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
+	"github.com/gorilla/securecookie"
 	"github.com/sosedoff/gitkit"
 )
 
 func bootstrapBuiltInEnv(
 	store *store.Store,
 	repoCache *nativeGit.RepoCache,
+	gitUser *model.User,
 ) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
@@ -61,8 +66,8 @@ func bootstrapBuiltInEnv(
 	opts := gitops.DefaultManifestOpts()
 	opts.ShouldGenerateDeployKey = false
 	opts.ShouldGenerateBasicAuthSecret = true
-	opts.BasicAuthUser = "testuser"
-	opts.BasicAuthPassword = "49bec54a"
+	opts.BasicAuthUser = gitUser.Login
+	opts.BasicAuthPassword = gitUser.Secret
 	opts.GitopsRepoUrl = fmt.Sprintf("http://127.0.0.1:9000/%s", builtInEnv.InfraRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
@@ -71,7 +76,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = stageCommitAndPush(repo, tmpPath, "testuser", "49bec54a", "[Gimlet] Bootstrapping")
+	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -81,7 +86,7 @@ func bootstrapBuiltInEnv(
 	if err != nil {
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
-	err = stageCommitAndPush(repo, tmpPath, "testuser", "49bec54a", "[Gimlet] Bootstrapping")
+	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -154,7 +159,7 @@ func stageCommitAndPush(repo *git.Repository, tmpPath string, user string, passw
 	return nil
 }
 
-func builtInGitServer() (http.Handler, error) {
+func builtInGitServer(gitUser *model.User) (http.Handler, error) {
 	hooks := &gitkit.HookScripts{}
 
 	service := gitkit.New(gitkit.Config{
@@ -170,7 +175,7 @@ func builtInGitServer() (http.Handler, error) {
 	// You can hook up your database/redis/cache for authentication purposes.
 	service.AuthFunc = func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
 		log.Println("user auth request for repo:", cred.Username, cred.Password, req.RepoName)
-		return cred.Username == "testuser" && cred.Password == "49bec54a", nil
+		return cred.Username == "git" && cred.Password == gitUser.Secret, nil
 	}
 
 	// Configure git server. Will create git repos path if it does not exist.
@@ -180,4 +185,26 @@ func builtInGitServer() (http.Handler, error) {
 	}
 
 	return service, nil
+}
+
+func setupGitUser(config *config.Config, store *store.Store) (*model.User, error) {
+	gitUser, err := store.User("git")
+
+	if err == sql.ErrNoRows {
+		gitUser = &model.User{
+			Login: "git",
+			Secret: base32.StdEncoding.EncodeToString(
+				securecookie.GenerateRandomKey(32),
+			),
+			Admin: false,
+		}
+		err = store.CreateUser(gitUser)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't create user git user %s", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("couldn't list users to create admin user %s", err)
+	}
+
+	return gitUser, nil
 }

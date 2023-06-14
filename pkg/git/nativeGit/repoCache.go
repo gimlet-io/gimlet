@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dashboardConfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
@@ -39,6 +40,9 @@ type RepoCache struct {
 	config      *dashboardConfig.Config
 	clientHub   *streaming.ClientHub
 
+	// for builtin env
+	gitUser *model.User
+
 	lock sync.Mutex
 }
 
@@ -54,6 +58,7 @@ func NewRepoCache(
 	goScmHelper *genericScm.GoScmHelper,
 	config *dashboardConfig.Config,
 	clientHub *streaming.ClientHub,
+	gitUser *model.User,
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
 		tokenManager: tokenManager,
@@ -64,6 +69,7 @@ func NewRepoCache(
 		goScmHelper:  goScmHelper,
 		config:       config,
 		clientHub:    clientHub,
+		gitUser:      gitUser,
 	}
 
 	const DirRwxRxR = 0754
@@ -294,8 +300,8 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		// Should come from configs
 		url = fmt.Sprintf("http://127.0.0.1:9000/%s", repoName)
 		auth = &http.BasicAuth{
-			Username: "testuser",
-			Password: "49bec54a",
+			Username: r.gitUser.Login,
+			Password: r.gitUser.Secret,
 		}
 	} else {
 		url = fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName)

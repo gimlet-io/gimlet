@@ -41,6 +41,7 @@ type GitopsWorker struct {
 	repoCache               *nativeGit.RepoCache
 	clientHub               *streaming.ClientHub
 	perf                    *prometheus.HistogramVec
+	gitUser                 *model.User
 }
 
 func NewGitopsWorker(
@@ -53,6 +54,7 @@ func NewGitopsWorker(
 	repoCache *nativeGit.RepoCache,
 	clientHub *streaming.ClientHub,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
 ) *GitopsWorker {
 	return &GitopsWorker{
 		store:                   store,
@@ -64,6 +66,7 @@ func NewGitopsWorker(
 		repoCache:               repoCache,
 		clientHub:               clientHub,
 		perf:                    perf,
+		gitUser:                 gitUser,
 	}
 }
 
@@ -87,6 +90,7 @@ func (w *GitopsWorker) Run() {
 				w.repoCache,
 				w.clientHub,
 				w.perf,
+				w.gitUser,
 			)
 		}
 
@@ -104,6 +108,7 @@ func processEvent(
 	repoCache *nativeGit.RepoCache,
 	clientHub *streaming.ClientHub,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
@@ -123,6 +128,7 @@ func processEvent(
 			event,
 			store,
 			perf,
+			gitUser,
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
@@ -133,6 +139,7 @@ func processEvent(
 			token,
 			event,
 			perf,
+			gitUser,
 		)
 	case model.RollbackRequestedEvent:
 		results, err = processRollbackEvent(
@@ -287,6 +294,7 @@ func processReleaseEvent(
 	nonImpersonatedToken string,
 	event *model.Event,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	var releaseRequest dx.ReleaseRequest
@@ -363,6 +371,7 @@ func processReleaseEvent(
 			releaseMeta,
 			perf,
 			store,
+			gitUser,
 		)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -482,6 +491,7 @@ func processArtifactEvent(
 	event *model.Event,
 	dao *store.Store,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	artifact, err := model.ToArtifact(event)
@@ -542,6 +552,7 @@ func processArtifactEvent(
 			releaseMeta,
 			perf,
 			dao,
+			gitUser,
 		)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -585,6 +596,7 @@ func cloneTemplateWriteAndPush(
 	releaseMeta *dx.Release,
 	perf *prometheus.HistogramVec,
 	store *store.Store,
+	gitUser *model.User,
 ) (string, error) {
 	t0 := time.Now()
 
@@ -631,7 +643,7 @@ func cloneTemplateWriteAndPush(
 			if envFromStore.BuiltIn {
 				// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
 				// Should come from configs
-				url = fmt.Sprintf("http://%s:%s@127.0.0.1:9000/%s", "testuser", "49bec54a", envFromStore.AppsRepo)
+				url = fmt.Sprintf("http://%s:%s@127.0.0.1:9000/%s", gitUser.Login, gitUser.Secret, envFromStore.AppsRepo)
 			}
 
 			return nativeGit.NativePushWithToken(

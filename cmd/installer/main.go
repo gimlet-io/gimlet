@@ -521,6 +521,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		nil,
 		fakeDashConfig,
 		nil,
+		nil,
 	)
 	if err != nil {
 		panic(err)
