@@ -26,7 +26,7 @@ import (
 func hook(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	goScmHelper := genericScm.NewGoScmHelper(config, nil)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
@@ -36,7 +36,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
 
 	webhook, err := goScmHelper.Parse(r, func(webhook scm.Webhook) (string, error) {
-		return config.WebhookSecret, nil
+		return config.Get(store.WebhookSecret), nil
 	})
 	if err != nil {
 		if config.IsGithub() {
@@ -47,7 +47,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 			}
 			if r.Header.Get("X-GitHub-Event") == "check_run" { // not handled by go-scm, parsing github actions manually
 				dao := ctx.Value("store").(*store.Store)
-				tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+				tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 				token, _, _ := tokenManager.Token()
 
 				r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
@@ -68,7 +68,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				gitService := ctx.Value("gitService").(customScm.CustomGitService)
+				gitService := *ctx.Value("gitService").(*customScm.CustomGitService)
 				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
 
 				writer.WriteHeader(http.StatusOK)
@@ -87,14 +87,14 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		processTagHook(webhook)
 	case *scm.StatusHook:
 		dao := ctx.Value("store").(*store.Store)
-		tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+		tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 		token, _, _ := tokenManager.Token()
 
 		owner := webhook.Repository().Namespace
 		name := webhook.Repository().Name
 		w := webhook.(*scm.StatusHook)
 
-		gitService := ctx.Value("gitService").(customScm.CustomGitService)
+		gitService := *ctx.Value("gitService").(*customScm.CustomGitService)
 		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao, clientHub)
 	case *scm.BranchHook:
 		processBranchHook(webhook, gitRepoCache)

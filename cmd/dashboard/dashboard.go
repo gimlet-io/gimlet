@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	dash_config "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -32,7 +32,7 @@ func main() {
 		log.Warnf("could not load .env file, relying on env vars")
 	}
 
-	config, err := config.Environ()
+	config, err := dash_config.Environ()
 	if err != nil {
 		log.Fatalln("main: invalid configuration")
 	}
@@ -80,13 +80,19 @@ func main() {
 		panic(err)
 	}
 
-	gitSvc, tokenManager := initTokenManager(config)
+	// TODO replace with config.Config
+	persistentConfig, err := dash_config.NewPersistentConfig(store, config)
+	if err != nil {
+		panic(err)
+	}
+
+	gitSvc, tokenManager := initTokenManager(persistentConfig)
 	notificationsManager := initNotifications(config, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
 
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	goScm := genericScm.NewGoScmHelper(persistentConfig, nil)
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
@@ -119,7 +125,7 @@ func main() {
 		stopCh,
 		config.RepoCachePath,
 		goScm,
-		config,
+		persistentConfig,
 		clientHub,
 	)
 	if err != nil {
@@ -182,12 +188,13 @@ func main() {
 
 	r := server.SetupRouter(
 		config,
+		persistentConfig,
 		agentHub,
 		clientHub,
 		agentWSHub,
 		store,
-		gitSvc,
-		tokenManager,
+		&gitSvc,
+		&tokenManager,
 		dashboardRepoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,
@@ -281,7 +288,7 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 	return false
 }
 
-func slackNotificationProvider(config *config.Config) *notifications.SlackProvider {
+func slackNotificationProvider(config *dash_config.Config) *notifications.SlackProvider {
 	slackChannelMap := parseChannelMap(config)
 
 	return &notifications.SlackProvider{
@@ -291,7 +298,7 @@ func slackNotificationProvider(config *config.Config) *notifications.SlackProvid
 	}
 }
 
-func discordNotificationProvider(config *config.Config) *notifications.DiscordProvider {
+func discordNotificationProvider(config *dash_config.Config) *notifications.DiscordProvider {
 	discordChannelMapping := parseChannelMap(config)
 
 	return &notifications.DiscordProvider{
@@ -301,7 +308,7 @@ func discordNotificationProvider(config *config.Config) *notifications.DiscordPr
 	}
 }
 
-func parseChannelMap(config *config.Config) map[string]string {
+func parseChannelMap(config *dash_config.Config) map[string]string {
 	channelMap := map[string]string{}
 	if config.Notifications.ChannelMapping != "" {
 		pairs := strings.Split(config.Notifications.ChannelMapping, ",")

@@ -48,9 +48,9 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	db := r.Context().Value("store").(*store.Store)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	user := ctx.Value("user").(*model.User)
 	goScm := genericScm.NewGoScmHelper(config, nil)
 
@@ -199,9 +199,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
 	gitToken, gitUser, _ := tokenManager.Token()
 	org := config.Org()
 
@@ -333,7 +333,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	notificationsFileName, err := BootstrapNotifications(
 		gitRepoCache,
-		config.Host,
+		config.Get(store.Host),
 		tokenStr,
 		environment.Name,
 		environment.AppsRepo,
@@ -599,7 +599,7 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 	envName := chi.URLParam(r, "env")
 
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	db := r.Context().Value("store").(*store.Store)
 
 	env, err := db.GetEnvironment(envName)
@@ -651,7 +651,7 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 		"enabled":          true,
 		"environment":      env.Name,
 		"agentKey":         agentKey,
-		"dashboardAddress": config.Host,
+		"dashboardAddress": config.Get(store.Host),
 	}
 
 	stackConfigBuff := bytes.NewBufferString("")
@@ -699,7 +699,7 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
 	if err != nil {

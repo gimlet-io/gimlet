@@ -284,8 +284,8 @@ func agents(w http.ResponseWriter, r *http.Request) {
 
 func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	for _, env := range envs {
 		for _, stack := range env.Stacks {
@@ -303,11 +303,11 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 
 func chartSchema(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -367,7 +367,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(schemasString))
 }
 
-func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.Manifest, error) {
+func getManifest(config *config.PersistentConfig, repo *git.Repository, env string) (*dx.Manifest, error) {
 	defaultManifest := &dx.Manifest{
 		Chart: chartFromConfig(config),
 	}
@@ -406,25 +406,25 @@ func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.M
 	return defaultManifest, nil
 }
 
-func chartFromConfig(config *config.Config) dx.Chart {
-	if strings.HasPrefix(config.Chart.Name, "git@") ||
-		strings.Contains(config.Chart.Name, ".git") {
+func chartFromConfig(config *config.PersistentConfig) dx.Chart {
+	if strings.HasPrefix(config.Get(store.ChartName), "git@") ||
+		strings.Contains(config.Get(store.ChartName), ".git") {
 		return dx.Chart{
-			Name: config.Chart.Name,
+			Name: config.Get(store.ChartName),
 		}
 	}
 
 	return dx.Chart{
-		Repository: config.Chart.Repo,
-		Name:       config.Chart.Name,
-		Version:    config.Chart.Version,
+		Repository: config.Get(store.ChartRepo),
+		Name:       config.Get(store.ChartName),
+		Version:    config.Get(store.ChartVersion),
 	}
 }
 
 func application(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := *ctx.Value("gitService").(*customScm.CustomGitService)
+	tokenManager := *ctx.Value("tokenManager").(*customScm.NonImpersonatedTokenManager)
 
 	tokenString, err := tokenManager.AppToken()
 	if err != nil {
@@ -514,9 +514,9 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 
 func getFlags(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
 	var provider string
-	termsOfServiceFeatureFlag := config.TermsOfServiceFeatureFlag
+	termsOfServiceFeatureFlag := config.Get(store.TermsOfServiceFeatureFlag)
 
 	if config.IsGithub() {
 		provider = "GitHub"
