@@ -119,7 +119,9 @@ func applyManifests(files map[string]string, filesPath string) {
 			fmt.Println(res)
 		}
 		if fileName == "flux.yaml" {
-			// TODO wait
+			// TODO
+			// kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io
+			// kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io
 		}
 	}
 }
