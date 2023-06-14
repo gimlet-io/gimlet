@@ -189,7 +189,7 @@ func main() {
 	logger := log.New()
 	logger.Formatter = &customFormatter{}
 
-	gitServer, err := builtInGitServer(gitUser)
+	gitServer, err := builtInGitServer(gitUser, config.GitRoot)
 	if err != nil {
 		panic(err)
 	}

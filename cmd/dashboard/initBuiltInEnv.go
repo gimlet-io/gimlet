@@ -158,11 +158,11 @@ func stageCommitAndPush(repo *git.Repository, tmpPath string, user string, passw
 	return nil
 }
 
-func builtInGitServer(gitUser *model.User) (http.Handler, error) {
+func builtInGitServer(gitUser *model.User, gitRoot string) (http.Handler, error) {
 	hooks := &gitkit.HookScripts{}
 
 	service := gitkit.New(gitkit.Config{
-		Dir:        "/home/laszlo/projects/gimlet/git-server-root",
+		Dir:        gitRoot,
 		AutoCreate: true,
 		AutoHooks:  true,
 		Hooks:      hooks,

@@ -50,6 +50,9 @@ func defaults(c *Config) {
 	if c.ReleaseStats == "" {
 		c.ReleaseStats = "disabled"
 	}
+	if c.GitRoot == "" {
+		c.GitRoot = "git-root/"
+	}
 }
 
 // String returns the configuration in string format.
@@ -61,7 +64,6 @@ func (c *Config) String() string {
 type Config struct {
 	Logging                 Logging
 	Host                    string `envconfig:"HOST"`
-	GitHost                 string `envconfig:"GIT_HOST"`
 	JWTSecret               string `envconfig:"JWT_SECRET"`
 	Github                  Github
 	Gitlab                  Gitlab
@@ -89,6 +91,9 @@ type Config struct {
 	TermsOfServiceFeatureFlag      bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 	BuiltinEnvFeatureFlag          bool `envconfig:"FEATURE_BUILT_IN_ENV"`
+
+	GitHost string `envconfig:"GIT_HOST"`
+	GitRoot string `envconfig:"GIT_ROOT"`
 }
 
 // Logging provides the logging configuration.
