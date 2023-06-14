@@ -96,6 +96,9 @@ func Upgrade(c *cli.Context) error {
 		gitopsRepoPath,
 		!noKustomization,
 		!noDeployKey,
+		false,
+		"",
+		"",
 		c.String("gitops-repo-url"),
 		branch,
 	)

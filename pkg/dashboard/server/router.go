@@ -41,6 +41,7 @@ func SetupRouter(
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
+	gitServer http.Handler,
 ) *chi.Mux {
 	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
@@ -88,6 +89,8 @@ func SetupRouter(
 	gimletdRoutes(r)
 
 	r.Get("/logout", logout)
+	r.Handle("/builtin-infra.git*", gitServer)
+	r.Handle("/builtin-apps.git*", gitServer)
 
 	r.Get("/ws/", func(w http.ResponseWriter, r *http.Request) {
 		streaming.ServeWs(clientHub, w, r)

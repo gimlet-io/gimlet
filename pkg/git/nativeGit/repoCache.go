@@ -37,8 +37,7 @@ type RepoCache struct {
 	// For webhook registration
 	goScmHelper *genericScm.GoScmHelper
 	config      *dashboardConfig.Config
-
-	clientHub *streaming.ClientHub
+	clientHub   *streaming.ClientHub
 
 	lock sync.Mutex
 }
@@ -288,17 +287,31 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		return repoData{}, errors.WithMessage(err, "couldn't create folder")
 	}
 
-	token, user, err := r.tokenManager.Token()
-	if err != nil {
-		return repoData{}, errors.WithMessage(err, "couldn't get scm token")
+	var auth *http.BasicAuth
+	var url string
+	if strings.HasPrefix(repoName, "builtin") {
+		// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
+		// Should come from configs
+		url = fmt.Sprintf("http://127.0.0.1:9000/%s", repoName)
+		auth = &http.BasicAuth{
+			Username: "testuser",
+			Password: "49bec54a",
+		}
+	} else {
+		url = fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName)
+		token, _, err := r.tokenManager.Token()
+		if err != nil {
+			return repoData{}, errors.WithMessage(err, "couldn't get scm token")
+		}
+		auth = &http.BasicAuth{
+			Username: "123",
+			Password: token,
+		}
 	}
 
 	opts := &git.CloneOptions{
-		URL: fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName),
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: token,
-		},
+		URL:   url,
+		Auth:  auth,
 		Depth: 100,
 		Tags:  git.NoTags,
 	}
@@ -313,12 +326,9 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 
 	err = repo.Fetch(&git.FetchOptions{
 		RefSpecs: FetchRefSpec,
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: token,
-		},
-		Depth: 100,
-		Tags:  git.NoTags,
+		Auth:     auth,
+		Depth:    100,
+		Tags:     git.NoTags,
 	})
 	if withHistory {
 		opts.Depth = 0
@@ -333,6 +343,10 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 
 func (r *RepoCache) registerWebhook(repoName string) {
 	owner, repo := scm.Split(repoName)
+
+	if owner == "" && strings.HasPrefix(repo, "builtin") {
+		return
+	}
 
 	token, _, err := r.tokenManager.Token()
 	if err != nil {

@@ -82,6 +82,9 @@ func Bootstrap(c *cli.Context) error {
 		gitopsRepoPath,
 		true,
 		true,
+		false,
+		"",
+		"",
 		c.String("gitops-repo-url"),
 		branch,
 	)

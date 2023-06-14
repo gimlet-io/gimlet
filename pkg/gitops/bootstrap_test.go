@@ -47,6 +47,9 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 		dirToWrite,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitOpsRepoURL,
 		"",
 	)
@@ -95,6 +98,9 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 		dirToWrite,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitOpsRepoURL,
 		"",
 	)
@@ -144,6 +150,9 @@ func Test_generateManifestWithController(t *testing.T) {
 		dirToWrite,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitOpsRepoURL,
 		"",
 	)
@@ -183,6 +192,9 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 		dirToWrite,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitOpsRepoURL,
 		"",
 	)
@@ -227,6 +239,9 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 		dirToWrite,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitOpsRepoURL,
 		"",
 	)

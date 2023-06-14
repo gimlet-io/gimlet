@@ -42,6 +42,9 @@ func Test_guidingTextWithoutController(t *testing.T) {
 		gitopsRepoPath,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitopsRepoUrl,
 		branch,
 	)
@@ -100,6 +103,9 @@ func Test_guidingTextWithoutControllerAndSingleEnv(t *testing.T) {
 		gitopsRepoPath,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitopsRepoUrl,
 		branch,
 	)
@@ -158,6 +164,9 @@ func Test_guidingTextWithController(t *testing.T) {
 		gitopsRepoPath,
 		shouldGenerateKustomizationAndRepo,
 		shouldGenerateDeployKey,
+		false,
+		"",
+		"",
 		gitopsRepoUrl,
 		branch,
 	)

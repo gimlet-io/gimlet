@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
@@ -180,6 +181,11 @@ func main() {
 	logger := log.New()
 	logger.Formatter = &customFormatter{}
 
+	gitServer, err := builtInGitServer()
+	if err != nil {
+		panic(err)
+	}
+
 	r := server.SetupRouter(
 		config,
 		agentHub,
@@ -194,6 +200,7 @@ func main() {
 		notificationsManager,
 		perf,
 		logger,
+		gitServer,
 	)
 
 	go func() {
@@ -202,6 +209,12 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	time.Sleep(time.Millisecond * 100) // wait til the router is up
+	err = bootstrapBuiltInEnv(store, dashboardRepoCache)
+	if err != nil {
+		panic(err)
+	}
 
 	<-waitCh
 	log.Info("Successfully cleaned up resources. Stopping.")
