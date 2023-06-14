@@ -88,17 +88,18 @@ func Upgrade(c *cli.Context) error {
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
 	_, _, _, err = gitops.GenerateManifests(
-		!noController,
-		!noDependencies,
-		kustomizationPerApp,
-		env,
-		singleEnv,
-		gitopsRepoPath,
-		!noKustomization,
-		!noDeployKey,
-		c.String("gitops-repo-url"),
-		branch,
-	)
+		gitops.ManifestOpts{
+			ShouldGenerateController:           !noController,
+			ShouldGenerateDependencies:         !noDependencies,
+			KustomizationPerApp:                kustomizationPerApp,
+			Env:                                env,
+			SingleEnv:                          singleEnv,
+			GitopsRepoPath:                     gitopsRepoPath,
+			ShouldGenerateKustomizationAndRepo: !noKustomization,
+			ShouldGenerateDeployKey:            !noDeployKey,
+			GitopsRepoUrl:                      c.String("gitops-repo-url"),
+			Branch:                             branch,
+		})
 	if err != nil {
 		return err
 	}

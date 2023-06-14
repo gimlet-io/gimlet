@@ -30,42 +30,30 @@ func Test_generateManifestWithoutControllerWithoutSingleEnv(t *testing.T) {
 		return
 	}
 
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	env := "staging"
-	singleEnv := false
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet-io/test-repo.git"
+	opts := DefaultManifestOpts()
+	opts.ShouldGenerateController = false
+	opts.Env = "staging"
+	opts.SingleEnv = false
+	opts.GitopsRepoUrl = "git@github.com:gimlet-io/test-repo.git"
+	opts.GitopsRepoPath = dirToWrite
 
-	_, _, _, err = GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		true,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
+	_, _, _, err = GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate the manifest files, %s", err)
 		return
 	}
 
-	fluxFile, _ := os.Stat(filepath.Join(dirToWrite, env, "flux", "flux.yaml"))
+	fluxFile, _ := os.Stat(filepath.Join(dirToWrite, opts.Env, "flux", "flux.yaml"))
 	if fluxFile != nil {
 		t.Errorf("Should not generate flux.yaml")
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "gitops-repo-gimlet-io-test-repo-staging.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, opts.Env, "flux", "gitops-repo-gimlet-io-test-repo-staging.yaml"))
 	if err != nil {
 		t.Errorf("Should generate Kustomization")
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "deploy-key-gimlet-io-test-repo-staging.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, opts.Env, "flux", "deploy-key-gimlet-io-test-repo-staging.yaml"))
 	if err != nil {
 		t.Errorf("Should generate deploy key")
 	}
@@ -78,26 +66,13 @@ func Test_generateManifestWithoutControllerWithSingleEnv(t *testing.T) {
 		t.Errorf("Cannot create directory")
 		return
 	}
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	env := ""
-	singleEnv := true
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet-io/gitops-staging-infra.git"
 
-	_, _, _, err = GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		true,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
+	opts := DefaultManifestOpts()
+	opts.ShouldGenerateController = false
+	opts.GitopsRepoUrl = "git@github.com:gimlet-io/gitops-staging-infra.git"
+	opts.GitopsRepoPath = dirToWrite
+
+	_, _, _, err = GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate the manifest files, %s", err)
 		return
@@ -127,32 +102,19 @@ func Test_generateManifestWithController(t *testing.T) {
 		return
 	}
 
-	shouldGenerateController := true
-	shouldGenerateDependencies := true
-	env := "staging"
-	singleEnv := false
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := true
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
+	opts := DefaultManifestOpts()
+	opts.Env = "staging"
+	opts.SingleEnv = false
+	opts.GitopsRepoUrl = "git@github.com:gimlet/test-repo.git"
+	opts.GitopsRepoPath = dirToWrite
 
-	_, _, _, err = GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		true,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
+	_, _, _, err = GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
 	}
 
-	_, err = os.Stat(filepath.Join(dirToWrite, env, "flux", "flux.yaml"))
+	_, err = os.Stat(filepath.Join(dirToWrite, opts.Env, "flux", "flux.yaml"))
 	if err != nil {
 		t.Errorf("Should generate flux.yaml")
 	}
@@ -166,26 +128,13 @@ func Test_generateManifestWithoutKustomizationAndRepoWithoutDeployKey(t *testing
 		return
 	}
 
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	env := ""
-	singleEnv := true
-	shouldGenerateKustomizationAndRepo := false
-	shouldGenerateDeployKey := false
-	gitOpsRepoURL := "git@github.com:gimlet/test-repo.git"
+	opts := DefaultManifestOpts()
+	opts.ShouldGenerateKustomizationAndRepo = false
+	opts.ShouldGenerateDeployKey = false
+	opts.GitopsRepoUrl = "git@github.com:gimlet/test-repo.git"
+	opts.GitopsRepoPath = dirToWrite
 
-	_, _, _, err = GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		true,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
+	_, _, _, err = GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
@@ -210,26 +159,12 @@ func Test_generateManifestWithKustomizationAndRepoWithoutDeployKey(t *testing.T)
 		return
 	}
 
-	shouldGenerateController := false
-	shouldGenerateDependencies := true
-	env := ""
-	singleEnv := true
-	shouldGenerateKustomizationAndRepo := true
-	shouldGenerateDeployKey := false
-	gitOpsRepoURL := "git@github.com:gimlet-io/gitops-staging-infra.git"
+	opts := DefaultManifestOpts()
+	opts.ShouldGenerateDeployKey = false
+	opts.GitopsRepoUrl = "git@github.com:gimlet-io/gitops-staging-infra.git"
+	opts.GitopsRepoPath = dirToWrite
 
-	_, _, _, err = GenerateManifests(
-		shouldGenerateController,
-		shouldGenerateDependencies,
-		true,
-		env,
-		singleEnv,
-		dirToWrite,
-		shouldGenerateKustomizationAndRepo,
-		shouldGenerateDeployKey,
-		gitOpsRepoURL,
-		"",
-	)
+	_, _, _, err = GenerateManifests(opts)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)
 		return
