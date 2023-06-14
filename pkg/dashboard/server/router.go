@@ -39,7 +39,6 @@ func SetupRouter(
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
 	alertStateManager *alert.AlertStateManager,
-	persistentConfig *config.PersistentConfig,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
