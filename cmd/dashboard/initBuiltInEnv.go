@@ -26,6 +26,7 @@ func bootstrapBuiltInEnv(
 	store *store.Store,
 	repoCache *nativeGit.RepoCache,
 	gitUser *model.User,
+	gitHost string,
 ) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
@@ -50,7 +51,7 @@ func bootstrapBuiltInEnv(
 		return err
 	}
 
-	repo, tmpPath, err := initRepo(fmt.Sprintf("http://127.0.0.1:9000/%s", builtInEnv.InfraRepo))
+	repo, tmpPath, err := initRepo(fmt.Sprintf("%s/%s", gitHost, builtInEnv.InfraRepo))
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		return fmt.Errorf("cannot get repo: %s", err)
@@ -68,7 +69,7 @@ func bootstrapBuiltInEnv(
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = gitUser.Login
 	opts.BasicAuthPassword = gitUser.Secret
-	opts.GitopsRepoUrl = fmt.Sprintf("http://127.0.0.1:9000/%s", builtInEnv.InfraRepo)
+	opts.GitopsRepoUrl = fmt.Sprintf("%s/%s", gitHost, builtInEnv.InfraRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
 	_, _, _, err = gitops.GenerateManifests(opts)
@@ -81,7 +82,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
-	repo, tmpPath, err = initRepo(fmt.Sprintf("http://127.0.0.1:9000/%s", builtInEnv.AppsRepo))
+	repo, tmpPath, err = initRepo(fmt.Sprintf("%s/%s", gitHost, builtInEnv.AppsRepo))
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		return fmt.Errorf("cannot get repo: %s", err)

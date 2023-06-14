@@ -296,9 +296,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 	var auth *http.BasicAuth
 	var url string
 	if strings.HasPrefix(repoName, "builtin") {
-		// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
-		// Should come from configs
-		url = fmt.Sprintf("http://127.0.0.1:9000/%s", repoName)
+		url = fmt.Sprintf("%s/%s", r.config.GitHost, repoName)
 		auth = &http.BasicAuth{
 			Username: r.gitUser.Login,
 			Password: r.gitUser.Secret,

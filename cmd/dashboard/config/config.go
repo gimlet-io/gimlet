@@ -61,6 +61,7 @@ func (c *Config) String() string {
 type Config struct {
 	Logging                 Logging
 	Host                    string `envconfig:"HOST"`
+	GitHost                 string `envconfig:"GIT_HOST"`
 	JWTSecret               string `envconfig:"JWT_SECRET"`
 	Github                  Github
 	Gitlab                  Gitlab

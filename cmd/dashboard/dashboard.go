@@ -159,6 +159,7 @@ func main() {
 		clientHub,
 		perf,
 		gitUser,
+		config.GitHost,
 	)
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
