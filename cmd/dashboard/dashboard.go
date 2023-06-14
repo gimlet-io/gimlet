@@ -210,10 +210,12 @@ func main() {
 		}
 	}()
 
-	time.Sleep(time.Millisecond * 100) // wait til the router is up
-	err = bootstrapBuiltInEnv(store, dashboardRepoCache)
-	if err != nil {
-		panic(err)
+	if config.BuiltinEnvFeatureFlag {
+		time.Sleep(time.Millisecond * 100) // wait til the router is up
+		err = bootstrapBuiltInEnv(store, dashboardRepoCache)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	<-waitCh

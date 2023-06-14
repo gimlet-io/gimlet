@@ -284,7 +284,7 @@ func processReleaseEvent(
 	gitopsRepo string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
-	githubChartAccessToken string,
+	nonImpersonatedToken string,
 	event *model.Event,
 	perf *prometheus.HistogramVec,
 ) ([]model.Result, error) {
@@ -358,7 +358,7 @@ func processReleaseEvent(
 			gitopsRepo,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
-			githubChartAccessToken,
+			nonImpersonatedToken,
 			manifest,
 			releaseMeta,
 			perf,
@@ -425,7 +425,11 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, nonImpersonatedToken, head.Name().Short())
+	err = nativeGit.NativePushWithToken(
+		fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo),
+		repoTmpPath,
+		head.Name().Short(),
+	)
 	if err != nil {
 		logrus.Errorf("could not push to git with native command: %s", err)
 		return nil, fmt.Errorf("could not push to git. Check server logs")
@@ -576,7 +580,7 @@ func cloneTemplateWriteAndPush(
 	gitopsRepo string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
-	githubChartAccessToken string,
+	nonImpersonatedToken string,
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 	perf *prometheus.HistogramVec,
@@ -612,7 +616,7 @@ func cloneTemplateWriteAndPush(
 		repo,
 		manifest,
 		releaseMeta,
-		githubChartAccessToken,
+		nonImpersonatedToken,
 		envFromStore.RepoPerEnv,
 		kustomizationManifest,
 	)
@@ -623,7 +627,19 @@ func cloneTemplateWriteAndPush(
 	if sha != "" { // if there is a change to push
 		operation := func() error {
 			head, _ := repo.Head()
-			return nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, githubChartAccessToken, head.Name().Short())
+			url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
+			if envFromStore.BuiltIn {
+				// TODO HOST should come from env var. Helm chart knows what is the incluster url of gimlet
+				// Should come from configs
+				url = fmt.Sprintf("http://%s:%s@127.0.0.1:9000/%s", "testuser", "49bec54a", envFromStore.AppsRepo)
+			}
+
+			return nativeGit.NativePushWithToken(
+				url,
+				repoTmpPath,
+				head.Name().Short(),
+			)
+
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
@@ -696,7 +712,11 @@ func cloneTemplateDeleteAndPush(
 
 	if sha != "" { // if there is a change to push
 		head, _ := repo.Head()
-		err = nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, nonImpersonatedToken, head.Name().Short())
+		err = nativeGit.NativePushWithToken(
+			fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo),
+			repoTmpPath,
+			head.Name().Short(),
+		)
 		if err != nil {
 			return "", err
 		}

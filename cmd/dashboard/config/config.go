@@ -87,6 +87,7 @@ type Config struct {
 
 	TermsOfServiceFeatureFlag      bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
+	BuiltinEnvFeatureFlag          bool `envconfig:"FEATURE_BUILT_IN_ENV"`
 }
 
 // Logging provides the logging configuration.
