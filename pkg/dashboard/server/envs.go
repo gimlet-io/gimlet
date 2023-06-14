@@ -417,6 +417,9 @@ func BootstrapEnv(
 		tmpPath,
 		true,
 		true,
+		false,
+		"",
+		"",
 		fmt.Sprintf("git@%s:%s.git", scmHost, repoName),
 		headBranch,
 	)

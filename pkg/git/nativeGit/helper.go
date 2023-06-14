@@ -82,6 +82,20 @@ func PushWithToken(repo *git.Repository, accessToken string) error {
 	return err
 }
 
+func PushWithBasicAuth(repo *git.Repository, user string, password string) error {
+	err := repo.Push(&git.PushOptions{
+		Auth: &http.BasicAuth{
+			Username: user,
+			Password: password,
+		},
+	})
+	if err == git.NoErrAlreadyUpToDate {
+		return nil
+	}
+
+	return err
+}
+
 func NothingToCommit(repo *git.Repository) (bool, error) {
 	worktree, err := repo.Worktree()
 	if err != nil {

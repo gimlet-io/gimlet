@@ -30,6 +30,9 @@ func GenerateManifests(
 	gitopsRepoPath string,
 	shouldGenerateKustomizationAndRepo bool,
 	shouldGenerateDeployKey bool,
+	shouldGenerateBasicAuthSecret bool,
+	basicAuthUser string,
+	basicAuthPassword,
 	gitopsRepoUrl string,
 	branch string,
 ) (string, string, string, error) {
@@ -69,7 +72,16 @@ func GenerateManifests(
 	}
 
 	if shouldGenerateKustomizationAndRepo {
-		host, owner, repoName := ParseRepoURL(gitopsRepoUrl)
+		var url, host, owner, repoName string
+		if strings.Contains(gitopsRepoUrl, "builtin-") {
+			url = gitopsRepoUrl
+			owner = "builtin"
+			repoName = strings.Split(gitopsRepoUrl, "/")[3]
+			repoName = strings.Split(repoName, ".")[0]
+		} else {
+			host, owner, repoName = ParseRepoURL(gitopsRepoUrl)
+			url = fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName)
+		}
 
 		gitopsRepoName = UniqueGitopsRepoName(singleEnv, owner, repoName, env)
 		gitopsRepoFileName = fmt.Sprintf("gitops-repo-%s.yaml", UniqueName(singleEnv, owner, repoName, env))
@@ -88,7 +100,7 @@ func GenerateManifests(
 
 		syncOpts := sync.Options{
 			Interval:             15 * time.Second,
-			URL:                  fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName),
+			URL:                  url,
 			Name:                 gitopsRepoName,
 			Secret:               secretName,
 			Namespace:            "flux-system",
@@ -136,6 +148,17 @@ func GenerateManifests(
 			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), deployKeySecret, os.ModePerm)
 			if err != nil {
 				return "", "", "", fmt.Errorf("cannot write deploy key %s", err)
+			}
+		}
+
+		if shouldGenerateBasicAuthSecret {
+			basicAuthSecret, err := generateBasicAuthSecret(secretName, basicAuthUser, basicAuthPassword)
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot generate deploy key %s", err)
+			}
+			err = ioutil.WriteFile(path.Join(gitopsRepoPath, env, "flux", secretFileName), basicAuthSecret, os.ModePerm)
+			if err != nil {
+				return "", "", "", fmt.Errorf("cannot write basic auth secret %s", err)
 			}
 		}
 	}
@@ -261,6 +284,26 @@ func generateDeployKey(host string, name string) (string, []byte, error) {
 
 	yamlString, err := yaml.Marshal(secret)
 	return string(publicKeyBytes), yamlString, err
+}
+
+func generateBasicAuthSecret(name, user, password string) ([]byte, error) {
+	secret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "flux-system",
+		},
+		StringData: map[string]string{
+			"username": user,
+			"password": password,
+		},
+	}
+
+	yamlString, err := yaml.Marshal(secret)
+	return yamlString, err
 }
 
 func GitopsRepoFileAndMetaNameFromRepo(repoPath string, contentPath string) (string, string) {

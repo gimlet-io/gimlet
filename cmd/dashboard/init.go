@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"fmt"
-	"math/rand"
 	"os"
 	"path"
 	"regexp"
@@ -165,30 +164,6 @@ func reencrypt(store *store.Store, encryptionKeyNew string) error {
 	fmt.Println("db field re-encryption is done, please replace the value of DATABASE_ENCRYPTION_KEY with the value of DATABASE_ENCRYPTION_KEY_NEW, and delete DATABASE_ENCRYPTION_KEY_NEW environment variable")
 	os.Exit(0)
 	return nil
-}
-
-func bootstrapBuiltInEnv(
-	store *store.Store,
-) {
-	envsInDB, err := store.GetEnvironments()
-	if err != nil {
-		panic(err)
-	}
-	for _, env := range envsInDB {
-		if env.BuiltIn {
-			return
-		}
-	}
-
-	randomFirstName := firstNames[rand.Intn(len(firstNames))]
-	randomSecondName := secondNames[rand.Intn(len(secondNames))]
-	err = store.CreateEnvironment(&model.Environment{
-		Name:    fmt.Sprintf("%s-%s", randomFirstName, randomSecondName),
-		BuiltIn: true,
-	})
-	if err != nil {
-		panic(err)
-	}
 }
 
 type customFormatter struct{}
