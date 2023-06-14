@@ -10,13 +10,13 @@ import (
 	"strings"
 	"syscall"
 
-	dash_config "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	dconfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	dstore "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
@@ -32,7 +32,7 @@ func main() {
 		log.Warnf("could not load .env file, relying on env vars")
 	}
 
-	config, err := dash_config.Environ()
+	config, err := dconfig.Environ()
 	if err != nil {
 		log.Fatalln("main: invalid configuration")
 	}
@@ -58,7 +58,7 @@ func main() {
 	agentWSHub := streaming.NewAgentWSHub(*clientHub)
 	go agentWSHub.Run()
 
-	store := store.New(
+	store := dstore.New(
 		config.Database.Driver,
 		config.Database.Config,
 		config.Database.EncryptionKey,
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	// TODO replace with config.Config
-	persistentConfig, err := dash_config.NewPersistentConfig(store, config)
+	persistentConfig, err := dconfig.NewPersistentConfig(store, config)
 	if err != nil {
 		panic(err)
 	}
@@ -120,10 +120,14 @@ func main() {
 			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
+	host := persistentConfig.Get(dstore.Host)
+	webhookSecrets := persistentConfig.Get(dstore.WebhookSecret)
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
 		config.RepoCachePath,
+		host,
+		webhookSecrets,
 		goScm,
 		persistentConfig,
 		clientHub,
@@ -244,7 +248,7 @@ func parseEnvs(envString string) ([]*model.Environment, error) {
 
 func bootstrapEnvs(
 	envString string,
-	store *store.Store,
+	store *dstore.Store,
 	gitopsRepos string,
 ) error {
 	envsInDB, err := store.GetEnvironments()
@@ -288,7 +292,7 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 	return false
 }
 
-func slackNotificationProvider(config *dash_config.Config) *notifications.SlackProvider {
+func slackNotificationProvider(config *dconfig.Config) *notifications.SlackProvider {
 	slackChannelMap := parseChannelMap(config)
 
 	return &notifications.SlackProvider{
@@ -298,7 +302,7 @@ func slackNotificationProvider(config *dash_config.Config) *notifications.SlackP
 	}
 }
 
-func discordNotificationProvider(config *dash_config.Config) *notifications.DiscordProvider {
+func discordNotificationProvider(config *dconfig.Config) *notifications.DiscordProvider {
 	discordChannelMapping := parseChannelMap(config)
 
 	return &notifications.DiscordProvider{
@@ -308,7 +312,7 @@ func discordNotificationProvider(config *dash_config.Config) *notifications.Disc
 	}
 }
 
-func parseChannelMap(config *dash_config.Config) map[string]string {
+func parseChannelMap(config *dconfig.Config) map[string]string {
 	channelMap := map[string]string{}
 	if config.Notifications.ChannelMapping != "" {
 		pairs := strings.Split(config.Notifications.ChannelMapping, ",")
