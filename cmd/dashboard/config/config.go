@@ -95,6 +95,10 @@ type StaticConfig struct {
 // * It can be initiatied with environment variables
 // * and dynamically changed runtime that is persisted in the database.
 // * Values in the database take precedence.
+//
+// We have a single instance of this struct in Gimlet
+// changes to this struct are reflected application wide as it has a pointer reference.
+// To make the changes persistent, call Persist()
 type Config struct {
 	dao *store.Store
 
@@ -188,7 +192,10 @@ func updateConfigWhenZeroValue(toUpdate *Config, new *Config) {
 	}
 }
 
-func (c *Config) persist() error {
+// Persist saves the config struct to the DB
+// When we are updating configs, like regsistering new github applications,
+// the config user should call a Persist on the config
+func (c *Config) Persist() error {
 	configString, err := json.Marshal(c)
 	if err != nil {
 		return err
