@@ -307,10 +307,10 @@ func discordNotificationProvider(config *config.Config) *notifications.DiscordPr
 	}
 }
 
-func parseChannelMap(notificationsChannelMapping string) map[string]string {
+func parseChannelMap(config *config.Config) map[string]string {
 	channelMap := map[string]string{}
-	if notificationsChannelMapping != "" {
-		pairs := strings.Split(notificationsChannelMapping, ",")
+	if config.Notifications.ChannelMapping != "" {
+		pairs := strings.Split(config.Notifications.ChannelMapping, ",")
 		for _, p := range pairs {
 			keyValue := strings.Split(p, "=")
 			channelMap[keyValue[0]] = keyValue[1]
