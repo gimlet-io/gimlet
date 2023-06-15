@@ -68,13 +68,12 @@ func printAdminToken(admin *model.User) error {
 }
 
 func adminToken(config *config.Config) string {
-	adminToken := config.AdminToken
-	if adminToken == "" {
+	if config.AdminToken == "" {
 		return base32.StdEncoding.EncodeToString(
 			securecookie.GenerateRandomKey(32),
 		)
 	} else {
-		return adminToken
+		return config.AdminToken
 	}
 }
 
@@ -98,9 +97,6 @@ func initTokenManager(config *config.Config) (customScm.CustomGitService, custom
 			BaseURL: config.ScmURL(),
 		}
 		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
-	} else {
-		gitSvc = customScm.NewDummyGitService()
-		tokenManager = customScm.NewDummyTokenManager()
 	}
 	return gitSvc, tokenManager
 }
