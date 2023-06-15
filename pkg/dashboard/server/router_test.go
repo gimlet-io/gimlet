@@ -22,7 +22,6 @@ func Test_MustUser(t *testing.T) {
 	dummyConfig := &config.Config{}
 	dummyPersistentConfig, _ := config.NewPersistentConfig(store, dummyConfig)
 	router := SetupRouter(
-		dummyConfig,
 		dummyPersistentConfig,
 		nil,
 		nil,
