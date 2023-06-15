@@ -502,9 +502,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := fmt.Sprintf("[Gimlet Dashboard] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env)
+	message := fmt.Sprintf("[Gimlet] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env)
 	if createCase {
-		message = fmt.Sprintf("[Gimlet Dashboard] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env)
+		message = fmt.Sprintf("[Gimlet] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env)
 	}
 
 	_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), nativeGit.Dir_RWX_RX_R)
@@ -523,7 +523,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet Dashboard] `%s` ➡️ `%s` deployment configuration change", envConfigData.AppName, env),
+		fmt.Sprintf("[Gimlet] `%s` ➡️ `%s` deployment configuration change", envConfigData.AppName, env),
 		fmt.Sprintf("@%s is editing the `%s` deployment configuration for the `%s` environment.", user.Login, envConfigData.AppName, env))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)

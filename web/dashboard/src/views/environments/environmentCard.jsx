@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
-import { InformationCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
