@@ -135,7 +135,7 @@ func TestParseChannelMapping(t *testing.T) {
 		},
 	}
 
-	testChannelMap := parseChannelMap(config)
+	testChannelMap := parseChannelMap(config.Notifications.ChannelMapping)
 
 	assertEqual(t, testChannelMap["staging"], "my-team")
 	assertEqual(t, testChannelMap["prod"], "another-team")
