@@ -1,6 +1,7 @@
 package config
 
 import (
+	"database/sql"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -128,18 +129,21 @@ type Config struct {
 
 // persist all config fields that are not already set in the database
 func (c *Config) persistEnvConfig() error {
-	persistedConfigString, err := c.dao.KeyValue(CONFIG_STORAGE_KEY)
-	if err != nil {
-		return err
-	}
-
 	var persistedConfig Config
-	err = json.Unmarshal([]byte(persistedConfigString.Value), &persistedConfig)
-	if err != nil {
+	persistedConfigString, err := c.dao.KeyValue(CONFIG_STORAGE_KEY)
+	if err == nil {
+		err = json.Unmarshal([]byte(persistedConfigString.Value), &persistedConfig)
+		if err != nil {
+			return err
+		}
+	} else if err == sql.ErrNoRows {
+		persistedConfig = Config{}
+	} else if err != nil {
 		return err
 	}
 
 	updateConfigWhenZeroValue(&persistedConfig, c)
+	persistedConfig.dao = c.dao
 
 	return persistedConfig.persist()
 }
