@@ -17,7 +17,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	dstore "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
@@ -60,29 +59,29 @@ func main() {
 	agentWSHub := streaming.NewAgentWSHub(*clientHub)
 	go agentWSHub.Run()
 
-	store := dstore.New(
+	dao := store.New(
 		config.Database.Driver,
 		config.Database.Config,
 		config.Database.EncryptionKey,
 		config.Database.EncryptionKeyNew,
 	)
 
-	persistentConfig, err := dconfig.NewPersistentConfig(store, config)
+	persistentConfig, err := dconfig.NewPersistentConfig(dao, config)
 	if err != nil {
 		panic(err)
 	}
 
-	err = reencrypt(store, persistentConfig.Get(dstore.DatabaseEncryptionKeyNew))
+	err = reencrypt(dao, persistentConfig.Get(store.DatabaseEncryptionKeyNew))
 	if err != nil {
 		panic(err)
 	}
 
-	err = setupAdminUser(persistentConfig, store)
+	err = setupAdminUser(persistentConfig, dao)
 	if err != nil {
 		panic(err)
 	}
 
-	err = bootstrapEnvs(persistentConfig.Get(dstore.BootstrapEnv), store, "")
+	err = bootstrapEnvs(persistentConfig.Get(store.BootstrapEnv), dao, "")
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +89,7 @@ func main() {
 	gitSvc, tokenManager := initTokenManager(persistentConfig)
 	notificationsManager := initNotifications(persistentConfig, tokenManager)
 
-	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
+	alertStateManager := alert.NewAlertStateManager(notificationsManager, *dao, 2)
 	// go alertStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(persistentConfig, nil)
@@ -102,17 +101,17 @@ func main() {
 	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	waitCh := make(chan struct{})
 
-	if persistentConfig.Get(dstore.GitopsRepo) != "" || persistentConfig.Get(dstore.GitopsRepoDeployKeyPath) != "" {
+	if persistentConfig.Get(store.GitopsRepo) != "" || persistentConfig.Get(store.GitopsRepoDeployKeyPath) != "" {
 		panic("GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH are deprecated." +
 			"Please use BOOTSTRAP_ENV instead, or create gitops environment configurations on the Gimlet dashboard.")
 	}
 
-	gitopsRepos := persistentConfig.Get(dstore.GitopsRepos)
+	gitopsRepos := persistentConfig.Get(store.GitopsRepos)
 	if gitopsRepos != "" {
 		log.Info("Bootstrapping gitops environments from deprecated GITOPS_REPOS variable")
 		err = bootstrapEnvs(
-			persistentConfig.Get(dstore.BootstrapEnv),
-			store,
+			persistentConfig.Get(store.BootstrapEnv),
+			dao,
 			gitopsRepos,
 		)
 		if err != nil {
@@ -122,9 +121,9 @@ func main() {
 			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
-	repoCachePath := persistentConfig.Get(dstore.RepoCachePath)
-	host := persistentConfig.Get(dstore.Host)
-	webhookSecrets := persistentConfig.Get(dstore.WebhookSecret)
+	repoCachePath := persistentConfig.Get(store.RepoCachePath)
+	host := persistentConfig.Get(store.Host)
+	webhookSecrets := persistentConfig.Get(store.WebhookSecret)
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
@@ -144,8 +143,8 @@ func main() {
 	chartUpdatePullRequests := map[string]interface{}{}
 	if persistentConfig.ChartVersionUpdaterFeatureFlag() {
 		chart := dconfig.Chart{
-			Name:    persistentConfig.Get(dstore.ChartName),
-			Version: persistentConfig.Get(dstore.ChartVersion),
+			Name:    persistentConfig.Get(store.ChartName),
+			Version: persistentConfig.Get(store.ChartVersion),
 		}
 
 		chartVersionUpdater := worker.NewChartVersionUpdater(
@@ -160,9 +159,9 @@ func main() {
 	}
 
 	gitopsWorker := worker.NewGitopsWorker(
-		store,
-		persistentConfig.Get(dstore.GitopsRepo),
-		persistentConfig.Get(dstore.GitopsRepoDeployKeyPath),
+		dao,
+		persistentConfig.Get(store.GitopsRepo),
+		persistentConfig.Get(store.GitopsRepoDeployKeyPath),
 		tokenManager,
 		notificationsManager,
 		eventsProcessed,
@@ -173,12 +172,12 @@ func main() {
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
 
-	if persistentConfig.Get(dstore.ReleaseStats) == "enabled" {
+	if persistentConfig.Get(store.ReleaseStats) == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
 			RepoCache: dashboardRepoCache,
 			Releases:  releases,
 			Perf:      perf,
-			Store:     store,
+			Store:     dao,
 			Config:    persistentConfig,
 		}
 		go releaseStateWorker.Run()
@@ -186,8 +185,8 @@ func main() {
 
 	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
 		tokenManager,
-		persistentConfig.Get(dstore.RepoCachePath),
-		store,
+		persistentConfig.Get(store.RepoCachePath),
+		dao,
 	)
 	go branchDeleteEventWorker.Run()
 
@@ -204,7 +203,7 @@ func main() {
 		agentHub,
 		clientHub,
 		agentWSHub,
-		store,
+		dao,
 		gitSvc,
 		tokenManager,
 		dashboardRepoCache,
@@ -256,7 +255,7 @@ func parseEnvs(envString string) ([]*model.Environment, error) {
 
 func bootstrapEnvs(
 	envString string,
-	store *dstore.Store,
+	store *store.Store,
 	gitopsRepos string,
 ) error {
 	envsInDB, err := store.GetEnvironments()
