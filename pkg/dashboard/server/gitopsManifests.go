@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func gitopsManifests(w http.ResponseWriter, r *http.Request) {
+func getGitopsManifests(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -32,14 +32,14 @@ func gitopsManifests(w http.ResponseWriter, r *http.Request) {
 		path = "flux"
 	}
 
-	infraRepoFiles, err := gtopsManifests(gitRepoCache, environment.InfraRepo, path)
+	infraRepoFiles, err := gitopsManifests(gitRepoCache, environment.InfraRepo, path)
 	if err != nil {
 		logrus.Errorf("cannot get gitops manifests from repo: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	appsRepoFiles, err := gtopsManifests(gitRepoCache, environment.AppsRepo, path)
+	appsRepoFiles, err := gitopsManifests(gitRepoCache, environment.AppsRepo, path)
 	if err != nil {
 		logrus.Errorf("cannot get gitops manifests from repo: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -60,7 +60,7 @@ func gitopsManifests(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsManifestsString)
 }
 
-func gtopsManifests(gitRepoCache *nativeGit.RepoCache, repoName string, filesPath string) (map[string]string, error) {
+func gitopsManifests(gitRepoCache *nativeGit.RepoCache, repoName string, filesPath string) (map[string]string, error) {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {

@@ -411,7 +411,7 @@ func (c *client) GitopsRepoGet() (string, error) {
 	return gitopsRepo.GitopsRepo, nil
 }
 
-// GitopsManifests returns the gitops manifests that related with the given environment name
+// GitopsManifestsGet retrieve the gitops manifests from the infrastructure and applications repository of the environment
 func (c *client) GitopsManifestsGet(envName string) (map[string]map[string]string, error) {
 	uri := fmt.Sprintf(pathGitopsManifests, c.addr)
 

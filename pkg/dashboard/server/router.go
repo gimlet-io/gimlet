@@ -124,7 +124,7 @@ func gimletdRoutes(r *chi.Mux) {
 		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
 		r.Post("/api/flux-events", fluxEvent)
 		r.Get("/api/gitopsCommits", getGitopsCommits)
-		r.Get("/api/gitopsManifests/{env}", gitopsManifests)
+		r.Get("/api/gitopsManifests/{env}", getGitopsManifests)
 	})
 
 	r.Group(func(r chi.Router) {

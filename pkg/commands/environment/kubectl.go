@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jonboulle/clockwork"
@@ -111,6 +112,12 @@ func applyObject(info *resource.Info) (string, error) {
 			return "", err
 		}
 		info.Refresh(obj, true)
+
+		if strings.Contains(info.Source, "flux.yaml") {
+			// TODO
+			// kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io
+			// kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io
+		}
 
 		return fmt.Sprintf("%s created", info.Name), nil
 	}
