@@ -4,15 +4,14 @@ import (
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
-	"gopkg.in/yaml.v2"
 )
 
 const DEFAULT_CHART_NAME = "onechart"
 const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
 const DEFAULT_CHART_VERSION = "0.47.0"
 
-// Environ returns the settings from the environment.
-func Environ() (*Config, error) {
+// LoadConfig returns the static config from the environment.
+func LoadConfig() (*Config, error) {
 	cfg := Config{}
 	err := envconfig.Process("", &cfg)
 	defaults(&cfg)
@@ -50,19 +49,16 @@ func defaults(c *Config) {
 	}
 }
 
-// String returns the configuration in string format.
-func (c *Config) String() string {
-	out, _ := yaml.Marshal(c)
-	return string(out)
-}
-
+// Config holds Gimlet configuration that can only be set with environment variables
 type Config struct {
-	Logging                 Logging
-	Host                    string `envconfig:"HOST"`
-	JWTSecret               string `envconfig:"JWT_SECRET"`
-	Github                  Github
-	Gitlab                  Gitlab
-	Database                Database
+	Logging  Logging
+	Database Database
+
+	Host      string `envconfig:"HOST"`
+	JWTSecret string `envconfig:"JWT_SECRET"`
+	Github    Github
+	Gitlab    Gitlab
+
 	Notifications           Notifications
 	Chart                   Chart
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
