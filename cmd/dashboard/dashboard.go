@@ -43,14 +43,12 @@ func main() {
 		log.Traceln(config.String())
 	}
 
-	// TODO host is used in OAuth, agent-dash communication, flux-dash communication, and on the frontend
-	// if config.Host == "" {
-	// 	panic(fmt.Errorf("please provide the HOST variable"))
-	// }
+	if config.Host == "" {
+		panic(fmt.Errorf("please provide the HOST variable"))
+	}
 
 	if config.JWTSecret == "" {
-		// TODO JWT secret should be generated if not provided, then persisted in the DB backed config module
-		// panic(fmt.Errorf("please provide the JWT_SECRET variable"))
+		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
 	}
 
 	agentHub := streaming.NewAgentHub()
