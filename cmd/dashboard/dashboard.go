@@ -39,14 +39,14 @@ func main() {
 
 	initLogger(staticConfig)
 
-	dao := store.New(
+	store := store.New(
 		staticConfig.Database.Driver,
 		staticConfig.Database.Config,
 		staticConfig.Database.EncryptionKey,
 		staticConfig.Database.EncryptionKeyNew,
 	)
 
-	config, err := config.LoadConfig(dao)
+	config, err := config.LoadConfig(store)
 	if err != nil {
 		panic(err)
 	}
@@ -68,17 +68,17 @@ func main() {
 	agentWSHub := streaming.NewAgentWSHub(*clientHub)
 	go agentWSHub.Run()
 
-	err = reencrypt(dao, staticConfig.Database.EncryptionKeyNew)
+	err = reencrypt(store, staticConfig.Database.EncryptionKeyNew)
 	if err != nil {
 		panic(err)
 	}
 
-	err = setupAdminUser(config, dao)
+	err = setupAdminUser(config, store)
 	if err != nil {
 		panic(err)
 	}
 
-	err = bootstrapEnvs(config.BootstrapEnv, dao, "")
+	err = bootstrapEnvs(config.BootstrapEnv, store, "")
 	if err != nil {
 		panic(err)
 	}
@@ -86,7 +86,7 @@ func main() {
 	gitSvc, tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
 
-	alertStateManager := alert.NewAlertStateManager(notificationsManager, *dao, 2)
+	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
 
 	goScm := genericScm.NewGoScmHelper(config, nil)
@@ -107,7 +107,7 @@ func main() {
 		log.Info("Bootstrapping gitops environments from deprecated GITOPS_REPOS variable")
 		err = bootstrapEnvs(
 			config.BootstrapEnv,
-			dao,
+			store,
 			config.GitopsRepos,
 		)
 		if err != nil {
@@ -145,7 +145,7 @@ func main() {
 	}
 
 	gitopsWorker := worker.NewGitopsWorker(
-		dao,
+		store,
 		config.GitopsRepo,
 		config.GitopsRepoDeployKeyPath,
 		tokenManager,
@@ -163,7 +163,7 @@ func main() {
 			RepoCache: dashboardRepoCache,
 			Releases:  releases,
 			Perf:      perf,
-			Store:     dao,
+			Store:     store,
 			Config:    config,
 		}
 		go releaseStateWorker.Run()
@@ -172,7 +172,7 @@ func main() {
 	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
 		tokenManager,
 		config.RepoCachePath,
-		dao,
+		store,
 	)
 	go branchDeleteEventWorker.Run()
 
@@ -188,7 +188,7 @@ func main() {
 		agentHub,
 		clientHub,
 		agentWSHub,
-		dao,
+		store,
 		gitSvc,
 		tokenManager,
 		dashboardRepoCache,
