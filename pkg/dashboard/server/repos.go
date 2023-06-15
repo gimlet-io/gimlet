@@ -21,7 +21,7 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	user := ctx.Value("user").(*model.User)
 
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config := ctx.Value("config").(*config.Config)
 
 	go updateUserRepos(config, dao, user)
 
@@ -67,7 +67,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config := ctx.Value("config").(*config.Config)
 
 	user, err := dao.User(user.Login)
 	if err != nil {
@@ -127,7 +127,7 @@ func updateOrgRepos(ctx context.Context) {
 	}
 }
 
-func updateUserRepos(config *config.PersistentConfig, dao *store.Store, user *model.User) []string {
+func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
 	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
 		user.AccessToken = token.Token
 		user.RefreshToken = token.Refresh
@@ -227,20 +227,18 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 
 func settings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config := ctx.Value("config").(*config.Config)
 
-	var provider string
-	if config.IsGithub() {
-		provider = "github"
-	} else if config.IsGitlab() {
+	provider := "github"
+	if config.IsGitlab() {
 		provider = "gitlab"
 	}
 
 	settings := map[string]interface{}{
-		"releaseHistorySinceDays": config.Get(store.ReleaseHistorySinceDays),
+		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
 		"scmUrl":                  config.ScmURL(),
-		"userflowToken":           config.Get(store.UserflowToken),
-		"host":                    config.Get(store.Host),
+		"userflowToken":           config.UserflowToken,
+		"host":                    config.Host,
 		"provider":                provider,
 	}
 

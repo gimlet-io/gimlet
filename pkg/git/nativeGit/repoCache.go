@@ -28,17 +28,15 @@ var FetchRefSpec = []config.RefSpec{
 }
 
 type RepoCache struct {
-	tokenManager   customScm.NonImpersonatedTokenManager
-	repos          map[string]repoData
-	stopCh         chan struct{}
-	invalidateCh   chan string
-	cachePath      string
-	host           string
-	webhookSecrets string
+	tokenManager customScm.NonImpersonatedTokenManager
+	repos        map[string]repoData
+	stopCh       chan struct{}
+	invalidateCh chan string
+	cachePath    string
 
 	// For webhook registration
 	goScmHelper *genericScm.GoScmHelper
-	config      *dashboardConfig.PersistentConfig
+	config      *dashboardConfig.Config
 
 	clientHub *streaming.ClientHub
 
@@ -54,23 +52,19 @@ func NewRepoCache(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
 	cachePath string,
-	host string,
-	webhookSecrets string,
 	goScmHelper *genericScm.GoScmHelper,
-	config *dashboardConfig.PersistentConfig,
+	config *dashboardConfig.Config,
 	clientHub *streaming.ClientHub,
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
-		tokenManager:   tokenManager,
-		repos:          map[string]repoData{},
-		stopCh:         stopCh,
-		invalidateCh:   make(chan string),
-		cachePath:      cachePath,
-		host:           host,
-		webhookSecrets: webhookSecrets,
-		goScmHelper:    goScmHelper,
-		config:         config,
-		clientHub:      clientHub,
+		tokenManager: tokenManager,
+		repos:        map[string]repoData{},
+		stopCh:       stopCh,
+		invalidateCh: make(chan string),
+		cachePath:    cachePath,
+		goScmHelper:  goScmHelper,
+		config:       config,
+		clientHub:    clientHub,
 	}
 
 	const DirRwxRxR = 0754
@@ -350,9 +344,9 @@ func (r *RepoCache) registerWebhook(repoName string) {
 		return
 	}
 	err = r.goScmHelper.RegisterWebhook(
-		r.host,
+		r.config.Host,
 		token,
-		r.webhookSecrets,
+		r.config.WebhookSecret,
 		owner,
 		repo,
 	)

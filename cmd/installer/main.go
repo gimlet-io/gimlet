@@ -395,7 +395,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.accessToken = appInfo["access_token"].(string)
 	data.refreshToken = appInfo["refresh_token"].(string)
 
-	goScmHelper := genericScm.NewGoScmHelper(&config.PersistentConfig{}, nil)
+	goScmHelper := genericScm.NewGoScmHelper(&config.Config{}, nil)
 	scmUser, err := goScmHelper.User(data.accessToken, data.refreshToken)
 	if err != nil {
 		panic(err)
@@ -516,10 +516,8 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		data.tokenManager,
 		nil,
 		repoCachePath,
-		"",
-		"",
 		nil,
-		&config.PersistentConfig{},
+		&config.Config{},
 		nil,
 	)
 	if err != nil {

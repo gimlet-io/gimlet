@@ -42,7 +42,6 @@ const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const createTableKubeEvents = "create-table-kube-events"
 const createTableAlerts = "create-table-alerts"
-const createTableConfig = "create-table-config"
 
 type migration struct {
 	name string
@@ -257,17 +256,6 @@ UNIQUE(id)
 );
 `,
 		},
-		{
-			name: createTableConfig,
-			stmt: `
-CREATE TABLE IF NOT EXISTS config (
-	id        INTEGER PRIMARY KEY AUTOINCREMENT,
-	key       TEXT,
-	value      TEXT,
-	UNIQUE(id)
-	);
-`,
-		},
 	},
 	"postgres": {
 		{
@@ -473,17 +461,6 @@ last_state_change INTEGER,
 count			  INTEGER,
 UNIQUE(id)
 );
-`,
-		},
-		{
-			name: createTableConfig,
-			stmt: `
-CREATE TABLE IF NOT EXISTS config (
-	id        SERIAL,
-	key       TEXT,
-	value      TEXT,
-	UNIQUE(id)
-	);
 `,
 		},
 	},

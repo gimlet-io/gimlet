@@ -19,10 +19,8 @@ func Test_MustUser(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	logger := logrus.Logger{}
 
-	dummyConfig := &config.Config{}
-	dummyPersistentConfig, _ := config.NewPersistentConfig(store, dummyConfig)
 	router := SetupRouter(
-		dummyPersistentConfig,
+		&config.Config{},
 		nil,
 		nil,
 		nil,

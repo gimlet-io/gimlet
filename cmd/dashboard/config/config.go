@@ -1,32 +1,66 @@
 package config
 
 import (
+	"encoding/json"
+	"reflect"
 	"strings"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/kelseyhightower/envconfig"
-	"gopkg.in/yaml.v2"
 )
+
+const CONFIG_STORAGE_KEY = "config"
 
 const DEFAULT_CHART_NAME = "onechart"
 const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
 const DEFAULT_CHART_VERSION = "0.47.0"
 
-// Environ returns the settings from the environment.
-func Environ() (*Config, error) {
-	cfg := Config{}
+// LoadConfig persist env config in the db and loads config from the db.
+// DB values take precedence
+func LoadConfig(dao *store.Store) (*Config, error) {
+	// First we load config from the environment
+	cfg := &Config{
+		dao: dao,
+	}
+	err := envconfig.Process("", cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then we set defaults
+	defaults(cfg)
+
+	// Then we persist it to the database if they are not set yet
+	err = cfg.persistEnvConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Then we reload from the DB, so DB values take precedence
+	err = cfg.load()
+	return cfg, err
+}
+
+// LoadStaticConfig returns the static config from the environment.
+func LoadStaticConfig() (*StaticConfig, error) {
+	cfg := StaticConfig{}
 	err := envconfig.Process("", &cfg)
-	defaults(&cfg)
+	staticDefaults(&cfg)
 
 	return &cfg, err
 }
 
-func defaults(c *Config) {
+func staticDefaults(c *StaticConfig) {
 	if c.Database.Driver == "" {
 		c.Database.Driver = "sqlite3"
 	}
 	if c.Database.Config == "" {
 		c.Database.Config = "gimlet-dashboard.sqlite"
 	}
+}
+
+func defaults(c *Config) {
 	if c.RepoCachePath == "" {
 		c.RepoCachePath = "/tmp/gimlet-dashboard"
 	}
@@ -50,19 +84,24 @@ func defaults(c *Config) {
 	}
 }
 
-// String returns the configuration in string format.
-func (c *Config) String() string {
-	out, _ := yaml.Marshal(c)
-	return string(out)
+// StaticConfig holds Gimlet configuration that can only be set with environment variables
+type StaticConfig struct {
+	Logging  Logging
+	Database Database
 }
 
+// Config holds Gimlet configuration that is stored in the database
+// * It can be initiatied with environment variables
+// * and dynamically changed runtime that is persisted in the database.
+// * Values in the database take precedence.
 type Config struct {
-	Logging                 Logging
-	Host                    string `envconfig:"HOST"`
-	JWTSecret               string `envconfig:"JWT_SECRET"`
-	Github                  Github
-	Gitlab                  Gitlab
-	Database                Database
+	dao *store.Store
+
+	Host      string `envconfig:"HOST"`
+	JWTSecret string `envconfig:"JWT_SECRET"`
+	Github    Github
+	Gitlab    Gitlab
+
 	Notifications           Notifications
 	Chart                   Chart
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
@@ -85,6 +124,85 @@ type Config struct {
 
 	TermsOfServiceFeatureFlag      bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
+}
+
+// persist all config fields that are not already set in the database
+func (c *Config) persistEnvConfig() error {
+	persistedConfigString, err := c.dao.KeyValue(CONFIG_STORAGE_KEY)
+	if err != nil {
+		return err
+	}
+
+	var persistedConfig Config
+	err = json.Unmarshal([]byte(persistedConfigString.Value), &persistedConfig)
+	if err != nil {
+		return err
+	}
+
+	updateConfigWhenZeroValue(&persistedConfig, c)
+
+	return persistedConfig.persist()
+}
+
+func updateConfigWhenZeroValue(toUpdate *Config, new *Config) {
+	t := reflect.TypeOf(*toUpdate)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := reflect.ValueOf(*toUpdate).Field(i)
+		newValue := reflect.ValueOf(*new).FieldByName(field.Name)
+
+		if value.Kind() == reflect.Struct {
+			for j := 0; j < value.NumField(); j++ {
+				nestedField := value.Type().Field(j)
+				nestedValue := value.Field(j)
+				newNestedValue := newValue.FieldByName(nestedField.Name)
+
+				if nestedValue.IsZero() {
+					obj := reflect.ValueOf(toUpdate).Elem()
+					if nestedValue.Kind() == reflect.Bool {
+						obj.FieldByName(field.Name).FieldByName(nestedField.Name).SetBool(newNestedValue.Bool())
+					} else if nestedValue.Kind() == reflect.Int {
+						obj.FieldByName(field.Name).FieldByName(nestedField.Name).SetInt(newNestedValue.Int())
+					} else if nestedValue.Kind() == reflect.String {
+						obj.FieldByName(field.Name).FieldByName(nestedField.Name).SetString(newNestedValue.String())
+					}
+				}
+			}
+		} else {
+			obj := reflect.ValueOf(toUpdate).Elem()
+
+			if value.IsZero() {
+				if value.Kind() == reflect.Bool {
+					obj.FieldByName(field.Name).SetBool(newValue.Bool())
+				} else if value.Kind() == reflect.Int {
+					obj.FieldByName(field.Name).SetInt(newValue.Int())
+				} else if value.Kind() == reflect.String {
+					obj.FieldByName(field.Name).SetString(newValue.String())
+				}
+			}
+		}
+	}
+}
+
+func (c *Config) persist() error {
+	configString, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	return c.dao.SaveKeyValue(&model.KeyValue{
+		Key:   CONFIG_STORAGE_KEY,
+		Value: string(configString),
+	})
+}
+
+func (c *Config) load() error {
+	configString, err := c.dao.KeyValue(CONFIG_STORAGE_KEY)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal([]byte(configString.Value), c)
 }
 
 // Logging provides the logging configuration.

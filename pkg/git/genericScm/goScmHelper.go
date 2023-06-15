@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/gimlet-io/go-scm/scm/driver/github"
 	"github.com/gimlet-io/go-scm/scm/driver/gitlab"
@@ -20,7 +19,7 @@ type GoScmHelper struct {
 	client *scm.Client
 }
 
-func NewGoScmHelper(config *config.PersistentConfig, tokenUpdateCallback func(token *scm.Token)) *GoScmHelper {
+func NewGoScmHelper(config *config.Config, tokenUpdateCallback func(token *scm.Token)) *GoScmHelper {
 	var client *scm.Client
 	var err error
 
@@ -30,15 +29,15 @@ func NewGoScmHelper(config *config.PersistentConfig, tokenUpdateCallback func(to
 			logrus.WithError(err).
 				Fatalln("main: cannot create the GitHub client")
 		}
-		if config.GithubDebug() {
+		if config.Github.Debug {
 			client.DumpResponse = httputil.DumpResponse
 		}
 
 		client.Client = &http.Client{
 			Transport: &oauth2.Transport{
 				Source: &Refresher{
-					ClientID:     config.Get(store.GithubClientID),
-					ClientSecret: config.Get(store.GithubClientSecret),
+					ClientID:     config.Github.ClientID,
+					ClientSecret: config.Github.ClientSecret,
 					Endpoint:     "https://github.com/login/oauth/access_token",
 					Source:       oauth2.ContextTokenSource(),
 					tokenUpdater: tokenUpdateCallback,
@@ -51,15 +50,15 @@ func NewGoScmHelper(config *config.PersistentConfig, tokenUpdateCallback func(to
 			logrus.WithError(err).
 				Fatalln("main: cannot create the Gitlab client")
 		}
-		if config.GitlabDebug() {
+		if config.Gitlab.Debug {
 			client.DumpResponse = httputil.DumpResponse
 		}
 
 		client.Client = &http.Client{
 			Transport: &oauth2.Transport{
 				Source: &Refresher{
-					ClientID:     config.Get(store.GitlabClientID),
-					ClientSecret: config.Get(store.GitlabClientSecret),
+					ClientID:     config.Gitlab.ClientID,
+					ClientSecret: config.Gitlab.ClientSecret,
 					Endpoint:     "",
 					Source:       oauth2.ContextTokenSource(),
 					tokenUpdater: tokenUpdateCallback,

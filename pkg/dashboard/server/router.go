@@ -28,11 +28,11 @@ import (
 var agentAuth *jwtauth.JWTAuth
 
 func SetupRouter(
-	persistentConfig *config.PersistentConfig,
+	config *config.Config,
 	agentHub *streaming.AgentHub,
 	clientHub *streaming.ClientHub,
 	agentWSHub *streaming.AgentWSHub,
-	dao *store.Store,
+	store *store.Store,
 	gitService customScm.CustomGitService,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
@@ -42,7 +42,7 @@ func SetupRouter(
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
 ) *chi.Mux {
-	agentAuth = jwtauth.New("HS256", []byte(persistentConfig.Get(store.JWTSecret)), nil)
+	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
 	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 	log.Infof("Agent JWT is %s\n", tokenString)
 
@@ -57,21 +57,20 @@ func SetupRouter(
 
 	r.Use(middleware.WithValue("agentHub", agentHub))
 	r.Use(middleware.WithValue("clientHub", clientHub))
-	r.Use(middleware.WithValue("store", dao))
-	r.Use(middleware.WithValue("persistentConfig", persistentConfig))
+	r.Use(middleware.WithValue("store", store))
+	r.Use(middleware.WithValue("config", config))
 	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("agentJWT", tokenString))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
-	r.Use(middleware.WithValue("persistentConfig", persistentConfig))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000", persistentConfig.Get(store.Host)}, // TODO replace config.Config
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:9000", "http://127.0.0.1:9000", config.Host},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -85,7 +84,7 @@ func SetupRouter(
 
 	agentRoutes(r, agentWSHub)
 	userRoutes(r)
-	githubOAuthRoutes(persistentConfig, r)
+	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
 
 	r.Get("/logout", logout)
@@ -191,16 +190,15 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 	})
 }
 
-// TODO this runs only on start, but after we write configs to db, somehow have to rerun, to get auth
-func githubOAuthRoutes(config *config.PersistentConfig, r *chi.Mux) {
+func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 	if config.IsGithub() {
 		dumper := logger.DiscardDumper()
-		if config.GithubDebug() {
+		if config.Github.Debug {
 			dumper = logger.StandardDumper()
 		}
 		loginMiddleware := &github.Config{
-			ClientID:     config.Get(store.GithubClientID),
-			ClientSecret: config.Get(store.GithubClientSecret),
+			ClientID:     config.Github.ClientID,
+			ClientSecret: config.Github.ClientSecret,
 			// you don't need to provide scopes in your authorization request.
 			// Unlike traditional OAuth, the authorization token is limited to the permissions associated
 			// with your GitHub App and those of the user.
@@ -218,9 +216,9 @@ func githubOAuthRoutes(config *config.PersistentConfig, r *chi.Mux) {
 	} else if config.IsGitlab() {
 		loginMiddleware := &gitlab.Config{
 			Server:       config.ScmURL(),
-			ClientID:     config.Get(store.GitlabClientID),
-			ClientSecret: config.Get(store.GitlabClientSecret),
-			RedirectURL:  config.Get(store.Host) + "/auth",
+			ClientID:     config.Gitlab.ClientID,
+			ClientSecret: config.Gitlab.ClientSecret,
+			RedirectURL:  config.Host + "/auth",
 			Scope:        []string{"api"},
 		}
 

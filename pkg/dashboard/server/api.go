@@ -303,7 +303,7 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 
 func chartSchema(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config := ctx.Value("config").(*config.Config)
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
@@ -367,7 +367,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(schemasString))
 }
 
-func getManifest(config *config.PersistentConfig, repo *git.Repository, env string) (*dx.Manifest, error) {
+func getManifest(config *config.Config, repo *git.Repository, env string) (*dx.Manifest, error) {
 	defaultManifest := &dx.Manifest{
 		Chart: chartFromConfig(config),
 	}
@@ -406,18 +406,18 @@ func getManifest(config *config.PersistentConfig, repo *git.Repository, env stri
 	return defaultManifest, nil
 }
 
-func chartFromConfig(config *config.PersistentConfig) dx.Chart {
-	if strings.HasPrefix(config.Get(store.ChartName), "git@") ||
-		strings.Contains(config.Get(store.ChartName), ".git") {
+func chartFromConfig(config *config.Config) dx.Chart {
+	if strings.HasPrefix(config.Chart.Name, "git@") ||
+		strings.Contains(config.Chart.Name, ".git") {
 		return dx.Chart{
-			Name: config.Get(store.ChartName),
+			Name: config.Chart.Name,
 		}
 	}
 
 	return dx.Chart{
-		Repository: config.Get(store.ChartRepo),
-		Name:       config.Get(store.ChartName),
-		Version:    config.Get(store.ChartVersion),
+		Repository: config.Chart.Repo,
+		Name:       config.Chart.Name,
+		Version:    config.Chart.Version,
 	}
 }
 
@@ -514,9 +514,9 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 
 func getFlags(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("persistentConfig").(*config.PersistentConfig)
+	config := ctx.Value("config").(*config.Config)
 	var provider string
-	termsOfServiceFeatureFlag := config.Get(store.TermsOfServiceFeatureFlag)
+	termsOfServiceFeatureFlag := config.TermsOfServiceFeatureFlag
 
 	if config.IsGithub() {
 		provider = "GitHub"
