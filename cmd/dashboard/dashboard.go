@@ -11,7 +11,6 @@ import (
 	"syscall"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	dconfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -33,7 +32,7 @@ func main() {
 		log.Warnf("could not load .env file, relying on env vars")
 	}
 
-	staticConfig, err := dconfig.LoadStaticConfig()
+	staticConfig, err := config.LoadStaticConfig()
 	if err != nil {
 		log.Fatalln("main: invalid configuration")
 	}
@@ -104,13 +103,12 @@ func main() {
 			"Please use BOOTSTRAP_ENV instead, or create gitops environment configurations on the Gimlet dashboard.")
 	}
 
-	gitopsRepos := config.GitopsRepos
-	if gitopsRepos != "" {
+	if config.GitopsRepos != "" {
 		log.Info("Bootstrapping gitops environments from deprecated GITOPS_REPOS variable")
 		err = bootstrapEnvs(
 			config.BootstrapEnv,
 			dao,
-			gitopsRepos,
+			config.GitopsRepos,
 		)
 		if err != nil {
 			panic(err)
@@ -119,11 +117,10 @@ func main() {
 			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
-	repoCachePath := config.RepoCachePath
 	dashboardRepoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
-		repoCachePath,
+		config.RepoCachePath,
 		goScm,
 		config,
 		clientHub,
@@ -288,7 +285,7 @@ func envExists(envsInDB []*model.Environment, envName string) bool {
 }
 
 func slackNotificationProvider(config *config.Config) *notifications.SlackProvider {
-	slackChannelMap := parseChannelMap(config.Notifications.ChannelMapping)
+	slackChannelMap := parseChannelMap(config)
 
 	return &notifications.SlackProvider{
 		Token:          config.Notifications.Token,
@@ -298,7 +295,7 @@ func slackNotificationProvider(config *config.Config) *notifications.SlackProvid
 }
 
 func discordNotificationProvider(config *config.Config) *notifications.DiscordProvider {
-	discordChannelMapping := parseChannelMap(config.Notifications.ChannelMapping)
+	discordChannelMapping := parseChannelMap(config)
 
 	return &notifications.DiscordProvider{
 		Token:          config.Notifications.Token,
