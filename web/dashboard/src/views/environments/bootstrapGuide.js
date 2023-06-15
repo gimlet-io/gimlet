@@ -5,7 +5,7 @@ const BootstrapGuide = ({ envName, host, token }) => {
   const renderBootstrapGuideText = () => {
     return (
       <>
-        <li>👉 Set the API Key</li>
+        <li>👉 Install Gimlet CLI</li>
         <CopiableCodeSnippet
           copiable
           color="blue"
@@ -19,7 +19,7 @@ EOF
 source ~/.gimlet/config`}
         />
 
-        <li>👉 Apply the gitops manifests on the cluster to start the gitops loop:</li>
+        <li>👉 Connect your cluster</li>
         <CopiableCodeSnippet
           copiable
           color="blue"

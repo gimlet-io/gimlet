@@ -5,7 +5,6 @@ import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
 import KustomizationPerApp from './kustomizationPerApp';
-import GitopsAutomationGuide from './gitopsAutomationGuide';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
@@ -450,7 +449,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                   host={host}
                   token={userToken}
                 />
-                <GitopsAutomationGuide />
                 <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
               </div>
             }
