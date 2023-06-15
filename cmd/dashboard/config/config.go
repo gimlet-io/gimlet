@@ -7,6 +7,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const DEFAULT_CHART_NAME = "onechart"
+const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
+const DEFAULT_CHART_VERSION = "0.47.0"
+
 // Environ returns the settings from the environment.
 func Environ() (*Config, error) {
 	cfg := Config{}
@@ -14,12 +18,6 @@ func Environ() (*Config, error) {
 	defaults(&cfg)
 
 	return &cfg, err
-}
-
-func DefaultChart() Chart {
-	cfg := Config{}
-	defaults(&cfg)
-	return cfg.Chart
 }
 
 func defaults(c *Config) {
@@ -36,13 +34,13 @@ func defaults(c *Config) {
 		c.ReleaseHistorySinceDays = 30
 	}
 	if c.Chart.Name == "" {
-		c.Chart.Name = "onechart"
+		c.Chart.Name = DEFAULT_CHART_NAME
 	}
 	if c.Chart.Repo == "" {
-		c.Chart.Repo = "https://chart.onechart.dev"
+		c.Chart.Repo = DEFAULT_CHART_REPO
 	}
 	if c.Chart.Version == "" {
-		c.Chart.Version = "0.47.0"
+		c.Chart.Version = DEFAULT_CHART_VERSION
 	}
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"
