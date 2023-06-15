@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -32,21 +33,21 @@ func main() {
 		log.Warnf("could not load .env file, relying on env vars")
 	}
 
-	staticConfig, err := config.LoadStaticConfig()
+	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalln("main: invalid configuration")
 	}
 
-	initLogger(staticConfig)
+	initLogger(config)
 
 	store := store.New(
-		staticConfig.Database.Driver,
-		staticConfig.Database.Config,
-		staticConfig.Database.EncryptionKey,
-		staticConfig.Database.EncryptionKeyNew,
+		config.Database.Driver,
+		config.Database.Config,
+		config.Database.EncryptionKey,
+		config.Database.EncryptionKeyNew,
 	)
 
-	config, err := config.LoadConfig(store)
+	dynamicConfig, err := dynamicconfig.LoadDynamicConfig(store)
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +69,7 @@ func main() {
 	agentWSHub := streaming.NewAgentWSHub(*clientHub)
 	go agentWSHub.Run()
 
-	err = reencrypt(store, staticConfig.Database.EncryptionKeyNew)
+	err = reencrypt(store, config.Database.EncryptionKeyNew)
 	if err != nil {
 		panic(err)
 	}
@@ -185,6 +186,7 @@ func main() {
 
 	r := server.SetupRouter(
 		config,
+		dynamicConfig,
 		agentHub,
 		clientHub,
 		agentWSHub,

@@ -122,7 +122,7 @@ func initNotifications(
 }
 
 // helper function configures the logging.
-func initLogger(c *config.StaticConfig) {
+func initLogger(c *config.Config) {
 	logrus.SetReportCaller(true)
 
 	customFormatter := &logrus.TextFormatter{
