@@ -23,8 +23,8 @@ COPY --chown=gimlet-dashboard:gimlet-dashboard web/dashboard/build ./web/build/
 
 USER gimlet-dashboard
 
-RUN git config --global user.name "Gimlet Dashboard"
-RUN git config --global user.email "gimlet-dashboard@gimlet.io"
+RUN git config --global user.name "Gimlet"
+RUN git config --global user.email "gimlet@gimlet.io"
 
 EXPOSE 9000
 CMD ["/gimlet-dashboard/gimlet-dashboard"]

@@ -626,7 +626,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = server.StageCommitAndPush(repo, tmpPath, installationToken, "[Gimlet Dashboard] Updating components")
+	err = server.StageCommitAndPush(repo, tmpPath, installationToken, "[Gimlet] Updating components")
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
