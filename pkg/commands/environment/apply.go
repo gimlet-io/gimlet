@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jonboulle/clockwork"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -96,7 +95,7 @@ func applyObject(info *resource.Info) (string, error) {
 	}
 
 	if err := info.Get(); err != nil {
-		if !errors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return "", err
 		}
 
@@ -112,12 +111,6 @@ func applyObject(info *resource.Info) (string, error) {
 			return "", err
 		}
 		info.Refresh(obj, true)
-
-		if strings.Contains(info.Source, "flux.yaml") {
-			// TODO
-			// kubectl wait --for condition=established --timeout=60s crd/gitrepositories.source.toolkit.fluxcd.io
-			// kubectl wait --for condition=established --timeout=60s crd/kustomizations.kustomize.toolkit.fluxcd.io
-		}
 
 		return fmt.Sprintf("%s created", info.Name), nil
 	}
@@ -135,6 +128,8 @@ func applyObject(info *resource.Info) (string, error) {
 	return fmt.Sprintf("%s configured", info.Name), nil
 }
 
+// All this code copied from
+// https://github.com/kubernetes/kubectl/blob/4ceef69fbc451d9bde6f4d5f92d55624b748141d/pkg/cmd/apply/patcher.go
 type Patcher struct {
 	Mapping *meta.RESTMapping
 	Helper  *resource.Helper
@@ -156,8 +151,6 @@ type Patcher struct {
 	OpenapiSchema openapi.Resources
 }
 
-// All this code copied from
-// https://github.com/kubernetes/kubectl/blob/4ceef69fbc451d9bde6f4d5f92d55624b748141d/pkg/cmd/apply/patcher.go
 func newPatcher(info *resource.Info, helper *resource.Helper) (*Patcher, error) {
 	var openapiSchema openapi.Resources
 
@@ -185,7 +178,7 @@ func (p *Patcher) Patch(current runtime.Object, modified []byte,
 		p.Retries = maxPatchRetry
 	}
 
-	for i := 1; i <= p.Retries && errors.IsConflict(err); i++ {
+	for i := 1; i <= p.Retries && apierrors.IsConflict(err); i++ {
 		if i > triesBeforeBackOff {
 			p.BackOff.Sleep(backOffPeriod)
 		}
@@ -198,7 +191,7 @@ func (p *Patcher) Patch(current runtime.Object, modified []byte,
 		patchBytes, patchObject, err = p.patchSimple(current, modified, namespace, name)
 	}
 
-	if err != nil && (errors.IsConflict(err) || errors.IsInvalid(err)) && p.Force {
+	if err != nil && (apierrors.IsConflict(err) || apierrors.IsInvalid(err)) && p.Force {
 		patchBytes, patchObject, err = p.deleteAndCreate(current, modified, namespace, name)
 	}
 
@@ -293,7 +286,7 @@ func (p *Patcher) deleteAndCreate(original runtime.Object, modified []byte, name
 	}
 	// TODO: use wait
 	if err := wait.PollImmediate(1*time.Second, p.Timeout, func() (bool, error) {
-		if _, err := p.Helper.Get(namespace, name); !errors.IsNotFound(err) {
+		if _, err := p.Helper.Get(namespace, name); !apierrors.IsNotFound(err) {
 			return false, err
 		}
 		return true, nil
