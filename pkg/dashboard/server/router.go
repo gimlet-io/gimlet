@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
@@ -29,6 +30,7 @@ var agentAuth *jwtauth.JWTAuth
 
 func SetupRouter(
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 	agentHub *streaming.AgentHub,
 	clientHub *streaming.ClientHub,
 	agentWSHub *streaming.AgentWSHub,
@@ -60,6 +62,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("clientHub", clientHub))
 	r.Use(middleware.WithValue("store", store))
 	r.Use(middleware.WithValue("config", config))
+	r.Use(middleware.WithValue("dynamicConfig", dynamicConfig))
 	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))

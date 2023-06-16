@@ -203,8 +203,7 @@ func helmChartInfo(chart string) (string, string, string, error) {
 		return chartName, repoUrl, chartVersion, nil
 	}
 
-	defaultChart := config.DefaultChart()
-	return defaultChart.Name, defaultChart.Repo, defaultChart.Version, nil
+	return config.DEFAULT_CHART_NAME, config.DEFAULT_CHART_REPO, config.DEFAULT_CHART_VERSION, nil
 }
 
 func setManifestValues(m *dx.Manifest, values manifestValues) {

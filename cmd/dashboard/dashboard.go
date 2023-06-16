@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -33,31 +34,12 @@ func main() {
 		log.Warnf("could not load .env file, relying on env vars")
 	}
 
-	config, err := config.Environ()
+	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalln("main: invalid configuration")
 	}
 
 	initLogger(config)
-	if log.IsLevelEnabled(log.TraceLevel) {
-		log.Traceln(config.String())
-	}
-
-	if config.Host == "" {
-		panic(fmt.Errorf("please provide the HOST variable"))
-	}
-	if config.JWTSecret == "" {
-		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
-	}
-
-	agentHub := streaming.NewAgentHub(config)
-	go agentHub.Run()
-
-	clientHub := streaming.NewClientHub()
-	go clientHub.Run()
-
-	agentWSHub := streaming.NewAgentWSHub(*clientHub)
-	go agentWSHub.Run()
 
 	store := store.New(
 		config.Database.Driver,
@@ -65,6 +47,28 @@ func main() {
 		config.Database.EncryptionKey,
 		config.Database.EncryptionKeyNew,
 	)
+
+	dynamicConfig, err := dynamicconfig.LoadDynamicConfig(store)
+	if err != nil {
+		panic(err)
+	}
+
+	if config.Host == "" {
+		panic(fmt.Errorf("please provide the HOST variable"))
+	}
+
+	if config.JWTSecret == "" {
+		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
+	}
+
+	agentHub := streaming.NewAgentHub()
+	go agentHub.Run()
+
+	clientHub := streaming.NewClientHub()
+	go clientHub.Run()
+
+	agentWSHub := streaming.NewAgentWSHub(*clientHub)
+	go agentWSHub.Run()
 
 	err = reencrypt(store, config.Database.EncryptionKeyNew)
 	if err != nil {
@@ -196,6 +200,7 @@ func main() {
 
 	r := server.SetupRouter(
 		config,
+		dynamicConfig,
 		agentHub,
 		clientHub,
 		agentWSHub,

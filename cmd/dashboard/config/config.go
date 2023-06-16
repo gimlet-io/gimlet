@@ -4,22 +4,19 @@ import (
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
-	"gopkg.in/yaml.v2"
 )
 
-// Environ returns the settings from the environment.
-func Environ() (*Config, error) {
+const DEFAULT_CHART_NAME = "onechart"
+const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
+const DEFAULT_CHART_VERSION = "0.47.0"
+
+// LoadConfig returns the static config from the environment.
+func LoadConfig() (*Config, error) {
 	cfg := Config{}
 	err := envconfig.Process("", &cfg)
 	defaults(&cfg)
 
 	return &cfg, err
-}
-
-func DefaultChart() Chart {
-	cfg := Config{}
-	defaults(&cfg)
-	return cfg.Chart
 }
 
 func defaults(c *Config) {
@@ -36,13 +33,13 @@ func defaults(c *Config) {
 		c.ReleaseHistorySinceDays = 30
 	}
 	if c.Chart.Name == "" {
-		c.Chart.Name = "onechart"
+		c.Chart.Name = DEFAULT_CHART_NAME
 	}
 	if c.Chart.Repo == "" {
-		c.Chart.Repo = "https://chart.onechart.dev"
+		c.Chart.Repo = DEFAULT_CHART_REPO
 	}
 	if c.Chart.Version == "" {
-		c.Chart.Version = "0.47.0"
+		c.Chart.Version = DEFAULT_CHART_VERSION
 	}
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"
@@ -55,19 +52,16 @@ func defaults(c *Config) {
 	}
 }
 
-// String returns the configuration in string format.
-func (c *Config) String() string {
-	out, _ := yaml.Marshal(c)
-	return string(out)
-}
-
+// Config holds Gimlet configuration that can only be set with environment variables
 type Config struct {
-	Logging                 Logging
-	Host                    string `envconfig:"HOST"`
-	JWTSecret               string `envconfig:"JWT_SECRET"`
-	Github                  Github
-	Gitlab                  Gitlab
-	Database                Database
+	Logging  Logging
+	Database Database
+
+	Host      string `envconfig:"HOST"`
+	JWTSecret string `envconfig:"JWT_SECRET"`
+	Github    Github
+	Gitlab    Gitlab
+
 	Notifications           Notifications
 	Chart                   Chart
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
