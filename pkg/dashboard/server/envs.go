@@ -349,17 +349,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guidingTexts := map[string]interface{}{
-		"envName": bootstrapConfig.EnvName,
-	}
-
-	guidingTextsString, err := json.Marshal(guidingTexts)
-	if err != nil {
-		logrus.Errorf("cannot serialize guiding texts: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	err = installAgent(environment, gitRepoCache, config, gitToken)
 	if err != nil {
 		logrus.Errorf("cannot install agent: %s", err)
@@ -367,7 +356,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(guidingTextsString)
 }
 
 func BootstrapEnv(
