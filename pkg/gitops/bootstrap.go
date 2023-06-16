@@ -12,8 +12,10 @@ import (
 	"github.com/fluxcd/flux2/v2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -91,11 +93,10 @@ func GenerateManifests(opts ManifestOpts) (string, string, string, error) {
 
 	if opts.ShouldGenerateKustomizationAndRepo {
 		var url, host, owner, repoName string
-		if strings.Contains(opts.GitopsRepoUrl, "builtin-") {
+		if strings.Contains(opts.GitopsRepoUrl, "builtin") {
 			url = opts.GitopsRepoUrl
 			owner = "builtin"
-			repoName = strings.Split(opts.GitopsRepoUrl, "/")[3]
-			repoName = strings.Split(repoName, ".")[0]
+			repoName = strings.Split(opts.GitopsRepoUrl, "/")[4]
 		} else {
 			host, owner, repoName = ParseRepoURL(opts.GitopsRepoUrl)
 			url = fmt.Sprintf("ssh://git@%s/%s/%s", host, owner, repoName)
@@ -224,24 +225,26 @@ func UniqueGitopsRepoName(singleEnv bool, owner string, repoName string, env str
 }
 
 func GenerateManifestProviderAndAlert(
-	env string,
-	targetPath string,
-	singleEnv bool,
+	env *model.Environment,
 	gitopsRepoPath string,
-	gitopsRepoUrl string,
-	gimletdUrl string,
-	token string,
+	gimletHost string,
+	gimletToken string,
 ) (string, error) {
-	_, owner, repoName := ParseRepoURL(gitopsRepoUrl)
+	owner, repoName := scm.Split(env.AppsRepo)
 
-	kustomizationName := fmt.Sprintf("gitops-repo-%s", UniqueName(singleEnv, owner, repoName, env))
-	notificationsName := fmt.Sprintf("notifications-%s", UniqueName(singleEnv, owner, repoName, env))
-	notificationsFileName := notificationsName + ".yaml"
+	kustomizationName := UniqueGitopsRepoName(env.RepoPerEnv, owner, repoName, env.Name)
+	notificationsName := UniqueGitopsRepoName(env.RepoPerEnv, owner, repoName, env.Name)
+	notificationsFileName := "notifications-" + notificationsName + ".yaml"
+
+	targetPath := env.Name
+	if env.RepoPerEnv {
+		targetPath = ""
+	}
 
 	syncManifest, err := sync.GenerateProviderAndAlert(
-		env,
-		gimletdUrl,
-		token,
+		env.Name,
+		gimletHost,
+		gimletToken,
 		targetPath,
 		kustomizationName,
 		notificationsName,

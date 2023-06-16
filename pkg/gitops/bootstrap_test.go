@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"gotest.tools/assert"
 )
 
@@ -189,21 +190,19 @@ func Test_generateManifestProviderAndAlert(t *testing.T) {
 		return
 	}
 
-	env := "staging"
-	targetPath := ""
-	singleEnv := false
-	gitOpsRepoURL := "git@github.com:gimlet-io/gitops-staging-infra.git"
-	gimletdUrl := "https://gimletd.test.io"
-	token := "mySecretToken123"
+	env := &model.Environment{
+		Name:       "staging",
+		RepoPerEnv: false,
+		AppsRepo:   "gimlet-io/gitops-staging-apps",
+	}
+	gimletHost := "https://gimletd.test.io"
+	gimletToken := "mySecretToken123"
 
 	_, err = GenerateManifestProviderAndAlert(
 		env,
-		targetPath,
-		singleEnv,
 		dirToWrite,
-		gitOpsRepoURL,
-		gimletdUrl,
-		token,
+		gimletHost,
+		gimletToken,
 	)
 	if err != nil {
 		t.Errorf("Cannot generate manifest files, %s", err)

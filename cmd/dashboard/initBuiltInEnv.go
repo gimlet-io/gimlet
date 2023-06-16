@@ -13,6 +13,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
@@ -26,7 +27,7 @@ func bootstrapBuiltInEnv(
 	store *store.Store,
 	repoCache *nativeGit.RepoCache,
 	gitUser *model.User,
-	gitHost string,
+	config *config.Config,
 ) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
@@ -42,8 +43,8 @@ func bootstrapBuiltInEnv(
 	randomSecondName := secondNames[rand.Intn(len(secondNames))]
 	builtInEnv := &model.Environment{
 		Name:       fmt.Sprintf("%s-%s", randomFirstName, randomSecondName),
-		InfraRepo:  "builtin-infra.git",
-		AppsRepo:   "builtin-apps.git",
+		InfraRepo:  "builtin/infra",
+		AppsRepo:   "builtin/apps",
 		BuiltIn:    true,
 		RepoPerEnv: true,
 	}
@@ -52,7 +53,7 @@ func bootstrapBuiltInEnv(
 		return err
 	}
 
-	repo, tmpPath, err := initRepo(fmt.Sprintf("http://%s/%s", gitHost, builtInEnv.InfraRepo))
+	repo, tmpPath, err := initRepo(fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.InfraRepo))
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		return fmt.Errorf("cannot get repo: %s", err)
@@ -68,7 +69,7 @@ func bootstrapBuiltInEnv(
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = gitUser.Login
 	opts.BasicAuthPassword = gitUser.Secret
-	opts.GitopsRepoUrl = fmt.Sprintf("http://%s/%s", gitHost, builtInEnv.InfraRepo)
+	opts.GitopsRepoUrl = fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.InfraRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
 	_, _, _, err = gitops.GenerateManifests(opts)
@@ -76,16 +77,47 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
+	err = server.PrepAgentManifests(builtInEnv, tmpPath, repo, config)
+	if err != nil {
+		return fmt.Errorf("cannot configure agent: %s", err)
+	}
+
 	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
-	repo, tmpPath, err = initRepo(fmt.Sprintf("http://%s/%s", gitHost, builtInEnv.AppsRepo))
+	repo, tmpPath, err = initRepo(fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.AppsRepo))
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
+
+	opts = gitops.DefaultManifestOpts()
+	opts.ShouldGenerateController = false
+	opts.ShouldGenerateDependencies = false
+	opts.ShouldGenerateDeployKey = false
+	opts.ShouldGenerateBasicAuthSecret = true
+	opts.BasicAuthUser = gitUser.Login
+	opts.BasicAuthPassword = gitUser.Secret
+	opts.GitopsRepoUrl = fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.AppsRepo)
+	opts.GitopsRepoPath = tmpPath
+	opts.Branch = headBranch
+	_, _, _, err = gitops.GenerateManifests(opts)
+	if err != nil {
+		return fmt.Errorf("cannot generate manifest: %s", err)
+	}
+
+	gimletToken, err := server.PrepNotificationsApiKey(builtInEnv, store)
+	if err != nil {
+		return fmt.Errorf("couldn't create user token %s", err)
+	}
+
+	_, err = gitops.GenerateManifestProviderAndAlert(builtInEnv, tmpPath, config.Host, gimletToken)
+	if err != nil {
+		return fmt.Errorf("cannot generate notificatoins manifest: %s", err)
+	}
+
 	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
