@@ -40,7 +40,7 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
-            "name": "Gimlet Dashboard",
+            "name": "Gimlet",
             "type": "go",
             "request": "launch",
             "mode": "auto",

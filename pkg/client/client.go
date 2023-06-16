@@ -44,6 +44,7 @@ const (
 	pathUsers              = "%s/api/users"
 	pathGitopsRepo         = "%s/api/gitopsRepo"
 	pathGitopsCommits      = "%s/api/gitopsCommits"
+	pathGitopsManifests    = "%s/api/gitopsManifests"
 )
 
 type client struct {
@@ -408,6 +409,20 @@ func (c *client) GitopsRepoGet() (string, error) {
 	}
 
 	return gitopsRepo.GitopsRepo, nil
+}
+
+// GitopsManifestsGet retrieve the gitops manifests from the infrastructure and applications repository of the environment
+func (c *client) GitopsManifestsGet(envName string) (map[string]map[string]string, error) {
+	uri := fmt.Sprintf(pathGitopsManifests, c.addr)
+
+	result := new(map[string]map[string]string)
+	err := c.get(uri+"/"+envName, result)
+	if err != nil {
+		return nil, err
+	}
+	res := *result
+
+	return res, nil
 }
 
 func (c *client) get(rawURL string, out interface{}) error {

@@ -8,7 +8,7 @@ const StepOne = ({ getContext }) => {
   url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
 
   const manifest = JSON.stringify({
-    "name": "Gimlet Dashboard",
+    "name": "Gimlet",
     "url": url,
     "callback_url": url + '/auth',
     "hook_attributes": {
@@ -137,7 +137,7 @@ const StepOne = ({ getContext }) => {
           </div>
           <div className="mb-64">
             <h2 className="text-xl font-sans font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate mb-4">Gitlab.com</h2>
-            <p className="">Gimlet Dashboard uses personal or group access tokens to integrate with Gitlab. 
+            <p className="">Gimlet uses personal or group access tokens to integrate with Gitlab. 
             Gimlet will also need an OAuth application to handle OAuth based authentication.</p>
             <form action="/gitlabInit" method="post">
             <div className="text-gray-700">

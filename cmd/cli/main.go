@@ -7,6 +7,7 @@ import (
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart"
+	"github.com/gimlet-io/gimlet-cli/pkg/commands/environment"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/manifest"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/release"
@@ -28,6 +29,7 @@ func main() {
 			&artifact.Command,
 			&release.Command,
 			&stack.Command,
+			&environment.Command,
 		},
 	}
 	err := app.Run(os.Args)

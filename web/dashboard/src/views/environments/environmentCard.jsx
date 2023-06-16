@@ -1,11 +1,9 @@
 import { useRef, useState, useEffect } from 'react'
 import { format, formatDistance } from "date-fns";
-import { InformationCircleIcon } from '@heroicons/react/solid'
 import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
 import KustomizationPerApp from './kustomizationPerApp';
-import GitopsAutomationGuide from './gitopsAutomationGuide';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
@@ -19,12 +17,11 @@ import {
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl, host, userToken }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true)
   const [kustomizationPerApp, setKustomizationPerApp] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
   const [appsRepo, setAppsRepo] = useState("gitops-apps")
-  const [bootstrapMessage, setBootstrapMessage] = useState(undefined);
   const ref = useRef();
 
   useEffect(() => {
@@ -185,7 +182,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     });
 
     gimletClient.bootstrapGitops(envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo)
-      .then((data) => {
+      .then(() => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
             header: "Success",
@@ -193,7 +190,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           }
         });
         refreshEnvs();
-        setBootstrapMessage(data)
         resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
@@ -254,45 +250,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           }
         });
       }, () => {/* Generic error handler deals with it */
-      })
-  }
-
-  const configureAgent = (envName) => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Configuring Agent..."
-      }
-    });
-
-    gimletClient.installAgent(envName)
-      .then((data) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Pull request was created",
-            link: data.createdPr.link
-          }
-        });
-        store.dispatch({
-          type: ACTION_TYPE_SAVE_ENV_PULLREQUEST, payload: {
-            envName: data.envName,
-            createdPr: data.createdPr
-          }
-        });
-        store.dispatch({
-          type: ACTION_TYPE_ENVUPDATED, name: envName, payload: data.stackConfig
-        });
-        setStack(data.stackConfig.config)
-        setStackNonDefaultValues(data.stackConfig.config)
-        resetPopupWindowAfterThreeSeconds()
-      }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
-        });
-        resetPopupWindowAfterThreeSeconds()
       })
   }
 
@@ -390,8 +347,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     )
   }
 
-  const gimletAgentConfigured = stack.gimletAgent && stack.gimletAgent.enabled;
-
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
       {renderPullRequests(pullRequests)}
@@ -442,83 +397,48 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 ))}
               </select>
             </div>
-            {bootstrapMessage &&
+            {!isOnline &&
               <div className="mb-4">
-                <h3 className="text-2xl font-bold p-2 text-gray-900">Finalize Gitops bootstrapping with these two steps below</h3>
+                <h3 className="text-2xl font-bold p-2 text-gray-900">Connect your cluster</h3>
                 <BootstrapGuide
-                  envName={bootstrapMessage.envName}
-                  repoPath={bootstrapMessage.infraRepo}
-                  repoPerEnv={bootstrapMessage.repoPerEnv}
-                  secretFileName={bootstrapMessage.infraSecretFileName}
-                  gitopsRepoFileName={bootstrapMessage.infraGitopsRepoFileName}
-                  controllerGenerated={true}
-                  scmUrl={scmUrl}
+                  envName={env.name}
+                  host={host}
+                  token={userToken}
                 />
-                <BootstrapGuide
-                  envName={bootstrapMessage.envName}
-                  repoPath={bootstrapMessage.appsRepo}
-                  repoPerEnv={bootstrapMessage.repoPerEnv}
-                  secretFileName={bootstrapMessage.appsSecretFileName}
-                  gitopsRepoFileName={bootstrapMessage.appsGitopsRepoFileName}
-                  notificationsFileName={bootstrapMessage.notificationsFileName}
-                  controllerGenerated={false}
-                  scmUrl={scmUrl}
-                />
-                <GitopsAutomationGuide />
-                <h2 className='text-gray-900'>Happy Gitopsing🎊</h2>
               </div>
             }
-            {!isOnline && !gimletAgentConfigured &&
-              <div className="rounded-md bg-blue-50 p-4 mb-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">This environment is disconnected</h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      Configure the Gimlet Agent for realtime Kubernetes data under <span className="italic">Infrastructure components &gt; Gimlet Agent</span><br />
-                      Or use the <span
-                        className="font-medium cursor-pointer"
-                        onClick={(e) => {
-                          // eslint-disable-next-line no-restricted-globals
-                          confirm('The 1-click-config will place a commit in your gitops repo.\nAre you sure you want proceed?') &&
-                            configureAgent(env.name, e);
-                        }}
-                      >1-click-config</span>.
-                    </div>
-                  </div>
+            {isOnline &&
+            <>
+              <div className="hidden sm:block">
+                <div className="border-b border-gray-200">
+                  <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    {tabs.map((tab) => (
+                      <div
+                        key={tab.name}
+                        className={(
+                          tab.current
+                            ? "border-indigo-500 text-indigo-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") +
+                          " cursor-pointer select-none whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                        }
+                        aria-current={tab.current ? "page" : undefined}
+                        onClick={() => switchTabHandler(tab.name)}
+                      >
+                        {tab.name}
+                      </div>
+                    ))}
+                  </nav>
                 </div>
               </div>
-            }
-            <div className="hidden sm:block">
-              <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                  {tabs.map((tab) => (
-                    <div
-                      key={tab.name}
-                      className={(
-                        tab.current
-                          ? "border-indigo-500 text-indigo-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") +
-                        " cursor-pointer select-none whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                      }
-                      aria-current={tab.current ? "page" : undefined}
-                      onClick={() => switchTabHandler(tab.name)}
-                    >
-                      {tab.name}
-                    </div>
-                  ))}
-                </nav>
-              </div>
-            </div>
-            {tabs[0].current ?
-              gitopsRepositoriesTab()
-              :
-              tabs[1].current ?
-                infrastructureComponentsTab()
+              {tabs[0].current ?
+                gitopsRepositoriesTab()
                 :
-                gitopsCommitsTab()
+                tabs[1].current ?
+                  infrastructureComponentsTab()
+                  :
+                  gitopsCommitsTab()
+              }
+            </>
             }
           </>
           :

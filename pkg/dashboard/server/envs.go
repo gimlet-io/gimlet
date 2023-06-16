@@ -23,7 +23,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -145,7 +145,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Updating components")
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -153,7 +153,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet Dashboard] `%s` infrastructure components change", env.Name),
+		fmt.Sprintf("[Gimlet] `%s` infrastructure components change", env.Name),
 		fmt.Sprintf("@%s is editing the infrastructure components on `%s`", user.Login, env.Name))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
@@ -272,7 +272,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	scmURL := config.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	infraGitopsRepoFileName, infraSecretFileName, err := BootstrapEnv(
+	_, _, err = BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
 		environment.Name,
@@ -291,7 +291,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	appsGitopsRepoFileName, appsSecretFileName, err := BootstrapEnv(
+	_, _, err = BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
 		environment.Name,
@@ -331,7 +331,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notificationsFileName, err := BootstrapNotifications(
+	_, err = BootstrapNotifications(
 		gitRepoCache,
 		config.Host,
 		tokenStr,
@@ -350,15 +350,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	guidingTexts := map[string]interface{}{
-		"envName":                 bootstrapConfig.EnvName,
-		"repoPerEnv":              bootstrapConfig.RepoPerEnv,
-		"infraRepo":               environment.InfraRepo,
-		"infraSecretFileName":     infraSecretFileName,
-		"infraGitopsRepoFileName": infraGitopsRepoFileName,
-		"appsRepo":                environment.AppsRepo,
-		"appsSecretFileName":      appsSecretFileName,
-		"appsGitopsRepoFileName":  appsGitopsRepoFileName,
-		"notificationsFileName":   notificationsFileName,
+		"envName": bootstrapConfig.EnvName,
 	}
 
 	guidingTextsString, err := json.Marshal(guidingTexts)
@@ -368,6 +360,12 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = installAgent(environment, gitRepoCache, config, gitToken)
+	if err != nil {
+		logrus.Errorf("cannot install agent: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(guidingTextsString)
 }
@@ -424,7 +422,7 @@ func BootstrapEnv(
 		return "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Bootstrapping")
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -527,7 +525,7 @@ func BootstrapNotifications(
 		return "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Bootstrapping")
+	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -595,28 +593,16 @@ func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg 
 	return nil
 }
 
-func installAgent(w http.ResponseWriter, r *http.Request) {
-	envName := chi.URLParam(r, "env")
-
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	db := r.Context().Value("store").(*store.Store)
-
-	env, err := db.GetEnvironment(envName)
-	if err != nil {
-		logrus.Errorf("cannot get environment: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+func installAgent(
+	env *model.Environment,
+	gitRepoCache *nativeGit.RepoCache,
+	config *config.Config,
+	gitToken string,
+) error {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
 	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
@@ -640,13 +626,13 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 				Config: map[string]interface{}{},
 			}
 		} else {
-			logrus.Errorf("cannot get stack yaml from repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			return fmt.Errorf("cannot get stack yaml from repo: %s", err)
 		}
 	}
 
-	agentKey := r.Context().Value("agentJWT").(string)
+	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
+	_, agentKey, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
+
 	stackConfig.Config["gimletAgent"] = map[string]interface{}{
 		"enabled":          true,
 		"environment":      env.Name,
@@ -659,93 +645,27 @@ func installAgent(w http.ResponseWriter, r *http.Request) {
 	e.SetIndent(2)
 	err = e.Encode(stackConfig)
 	if err != nil {
-		logrus.Errorf("cannot serialize stack config: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	headBranch, err := nativeGit.HeadBranch(repo)
-	if err != nil {
-		logrus.Errorf("cannot get head branch: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-change-%s", env.Name), 4)
-	if err != nil {
-		logrus.Errorf("cannot generate branch name: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
-	if err != nil {
-		logrus.Errorf("cannot checkout branch: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot serialize stack config: %s", err)
 	}
 
 	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
 	if err != nil {
-		logrus.Errorf("cannot write file: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot write file: %s", err)
 	}
 
 	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
 	if err != nil {
-		logrus.Errorf("cannot generate and write files: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot generate and write files: %s", err)
 	}
 
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet Dashboard] Updating components")
+	err = StageCommitAndPush(repo, tmpPath, gitToken, "[Gimlet] Installing agent")
 	if err != nil {
-		logrus.Errorf("cannot stage commit and push: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	goScm := genericScm.NewGoScmHelper(config, nil)
-	user := ctx.Value("user").(*model.User)
-	createdPR, _, err := goScm.CreatePR(token, env.InfraRepo, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet Dashboard] `%s` infrastructure components change", env.Name),
-		fmt.Sprintf("@%s is editing the infrastructure components on `%s`", user.Login, env.Name))
-	if err != nil {
-		logrus.Errorf("cannot create pr: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
 	gitRepoCache.Invalidate(env.InfraRepo)
 
-	response := map[string]interface{}{
-		"envName": env.Name,
-		"createdPr": &api.PR{
-			Sha:     createdPR.Sha,
-			Link:    createdPR.Link,
-			Title:   createdPR.Title,
-			Source:  createdPR.Source,
-			Number:  createdPR.Number,
-			Author:  createdPR.Author.Login,
-			Created: int(createdPR.Created.Unix()),
-			Updated: int(createdPR.Updated.Unix()),
-		},
-		"stackConfig": stackConfig,
-	}
-
-	responseString, err := json.Marshal(response)
-	if err != nil {
-		logrus.Errorf("cannot serialize stack config: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(responseString))
+	return nil
 }
 
 func ParseRepo(repoName string) (string, string) {

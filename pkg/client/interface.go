@@ -88,4 +88,7 @@ type Client interface {
 
 	// GitopsRepoGet returns the configured gitops repo name
 	GitopsRepoGet() (string, error)
+
+	//GitopsManifestsGet retrieve the gitops manifests from the infrastructure and applications repository of the environment
+	GitopsManifestsGet(envName string) (map[string]map[string]string, error)
 }

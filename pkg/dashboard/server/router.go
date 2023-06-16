@@ -45,10 +45,6 @@ func SetupRouter(
 	logger *log.Logger,
 	gitServer http.Handler,
 ) *chi.Mux {
-	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
-	_, tokenString, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
-	log.Infof("Agent JWT is %s\n", tokenString)
-
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -66,7 +62,6 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
-	r.Use(middleware.WithValue("agentJWT", tokenString))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
 
@@ -86,7 +81,7 @@ func SetupRouter(
 		w.WriteHeader(http.StatusOK)
 	})
 
-	agentRoutes(r, agentWSHub)
+	agentRoutes(r, agentWSHub, config.JWTSecret)
 	userRoutes(r)
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
@@ -130,6 +125,7 @@ func gimletdRoutes(r *chi.Mux) {
 		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
 		r.Post("/api/flux-events", fluxEvent)
 		r.Get("/api/gitopsCommits", getGitopsCommits)
+		r.Get("/api/gitopsManifests/{env}", getGitopsManifests)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -175,11 +171,12 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/deleteEnvFromDB"), deleteEnvFromDB)
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
-		r.Post(("/api/envs/{env}/installAgent"), installAgent)
 	})
 }
 
-func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
+func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string) {
+	agentAuth = jwtauth.New("HS256", []byte(jwtSecret), nil)
+
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(agentAuth))
 		r.Use(jwtauth.Authenticator)
