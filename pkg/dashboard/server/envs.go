@@ -550,7 +550,6 @@ func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg 
 	return nil
 }
 
-<<<<<<< HEAD
 func PrepNotificationsApiKey(
 	env *model.Environment,
 	db *store.Store,
@@ -574,8 +573,6 @@ func PrepNotificationsApiKey(
 	return tokenStr, nil
 }
 
-=======
->>>>>>> origin/main
 func installAgent(
 	env *model.Environment,
 	gitRepoCache *nativeGit.RepoCache,
@@ -663,16 +660,6 @@ func PrepAgentManifests(
 		return fmt.Errorf("cannot generate and write files: %s", err)
 	}
 
-<<<<<<< HEAD
-=======
-	err = StageCommitAndPush(repo, tmpPath, gitToken, "[Gimlet] Installing agent")
-	if err != nil {
-		return fmt.Errorf("cannot stage commit and push: %s", err)
-	}
-
-	gitRepoCache.Invalidate(env.InfraRepo)
-
->>>>>>> origin/main
 	return nil
 }
 
