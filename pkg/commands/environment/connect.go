@@ -98,6 +98,17 @@ func applyManifests(files map[string]string, filesPath string) {
 			}
 			fmt.Println(response)
 		}
+
+		if fileName == "flux.yaml" {
+			err := waitFor("crd/gitrepositories.source.toolkit.fluxcd.io")
+			if err != nil {
+				logrus.Warnf("cannot wait for crd/gitrepositories.source.toolkit.fluxcd.io: %s", err)
+			}
+			err = waitFor("crd/kustomizations.kustomize.toolkit.fluxcd.io")
+			if err != nil {
+				logrus.Warnf("cannot wait for crd/kustomizations.kustomize.toolkit.fluxcd.io: %s", err)
+			}
+		}
 	}
 }
 
