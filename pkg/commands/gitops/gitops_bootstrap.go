@@ -73,18 +73,18 @@ func Bootstrap(c *cli.Context) error {
 	kustomizationPerApp := c.Bool("kustomization-per-app")
 	singleEnv := c.Bool("single-env")
 	env := c.String("env")
-	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(
-		!noController,
-		!noDependencies,
-		kustomizationPerApp,
-		env,
-		singleEnv,
-		gitopsRepoPath,
-		true,
-		true,
-		c.String("gitops-repo-url"),
-		branch,
-	)
+	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(gitops.ManifestOpts{
+		ShouldGenerateController:           !noController,
+		ShouldGenerateDependencies:         !noDependencies,
+		KustomizationPerApp:                kustomizationPerApp,
+		Env:                                env,
+		SingleEnv:                          singleEnv,
+		GitopsRepoPath:                     gitopsRepoPath,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		GitopsRepoUrl:                      c.String("gitops-repo-url"),
+		Branch:                             branch,
+	})
 	if err != nil {
 		return err
 	}

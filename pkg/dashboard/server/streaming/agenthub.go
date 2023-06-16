@@ -3,7 +3,6 @@ package streaming
 import (
 	"encoding/json"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 )
 
@@ -24,16 +23,13 @@ type AgentHub struct {
 
 	// Unregister requests from agents.
 	Unregister chan *ConnectedAgent
-
-	config *config.Config
 }
 
-func NewAgentHub(config *config.Config) *AgentHub {
+func NewAgentHub() *AgentHub {
 	return &AgentHub{
 		Register:   make(chan *ConnectedAgent),
 		Unregister: make(chan *ConnectedAgent),
 		Agents:     make(map[string]*ConnectedAgent),
-		config:     config,
 	}
 }
 
