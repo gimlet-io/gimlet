@@ -4,6 +4,7 @@ import StackUI from './stack-ui';
 import BootstrapGuide from './bootstrapGuide';
 import SeparateEnvironments from './separateEnvironments';
 import KustomizationPerApp from './kustomizationPerApp';
+import { InformationCircleIcon } from '@heroicons/react/solid'
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWERRORLIST,
@@ -222,6 +223,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             {gitopsRepositories.map((gitopsRepo) =>
             (
               <div className="flex" key={gitopsRepo.href}>
+                { !env.builtIn &&
                 <a className="mb-1 hover:text-gray-600" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}
                   <svg xmlns="http://www.w3.org/2000/svg"
                     className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
@@ -231,6 +233,10 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                       d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                   </svg>
                 </a>
+                }
+                { env.builtIn &&
+                  <div className="mb-1" href={gitopsRepo.href} target="_blank" rel="noreferrer">{gitopsRepo.name}</div>
+                }
               </div>
             ))}
           </div>
@@ -264,7 +270,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
       const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl))
+      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl, env.builtIn))
     })
 
     return (
@@ -295,6 +301,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             setValues={setValues}
             validationCallback={validationCallback}
           />
+          { !env.builtIn &&
           <div className="p-0 flow-root my-8">
             <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
               <button
@@ -305,6 +312,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               </button>
             </span>
           </div>
+          }
         </div>
       </div>
     )
@@ -345,6 +353,25 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         </div>
       </>
     )
+  }
+
+  const builtInEnvInfo = () => {
+    return (
+      <div className="rounded-md bg-blue-50 p-4 mb-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-blue-800">This is a built-in environment</h3>
+          <div className="mt-2 text-sm text-blue-700">
+            Gimlet made this environment for you so you can quickly get started, but you can't make changes to it.<br />
+            Create a another environment to tailor it to your needs.
+          </div>
+        </div>
+      </div>
+      </div>
+    );
   }
 
   return (
@@ -410,6 +437,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             {isOnline &&
             <>
               <div className="hidden sm:block">
+                {env.builtIn && builtInEnvInfo()}
                 <div className="border-b border-gray-200">
                   <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     {tabs.map((tab) => (

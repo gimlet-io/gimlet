@@ -10,7 +10,7 @@ import {
 
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, builtInEnv } = props;
   const ref = useRef(null);
 
   useEffect(() => {
@@ -123,6 +123,7 @@ function ServiceDetail(props) {
               appRolloutHistory={rolloutHistory}
               releaseHistorySinceDays={releaseHistorySinceDays}
               scmUrl={scmUrl}
+              builtInEnv={builtInEnv}
             />
           </div>
           <div className="flex flex-wrap text-sm">

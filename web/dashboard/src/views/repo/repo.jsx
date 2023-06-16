@@ -570,7 +570,10 @@ function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, sear
   
   // iterate through all Kubernetes envs
   for (const env of envs) {
-    filteredEnvs[env.name] = { name: env.name };
+    filteredEnvs[env.name] = {
+      name: env.name,
+      builtIn: env.builtIn
+    };
 
     // find all stacks that belong to this repo
     filteredEnvs[env.name].stacks = stacks(connectedAgents, env.name).filter((service) => {

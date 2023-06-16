@@ -58,6 +58,7 @@ export default class Pulse extends Component {
                           releaseHistorySinceDays={this.state.releaseHistorySinceDays}
                           releaseStatuses={this.state.releaseStatuses[env.name]}
                           scmUrl={this.state.scmUrl}
+                          builtInEnv={env.builtIn}
                         />
                       </div>
                     )}

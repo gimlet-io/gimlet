@@ -28,7 +28,7 @@ export default class DeployStatus extends Component {
   }
 
   render() {
-    const {runningDeploys, envs, scmUrl} = this.state;
+    const {runningDeploys, envs, scmUrl } = this.state;
 
     if (runningDeploys.length === 0) {
       return null;
@@ -36,6 +36,7 @@ export default class DeployStatus extends Component {
 
     const deploy = runningDeploys[0];
     const gitopsRepo = envs.find(env => env.name === deploy.env).appsRepo;
+    const builtInEnv = envs.find(env => env.name === deploy.env).builtIn;
 
     let gitopsWidget = (
       <div className="mt-2">
@@ -59,8 +60,8 @@ export default class DeployStatus extends Component {
 
     const hasResults = deploy.results && deploy.results.length !== 0;
     if (deploy.status === 'processed' || hasResults) {
-      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl);
-      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo, scmUrl);  
+      gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl, builtInEnv);
+      appliedWidget = appliedWidgetFromResults(deploy, this.state.gitopsCommits, deploy.env, gitopsRepo, scmUrl, builtInEnv);  
     }
 
     return (
@@ -148,7 +149,7 @@ function Loading() {
   )
 }
 
-function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl) {
+function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl, builtInEnv) {
   if (!deployCommit.sha) {
     return null;
   }
@@ -172,6 +173,7 @@ function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl) {
   return (
     <p key={deployCommit.sha} className={`font-semibold ${color}`}>
       {deployCommitStatusIcon}
+      { !builtInEnv &&
       <a
         href={`${scmUrl}/${gitopsRepo}/commit/${deployCommit.sha}`}
         target="_blank" rel="noopener noreferrer"
@@ -179,24 +181,33 @@ function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl) {
       >
         {deployCommit.sha?.slice(0, 6)}
       </a>
+      }
+      { builtInEnv &&
+      <span className='ml-1'>{deployCommit.sha?.slice(0, 6)}</span>
+      }
       <span className='ml-1'>{deployCommitStatus}</span>
     </p>
   )
 }
 
-function renderResult(result, gitopsRepo, scmUrl) {
+function renderResult(result, gitopsRepo, scmUrl, builtInEnv) {
   if (result.hash && result.status === "success") {
     return (
       <div className="pl-2 mb-2" key={result.hash}>
         <p className="font-semibold truncate mb-1" title={result.app}>
           {result.app}
           <span className='mx-1 align-middle'>✅</span>
+          { !builtInEnv &&
           <a
             href={`${scmUrl}/${gitopsRepo}/commit/${result.hash}`}
             target="_blank" rel="noopener noreferrer" className="font-normal"
           >
             {result.hash.slice(0, 6)}
           </a>
+          }
+          { builtInEnv &&
+          <span className="font-normal">{result.hash.slice(0, 6)}</span>
+          }
         </p>
       </div>)
   } else if (result.status === "failure") {
@@ -215,18 +226,18 @@ function renderResult(result, gitopsRepo, scmUrl) {
 }
 
 
-function gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl) {
+function gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl, builtInEnv) {
   return (
     <div className="mt-2">
       <p className="text-yellow-100 font-semibold">
         Manifests written to git
       </p>
-      {deploy.results.map(result => renderResult(result, gitopsRepo, scmUrl))}
+      {deploy.results.map(result => renderResult(result, gitopsRepo, scmUrl, builtInEnv))}
     </div>
   )
 }
 
-function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo, scmUrl) {
+function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo, scmUrl, builtInEnv) {
   const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
 
   let deployCommit = {};
