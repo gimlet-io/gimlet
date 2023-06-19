@@ -1,0 +1,6 @@
+image:
+  repository: 127.0.0.1:32447/gimlet-documentation
+  tag: "1"
+containerPort: 3000
+# command: |
+#   while true; do date; sleep 2; done
