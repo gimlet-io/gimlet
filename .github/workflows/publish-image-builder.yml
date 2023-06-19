@@ -36,22 +36,22 @@ jobs:
       run: make dist-image-builder
       env:
         VERSION: ${{ steps.version.outputs.version }}
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Image builder ${{ steps.version.outputs.version }}
-        draft: false
-        prerelease: false
-    # - name: 🚀 Upload release binaries
-    #   uses: alexellis/upload-assets@0.2.2
+    # - name: Create Release
+    #   id: create_release
+    #   uses: actions/create-release@v1
     #   env:
-    #     GITHUB_TOKEN: ${{ github.token }}
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     #   with:
-    #     asset_paths: '["./bin/gimlet*"]'
+    #     tag_name: ${{ github.ref }}
+    #     release_name: Image builder ${{ steps.version.outputs.version }}
+    #     draft: false
+    #     prerelease: false
+    - name: 🚀 Upload release binaries
+      uses: alexellis/upload-assets@0.2.2
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        asset_paths: '["./bin/image-builder*"]'
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     - name: Login to GitHub Container Registry
