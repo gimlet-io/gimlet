@@ -479,7 +479,7 @@ func BootstrapNotifications(
 
 	notificationsFileName, err := gitops.GenerateManifestProviderAndAlert(env, tmpPath, host, gimletToken)
 	if err != nil {
-		return "", fmt.Errorf("cannot generate notificatoins manifest: %s", err)
+		return "", fmt.Errorf("cannot generate notifications manifest: %s", err)
 	}
 
 	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Bootstrapping")
