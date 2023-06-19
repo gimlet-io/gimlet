@@ -22,7 +22,7 @@ export class RolloutHistory extends Component {
   }
 
   render() {
-    let { env, app, appRolloutHistory, rollback, releaseHistorySinceDays, scmUrl } = this.props;
+    let { env, app, appRolloutHistory, rollback, releaseHistorySinceDays, scmUrl, builtInEnv } = this.props;
 
     const { open } = this.state;
 
@@ -66,7 +66,7 @@ export class RolloutHistory extends Component {
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
       markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
-      rollouts.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl))
+      rollouts.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl, builtInEnv))
     })
 
     if (releaseHistorySinceDays && releasesCount === 0) {
@@ -150,7 +150,7 @@ at ${exactDate}`;
   )
 }
 
-export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl) {
+export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl, builtInEnv) {
   const exactGitopsCommitCreatedDate = !rollout.gitopsCommitCreated ? "" : format(rollout.gitopsCommitCreated * 1000, 'h:mm:ss a, MMMM do yyyy')
   let gitopsCommitCreatedDateLabel = !rollout.gitopsCommitCreated ? "" : formatDistance(rollout.gitopsCommitCreated * 1000, new Date());
 
@@ -205,6 +205,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
               {!rollback && <p className="font-medium text-gray-700">{rollout.app}</p>}
               <p className="text-gray-700">
                 <span>Released</span>
+                { !builtInEnv &&
                 <a
                   className="ml-1"
                   title={exactDate}
@@ -213,6 +214,10 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
                   rel="noopener noreferrer">
                   {dateLabel} ago
                 </a>
+                }
+                { builtInEnv &&
+                  <span className="ml-1" title={exactDate}>{dateLabel} ago</span>
+                }
               </p>
               <div className="text-gray-600">
                 <span title={exactGitopsCommitCreatedDate} >

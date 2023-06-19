@@ -41,6 +41,8 @@ type GitopsWorker struct {
 	repoCache               *nativeGit.RepoCache
 	clientHub               *streaming.ClientHub
 	perf                    *prometheus.HistogramVec
+	gitUser                 *model.User
+	gitHost                 string
 }
 
 func NewGitopsWorker(
@@ -53,6 +55,8 @@ func NewGitopsWorker(
 	repoCache *nativeGit.RepoCache,
 	clientHub *streaming.ClientHub,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
+	gitHost string,
 ) *GitopsWorker {
 	return &GitopsWorker{
 		store:                   store,
@@ -64,6 +68,8 @@ func NewGitopsWorker(
 		repoCache:               repoCache,
 		clientHub:               clientHub,
 		perf:                    perf,
+		gitUser:                 gitUser,
+		gitHost:                 gitHost,
 	}
 }
 
@@ -87,6 +93,8 @@ func (w *GitopsWorker) Run() {
 				w.repoCache,
 				w.clientHub,
 				w.perf,
+				w.gitUser,
+				w.gitHost,
 			)
 		}
 
@@ -104,6 +112,8 @@ func processEvent(
 	repoCache *nativeGit.RepoCache,
 	clientHub *streaming.ClientHub,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
+	gitHost string,
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
@@ -123,6 +133,8 @@ func processEvent(
 			event,
 			store,
 			perf,
+			gitUser,
+			gitHost,
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
@@ -133,6 +145,8 @@ func processEvent(
 			token,
 			event,
 			perf,
+			gitUser,
+			gitHost,
 		)
 	case model.RollbackRequestedEvent:
 		results, err = processRollbackEvent(
@@ -142,6 +156,8 @@ func processEvent(
 			event,
 			token,
 			store,
+			gitUser,
+			gitHost,
 		)
 	case model.BranchDeletedEvent:
 		results, err = processBranchDeletedEvent(
@@ -284,9 +300,11 @@ func processReleaseEvent(
 	gitopsRepo string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
-	githubChartAccessToken string,
+	nonImpersonatedToken string,
 	event *model.Event,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
+	gitHost string,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	var releaseRequest dx.ReleaseRequest
@@ -358,11 +376,13 @@ func processReleaseEvent(
 			gitopsRepo,
 			gitopsRepoCache,
 			gitopsRepoDeployKeyPath,
-			githubChartAccessToken,
+			nonImpersonatedToken,
 			manifest,
 			releaseMeta,
 			perf,
 			store,
+			gitUser,
+			gitHost,
 		)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -385,6 +405,8 @@ func processRollbackEvent(
 	event *model.Event,
 	nonImpersonatedToken string,
 	store *store.Store,
+	gitUser *model.User,
+	gitHost string,
 ) ([]model.Result, error) {
 	var rollbackRequest dx.RollbackRequest
 	err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
@@ -425,7 +447,15 @@ func processRollbackEvent(
 	}
 
 	head, _ := repo.Head()
-	err = nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, nonImpersonatedToken, head.Name().Short())
+	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
+	if envFromStore.BuiltIn {
+		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, gitHost, envFromStore.AppsRepo)
+	}
+	err = nativeGit.NativePushWithToken(
+		url,
+		repoTmpPath,
+		head.Name().Short(),
+	)
 	if err != nil {
 		logrus.Errorf("could not push to git with native command: %s", err)
 		return nil, fmt.Errorf("could not push to git. Check server logs")
@@ -478,6 +508,8 @@ func processArtifactEvent(
 	event *model.Event,
 	dao *store.Store,
 	perf *prometheus.HistogramVec,
+	gitUser *model.User,
+	gitHost string,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	artifact, err := model.ToArtifact(event)
@@ -538,6 +570,8 @@ func processArtifactEvent(
 			releaseMeta,
 			perf,
 			dao,
+			gitUser,
+			gitHost,
 		)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -576,11 +610,13 @@ func cloneTemplateWriteAndPush(
 	gitopsRepo string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	gitopsRepoDeployKeyPath string,
-	githubChartAccessToken string,
+	nonImpersonatedToken string,
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
 	perf *prometheus.HistogramVec,
 	store *store.Store,
+	gitUser *model.User,
+	gitHost string,
 ) (string, error) {
 	t0 := time.Now()
 
@@ -612,7 +648,7 @@ func cloneTemplateWriteAndPush(
 		repo,
 		manifest,
 		releaseMeta,
-		githubChartAccessToken,
+		nonImpersonatedToken,
 		envFromStore.RepoPerEnv,
 		kustomizationManifest,
 	)
@@ -623,7 +659,17 @@ func cloneTemplateWriteAndPush(
 	if sha != "" { // if there is a change to push
 		operation := func() error {
 			head, _ := repo.Head()
-			return nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, githubChartAccessToken, head.Name().Short())
+			url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
+			if envFromStore.BuiltIn {
+				url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, gitHost, envFromStore.AppsRepo)
+			}
+
+			return nativeGit.NativePushWithToken(
+				url,
+				repoTmpPath,
+				head.Name().Short(),
+			)
+
 		}
 		backoffStrategy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 		err := backoff.Retry(operation, backoffStrategy)
@@ -696,7 +742,11 @@ func cloneTemplateDeleteAndPush(
 
 	if sha != "" { // if there is a change to push
 		head, _ := repo.Head()
-		err = nativeGit.NativePushWithToken(repoTmpPath, envFromStore.AppsRepo, nonImpersonatedToken, head.Name().Short())
+		err = nativeGit.NativePushWithToken(
+			fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo),
+			repoTmpPath,
+			head.Name().Short(),
+		)
 		if err != nil {
 			return "", err
 		}

@@ -132,6 +132,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			AppsRepo:                    env.AppsRepo,
 			RepoPerEnv:                  env.RepoPerEnv,
 			KustomizationPerApp:         env.KustomizationPerApp,
+			BuiltIn:                     env.BuiltIn,
 			StackConfig:                 stackConfig,
 			StackDefinition:             stackDefinition,
 			DeploymentAutomationEnabled: false,

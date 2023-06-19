@@ -82,6 +82,20 @@ func PushWithToken(repo *git.Repository, accessToken string) error {
 	return err
 }
 
+func PushWithBasicAuth(repo *git.Repository, user string, password string) error {
+	err := repo.Push(&git.PushOptions{
+		Auth: &http.BasicAuth{
+			Username: user,
+			Password: password,
+		},
+	})
+	if err == git.NoErrAlreadyUpToDate {
+		return nil
+	}
+
+	return err
+}
+
 func NothingToCommit(repo *git.Repository) (bool, error) {
 	worktree, err := repo.Worktree()
 	if err != nil {
@@ -134,9 +148,7 @@ func NativePush(repoPath string, privateKeyPath string, branch string) error {
 	return execCommand(repoPath, "git", "push", "origin", branch)
 }
 
-func NativePushWithToken(repoPath, ownerAndrepo, token, branch string) error {
-	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, ownerAndrepo)
-
+func NativePushWithToken(url, repoPath, branch string) error {
 	err := execCommand(repoPath, "git", "pull", url, "--rebase")
 	if err != nil {
 		return err

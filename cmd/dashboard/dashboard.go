@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
@@ -118,18 +119,24 @@ func main() {
 			"You can also delete the deploykey. The gitops repo is accessed via the Github Application / Gitlab admin token.")
 	}
 
-	dashboardRepoCache, err := nativeGit.NewRepoCache(
+	gitUser, err := setupGitUser(config, store)
+	if err != nil {
+		panic(err)
+	}
+
+	repoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
 		config.RepoCachePath,
 		goScm,
 		config,
 		clientHub,
+		gitUser,
 	)
 	if err != nil {
 		panic(err)
 	}
-	go dashboardRepoCache.Run()
+	go repoCache.Run()
 	log.Info("repo cache initialized")
 
 	chartUpdatePullRequests := map[string]interface{}{}
@@ -137,7 +144,7 @@ func main() {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			gitSvc,
 			tokenManager,
-			dashboardRepoCache,
+			repoCache,
 			goScm,
 			&chartUpdatePullRequests,
 			config.Chart,
@@ -152,16 +159,18 @@ func main() {
 		tokenManager,
 		notificationsManager,
 		eventsProcessed,
-		dashboardRepoCache,
+		repoCache,
 		clientHub,
 		perf,
+		gitUser,
+		config.GitHost,
 	)
 	go gitopsWorker.Run()
 	log.Info("Gitops worker started")
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			RepoCache: dashboardRepoCache,
+			RepoCache: repoCache,
 			Releases:  releases,
 			Perf:      perf,
 			Store:     store,
@@ -184,6 +193,11 @@ func main() {
 	logger := log.New()
 	logger.Formatter = &customFormatter{}
 
+	gitServer, err := builtInGitServer(gitUser, config.GitRoot)
+	if err != nil {
+		panic(err)
+	}
+
 	r := server.SetupRouter(
 		config,
 		dynamicConfig,
@@ -193,12 +207,13 @@ func main() {
 		store,
 		gitSvc,
 		tokenManager,
-		dashboardRepoCache,
+		repoCache,
 		&chartUpdatePullRequests,
 		alertStateManager,
 		notificationsManager,
 		perf,
 		logger,
+		gitServer,
 	)
 
 	go func() {
@@ -207,6 +222,14 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	if config.BuiltinEnvFeatureFlag {
+		time.Sleep(time.Millisecond * 100) // wait til the router is up
+		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	<-waitCh
 	log.Info("Successfully cleaned up resources. Stopping.")

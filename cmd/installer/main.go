@@ -17,6 +17,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
@@ -521,6 +522,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		nil,
 		fakeDashConfig,
 		nil,
+		nil,
 	)
 	if err != nil {
 		panic(err)
@@ -569,12 +571,13 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		gitRepoCache,
 		gimletURL,
 		gimletSignedAdminToken,
-		envName,
-		appsRepo,
-		repoPerEnv,
+		&model.Environment{
+			Name:       envName,
+			AppsRepo:   appsRepo,
+			RepoPerEnv: repoPerEnv,
+		},
 		installationToken,
 		gitUser,
-		data.scmURL,
 	)
 	if err != nil {
 		panic(err)

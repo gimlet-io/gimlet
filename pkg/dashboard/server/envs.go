@@ -311,20 +311,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fluxUser := &model.User{
-		Login:  fmt.Sprintf(fluxPattern, bootstrapConfig.EnvName),
-		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
-	}
-
-	err = db.CreateUser(fluxUser)
-	if err != nil {
-		logrus.Errorf("cannot create user %s: %s", fluxUser.Login, err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	token := token.New(token.UserToken, fluxUser.Login)
-	tokenStr, err := token.Sign(fluxUser.Secret)
+	tokenStr, err := PrepNotificationsApiKey(environment, db)
 	if err != nil {
 		logrus.Errorf("couldn't create user token %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -335,12 +322,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		gitRepoCache,
 		config.Host,
 		tokenStr,
-		environment.Name,
-		environment.AppsRepo,
-		bootstrapConfig.RepoPerEnv,
+		environment,
 		gitToken,
 		gitUser,
-		scmURL,
 	)
 	if err != nil {
 		logrus.Error(err)
@@ -356,6 +340,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func BootstrapEnv(
@@ -464,17 +449,13 @@ func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
 
 func BootstrapNotifications(
 	gitRepoCache *nativeGit.RepoCache,
-	gimletdUrl string,
-	gimletdToken string,
-	envName string,
-	repoName string,
-	repoPerEnv bool,
+	host string,
+	gimletToken string,
+	env *model.Environment,
 	token string,
 	gitUser string,
-	scmURL string,
 ) (string, error) {
-	targetPath := envName
-	repo, tmpPath, err := gitRepoCache.InstanceForWrite(repoName)
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.AppsRepo)
 	defer os.RemoveAll(tmpPath)
 	if err != nil {
 		return "", fmt.Errorf("cannot get repo: %s", err)
@@ -496,21 +477,9 @@ func BootstrapNotifications(
 		return "", fmt.Errorf("could not fetch: %s", err)
 	}
 
-	if repoPerEnv {
-		targetPath = ""
-	}
-	scmHost := strings.Split(scmURL, "://")[1]
-	notificationsFileName, err := gitops.GenerateManifestProviderAndAlert(
-		envName,
-		targetPath,
-		repoPerEnv,
-		tmpPath,
-		fmt.Sprintf("git@%s:%s.git", scmHost, repoName),
-		gimletdUrl,
-		gimletdToken,
-	)
+	notificationsFileName, err := gitops.GenerateManifestProviderAndAlert(env, tmpPath, host, gimletToken)
 	if err != nil {
-		return "", fmt.Errorf("cannot generate manifest: %s", err)
+		return "", fmt.Errorf("cannot generate notifications manifest: %s", err)
 	}
 
 	err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Bootstrapping")
@@ -518,7 +487,7 @@ func BootstrapNotifications(
 		return "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
-	gitRepoCache.Invalidate(repoName)
+	gitRepoCache.Invalidate(env.AppsRepo)
 
 	return notificationsFileName, nil
 }
@@ -581,6 +550,29 @@ func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg 
 	return nil
 }
 
+func PrepNotificationsApiKey(
+	env *model.Environment,
+	db *store.Store,
+) (string, error) {
+	fluxUser := &model.User{
+		Login:  fmt.Sprintf(fluxPattern, env.Name),
+		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
+	}
+
+	err := db.CreateUser(fluxUser)
+	if err != nil {
+		return "", fmt.Errorf("cannot create user %s: %s", fluxUser.Login, err)
+	}
+
+	token := token.New(token.UserToken, fluxUser.Login)
+	tokenStr, err := token.Sign(fluxUser.Secret)
+	if err != nil {
+		return "", fmt.Errorf("couldn't create user token %s", err)
+	}
+
+	return tokenStr, nil
+}
+
 func installAgent(
 	env *model.Environment,
 	gitRepoCache *nativeGit.RepoCache,
@@ -593,6 +585,27 @@ func installAgent(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
+	err = PrepAgentManifests(env, tmpPath, repo, config)
+	if err != nil {
+		return fmt.Errorf("cannot configure agent: %s", err)
+	}
+
+	err = StageCommitAndPush(repo, tmpPath, gitToken, "[Gimlet] Installing agent")
+	if err != nil {
+		return fmt.Errorf("cannot stage commit and push: %s", err)
+	}
+
+	gitRepoCache.Invalidate(env.InfraRepo)
+
+	return nil
+}
+
+func PrepAgentManifests(
+	env *model.Environment,
+	tmpPath string,
+	repo *git.Repository,
+	config *config.Config,
+) error {
 	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
 	if env.RepoPerEnv {
 		stackYamlPath = "stack.yaml"
@@ -600,7 +613,8 @@ func installAgent(
 
 	stackConfig, err := stackYaml(repo, stackYamlPath)
 	if err != nil {
-		if strings.Contains(err.Error(), "file not found") {
+		if strings.Contains(err.Error(), "file not found") ||
+			strings.Contains(err.Error(), "cannot get head commit") {
 			url := stack.DefaultStackURL
 			latestTag, _ := stack.LatestVersion(url)
 			if latestTag != "" {
@@ -645,13 +659,6 @@ func installAgent(
 	if err != nil {
 		return fmt.Errorf("cannot generate and write files: %s", err)
 	}
-
-	err = StageCommitAndPush(repo, tmpPath, gitToken, "[Gimlet] Installing agent")
-	if err != nil {
-		return fmt.Errorf("cannot stage commit and push: %s", err)
-	}
-
-	gitRepoCache.Invalidate(env.InfraRepo)
 
 	return nil
 }

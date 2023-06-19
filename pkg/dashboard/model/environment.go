@@ -7,4 +7,5 @@ type Environment struct {
 	KustomizationPerApp bool   `json:"kustomizationPerApp"  meddler:"kustomization_per_app"`
 	InfraRepo           string `json:"infraRepo"  meddler:"infra_repo"`
 	AppsRepo            string `json:"appsRepo"  meddler:"apps_repo"`
+	BuiltIn             bool   `json:"builtIn"  meddler:"built_in"`
 }

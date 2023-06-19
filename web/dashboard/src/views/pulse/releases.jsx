@@ -20,7 +20,7 @@ export default class Releases extends Component {
     }
 
     render() {
-        let { releaseStatuses, releaseHistorySinceDays, env, scmUrl } = this.props;
+        let { releaseStatuses, releaseHistorySinceDays, env, scmUrl, builtInEnv } = this.props;
 
         if (!releaseStatuses) {
             return null;
@@ -34,7 +34,7 @@ export default class Releases extends Component {
             const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
             const dateLabel = formatDistance(rollout.created * 1000, new Date());
 
-            renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl))
+            renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl, builtInEnv))
         })
 
         return (

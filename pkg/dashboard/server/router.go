@@ -43,6 +43,7 @@ func SetupRouter(
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
+	gitServer http.Handler,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -86,6 +87,8 @@ func SetupRouter(
 	gimletdRoutes(r)
 
 	r.Get("/logout", logout)
+	r.Handle("/builtin/infra*", gitServer)
+	r.Handle("/builtin/apps*", gitServer)
 
 	r.Get("/ws/", func(w http.ResponseWriter, r *http.Request) {
 		streaming.ServeWs(clientHub, w, r)

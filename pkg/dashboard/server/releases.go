@@ -398,7 +398,11 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	head, _ := repo.Head()
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	err = nativeGit.NativePushWithToken(pathToCleanUp, repoName, token, head.Name().Short())
+	err = nativeGit.NativePushWithToken(
+		fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, repoName),
+		pathToCleanUp,
+		head.Name().Short(),
+	)
 	if err != nil {
 		logrus.Errorf("could not push: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

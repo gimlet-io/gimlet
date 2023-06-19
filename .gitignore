@@ -56,3 +56,4 @@ cmd/installer/web/asset-manifest.json
 .DS_Store
 
 web/dashboard/coverage/
+cmd/dashboard/git-root/

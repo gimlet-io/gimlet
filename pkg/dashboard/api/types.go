@@ -73,6 +73,7 @@ type GitopsEnv struct {
 	AppsRepo                    string                 `json:"appsRepo"`
 	RepoPerEnv                  bool                   `json:"repoPerEnv"`
 	KustomizationPerApp         bool                   `json:"kustomizationPerApp"`
+	BuiltIn                     bool                   `json:"builtIn"`
 	StackConfig                 *dx.StackConfig        `json:"stackConfig"`
 	StackDefinition             map[string]interface{} `json:"stackDefinition"`
 	DeploymentAutomationEnabled bool                   `json:"deploymentAutomationEnabled"`

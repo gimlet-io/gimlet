@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dashboardConfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
@@ -37,8 +38,10 @@ type RepoCache struct {
 	// For webhook registration
 	goScmHelper *genericScm.GoScmHelper
 	config      *dashboardConfig.Config
+	clientHub   *streaming.ClientHub
 
-	clientHub *streaming.ClientHub
+	// for builtin env
+	gitUser *model.User
 
 	lock sync.Mutex
 }
@@ -55,6 +58,7 @@ func NewRepoCache(
 	goScmHelper *genericScm.GoScmHelper,
 	config *dashboardConfig.Config,
 	clientHub *streaming.ClientHub,
+	gitUser *model.User,
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
 		tokenManager: tokenManager,
@@ -65,6 +69,7 @@ func NewRepoCache(
 		goScmHelper:  goScmHelper,
 		config:       config,
 		clientHub:    clientHub,
+		gitUser:      gitUser,
 	}
 
 	const DirRwxRxR = 0754
@@ -288,17 +293,29 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		return repoData{}, errors.WithMessage(err, "couldn't create folder")
 	}
 
-	token, user, err := r.tokenManager.Token()
-	if err != nil {
-		return repoData{}, errors.WithMessage(err, "couldn't get scm token")
+	var auth *http.BasicAuth
+	var url string
+	if strings.HasPrefix(repoName, "builtin") {
+		url = fmt.Sprintf("http://%s/%s", r.config.GitHost, repoName)
+		auth = &http.BasicAuth{
+			Username: r.gitUser.Login,
+			Password: r.gitUser.Secret,
+		}
+	} else {
+		url = fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName)
+		token, _, err := r.tokenManager.Token()
+		if err != nil {
+			return repoData{}, errors.WithMessage(err, "couldn't get scm token")
+		}
+		auth = &http.BasicAuth{
+			Username: "123",
+			Password: token,
+		}
 	}
 
 	opts := &git.CloneOptions{
-		URL: fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName),
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: token,
-		},
+		URL:   url,
+		Auth:  auth,
 		Depth: 100,
 		Tags:  git.NoTags,
 	}
@@ -313,12 +330,9 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 
 	err = repo.Fetch(&git.FetchOptions{
 		RefSpecs: FetchRefSpec,
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: token,
-		},
-		Depth: 100,
-		Tags:  git.NoTags,
+		Auth:     auth,
+		Depth:    100,
+		Tags:     git.NoTags,
 	})
 	if withHistory {
 		opts.Depth = 0
@@ -333,6 +347,10 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 
 func (r *RepoCache) registerWebhook(repoName string) {
 	owner, repo := scm.Split(repoName)
+
+	if owner == "" && strings.HasPrefix(repo, "builtin") {
+		return
+	}
 
 	token, _, err := r.tokenManager.Token()
 	if err != nil {
