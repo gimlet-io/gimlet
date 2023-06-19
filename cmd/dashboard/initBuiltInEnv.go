@@ -115,7 +115,7 @@ func bootstrapBuiltInEnv(
 
 	_, err = gitops.GenerateManifestProviderAndAlert(builtInEnv, tmpPath, config.Host, gimletToken)
 	if err != nil {
-		return fmt.Errorf("cannot generate notificatoins manifest: %s", err)
+		return fmt.Errorf("cannot generate notifications manifest: %s", err)
 	}
 
 	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
