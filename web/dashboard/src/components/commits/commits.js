@@ -45,6 +45,15 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
 
   const commitWidgets = [];
 
+  const envNames = envs.map(env => env["name"]);
+  let hasBuiltInEnv = false;
+  for (let env of envs) {
+    if (env.builtIn) {
+      hasBuiltInEnv = true;
+      break;
+    }
+  }
+
   commits.forEach((commit, idx, ar) => {
     const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
     const dateLabel = formatDistance(commit.created_at * 1000, new Date());
@@ -109,7 +118,8 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                 connectedAgents={connectedAgents}
               />
               <DeployWidget
-                deployTargets={filterDeployTargets(commit.deployTargets, envs, tenant)}
+                deployTargets={filterDeployTargets(commit.deployTargets, envNames, tenant)}
+                hasBuiltInEnv={hasBuiltInEnv}
                 deployHandler={deployHandler}
                 sha={commit.sha}
                 repo={repoName}
