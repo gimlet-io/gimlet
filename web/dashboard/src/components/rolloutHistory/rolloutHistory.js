@@ -183,8 +183,6 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
     rounding = "rounded-t"
   }
 
-  console.log(builtInEnv)
-
   return (
     <li key={rollout.gitopsRef}
       className={`${hoverBgColor} ${bgColor} p-4 ${rounding}`}
