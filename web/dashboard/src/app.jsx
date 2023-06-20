@@ -64,7 +64,6 @@ export default class App extends Component {
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
         {/* <FooterWithLocation /> */}
-        <DeployPanel />
         <Userflow store={store} />
 
         <Route exact path="/">
@@ -73,6 +72,7 @@ export default class App extends Component {
 
         <div className="min-h-screen bg-gray-100 pb-20">
           <NavBar />
+          <DeployPanel />
           <div className="py-10">
             <Switch>
               <Route path="/pulse">
