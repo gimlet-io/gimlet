@@ -31,7 +31,7 @@ function RepoCard(props) {
     }
 
     return (
-      <div>
+      <div key={name}>
         <p className="text-xs">{service.service.namespace}/{service.service.name}
           <span
             className="flex-shrink-0 inline-block px-2 py-0.5 mx-1 text-green-800 text-xs font-medium bg-green-100 rounded-full">
