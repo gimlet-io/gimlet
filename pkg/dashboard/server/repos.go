@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -23,23 +24,30 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 
 	go updateUserRepos(config, dao, user)
+	go updateOrgRepos(ctx)
 
 	timeout := time.After(45 * time.Second)
-	user, err := func() (*model.User, error) {
+	orgReposJson, user, err := func() (*model.KeyValue, *model.User, error) {
 		for {
-			user, err := dao.User(user.Login)
-			if err != nil {
-				logrus.Errorf("cannot get user from db: %s", err)
-				return nil, err
+			orgReposJson, err := dao.KeyValue(model.OrgRepos)
+			if err != nil && err != sql.ErrNoRows {
+				logrus.Errorf("cannot load org repos: %s", err)
+				return nil, nil, err
 			}
 
-			if len(user.Repos) > 0 {
-				return user, nil
+			user, err = dao.User(user.Login)
+			if err != nil {
+				logrus.Errorf("cannot get user from db: %s", err)
+				return nil, nil, err
+			}
+
+			if orgReposJson.Value != "" && len(user.Repos) > 0 {
+				return orgReposJson, user, nil
 			}
 
 			select {
 			case <-timeout:
-				return &model.User{}, nil
+				return &model.KeyValue{}, &model.User{}, nil
 			default:
 				time.Sleep(3 * time.Second)
 			}
@@ -50,7 +58,18 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orgRepos := updateOrgRepos(ctx)
+	if orgReposJson.Value == "" {
+		orgReposJson.Value = "[]"
+	}
+
+	var orgRepos []string
+	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
+	if err != nil {
+		logrus.Errorf("cannot parse org repos: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	userHasAccessToRepos := intersection(orgRepos, user.Repos)
 	reposString, err := json.Marshal(userHasAccessToRepos)
 	if err != nil {
@@ -168,7 +187,8 @@ func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) 
 	return userRepos
 }
 
-func intersection(s1, s2 []string) (inter []string) {
+func intersection(s1, s2 []string) []string {
+	inter := []string{}
 	hash := make(map[string]bool)
 	for _, e := range s1 {
 		hash[e] = true
@@ -180,7 +200,7 @@ func intersection(s1, s2 []string) (inter []string) {
 		}
 	}
 
-	return
+	return inter
 }
 
 type favRepos struct {
