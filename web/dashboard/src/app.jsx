@@ -18,6 +18,7 @@ import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
 import Footer from './views/footer/footer';
 import Userflow from './userflow';
+import DeployPanel from './components/deployPanel/deployPanel';
 
 export default class App extends Component {
   constructor(props) {
@@ -62,7 +63,8 @@ export default class App extends Component {
         <StreamingBackendWithLocation />
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
-        <FooterWithLocation />
+        {/* <FooterWithLocation /> */}
+        <DeployPanel />
         <Userflow store={store} />
 
         <Route exact path="/">
