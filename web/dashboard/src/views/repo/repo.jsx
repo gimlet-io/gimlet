@@ -80,6 +80,7 @@ export default class Repo extends Component {
 
     this.branchChange = this.branchChange.bind(this)
     this.deploy = this.deploy.bind(this)
+    this.magicDeploy = this.magicDeploy.bind(this)
     this.rollback = this.rollback.bind(this)
     this.checkDeployStatus = this.checkDeployStatus.bind(this)
     this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
@@ -295,6 +296,29 @@ export default class Repo extends Component {
 
     target.sha = sha;
     target.repo = repo;
+    this.props.store.dispatch({
+      type: ACTION_TYPE_DEPLOY, payload: target
+    });
+  }
+
+  magicDeploy(env, repo, sha) {
+    let target = {}
+    console.log(repo)
+    const owner = repo.split("/")[0]
+    const repoName = repo.split("/")[1]
+    this.props.gimletClient.magicDeploy(owner, repoName, sha)
+      .then(data => {
+        target.sha = sha;
+        target.trackingId = data.id;
+        setTimeout(() => {
+          this.checkDeployStatus(target);
+        }, 500);
+      }, () => {/* Generic error handler deals with it */
+      });
+
+    target.sha = sha;
+    target.repo = repo;
+    target.env = env;
     this.props.store.dispatch({
       type: ACTION_TYPE_DEPLOY, payload: target
     });
@@ -522,6 +546,7 @@ export default class Repo extends Component {
                       envs={envs}
                       connectedAgents={filteredEnvs}
                       deployHandler={this.deploy}
+                      magicDeployHandler={this.magicDeploy}
                       repo={repo}
                       gimletClient={this.props.gimletClient}
                       store={this.props.store}

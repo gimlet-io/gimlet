@@ -366,7 +366,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           <h3 className="text-sm font-medium text-blue-800">This is a built-in environment</h3>
           <div className="mt-2 text-sm text-blue-700">
             Gimlet made this environment for you so you can quickly get started, but you can't make changes to it.<br />
-            Create a another environment to tailor it to your needs.
+            Create another environment to tailor it to your needs.
           </div>
         </div>
       </div>

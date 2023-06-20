@@ -82,7 +82,24 @@ export class Env extends Component {
   }
 }
 
-function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, builtInEnv) {
+function renderServices(
+  stacks,
+  envConfigs,
+  envName,
+  repoRolloutHistory,
+  navigateToConfigEdit,
+  linkToDeployment,
+  rollback,
+  owner,
+  repoName,
+  fileInfos,
+  releaseHistorySinceDays,
+  gimletClient,
+  store,
+  kubernetesAlerts,
+  deploymentFromParams,
+  scmUrl,
+  builtInEnv) {
   let services = [];
 
   let configsWeHave = [];
@@ -90,7 +107,7 @@ function renderServices(stacks, envConfigs, envName, repoRolloutHistory, navigat
     configsWeHave = envConfigs.map((config) => config.app);
   }
 
-  const filteredStacks = stacks.filter(stack => configsWeHave.includes(stack.service.name));
+  const filteredStacks = stacks;//.filter(stack => configsWeHave.includes(stack.service.name));
 
   let configsWeDeployed = [];
   // render services that are deployed on k8s

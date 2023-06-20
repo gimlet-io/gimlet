@@ -159,7 +159,7 @@ func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store) (
 
 	var decoratedCommits []*Commit
 	for _, c := range commits {
-		if artifact, ok := artifactsBySha[c.SHA]; ok {
+		if artifact, ok := artifactsBySha[c.SHA]; ok && !artifact.Fake {
 			for _, targetEnv := range artifact.Environments {
 				targetEnv.ResolveVars(artifact.CollectVariables())
 				if c.DeployTargets == nil {
