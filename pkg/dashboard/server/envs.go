@@ -268,7 +268,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go updateOrgRepos(ctx)
-	go updateUserRepos(ctx, db, user)
+	go updateUserRepos(config, db, user)
 
 	scmURL := config.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)

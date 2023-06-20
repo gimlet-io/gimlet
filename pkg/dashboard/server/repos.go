@@ -3,13 +3,14 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -21,7 +22,7 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	dao := ctx.Value("store").(*store.Store)
 	config := ctx.Value("config").(*config.Config)
 
-	go updateUserRepos(ctx, dao, user)
+	go updateUserRepos(config, dao, user)
 
 	timeout := time.After(45 * time.Second)
 	user, err := func() (*model.User, error) {
@@ -49,7 +50,8 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userHasAccessToRepos := hasPrefix(user.Repos, config.Org())
+	orgRepos := updateOrgRepos(ctx)
+	userHasAccessToRepos := intersection(orgRepos, user.Repos)
 	reposString, err := json.Marshal(userHasAccessToRepos)
 	if err != nil {
 		logrus.Errorf("cannot serialize repos: %s", err)
@@ -74,14 +76,29 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userReposDb := hasPrefix(user.Repos, config.Org())
-	userRepos := updateUserRepos(ctx, dao, user)
-	userReposWithAccess := hasPrefix(userRepos, config.Org())
-	added := difference(userReposWithAccess, userReposDb)
-	deleted := difference(userReposDb, userReposWithAccess)
+	var orgRepos []string
+	orgReposJson, err := dao.KeyValue(model.OrgRepos)
+	if err != nil {
+		logrus.Errorf("cannot get org repos from db: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
+	if err != nil {
+		logrus.Errorf("cannot parse org repos: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	userAccessRepos := intersection(orgRepos, user.Repos)
+	updatedUserRepos := updateUserRepos(config, dao, user)
+	updatedOrgRepos := updateOrgRepos(ctx)
+	updatedUserAccessRepos := intersection(updatedOrgRepos, updatedUserRepos)
+	added := difference(updatedUserAccessRepos, userAccessRepos)
+	deleted := difference(userAccessRepos, updatedUserAccessRepos)
 
 	repos := map[string]interface{}{
-		"userRepos": userReposWithAccess,
+		"userRepos": updatedUserAccessRepos,
 		"added":     added,
 		"deleted":   deleted,
 	}
@@ -97,7 +114,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	w.Write(reposString)
 }
 
-func updateOrgRepos(ctx context.Context) {
+func updateOrgRepos(ctx context.Context) []string {
 	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
@@ -105,13 +122,13 @@ func updateOrgRepos(ctx context.Context) {
 	orgRepos, err := gitServiceImpl.OrgRepos(token)
 	if err != nil {
 		logrus.Warnf("cannot get org repos: %s", err)
-		return
+		return nil
 	}
 
 	orgReposString, err := json.Marshal(orgRepos)
 	if err != nil {
 		logrus.Warnf("cannot serialize org repos: %s", err)
-		return
+		return nil
 	}
 
 	dao := ctx.Value("store").(*store.Store)
@@ -121,38 +138,49 @@ func updateOrgRepos(ctx context.Context) {
 	})
 	if err != nil {
 		logrus.Warnf("cannot store org repos: %s", err)
-		return
+		return nil
 	}
+	return orgRepos
 }
 
-func updateUserRepos(ctx context.Context, dao *store.Store, user *model.User) []string {
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-
-	installationAccessRepos, err := gitServiceImpl.OrgRepos(token)
+func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
+	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
+		user.AccessToken = token.Token
+		user.RefreshToken = token.Refresh
+		user.Expires = token.Expires.Unix()
+		err := dao.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("could not refresh user's oauth access_token")
+		}
+	})
+	userRepos, err := goScmHelper.UserRepos(user.AccessToken, user.RefreshToken, time.Unix(user.Expires, 0))
 	if err != nil {
-		logrus.Warnf("cannot get org repos: %s", err)
+		logrus.Warnf("cannot get user repos: %s", err)
 		return nil
 	}
 
-	user.Repos = installationAccessRepos
+	user.Repos = userRepos
 	err = dao.UpdateUser(user)
 	if err != nil {
 		logrus.Warnf("cannot get user repos: %s", err)
 		return nil
 	}
-	return installationAccessRepos
+	return userRepos
 }
 
-func hasPrefix(repos []string, prefix string) []string {
-	filtered := []string{}
-	for _, r := range repos {
-		if strings.HasPrefix(r, prefix) {
-			filtered = append(filtered, r)
+func intersection(s1, s2 []string) (inter []string) {
+	hash := make(map[string]bool)
+	for _, e := range s1 {
+		hash[e] = true
+	}
+	for _, e := range s2 {
+		// If elements present in the hashmap then append intersection list.
+		if hash[e] {
+			inter = append(inter, e)
 		}
 	}
-	return filtered
+
+	return
 }
 
 type favRepos struct {
