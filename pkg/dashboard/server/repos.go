@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -26,51 +25,14 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	go updateUserRepos(config, dao, user)
 	go updateOrgRepos(ctx)
 
-	timeout := time.After(45 * time.Second)
-	orgReposJson, user, err := func() (*model.KeyValue, *model.User, error) {
-		for {
-			orgReposJson, err := dao.KeyValue(model.OrgRepos)
-			if err != nil && err != sql.ErrNoRows {
-				logrus.Errorf("cannot load org repos: %s", err)
-				return nil, nil, err
-			}
-
-			user, err = dao.User(user.Login)
-			if err != nil {
-				logrus.Errorf("cannot get user from db: %s", err)
-				return nil, nil, err
-			}
-
-			if orgReposJson.Value != "" && len(user.Repos) > 0 {
-				return orgReposJson, user, nil
-			}
-
-			select {
-			case <-timeout:
-				return &model.KeyValue{}, &model.User{}, nil
-			default:
-				time.Sleep(3 * time.Second)
-			}
-		}
-	}()
+	orgRepos, userRepos, err := fetchReposFromDb(dao, user.Login)
 	if err != nil {
+		logrus.Errorf("cannot get repos from db: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	if orgReposJson.Value == "" {
-		orgReposJson.Value = "[]"
-	}
-
-	var orgRepos []string
-	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
-	if err != nil {
-		logrus.Errorf("cannot parse org repos: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	userHasAccessToRepos := intersection(orgRepos, user.Repos)
+	userHasAccessToRepos := intersection(orgRepos, userRepos)
 	reposString, err := json.Marshal(userHasAccessToRepos)
 	if err != nil {
 		logrus.Errorf("cannot serialize repos: %s", err)
@@ -95,16 +57,9 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var orgRepos []string
-	orgReposJson, err := dao.KeyValue(model.OrgRepos)
+	orgRepos, err := getOrgRepos(dao)
 	if err != nil {
 		logrus.Errorf("cannot get org repos from db: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
-	if err != nil {
-		logrus.Errorf("cannot parse org repos: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -185,6 +140,33 @@ func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) 
 		return nil
 	}
 	return userRepos
+}
+
+func fetchReposFromDb(dao *store.Store, login string) ([]string, []string, error) {
+	timeout := time.After(45 * time.Second)
+
+	for {
+		orgRepos, err := getOrgRepos(dao)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		user, err := dao.User(login)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if len(orgRepos) != 0 && len(user.Repos) != 0 {
+			return orgRepos, user.Repos, nil
+		}
+
+		select {
+		case <-timeout:
+			return orgRepos, user.Repos, nil
+		default:
+			time.Sleep(3 * time.Second)
+		}
+	}
 }
 
 func intersection(s1, s2 []string) []string {
