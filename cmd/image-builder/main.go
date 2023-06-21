@@ -55,6 +55,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
 	image := r.FormValue("image")
+	tag := r.FormValue("tag")
 	// cacheImage := r.FormValue("cacheImage")
 	// previousImage := r.FormValue("previousImage")
 	// Parse our multipart form, 1000 << 20 specifies a maximum
@@ -98,27 +99,28 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	tempFolder, err := ioutil.TempDir("/home/cnb", "source-*")
 
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(tempFolder)
-	err = Untar(tempFolder, reader)
+	sourcePath := "/home/cnb" + image
+	err = Untar(sourcePath, reader)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	// shell out to buildpacks
 	app := "/cnb/lifecycle/creator"
-	sourcePath := "-app=" + tempFolder
+	sourcePathArg := "-app=" + sourcePath
 	// cacheImage = "-cache-image=" + cacheImage
 	// previousImage = "-previous-image=" + previousImage
 	// cmd := exec.Command(app, sourcePath, cacheImage, previousImage, image)
-	cmd := exec.Command(app, sourcePath, image)
+	cmd := exec.Command(app, sourcePathArg, image+":"+tag)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()
+
+	err = os.Remove(sourcePath)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 // Untar takes a destination path and a reader; a tar reader loops over the tarfile
