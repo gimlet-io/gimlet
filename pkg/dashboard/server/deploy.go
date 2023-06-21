@@ -87,9 +87,9 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	imageBuilderUrl := "http://127.0.0.1:8000/build-image"
-	image := "registry.acorn-image-system.svc.cluster.local:5000/dummy"
+	image := "registry.acorn-image-system.svc.cluster.local:5000/" + deployRequest.Repo
 	previousImage := "" //"registry.acorn-image-system.svc.cluster.local:5000/dummy"
-	tag := "latest"
+	tag := deployRequest.Sha
 	err = buildImage(tarFile.Name(), imageBuilderUrl, image+":"+tag, previousImage)
 	if err != nil {
 		logrus.Errorf("cannot tar folder: %s", err)
@@ -100,7 +100,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
 		builtInEnv.Name,
 		store,
-		"127.0.0.1:31845/dummy",
+		"127.0.0.1:31845/"+deployRequest.Repo,
 		tag,
 	)
 	if err != nil {
