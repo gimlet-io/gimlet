@@ -349,6 +349,7 @@ export function deployStatus(state, payload) {
       runningDeploy = payload;
     }
   }
+  state = openDeployPanel(state)
 
   return state;
 }

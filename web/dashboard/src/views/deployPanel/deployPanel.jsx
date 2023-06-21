@@ -3,6 +3,12 @@ import { XIcon } from '@heroicons/react/outline'
 import { formatDistance } from "date-fns";
 import { ACTION_TYPE_OPEN_DEPLOY_PANEL, ACTION_TYPE_CLOSE_DEPLOY_PANEL } from '../../redux/redux';
 import DeployPanelTabs from './deployPanelTabs';
+import DeployStatus from "../../components/deployStatus/deployStatus";
+
+const defaultTabs = [
+  { name: 'Gitops Status', current: true },
+  { name: 'Deploy Status', current: false },
+]
 
 export default class DeployPanel extends Component {
   constructor(props) {
@@ -14,19 +20,25 @@ export default class DeployPanel extends Component {
       deployPanelOpen: reduxState.deployPanelOpen,
       gitopsCommits: reduxState.gitopsCommits,
       envs: reduxState.envs,
-      tabs: [
-        { name: 'Gitops Status', href: '#', current: true },
-        { name: 'Deploy Status', href: '#', current: false },
-      ]
+      tabs: defaultTabs,
+      runningDeploys: reduxState.runningDeploys,
+      scmUrl: reduxState.settings.scmUrl
     }
 
     // handling API and streaming state changes
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
+
       this.setState({
         deployPanelOpen: reduxState.deployPanelOpen,
         gitopsCommits: reduxState.gitopsCommits,
-        envs: reduxState.envs
+        envs: reduxState.envs,
+        runningDeploys: reduxState.runningDeploys,
+        scmUrl: reduxState.settings.scmUrl,
+        tabs: reduxState.runningDeploys.length === 0 ? defaultTabs : [
+          { name: 'Gitops Status', current: false },
+          { name: 'Deploy Status', current: true },
+        ]
       });
     });
 
@@ -120,12 +132,12 @@ export default class DeployPanel extends Component {
     )
   }
 
-  deployStatus(){
-    return (
-      <div>
-        Deploy status
-      </div>
-    );
+  deployStatus(runningDeploys, scmUrl, gitopsCommits, envs){
+    if (runningDeploys.length === 0) {
+      return null;
+    }
+
+    return DeployStatus(runningDeploys[0], scmUrl, gitopsCommits, envs)
   }
 
   switchTab(tab) {
@@ -139,13 +151,15 @@ export default class DeployPanel extends Component {
 
     this.setState({
       tabs: [
-        { name: 'Gitops Status', href: '#', current: gitopsStatus },
-        { name: 'Deploy Status', href: '#', current: deployStatus },
+        { name: 'Gitops Status', current: gitopsStatus },
+        { name: 'Deploy Status', current: deployStatus },
       ]
     });
   }
 
   render() {
+    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs } = this.state;
+
     if (!this.state.deployPanelOpen) {
       return (
           <div className="fixed bottom-0 left-0 bg-gray-800 z-50 w-full px-6 py-2 text-gray-100">
@@ -165,12 +179,12 @@ export default class DeployPanel extends Component {
                 <XIcon className="h-5 w-5" aria-hidden="true"/>
               </button>
             </div>
-            <div className="px-6">
-              {DeployPanelTabs(this.state.tabs, this.switchTab)}
+            <div className="px-6 bg-gray-900">
+              {DeployPanelTabs(tabs, this.switchTab)}
             </div>
-            <div className="mt-12 pb-20 px-6 overflow-y-scroll h-full w-full">
-              {this.state.tabs[0].current ? this.gitopsStatus(this.state.gitopsCommits, this.state.envs) : null}
-              {this.state.tabs[1].current ? this.deployStatus() : null}
+            <div className="mt-4 pb-12 px-6 overflow-y-scroll h-full w-full">
+              {tabs[0].current ? this.gitopsStatus(gitopsCommits, envs) : null}
+              {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs) : null}
             </div>
           </div>
       </div>

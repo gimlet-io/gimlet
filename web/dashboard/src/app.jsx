@@ -11,7 +11,6 @@ import APIBackend from "./apiBackend";
 import Profile from "./views/profile/profile";
 import Pulse from "./views/pulse/pulse";
 import Repo from "./views/repo/repo";
-import DeployStatus from "./components/deployStatus/deployStatus";
 import LoginPage from './views/login/loginPage';
 import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
@@ -103,7 +102,6 @@ export default class App extends Component {
             </Switch>
           </div>
         </div>
-        <DeployStatus store={store} />
       </Router>
     )
   }

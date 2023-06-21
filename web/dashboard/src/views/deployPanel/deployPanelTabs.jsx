@@ -4,7 +4,7 @@ function classNames(...classes) {
 
 export default function DeployPanelTabs(tabs, switchTab) {
   return (
-    <div>
+    <div className="">
       <div className="sm:hidden">
         <label htmlFor="tabs" className="sr-only">
           Select a tab
@@ -25,20 +25,19 @@ export default function DeployPanelTabs(tabs, switchTab) {
         <div>
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {tabs.map((tab) => (
-              <a
+              <span
                 key={tab.name}
-                href={tab.href}
-                onClick={() => switchTab(tab.name)}
+                onClick={() => {switchTab(tab.name); return false}}
                 className={classNames(
                   tab.current
                     ? 'border-gray-300 text-gray-300'
                     : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300',
-                  'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
+                  'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium cursor-pointer'
                 )}
                 aria-current={tab.current ? 'page' : undefined}
               >
                 {tab.name}
-              </a>
+              </span>
             ))}
           </nav>
         </div>
