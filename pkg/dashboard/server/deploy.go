@@ -90,7 +90,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	image := "registry.acorn-image-system.svc.cluster.local:5000/" + deployRequest.Repo
 	// previousImage := "" //"registry.acorn-image-system.svc.cluster.local:5000/dummy"
 	tag := deployRequest.Sha
-	err = buildImage(tarFile.Name(), imageBuilderUrl, image, tag)
+	err = buildImage(tarFile.Name(), imageBuilderUrl, image, tag, deployRequest.Repo)
 	if err != nil {
 		logrus.Errorf("cannot tar folder: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -327,10 +327,11 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	return req, err
 }
 
-func buildImage(path string, url string, image string, tag string) error {
+func buildImage(path string, url string, image string, tag string, app string) error {
 	request, err := newfileUploadRequest(url, map[string]string{
 		"image": image,
 		"tag":   tag,
+		"app":   app,
 	}, "data", path)
 	if err != nil {
 		return err
