@@ -100,7 +100,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 
-	sourcePath := "/home/cnb" + image
+	sourcePath := "/home/cnb/" + image
 	err = Untar(sourcePath, reader)
 	if err != nil {
 		fmt.Println(err)
