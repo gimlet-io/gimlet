@@ -264,7 +264,7 @@ func IsVersionLocked(stackConfig dx.StackConfig) (bool, error) {
 	return false, nil
 }
 
-const DefaultStackURL = "https://github.com/gimlet-io/gimlet-stack-reference.git"
+const DefaultStackURL = "https://github.com/gimlet-io/gimlet-stack-reference.git?sha=f78657c8b0be53e32849d8cd1b4bd304ba47f255"
 
 func LatestVersion(repoURL string) (string, error) {
 	gitAddress, err := giturl.ParseScp(repoURL)

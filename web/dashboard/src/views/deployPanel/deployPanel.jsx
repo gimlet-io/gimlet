@@ -2,6 +2,7 @@ import {Component} from 'react'
 import { XIcon } from '@heroicons/react/outline'
 import { formatDistance } from "date-fns";
 import { ACTION_TYPE_OPEN_DEPLOY_PANEL, ACTION_TYPE_CLOSE_DEPLOY_PANEL } from '../../redux/redux';
+import DeployPanelTabs from './deployPanelTabs';
 
 export default class DeployPanel extends Component {
   constructor(props) {
@@ -61,9 +62,9 @@ export default class DeployPanel extends Component {
       }
 
       return (
-          <div className="flex items-center align-middle justify-center w-full truncate" key={gitopsCommit.sha}>
-              <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}:</p>
-              <div className="w-72 ml-2 cursor-pointer truncate text-sm"
+          <div className="w-full truncate" key={gitopsCommit.sha}>
+              <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}</p>
+              <div className="w-72 cursor-pointer truncate text-sm"
                   onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}
                   title={gitopsCommit.statusDesc}>
                   <span>
@@ -124,7 +125,7 @@ export default class DeployPanel extends Component {
 
     return (
       <div aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
-          <div className="fixed inset-x-0 bottom-0 h-2/5 z-40 bg-gray-800 text-gray-100">
+          <div className="fixed inset-x-0 bottom-0 h-2/5 z-40 bg-gray-800 text-gray-300">
             <div className="absolute top-0 right-0 p-4">
               <button 
                 onClick={() => this.props.store.dispatch({ type: ACTION_TYPE_CLOSE_DEPLOY_PANEL })}
@@ -133,8 +134,10 @@ export default class DeployPanel extends Component {
                 <XIcon className="h-5 w-5" aria-hidden="true"/>
               </button>
             </div>
-            
-            <div className="mt-12 pb-20 px-6 overflow-y-scroll h-full w-full">
+            <div className="px-6">
+              {DeployPanelTabs()}
+            </div>
+            <div className="mt-12 pb-20 px-6 overflow-y-scroll h-full w-full">  
               {this.gitopsStatus(this.state.gitopsCommits, this.state.envs)}
             </div>
           </div>
