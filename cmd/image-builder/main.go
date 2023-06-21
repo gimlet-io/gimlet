@@ -98,7 +98,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	tempFolder, err := ioutil.TempDir("/tmp", "source-*")
+	tempFolder, err := ioutil.TempDir("/home/cnb", "source-*")
 	if err != nil {
 		fmt.Println(err)
 	}
