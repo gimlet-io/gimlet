@@ -1,17 +1,26 @@
 package server
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -54,10 +63,44 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	_, repoPath, err := gitRepoCache.InstanceForWrite(deployRequest.Owner + "/" + deployRequest.Repo)
+	defer os.RemoveAll(repoPath)
+	if err != nil {
+		logrus.Errorf("cannot get repo instance: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
+	if err != nil {
+		logrus.Errorf("cannot get temp file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = tartar(tarFile.Name(), []string{repoPath})
+	if err != nil {
+		logrus.Errorf("cannot tar folder: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	imageBuilderUrl := "http://127.0.0.1:8000/build-image"
+	image := "registry.infrastructure.svc.cluster.local:5000/dummy"
+	tag := "latest"
+	err = buildImage(tarFile.Name(), imageBuilderUrl, image+":"+tag)
+	if err != nil {
+		logrus.Errorf("cannot tar folder: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	artifact, err := createDummyArtifact(
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
 		builtInEnv.Name,
 		store,
+		image,
+		tag,
 	)
 	if err != nil {
 		logrus.Errorf("cannot create artifact: %s", err)
@@ -102,7 +145,9 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 func createDummyArtifact(
 	owner, repo, sha string,
 	env string,
-	store *store.Store) (*dx.Artifact, error) {
+	store *store.Store,
+	image, tag string,
+) (*dx.Artifact, error) {
 	artifact := dx.Artifact{
 		ID:      fmt.Sprintf("%s-%s", owner+"/"+repo, uuid.New().String()),
 		Created: time.Now().Unix(),
@@ -122,8 +167,8 @@ func createDummyArtifact(
 					"gitRepository": owner + "/" + repo,
 					"gitSha":        sha,
 					"image": map[string]interface{}{
-						"repository": "nginx",
-						"tag":        "latest",
+						"repository": image,
+						"tag":        tag,
 					},
 				},
 			},
@@ -154,4 +199,153 @@ func createDummyArtifact(
 	}
 
 	return &artifact, nil
+}
+
+// https://github.com/vladimirvivien/go-tar/blob/master/tartar/tartar.go
+// tarrer walks paths to create tar file tarName
+func tartar(tarName string, paths []string) (err error) {
+	tarFile, err := os.Create(tarName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tarFile.Close()
+	}()
+
+	absTar, err := filepath.Abs(tarName)
+	if err != nil {
+		return err
+	}
+
+	// enable compression if file ends in .gz
+	tw := tar.NewWriter(tarFile)
+	if strings.HasSuffix(tarName, ".gz") || strings.HasSuffix(tarName, ".gzip") {
+		gz := gzip.NewWriter(tarFile)
+		defer gz.Close()
+		tw = tar.NewWriter(gz)
+	}
+	defer tw.Close()
+
+	// walk each specified path and add encountered file to tar
+	for _, path := range paths {
+		// validate path
+		path = filepath.Clean(path)
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if absPath == absTar {
+			fmt.Printf("tar file %s cannot be the source\n", tarName)
+			continue
+		}
+		if absPath == filepath.Dir(absTar) {
+			fmt.Printf("tar file %s cannot be in source %s\n", tarName, absPath)
+			continue
+		}
+
+		walker := func(file string, finfo os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// fill in header info using func FileInfoHeader
+			hdr, err := tar.FileInfoHeader(finfo, finfo.Name())
+			if err != nil {
+				return err
+			}
+
+			relFilePath := file
+			if filepath.IsAbs(path) {
+				relFilePath, err = filepath.Rel(path, file)
+				if err != nil {
+					return err
+				}
+			}
+			// ensure header has relative file path
+			hdr.Name = relFilePath
+
+			if err := tw.WriteHeader(hdr); err != nil {
+				return err
+			}
+			// if path is a dir, dont continue
+			if finfo.Mode().IsDir() {
+				return nil
+			}
+
+			// add file to tar
+			srcFile, err := os.Open(file)
+			if err != nil {
+				return err
+			}
+			defer srcFile.Close()
+			_, err = io.Copy(tw, srcFile)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		// build tar
+		if err := filepath.Walk(path, walker); err != nil {
+			fmt.Printf("failed to add %s to tar: %s\n", path, err)
+		}
+	}
+	return nil
+}
+
+// Creates a new file upload http request with optional extra params
+func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile(paramName, filepath.Base(path))
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range params {
+		_ = writer.WriteField(key, val)
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", uri, body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	return req, err
+}
+
+func buildImage(path string, url string, tag string) error {
+	request, err := newfileUploadRequest(url, map[string]string{"image": tag}, "data", path)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(request)
+	if err != nil {
+		return err
+	} else {
+		body := &bytes.Buffer{}
+		_, err := body.ReadFrom(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("image builder returned %d: %s", resp.StatusCode, body)
+		}
+	}
+
+	return nil
 }
