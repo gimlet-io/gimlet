@@ -56,6 +56,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	image := r.FormValue("image")
 	tag := r.FormValue("tag")
+	app := r.FormValue("app")
 	// cacheImage := r.FormValue("cacheImage")
 	// previousImage := r.FormValue("previousImage")
 	// Parse our multipart form, 1000 << 20 specifies a maximum
@@ -117,7 +118,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	cmd.Stderr = os.Stderr
 	cmd.Run()
 
-	err = os.Remove(sourcePath)
+	err = os.RemoveAll(sourcePath)
 	if err != nil {
 		fmt.Println(err)
 	}
