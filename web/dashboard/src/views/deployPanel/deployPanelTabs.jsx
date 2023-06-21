@@ -1,13 +1,8 @@
-const tabs = [
-  { name: 'Gitops Status', href: '#', current: true },
-  { name: 'Deploy Status', href: '#', current: false },
-]
-
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function DeployPanelTabs() {
+export default function DeployPanelTabs(tabs, switchTab) {
   return (
     <div>
       <div className="sm:hidden">
@@ -33,6 +28,7 @@ export default function DeployPanelTabs() {
               <a
                 key={tab.name}
                 href={tab.href}
+                onClick={() => switchTab(tab.name)}
                 className={classNames(
                   tab.current
                     ? 'border-gray-300 text-gray-300'

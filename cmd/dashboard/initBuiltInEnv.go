@@ -77,7 +77,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = server.PrepInfraComponentManifests(builtInEnv, tmpPath, repo, config, server.ComponentOpts{true, true})
+	err = server.PrepInfraComponentManifests(builtInEnv, tmpPath, repo, config, server.ComponentOpts{ImageBuilder: true, Registry: true})
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}

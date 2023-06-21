@@ -13,7 +13,11 @@ export default class DeployPanel extends Component {
     this.state = {
       deployPanelOpen: reduxState.deployPanelOpen,
       gitopsCommits: reduxState.gitopsCommits,
-      envs: reduxState.envs
+      envs: reduxState.envs,
+      tabs: [
+        { name: 'Gitops Status', href: '#', current: true },
+        { name: 'Deploy Status', href: '#', current: false },
+      ]
     }
 
     // handling API and streaming state changes
@@ -25,6 +29,8 @@ export default class DeployPanel extends Component {
         envs: reduxState.envs
       });
     });
+
+    this.switchTab = this.switchTab.bind(this)
   }
 
   renderLastCommitStatusMessage(lastCommitStatus, lastCommitStatusMessage) {
@@ -114,6 +120,31 @@ export default class DeployPanel extends Component {
     )
   }
 
+  deployStatus(){
+    return (
+      <div>
+        Deploy status
+      </div>
+    );
+  }
+
+  switchTab(tab) {
+    let gitopsStatus = true;
+    let deployStatus = false;
+
+    if (tab === "Deploy Status") {
+      gitopsStatus = false;
+      deployStatus = true;
+    }
+
+    this.setState({
+      tabs: [
+        { name: 'Gitops Status', href: '#', current: gitopsStatus },
+        { name: 'Deploy Status', href: '#', current: deployStatus },
+      ]
+    });
+  }
+
   render() {
     if (!this.state.deployPanelOpen) {
       return (
@@ -135,10 +166,11 @@ export default class DeployPanel extends Component {
               </button>
             </div>
             <div className="px-6">
-              {DeployPanelTabs()}
+              {DeployPanelTabs(this.state.tabs, this.switchTab)}
             </div>
-            <div className="mt-12 pb-20 px-6 overflow-y-scroll h-full w-full">  
-              {this.gitopsStatus(this.state.gitopsCommits, this.state.envs)}
+            <div className="mt-12 pb-20 px-6 overflow-y-scroll h-full w-full">
+              {this.state.tabs[0].current ? this.gitopsStatus(this.state.gitopsCommits, this.state.envs) : null}
+              {this.state.tabs[1].current ? this.deployStatus() : null}
             </div>
           </div>
       </div>
