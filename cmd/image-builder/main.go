@@ -55,6 +55,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
 	image := r.FormValue("image")
+	cacheImage := r.FormValue("cacheImage")
+	previousImage := r.FormValue("previousImage")
 	// Parse our multipart form, 1000 << 20 specifies a maximum
 	// upload of 1000 MB files.
 	r.ParseMultipartForm(1000 << 20)
@@ -109,7 +111,9 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	// shell out to buildpacks
 	app := "/cnb/lifecycle/creator"
 	sourcePath := "-app=" + tempFolder
-	cmd := exec.Command(app, sourcePath, image)
+	cacheImage = "-cache-image=" + cacheImage
+	previousImage = "-previous-image=" + previousImage
+	cmd := exec.Command(app, sourcePath, cacheImage, previousImage, image)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()
