@@ -1,4 +1,4 @@
-import { copyToClipboard } from "../profile/profile";
+import { copyToClipboard } from "../settings/settings";
 import { useState } from 'react';
 
 const CopiableCodeSnippet = ({ code, copiable, color = 'gray' }) => {

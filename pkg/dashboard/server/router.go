@@ -99,6 +99,7 @@ func SetupRouter(
 	fileServer(r, "/repositories", filesDir)
 	fileServer(r, "/pulse", filesDir)
 	fileServer(r, "/profile", filesDir)
+	fileServer(r, "/settings", filesDir)
 	fileServer(r, "/repo", filesDir)
 	fileServer(r, "/environments", filesDir)
 
