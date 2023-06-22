@@ -69,6 +69,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
@@ -81,6 +82,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	tempFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	defer tempFile.Close()
 	fmt.Println(tempFile.Name())
@@ -90,21 +93,25 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
-	// return that we have successfully uploaded our file!
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
 
 	reader, err := os.Open(tempFile.Name())
 	if err != nil {
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	sourcePath := "/home/cnb/" + app
 	err = Untar(sourcePath, reader)
 	if err != nil {
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	// shell out to buildpacks
@@ -114,13 +121,41 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	// previousImage = "-previous-image=" + previousImage
 	// cmd := exec.Command(command, sourcePath, cacheImage, previousImage, image)
 	cmd := exec.Command(command, sourcePathArg, image+":"+tag)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	pipeReader, pipeWriter := io.Pipe()
+	cmd.Stdout = pipeWriter
+	cmd.Stderr = pipeWriter
+	go writeCmdOutput(w, pipeReader)
 	cmd.Run()
+	pipeWriter.Close()
 
 	err = os.RemoveAll(sourcePath)
 	if err != nil {
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func writeCmdOutput(res http.ResponseWriter, pipeReader *io.PipeReader) {
+	buffer := make([]byte, 1024)
+	for {
+		n, err := pipeReader.Read(buffer)
+		if err != nil {
+			pipeReader.Close()
+			break
+		}
+
+		data := buffer[0:n]
+		res.Write(data)
+		if f, ok := res.(http.Flusher); ok {
+			f.Flush()
+		}
+		//reset buffer
+		for i := 0; i < n; i++ {
+			buffer[i] = 0
+		}
 	}
 }
 
