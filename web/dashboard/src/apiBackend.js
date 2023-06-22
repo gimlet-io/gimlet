@@ -43,7 +43,12 @@ export default class APIBackend extends Component {
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_COMMITS, payload: data }), () => {/* Generic error handler deals with it */
       });
       this.props.gimletClient.getSettings()
-      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data }), () => {/* Generic error handler deals with it */
+      .then(data => {
+        this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data });
+        if (data.provider === "" && !this.props.location.pathname.startsWith('/settings')) {
+          window.location.replace("/settings");
+        }
+      }, () => {/* Generic error handler deals with it */
       });
     this.props.gimletClient.getChartUpdatePullRequests()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_CHART_UPDATE_PULLREQUESTS, payload: data }), () => {/* Generic error handler deals with it */
