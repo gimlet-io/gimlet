@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/base32"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -75,6 +78,17 @@ func adminToken(config *config.Config) string {
 	} else {
 		return config.AdminToken
 	}
+}
+
+func adminKey(dynamicConfig *dynamicconfig.DynamicConfig) string {
+	if dynamicConfig.AdminKey == "" {
+		adminSecret, _ := randomHex(16)
+		dynamicConfig.AdminKey = adminSecret
+		dynamicConfig.Persist()
+
+		return adminSecret
+	}
+	return dynamicConfig.AdminKey
 }
 
 func initTokenManager(config *config.Config) customScm.NonImpersonatedTokenManager {
@@ -180,4 +194,12 @@ func hideAccessToken(message string) string {
 		return message
 	}
 	return r.ReplaceAllString(message, "access_token=***")
+}
+
+func randomHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }

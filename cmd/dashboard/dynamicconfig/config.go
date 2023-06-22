@@ -54,6 +54,7 @@ type DynamicConfig struct {
 	DummyInt     int
 
 	Github config.Github
+	AdminKey  string
 }
 
 // persist all config fields that are not already set in the database

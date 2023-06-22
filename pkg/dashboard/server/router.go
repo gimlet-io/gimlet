@@ -83,6 +83,7 @@ func SetupRouter(
 	userRoutes(r, clientHub)
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
+	adminKeyAuthRoutes(r)
 
 	r.Get("/logout", logout)
 	r.Handle("/builtin/infra*", gitServer)
@@ -230,6 +231,13 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 			http.HandlerFunc(auth),
 		))
 	}
+}
+
+func adminKeyAuthRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Post("/admin-key-auth", adminKeyAuth)
+	})
 }
 
 // static files from a http.FileSystem

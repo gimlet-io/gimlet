@@ -52,6 +52,8 @@ func main() {
 		panic(err)
 	}
 
+	log.Infof("Admin key: %s", adminKey(dynamicConfig))
+
 	if config.Host == "" {
 		panic(fmt.Errorf("please provide the HOST variable"))
 	}
