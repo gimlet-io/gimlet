@@ -86,6 +86,9 @@ func main() {
 		panic(err)
 	}
 
+	// TODO fix this
+	config.Github = dynamicConfig.Github
+	config.Gitlab = dynamicConfig.Gitlab
 	tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
 

@@ -84,6 +84,7 @@ func SetupRouter(
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
 	adminKeyAuthRoutes(r)
+	installerRoutes(r)
 
 	r.Get("/logout", logout)
 	r.Handle("/builtin/infra*", gitServer)
@@ -238,6 +239,16 @@ func adminKeyAuthRoutes(r *chi.Mux) {
 	r.Group(func(r chi.Router) {
 		r.Use(session.SetUser())
 		r.Post("/admin-key-auth", adminKeyAuth)
+	})
+}
+
+func installerRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustUser())
+		r.Get("/settings/created", created)
+		r.Get("/settings/installed", installed)
+		r.Post("/settings/gitlabInit", gitlabInit)
 	})
 }
 
