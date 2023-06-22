@@ -106,6 +106,8 @@ func initTokenManager(config *config.Config) customScm.NonImpersonatedTokenManag
 		}
 	} else if config.IsGitlab() {
 		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
+	} else {
+		tokenManager = customScm.NewDummyTokenManager()
 	}
 	return tokenManager
 }
