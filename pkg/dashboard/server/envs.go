@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -200,6 +201,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	gitServiceImpl := customScm.NewGitService(config)
 	gitToken, gitUser, _ := tokenManager.Token()
@@ -333,7 +335,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = installAgent(environment, gitRepoCache, config, gitToken)
+	err = installAgent(environment, gitRepoCache, config.Host, gitToken, dynamicConfig.JWTSecret)
 	if err != nil {
 		logrus.Errorf("cannot install agent: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -576,8 +578,9 @@ func PrepNotificationsApiKey(
 func installAgent(
 	env *model.Environment,
 	gitRepoCache *nativeGit.RepoCache,
-	config *config.Config,
+	host string,
 	gitToken string,
+	jwtSecret string,
 ) error {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
 	defer os.RemoveAll(tmpPath)
@@ -585,7 +588,7 @@ func installAgent(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	err = PrepAgentManifests(env, tmpPath, repo, config)
+	err = PrepAgentManifests(env, tmpPath, repo, host, jwtSecret)
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
@@ -604,7 +607,8 @@ func PrepAgentManifests(
 	env *model.Environment,
 	tmpPath string,
 	repo *git.Repository,
-	config *config.Config,
+	host string,
+	jwtSecret string,
 ) error {
 	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
 	if env.RepoPerEnv {
@@ -632,14 +636,14 @@ func PrepAgentManifests(
 		}
 	}
 
-	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
+	agentAuth = jwtauth.New("HS256", []byte(jwtSecret), nil)
 	_, agentKey, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 
 	stackConfig.Config["gimletAgent"] = map[string]interface{}{
 		"enabled":          true,
 		"environment":      env.Name,
 		"agentKey":         agentKey,
-		"dashboardAddress": config.Host,
+		"dashboardAddress": host,
 	}
 
 	stackConfigBuff := bytes.NewBufferString("")

@@ -196,6 +196,12 @@ func hideAccessToken(message string) string {
 	return r.ReplaceAllString(message, "access_token=***")
 }
 
+func generateAndPersistJwtSecret(dynamicConfig *dynamicconfig.DynamicConfig) {
+	jwtSecret, _ := randomHex(32)
+	dynamicConfig.JWTSecret = jwtSecret
+	dynamicConfig.Persist()
+}
+
 func randomHex(n int) (string, error) {
 	bytes := make([]byte, n)
 	if _, err := rand.Read(bytes); err != nil {

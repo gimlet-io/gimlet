@@ -58,8 +58,8 @@ func main() {
 		panic(fmt.Errorf("please provide the HOST variable"))
 	}
 
-	if config.JWTSecret == "" {
-		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
+	if dynamicConfig.JWTSecret == "" {
+		generateAndPersistJwtSecret(dynamicConfig)
 	}
 
 	agentHub := streaming.NewAgentHub()
@@ -222,7 +222,7 @@ func main() {
 
 	if config.BuiltinEnvFeatureFlag {
 		time.Sleep(time.Millisecond * 100) // wait til the router is up
-		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config)
+		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config, dynamicConfig.JWTSecret)
 		if err != nil {
 			panic(err)
 		}

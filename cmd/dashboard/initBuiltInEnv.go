@@ -28,6 +28,7 @@ func bootstrapBuiltInEnv(
 	repoCache *nativeGit.RepoCache,
 	gitUser *model.User,
 	config *config.Config,
+	jwtSecret string,
 ) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
@@ -77,7 +78,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = server.PrepAgentManifests(builtInEnv, tmpPath, repo, config)
+	err = server.PrepAgentManifests(builtInEnv, tmpPath, repo, config.Host, jwtSecret)
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}

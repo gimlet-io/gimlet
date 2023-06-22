@@ -54,6 +54,8 @@ type DynamicConfig struct {
 	DummyInt     int
 
 	Github config.Github
+
+	JWTSecret string
 	AdminKey  string
 }
 

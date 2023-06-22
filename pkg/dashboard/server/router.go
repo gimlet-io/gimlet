@@ -79,7 +79,7 @@ func SetupRouter(
 		w.WriteHeader(http.StatusOK)
 	})
 
-	agentRoutes(r, agentWSHub, config.JWTSecret)
+	agentRoutes(r, agentWSHub, dynamicConfig.JWTSecret)
 	userRoutes(r, clientHub)
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
