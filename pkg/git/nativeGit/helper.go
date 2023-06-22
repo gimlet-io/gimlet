@@ -118,8 +118,8 @@ func Commit(repo *git.Repository, message string) (string, error) {
 
 	sha, err := worktree.Commit(message, &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "Gimlet CLI",
-			Email: "cli@gimlet.io",
+			Name:  "Gimlet",
+			Email: "gimlet@gimlet.io",
 			When:  time.Now(),
 		},
 	})

@@ -21,6 +21,8 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -64,10 +66,26 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	_, repoPath, err := gitRepoCache.InstanceForWrite(deployRequest.Owner + "/" + deployRequest.Repo)
+	repo, repoPath, err := gitRepoCache.InstanceForWrite(deployRequest.Owner + "/" + deployRequest.Repo)
 	defer os.RemoveAll(repoPath)
 	if err != nil {
 		logrus.Errorf("cannot get repo instance: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		logrus.Errorf("cannot get worktree: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	err = worktree.Reset(&git.ResetOptions{
+		Commit: plumbing.NewHash(deployRequest.Sha),
+		Mode:   git.HardReset,
+	})
+	if err != nil {
+		logrus.Errorf("cannot set version: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -87,9 +105,9 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	imageBuilderUrl := "http://127.0.0.1:8000/build-image"
-	image := "registry.acorn-image-system.svc.cluster.local:5000/" + deployRequest.Repo
+	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	// previousImage := "" //"registry.acorn-image-system.svc.cluster.local:5000/dummy"
-	tag := deployRequest.Sha
+	tag := deployRequest.Sha + "x"
 	err = buildImage(tarFile.Name(), imageBuilderUrl, image, tag, deployRequest.Repo)
 	if err != nil {
 		logrus.Errorf("cannot tar folder: %s", err)
@@ -100,7 +118,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
 		builtInEnv.Name,
 		store,
-		"127.0.0.1:31845/"+deployRequest.Repo,
+		"127.0.0.1:32447/"+deployRequest.Repo,
 		tag,
 	)
 	if err != nil {
@@ -170,6 +188,7 @@ func createDummyArtifact(
 					"image": map[string]interface{}{
 						"repository": image,
 						"tag":        tag,
+						"pullPolicy": "Always",
 					},
 				},
 			},
