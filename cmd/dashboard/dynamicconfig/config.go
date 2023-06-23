@@ -144,3 +144,34 @@ func (c *DynamicConfig) load() error {
 
 	return json.Unmarshal([]byte(configString.Value), c)
 }
+
+func (c *DynamicConfig) IsGithub() bool {
+	return c.Github.AppID != ""
+}
+
+func (c *DynamicConfig) IsGitlab() bool {
+	return c.Gitlab.ClientID != ""
+}
+
+func (c *DynamicConfig) Org() string {
+	if c.IsGithub() {
+		return c.Github.Org
+	} else if c.IsGitlab() {
+		return c.Gitlab.Org
+	}
+
+	return ""
+}
+
+func (c *DynamicConfig) ScmURL() string {
+	if c.IsGithub() {
+		return "https://github.com"
+	} else if c.IsGitlab() {
+		if c.Gitlab.URL != "" {
+			return c.Gitlab.URL
+		}
+		return "https://gitlab.com"
+	}
+
+	return ""
+}

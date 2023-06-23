@@ -91,21 +91,21 @@ func adminKey(dynamicConfig *dynamicconfig.DynamicConfig) string {
 	return dynamicConfig.AdminKey
 }
 
-func initTokenManager(config *config.Config) customScm.NonImpersonatedTokenManager {
+func initTokenManager(dynamicConfig *dynamicconfig.DynamicConfig) customScm.NonImpersonatedTokenManager {
 	var tokenManager customScm.NonImpersonatedTokenManager
 
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		var err error
 		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			config.Github.AppID,
-			config.Github.InstallationID,
-			config.Github.PrivateKey.String(),
+			dynamicConfig.Github.AppID,
+			dynamicConfig.Github.InstallationID,
+			dynamicConfig.Github.PrivateKey.String(),
 		)
 		if err != nil {
 			panic(err)
 		}
-	} else if config.IsGitlab() {
-		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
+	} else if dynamicConfig.IsGitlab() {
+		tokenManager = customGitlab.NewGitlabTokenManager(dynamicConfig.Gitlab.AdminToken)
 	} else {
 		tokenManager = customScm.NewDummyTokenManager()
 	}
@@ -114,6 +114,7 @@ func initTokenManager(config *config.Config) customScm.NonImpersonatedTokenManag
 
 func initNotifications(
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 	tokenManager *customScm.NonImpersonatedTokenManager,
 ) *notifications.ManagerImpl {
 	notificationsManager := notifications.NewManager()
@@ -123,10 +124,10 @@ func initNotifications(
 	if config.Notifications.Provider == "discord" {
 		notificationsManager.AddProvider(discordNotificationProvider(config))
 	}
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		notificationsManager.AddProvider(notifications.NewGithubProvider(tokenManager))
-	} else if config.IsGitlab() {
-		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, config.Gitlab.URL))
+	} else if dynamicConfig.IsGitlab() {
+		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, dynamicConfig.Gitlab.URL))
 	}
 	go notificationsManager.Run()
 	return notificationsManager

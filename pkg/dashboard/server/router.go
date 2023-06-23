@@ -81,7 +81,7 @@ func SetupRouter(
 
 	agentRoutes(r, agentWSHub, dynamicConfig.JWTSecret)
 	userRoutes(r, clientHub)
-	githubOAuthRoutes(config, r)
+	githubOAuthRoutes(dynamicConfig, r, config.Host)
 	gimletdRoutes(r)
 	adminKeyAuthRoutes(r)
 	installerRoutes(r)
@@ -194,15 +194,15 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 	})
 }
 
-func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
-	if config.IsGithub() {
+func githubOAuthRoutes(dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux, host string) {
+	if dynamicConfig.IsGithub() {
 		dumper := logger.DiscardDumper()
-		if config.Github.Debug {
+		if dynamicConfig.Github.Debug {
 			dumper = logger.StandardDumper()
 		}
 		loginMiddleware := &github.Config{
-			ClientID:     config.Github.ClientID,
-			ClientSecret: config.Github.ClientSecret,
+			ClientID:     dynamicConfig.Github.ClientID,
+			ClientSecret: dynamicConfig.Github.ClientSecret,
 			// you don't need to provide scopes in your authorization request.
 			// Unlike traditional OAuth, the authorization token is limited to the permissions associated
 			// with your GitHub App and those of the user.
@@ -217,12 +217,12 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 		r.Handle("/auth/*", loginMiddleware.Handler(
 			http.HandlerFunc(auth),
 		))
-	} else if config.IsGitlab() {
+	} else if dynamicConfig.IsGitlab() {
 		loginMiddleware := &gitlab.Config{
-			Server:       config.ScmURL(),
-			ClientID:     config.Gitlab.ClientID,
-			ClientSecret: config.Gitlab.ClientSecret,
-			RedirectURL:  config.Host + "/auth",
+			Server:       dynamicConfig.ScmURL(),
+			ClientID:     dynamicConfig.Gitlab.ClientID,
+			ClientSecret: dynamicConfig.Gitlab.ClientSecret,
+			RedirectURL:  host + "/auth",
 			Scope:        []string{"api"},
 		}
 

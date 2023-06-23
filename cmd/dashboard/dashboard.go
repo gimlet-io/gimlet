@@ -86,11 +86,8 @@ func main() {
 		panic(err)
 	}
 
-	// TODO fix this
-	config.Github = dynamicConfig.Github
-	config.Gitlab = dynamicConfig.Gitlab
-	tokenManager := initTokenManager(config)
-	notificationsManager := initNotifications(config, &tokenManager)
+	tokenManager := initTokenManager(dynamicConfig)
+	notificationsManager := initNotifications(config, dynamicConfig, &tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
@@ -130,6 +127,7 @@ func main() {
 		&tokenManager,
 		stopCh,
 		config,
+		dynamicConfig,
 		clientHub,
 		gitUser,
 	)
@@ -168,11 +166,11 @@ func main() {
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			RepoCache: repoCache,
-			Releases:  releases,
-			Perf:      perf,
-			Store:     store,
-			Config:    config,
+			RepoCache:     repoCache,
+			Releases:      releases,
+			Perf:          perf,
+			Store:         store,
+			DynamicConfig: dynamicConfig,
 		}
 		go releaseStateWorker.Run()
 	}

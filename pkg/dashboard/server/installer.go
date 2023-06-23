@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
@@ -92,9 +91,7 @@ func installed(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	goScmHelper := genericScm.NewGoScmHelper(&config.Config{
-		Github: dynamicConfig.Github,
-	}, nil)
+	goScmHelper := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	scmUser, err := goScmHelper.User(token.Access, token.Refresh)
 	if err != nil {
 		log.Errorf("cannot find git user: %s", err)
@@ -136,10 +133,6 @@ func installed(w http.ResponseWriter, r *http.Request) {
 
 	dynamicConfig.Github.Org = appOwner
 	dynamicConfig.Persist()
-
-	// TODO fix this
-	config := ctx.Value("config").(*config.Config)
-	config.Github = dynamicConfig.Github
 
 	gitScm := ctx.Value("gitScm").(*customScm.GitScm)
 	gitScm.GitService = gitSvc
@@ -183,7 +176,6 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	dynamicConfig.Gitlab.ClientID = appId
 	dynamicConfig.Gitlab.ClientSecret = appSecret
@@ -191,9 +183,6 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig.Gitlab.URL = gitlabUrl
 	dynamicConfig.Gitlab.AdminToken = token
 	dynamicConfig.Persist()
-
-	// TODO fix this
-	config.Gitlab = dynamicConfig.Gitlab
 
 	gitScm := ctx.Value("gitScm").(*customScm.GitScm)
 	gitScm.GitService = &customGitlab.GitlabClient{

@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -153,8 +153,8 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
 
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 
@@ -228,8 +228,8 @@ func getChartUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
 
 func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 
@@ -396,9 +396,9 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	user := ctx.Value("user").(*model.User)
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
 
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(fmt.Sprintf("%s/%s", owner, repoName))
 	defer os.RemoveAll(tmpPath)

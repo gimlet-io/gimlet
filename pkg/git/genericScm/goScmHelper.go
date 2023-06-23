@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/gimlet-io/go-scm/scm/driver/github"
 	"github.com/gimlet-io/go-scm/scm/driver/gitlab"
@@ -19,7 +19,7 @@ type GoScmHelper struct {
 	client *scm.Client
 }
 
-func NewGoScmHelper(config *config.Config, tokenUpdateCallback func(token *scm.Token)) *GoScmHelper {
+func NewGoScmHelper(config *dynamicconfig.DynamicConfig, tokenUpdateCallback func(token *scm.Token)) *GoScmHelper {
 	var client *scm.Client
 	var err error
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
@@ -25,9 +26,9 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 
-	go updateUserRepos(config, dao, user)
+	go updateUserRepos(dynamicConfig, dao, user)
 	go updateOrgRepos(ctx)
 
 	orgRepos, userRepos, err := fetchReposFromDb(dao, user.Login)
@@ -53,7 +54,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 
 	user, err := dao.User(user.Login)
 	if err != nil {
@@ -70,7 +71,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userAccessRepos := intersection(orgRepos, user.Repos)
-	updatedUserRepos := updateUserRepos(config, dao, user)
+	updatedUserRepos := updateUserRepos(dynamicConfig, dao, user)
 	updatedOrgRepos := updateOrgRepos(ctx)
 	updatedUserAccessRepos := intersection(updatedOrgRepos, updatedUserRepos)
 	added := difference(updatedUserAccessRepos, userAccessRepos)
@@ -124,7 +125,7 @@ func updateOrgRepos(ctx context.Context) []string {
 	return orgRepos
 }
 
-func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
+func updateUserRepos(config *dynamicconfig.DynamicConfig, dao *store.Store, user *model.User) []string {
 	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
 		user.AccessToken = token.Token
 		user.RefreshToken = token.Refresh
@@ -258,17 +259,18 @@ func saveFavoriteServices(w http.ResponseWriter, r *http.Request) {
 func settings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 
 	var provider string
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		provider = "github"
-	} else if config.IsGitlab() {
+	} else if dynamicConfig.IsGitlab() {
 		provider = "gitlab"
 	}
 
 	settings := map[string]interface{}{
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
-		"scmUrl":                  config.ScmURL(),
+		"scmUrl":                  dynamicConfig.ScmURL(),
 		"userflowToken":           config.UserflowToken,
 		"host":                    config.Host,
 		"provider":                provider,

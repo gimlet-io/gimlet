@@ -51,9 +51,9 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value("store").(*store.Store)
 	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	user := ctx.Value("user").(*model.User)
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
 
 	env, err := db.GetEnvironment(req.Env)
 	if err != nil {
@@ -206,7 +206,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	gitServiceImpl := customScm.NewGitService(config)
 
 	gitToken, gitUser, _ := tokenManager.Token()
-	org := config.Org()
+	org := dynamicConfig.Org()
 
 	db := r.Context().Value("store").(*store.Store)
 	environment, err := db.GetEnvironment(bootstrapConfig.EnvName)
@@ -271,9 +271,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go updateOrgRepos(ctx)
-	go updateUserRepos(config, db, user)
+	go updateUserRepos(dynamicConfig, db, user)
 
-	scmURL := config.ScmURL()
+	scmURL := dynamicConfig.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	_, _, err = BootstrapEnv(
 		gitRepoCache,

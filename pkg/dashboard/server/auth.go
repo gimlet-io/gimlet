@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
@@ -30,8 +29,8 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 	token := login.TokenFrom(ctx)
 
-	config := ctx.Value("config").(*config.Config)
-	goScmHelper := genericScm.NewGoScmHelper(config, nil)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	goScmHelper := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	scmUser, err := goScmHelper.User(token.Access, token.Refresh)
 	if err != nil {
 		log.Errorf("cannot find git user: %s", err)
@@ -46,7 +45,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member := validateOrganizationMembership(orgList, config.Org(), scmUser.Login)
+	member := validateOrganizationMembership(orgList, dynamicConfig.Org(), scmUser.Login)
 	if !member {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return

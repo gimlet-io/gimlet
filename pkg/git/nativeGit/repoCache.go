@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dashboardConfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
@@ -35,8 +36,9 @@ type RepoCache struct {
 	invalidateCh chan string
 
 	// For webhook registration
-	config    *dashboardConfig.Config
-	clientHub *streaming.ClientHub
+	config        *dashboardConfig.Config
+	dynamicConfig *dynamicconfig.DynamicConfig
+	clientHub     *streaming.ClientHub
 
 	// for builtin env
 	gitUser *model.User
@@ -53,6 +55,7 @@ func NewRepoCache(
 	tokenManager *customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
 	config *dashboardConfig.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 	clientHub *streaming.ClientHub,
 	gitUser *model.User,
 ) (*RepoCache, error) {
@@ -298,7 +301,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 			Password: r.gitUser.Secret,
 		}
 	} else {
-		url = fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName)
+		url = fmt.Sprintf("%s/%s", r.dynamicConfig.ScmURL(), repoName)
 		tokenManager := *r.tokenManager
 		token, _, err := tokenManager.Token()
 		if err != nil {
@@ -355,7 +358,7 @@ func (r *RepoCache) registerWebhook(repoName string) {
 		logrus.Errorf("couldn't get scm token: %s", err)
 	}
 
-	goScmHelper := genericScm.NewGoScmHelper(r.config, nil)
+	goScmHelper := genericScm.NewGoScmHelper(r.dynamicConfig, nil)
 	err = goScmHelper.RegisterWebhook(
 		r.config.Host,
 		token,

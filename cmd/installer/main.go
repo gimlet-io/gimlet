@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/cmd/installer/web"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
@@ -396,7 +397,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	data.accessToken = appInfo["access_token"].(string)
 	data.refreshToken = appInfo["refresh_token"].(string)
 
-	goScmHelper := genericScm.NewGoScmHelper(&config.Config{
+	goScmHelper := genericScm.NewGoScmHelper(&dynamicconfig.DynamicConfig{
 		Github: config.Github{AppID: "dummyID - helper uses the tokens only"},
 	}, nil)
 	scmUser, err := goScmHelper.User(data.accessToken, data.refreshToken)
@@ -520,6 +521,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		&data.tokenManager,
 		nil,
 		fakeDashConfig,
+		&dynamicconfig.DynamicConfig{},
 		nil,
 		nil,
 	)
