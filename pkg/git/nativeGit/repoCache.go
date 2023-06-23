@@ -29,7 +29,7 @@ var FetchRefSpec = []config.RefSpec{
 }
 
 type RepoCache struct {
-	tokenManager customScm.NonImpersonatedTokenManager
+	tokenManager *customScm.NonImpersonatedTokenManager
 	repos        map[string]repoData
 	stopCh       chan struct{}
 	invalidateCh chan string
@@ -50,7 +50,7 @@ type repoData struct {
 }
 
 func NewRepoCache(
-	tokenManager customScm.NonImpersonatedTokenManager,
+	tokenManager *customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
 	config *dashboardConfig.Config,
 	clientHub *streaming.ClientHub,
@@ -113,7 +113,8 @@ func (r *RepoCache) Run() {
 }
 
 func (r *RepoCache) syncGitRepo(repoName string) {
-	token, user, err := r.tokenManager.Token()
+	tokenManager := *r.tokenManager
+	token, user, err := tokenManager.Token()
 	if err != nil {
 		logrus.Errorf("couldn't get scm token: %s", err)
 		return
@@ -298,7 +299,8 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		}
 	} else {
 		url = fmt.Sprintf("%s/%s", r.config.ScmURL(), repoName)
-		token, _, err := r.tokenManager.Token()
+		tokenManager := *r.tokenManager
+		token, _, err := tokenManager.Token()
 		if err != nil {
 			return repoData{}, errors.WithMessage(err, "couldn't get scm token")
 		}
@@ -347,7 +349,8 @@ func (r *RepoCache) registerWebhook(repoName string) {
 		return
 	}
 
-	token, _, err := r.tokenManager.Token()
+	tokenManager := *r.tokenManager
+	token, _, err := tokenManager.Token()
 	if err != nil {
 		logrus.Errorf("couldn't get scm token: %s", err)
 	}

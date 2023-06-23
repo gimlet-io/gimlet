@@ -90,7 +90,7 @@ func main() {
 	config.Github = dynamicConfig.Github
 	config.Gitlab = dynamicConfig.Gitlab
 	tokenManager := initTokenManager(config)
-	notificationsManager := initNotifications(config, tokenManager)
+	notificationsManager := initNotifications(config, &tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
@@ -127,7 +127,7 @@ func main() {
 	}
 
 	repoCache, err := nativeGit.NewRepoCache(
-		tokenManager,
+		&tokenManager,
 		stopCh,
 		config,
 		clientHub,
@@ -143,7 +143,7 @@ func main() {
 	if config.ChartVersionUpdaterFeatureFlag {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			config,
-			tokenManager,
+			&tokenManager,
 			repoCache,
 			&chartUpdatePullRequests,
 		)
@@ -154,7 +154,7 @@ func main() {
 		store,
 		config.GitopsRepo,
 		config.GitopsRepoDeployKeyPath,
-		tokenManager,
+		&tokenManager,
 		notificationsManager,
 		eventsProcessed,
 		repoCache,
@@ -178,7 +178,7 @@ func main() {
 	}
 
 	branchDeleteEventWorker := worker.NewBranchDeleteEventWorker(
-		tokenManager,
+		&tokenManager,
 		config.RepoCachePath,
 		store,
 	)

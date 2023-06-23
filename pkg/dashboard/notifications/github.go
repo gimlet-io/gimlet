@@ -15,10 +15,10 @@ import (
 const githubCommitLink = "https://github.com/%s/commit/%s"
 
 type githubProvider struct {
-	tokenManager customScm.NonImpersonatedTokenManager
+	tokenManager *customScm.NonImpersonatedTokenManager
 }
 
-func NewGithubProvider(tokenManager customScm.NonImpersonatedTokenManager) *githubProvider {
+func NewGithubProvider(tokenManager *customScm.NonImpersonatedTokenManager) *githubProvider {
 	return &githubProvider{
 		tokenManager: tokenManager,
 	}
@@ -66,7 +66,8 @@ func (g *githubProvider) post(owner string, repo string, sha string, status *git
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	token, _, err := g.tokenManager.Token()
+	tokenManager := *g.tokenManager
+	token, _, err := tokenManager.Token()
 	if err != nil {
 		return fmt.Errorf("couldn't get scm token: %s", err)
 	}

@@ -23,14 +23,14 @@ import (
 
 type ChartVersionUpdater struct {
 	config            *config.Config
-	tokenManager      customScm.NonImpersonatedTokenManager
+	tokenManager      *customScm.NonImpersonatedTokenManager
 	repoCache         *helper.RepoCache
 	chartUpdatePrList *map[string]interface{}
 }
 
 func NewChartVersionUpdater(
 	config *config.Config,
-	tokenManager customScm.NonImpersonatedTokenManager,
+	tokenManager *customScm.NonImpersonatedTokenManager,
 	repoCache *helper.RepoCache,
 	chartUpdatePrList *map[string]interface{},
 ) *ChartVersionUpdater {
@@ -45,8 +45,9 @@ func NewChartVersionUpdater(
 func (c *ChartVersionUpdater) Run() {
 	for {
 		(*c.chartUpdatePrList) = map[string]interface{}{}
-		token, _, _ := c.tokenManager.Token()
+		token, _, _ := (*c.tokenManager).Token()
 		gitSvc := customScm.NewGitService(c.config)
+
 		repos, err := gitSvc.OrgRepos(token)
 		if err != nil {
 			logrus.Errorf("cannot get org repos: %s", err)

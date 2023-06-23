@@ -517,7 +517,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	gitRepoCache, err := nativeGit.NewRepoCache(
-		data.tokenManager,
+		&data.tokenManager,
 		nil,
 		fakeDashConfig,
 		nil,
