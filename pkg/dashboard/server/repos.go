@@ -97,6 +97,7 @@ func updateOrgRepos(ctx context.Context) []string {
 	config := ctx.Value("config").(*config.Config)
 	gitServiceImpl := customScm.NewGitService(config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+
 	token, _, _ := tokenManager.Token()
 
 	orgRepos, err := gitServiceImpl.OrgRepos(token)

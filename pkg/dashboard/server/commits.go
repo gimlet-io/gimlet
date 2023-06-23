@@ -90,6 +90,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	gitServiceImpl := customScm.NewGitService(config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+
 	token, _, _ := tokenManager.Token()
 	commits, err = decorateCommitsWithSCMData(repoName, commits, dao, gitServiceImpl, token)
 	if err != nil {

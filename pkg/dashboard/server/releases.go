@@ -396,7 +396,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 	err = nativeGit.NativePushWithToken(
 		fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, repoName),

@@ -11,7 +11,9 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/laszlocph/go-login/login"
 	"github.com/sirupsen/logrus"
@@ -138,12 +140,10 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	// TODO fix this
 	config := ctx.Value("config").(*config.Config)
 	config.Github = dynamicConfig.Github
-	config.Gitlab = dynamicConfig.Gitlab
 
-	// gitServiceImplFromCtx := ctx.Value("gitService").(customScm.CustomGitService)
-	// tokenManagerFromCtx := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	// gitServiceImplFromCtx = gitSvc
-	// tokenManagerFromCtx = tokenManager
+	gitScm := ctx.Value("gitScm").(*customScm.GitScm)
+	gitScm.GitService = gitSvc
+	gitScm.TokenManager = tokenManager
 
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
@@ -193,15 +193,13 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig.Persist()
 
 	// TODO fix this
-	config.Github = dynamicConfig.Github
 	config.Gitlab = dynamicConfig.Gitlab
 
-	// gitServiceImplFromCtx := ctx.Value("gitService").(customScm.CustomGitService)
-	// tokenManagerFromCtx := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	// gitServiceImplFromCtx = &customGitlab.GitlabClient{
-	// 	BaseURL: gitlabUrl,
-	// }
-	// tokenManagerFromCtx = customGitlab.NewGitlabTokenManager(token)
+	gitScm := ctx.Value("gitScm").(*customScm.GitScm)
+	gitScm.GitService = &customGitlab.GitlabClient{
+		BaseURL: gitlabUrl,
+	}
+	gitScm.TokenManager = customGitlab.NewGitlabTokenManager(token)
 
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }

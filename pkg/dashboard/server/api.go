@@ -288,6 +288,7 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 	config := ctx.Value("config").(*config.Config)
 	gitServiceImpl := customScm.NewGitService(config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+
 	token, _, _ := tokenManager.Token()
 	for _, env := range envs {
 		for _, stack := range env.Stacks {
@@ -309,7 +310,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	installationToken, _, _ := tokenManager.Token()
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)

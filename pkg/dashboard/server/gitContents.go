@@ -155,7 +155,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	goScm := genericScm.NewGoScmHelper(config, nil)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 
 	db := r.Context().Value("store").(*store.Store)
@@ -230,7 +230,7 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	goScm := genericScm.NewGoScmHelper(config, nil)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 
 	db := r.Context().Value("store").(*store.Store)
@@ -394,7 +394,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 	config := ctx.Value("config").(*config.Config)
 	user := ctx.Value("user").(*model.User)

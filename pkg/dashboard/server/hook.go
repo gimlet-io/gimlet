@@ -47,7 +47,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 			}
 			if r.Header.Get("X-GitHub-Event") == "check_run" { // not handled by go-scm, parsing github actions manually
 				dao := ctx.Value("store").(*store.Store)
-				tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+				tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 				token, _, _ := tokenManager.Token()
 
 				r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
@@ -87,7 +87,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		processTagHook(webhook)
 	case *scm.StatusHook:
 		dao := ctx.Value("store").(*store.Store)
-		tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+		tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 		token, _, _ := tokenManager.Token()
 
 		owner := webhook.Repository().Namespace

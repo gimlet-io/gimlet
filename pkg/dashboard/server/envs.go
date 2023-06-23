@@ -49,7 +49,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	db := r.Context().Value("store").(*store.Store)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
 	token, _, _ := tokenManager.Token()
 	config := ctx.Value("config").(*config.Config)
 	user := ctx.Value("user").(*model.User)
@@ -204,6 +204,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	gitServiceImpl := customScm.NewGitService(config)
+
 	gitToken, gitUser, _ := tokenManager.Token()
 	org := config.Org()
 
