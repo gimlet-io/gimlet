@@ -109,7 +109,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	tag := deployRequest.Sha
 	signalCh := make(chan imageBuildingDoneSignal)
-	err = buildImage(
+	go buildImage(
 		tarFile.Name(),
 		imageBuilderUrl,
 		image,
@@ -117,11 +117,6 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		deployRequest.Repo,
 		signalCh,
 	)
-	if err != nil {
-		logrus.Errorf("cannot tar folder: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
 	go createDeployRequest(
 		deployRequest,
 		builtInEnv,
@@ -379,7 +374,7 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	return req, err
 }
 
-func buildImage(path string, url string, image string, tag string, app string, signalCh chan imageBuildingDoneSignal) error {
+func buildImage(path string, url string, image string, tag string, app string, signalCh chan imageBuildingDoneSignal) {
 	request, err := newfileUploadRequest(url, map[string]string{
 		"image": image,
 		"tag":   tag,
@@ -387,19 +382,20 @@ func buildImage(path string, url string, image string, tag string, app string, s
 	}, "data", path)
 	if err != nil {
 		signalCh <- imageBuildingDoneSignal{successful: false}
-		return err
+		logrus.Errorf("cannot upload file: %s", err)
+		return
 	}
 	client := &http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
 		signalCh <- imageBuildingDoneSignal{successful: false}
-		return err
+		logrus.Errorf("cannot upload file: %s", err)
+		return
 	} else {
 		streamImageBuilderLogs(resp.Body)
 	}
 
 	signalCh <- imageBuildingDoneSignal{successful: true}
-	return nil
 }
 
 func streamImageBuilderLogs(body io.ReadCloser) {
