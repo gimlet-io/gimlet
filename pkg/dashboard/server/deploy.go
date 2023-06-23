@@ -107,14 +107,52 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 
 	imageBuilderUrl := "http://127.0.0.1:8000/build-image"
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
-	// previousImage := "" //"registry.acorn-image-system.svc.cluster.local:5000/dummy"
-	tag := deployRequest.Sha + "x"
-	err = buildImage(tarFile.Name(), imageBuilderUrl, image, tag, deployRequest.Repo)
+	tag := deployRequest.Sha
+	signalCh := make(chan imageBuildingDoneSignal)
+	err = buildImage(
+		tarFile.Name(),
+		imageBuilderUrl,
+		image,
+		tag,
+		deployRequest.Repo,
+		signalCh,
+	)
 	if err != nil {
 		logrus.Errorf("cannot tar folder: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	go createDeployRequest(
+		deployRequest,
+		builtInEnv,
+		store,
+		tag,
+		user.Login,
+		signalCh,
+	)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}
+
+type imageBuildingDoneSignal struct {
+	successful bool
+}
+
+func createDeployRequest(
+	deployRequest dx.MagicDeployRequest,
+	builtInEnv *model.Environment,
+	store *store.Store,
+	tag string,
+	triggeredBy string,
+	signal chan imageBuildingDoneSignal,
+) {
+	// wait until image building is done
+	imageBuildingDoneSignal := <-signal
+	if !imageBuildingDoneSignal.successful {
+		return
+	}
+
 	artifact, err := createDummyArtifact(
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
 		builtInEnv.Name,
@@ -124,7 +162,6 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		logrus.Errorf("cannot create artifact: %s", err)
-		http.Error(w, http.StatusText(400), 400)
 		return
 	}
 
@@ -132,16 +169,16 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		Env:         builtInEnv.Name,
 		App:         deployRequest.Repo,
 		ArtifactID:  artifact.ID,
-		TriggeredBy: user.Login,
+		TriggeredBy: triggeredBy,
 	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
+		logrus.Errorf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err)
 		return
 	}
 
 	artifactEvent, err := store.Artifact(artifact.ID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%s - cannot find artifact with id %s", http.StatusText(http.StatusNotFound), artifact.ID), http.StatusNotFound)
+		logrus.Errorf("%s - cannot find artifact with id %s", http.StatusText(http.StatusNotFound), artifact.ID)
 		return
 	}
 	event, err := store.CreateEvent(&model.Event{
@@ -150,16 +187,11 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		Repository: artifactEvent.Repository,
 	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
+		logrus.Errorf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err)
 		return
 	}
 
-	eventIDBytes, _ := json.Marshal(map[string]string{
-		"id": event.ID,
-	})
-
-	w.WriteHeader(http.StatusCreated)
-	w.Write(eventIDBytes)
+	fmt.Println(event.ID)
 }
 
 func createDummyArtifact(
@@ -347,30 +379,38 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	return req, err
 }
 
-func buildImage(path string, url string, image string, tag string, app string) error {
+func buildImage(path string, url string, image string, tag string, app string, signalCh chan imageBuildingDoneSignal) error {
 	request, err := newfileUploadRequest(url, map[string]string{
 		"image": image,
 		"tag":   tag,
 		"app":   app,
 	}, "data", path)
 	if err != nil {
+		signalCh <- imageBuildingDoneSignal{successful: false}
 		return err
 	}
 	client := &http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
+		signalCh <- imageBuildingDoneSignal{successful: false}
 		return err
 	} else {
-		reader := bufio.NewReader(resp.Body)
-		for {
-			line, err := reader.ReadBytes('\n')
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			log.Println(string(line))
-		}
+		streamImageBuilderLogs(resp.Body)
 	}
 
+	signalCh <- imageBuildingDoneSignal{successful: true}
 	return nil
+}
+
+func streamImageBuilderLogs(body io.ReadCloser) {
+	defer body.Close()
+	reader := bufio.NewReader(body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		log.Println(string(line))
+	}
 }
