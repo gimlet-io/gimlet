@@ -82,7 +82,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	tempFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("IMAGE BUILD ERROR"))
 		return
 	}
 	defer tempFile.Close()
@@ -93,7 +93,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("IMAGE BUILD ERROR"))
 		return
 	}
 	// write this byte array to our temporary file
@@ -102,15 +102,16 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	reader, err := os.Open(tempFile.Name())
 	if err != nil {
 		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("IMAGE BUILD ERROR"))
 		return
 	}
 
 	sourcePath := "/home/cnb/" + app
+	defer os.RemoveAll(sourcePath)
 	err = Untar(sourcePath, reader)
 	if err != nil {
 		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("IMAGE BUILD ERROR"))
 		return
 	}
 
@@ -125,17 +126,21 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	cmd.Stdout = pipeWriter
 	cmd.Stderr = pipeWriter
 	go writeCmdOutput(w, pipeReader)
-	cmd.Run()
-	pipeWriter.Close()
-
-	err = os.RemoveAll(sourcePath)
+	err = cmd.Run()
 	if err != nil {
 		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
+	}
+	pipeWriter.Close()
+
+	if err != nil {
+		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("IMAGE BUILT"))
 }
 
 func writeCmdOutput(res http.ResponseWriter, pipeReader *io.PipeReader) {
@@ -148,6 +153,7 @@ func writeCmdOutput(res http.ResponseWriter, pipeReader *io.PipeReader) {
 		}
 
 		data := buffer[0:n]
+		fmt.Print(string(data))
 		res.Write(data)
 		if f, ok := res.(http.Flusher); ok {
 			f.Flush()
