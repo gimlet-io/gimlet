@@ -2,6 +2,7 @@ package server
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
@@ -360,14 +361,14 @@ func buildImage(path string, url string, image string, tag string, app string) e
 	if err != nil {
 		return err
 	} else {
-		body := &bytes.Buffer{}
-		_, err := body.ReadFrom(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("image builder returned %d: %s", resp.StatusCode, body)
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				log.Println(err)
+				break
+			}
+			log.Println(string(line))
 		}
 	}
 
