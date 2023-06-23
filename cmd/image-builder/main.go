@@ -115,6 +115,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
+
 	// shell out to buildpacks
 	command := "/cnb/lifecycle/creator"
 	sourcePathArg := "-app=" + sourcePath
