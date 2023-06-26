@@ -303,16 +303,15 @@ export default class Repo extends Component {
 
   magicDeploy(env, repo, sha) {
     let target = {}
-    console.log(repo)
     const owner = repo.split("/")[0]
     const repoName = repo.split("/")[1]
     this.props.gimletClient.magicDeploy(owner, repoName, sha)
       .then(data => {
         target.sha = sha;
-        target.trackingId = data.id;
-        setTimeout(() => {
-          this.checkDeployStatus(target);
-        }, 500);
+        target.buildId = data.buildId;
+        this.props.store.dispatch({ todo
+          type: ACTION_TYPE_DEPLOY_STATUS, payload: deployRequest
+        });
       }, () => {/* Generic error handler deals with it */
       });
 

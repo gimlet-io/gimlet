@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
@@ -32,6 +34,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 	user := ctx.Value("user").(*model.User)
+	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 
 	body, _ := ioutil.ReadAll(r.Body)
 	var deployRequest dx.MagicDeployRequest
@@ -105,6 +108,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	imageBuildId := randStringRunes(6)
 	imageBuilderUrl := "http://127.0.0.1:8000/build-image"
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	tag := deployRequest.Sha
@@ -116,7 +120,11 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		tag,
 		deployRequest.Repo,
 		signalCh,
+		clientHub,
+		user.Login,
+		string(imageBuildId),
 	)
+
 	go createDeployRequest(
 		deployRequest,
 		builtInEnv,
@@ -124,10 +132,20 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		tag,
 		user.Login,
 		signalCh,
+		clientHub,
 	)
 
+	responseStr, err := json.Marshal(map[string]string{
+		"buildId": string(imageBuildId),
+	})
+	if err != nil {
+		logrus.Errorf("cannot serialize response: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	w.Write(responseStr)
 }
 
 type imageBuildingDoneSignal struct {
@@ -141,6 +159,7 @@ func createDeployRequest(
 	tag string,
 	triggeredBy string,
 	signal chan imageBuildingDoneSignal,
+	clientHub *streaming.ClientHub,
 ) {
 	// wait until image building is done
 	imageBuildingDoneSignal := <-signal
@@ -374,7 +393,14 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	return req, err
 }
 
-func buildImage(path string, url string, image string, tag string, app string, signalCh chan imageBuildingDoneSignal) {
+func buildImage(
+	path string, url string,
+	image string, tag string, app string,
+	signalCh chan imageBuildingDoneSignal,
+	clientHub *streaming.ClientHub,
+	userLogin string,
+	imageBuildId string,
+) {
 	request, err := newfileUploadRequest(url, map[string]string{
 		"image": image,
 		"tag":   tag,
@@ -392,13 +418,13 @@ func buildImage(path string, url string, image string, tag string, app string, s
 		logrus.Errorf("cannot upload file: %s", err)
 		return
 	} else {
-		streamImageBuilderLogs(resp.Body)
+		streamImageBuilderLogs(resp.Body, clientHub, userLogin, imageBuildId)
 	}
 
 	signalCh <- imageBuildingDoneSignal{successful: true}
 }
 
-func streamImageBuilderLogs(body io.ReadCloser) {
+func streamImageBuilderLogs(body io.ReadCloser, clientHub *streaming.ClientHub, userLogin string, imageBuildId string) {
 	defer body.Close()
 	reader := bufio.NewReader(body)
 	for {
@@ -407,6 +433,25 @@ func streamImageBuilderLogs(body io.ReadCloser) {
 			log.Println(err)
 			break
 		}
-		log.Println(string(line))
+
+		jsonString, _ := json.Marshal(streaming.ImageBuildLogEvent{
+			StreamingEvent: streaming.StreamingEvent{Event: streaming.ImageBuildLogEventString},
+			BuildId:        imageBuildId,
+			LogLine:        string(line),
+		})
+		clientHub.Send <- &streaming.ClientMessage{
+			ClientId: userLogin,
+			Message:  jsonString,
+		}
 	}
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+
+func randStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }

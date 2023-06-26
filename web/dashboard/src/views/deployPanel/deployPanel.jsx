@@ -22,7 +22,8 @@ export default class DeployPanel extends Component {
       envs: reduxState.envs,
       tabs: defaultTabs,
       runningDeploys: reduxState.runningDeploys,
-      scmUrl: reduxState.settings.scmUrl
+      scmUrl: reduxState.settings.scmUrl,
+      imageBuildLogs: reduxState.imageBuildLogs
     }
 
     // handling API and streaming state changes
@@ -38,7 +39,8 @@ export default class DeployPanel extends Component {
         tabs: reduxState.runningDeploys.length === 0 ? defaultTabs : [
           { name: 'Gitops Status', current: false },
           { name: 'Deploy Status', current: true },
-        ]
+        ],
+        imageBuildLogs: reduxState.imageBuildLogs
       });
     });
 
@@ -132,12 +134,23 @@ export default class DeployPanel extends Component {
     )
   }
 
-  deployStatus(runningDeploys, scmUrl, gitopsCommits, envs){
+  deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs){
     if (runningDeploys.length === 0) {
       return null;
     }
 
-    return DeployStatus(runningDeploys[0], scmUrl, gitopsCommits, envs)
+    const runningDeploy = runningDeploys[0];
+
+    console.log(runningDeploy)
+
+    if (runningDeploy.id) {
+      return DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
+    } else {
+      console.log(imageBuildLogs[runningDeploy.buildId])
+      return (
+        <div>aaa</div>
+      );
+    }
   }
 
   switchTab(tab) {
@@ -158,7 +171,7 @@ export default class DeployPanel extends Component {
   }
 
   render() {
-    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs } = this.state;
+    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs, imageBuildLogs } = this.state;
 
     if (!this.state.deployPanelOpen) {
       return (
@@ -184,7 +197,7 @@ export default class DeployPanel extends Component {
             </div>
             <div className="mt-4 pb-12 px-6 overflow-y-scroll h-full w-full">
               {tabs[0].current ? this.gitopsStatus(gitopsCommits, envs) : null}
-              {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs) : null}
+              {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs) : null}
             </div>
           </div>
       </div>

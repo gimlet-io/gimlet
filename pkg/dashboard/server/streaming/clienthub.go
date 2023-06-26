@@ -48,6 +48,8 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	clientId string
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -130,7 +132,15 @@ func ServeWs(hub *ClientHub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	ctx := r.Context()
+	user := ctx.Value("user").(*model.User)
+
+	client := &Client{
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		clientId: user.Login,
+	}
 	client.hub.Register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -148,6 +158,9 @@ type ClientHub struct {
 	// Updates to be broadcasted to the clients.
 	Broadcast chan []byte
 
+	// Updates to be sent to a single user.
+	Send chan *ClientMessage
+
 	// Register requests from the clients.
 	Register chan *Client
 
@@ -155,9 +168,15 @@ type ClientHub struct {
 	Unregister chan *Client
 }
 
+type ClientMessage struct {
+	ClientId string
+	Message  []byte
+}
+
 func NewClientHub() *ClientHub {
 	return &ClientHub{
 		Broadcast:  make(chan []byte),
+		Send:       make(chan *ClientMessage),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
@@ -181,6 +200,17 @@ func (h *ClientHub) Run() {
 				default:
 					close(client.send)
 					delete(h.Clients, client)
+				}
+			}
+		case clientMessage := <-h.Send:
+			for client := range h.Clients {
+				if client.clientId == clientMessage.ClientId {
+					select {
+					case client.send <- clientMessage.Message:
+					default:
+						close(client.send)
+						delete(h.Clients, client)
+					}
 				}
 			}
 		}

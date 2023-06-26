@@ -64,6 +64,8 @@ export const EVENT_INGRESS_CREATED = 'ingressCreated';
 export const EVENT_INGRESS_UPDATED = 'ingressUpdated';
 export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 
+export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
+
 export const initialState = {
   settings: {
     agents: []
@@ -99,6 +101,7 @@ export const initialState = {
     errorList: null
   },
   podLogs: {},
+  imageBuildLogs: {},
   users: [],
   deployPanelOpen: false
 };
@@ -186,7 +189,7 @@ export function rootReducer(state = initialState, action) {
 }
 
 function processStreamingEvent(state, event) {
-  console.log(event.event);
+  // console.log(event.event);
 
   switch (event.event) {
     case EVENT_AGENT_CONNECTED:
@@ -203,6 +206,8 @@ function processStreamingEvent(state, event) {
       return podEventHandlers.podDeleted(state, event);
     case EVENT_POD_LOGS:
       return podEventHandlers.podLogs(state, event);
+    case EVENT_IMAGE_BUILD_LOG_EVENT:
+      return deploymentEventHandlers.imageBuildLogs(state, event);
     case EVENT_DEPLOYMENT_CREATED:
       return deploymentEventHandlers.deploymentCreated(state, event);
     case EVENT_DEPLOYMENT_UPDATED:
@@ -218,7 +223,6 @@ function processStreamingEvent(state, event) {
     case EVENT_STALE_REPO_DATA:
       return eventHandlers.staleRepoData(state, event);
     case EVENT_GITOPS_COMMIT_EVENT:
-      console.log(event);
       return eventHandlers.updateGitopsCommits(state, event);
     case EVENT_COMMIT_STATUS_UPDATED:
       return eventHandlers.updateCommitStatus(state, event);
