@@ -140,6 +140,9 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	gitScm.GitService = gitSvc
 	gitScm.TokenManager = tokenManager
 
+	goScm := ctx.Value("goScm").(*genericScm.GoScmHelper)
+	*goScm = *genericScm.NewGoScmHelper(dynamicConfig, nil)
+
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
 	githubOAuthRoutes(dynamicConfig, router, config.Host)
@@ -195,6 +198,9 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 		BaseURL: gitlabUrl,
 	}
 	gitScm.TokenManager = customGitlab.NewGitlabTokenManager(token)
+
+	goScm := ctx.Value("goScm").(*genericScm.GoScmHelper)
+	*goScm = *genericScm.NewGoScmHelper(dynamicConfig, nil)
 
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
