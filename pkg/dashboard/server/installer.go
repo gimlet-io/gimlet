@@ -8,12 +8,14 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
+	"github.com/go-chi/chi"
 	"github.com/laszlocph/go-login/login"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -138,6 +140,10 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	gitScm.GitService = gitSvc
 	gitScm.TokenManager = tokenManager
 
+	router := ctx.Value("router").(*chi.Mux)
+	config := ctx.Value("config").(*config.Config)
+	githubOAuthRoutes(dynamicConfig, router, config.Host)
+
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
@@ -189,6 +195,10 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 		BaseURL: gitlabUrl,
 	}
 	gitScm.TokenManager = customGitlab.NewGitlabTokenManager(token)
+
+	router := ctx.Value("router").(*chi.Mux)
+	config := ctx.Value("config").(*config.Config)
+	githubOAuthRoutes(dynamicConfig, router, config.Host)
 
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
