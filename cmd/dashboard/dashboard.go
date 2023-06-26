@@ -193,9 +193,12 @@ func main() {
 	logger := log.New()
 	logger.Formatter = &customFormatter{}
 
-	gitServer, err := builtInGitServer(gitUser, config.GitRoot)
-	if err != nil {
-		panic(err)
+	var gitServer http.Handler
+	if config.BuiltinEnvFeatureFlag {
+		gitServer, err = builtInGitServer(gitUser, config.GitRoot)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	r := server.SetupRouter(
