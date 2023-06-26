@@ -9,11 +9,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 )
 
-type GitScm struct {
-	GitService   CustomGitService
-	TokenManager NonImpersonatedTokenManager
-}
-
 type CustomGitService interface {
 	FetchCommits(owner string, repo string, token string, hashesToFetch []string) ([]*model.Commit, error)
 	OrgRepos(installationToken string) ([]string, error)

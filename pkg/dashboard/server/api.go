@@ -289,7 +289,6 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-
 	token, _, _ := tokenManager.Token()
 	for _, env := range envs {
 		for _, stack := range env.Stacks {

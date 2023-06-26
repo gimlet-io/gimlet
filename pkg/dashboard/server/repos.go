@@ -125,8 +125,8 @@ func updateOrgRepos(ctx context.Context) []string {
 	return orgRepos
 }
 
-func updateUserRepos(config *dynamicconfig.DynamicConfig, dao *store.Store, user *model.User) []string {
-	goScmHelper := genericScm.NewGoScmHelper(config, func(token *scm.Token) {
+func updateUserRepos(dynamicConfig *dynamicconfig.DynamicConfig, dao *store.Store, user *model.User) []string {
+	goScmHelper := genericScm.NewGoScmHelper(dynamicConfig, func(token *scm.Token) {
 		user.AccessToken = token.Token
 		user.RefreshToken = token.Refresh
 		user.Expires = token.Expires.Unix()

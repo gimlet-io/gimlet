@@ -204,7 +204,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	gitServiceImpl := customScm.NewGitService(dynamicConfig)
-
 	gitToken, gitUser, _ := tokenManager.Token()
 	org := dynamicConfig.Org()
 
