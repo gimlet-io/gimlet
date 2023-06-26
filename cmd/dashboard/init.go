@@ -77,12 +77,10 @@ func adminToken(config *config.Config) string {
 	}
 }
 
-func initTokenManager(config *config.Config) (customScm.CustomGitService, customScm.NonImpersonatedTokenManager) {
-	var gitSvc customScm.CustomGitService
+func initTokenManager(config *config.Config) customScm.NonImpersonatedTokenManager {
 	var tokenManager customScm.NonImpersonatedTokenManager
 
 	if config.IsGithub() {
-		gitSvc = &customGithub.GithubClient{}
 		var err error
 		tokenManager, err = customGithub.NewGithubOrgTokenManager(
 			config.Github.AppID,
@@ -93,12 +91,9 @@ func initTokenManager(config *config.Config) (customScm.CustomGitService, custom
 			panic(err)
 		}
 	} else if config.IsGitlab() {
-		gitSvc = &customGitlab.GitlabClient{
-			BaseURL: config.ScmURL(),
-		}
 		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
 	}
-	return gitSvc, tokenManager
+	return tokenManager
 }
 
 func initNotifications(

@@ -22,29 +22,23 @@ import (
 )
 
 type ChartVersionUpdater struct {
-	gitSvc            customScm.CustomGitService
+	config            *config.Config
 	tokenManager      customScm.NonImpersonatedTokenManager
 	repoCache         *helper.RepoCache
-	goScm             *genericScm.GoScmHelper
 	chartUpdatePrList *map[string]interface{}
-	chart             config.Chart
 }
 
 func NewChartVersionUpdater(
-	gitSvc customScm.CustomGitService,
+	config *config.Config,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *helper.RepoCache,
-	goScm *genericScm.GoScmHelper,
 	chartUpdatePrList *map[string]interface{},
-	chart config.Chart,
 ) *ChartVersionUpdater {
 	return &ChartVersionUpdater{
-		gitSvc:            gitSvc,
+		config:            config,
 		tokenManager:      tokenManager,
 		repoCache:         repoCache,
-		goScm:             goScm,
 		chartUpdatePrList: chartUpdatePrList,
-		chart:             chart,
 	}
 }
 
@@ -52,7 +46,8 @@ func (c *ChartVersionUpdater) Run() {
 	for {
 		(*c.chartUpdatePrList) = map[string]interface{}{}
 		token, _, _ := c.tokenManager.Token()
-		repos, err := c.gitSvc.OrgRepos(token)
+		gitSvc := customScm.NewGitService(c.config)
+		repos, err := gitSvc.OrgRepos(token)
 		if err != nil {
 			logrus.Errorf("cannot get org repos: %s", err)
 		}
@@ -70,7 +65,8 @@ func (c *ChartVersionUpdater) Run() {
 
 func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, repoName string) error {
 	logrus.Infof("evaluating %s for chart version update", repoName)
-	prList, err := c.goScm.ListOpenPRs(token, repoName)
+	goScmHelper := genericScm.NewGoScmHelper(c.config, nil)
+	prList, err := goScmHelper.ListOpenPRs(token, repoName)
 	if err != nil {
 		return fmt.Errorf("cannot list pull requests: %s", err)
 	}
@@ -114,7 +110,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 	}
 
 	for fileName, content := range files {
-		latestVersion := c.chart.Version
+		latestVersion := c.config.Chart.Version
 
 		chartFromGitRepo, err := isChartFromGitRepo(content)
 		if err != nil {
@@ -122,7 +118,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			continue
 		}
 		if chartFromGitRepo {
-			latestVersion = c.chart.Name
+			latestVersion = c.config.Chart.Name
 		}
 		updatedContent := updateChartVersion(content, latestVersion)
 
@@ -147,7 +143,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		return fmt.Errorf("cannot stage, commit and push: %s", err)
 	}
 
-	createdPr, _, err := c.goScm.CreatePR(token, repoName, sourceBranch, headBranch,
+	createdPr, _, err := goScmHelper.CreatePR(token, repoName, sourceBranch, headBranch,
 		"[Gimlet] Deployment template update",
 		"This is an automated Pull Request that updates the Helm chart version in Gimlet manifests.")
 	if err != nil {

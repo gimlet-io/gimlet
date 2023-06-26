@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -24,34 +23,16 @@ func gitRepos(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 
 	go updateUserRepos(config, dao, user)
+	go updateOrgRepos(ctx)
 
-	timeout := time.After(45 * time.Second)
-	user, err := func() (*model.User, error) {
-		for {
-			user, err := dao.User(user.Login)
-			if err != nil {
-				logrus.Errorf("cannot get user from db: %s", err)
-				return nil, err
-			}
-
-			if len(user.Repos) > 0 {
-				return user, nil
-			}
-
-			select {
-			case <-timeout:
-				return &model.User{}, nil
-			default:
-				time.Sleep(3 * time.Second)
-			}
-		}
-	}()
+	orgRepos, userRepos, err := fetchReposFromDb(dao, user.Login)
 	if err != nil {
+		logrus.Errorf("cannot get repos from db: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	userHasAccessToRepos := hasPrefix(user.Repos, config.Org())
+	userHasAccessToRepos := intersection(orgRepos, userRepos)
 	reposString, err := json.Marshal(userHasAccessToRepos)
 	if err != nil {
 		logrus.Errorf("cannot serialize repos: %s", err)
@@ -76,14 +57,22 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userReposDb := hasPrefix(user.Repos, config.Org())
-	userRepos := updateUserRepos(config, dao, user)
-	userReposWithAccess := hasPrefix(userRepos, config.Org())
-	added := difference(userReposWithAccess, userReposDb)
-	deleted := difference(userReposDb, userReposWithAccess)
+	orgRepos, err := getOrgRepos(dao)
+	if err != nil {
+		logrus.Errorf("cannot get org repos from db: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	userAccessRepos := intersection(orgRepos, user.Repos)
+	updatedUserRepos := updateUserRepos(config, dao, user)
+	updatedOrgRepos := updateOrgRepos(ctx)
+	updatedUserAccessRepos := intersection(updatedOrgRepos, updatedUserRepos)
+	added := difference(updatedUserAccessRepos, userAccessRepos)
+	deleted := difference(userAccessRepos, updatedUserAccessRepos)
 
 	repos := map[string]interface{}{
-		"userRepos": userReposWithAccess,
+		"userRepos": updatedUserAccessRepos,
 		"added":     added,
 		"deleted":   deleted,
 	}
@@ -99,21 +88,22 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	w.Write(reposString)
 }
 
-func updateOrgRepos(ctx context.Context) {
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
+func updateOrgRepos(ctx context.Context) []string {
+	config := ctx.Value("config").(*config.Config)
+	gitServiceImpl := customScm.NewGitService(config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
 	orgRepos, err := gitServiceImpl.OrgRepos(token)
 	if err != nil {
 		logrus.Warnf("cannot get org repos: %s", err)
-		return
+		return nil
 	}
 
 	orgReposString, err := json.Marshal(orgRepos)
 	if err != nil {
 		logrus.Warnf("cannot serialize org repos: %s", err)
-		return
+		return nil
 	}
 
 	dao := ctx.Value("store").(*store.Store)
@@ -123,8 +113,9 @@ func updateOrgRepos(ctx context.Context) {
 	})
 	if err != nil {
 		logrus.Warnf("cannot store org repos: %s", err)
-		return
+		return nil
 	}
+	return orgRepos
 }
 
 func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) []string {
@@ -152,14 +143,47 @@ func updateUserRepos(config *config.Config, dao *store.Store, user *model.User) 
 	return userRepos
 }
 
-func hasPrefix(repos []string, prefix string) []string {
-	filtered := []string{}
-	for _, r := range repos {
-		if strings.HasPrefix(r, prefix) {
-			filtered = append(filtered, r)
+func fetchReposFromDb(dao *store.Store, login string) ([]string, []string, error) {
+	timeout := time.After(45 * time.Second)
+
+	for {
+		orgRepos, err := getOrgRepos(dao)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		user, err := dao.User(login)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if len(orgRepos) != 0 && len(user.Repos) != 0 {
+			return orgRepos, user.Repos, nil
+		}
+
+		select {
+		case <-timeout:
+			return orgRepos, user.Repos, nil
+		default:
+			time.Sleep(3 * time.Second)
 		}
 	}
-	return filtered
+}
+
+func intersection(s1, s2 []string) []string {
+	inter := []string{}
+	hash := make(map[string]bool)
+	for _, e := range s1 {
+		hash[e] = true
+	}
+	for _, e := range s2 {
+		// If elements present in the hashmap then append intersection list.
+		if hash[e] {
+			inter = append(inter, e)
+		}
+	}
+
+	return inter
 }
 
 type favRepos struct {

@@ -55,6 +55,10 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
 	image := r.FormValue("image")
+	tag := r.FormValue("tag")
+	app := r.FormValue("app")
+	// cacheImage := r.FormValue("cacheImage")
+	// previousImage := r.FormValue("previousImage")
 	// Parse our multipart form, 1000 << 20 specifies a maximum
 	// upload of 1000 MB files.
 	r.ParseMultipartForm(1000 << 20)
@@ -65,6 +69,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
 		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
@@ -77,6 +82,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	tempFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
 	}
 	defer tempFile.Close()
 	fmt.Println(tempFile.Name())
@@ -86,33 +93,78 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
 	}
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
-	// return that we have successfully uploaded our file!
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
 
 	reader, err := os.Open(tempFile.Name())
 	if err != nil {
 		fmt.Println(err)
-	}
-	tempFolder, err := ioutil.TempDir("/tmp", "source-*")
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(tempFolder)
-	err = Untar(tempFolder, reader)
-	if err != nil {
-		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
 	}
 
+	sourcePath := "/home/cnb/" + app
+	defer os.RemoveAll(sourcePath)
+	err = Untar(sourcePath, reader)
+	if err != nil {
+		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
 	// shell out to buildpacks
-	app := "/cnb/lifecycle/creator"
-	sourcePath := "-app=" + tempFolder
-	cmd := exec.Command(app, sourcePath, image)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run()
+	command := "/cnb/lifecycle/creator"
+	sourcePathArg := "-app=" + sourcePath
+	// cacheImage = "-cache-image=" + cacheImage
+	// previousImage = "-previous-image=" + previousImage
+	// cmd := exec.Command(command, sourcePath, cacheImage, previousImage, image)
+	cmd := exec.Command(command, sourcePathArg, image+":"+tag)
+	pipeReader, pipeWriter := io.Pipe()
+	cmd.Stdout = pipeWriter
+	cmd.Stderr = pipeWriter
+	go writeCmdOutput(w, pipeReader)
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
+	}
+	pipeWriter.Close()
+
+	if err != nil {
+		fmt.Println(err)
+		w.Write([]byte("IMAGE BUILD ERROR"))
+		return
+	}
+
+	w.Write([]byte("IMAGE BUILT"))
+}
+
+func writeCmdOutput(res http.ResponseWriter, pipeReader *io.PipeReader) {
+	buffer := make([]byte, 1024)
+	for {
+		n, err := pipeReader.Read(buffer)
+		if err != nil {
+			pipeReader.Close()
+			break
+		}
+
+		data := buffer[0:n]
+		fmt.Print(string(data))
+		res.Write(data)
+		if f, ok := res.(http.Flusher); ok {
+			f.Flush()
+		}
+		//reset buffer
+		for i := 0; i < n; i++ {
+			buffer[i] = 0
+		}
+	}
 }
 
 // Untar takes a destination path and a reader; a tar reader loops over the tarfile

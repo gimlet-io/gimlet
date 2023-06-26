@@ -507,6 +507,7 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fakeDashConfig := &config.Config{}
+	fakeDashConfig.RepoCachePath = repoCachePath
 	if data.github {
 		fakeDashConfig.Github = config.Github{AppID: "xxx"}
 	} else {
@@ -517,8 +518,6 @@ func bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 	gitRepoCache, err := nativeGit.NewRepoCache(
 		data.tokenManager,
-		nil,
-		repoCachePath,
 		nil,
 		fakeDashConfig,
 		nil,
