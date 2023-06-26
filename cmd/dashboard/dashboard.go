@@ -127,8 +127,6 @@ func main() {
 	repoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
-		config.RepoCachePath,
-		goScm,
 		config,
 		clientHub,
 		gitUser,
