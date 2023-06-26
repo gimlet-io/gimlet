@@ -82,17 +82,13 @@ func SetupRouter(
 	})
 
 	agentRoutes(r, agentWSHub, config.JWTSecret)
-	userRoutes(r)
+	userRoutes(r, clientHub)
 	githubOAuthRoutes(config, r)
 	gimletdRoutes(r)
 
 	r.Get("/logout", logout)
 	r.Handle("/builtin/infra*", gitServer)
 	r.Handle("/builtin/apps*", gitServer)
-
-	r.Get("/ws/", func(w http.ResponseWriter, r *http.Request) {
-		streaming.ServeWs(clientHub, w, r)
-	})
 
 	r.Post("/hook", hook)
 
@@ -138,7 +134,7 @@ func gimletdRoutes(r *chi.Mux) {
 	})
 }
 
-func userRoutes(r *chi.Mux) {
+func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 	r.Group(func(r chi.Router) {
 		r.Use(session.SetUser())
 		r.Use(session.SetCSRF())
@@ -171,6 +167,10 @@ func userRoutes(r *chi.Mux) {
 		r.Post(("/api/deleteEnvFromDB"), deleteEnvFromDB)
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
+
+		r.Get("/ws/", func(w http.ResponseWriter, r *http.Request) {
+			streaming.ServeWs(clientHub, w, r)
+		})
 	})
 }
 
