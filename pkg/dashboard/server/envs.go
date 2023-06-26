@@ -201,7 +201,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
+	gitServiceImpl := customScm.NewGitService(config)
 	gitToken, gitUser, _ := tokenManager.Token()
 	org := config.Org()
 

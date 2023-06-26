@@ -35,7 +35,6 @@ func SetupRouter(
 	clientHub *streaming.ClientHub,
 	agentWSHub *streaming.AgentWSHub,
 	store *store.Store,
-	gitService customScm.CustomGitService,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
@@ -59,7 +58,6 @@ func SetupRouter(
 	r.Use(middleware.WithValue("store", store))
 	r.Use(middleware.WithValue("config", config))
 	r.Use(middleware.WithValue("dynamicConfig", dynamicConfig))
-	r.Use(middleware.WithValue("gitService", gitService))
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))

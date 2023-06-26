@@ -33,12 +33,10 @@ type RepoCache struct {
 	repos        map[string]repoData
 	stopCh       chan struct{}
 	invalidateCh chan string
-	cachePath    string
 
 	// For webhook registration
-	goScmHelper *genericScm.GoScmHelper
-	config      *dashboardConfig.Config
-	clientHub   *streaming.ClientHub
+	config    *dashboardConfig.Config
+	clientHub *streaming.ClientHub
 
 	// for builtin env
 	gitUser *model.User
@@ -54,8 +52,6 @@ type repoData struct {
 func NewRepoCache(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
-	cachePath string,
-	goScmHelper *genericScm.GoScmHelper,
 	config *dashboardConfig.Config,
 	clientHub *streaming.ClientHub,
 	gitUser *model.User,
@@ -65,14 +61,13 @@ func NewRepoCache(
 		repos:        map[string]repoData{},
 		stopCh:       stopCh,
 		invalidateCh: make(chan string),
-		cachePath:    cachePath,
-		goScmHelper:  goScmHelper,
 		config:       config,
 		clientHub:    clientHub,
 		gitUser:      gitUser,
 	}
 
 	const DirRwxRxR = 0754
+	cachePath := config.RepoCachePath
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
 		os.MkdirAll(cachePath, DirRwxRxR)
 	}
@@ -253,7 +248,7 @@ func (r *RepoCache) instanceForWrite(repoName string, withHistory bool) (*git.Re
 		return nil, "", err
 	}
 
-	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
+	repoPath := filepath.Join(r.config.RepoCachePath, strings.ReplaceAll(repoName, "/", "%"))
 	err = copy.Copy(repoPath, tmpPath)
 	if err != nil {
 		errors.WithMessage(err, "could not make copy of repo")
@@ -285,7 +280,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		return repoData{}, fmt.Errorf("repo name is mandatory")
 	}
 
-	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
+	repoPath := filepath.Join(r.config.RepoCachePath, strings.ReplaceAll(repoName, "/", "%"))
 
 	os.RemoveAll(repoPath)
 	err := os.MkdirAll(repoPath, Dir_RWX_RX_R)
@@ -357,11 +352,8 @@ func (r *RepoCache) registerWebhook(repoName string) {
 		logrus.Errorf("couldn't get scm token: %s", err)
 	}
 
-	if r.goScmHelper == nil {
-		logrus.Warnf("not registering webhook for %s", repoName)
-		return
-	}
-	err = r.goScmHelper.RegisterWebhook(
+	goScmHelper := genericScm.NewGoScmHelper(r.config, nil)
+	err = goScmHelper.RegisterWebhook(
 		r.config.Host,
 		token,
 		r.config.WebhookSecret,
