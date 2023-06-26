@@ -20,7 +20,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -91,8 +90,6 @@ func main() {
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
 
-	goScm := genericScm.NewGoScmHelper(config, nil)
-
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
@@ -140,12 +137,10 @@ func main() {
 	chartUpdatePullRequests := map[string]interface{}{}
 	if config.ChartVersionUpdaterFeatureFlag {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
-			gitSvc,
+			config,
 			tokenManager,
 			repoCache,
-			goScm,
 			&chartUpdatePullRequests,
-			config.Chart,
 		)
 		go chartVersionUpdater.Run()
 	}
