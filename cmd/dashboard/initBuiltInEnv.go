@@ -79,7 +79,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = server.PrepAgentManifests(builtInEnv, tmpPath, repo, config.Host, dynamicConfig.JWTSecret)
+	err = server.PrepAgentManifests(builtInEnv, tmpPath, repo, config, dynamicConfig)
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
