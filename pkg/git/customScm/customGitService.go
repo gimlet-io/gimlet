@@ -3,7 +3,7 @@ package customScm
 import (
 	"context"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
@@ -22,14 +22,14 @@ type CustomGitService interface {
 	AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error
 }
 
-func NewGitService(config *config.Config) CustomGitService {
+func NewGitService(dynamicConfig *dynamicconfig.DynamicConfig) CustomGitService {
 	var gitSvc CustomGitService
 
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		gitSvc = &customGithub.GithubClient{}
-	} else if config.IsGitlab() {
+	} else if dynamicConfig.IsGitlab() {
 		gitSvc = &customGitlab.GitlabClient{
-			BaseURL: config.ScmURL(),
+			BaseURL: dynamicConfig.ScmURL(),
 		}
 	} else {
 		gitSvc = &DummyGitService{}

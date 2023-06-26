@@ -13,7 +13,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
@@ -59,12 +58,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("store", store))
 	r.Use(middleware.WithValue("config", config))
 	r.Use(middleware.WithValue("dynamicConfig", dynamicConfig))
-<<<<<<< HEAD
 	r.Use(middleware.WithValue("tokenManager", tokenManager))
-=======
-	r.Use(middleware.WithValue("gitScm", gitScm))
-	r.Use(middleware.WithValue("goScm", goScm))
->>>>>>> 04c5a60 (Update goScm on install)
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
@@ -88,7 +82,7 @@ func SetupRouter(
 
 	agentRoutes(r, agentWSHub, dynamicConfig.JWTSecret)
 	userRoutes(r, clientHub)
-	githubOAuthRoutes(dynamicConfig, r, config.Host)
+	githubOAuthRoutes(config, dynamicConfig, r)
 	gimletdRoutes(r)
 	adminKeyAuthRoutes(r)
 	installerRoutes(r)
@@ -201,7 +195,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 	})
 }
 
-func githubOAuthRoutes(dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux, host string) {
+func githubOAuthRoutes(config *config.Config, dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux) {
 	if dynamicConfig.IsGithub() {
 		dumper := logger.DiscardDumper()
 		if dynamicConfig.Github.Debug {
@@ -229,7 +223,7 @@ func githubOAuthRoutes(dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux, h
 			Server:       dynamicConfig.ScmURL(),
 			ClientID:     dynamicConfig.Gitlab.ClientID,
 			ClientSecret: dynamicConfig.Gitlab.ClientSecret,
-			RedirectURL:  host + "/auth",
+			RedirectURL:  config.Host + "/auth",
 			Scope:        []string{"api"},
 		}
 

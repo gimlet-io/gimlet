@@ -286,8 +286,8 @@ func agents(w http.ResponseWriter, r *http.Request) {
 
 func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("config").(*config.Config)
-	gitServiceImpl := customScm.NewGitService(config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 
 	token, _, _ := tokenManager.Token()
@@ -311,7 +311,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
-	tokenManager := ctx.Value("gitScm").(*customScm.GitScm).TokenManager
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -427,8 +427,8 @@ func chartFromConfig(config *config.Config) dx.Chart {
 
 func application(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	gitServiceImpl := customScm.NewGitService(config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 
 	tokenString, err := tokenManager.AppToken()

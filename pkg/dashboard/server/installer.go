@@ -11,9 +11,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/go-chi/chi"
 	"github.com/laszlocph/go-login/login"
@@ -136,16 +134,11 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig.Github.Org = appOwner
 	dynamicConfig.Persist()
 
-	gitScm := ctx.Value("gitScm").(*customScm.GitScm)
-	gitScm.GitService = gitSvc
-	gitScm.TokenManager = tokenManager
-
-	goScm := ctx.Value("goScm").(*genericScm.GoScmHelper)
-	*goScm = *genericScm.NewGoScmHelper(dynamicConfig, nil)
+	// TODO update tokenManager with tokenManager
 
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
-	githubOAuthRoutes(dynamicConfig, router, config.Host)
+	githubOAuthRoutes(config, dynamicConfig, router)
 
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
@@ -193,18 +186,11 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig.Gitlab.AdminToken = token
 	dynamicConfig.Persist()
 
-	gitScm := ctx.Value("gitScm").(*customScm.GitScm)
-	gitScm.GitService = &customGitlab.GitlabClient{
-		BaseURL: gitlabUrl,
-	}
-	gitScm.TokenManager = customGitlab.NewGitlabTokenManager(token)
-
-	goScm := ctx.Value("goScm").(*genericScm.GoScmHelper)
-	*goScm = *genericScm.NewGoScmHelper(dynamicConfig, nil)
+	// TODO update tokenManager with customGitlab.NewGitlabTokenManager(token)
 
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
-	githubOAuthRoutes(dynamicConfig, router, config.Host)
+	githubOAuthRoutes(config, dynamicConfig, router)
 
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }

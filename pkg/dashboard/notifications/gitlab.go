@@ -12,12 +12,12 @@ import (
 const gitlabCommitLink = "%s/%s/-/commit/%s"
 
 type gitlabProvider struct {
-	tokenManager *customScm.NonImpersonatedTokenManager
+	tokenManager customScm.NonImpersonatedTokenManager
 	baseUrl      string
 }
 
 func NewGitlabProvider(
-	tokenManager *customScm.NonImpersonatedTokenManager,
+	tokenManager customScm.NonImpersonatedTokenManager,
 	baseUrl string,
 ) *gitlabProvider {
 	return &gitlabProvider{
@@ -50,8 +50,7 @@ func (g *gitlabProvider) send(msg Message) error {
 }
 
 func (g *gitlabProvider) post(owner string, repo string, sha string, status *status) error {
-	tokenManager := *g.tokenManager
-	token, _, _ := tokenManager.Token()
+	token, _, _ := g.tokenManager.Token()
 	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(g.baseUrl))
 	if err != nil {
 		return fmt.Errorf("couldn't create gitlab client: %s", err)

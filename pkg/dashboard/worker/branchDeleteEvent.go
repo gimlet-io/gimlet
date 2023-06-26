@@ -31,13 +31,13 @@ var fetchRefSpec = []config.RefSpec{
 }
 
 type BranchDeleteEventWorker struct {
-	tokenManager *customScm.NonImpersonatedTokenManager
+	tokenManager customScm.NonImpersonatedTokenManager
 	cachePath    string
 	dao          *store.Store
 }
 
 func NewBranchDeleteEventWorker(
-	tokenManager *customScm.NonImpersonatedTokenManager,
+	tokenManager customScm.NonImpersonatedTokenManager,
 	cachePath string,
 	dao *store.Store,
 ) *BranchDeleteEventWorker {
@@ -132,8 +132,7 @@ func (r *BranchDeleteEventWorker) Run() {
 func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([]string, error) {
 	staleBranches := commonGit.BranchList(repo)
 
-	tokenManager := *r.tokenManager
-	token, user, err := tokenManager.Token()
+	token, user, err := r.tokenManager.Token()
 	if err != nil {
 		return []string{}, fmt.Errorf("couldn't get scm token: %s", err)
 	}
@@ -200,8 +199,7 @@ func (r *BranchDeleteEventWorker) clone(repoName string) error {
 		return errors.WithMessage(err, "couldn't create folder")
 	}
 
-	tokenManager := *r.tokenManager
-	token, user, err := tokenManager.Token()
+	token, user, err := r.tokenManager.Token()
 	if err != nil {
 		os.RemoveAll(repoPath)
 		return errors.WithMessage(err, "couldn't get scm token")

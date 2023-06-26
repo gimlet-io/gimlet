@@ -35,7 +35,7 @@ type GitopsWorker struct {
 	store                   *store.Store
 	gitopsRepo              string
 	gitopsRepoDeployKeyPath string
-	tokenManager            *customScm.NonImpersonatedTokenManager
+	tokenManager            customScm.NonImpersonatedTokenManager
 	notificationsManager    notifications.Manager
 	eventsProcessed         prometheus.Counter
 	repoCache               *nativeGit.RepoCache
@@ -49,7 +49,7 @@ func NewGitopsWorker(
 	store *store.Store,
 	gitopsRepo string,
 	gitopsRepoDeployKeyPath string,
-	tokenManager *customScm.NonImpersonatedTokenManager,
+	tokenManager customScm.NonImpersonatedTokenManager,
 	notificationsManager notifications.Manager,
 	eventsProcessed prometheus.Counter,
 	repoCache *nativeGit.RepoCache,
@@ -106,7 +106,7 @@ func processEvent(
 	store *store.Store,
 	gitopsRepo string,
 	gitopsRepoDeployKeyPath string,
-	tokenManager *customScm.NonImpersonatedTokenManager,
+	tokenManager customScm.NonImpersonatedTokenManager,
 	event *model.Event,
 	notificationsManager notifications.Manager,
 	repoCache *nativeGit.RepoCache,
@@ -117,7 +117,6 @@ func processEvent(
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
-		tokenManager := *tokenManager
 		token, _, _ = tokenManager.Token()
 	}
 

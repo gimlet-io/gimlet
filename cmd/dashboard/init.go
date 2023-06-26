@@ -115,7 +115,7 @@ func initTokenManager(dynamicConfig *dynamicconfig.DynamicConfig) customScm.NonI
 func initNotifications(
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
-	tokenManager *customScm.NonImpersonatedTokenManager,
+	tokenManager customScm.NonImpersonatedTokenManager,
 ) *notifications.ManagerImpl {
 	notificationsManager := notifications.NewManager()
 	if config.Notifications.Provider == "slack" {
