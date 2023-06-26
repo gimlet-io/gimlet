@@ -68,7 +68,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				gitService := ctx.Value("gitService").(customScm.CustomGitService)
+				gitService := customScm.NewGitService(config)
 				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
 
 				writer.WriteHeader(http.StatusOK)
@@ -94,7 +94,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		name := webhook.Repository().Name
 		w := webhook.(*scm.StatusHook)
 
-		gitService := ctx.Value("gitService").(customScm.CustomGitService)
+		gitService := customScm.NewGitService(config)
 		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao, clientHub)
 	case *scm.BranchHook:
 		processBranchHook(webhook, gitRepoCache)

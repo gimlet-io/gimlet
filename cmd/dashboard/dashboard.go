@@ -84,7 +84,7 @@ func main() {
 		panic(err)
 	}
 
-	gitSvc, tokenManager := initTokenManager(config)
+	tokenManager := initTokenManager(config)
 	notificationsManager := initNotifications(config, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
@@ -198,7 +198,6 @@ func main() {
 		clientHub,
 		agentWSHub,
 		store,
-		gitSvc,
 		tokenManager,
 		repoCache,
 		&chartUpdatePullRequests,

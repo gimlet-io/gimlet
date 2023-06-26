@@ -285,7 +285,8 @@ func agents(w http.ResponseWriter, r *http.Request) {
 
 func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
+	config := ctx.Value("config").(*config.Config)
+	gitServiceImpl := customScm.NewGitService(config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	for _, env := range envs {
@@ -424,7 +425,8 @@ func chartFromConfig(config *config.Config) dx.Chart {
 
 func application(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	gitServiceImpl := ctx.Value("gitService").(customScm.CustomGitService)
+	config := ctx.Value("config").(*config.Config)
+	gitServiceImpl := customScm.NewGitService(config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 
 	tokenString, err := tokenManager.AppToken()
