@@ -18,8 +18,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
@@ -89,27 +87,6 @@ func adminKey(dynamicConfig *dynamicconfig.DynamicConfig) string {
 		return adminSecret
 	}
 	return dynamicConfig.AdminKey
-}
-
-func initTokenManager(dynamicConfig *dynamicconfig.DynamicConfig) customScm.NonImpersonatedTokenManager {
-	var tokenManager customScm.NonImpersonatedTokenManager
-
-	if dynamicConfig.IsGithub() {
-		var err error
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			dynamicConfig.Github.AppID,
-			dynamicConfig.Github.InstallationID,
-			dynamicConfig.Github.PrivateKey.String(),
-		)
-		if err != nil {
-			panic(err)
-		}
-	} else if dynamicConfig.IsGitlab() {
-		tokenManager = customGitlab.NewGitlabTokenManager(dynamicConfig.Gitlab.AdminToken)
-	} else {
-		tokenManager = customScm.NewDummyTokenManager()
-	}
-	return tokenManager
 }
 
 func initNotifications(

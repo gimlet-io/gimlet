@@ -20,6 +20,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -86,7 +87,7 @@ func main() {
 		panic(err)
 	}
 
-	tokenManager := initTokenManager(dynamicConfig)
+	tokenManager := customScm.NewTokenManager(dynamicConfig)
 	notificationsManager := initNotifications(config, dynamicConfig, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)

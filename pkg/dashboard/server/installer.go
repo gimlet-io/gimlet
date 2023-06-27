@@ -11,6 +11,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/go-chi/chi"
@@ -114,10 +115,8 @@ func installed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenManager, err := customGithub.NewGithubOrgTokenManager(dynamicConfig.Github.AppID, installationId, dynamicConfig.Github.PrivateKey.String())
-	if err != nil {
-		panic(err)
-	}
+	tokenManager := ctx.Value("tokenManager").(*customScm.TokenManager)
+	tokenManager.Configure(dynamicConfig)
 	tokenString, err := tokenManager.AppToken()
 	if err != nil {
 		panic(err)
@@ -133,8 +132,6 @@ func installed(w http.ResponseWriter, r *http.Request) {
 
 	dynamicConfig.Github.Org = appOwner
 	dynamicConfig.Persist()
-
-	// TODO update tokenManager with tokenManager
 
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
@@ -186,7 +183,8 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 	dynamicConfig.Gitlab.AdminToken = token
 	dynamicConfig.Persist()
 
-	// TODO update tokenManager with customGitlab.NewGitlabTokenManager(token)
+	tokenManager := ctx.Value("tokenManager").(*customScm.TokenManager)
+	tokenManager.Configure(dynamicConfig)
 
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
