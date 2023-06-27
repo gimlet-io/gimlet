@@ -19,11 +19,6 @@ import (
 func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
-	if user.AccessToken == "" {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("[]"))
-		return
-	}
 
 	dao := ctx.Value("store").(*store.Store)
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
@@ -98,7 +93,6 @@ func updateOrgRepos(ctx context.Context) []string {
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-
 	token, _, _ := tokenManager.Token()
 
 	orgRepos, err := gitServiceImpl.OrgRepos(token)

@@ -78,6 +78,9 @@ func (helper *GoScmHelper) Parse(req *http.Request, fn scm.SecretFunc) (scm.Webh
 
 func (helper *GoScmHelper) UserRepos(accessToken string, refreshToken string, expires time.Time) ([]string, error) {
 	var repos []string
+	if helper.client == nil {
+		return repos, nil
+	}
 
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,
