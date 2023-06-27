@@ -33,6 +33,8 @@ export default class Profile extends Component {
       this.setState({ application: reduxState.application });
       this.setState({ settings: reduxState.settings });
     });
+
+    this.deleteUser = this.deleteUser.bind(this)
   }
 
   save() {
@@ -93,6 +95,41 @@ export default class Profile extends Component {
 
   sortAlphabetically(users) {
     return users.sort((a, b) => a.login.localeCompare(b.login));
+  }
+
+  deleteUser(login) {
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Deleting..."
+      }
+    });
+
+    this.props.gimletClient.deleteUser(login)
+      .then(() => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "User deleted"
+          }
+        });
+
+        this.props.gimletClient.getUsers()
+          .then(data => {
+            this.props.store.dispatch({
+              type: ACTION_TYPE_USERS,
+              payload: data
+            });
+          }, () => {/* Generic error handler deals with it */
+          });
+      }, err => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+        this.setTimeOutForButtonTriggeredAndPopupWindow();
+      });
   }
 
   render() {
@@ -174,10 +211,11 @@ source ~/.gimlet/config`}
                   </code>
                 </div>
               </div>
-              {this.so}
-              {users &&
-                userList(sortedUsers, DefaultProfilePicture, settings.scmUrl)
-              }
+              <Users
+                users={sortedUsers}
+                scmUrl={settings.scmUrl}
+                deleteUser={this.deleteUser}
+              />
               <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                 <div className="px-4 py-5 sm:px-6">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
@@ -257,7 +295,11 @@ function dashboardVersion(application) {
   )
 }
 
-function userList(sortedUsers, defaultProfilePicture, scmUrl) {
+function Users({ users, scmUrl, deleteUser }) {
+  if (users.length === 0) {
+    return null;
+  }
+
   return (
     <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
       <div className="px-4 py-5 sm:px-6">
@@ -266,13 +308,13 @@ function userList(sortedUsers, defaultProfilePicture, scmUrl) {
         </h3>
       </div>
       <div className="px-4 py-5 sm:px-6">
-        {sortedUsers.map(user => (
-          <div className="flex my-4 justify-between">
+        {users.map(user => (
+          <div key={user.login} className="flex my-4 justify-between">
             <div className="inline-flex items-center">
               <img
                 className="h-8 w-8 rounded-full text-2xl font-medium text-gray-900"
                 src={`${scmUrl}/${user.login}.png?size=128`}
-                onError={(e) => { e.target.src = defaultProfilePicture }}
+                onError={(e) => { e.target.src = DefaultProfilePicture }}
                 alt={user.login} />
               <div className="ml-4">{user.login}</div>
             </div>
@@ -298,6 +340,11 @@ function userList(sortedUsers, defaultProfilePicture, scmUrl) {
                 </div>
               </div>
             }
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" onClick={() => deleteUser(user.login)} className="items-center cursor-pointer inline text-red-400 hover:text-red-600 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
           </div>
         ))}
       </div>
