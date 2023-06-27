@@ -60,13 +60,14 @@ func NewRepoCache(
 	gitUser *model.User,
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
-		tokenManager: tokenManager,
-		repos:        map[string]repoData{},
-		stopCh:       stopCh,
-		invalidateCh: make(chan string),
-		config:       config,
-		clientHub:    clientHub,
-		gitUser:      gitUser,
+		tokenManager:  tokenManager,
+		repos:         map[string]repoData{},
+		stopCh:        stopCh,
+		invalidateCh:  make(chan string),
+		config:        config,
+		dynamicConfig: dynamicConfig,
+		clientHub:     clientHub,
+		gitUser:       gitUser,
 	}
 
 	const DirRwxRxR = 0754
