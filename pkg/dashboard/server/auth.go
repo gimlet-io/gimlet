@@ -3,10 +3,11 @@ package server
 import (
 	"database/sql"
 	"encoding/base32"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/httputil"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -28,8 +29,8 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 	token := login.TokenFrom(ctx)
 
-	config := ctx.Value("config").(*config.Config)
-	goScmHelper := genericScm.NewGoScmHelper(config, nil)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	goScmHelper := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	scmUser, err := goScmHelper.User(token.Access, token.Refresh)
 	if err != nil {
 		log.Errorf("cannot find git user: %s", err)
@@ -44,7 +45,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member := validateOrganizationMembership(orgList, config.Org(), scmUser.Login)
+	member := validateOrganizationMembership(orgList, dynamicConfig.Org(), scmUser.Login)
 	if !member {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
@@ -66,6 +67,40 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.RedirectHandler("/", http.StatusSeeOther).ServeHTTP(w, r)
+}
+
+func adminKeyAuth(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	formValues := r.Form
+	adminKey := formValues.Get("token")
+	ctx := r.Context()
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+
+	if adminKey != dynamicConfig.AdminKey {
+		log.Errorf("token is not valid")
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	store := ctx.Value("store").(*store.Store)
+	admin, err := store.User("admin")
+	if err != nil {
+		log.Errorf("cannot get user from db: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = setSessionCookie(w, r, admin)
+	if err != nil {
+		log.Errorf("cannot set session cookie: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func validateOrganizationMembership(orgList []*scm.Organization, org string, userName string) bool {

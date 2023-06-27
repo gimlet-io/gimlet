@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -50,9 +51,9 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value("store").(*store.Store)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	user := ctx.Value("user").(*model.User)
-	goScm := genericScm.NewGoScmHelper(config, nil)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
 
 	env, err := db.GetEnvironment(req.Env)
 	if err != nil {
@@ -200,10 +201,11 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	gitServiceImpl := customScm.NewGitService(config)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	gitToken, gitUser, _ := tokenManager.Token()
-	org := config.Org()
+	org := dynamicConfig.Org()
 
 	db := r.Context().Value("store").(*store.Store)
 	environment, err := db.GetEnvironment(bootstrapConfig.EnvName)
@@ -268,9 +270,9 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go updateOrgRepos(ctx)
-	go updateUserRepos(config, db, user)
+	go updateUserRepos(dynamicConfig, db, user)
 
-	scmURL := config.ScmURL()
+	scmURL := dynamicConfig.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	_, _, err = BootstrapEnv(
 		gitRepoCache,
@@ -333,7 +335,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = installAgent(environment, gitRepoCache, config, gitToken)
+	err = installAgent(environment, gitRepoCache, config, dynamicConfig, gitToken)
 	if err != nil {
 		logrus.Errorf("cannot install agent: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -577,6 +579,7 @@ func installAgent(
 	env *model.Environment,
 	gitRepoCache *nativeGit.RepoCache,
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 	gitToken string,
 ) error {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
@@ -585,7 +588,7 @@ func installAgent(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	err = PrepAgentManifests(env, tmpPath, repo, config)
+	err = PrepAgentManifests(env, tmpPath, repo, config, dynamicConfig)
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
@@ -605,6 +608,7 @@ func PrepAgentManifests(
 	tmpPath string,
 	repo *git.Repository,
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 ) error {
 	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
 	if env.RepoPerEnv {
@@ -632,7 +636,7 @@ func PrepAgentManifests(
 		}
 	}
 
-	agentAuth = jwtauth.New("HS256", []byte(config.JWTSecret), nil)
+	agentAuth = jwtauth.New("HS256", []byte(dynamicConfig.JWTSecret), nil)
 	_, agentKey, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
 
 	stackConfig.Config["gimletAgent"] = map[string]interface{}{

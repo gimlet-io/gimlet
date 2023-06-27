@@ -20,6 +20,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/worker"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
@@ -52,12 +53,14 @@ func main() {
 		panic(err)
 	}
 
+	log.Infof("Admin auth key: %s", adminKey(dynamicConfig))
+
 	if config.Host == "" {
 		panic(fmt.Errorf("please provide the HOST variable"))
 	}
 
-	if config.JWTSecret == "" {
-		panic(fmt.Errorf("please provide the JWT_SECRET variable"))
+	if dynamicConfig.JWTSecret == "" {
+		generateAndPersistJwtSecret(dynamicConfig)
 	}
 
 	agentHub := streaming.NewAgentHub()
@@ -84,8 +87,8 @@ func main() {
 		panic(err)
 	}
 
-	tokenManager := initTokenManager(config)
-	notificationsManager := initNotifications(config, tokenManager)
+	tokenManager := customScm.NewTokenManager(dynamicConfig)
+	notificationsManager := initNotifications(config, dynamicConfig, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
 	// go alertStateManager.Run()
@@ -125,6 +128,7 @@ func main() {
 		tokenManager,
 		stopCh,
 		config,
+		dynamicConfig,
 		clientHub,
 		gitUser,
 	)
@@ -138,6 +142,7 @@ func main() {
 	if config.ChartVersionUpdaterFeatureFlag {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			config,
+			dynamicConfig,
 			tokenManager,
 			repoCache,
 			&chartUpdatePullRequests,
@@ -163,11 +168,11 @@ func main() {
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
-			RepoCache: repoCache,
-			Releases:  releases,
-			Perf:      perf,
-			Store:     store,
-			Config:    config,
+			RepoCache:     repoCache,
+			Releases:      releases,
+			Perf:          perf,
+			Store:         store,
+			DynamicConfig: dynamicConfig,
 		}
 		go releaseStateWorker.Run()
 	}
@@ -220,7 +225,7 @@ func main() {
 
 	if config.BuiltinEnvFeatureFlag {
 		time.Sleep(time.Millisecond * 100) // wait til the router is up
-		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config)
+		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config, dynamicConfig)
 		if err != nil {
 			panic(err)
 		}

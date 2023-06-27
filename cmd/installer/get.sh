@@ -68,4 +68,3 @@ echo ""
 
 kubectl get svc -n infrastructure
 kubectl get svc -n kube-system
-

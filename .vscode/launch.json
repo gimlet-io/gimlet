@@ -55,14 +55,6 @@
             "program": "cmd/image-builder",
         },
         {
-            "name": "Installer",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "cmd/installer",
-            "envFile": "${workspaceFolder}/.env"
-        },
-        {
             "name": "bootstrap",
             "type": "go",
             "request": "launch",

@@ -9,25 +9,27 @@ import (
 
 func Test_UpdateConfig(t *testing.T) {
 	toUpdate := &DynamicConfig{
-		DummyString: "xyz",
-		DummyBool:   true,
+		AdminKey: "admin-key",
+		Github: config.Github{
+			Debug: true,
+		},
 	}
 
 	new := &DynamicConfig{
-		DummyString:  "cccc",
-		DummyString2: "host",
-		DummyBool:    true,
-		DummyBool2:   true,
-		DummyInt:     100,
+		AdminKey:  "new-admin-key",
+		JWTSecret: "new-jwt-secret",
+		Github: config.Github{
+			Debug:      true,
+			SkipVerify: true,
+		},
 	}
 
 	updateConfigWhenZeroValue(toUpdate, new)
 
-	assert.Equal(t, toUpdate.DummyString, "xyz", "Set values should not be updated")
-	assert.Equal(t, toUpdate.DummyString2, "host", "Empty strings should be updated")
-	assert.Equal(t, toUpdate.DummyBool, true, "Equal values should stay equal")
-	assert.Equal(t, toUpdate.DummyBool2, true, "Booelan fields should be set")
-	assert.Equal(t, toUpdate.DummyInt, 100, "Int fields should be set")
+	assert.Equal(t, toUpdate.AdminKey, "admin-key", "Set values should not be updated")
+	assert.Equal(t, toUpdate.JWTSecret, "new-jwt-secret", "Empty strings should be updated")
+	assert.Equal(t, toUpdate.Github.Debug, true, "Equal values should stay equal")
+	assert.Equal(t, toUpdate.Github.SkipVerify, true, "Booelan fields should be set")
 }
 
 func Test_UpdateConfig_StructFields(t *testing.T) {

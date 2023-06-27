@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -23,7 +24,7 @@ func Test_artifact(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	logger := logrus.Logger{}
 
-	router := server.SetupRouter(&config.Config{}, nil, nil, nil, nil, store, nil, nil, nil, nil, nil, nil, &logger, nil)
+	router := server.SetupRouter(&config.Config{}, &dynamicconfig.DynamicConfig{}, nil, nil, nil, store, nil, nil, nil, nil, nil, nil, &logger, nil)
 	server := httptest.NewServer(router)
 	defer server.Close()
 

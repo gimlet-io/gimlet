@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
@@ -21,7 +22,7 @@ func Test_MustUser(t *testing.T) {
 
 	router := SetupRouter(
 		&config.Config{},
-		nil,
+		&dynamicconfig.DynamicConfig{},
 		nil,
 		nil,
 		nil,

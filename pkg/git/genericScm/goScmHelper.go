@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/gimlet-io/go-scm/scm/driver/github"
 	"github.com/gimlet-io/go-scm/scm/driver/gitlab"
@@ -19,46 +19,46 @@ type GoScmHelper struct {
 	client *scm.Client
 }
 
-func NewGoScmHelper(config *config.Config, tokenUpdateCallback func(token *scm.Token)) *GoScmHelper {
+func NewGoScmHelper(dynamicConfig *dynamicconfig.DynamicConfig, tokenUpdateCallback func(token *scm.Token)) *GoScmHelper {
 	var client *scm.Client
 	var err error
 
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		client, err = github.New("https://api.github.com")
 		if err != nil {
 			logrus.WithError(err).
 				Fatalln("main: cannot create the GitHub client")
 		}
-		if config.Github.Debug {
+		if dynamicConfig.Github.Debug {
 			client.DumpResponse = httputil.DumpResponse
 		}
 
 		client.Client = &http.Client{
 			Transport: &oauth2.Transport{
 				Source: &Refresher{
-					ClientID:     config.Github.ClientID,
-					ClientSecret: config.Github.ClientSecret,
+					ClientID:     dynamicConfig.Github.ClientID,
+					ClientSecret: dynamicConfig.Github.ClientSecret,
 					Endpoint:     "https://github.com/login/oauth/access_token",
 					Source:       oauth2.ContextTokenSource(),
 					tokenUpdater: tokenUpdateCallback,
 				},
 			},
 		}
-	} else if config.IsGitlab() {
-		client, err = gitlab.New(config.ScmURL())
+	} else if dynamicConfig.IsGitlab() {
+		client, err = gitlab.New(dynamicConfig.ScmURL())
 		if err != nil {
 			logrus.WithError(err).
 				Fatalln("main: cannot create the Gitlab client")
 		}
-		if config.Gitlab.Debug {
+		if dynamicConfig.Gitlab.Debug {
 			client.DumpResponse = httputil.DumpResponse
 		}
 
 		client.Client = &http.Client{
 			Transport: &oauth2.Transport{
 				Source: &Refresher{
-					ClientID:     config.Gitlab.ClientID,
-					ClientSecret: config.Gitlab.ClientSecret,
+					ClientID:     dynamicConfig.Gitlab.ClientID,
+					ClientSecret: dynamicConfig.Gitlab.ClientSecret,
 					Endpoint:     "",
 					Source:       oauth2.ContextTokenSource(),
 					tokenUpdater: tokenUpdateCallback,
@@ -78,6 +78,9 @@ func (helper *GoScmHelper) Parse(req *http.Request, fn scm.SecretFunc) (scm.Webh
 
 func (helper *GoScmHelper) UserRepos(accessToken string, refreshToken string, expires time.Time) ([]string, error) {
 	var repos []string
+	if helper.client == nil {
+		return repos, nil
+	}
 
 	ctx := context.WithValue(context.Background(), scm.TokenKey{}, &scm.Token{
 		Token:   accessToken,

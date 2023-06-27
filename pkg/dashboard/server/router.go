@@ -62,6 +62,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
+	r.Use(middleware.WithValue("router", r))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))
@@ -79,10 +80,12 @@ func SetupRouter(
 		w.WriteHeader(http.StatusOK)
 	})
 
-	agentRoutes(r, agentWSHub, config.JWTSecret)
+	agentRoutes(r, agentWSHub, dynamicConfig.JWTSecret)
 	userRoutes(r, clientHub)
-	githubOAuthRoutes(config, r)
+	githubOAuthRoutes(config, dynamicConfig, r)
 	gimletdRoutes(r)
+	adminKeyAuthRoutes(r)
+	installerRoutes(r)
 
 	r.Get("/logout", logout)
 	r.Handle("/builtin/infra*", gitServer)
@@ -98,6 +101,7 @@ func SetupRouter(
 	fileServer(r, "/repositories", filesDir)
 	fileServer(r, "/pulse", filesDir)
 	fileServer(r, "/profile", filesDir)
+	fileServer(r, "/settings", filesDir)
 	fileServer(r, "/repo", filesDir)
 	fileServer(r, "/environments", filesDir)
 
@@ -191,15 +195,15 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 	})
 }
 
-func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
-	if config.IsGithub() {
+func githubOAuthRoutes(config *config.Config, dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux) {
+	if dynamicConfig.IsGithub() {
 		dumper := logger.DiscardDumper()
-		if config.Github.Debug {
+		if dynamicConfig.Github.Debug {
 			dumper = logger.StandardDumper()
 		}
 		loginMiddleware := &github.Config{
-			ClientID:     config.Github.ClientID,
-			ClientSecret: config.Github.ClientSecret,
+			ClientID:     dynamicConfig.Github.ClientID,
+			ClientSecret: dynamicConfig.Github.ClientSecret,
 			// you don't need to provide scopes in your authorization request.
 			// Unlike traditional OAuth, the authorization token is limited to the permissions associated
 			// with your GitHub App and those of the user.
@@ -214,11 +218,11 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 		r.Handle("/auth/*", loginMiddleware.Handler(
 			http.HandlerFunc(auth),
 		))
-	} else if config.IsGitlab() {
+	} else if dynamicConfig.IsGitlab() {
 		loginMiddleware := &gitlab.Config{
-			Server:       config.ScmURL(),
-			ClientID:     config.Gitlab.ClientID,
-			ClientSecret: config.Gitlab.ClientSecret,
+			Server:       dynamicConfig.ScmURL(),
+			ClientID:     dynamicConfig.Gitlab.ClientID,
+			ClientSecret: dynamicConfig.Gitlab.ClientSecret,
 			RedirectURL:  config.Host + "/auth",
 			Scope:        []string{"api"},
 		}
@@ -230,6 +234,23 @@ func githubOAuthRoutes(config *config.Config, r *chi.Mux) {
 			http.HandlerFunc(auth),
 		))
 	}
+}
+
+func adminKeyAuthRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Post("/admin-key-auth", adminKeyAuth)
+	})
+}
+
+func installerRoutes(r *chi.Mux) {
+	r.Group(func(r chi.Router) {
+		r.Use(session.SetUser())
+		r.Use(session.MustUser())
+		r.Get("/settings/created", created)
+		r.Get("/settings/installed", installed)
+		r.Post("/settings/gitlabInit", gitlabInit)
+	})
 }
 
 // static files from a http.FileSystem
