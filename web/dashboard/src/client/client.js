@@ -13,6 +13,8 @@ export default class GimletClient {
 
   getUsers = () => this.get('/api/users');
 
+  deleteUser = (userName) => this.postWithAxios("/api/deleteUser", JSON.stringify(userName))
+
   saveUser = (userName) => this.postWithAxios("/api/saveUser", JSON.stringify(userName));
 
   getAgents = () => this.get('/api/agents');

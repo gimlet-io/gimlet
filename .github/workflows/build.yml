@@ -173,26 +173,6 @@ jobs:
     - name: 🏗️ Build dashboard frontend
       run: make build-dashboard-frontend
 
-  installer:
-    name: 🏗️ Build Installer
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.20.0
-    - name: ⬇️ Check out code into the Go module directory
-      uses: actions/checkout@v1
-      with:
-        fetch-depth: 5
-    - name: 🏗️ Build installer frontend
-      run: make build-installer-frontend
-    - name: 🏗️ Build Installer
-      run: make build-installer
-      env:
-        VERSION: "ci-build"
-
   image-builder:
     name: 🏗️ Build Image builder
     runs-on: ubuntu-latest

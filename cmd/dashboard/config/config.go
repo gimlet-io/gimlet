@@ -144,37 +144,6 @@ type GitopsRepoConfig struct {
 	DeployKeyPath string
 }
 
-func (c *Config) IsGithub() bool {
-	return c.Github.AppID != ""
-}
-
-func (c *Config) IsGitlab() bool {
-	return c.Gitlab.ClientID != ""
-}
-
-func (c *Config) Org() string {
-	if c.IsGithub() {
-		return c.Github.Org
-	} else if c.IsGitlab() {
-		return c.Gitlab.Org
-	}
-
-	return ""
-}
-
-func (c *Config) ScmURL() string {
-	if c.IsGithub() {
-		return "https://github.com"
-	} else if c.IsGitlab() {
-		if c.Gitlab.URL != "" {
-			return c.Gitlab.URL
-		}
-		return "https://gitlab.com"
-	}
-
-	return ""
-}
-
 type Multiline string
 
 func (m *Multiline) Decode(value string) error {

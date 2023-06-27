@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -285,8 +286,8 @@ func agents(w http.ResponseWriter, r *http.Request) {
 
 func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error {
 	dao := ctx.Value("store").(*store.Store)
-	config := ctx.Value("config").(*config.Config)
-	gitServiceImpl := customScm.NewGitService(config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 	for _, env := range envs {
@@ -425,8 +426,8 @@ func chartFromConfig(config *config.Config) dx.Chart {
 
 func application(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	gitServiceImpl := customScm.NewGitService(config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 
 	tokenString, err := tokenManager.AppToken()
@@ -518,12 +519,13 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 func getFlags(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	var provider string
 	termsOfServiceFeatureFlag := config.TermsOfServiceFeatureFlag
 
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		provider = "GitHub"
-	} else if config.IsGitlab() {
+	} else if dynamicConfig.IsGitlab() {
 		provider = "GitLab"
 	}
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -27,7 +28,8 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	config := ctx.Value("config").(*config.Config)
-	goScmHelper := genericScm.NewGoScmHelper(config, nil)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	goScmHelper := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
 
@@ -39,7 +41,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		return config.WebhookSecret, nil
 	})
 	if err != nil {
-		if config.IsGithub() {
+		if dynamicConfig.IsGithub() {
 			if r.Header.Get("X-GitHub-Event") == "ping" {
 				writer.WriteHeader(http.StatusOK)
 				writer.Write([]byte("pong"))
@@ -68,7 +70,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				gitService := customScm.NewGitService(config)
+				gitService := customScm.NewGitService(dynamicConfig)
 				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
 
 				writer.WriteHeader(http.StatusOK)
@@ -94,7 +96,7 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 		name := webhook.Repository().Name
 		w := webhook.(*scm.StatusHook)
 
-		gitService := customScm.NewGitService(config)
+		gitService := customScm.NewGitService(dynamicConfig)
 		processStatusHook(owner, name, w.SHA, gitRepoCache, gitService, token, dao, clientHub)
 	case *scm.BranchHook:
 		processBranchHook(webhook, gitRepoCache)

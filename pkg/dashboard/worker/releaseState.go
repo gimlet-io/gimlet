@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -17,11 +17,11 @@ import (
 )
 
 type ReleaseStateWorker struct {
-	RepoCache *nativeGit.RepoCache
-	Releases  *prometheus.GaugeVec
-	Perf      *prometheus.HistogramVec
-	Store     *store.Store
-	Config    *config.Config
+	RepoCache     *nativeGit.RepoCache
+	Releases      *prometheus.GaugeVec
+	Perf          *prometheus.HistogramVec
+	Store         *store.Store
+	DynamicConfig *dynamicconfig.DynamicConfig
 }
 
 func (w *ReleaseStateWorker) Run() {
@@ -41,7 +41,7 @@ func (w *ReleaseStateWorker) Run() {
 				w.Releases,
 				w.Perf,
 				w.RepoCache,
-				w.Config.ScmURL(),
+				w.DynamicConfig.ScmURL(),
 			)
 			if err != nil {
 				logrus.Warnf("could not process state of %s gitops repo", env.Name)

@@ -5,6 +5,7 @@ import {MenuIcon, XIcon} from '@heroicons/react/outline'
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import logo from "!file-loader!./logo.svg";
 import {ACTION_TYPE_SEARCH} from "../../redux/redux";
+import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 
 const navigation = [
   {name: 'Pulse', href: '/pulse'},
@@ -13,6 +14,7 @@ const navigation = [
 ]
 const userNavigation = [
   {name: 'Profile', href: '/profile'},
+  {name: 'Settings', href: '/settings'},
   {name: 'Sign out', href: '/logout'},
 ]
 
@@ -142,7 +144,7 @@ export default class Nav extends Component {
                           <Menu.Button
                             className="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             <span className="sr-only">Open user menu</span>
-                            <img className="h-8 w-8 rounded-full" src={user.imageUrl} alt={user.login}/>
+                            <img className="h-8 w-8 rounded-full" src={user.imageUrl} alt={user.login} onError={(e) => { e.target.src = DefaultProfilePicture }}/>
                           </Menu.Button>
                         </div>
                         <Transition

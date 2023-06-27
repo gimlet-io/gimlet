@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
@@ -23,6 +24,7 @@ import (
 
 type ChartVersionUpdater struct {
 	config            *config.Config
+	dynamicConfig     *dynamicconfig.DynamicConfig
 	tokenManager      customScm.NonImpersonatedTokenManager
 	repoCache         *helper.RepoCache
 	chartUpdatePrList *map[string]interface{}
@@ -30,12 +32,14 @@ type ChartVersionUpdater struct {
 
 func NewChartVersionUpdater(
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *helper.RepoCache,
 	chartUpdatePrList *map[string]interface{},
 ) *ChartVersionUpdater {
 	return &ChartVersionUpdater{
 		config:            config,
+		dynamicConfig:     dynamicConfig,
 		tokenManager:      tokenManager,
 		repoCache:         repoCache,
 		chartUpdatePrList: chartUpdatePrList,
@@ -46,7 +50,8 @@ func (c *ChartVersionUpdater) Run() {
 	for {
 		(*c.chartUpdatePrList) = map[string]interface{}{}
 		token, _, _ := c.tokenManager.Token()
-		gitSvc := customScm.NewGitService(c.config)
+		gitSvc := customScm.NewGitService(c.dynamicConfig)
+
 		repos, err := gitSvc.OrgRepos(token)
 		if err != nil {
 			logrus.Errorf("cannot get org repos: %s", err)
@@ -65,7 +70,7 @@ func (c *ChartVersionUpdater) Run() {
 
 func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, repoName string) error {
 	logrus.Infof("evaluating %s for chart version update", repoName)
-	goScmHelper := genericScm.NewGoScmHelper(c.config, nil)
+	goScmHelper := genericScm.NewGoScmHelper(c.dynamicConfig, nil)
 	prList, err := goScmHelper.ListOpenPRs(token, repoName)
 	if err != nil {
 		return fmt.Errorf("cannot list pull requests: %s", err)

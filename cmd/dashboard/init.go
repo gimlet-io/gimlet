@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/base32"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
@@ -11,12 +13,11 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
@@ -77,27 +78,20 @@ func adminToken(config *config.Config) string {
 	}
 }
 
-func initTokenManager(config *config.Config) customScm.NonImpersonatedTokenManager {
-	var tokenManager customScm.NonImpersonatedTokenManager
+func adminKey(dynamicConfig *dynamicconfig.DynamicConfig) string {
+	if dynamicConfig.AdminKey == "" {
+		adminSecret, _ := randomHex(16)
+		dynamicConfig.AdminKey = adminSecret
+		dynamicConfig.Persist()
 
-	if config.IsGithub() {
-		var err error
-		tokenManager, err = customGithub.NewGithubOrgTokenManager(
-			config.Github.AppID,
-			config.Github.InstallationID,
-			config.Github.PrivateKey.String(),
-		)
-		if err != nil {
-			panic(err)
-		}
-	} else if config.IsGitlab() {
-		tokenManager = customGitlab.NewGitlabTokenManager(config.Gitlab.AdminToken)
+		return adminSecret
 	}
-	return tokenManager
+	return dynamicConfig.AdminKey
 }
 
 func initNotifications(
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 	tokenManager customScm.NonImpersonatedTokenManager,
 ) *notifications.ManagerImpl {
 	notificationsManager := notifications.NewManager()
@@ -107,10 +101,10 @@ func initNotifications(
 	if config.Notifications.Provider == "discord" {
 		notificationsManager.AddProvider(discordNotificationProvider(config))
 	}
-	if config.IsGithub() {
+	if dynamicConfig.IsGithub() {
 		notificationsManager.AddProvider(notifications.NewGithubProvider(tokenManager))
-	} else if config.IsGitlab() {
-		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, config.Gitlab.URL))
+	} else if dynamicConfig.IsGitlab() {
+		notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, dynamicConfig.Gitlab.URL))
 	}
 	go notificationsManager.Run()
 	return notificationsManager
@@ -180,4 +174,18 @@ func hideAccessToken(message string) string {
 		return message
 	}
 	return r.ReplaceAllString(message, "access_token=***")
+}
+
+func generateAndPersistJwtSecret(dynamicConfig *dynamicconfig.DynamicConfig) {
+	jwtSecret, _ := randomHex(32)
+	dynamicConfig.JWTSecret = jwtSecret
+	dynamicConfig.Persist()
+}
+
+func randomHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }

@@ -12,6 +12,7 @@ import (
 	"os/exec"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -28,6 +29,7 @@ func bootstrapBuiltInEnv(
 	repoCache *nativeGit.RepoCache,
 	gitUser *model.User,
 	config *config.Config,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 ) error {
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
@@ -77,7 +79,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = server.PrepInfraComponentManifests(builtInEnv, tmpPath, repo, config, server.ComponentOpts{ImageBuilder: true, Registry: true})
+	err = server.PrepInfraComponentManifests(builtInEnv, tmpPath, repo, config, dynamicConfig, server.ComponentOpts{ImageBuilder: true, Registry: true})
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
