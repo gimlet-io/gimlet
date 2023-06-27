@@ -127,7 +127,7 @@ func gimletdRoutes(r *chi.Mux) {
 		r.Use(session.MustAdmin())
 		r.Get("/api/user/{login}", getUser)
 		r.Post("/api/user", saveUserGimletD)
-		r.Post("/api/user/{login}", deleteUser)
+		r.Post("/api/deleteUser", deleteUser)
 		r.Get("/api/users", getUsers)
 	})
 }

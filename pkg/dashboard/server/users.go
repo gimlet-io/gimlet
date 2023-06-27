@@ -78,13 +78,20 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
+	var usernameToDelete string
+	err := json.NewDecoder(r.Body).Decode(&usernameToDelete)
+	if err != nil {
+		logrus.Errorf("cannot decode user name to delete: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 
-	login := chi.URLParam(r, "login")
-	err := store.DeleteUser(login)
+	err = store.DeleteUser(usernameToDelete)
 	if err != nil {
-		logrus.Errorf("cannot delete user %s: %s", login, err)
+		logrus.Errorf("cannot delete user %s: %s", usernameToDelete, err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
