@@ -47,12 +47,6 @@ func LoadDynamicConfig(dao *store.Store) (*DynamicConfig, error) {
 type DynamicConfig struct {
 	dao *store.Store
 
-	DummyString  string
-	DummyString2 string
-	DummyBool    bool
-	DummyBool2   bool
-	DummyInt     int
-
 	Github config.Github
 	Gitlab config.Gitlab
 
