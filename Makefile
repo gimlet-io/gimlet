@@ -3,7 +3,6 @@ LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg/ve
 
 .PHONY: format test 
 .PHONY: build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli
-.PHONY: build-installer dist-installer
 
 format:
 	@gofmt -w ${GOFILES}
@@ -15,11 +14,6 @@ test-prep:
 	touch pkg/commands/chart/bundle.js
 	touch pkg/commands/chart/bundle.js.LICENSE.txt
 	touch pkg/commands/chart/index.html
-	touch cmd/installer/web/main.js
-	touch cmd/installer/web/1.chunk.js
-	touch cmd/installer/web/main.css
-	touch cmd/installer/web/index.html
-	touch cmd/installer/web/favicon.ico
 
 test: test-prep
 	go test -timeout 60s $(shell go list ./...)
@@ -52,8 +46,6 @@ build-dashboard:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
 build-image-builder:
 	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/image-builder github.com/gimlet-io/gimlet-cli/cmd/image-builder
-build-installer:
-	CGO_ENABLED=0 go build -ldflags $(LDFLAGS) -o build/gimlet-installer github.com/gimlet-io/gimlet-cli/cmd/installer
 
 dist-dashboard:
 	mkdir -p bin
@@ -74,11 +66,6 @@ fast-dist-cli:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-arm64 github.com/gimlet-io/gimlet-cli/cmd/cli
-dist-installer:
-	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-installer-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/installer
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-installer-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/installer
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-installer-darwin-arm64 github.com/gimlet-io/gimlet-cli/cmd/installer
 dist-image-builder:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/image-builder-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/image-builder
@@ -99,13 +86,6 @@ build-dashboard-frontend:
 	rm -rf cmd/dashboard/web/build
 	mkdir -p cmd/dashboard/web/build
 	@cp -r web/dashboard/build/* cmd/dashboard/web/build
-build-installer-frontend:
-	(cd web/installer; npm install; npm run build)
-	@cp web/installer/build/main.js cmd/installer/web/
-	@cp web/installer/build/1.chunk.js cmd/installer/web/
-	@cp web/installer/build/main.css cmd/installer/web/
-	@cp web/installer/build/index.html cmd/installer/web/
-	@cp web/installer/public/favicon.ico cmd/installer/web/
 
 start-local-env:
 	docker-compose -f fixtures/k3s/docker-compose.yml up -d
