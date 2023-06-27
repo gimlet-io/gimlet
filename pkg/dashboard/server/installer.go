@@ -10,6 +10,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
@@ -117,6 +118,10 @@ func installed(w http.ResponseWriter, r *http.Request) {
 
 	tokenManager := ctx.Value("tokenManager").(*customScm.TokenManager)
 	tokenManager.Configure(dynamicConfig)
+
+	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
+	notificationsManager.AddProvider(notifications.NewGithubProvider(tokenManager))
+
 	tokenString, err := tokenManager.AppToken()
 	if err != nil {
 		panic(err)
@@ -185,6 +190,9 @@ func gitlabInit(w http.ResponseWriter, r *http.Request) {
 
 	tokenManager := ctx.Value("tokenManager").(*customScm.TokenManager)
 	tokenManager.Configure(dynamicConfig)
+
+	notificationsManager := ctx.Value("notificationsManager").(notifications.Manager)
+	notificationsManager.AddProvider(notifications.NewGitlabProvider(tokenManager, gitlabUrl))
 
 	router := ctx.Value("router").(*chi.Mux)
 	config := ctx.Value("config").(*config.Config)
