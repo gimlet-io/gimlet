@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"mime/multipart"
 	"net/http"
@@ -133,6 +132,8 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		user.Login,
 		signalCh,
 		clientHub,
+		user.Login,
+		string(imageBuildId),
 	)
 
 	responseStr, err := json.Marshal(map[string]string{
@@ -160,6 +161,8 @@ func createDeployRequest(
 	triggeredBy string,
 	signal chan imageBuildingDoneSignal,
 	clientHub *streaming.ClientHub,
+	userLogin string,
+	imageBuildId string,
 ) {
 	// wait until image building is done
 	imageBuildingDoneSignal := <-signal
@@ -176,6 +179,7 @@ func createDeployRequest(
 	)
 	if err != nil {
 		logrus.Errorf("cannot create artifact: %s", err)
+		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	}
 
@@ -187,12 +191,14 @@ func createDeployRequest(
 	})
 	if err != nil {
 		logrus.Errorf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err)
+		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	}
 
 	artifactEvent, err := store.Artifact(artifact.ID)
 	if err != nil {
 		logrus.Errorf("%s - cannot find artifact with id %s", http.StatusText(http.StatusNotFound), artifact.ID)
+		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	}
 	event, err := store.CreateEvent(&model.Event{
@@ -202,10 +208,11 @@ func createDeployRequest(
 	})
 	if err != nil {
 		logrus.Errorf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err)
+		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	}
 
-	fmt.Println(event.ID)
+	streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "created", event.ID)
 }
 
 func createDummyArtifact(
@@ -409,6 +416,7 @@ func buildImage(
 	if err != nil {
 		signalCh <- imageBuildingDoneSignal{successful: false}
 		logrus.Errorf("cannot upload file: %s", err)
+		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	}
 	client := &http.Client{}
@@ -416,6 +424,7 @@ func buildImage(
 	if err != nil {
 		signalCh <- imageBuildingDoneSignal{successful: false}
 		logrus.Errorf("cannot upload file: %s", err)
+		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	} else {
 		streamImageBuilderLogs(resp.Body, clientHub, userLogin, imageBuildId)
@@ -430,19 +439,39 @@ func streamImageBuilderLogs(body io.ReadCloser, clientHub *streaming.ClientHub, 
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
-			log.Println(err)
+			logrus.Errorf("cannot stream build logs: %s", err)
+			streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
 			break
 		}
 
-		jsonString, _ := json.Marshal(streaming.ImageBuildLogEvent{
-			StreamingEvent: streaming.StreamingEvent{Event: streaming.ImageBuildLogEventString},
-			BuildId:        imageBuildId,
-			LogLine:        string(line),
-		})
-		clientHub.Send <- &streaming.ClientMessage{
-			ClientId: userLogin,
-			Message:  jsonString,
-		}
+		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "running", string(line))
+	}
+
+	streamImageBuildEvent(clientHub, userLogin, imageBuildId, "success", "")
+}
+
+func streamImageBuildEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, logLine string) {
+	jsonString, _ := json.Marshal(streaming.ImageBuildLogEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.ImageBuildLogEventString},
+		BuildId:        imageBuildId,
+		Status:         status,
+		LogLine:        string(logLine),
+	})
+	clientHub.Send <- &streaming.ClientMessage{
+		ClientId: userLogin,
+		Message:  jsonString,
+	}
+}
+
+func streamArtifactCreatedEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, trackingId string) {
+	jsonString, _ := json.Marshal(streaming.ArtifactCreatedEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.ArtifactCreatedEventString},
+		BuildId:        imageBuildId,
+		TrackingId:     trackingId,
+	})
+	clientHub.Send <- &streaming.ClientMessage{
+		ClientId: userLogin,
+		Message:  jsonString,
 	}
 }
 

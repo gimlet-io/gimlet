@@ -1,9 +1,9 @@
-import {Component} from 'react'
+import React, {Component} from 'react'
 import { XIcon } from '@heroicons/react/outline'
 import { formatDistance } from "date-fns";
 import { ACTION_TYPE_OPEN_DEPLOY_PANEL, ACTION_TYPE_CLOSE_DEPLOY_PANEL } from '../../redux/redux';
 import DeployPanelTabs from './deployPanelTabs';
-import DeployStatus from "../../components/deployStatus/deployStatus";
+import { DeployStatus, deployHeader, Loading, ImageBuild } from "../../components/deployStatus/deployStatus";
 
 const defaultTabs = [
   { name: 'Gitops Status', current: true },
@@ -42,9 +42,14 @@ export default class DeployPanel extends Component {
         ],
         imageBuildLogs: reduxState.imageBuildLogs
       });
+
+      if (this.logsEndRef.current) {
+        this.logsEndRef.current.scrollIntoView();
+      }
     });
 
     this.switchTab = this.switchTab.bind(this)
+    this.logsEndRef = React.createRef();
   }
 
   renderLastCommitStatusMessage(lastCommitStatus, lastCommitStatusMessage) {
@@ -56,7 +61,7 @@ export default class DeployPanel extends Component {
     }
   }
 
-  renderGitopsCommit(gitopsCommit) {
+  renderGitopsCommit(gitopsCommit, navigationHistory) {
       if (gitopsCommit === undefined) {
           return null
       }
@@ -85,7 +90,7 @@ export default class DeployPanel extends Component {
           <div className="w-full truncate" key={gitopsCommit.sha}>
               <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}</p>
               <div className="w-72 cursor-pointer truncate text-sm"
-                  onClick={() => this.props.history.push(`/environments/${gitopsCommit.env}/gitops-commits`)}
+                  onClick={() => navigationHistory.push(`/environments/${gitopsCommit.env}/gitops-commits`)}
                   title={gitopsCommit.statusDesc}>
                   <span>
                       <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
@@ -134,23 +139,39 @@ export default class DeployPanel extends Component {
     )
   }
 
-  deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs){
+  deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, logsEndRef){
     if (runningDeploys.length === 0) {
       return null;
     }
 
     const runningDeploy = runningDeploys[0];
 
-    console.log(runningDeploy)
+    const loading = (
+      <div className="p-2">
+        <Loading/>
+      </div>
+    )
 
-    if (runningDeploy.id) {
-      return DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
-    } else {
-      console.log(imageBuildLogs[runningDeploy.buildId])
-      return (
-        <div>aaa</div>
-      );
+    let imageBuildWidget = null
+    let deployStatusWidget = null
+
+    if (runningDeploy.trackingId) {
+      deployStatusWidget = DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
     }
+    if (runningDeploy.buildId) {
+      imageBuildWidget = ImageBuild(imageBuildLogs[runningDeploy.buildId], logsEndRef);
+    }
+
+    const deployHeaderWidget = deployHeader(scmUrl, runningDeploy)
+
+    return (
+      <>
+        {deployHeaderWidget}
+        {imageBuildWidget}
+        {deployStatusWidget}
+        {deployStatusWidget == null && imageBuildWidget == null ? loading : null}
+      </>
+    );
   }
 
   switchTab(tab) {
@@ -192,12 +213,12 @@ export default class DeployPanel extends Component {
                 <XIcon className="h-5 w-5" aria-hidden="true"/>
               </button>
             </div>
-            <div className="px-6 bg-gray-900">
+            <div className="px-6 pt-4 bg-gray-900">
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>
-            <div className="mt-4 pb-12 px-6 overflow-y-scroll h-full w-full">
+            <div className="pt-4 pb-24 px-6 overflow-y-scroll h-full w-full">
               {tabs[0].current ? this.gitopsStatus(gitopsCommits, envs) : null}
-              {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs) : null}
+              {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, this.logsEndRef) : null}
             </div>
           </div>
       </div>

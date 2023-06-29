@@ -1,4 +1,4 @@
-export default function DeployStatus(
+export function DeployStatus(
   deploy,
   scmUrl,
   gitopsCommits,
@@ -9,7 +9,7 @@ export default function DeployStatus(
   const builtInEnv = envs.find(env => env.name === deploy.env).builtIn;
 
   let gitopsWidget = (
-    <div className="mt-2">
+    <div className="">
       <Loading/>
     </div>
   )
@@ -17,7 +17,7 @@ export default function DeployStatus(
 
   if (deploy.status === 'error') {
     gitopsWidget = (
-      <div className="mt-2">
+      <div className="">
         <p className="text-red-500 font-semibold">
           Gitops write failed
         </p>
@@ -39,33 +39,8 @@ export default function DeployStatus(
         <div className="text-gray-100">
           <div className="flex">
             <div className="w-0 flex-1 justify-between">
-              {!deploy.rollback &&
-              <p className="text-yellow-100 font-semibold">
-                Rolling out {deploy.app}
-              </p>
-              }
-              {deploy.rollback &&
-              <p className="text-yellow-100 font-semibold">
-                Rolling back {deploy.app}
-              </p>
-              }
-              <p className="pl-2  ">
-                🎯 {deploy.env}
-              </p>
-              {!deploy.rollback &&
-              <p className="pl-2">
-                <span>📎</span>
-                <a
-                  href={`${scmUrl}/${deploy.repo}/commit/${deploy.sha}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className='ml-1'
-                >
-                  {deploy.sha.slice(0, 6)}
-                </a>
-              </p>
-              }
               {gitopsWidget}
-              <div className='pl-2 mt-4'>{appliedWidget}</div>
+              <div className='pl-2'>{appliedWidget}</div>
             </div>
           </div>
         </div>
@@ -73,7 +48,69 @@ export default function DeployStatus(
   );
 }
 
-function Loading() {
+export function deployHeader(scmUrl, deploy) {
+  return (
+    <>
+      {!deploy.rollback &&
+      <p className="text-yellow-100 font-semibold">
+        Rolling out {deploy.app}
+      </p>
+      }
+      {deploy.rollback &&
+      <p className="text-yellow-100 font-semibold">
+        Rolling back {deploy.app}
+      </p>
+      }
+      <p className="pl-2  ">
+        🎯 {deploy.env}
+      </p>
+      {!deploy.rollback &&
+      <p className="pl-2">
+        <span>📎</span>
+        <a
+          href={`${scmUrl}/${deploy.repo}/commit/${deploy.sha}`}
+          target="_blank" rel="noopener noreferrer"
+          className='ml-1'
+        >
+          {deploy.sha.slice(0, 6)}
+        </a>
+      </p>
+      }
+    </>
+  );
+}
+
+export function ImageBuild(build, logsEndRef) {
+  let statusIcon = '⏳';
+  let statusText = (
+    <div className="w-4/5 font-mono text-xs">
+      {build.logLines.join()}
+    </div>
+  )
+  if (build.status === "success") {
+    statusIcon = '✅';
+  } else if (build.status === "error") {
+    statusIcon = '❗';
+    statusText = "Could not build image, check server logs."
+  }
+
+  return (
+    <>
+      <p className="text-yellow-100 pt-4 pb-2 font-semibold">
+        Building image {statusIcon}
+      </p>
+      <div className="px-2">
+      <div className="p-4 h-48 overflow-y-scroll bg-gray-900">
+        <div className="whitespace-pre-wrap">{statusText}</div>
+        <p ref={logsEndRef} />
+      </div>
+      </div>
+    </>
+  );
+}
+
+
+export function Loading() {
   return (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
       viewBox="0 0 24 24">
@@ -85,6 +122,7 @@ function Loading() {
 }
 
 function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl, builtInEnv) {
+  console.log("hello")
   if (!deployCommit.sha) {
     return null;
   }
@@ -128,8 +166,8 @@ function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl, builtInEnv) {
 function renderResult(result, gitopsRepo, scmUrl, builtInEnv) {
   if (result.hash && result.status === "success") {
     return (
-      <div className="pl-2 mb-2" key={result.hash}>
-        <p className="font-semibold truncate mb-1" title={result.app}>
+      <div className="pl-2" key={result.hash}>
+        <p className="font-semibold truncate" title={result.app}>
           {result.app}
           <span className='mx-1 align-middle'>✅</span>
           { !builtInEnv &&
@@ -147,10 +185,10 @@ function renderResult(result, gitopsRepo, scmUrl, builtInEnv) {
       </div>)
   } else if (result.status === "failure") {
     return (
-      <div className="pl-2 mb-2">
+      <div className="pl-2">
         <div className="grid grid-cols-2">
           <div>
-            <p className="font-semibold truncate mb-1" title={result.app}>{result.app}</p>
+            <p className="font-semibold truncate" title={result.app}>{result.app}</p>
           </div>
           <span className='mx-1 align-middle'>❌</span>
         </div>
@@ -163,8 +201,8 @@ function renderResult(result, gitopsRepo, scmUrl, builtInEnv) {
 
 function gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl, builtInEnv) {
   return (
-    <div className="mt-2">
-      <p className="text-yellow-100 font-semibold">
+    <div className="">
+      <p className="text-yellow-100 pt-4 font-semibold">
         Manifests written to git
       </p>
       {deploy.results.map(result => renderResult(result, gitopsRepo, scmUrl, builtInEnv))}
@@ -182,5 +220,5 @@ function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo, scmUrl
     }
   })
 
-  return renderAppliedWidget(deployCommit, gitopsRepo, scmUrl);
+  return renderAppliedWidget(deployCommit, gitopsRepo, scmUrl, builtInEnv);
 }

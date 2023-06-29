@@ -44,7 +44,9 @@ export default class Repo extends Component {
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests.configChanges[repoName],
-      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName)
+      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
+      runningDeploys: reduxState.runningDeploys,
+      trackedDeploys: []
     }
 
     // handling API and streaming state changes
@@ -63,7 +65,7 @@ export default class Repo extends Component {
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests.configChanges[repoName],
         kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
-        scmUrl: reduxState.settings.scmUrl
+        scmUrl: reduxState.settings.scmUrl,
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -76,6 +78,26 @@ export default class Repo extends Component {
         return { refreshQueueLength: queueLength }
       });
       this.setState({ agents: reduxState.settings.agents });
+
+      this.setState(prevState => {
+        let trackedDeploys = []
+        reduxState.runningDeploys.forEach(runningDeploy => {
+          if (!runningDeploy.trackingId) {
+            return
+          }
+          if (!prevState.trackedDeploys.includes(runningDeploy.trackingId)) {
+            setTimeout(() => {
+              this.checkDeployStatus(runningDeploy.trackingId);
+            }, 500);
+          }
+
+          trackedDeploys.push(runningDeploy.trackingId)
+        });
+
+        return {
+          trackedDeploys: trackedDeploys
+        }
+      });
     });
 
     this.branchChange = this.branchChange.bind(this)
@@ -216,21 +238,24 @@ export default class Repo extends Component {
     }
   }
 
-  checkDeployStatus(deployRequest) {
+  checkDeployStatus(trackingId) {
+    console.log("checking deploys")
     const { owner, repo } = this.props.match.params;
 
-    this.props.gimletClient.getDeployStatus(deployRequest.trackingId)
+    this.props.gimletClient.getDeployStatus(trackingId)
       .then(data => {
-        deployRequest.status = data.status;
-        deployRequest.statusDesc = data.statusDesc;
-        deployRequest.results = data.results;
         this.props.store.dispatch({
-          type: ACTION_TYPE_DEPLOY_STATUS, payload: deployRequest
+          type: ACTION_TYPE_DEPLOY_STATUS, payload: {
+            trackingId:  trackingId,
+            status: data.status,
+            statusDesc: data.statusDesc,
+            results: data.results,
+          }
         });
 
         if (data.status === "new") {
           setTimeout(() => {
-            this.checkDeployStatus(deployRequest);
+            this.checkDeployStatus(trackingId);
           }, 500);
         }
 
@@ -243,12 +268,12 @@ export default class Repo extends Component {
             if (latestGitopsHashMetadata.gitopsCommitStatus === "N/A") { // poll until all gitops writes are applied
               gitopsCommitsApplied = false;
               setTimeout(() => {
-                this.checkDeployStatus(deployRequest);
+                this.checkDeployStatus(trackingId);
               }, 500);
             }
           }
           if (gitopsCommitsApplied) {
-            for (const result of deployRequest.results) {
+            for (const result of data.results) {
               setTimeout(() => {
                 this.props.gimletClient.getRolloutHistoryPerApp(owner, repo, result.env, result.app)
                 .then(data => {
@@ -307,10 +332,9 @@ export default class Repo extends Component {
     const repoName = repo.split("/")[1]
     this.props.gimletClient.magicDeploy(owner, repoName, sha)
       .then(data => {
-        target.sha = sha;
         target.buildId = data.buildId;
-        this.props.store.dispatch({ todo
-          type: ACTION_TYPE_DEPLOY_STATUS, payload: deployRequest
+        this.props.store.dispatch({
+          type: ACTION_TYPE_DEPLOY_STATUS, payload: target
         });
       }, () => {/* Generic error handler deals with it */
       });

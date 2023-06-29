@@ -63,6 +63,17 @@ export function deploymentDeleted(state, event) {
 }
 
 export function imageBuildLogs(state, event) {
-  state.imageBuildLogs[event.buildId] = (state.imageBuildLogs[event.buildId] + event.logLine + "\n");
+  if (!state.imageBuildLogs[event.buildId]) {
+    state.imageBuildLogs[event.buildId] = {
+      status: event.status,
+      logLines: [],
+    };
+  }
+
+  state.imageBuildLogs[event.buildId].status = event.status;
+
+  if (event.logLine) {
+    state.imageBuildLogs[event.buildId].logLines.push(event.logLine);
+  }
   return state;
 }
