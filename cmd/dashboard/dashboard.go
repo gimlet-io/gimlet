@@ -29,6 +29,8 @@ import (
 )
 
 func main() {
+	fmt.Println(logo())
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Warnf("could not load .env file, relying on env vars")
@@ -368,4 +370,14 @@ func parseGitopsRepos(gitopsReposString string) ([]*model.Environment, error) {
 	}
 
 	return envs, nil
+}
+
+func logo() string {
+	return `   _____ _____ __  __ _      ______ _______
+  / ____|_   _|  \/  | |    |  ____|__   __|
+ | |  __  | | | \  / | |    | |__     | |
+ | | |_ | | | | |\/| | |    |  __|    | |
+ | |__| |_| |_| |  | | |____| |____   | |
+  \_____|_____|_|  |_|______|______|  |_|
+`
 }

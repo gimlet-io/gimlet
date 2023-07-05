@@ -18,14 +18,13 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )
 
-// Creates an admin user and prints her access token, in case there are no users in the database
+// Creates an admin user, in case there are no users in the database
 func setupAdminUser(config *config.Config, store *store.Store) error {
-	admin, err := store.User("admin")
+	_, err := store.User("admin")
 
 	if err == sql.ErrNoRows {
 		admin := &model.User{
@@ -37,33 +36,10 @@ func setupAdminUser(config *config.Config, store *store.Store) error {
 		if err != nil {
 			return fmt.Errorf("couldn't create user admin user %s", err)
 		}
-		err = printAdminToken(admin)
-		if err != nil {
-			return err
-		}
+
 	} else if err != nil {
 		return fmt.Errorf("couldn't list users to create admin user %s", err)
 	}
-
-	if config.PrintAdminToken {
-		err = printAdminToken(admin)
-		if err != nil {
-			return err
-		}
-	} else {
-		logrus.Infof("Admin token was already printed, use the PRINT_ADMIN_TOKEN=true env var to print it again")
-	}
-
-	return nil
-}
-
-func printAdminToken(admin *model.User) error {
-	token := token.New(token.UserToken, admin.Login)
-	tokenStr, err := token.Sign(admin.Secret)
-	if err != nil {
-		return fmt.Errorf("couldn't create admin token %s", err)
-	}
-	logrus.Infof("Admin token: %s", tokenStr)
 
 	return nil
 }

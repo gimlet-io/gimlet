@@ -70,8 +70,7 @@ type Config struct {
 	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
 	UserflowToken           string `envconfig:"USERFLOW_TOKEN"`
 
-	PrintAdminToken bool   `envconfig:"PRINT_ADMIN_TOKEN"`
-	AdminToken      string `envconfig:"ADMIN_TOKEN"`
+	AdminToken string `envconfig:"ADMIN_TOKEN"`
 
 	// Deprecated, use BootstrapEnv instead
 	GitopsRepo string `envconfig:"GITOPS_REPO"`
