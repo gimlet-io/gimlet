@@ -122,7 +122,6 @@ export function Loading() {
 }
 
 function renderAppliedWidget(deployCommit, gitopsRepo, scmUrl, builtInEnv) {
-  console.log("hello")
   if (!deployCommit.sha) {
     return null;
   }

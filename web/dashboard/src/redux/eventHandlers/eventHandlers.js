@@ -337,8 +337,6 @@ export function settings(state, payload) {
 }
 
 export function deploy(state, payload) {
-  console.log("deploy")
-  console.log(payload)
   state.runningDeploys = [payload];
   state = openDeployPanel(state)
 
@@ -355,9 +353,6 @@ export function deploy(state, payload) {
 }
 
 export function deployStatus(state, payload) {
-  console.log("deployStatus")
-  console.log(payload)
-
   if (state.runningDeploys.length === 0) {
     return state
   }
@@ -388,8 +383,6 @@ export function deployStatus(state, payload) {
 }
 
 export function artifactCreated(state, payload) {
-  console.log(payload)
-  console.log(state.runningDeploys)
   for (let runningDeploy of state.runningDeploys) {
     if (runningDeploy.buildId === payload.buildId) {
       runningDeploy.trackingId = payload.trackingId;
