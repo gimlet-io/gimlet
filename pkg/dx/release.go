@@ -40,6 +40,14 @@ type ReleaseRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
+// MagicDeployRequest contains all metadata about a simplified release intent
+type MagicDeployRequest struct {
+	Owner       string `json:"owner"`
+	Repo        string `json:"repo"`
+	Sha         string `json:"sha"`
+	TriggeredBy string `json:"triggeredBy"`
+}
+
 // RollbackRequest contains all metadata about the rollback intent
 type RollbackRequest struct {
 	Env         string `json:"env"`

@@ -51,7 +51,7 @@ export default class Nav extends Component {
     user.imageUrl = `${scmUrl}/${user.login}.png?size=128`
 
     return (
-      <Disclosure as="nav" className="bg-white border-b border-gray-200">
+      <Disclosure as="nav" className="bg-white border-b border-gray-200 z-1">
         {({open}) => (
           <>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

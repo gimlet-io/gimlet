@@ -12,6 +12,8 @@ const StaleRepoDataEventString = "staleRepoData"
 const GitopsCommitEventString = "gitopsCommit"
 const CommitStatusUpdatedEventString = "commitStatusUpdated"
 const PodLogsEventString = "podLogs"
+const ImageBuildLogEventString = "imageBuildLogEvent"
+const ArtifactCreatedEventString = "artifactCreatedEvent"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -39,6 +41,20 @@ type StaleRepoDataEvent struct {
 
 type GitopsEvent struct {
 	GitopsCommit interface{} `json:"gitopsCommit"`
+	StreamingEvent
+}
+
+type ImageBuildLogEvent struct {
+	BuildId string `json:"buildId"`
+	Status  string `json:"status"`
+	LogLine string `json:"logLine,omitempty"`
+	StreamingEvent
+}
+
+type ArtifactCreatedEvent struct {
+	BuildId    string `json:"buildId"`
+	Status     string `json:"status"`
+	TrackingId string `json:"trackingId"`
 	StreamingEvent
 }
 

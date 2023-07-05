@@ -588,7 +588,7 @@ func installAgent(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	err = PrepAgentManifests(env, tmpPath, repo, config, dynamicConfig)
+	err = PrepInfraComponentManifests(env, tmpPath, repo, config, dynamicConfig, ComponentOpts{})
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
@@ -603,12 +603,18 @@ func installAgent(
 	return nil
 }
 
-func PrepAgentManifests(
+type ComponentOpts struct {
+	ImageBuilder bool
+	Registry     bool
+}
+
+func PrepInfraComponentManifests(
 	env *model.Environment,
 	tmpPath string,
 	repo *git.Repository,
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
+	opts ComponentOpts,
 ) error {
 	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
 	if env.RepoPerEnv {
@@ -644,6 +650,16 @@ func PrepAgentManifests(
 		"environment":      env.Name,
 		"agentKey":         agentKey,
 		"dashboardAddress": config.Host,
+	}
+	if opts.ImageBuilder {
+		stackConfig.Config["imageBuilder"] = map[string]interface{}{
+			"enabled": true,
+		}
+	}
+	if opts.Registry {
+		stackConfig.Config["dockerRegistry"] = map[string]interface{}{
+			"enabled": true,
+		}
 	}
 
 	stackConfigBuff := bytes.NewBufferString("")

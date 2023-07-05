@@ -117,6 +117,7 @@ func gimletdRoutes(r *chi.Mux) {
 		r.Get("/api/releases", getReleases)
 		r.Get("/api/status", getStatus)
 		r.Post("/api/releases", release)
+		r.Post("/api/deploy", magicDeploy)
 		r.Post("/api/rollback", performRollback)
 		r.Post("/api/delete", delete)
 		r.Get("/api/eventReleaseTrack", getEventReleaseTrack)

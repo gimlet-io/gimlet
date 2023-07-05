@@ -41,6 +41,9 @@ export const ACTION_TYPE_ALERTS = 'alerts'
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
+export const ACTION_TYPE_OPEN_DEPLOY_PANEL = 'openDeployPanel';
+export const ACTION_TYPE_CLOSE_DEPLOY_PANEL = 'closeDeployPanel';
+
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
 export const EVENT_ENVS_UPDATED = 'envsUpdated';
@@ -60,6 +63,9 @@ export const EVENT_DEPLOYMENT_DELETED = 'deploymentDeleted';
 export const EVENT_INGRESS_CREATED = 'ingressCreated';
 export const EVENT_INGRESS_UPDATED = 'ingressUpdated';
 export const EVENT_INGRESS_DELETED = 'ingressDeleted';
+
+export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
+export const EVENT_ARTIFACT_CREATED_EVENT = 'artifactCreatedEvent';
 
 export const initialState = {
   settings: {
@@ -96,7 +102,9 @@ export const initialState = {
     errorList: null
   },
   podLogs: {},
-  users: []
+  imageBuildLogs: {},
+  users: [],
+  deployPanelOpen: false
 };
 
 export function rootReducer(state = initialState, action) {
@@ -171,6 +179,10 @@ export function rootReducer(state = initialState, action) {
        return podEventHandlers.clearPodLogs(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
+    case ACTION_TYPE_OPEN_DEPLOY_PANEL:
+      return eventHandlers.openDeployPanel(state)
+    case ACTION_TYPE_CLOSE_DEPLOY_PANEL:
+      return eventHandlers.closeDeployPanel(state)
     default:
       console.log('Could not process redux event: ' + JSON.stringify(action));
       return state;
@@ -178,7 +190,7 @@ export function rootReducer(state = initialState, action) {
 }
 
 function processStreamingEvent(state, event) {
-  console.log(event.event);
+  // console.log(event.event);
 
   switch (event.event) {
     case EVENT_AGENT_CONNECTED:
@@ -195,6 +207,10 @@ function processStreamingEvent(state, event) {
       return podEventHandlers.podDeleted(state, event);
     case EVENT_POD_LOGS:
       return podEventHandlers.podLogs(state, event);
+    case EVENT_IMAGE_BUILD_LOG_EVENT:
+      return deploymentEventHandlers.imageBuildLogs(state, event);
+    case EVENT_ARTIFACT_CREATED_EVENT:
+      return eventHandlers.artifactCreated(state, event);
     case EVENT_DEPLOYMENT_CREATED:
       return deploymentEventHandlers.deploymentCreated(state, event);
     case EVENT_DEPLOYMENT_UPDATED:
@@ -210,7 +226,6 @@ function processStreamingEvent(state, event) {
     case EVENT_STALE_REPO_DATA:
       return eventHandlers.staleRepoData(state, event);
     case EVENT_GITOPS_COMMIT_EVENT:
-      console.log(event);
       return eventHandlers.updateGitopsCommits(state, event);
     case EVENT_COMMIT_STATUS_UPDATED:
       return eventHandlers.updateCommitStatus(state, event);

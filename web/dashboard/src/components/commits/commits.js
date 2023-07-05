@@ -5,7 +5,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 
-const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
+const Commits = ({ commits, envs, connectedAgents, deployHandler, magicDeployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
   const repoName = `${owner}/${repo}`
   const commitsRef = useRef();
@@ -44,6 +44,15 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
   }
 
   const commitWidgets = [];
+
+  const envNames = envs.map(env => env["name"]);
+  let builtInEnv;
+  for (let env of envs) {
+    if (env.builtIn) {
+      builtInEnv = env;
+      break;
+    }
+  }
 
   commits.forEach((commit, idx, ar) => {
     const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
@@ -109,8 +118,10 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                 connectedAgents={connectedAgents}
               />
               <DeployWidget
-                deployTargets={filterDeployTargets(commit.deployTargets, envs, tenant)}
+                deployTargets={filterDeployTargets(commit.deployTargets, envNames, tenant)}
+                builtInEnv={builtInEnv}
                 deployHandler={deployHandler}
+                magicDeployHandler={magicDeployHandler}
                 sha={commit.sha}
                 repo={repoName}
               />

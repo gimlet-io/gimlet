@@ -92,6 +92,16 @@ export function envStackUpdated(state, envName, payload) {
   return state;
 }
 
+export function openDeployPanel(state) {
+  state.deployPanelOpen = true
+  return state;
+}
+
+export function closeDeployPanel(state) {
+  state.deployPanelOpen = false
+  return state;
+}
+
 export function envPullRequests(state, payload) {
   for (const [envName, pullRequests] of Object.entries(payload)) {
     if (!state.envs.some(env => env.name === envName)) {
@@ -328,15 +338,54 @@ export function settings(state, payload) {
 
 export function deploy(state, payload) {
   state.runningDeploys = [payload];
+  state = openDeployPanel(state)
+
+  if (payload.buildId) {
+    if (!state.imageBuildLogs[payload.buildId]) {
+      state.imageBuildLogs[payload.buildId] = {
+        status: "pending",
+        logLines: [],
+      };
+    }
+  }
+
   return state;
 }
 
 export function deployStatus(state, payload) {
+  if (state.runningDeploys.length === 0) {
+    return state
+  }
+
+  if (payload.buildId) {
+    state.runningDeploys[0].buildId = payload.buildId
+  }
+  if (payload.trackingId) {
+    state.runningDeploys[0].trackingId = payload.trackingId
+  }
+
+  if (payload.status) {
+    state.runningDeploys[0].status = payload.status
+    state.runningDeploys[0].statusDesc = payload.statusDesc
+    state.runningDeploys[0].results = payload.results
+  }
+
+  if (payload.buildId) {
+    if (!state.imageBuildLogs[payload.buildId]) {
+      state.imageBuildLogs[payload.buildId] = {
+        status: "pending",
+        logLines: [],
+      };
+    }
+  }
+
+  return state;
+}
+
+export function artifactCreated(state, payload) {
   for (let runningDeploy of state.runningDeploys) {
-    if (runningDeploy.sha === payload.sha &&
-      runningDeploy.env === payload.env &&
-      runningDeploy.app === payload.app) {
-      runningDeploy = payload;
+    if (runningDeploy.buildId === payload.buildId) {
+      runningDeploy.trackingId = payload.trackingId;
     }
   }
 

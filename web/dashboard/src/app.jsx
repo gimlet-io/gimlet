@@ -12,13 +12,12 @@ import Profile from "./views/profile/profile";
 import Settings from "./views/settings/settings";
 import Pulse from "./views/pulse/pulse";
 import Repo from "./views/repo/repo";
-import DeployStatus from "./components/deployStatus/deployStatus";
 import LoginPage from './views/login/loginPage';
 import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
-import Footer from './views/footer/footer';
 import Userflow from './userflow';
+import DeployPanel from './views/deployPanel/deployPanel';
 
 export default class App extends Component {
   constructor(props) {
@@ -55,7 +54,6 @@ export default class App extends Component {
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
     const ChartUIWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
-    const FooterWithLocation = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
     const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
 
@@ -64,7 +62,6 @@ export default class App extends Component {
         <StreamingBackendWithLocation />
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
-        <FooterWithLocation />
         <Userflow store={store} />
 
         <Route exact path="/">
@@ -73,6 +70,7 @@ export default class App extends Component {
 
         <div className="min-h-screen bg-gray-100 pb-20">
           <NavBar />
+          <DeployPanel store={store} />
           <div className="py-10">
             <Switch>
               <Route path="/pulse">
@@ -110,7 +108,6 @@ export default class App extends Component {
             </Switch>
           </div>
         </div>
-        <DeployStatus store={store} />
       </Router>
     )
   }
