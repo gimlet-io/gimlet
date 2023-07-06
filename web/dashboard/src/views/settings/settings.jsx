@@ -181,8 +181,6 @@ export default class Settings extends Component {
                       </div>
                     </div>
                   </div>
-                  <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                  </div>
                   {dashboardVersion(application)}
                 </div>}
             </div>
