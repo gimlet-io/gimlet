@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 const Installer = () => {
   const [org, setOrg] = useState(null);
-  const [gitlabUrl, setGitlabUrl] = useState("https://gitlab.com");
 
   let url = window.location.href;
   url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash

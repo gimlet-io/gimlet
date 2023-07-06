@@ -142,7 +142,7 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	githubOAuthRoutes(config, dynamicConfig, router)
 
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {

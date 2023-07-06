@@ -9,6 +9,8 @@ export default function DeployWidget(props) {
   if (!deployTargets) {
     if (!builtInEnv) {
       return null
+    } else if (!builtInEnv.isOnline) {
+      return null
     }
     return (
       // eslint-disable-next-line

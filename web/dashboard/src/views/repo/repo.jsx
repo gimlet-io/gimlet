@@ -530,7 +530,6 @@ export default class Repo extends Component {
                   <Env
                     key={envName}
                     searchFilter={search.filter}
-                    envName={envName}
                     env={filteredEnvs[envName]}
                     repoRolloutHistory={repoRolloutHistory}
                     envConfigs={this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)}
@@ -549,6 +548,7 @@ export default class Repo extends Component {
                     envFromParams={environment}
                     deploymentFromParams={deployment}
                     scmUrl={scmUrl}
+                    history={this.props.history}
                   />
                 )
                 }
@@ -615,7 +615,8 @@ function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, sear
   for (const env of envs) {
     filteredEnvs[env.name] = {
       name: env.name,
-      builtIn: env.builtIn
+      builtIn: env.builtIn,
+      isOnline: isOnline(connectedAgents, env)
     };
 
     // find all stacks that belong to this repo
@@ -635,3 +636,11 @@ function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, sear
 
   return filteredEnvs;
 }
+
+function isOnline(onlineEnvs, singleEnv) {
+  return Object.keys(onlineEnvs)
+      .map(env => onlineEnvs[env])
+      .some(onlineEnv => {
+          return onlineEnv.name === singleEnv.name
+      })
+};

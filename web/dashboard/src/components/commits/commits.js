@@ -50,6 +50,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, magicDeployHan
   for (let env of envs) {
     if (env.builtIn) {
       builtInEnv = env;
+      builtInEnv.isOnline = connectedAgents[env.name].isOnline
       break;
     }
   }
