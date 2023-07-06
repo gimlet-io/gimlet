@@ -4,7 +4,6 @@ import {Disclosure, Menu, Transition} from '@headlessui/react'
 import {MenuIcon, XIcon} from '@heroicons/react/outline'
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import logo from "!file-loader!./logo.svg";
-import {ACTION_TYPE_SEARCH} from "../../redux/redux";
 import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 
 const navigation = [
@@ -41,7 +40,6 @@ export default class Nav extends Component {
 
   render() {
     const {user,scmUrl} = this.state;
-    const {store} = this.props;
 
     const loggedIn = user !== undefined;
     if (!loggedIn) {
