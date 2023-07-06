@@ -50,6 +50,7 @@ func defaults(c *Config) {
 	if c.GitRoot == "" {
 		c.GitRoot = "git-root/"
 	}
+	c.BuiltinEnvFeatureFlag = true
 }
 
 // Config holds Gimlet configuration that can only be set with environment variables

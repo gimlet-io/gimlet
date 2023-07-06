@@ -294,7 +294,8 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 
 	var auth *http.BasicAuth
 	var url string
-	if strings.HasPrefix(repoName, "builtin") {
+	owner, _ := scm.Split(repoName)
+	if owner == "builtin" {
 		url = fmt.Sprintf("http://%s/%s", r.config.GitHost, repoName)
 		auth = &http.BasicAuth{
 			Username: r.gitUser.Login,
@@ -347,7 +348,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 func (r *RepoCache) registerWebhook(repoName string) {
 	owner, repo := scm.Split(repoName)
 
-	if owner == "" && strings.HasPrefix(repo, "builtin") {
+	if owner == "builtin" {
 		return
 	}
 

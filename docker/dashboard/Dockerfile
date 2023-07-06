@@ -6,6 +6,7 @@ RUN apk update && apk upgrade && \
 ENV DATABASE_DRIVER=sqlite3
 ENV DATABASE_CONFIG=/var/lib/gimlet-dashboard/gimlet-dashboard.sqlite
 ENV XDG_CACHE_HOME /var/lib/gimlet-dashboard
+ENV GIT_ROOT=/var/lib/gimlet-dashboard/git-root/
 
 RUN addgroup -S gimlet-dashboard && adduser -S gimlet-dashboard -G gimlet-dashboard
 

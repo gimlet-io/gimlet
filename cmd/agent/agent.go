@@ -36,6 +36,8 @@ import (
 )
 
 func main() {
+	fmt.Println(logo())
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Warnf("could not load .env file, relying on env vars")
@@ -520,4 +522,14 @@ func chunks(str string, size int) []string {
 		return []string{str}
 	}
 	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
+}
+
+func logo() string {
+	return `	_____ _____ __  __ _      ______ _______            _____ ______ _   _ _______ 
+  / ____|_   _|  \/  | |    |  ____|__   __|     /\   / ____|  ____| \ | |__   __|
+ | |  __  | | | \  / | |    | |__     | |       /  \ | |  __| |__  |  \| |  | |
+ | | |_ | | | | |\/| | |    |  __|    | |      / /\ \| | |_ |  __| | .   |  | |
+ | |__| |_| |_| |  | | |____| |____   | |     / ____ \ |__| | |____| |\  |  | |
+  \_____|_____|_|  |_|______|______|  |_|    /_/    \_\_____|______|_| \_|  |_|
+`
 }

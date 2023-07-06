@@ -52,6 +52,7 @@ func NewBranchDeleteEventWorker(
 
 func (r *BranchDeleteEventWorker) Run() {
 	for {
+		time.Sleep(5 * time.Minute)
 		reposWithCleanupPolicy, err := r.dao.ReposWithCleanupPolicy()
 		if err != nil && err != sql.ErrNoRows {
 			logrus.Warnf("could not load repos with cleanup policy: %s", err)
@@ -124,8 +125,7 @@ func (r *BranchDeleteEventWorker) Run() {
 			}
 		}
 
-		logrus.Info("cleanup process finished succesfully")
-		time.Sleep(5 * time.Minute)
+		logrus.Info("Cleanup process finished succesfully")
 	}
 }
 

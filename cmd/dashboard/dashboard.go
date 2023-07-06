@@ -31,10 +31,7 @@ import (
 func main() {
 	fmt.Println(logo())
 
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Warnf("could not load .env file, relying on env vars")
-	}
+	godotenv.Load(".env")
 
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -138,7 +135,7 @@ func main() {
 		panic(err)
 	}
 	go repoCache.Run()
-	log.Info("repo cache initialized")
+	log.Info("Repo cache initialized")
 
 	chartUpdatePullRequests := map[string]interface{}{}
 	if config.ChartVersionUpdaterFeatureFlag {

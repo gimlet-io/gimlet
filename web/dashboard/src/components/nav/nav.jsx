@@ -8,7 +8,7 @@ import {ACTION_TYPE_SEARCH} from "../../redux/redux";
 import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 
 const navigation = [
-  {name: 'Pulse', href: '/pulse'},
+  // {name: 'Pulse', href: '/pulse'},
   {name: 'Repositories', href: '/repositories'},
   {name: 'Environments', href: '/environments'},
 ]

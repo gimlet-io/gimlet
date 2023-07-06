@@ -147,34 +147,41 @@ export default class Settings extends Component {
                 <div>
                   {settings.scmUrl === "https://github.com" &&
                     githubAppSettings(application)}
-                  <Users
-                    users={sortedUsers}
-                    scmUrl={settings.scmUrl}
-                    deleteUser={this.deleteUser}
-                  />
                   <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                     <div className="px-4 py-5 sm:px-6">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900">Create new user</h3>
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Users and API Keys
+                      </h3>
                     </div>
+                    <Users
+                      users={sortedUsers}
+                      scmUrl={settings.scmUrl}
+                      deleteUser={this.deleteUser}
+                    />
                     <div className="px-4 py-5 sm:px-6">
-                      <input
-                        onChange={e => this.setState({ input: e.target.value })}
-                        className="shadow appearance-none border rounded w-full my-4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        id="environment"
-                        type="text"
-                        value={input}
-                        placeholder="Please enter a username" />
-                      <div className="p-0 flow-root">
-                        <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
-                          <button
-                            disabled={input === "" || saveButtonTriggered}
-                            onClick={() => this.save()}
-                            className={(input === "" || saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}>
-                            Create
-                          </button>
-                        </span>
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">Create an API key</h3>
+                      <div>
+                        <input
+                          onChange={e => this.setState({ input: e.target.value })}
+                          className="shadow appearance-none border rounded w-full my-4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          id="environment"
+                          type="text"
+                          value={input}
+                          placeholder="Please enter an API key name" />
+                        <div className="p-0 flow-root">
+                          <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
+                            <button
+                              disabled={input === "" || saveButtonTriggered}
+                              onClick={() => this.save()}
+                              className={(input === "" || saveButtonTriggered ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700") + " inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"}>
+                              Create
+                            </button>
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                   </div>
                   {dashboardVersion(application)}
                 </div>}
@@ -239,17 +246,8 @@ function gimletInstaller() {
 }
 
 function Users({ users, scmUrl, deleteUser }) {
-  if (users.length === 0) {
-    return null;
-  }
-
   return (
-    <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">
-          Users
-        </h3>
-      </div>
+
       <div className="px-4 py-5 sm:px-6">
         {users.map(user => (
           <div key={user.login} className="flex justify-between p-2 hover:bg-gray-100 rounded">
@@ -268,7 +266,7 @@ function Users({ users, scmUrl, deleteUser }) {
                     <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">User token:</h3>
+                    <h3 className="text-sm font-medium text-blue-800">API key:</h3>
                     <div className="mt-2 text-sm text-blue-700">
                       <div className="flex items-center">
                         <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{user.token}</span>
@@ -297,7 +295,6 @@ function Users({ users, scmUrl, deleteUser }) {
           </div>
         ))}
       </div>
-    </div>
   )
 }
 
