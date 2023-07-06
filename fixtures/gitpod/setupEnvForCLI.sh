@@ -1,6 +1,0 @@
-#!/bin/bash      
-
-cat << EOF >> $PWD/.env
-GIMLET_SERVER=$GIMLET_SERVER
-GIMLET_TOKEN=$GIMLET_TOKEN
-EOF

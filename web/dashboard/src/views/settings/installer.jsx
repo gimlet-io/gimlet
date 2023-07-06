@@ -8,7 +8,7 @@ const Installer = () => {
     url = url[url.length - 1] === '/' ? url.slice(0, -1) : url; // strip trailing slash
 
     const manifest = JSON.stringify({
-        "name": "Gimlet Dashboard",
+        "name": "Gimlet",
         "url": "https://gimlet.io",
         "redirect_url": url + '/created',
         "callback_url": url + '/installed',

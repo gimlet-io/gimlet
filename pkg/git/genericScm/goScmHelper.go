@@ -287,7 +287,7 @@ func (helper *GoScmHelper) RegisterWebhook(
 	})
 
 	hook := &scm.HookInput{
-		Name:   "Gimlet Dashboard",
+		Name:   "Gimlet",
 		Target: host + "/hook",
 		Secret: webhookSecret,
 		Events: scm.HookEvents{
