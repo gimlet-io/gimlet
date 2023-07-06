@@ -13,12 +13,14 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -394,12 +396,20 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	config := ctx.Value("config").(*config.Config)
+
 	t0 := time.Now().UnixNano()
 	head, _ := repo.Head()
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
+	owner, _ := scm.Split(repoName)
+	scmURL := dynamicConfig.ScmURL()
+	if owner == "builtin" {
+		scmURL = config.GitHost
+	}
 	err = nativeGit.NativePushWithToken(
-		fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, repoName),
+		fmt.Sprintf("https://abc123:%s@%s/%s.git", scmURL, token, repoName),
 		pathToCleanUp,
 		head.Name().Short(),
 	)

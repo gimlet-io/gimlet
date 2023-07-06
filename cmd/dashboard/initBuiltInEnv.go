@@ -71,7 +71,7 @@ func bootstrapBuiltInEnv(
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = gitUser.Login
 	opts.BasicAuthPassword = gitUser.Secret
-	opts.GitopsRepoUrl = fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.InfraRepo)
+	opts.GitopsRepoUrl = fmt.Sprintf("%s/%s", config.ApiHost, builtInEnv.InfraRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
 	_, _, _, err = gitops.GenerateManifests(opts)
@@ -102,7 +102,7 @@ func bootstrapBuiltInEnv(
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = gitUser.Login
 	opts.BasicAuthPassword = gitUser.Secret
-	opts.GitopsRepoUrl = fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.AppsRepo)
+	opts.GitopsRepoUrl = fmt.Sprintf("%s/%s", config.ApiHost, builtInEnv.AppsRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
 	_, _, _, err = gitops.GenerateManifests(opts)

@@ -50,6 +50,9 @@ func defaults(c *Config) {
 	if c.GitRoot == "" {
 		c.GitRoot = "git-root/"
 	}
+	if c.GitHost == "" {
+		c.GitHost = "127.0.0.1:9000"
+	}
 	c.BuiltinEnvFeatureFlag = true
 }
 
@@ -86,8 +89,10 @@ type Config struct {
 	ChartVersionUpdaterFeatureFlag bool `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 	BuiltinEnvFeatureFlag          bool `envconfig:"FEATURE_BUILT_IN_ENV"`
 
-	GitHost string `envconfig:"GIT_HOST"`
-	GitRoot string `envconfig:"GIT_ROOT"`
+	GitHost          string `envconfig:"GIT_HOST"`
+	ApiHost          string `envconfig:"API_HOST"`
+	GitRoot          string `envconfig:"GIT_ROOT"`
+	ImageBuilderHost string `envconfig:"IMAGE_BUILDER_HOST"`
 }
 
 // Logging provides the logging configuration.

@@ -649,7 +649,7 @@ func PrepInfraComponentManifests(
 		"enabled":          true,
 		"environment":      env.Name,
 		"agentKey":         agentKey,
-		"dashboardAddress": config.Host,
+		"dashboardAddress": config.ApiHost,
 	}
 	if opts.ImageBuilder {
 		stackConfig.Config["imageBuilder"] = map[string]interface{}{

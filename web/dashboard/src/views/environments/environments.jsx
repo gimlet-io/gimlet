@@ -65,7 +65,7 @@ class Environments extends Component {
     }
 
     getEnvironmentCards() {
-        const { connectedAgents, envs, releaseStatuses, popupWindow, scmUrl, host, user } = this.state;
+        const { connectedAgents, envs, releaseStatuses, popupWindow, scmUrl, user } = this.state;
         const { environment, tab } = this.props.match.params;
         const sortedEnvs = this.sortingByName(envs);
 
@@ -84,7 +84,6 @@ class Environments extends Component {
                 popupWindow={popupWindow}
                 pullRequests={env.pullRequests}
                 scmUrl={scmUrl}
-                host={host}
                 userToken={user.token}
             />))
         )

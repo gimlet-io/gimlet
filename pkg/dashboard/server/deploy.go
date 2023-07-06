@@ -107,8 +107,10 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	config := ctx.Value("config").(*config.Config)
+
 	imageBuildId := randStringRunes(6)
-	imageBuilderUrl := "http://127.0.0.1:8000/build-image"
+	imageBuilderUrl := config.ImageBuilderHost + "/build-image"
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	tag := deployRequest.Sha
 	signalCh := make(chan imageBuildingDoneSignal)
@@ -243,6 +245,9 @@ func createDummyArtifact(
 						"repository": image,
 						"tag":        tag,
 						"pullPolicy": "Always",
+					},
+					"resources": map[string]interface{}{
+						"ignore": true,
 					},
 				},
 			},

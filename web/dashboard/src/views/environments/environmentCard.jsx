@@ -18,7 +18,7 @@ import {
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl, host, userToken }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl, userToken }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true)
   const [kustomizationPerApp, setKustomizationPerApp] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
@@ -429,7 +429,6 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
                 <h3 className="text-lg font-medium p-2 text-gray-900">Connect your cluster</h3>
                 <BootstrapGuide
                   envName={env.name}
-                  host={host}
                   token={userToken}
                 />
               </div>

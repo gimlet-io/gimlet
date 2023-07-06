@@ -1,8 +1,10 @@
 import React from 'react'
 import CopiableCodeSnippet from '../envConfig/copiableCodeSnippet';
 
-const BootstrapGuide = ({ envName, host, token }) => {
+const BootstrapGuide = ({ envName, token }) => {
   const renderBootstrapGuideText = () => {
+    const url = window.location.protocol + "//" + window.location.host;
+
     return (
       <>
         <li>👉 Install Gimlet CLI</li>
@@ -20,7 +22,7 @@ sudo mv ./gimlet /usr/local/bin/gimlet`}
           color="blue"
           code={`gimlet environment connect \\
   --env ${envName} \\
-  --server ${host} \\
+  --server ${url} \\
   --token ${token}`}
         />
 
