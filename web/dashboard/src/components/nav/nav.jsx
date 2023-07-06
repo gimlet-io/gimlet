@@ -91,7 +91,7 @@ export default class Nav extends Component {
                   </div>
                 </div>
                 <div className="flex-1 flex items-center justify-center px-2 sm:ml-6 sm:justify-end">
-                  <div className="max-w-lg w-full lg:max-w-xs">
+                  {/* <div className="max-w-lg w-full lg:max-w-xs">
                     <label htmlFor="search" className="sr-only">Search</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -109,7 +109,7 @@ export default class Nav extends Component {
                         payload: {filter: e.target.value}
                       })}/>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
                 <div className="hidden sm:-my-px sm:ml-6 sm:flex pr-2">
                   <a
