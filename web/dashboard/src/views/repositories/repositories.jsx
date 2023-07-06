@@ -4,6 +4,7 @@ import { emptyStateNoMatchingService } from "../pulse/pulse";
 import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 import RefreshRepos from './refreshRepos';
 import { renderChartUpdatePullRequests } from '../pulse/pulse';
+import { InformationCircleIcon } from '@heroicons/react/solid'
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -28,6 +29,7 @@ export default class Repositories extends Component {
       isOpen: false,
       added: null,
       deleted: null,
+      settings: reduxState.settings,
     }
 
     // handling API and streaming state changes
@@ -43,7 +45,10 @@ export default class Repositories extends Component {
       this.setState({ search: reduxState.search });
       this.setState({ agents: reduxState.settings.agents });
       this.setState({ favorites: favoriteRepos });
-      this.setState({ application: reduxState.application });
+      this.setState({
+        application: reduxState.application,
+        settings: reduxState.settings,
+      });
       this.setState({ chartUpdatePullRequests: reduxState.pullRequests.chartUpdates });
     });
 
@@ -129,7 +134,24 @@ export default class Repositories extends Component {
   }
 
   render() {
-    const { repositories, search, favorites, isOpen } = this.state;
+    const { repositories, search, favorites, isOpen, settings } = this.state;
+
+    if (!settings.provider || settings.provider === "") {
+      return (
+        <div>
+          <header>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+              <div>
+                <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
+                <div className="mt-8">
+                  {setupGithubCard(this.props.history)} 
+                </div>
+              </div>
+            </div>
+          </header>
+        </div>
+      )
+    }
 
     let filteredRepositories = {};
     for (const repoName of Object.keys(repositories)) {
@@ -236,6 +258,30 @@ export default class Repositories extends Component {
     )
   }
 
+}
+
+const setupGithubCard = (history) => {
+  return (
+    <div className="rounded-md bg-blue-50 p-4 mb-4">
+    <div className="flex">
+      <div className="flex-shrink-0">
+        <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+      </div>
+      <div className="ml-3">
+        <h3 className="text-sm font-medium text-blue-800">Integrate Github</h3>
+        <div className="mt-2 text-sm text-blue-700">
+          This view will load your git repositories once you integrated Github.<br />
+          <button
+            className="font-medium"
+            onClick={() => {history.push("/settings");return true}}
+          >
+            Click to integrate Github on the Settings page.
+          </button>
+        </div>
+      </div>
+    </div>
+    </div>
+  );
 }
 
 export const Spinner = () => {

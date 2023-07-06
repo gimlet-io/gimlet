@@ -426,7 +426,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             </div>
             {!isOnline &&
               <div className="mb-4">
-                <h3 className="text-2xl font-bold p-2 text-gray-900">Connect your cluster</h3>
+                <h3 className="text-lg font-medium p-2 text-gray-900">Connect your cluster</h3>
                 <BootstrapGuide
                   envName={env.name}
                   host={host}

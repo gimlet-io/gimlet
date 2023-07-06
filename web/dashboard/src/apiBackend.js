@@ -45,9 +45,6 @@ export default class APIBackend extends Component {
       this.props.gimletClient.getSettings()
       .then(data => {
         this.props.store.dispatch({ type: ACTION_TYPE_SETTINGS, payload: data });
-        if (data.provider === "" && !this.props.location.pathname.startsWith('/settings')) {
-          window.location.replace("/settings");
-        }
       }, () => {/* Generic error handler deals with it */
       });
     this.props.gimletClient.getChartUpdatePullRequests()
