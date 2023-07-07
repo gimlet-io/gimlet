@@ -18,22 +18,14 @@ import (
 
 func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user := ctx.Value("user").(*model.User)
 
-	dao := ctx.Value("store").(*store.Store)
-	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
-
-	go updateUserRepos(dynamicConfig, dao, user)
-	go updateOrgRepos(ctx)
-
-	orgRepos, userRepos, err := fetchReposFromDb(dao, user.Login)
+	userHasAccessToRepos, err := fetchReposWithAccess(ctx)
 	if err != nil {
 		logrus.Errorf("cannot get repos from db: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	userHasAccessToRepos := intersection(orgRepos, userRepos)
 	reposString, err := json.Marshal(userHasAccessToRepos)
 	if err != nil {
 		logrus.Errorf("cannot serialize repos: %s", err)
@@ -144,31 +136,23 @@ func updateUserRepos(dynamicConfig *dynamicconfig.DynamicConfig, dao *store.Stor
 	return userRepos
 }
 
-func fetchReposFromDb(dao *store.Store, login string) ([]string, []string, error) {
-	timeout := time.After(45 * time.Second)
+func fetchReposWithAccess(ctx context.Context) ([]string, error) {
+	user := ctx.Value("user").(*model.User)
+	dao := ctx.Value("store").(*store.Store)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	userRepos := user.Repos
 
-	for {
-		orgRepos, err := getOrgRepos(dao)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		user, err := dao.User(login)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if len(orgRepos) != 0 && len(user.Repos) != 0 {
-			return orgRepos, user.Repos, nil
-		}
-
-		select {
-		case <-timeout:
-			return orgRepos, user.Repos, nil
-		default:
-			time.Sleep(3 * time.Second)
-		}
+	orgRepos, err := getOrgRepos(dao)
+	if err != nil {
+		return nil, err
 	}
+
+	if len(userRepos) == 0 && len(orgRepos) == 0 {
+		userRepos = updateUserRepos(dynamicConfig, dao, user)
+		orgRepos = updateOrgRepos(ctx)
+	}
+
+	return intersection(orgRepos, userRepos), nil
 }
 
 func intersection(s1, s2 []string) []string {
