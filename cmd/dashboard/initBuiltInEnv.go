@@ -115,7 +115,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("couldn't create user token %s", err)
 	}
 
-	_, err = gitops.GenerateManifestProviderAndAlert(builtInEnv, tmpPath, config.Host, gimletToken)
+	_, err = gitops.GenerateManifestProviderAndAlert(builtInEnv, tmpPath, config.ApiHost, gimletToken)
 	if err != nil {
 		return fmt.Errorf("cannot generate notifications manifest: %s", err)
 	}
