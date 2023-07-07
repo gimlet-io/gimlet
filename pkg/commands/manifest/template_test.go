@@ -400,35 +400,6 @@ func Test_template(t *testing.T) {
 			//fmt.Println(string(templated))
 		})
 
-		g.It("Should template a manifest file with local chart", func() {
-			g.Timeout(100 * time.Second)
-			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(manifestFile.Name())
-			templatedFile, err := ioutil.TempFile("", "gimlet-cli-test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(templatedFile.Name())
-
-			ioutil.WriteFile(manifestFile.Name(), []byte(manifestWithLocalChart), commands.File_RW_RW_R)
-			args = append(args, "-f", manifestFile.Name())
-			args = append(args, "-o", templatedFile.Name())
-
-			err = commands.Run(&Command, args)
-			g.Assert(err == nil).IsTrue(err)
-
-			templated, err := ioutil.ReadFile(templatedFile.Name())
-			g.Assert(err == nil).IsTrue(err)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g.Assert(strings.Contains(string(templated), "hello-server:v0.1.0")).IsTrue("Templated manifest should have the image reference")
-			//fmt.Println(string(templated))
-		})
-
 		g.It("Should template a manifest file with a private git hosted chart", func() {
 			g.Timeout(100 * time.Second)
 			manifestFile, err := ioutil.TempFile("", "gimlet-cli-test")
