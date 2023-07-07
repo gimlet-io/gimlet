@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-
+import { Spinner } from '../repositories/repositories';
 import {
   ACTION_TYPE_BRANCHES,
   ACTION_TYPE_ENVCONFIGS,
@@ -491,7 +491,7 @@ export default class Repo extends Component {
     }
 
     if (!this.state.envConfigs) {
-      return null
+      return <Spinner />
     }
 
     return (
