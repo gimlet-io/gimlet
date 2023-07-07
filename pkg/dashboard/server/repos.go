@@ -13,13 +13,17 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
 func gitRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	user := ctx.Value("user").(*model.User)
 
-	userHasAccessToRepos, err := fetchReposWithAccess(ctx)
+	dao := ctx.Value("store").(*store.Store)
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+
+	userHasAccessToRepos, err := fetchReposWithAccess(dynamicConfig, tokenManager, dao, user)
 	if err != nil {
 		logrus.Errorf("cannot get repos from db: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -42,6 +46,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	user := ctx.Value("user").(*model.User)
 	dao := ctx.Value("store").(*store.Store)
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 
 	user, err := dao.User(user.Login)
 	if err != nil {
@@ -59,7 +64,7 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 
 	userAccessRepos := intersection(orgRepos, user.Repos)
 	updatedUserRepos := updateUserRepos(dynamicConfig, dao, user)
-	updatedOrgRepos := updateOrgRepos(ctx)
+	updatedOrgRepos := updateOrgRepos(dynamicConfig, tokenManager, dao)
 	updatedUserAccessRepos := intersection(updatedOrgRepos, updatedUserRepos)
 	added := difference(updatedUserAccessRepos, userAccessRepos)
 	deleted := difference(userAccessRepos, updatedUserAccessRepos)
@@ -81,10 +86,12 @@ func refreshRepos(w http.ResponseWriter, r *http.Request) {
 	w.Write(reposString)
 }
 
-func updateOrgRepos(ctx context.Context) []string {
-	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+func updateOrgRepos(
+	dynamicConfig *dynamicconfig.DynamicConfig,
+	tokenManager customScm.NonImpersonatedTokenManager,
+	dao *store.Store,
+) []string {
 	gitServiceImpl := customScm.NewGitService(dynamicConfig)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
 	orgRepos, err := gitServiceImpl.OrgRepos(token)
@@ -99,7 +106,6 @@ func updateOrgRepos(ctx context.Context) []string {
 		return nil
 	}
 
-	dao := ctx.Value("store").(*store.Store)
 	err = dao.SaveKeyValue(&model.KeyValue{
 		Key:   model.OrgRepos,
 		Value: string(orgReposString),
@@ -136,10 +142,12 @@ func updateUserRepos(dynamicConfig *dynamicconfig.DynamicConfig, dao *store.Stor
 	return userRepos
 }
 
-func fetchReposWithAccess(ctx context.Context) ([]string, error) {
-	user := ctx.Value("user").(*model.User)
-	dao := ctx.Value("store").(*store.Store)
-	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+func fetchReposWithAccess(
+	dynamicConfig *dynamicconfig.DynamicConfig,
+	tokenManager customScm.NonImpersonatedTokenManager,
+	dao *store.Store,
+	user *model.User,
+) ([]string, error) {
 	userRepos := user.Repos
 
 	orgRepos, err := getOrgRepos(dao)
@@ -149,7 +157,7 @@ func fetchReposWithAccess(ctx context.Context) ([]string, error) {
 
 	if len(userRepos) == 0 && len(orgRepos) == 0 {
 		userRepos = updateUserRepos(dynamicConfig, dao, user)
-		orgRepos = updateOrgRepos(ctx)
+		orgRepos = updateOrgRepos(dynamicConfig, tokenManager, dao)
 	}
 
 	return intersection(orgRepos, userRepos), nil
