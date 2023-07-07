@@ -2,7 +2,7 @@ GOFILES = $(shell find . -type f -name '*.go' -not -path "./.git/*")
 LDFLAGS = '-s -w -extldflags "-static" -X github.com/gimlet-io/gimlet-cli/pkg/version.Version='${VERSION}
 
 .PHONY: format test 
-.PHONY: build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli
+.PHONY: build-cli dist-cli build-cli-frontend build-stack-frontend fast-dist-cli fast-dist
 
 format:
 	@gofmt -w ${GOFILES}
@@ -54,6 +54,9 @@ dist-dashboard:
 
 	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
+fast-dist:
+	mkdir -p bin
+	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/amd64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
 dist-cli:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/gimlet-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/cli
