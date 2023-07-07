@@ -269,7 +269,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	go updateOrgRepos(ctx)
+	go updateOrgRepos(dynamicConfig, tokenManager, db)
 	go updateUserRepos(dynamicConfig, db, user)
 
 	scmURL := dynamicConfig.ScmURL()
