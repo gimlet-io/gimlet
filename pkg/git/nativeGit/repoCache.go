@@ -117,6 +117,11 @@ func (r *RepoCache) Run() {
 }
 
 func (r *RepoCache) syncGitRepo(repoName string) {
+	owner, _ := scm.Split(repoName)
+	if owner == "builtin" {
+		return
+	}
+
 	token, user, err := r.tokenManager.Token()
 	if err != nil {
 		logrus.Errorf("couldn't get scm token: %s", err)

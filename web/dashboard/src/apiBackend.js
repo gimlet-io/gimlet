@@ -15,8 +15,6 @@ import {
 export default class APIBackend extends Component {
 
   componentDidMount() {
-    console.log(this.props.location.pathname);
-
     if (this.props.location.pathname.startsWith('/login')) {
       return;
     }

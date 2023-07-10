@@ -424,6 +424,7 @@ func buildImage(
 		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
 	}
+
 	client := &http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
@@ -431,28 +432,45 @@ func buildImage(
 		logrus.Errorf("cannot upload file: %s", err)
 		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
 		return
-	} else {
-		streamImageBuilderLogs(resp.Body, clientHub, userLogin, imageBuildId)
 	}
 
-	signalCh <- imageBuildingDoneSignal{successful: true}
+	success := streamImageBuilderLogs(resp.Body, clientHub, userLogin, imageBuildId)
+	signalCh <- imageBuildingDoneSignal{successful: success}
 }
 
-func streamImageBuilderLogs(body io.ReadCloser, clientHub *streaming.ClientHub, userLogin string, imageBuildId string) {
+func streamImageBuilderLogs(body io.ReadCloser, clientHub *streaming.ClientHub, userLogin string, imageBuildId string) bool {
 	defer body.Close()
+	var sb strings.Builder
 	reader := bufio.NewReader(body)
+	first := true
 	for {
 		line, err := reader.ReadBytes('\n')
+		sb.WriteString(string(line))
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
 			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
-			break
+			streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", sb.String())
+			return false
 		}
 
-		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "running", string(line))
+		if first || sb.Len() > 1000 {
+			streamImageBuildEvent(clientHub, userLogin, imageBuildId, "running", sb.String())
+			sb.Reset()
+			first = false
+		}
 	}
 
-	streamImageBuildEvent(clientHub, userLogin, imageBuildId, "success", "")
+	lastLine := sb.String()
+	if strings.HasSuffix(lastLine, "IMAGE BUILT") {
+		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "success", lastLine)
+		return true
+	} else {
+		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "notBuilt", lastLine)
+		return false
+	}
 }
 
 func streamImageBuildEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, logLine string) {

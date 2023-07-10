@@ -171,6 +171,10 @@ func Status(
 				if !fileInfo.IsDir() {
 					continue
 				}
+				if fileInfo.Name() == ".git" || fileInfo.Name() == "flux" {
+					continue
+				}
+
 				path := filepath.Join(envPath, fileInfo.Name())
 
 				release, err := readAppStatus(fs, path)

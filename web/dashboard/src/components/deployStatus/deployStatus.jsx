@@ -87,8 +87,12 @@ export function ImageBuild(build, logsEndRef) {
       {build.logLines.join()}
     </div>
   )
+  let instructionsText = null;
   if (build.status === "success") {
     statusIcon = '✅';
+  } else if (build.status === "notBuilt") {
+    statusIcon = '😟';
+    instructionsText = "We could not automatically build an image. Please check our documentation (TODO link) to proceed."
   } else if (build.status === "error") {
     statusIcon = '❗';
     statusText = "Could not build image, check server logs."
@@ -104,6 +108,7 @@ export function ImageBuild(build, logsEndRef) {
         <div className="whitespace-pre-wrap">{statusText}</div>
         <p ref={logsEndRef} />
       </div>
+      <div className="pt-2 text-orange-600">{instructionsText}</div>
       </div>
     </>
   );

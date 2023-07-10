@@ -5,7 +5,6 @@ import (
 	"encoding/base32"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
 	"github.com/gorilla/securecookie"
+	"github.com/sirupsen/logrus"
 	"github.com/sosedoff/gitkit"
 )
 
@@ -208,8 +208,11 @@ func builtInGitServer(gitUser *model.User, gitRoot string) (http.Handler, error)
 	// If return value is false or error is set, user's request will be rejected.
 	// You can hook up your database/redis/cache for authentication purposes.
 	service.AuthFunc = func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
-		log.Println("user auth request for repo:", cred.Username, cred.Password, req.RepoName)
-		return cred.Username == "git" && cred.Password == gitUser.Secret, nil
+		authorized := cred.Username == "git" && cred.Password == gitUser.Secret
+		if !authorized {
+			logrus.Warnf("could not auth user %s to builtin git repo", cred.Username)
+		}
+		return authorized, nil
 	}
 
 	// Configure git server. Will create git repos path if it does not exist.
