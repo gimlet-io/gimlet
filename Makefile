@@ -54,9 +54,6 @@ dist-dashboard:
 
 	GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/arm64/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
-
-	GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/darwin/arm64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/darwin/arm64/gimlet-agent github.com/gimlet-io/gimlet-cli/cmd/agent
 fast-dist:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/linux/amd64/gimlet-dashboard github.com/gimlet-io/gimlet-cli/cmd/dashboard
