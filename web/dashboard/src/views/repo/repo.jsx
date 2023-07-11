@@ -452,6 +452,11 @@ export default class Repo extends Component {
 
   tenantsFromConfigs(envConfigs) {
     let tenants = [];
+
+    if (!envConfigs) {
+      return tenants;
+    }
+
     for (const configs of Object.values(envConfigs)) {
       configs.forEach(config => {
         const tenantName = config.tenant.name;
@@ -490,10 +495,6 @@ export default class Repo extends Component {
       repoRolloutHistory = rolloutHistory[repoName]
     }
 
-    if (!this.state.envConfigs || (Object.keys(commits).length === 0)) {
-      return <Spinner />
-    }
-
     return (
       <div>
         <header>
@@ -526,7 +527,7 @@ export default class Repo extends Component {
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
               <div>
-                {Object.keys(filteredEnvs).sort().map((envName) =>
+                {envConfigs && Object.keys(filteredEnvs).sort().map((envName) =>
                   <Env
                     key={envName}
                     searchFilter={search.filter}
@@ -553,33 +554,33 @@ export default class Repo extends Component {
                 )
                 }
 
-                <div className="bg-gray-50 shadow p-4 sm:p-6 lg:p-8 mt-8 relative">
-                  <div className="w-64 mb-4 lg:mb-8">
-                    {branches &&
+                {Object.keys(branches).length !== 0 &&
+                  <div className="bg-gray-50 shadow p-4 sm:p-6 lg:p-8 mt-8 relative">
+                    <div className="w-64 mb-4 lg:mb-8">
                       <Dropdown
                         items={branches[repoName]}
                         value={selectedBranch}
                         changeHandler={(newBranch) => this.branchChange(newBranch)}
                       />
+                    </div>
+                    {commits &&
+                      <Commits
+                        commits={commits[repoName]}
+                        envs={envs}
+                        connectedAgents={filteredEnvs}
+                        deployHandler={this.deploy}
+                        magicDeployHandler={this.magicDeploy}
+                        repo={repo}
+                        gimletClient={this.props.gimletClient}
+                        store={this.props.store}
+                        owner={owner}
+                        branch={this.state.selectedBranch}
+                        scmUrl={scmUrl}
+                        tenant={this.state.selectedTenant}
+                      />
                     }
-                  </div>
-                  {commits &&
-                    <Commits
-                      commits={commits[repoName]}
-                      envs={envs}
-                      connectedAgents={filteredEnvs}
-                      deployHandler={this.deploy}
-                      magicDeployHandler={this.magicDeploy}
-                      repo={repo}
-                      gimletClient={this.props.gimletClient}
-                      store={this.props.store}
-                      owner={owner}
-                      branch={this.state.selectedBranch}
-                      scmUrl={scmUrl}
-                      tenant={this.state.selectedTenant}
-                    />
-                  }
-                </div>
+                  </div>}
+                {(!envConfigs || !commits) && <Spinner />}
               </div>
             </div>
           </div>
