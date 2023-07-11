@@ -490,7 +490,7 @@ export default class Repo extends Component {
       repoRolloutHistory = rolloutHistory[repoName]
     }
 
-    if (!this.state.envConfigs) {
+    if (!this.state.envConfigs || (Object.keys(commits).length === 0)) {
       return <Spinner />
     }
 
