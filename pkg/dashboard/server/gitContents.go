@@ -242,6 +242,11 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 
 	infraRepoPullRequests := map[string]interface{}{}
 	for _, env := range envsFromDB {
+		owner, _ := scm.Split(env.InfraRepo)
+		if owner == "builtin" {
+			continue
+		}
+
 		prList, err := goScm.ListOpenPRs(token, env.InfraRepo)
 		if err != nil {
 			if !strings.Contains(err.Error(), "Not Found") {
