@@ -49,6 +49,6 @@ jobs:
       with:
         context: .
         file: docker/image-builder/Dockerfile
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64/v8
         push: true
         tags: ghcr.io/gimlet-io/image-builder:${{ steps.version.outputs.version }},ghcr.io/gimlet-io/image-builder:latest
