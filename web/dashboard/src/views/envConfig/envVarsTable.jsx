@@ -1,12 +1,12 @@
 const variables = [
-    { variable: 'REPO', value: 'The owner and repository name.', },
-    { variable: 'OWNER', value: "The repository owner's name.", },
-    { variable: 'BRANCH', value: 'The name of the Git branch currently being built.', },
-    { variable: 'TAG', value: 'The name of the git tag, if the current build is tagged.', },
-    { variable: 'SHA', value: 'The commit SHA that triggered the workflow.', },
-    { variable: 'ACTOR', value: 'The name of the person or app that initiated the workflow.', },
-    { variable: 'EVENT', value: 'The name of the event that triggered the workflow. ', },
-    { variable: 'JOB', value: 'A unique identifier for the current job.', },
+    { variable: '{{ .REPO }}', value: 'The owner and repository name.', },
+    { variable: '{{ .OWNER }}', value: "The repository owner's name.", },
+    { variable: '{{ .BRANCH }}', value: 'The name of the Git branch currently being built.', },
+    { variable: '{{ .TAG }}', value: 'The name of the git tag, if the current build is tagged.', },
+    { variable: '{{ .SHA }}', value: 'The commit SHA that triggered the workflow.', },
+    { variable: '{{ .ACTOR }}', value: 'The name of the person or app that initiated the workflow.', },
+    { variable: '{{ .EVENT }}', value: 'The name of the event that triggered the workflow. ', },
+    { variable: '{{ .JOB }}', value: 'A unique identifier for the current job.', },
 ]
 
 export default function EnvVarsTable() {

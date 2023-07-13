@@ -23,10 +23,12 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 func magicDeploy(w http.ResponseWriter, r *http.Request) {
@@ -136,6 +138,8 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		clientHub,
 		user.Login,
 		string(imageBuildId),
+		gitRepoCache,
+		builtInEnv.Name,
 	)
 
 	responseStr, err := json.Marshal(map[string]string{
@@ -165,12 +169,18 @@ func createDeployRequest(
 	clientHub *streaming.ClientHub,
 	userLogin string,
 	imageBuildId string,
+	gitRepoCache *nativeGit.RepoCache,
+	builtInEnvName string,
 ) {
 	// wait until image building is done
 	imageBuildingDoneSignal := <-signal
 	if !imageBuildingDoneSignal.successful {
 		return
 	}
+	envConfig, _ := defaultEnvConfig(
+		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha, builtInEnvName,
+		gitRepoCache,
+	)
 
 	artifact, err := createDummyArtifact(
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
@@ -178,6 +188,7 @@ func createDeployRequest(
 		store,
 		"127.0.0.1:32447/"+deployRequest.Repo,
 		tag,
+		envConfig,
 	)
 	if err != nil {
 		logrus.Errorf("cannot create artifact: %s", err)
@@ -217,41 +228,79 @@ func createDeployRequest(
 	streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "created", event.ID)
 }
 
+func defaultEnvConfig(
+	owner string, repoName string, sha string, env string,
+	gitRepoCache *nativeGit.RepoCache,
+
+) (*dx.Manifest, error) {
+	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
+	if err != nil {
+		return nil, fmt.Errorf("cannot get repo: %s", err)
+	}
+
+	files, err := helper.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
+	if err != nil {
+		if strings.Contains(err.Error(), "directory not found") {
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("cannot list files in .gimlet/: %s", err)
+		}
+	}
+
+	for _, content := range files {
+		var envConfig dx.Manifest
+		err = yaml.Unmarshal([]byte(content), &envConfig)
+		if err != nil {
+			logrus.Warnf("cannot parse env config string: %s", err)
+			continue
+		}
+		if envConfig.Env == env && envConfig.App == repoName {
+			return &envConfig, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func createDummyArtifact(
 	owner, repo, sha string,
 	env string,
 	store *store.Store,
 	image, tag string,
+	envConfig *dx.Manifest,
 ) (*dx.Artifact, error) {
-	artifact := dx.Artifact{
-		ID:      fmt.Sprintf("%s-%s", owner+"/"+repo, uuid.New().String()),
-		Created: time.Now().Unix(),
-		Fake:    true,
-		Environments: []*dx.Manifest{
-			{
-				App:       repo,
-				Namespace: "default",
-				Env:       env,
-				Chart: dx.Chart{
-					Name:       config.DEFAULT_CHART_NAME,
-					Repository: config.DEFAULT_CHART_REPO,
-					Version:    config.DEFAULT_CHART_VERSION,
+
+	if envConfig == nil {
+		envConfig = &dx.Manifest{
+			App:       repo,
+			Namespace: "default",
+			Env:       env,
+			Chart: dx.Chart{
+				Name:       config.DEFAULT_CHART_NAME,
+				Repository: config.DEFAULT_CHART_REPO,
+				Version:    config.DEFAULT_CHART_VERSION,
+			},
+			Values: map[string]interface{}{
+				"containerPort": 80,
+				"gitRepository": owner + "/" + repo,
+				"gitSha":        sha,
+				"image": map[string]interface{}{
+					"repository": image,
+					"tag":        tag,
+					"pullPolicy": "Always",
 				},
-				Values: map[string]interface{}{
-					"containerPort": 80,
-					"gitRepository": owner + "/" + repo,
-					"gitSha":        sha,
-					"image": map[string]interface{}{
-						"repository": image,
-						"tag":        tag,
-						"pullPolicy": "Always",
-					},
-					"resources": map[string]interface{}{
-						"ignore": true,
-					},
+				"resources": map[string]interface{}{
+					"ignore": true,
 				},
 			},
-		},
+		}
+	}
+
+	artifact := dx.Artifact{
+		ID:           fmt.Sprintf("%s-%s", owner+"/"+repo, uuid.New().String()),
+		Created:      time.Now().Unix(),
+		Fake:         true,
+		Environments: []*dx.Manifest{envConfig},
 		Version: dx.Version{
 			RepositoryName: owner + "/" + repo,
 			SHA:            sha,
@@ -264,7 +313,9 @@ func createDummyArtifact(
 			Message:        "TODO",
 			URL:            "TODO",
 		},
-		Vars: map[string]string{},
+		Vars: map[string]string{
+			"SHA": sha,
+		},
 	}
 
 	event, err := model.ToEvent(artifact)

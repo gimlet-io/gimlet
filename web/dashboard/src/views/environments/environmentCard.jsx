@@ -365,8 +365,19 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         <div className="ml-3">
           <h3 className="text-sm font-medium text-blue-800">This is a built-in environment</h3>
           <div className="mt-2 text-sm text-blue-700">
-            Gimlet made this environment for you so you can quickly get started, but you can't make changes to it.<br />
-            Create another environment to tailor it to your needs.
+            Gimlet made this environment for you so you can quickly start deploying.<br />
+            To make edits to it,
+            <span className="cursor-pointer font-medium pl-1 text-blue-800"
+              onClick={() => {
+                // eslint-disable-next-line no-restricted-globals
+                confirm(`Are you sure you want to convert to a gitops environment?`) &&
+                  console.log("Converting")
+              }}
+            >
+              convert it to a gitops environment
+            </span>.
+            <br />
+            By doing so, Gimlet will create two git repositories.
           </div>
         </div>
       </div>

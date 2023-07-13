@@ -225,6 +225,39 @@ func RemoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, pa
 	return files, nil
 }
 
+func RemoteFolderOnHashWithoutCheckout(repo *git.Repository, hash string, path string) (map[string]string, error) {
+	files := map[string]string{}
+
+	headCommit, err := repo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return files, fmt.Errorf("cannot get head commit: %s", err)
+	}
+
+	t, err := headCommit.Tree()
+	if err != nil {
+		return files, fmt.Errorf("cannot get head tree: %s", err)
+	}
+
+	subTree, err := t.Tree(path)
+	if err != nil {
+		return files, fmt.Errorf("cannot get %s tree: %s", path, err)
+	}
+
+	for _, entry := range subTree.Entries {
+		f, err := subTree.File(entry.Name)
+		if err != nil {
+			return files, fmt.Errorf("cannot get file: %s", err)
+		}
+		contents, err := f.Contents()
+		if err != nil {
+			return files, fmt.Errorf("cannot get file: %s", err)
+		}
+		files[entry.Name] = contents
+	}
+
+	return files, nil
+}
+
 func RemoteFoldersOnBranchWithoutCheckout(repo *git.Repository, branch string, path string) ([]string, error) {
 	var err error
 	if branch == "" {
