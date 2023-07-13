@@ -487,6 +487,93 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(lowerCaseEnvNameToSave))
 }
 
+func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	store := ctx.Value("store").(*store.Store)
+
+	envs, err := store.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get envs: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	var builtInEnv *model.Environment
+	for _, env := range envs {
+		if env.BuiltIn {
+			builtInEnv = env
+			break
+		}
+	}
+	if builtInEnv == nil {
+		http.Error(w, http.StatusText(http.StatusPreconditionFailed)+" - built-in environment missing", http.StatusPreconditionFailed)
+		return
+	}
+
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
+	gitToken, _, _ := tokenManager.Token()
+
+	user := ctx.Value("user").(*model.User)
+	orgRepos, err := getOrgRepos(store)
+	if err != nil {
+		logrus.Errorf("cannot get repo list: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	builtInEnv.InfraRepo = fmt.Sprintf("%s/gitops-%s-infra", dynamicConfig.Org(), builtInEnv.Name)
+	builtInEnv.AppsRepo = fmt.Sprintf("%s/gitops-%s-apps", dynamicConfig.Org(), builtInEnv.Name)
+
+	// Creating repos
+	_, err = AssureRepoExists(
+		orgRepos,
+		builtInEnv.InfraRepo,
+		user.AccessToken,
+		gitToken,
+		user.Login,
+		gitServiceImpl,
+	)
+	if err != nil {
+		logrus.Errorf("cannot assure repo exists: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	_, err = AssureRepoExists(
+		orgRepos,
+		builtInEnv.AppsRepo,
+		user.AccessToken,
+		gitToken,
+		user.Login,
+		gitServiceImpl,
+	)
+	if err != nil {
+		logrus.Errorf("cannot assure repo exists: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Updating GitRepository to point to the newly created ones
+	// Pushing to new repos
+	// Push to builtin repos (Flux will take care of the switch)
+	// Set that we had a built in env once, no need to generate a new one
+
+	builtInEnv.BuiltIn = false
+	err = store.UpdateEnvironment(builtInEnv)
+	if err != nil {
+		logrus.Errorf("cannot update env: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}
+
 func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 	var envNameToDelete string
 	err := json.NewDecoder(r.Body).Decode(&envNameToDelete)

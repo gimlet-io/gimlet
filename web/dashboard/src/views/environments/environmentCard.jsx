@@ -119,6 +119,31 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     setErrors({ ...errors, [variable]: validationErrors })
   }
 
+  const spinOutBuiltInEnv = () => {
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Converting environment..."
+      }
+    });
+    gimletClient.spinOutBuiltInEnv()
+    .then(() => {
+      store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+          header: "Success",
+          message: "Environment was converted",
+        }
+      });
+    }, (err) => {
+      store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+          header: "Error",
+          message: err.statusText
+        }
+      });
+      resetPopupWindowAfterThreeSeconds()
+    })
+  }
+
   const resetPopupWindowAfterThreeSeconds = () => {
     setTimeout(() => {
       store.dispatch({
@@ -371,11 +396,11 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               onClick={() => {
                 // eslint-disable-next-line no-restricted-globals
                 confirm(`Are you sure you want to convert to a gitops environment?`) &&
-                  console.log("Converting")
+                  spinOutBuiltInEnv()
               }}
             >
               convert it to a gitops environment
-            </span>.
+            </span> first.
             <br />
             By doing so, Gimlet will create two git repositories.
           </div>
