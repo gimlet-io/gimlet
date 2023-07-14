@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -21,11 +19,9 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
-	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
-	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
@@ -520,67 +516,14 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 	gitToken, _, _ := tokenManager.Token()
 
 	user := ctx.Value("user").(*model.User)
-	orgRepos, err := getOrgRepos(store)
-	if err != nil {
-		logrus.Errorf("cannot get repo list: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
 
-	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	infraRepo, infraRepoPath, err := gitRepoCache.InstanceForWrite(builtInEnv.InfraRepo)
-	defer os.RemoveAll(infraRepoPath)
-	if err != nil {
-		logrus.Errorf("cannot get repo instance: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	appsRepo, appsRepoPath, err := gitRepoCache.InstanceForWrite(builtInEnv.AppsRepo)
-	defer os.RemoveAll(appsRepoPath)
-	if err != nil {
-		logrus.Errorf("cannot get repo instance: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	owner, repoName := scm.Split(builtInEnv.InfraRepo)
-	infraGitRepositoryFileName := fmt.Sprintf("flux/gitops-repo-%s.yaml", gitops.UniqueName(true, owner, repoName, ""))
-	infraGitRepositoryString, err := helper.Content(infraRepo, infraGitRepositoryFileName)
-	if err != nil {
-		logrus.Errorf("cannot get gitrepository source: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	var infraGitRepository sourcev1.GitRepository
-	err = yaml.Unmarshal([]byte(infraGitRepositoryString), &infraGitRepository)
-	if err != nil {
-		logrus.Errorf("cannot parse gitrepository: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	owner, repoName = scm.Split(builtInEnv.AppsRepo)
-	appsGitRepositoryFileName := fmt.Sprintf("flux/gitops-repo-%s.yaml", gitops.UniqueName(true, owner, repoName, ""))
-	appsGitRepositoryString, err := helper.Content(appsRepo, appsGitRepositoryFileName)
-	if err != nil {
-		logrus.Errorf("cannot get gitrepository source: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	var appsGitRepository sourcev1.GitRepository
-	err = yaml.Unmarshal([]byte(appsGitRepositoryString), &appsGitRepository)
-	if err != nil {
-		logrus.Errorf("cannot parse gitrepository: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
+	oldInfraRepo := builtInEnv.InfraRepo
+	oldAppsRepo := builtInEnv.AppsRepo
 	builtInEnv.InfraRepo = fmt.Sprintf("%s/gitops-%s-infra", dynamicConfig.Org(), builtInEnv.Name)
 	builtInEnv.AppsRepo = fmt.Sprintf("%s/gitops-%s-apps", dynamicConfig.Org(), builtInEnv.Name)
 
 	// Creating repos
 	_, err = AssureRepoExists(
-		orgRepos,
 		builtInEnv.InfraRepo,
 		user.AccessToken,
 		gitToken,
@@ -594,7 +537,6 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = AssureRepoExists(
-		orgRepos,
 		builtInEnv.AppsRepo,
 		user.AccessToken,
 		gitToken,
@@ -608,11 +550,58 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Updating GitRepository to point to the newly created ones
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	gitUser, err := store.User("git")
+	if err != nil {
+		logrus.Errorf("cannot get git user: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	_, _, err = MigrateEnv(
+		gitRepoCache,
+		gitServiceImpl,
+		builtInEnv.Name,
+		oldInfraRepo,
+		builtInEnv.InfraRepo,
+		true,
+		gitToken,
+		true,
+		true,
+		false,
+		false,
+		dynamicConfig.ScmURL(),
+		gitUser,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	_, _, err = MigrateEnv(
+		gitRepoCache,
+		gitServiceImpl,
+		builtInEnv.Name,
+		oldAppsRepo,
+		builtInEnv.AppsRepo,
+		true,
+		gitToken,
+		true,
+		false,
+		false,
+		false,
+		dynamicConfig.ScmURL(),
+		gitUser,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
-	// Pushing to new repos
-	// Push to builtin repos (Flux will take care of the switch)
-	// Set that we had a built in env once, no need to generate a new one
+	// TODO Set that we had a built in env once, no need to generate a new one
 
 	builtInEnv.BuiltIn = false
 	err = store.UpdateEnvironment(builtInEnv)

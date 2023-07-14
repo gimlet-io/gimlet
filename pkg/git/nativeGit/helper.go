@@ -156,6 +156,10 @@ func NativePushWithToken(url, repoPath, branch string) error {
 	return execCommand(repoPath, "git", "push", url, branch)
 }
 
+func NativeForcePushWithToken(url, repoPath, branch string) error {
+	return execCommand(repoPath, "git", "push", "--force", url, branch)
+}
+
 func execCommand(rootPath string, cmdName string, args ...string) error {
 	cmd := exec.CommandContext(context.TODO(), cmdName, args...)
 	cmd.Dir = rootPath
