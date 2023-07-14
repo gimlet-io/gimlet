@@ -24,6 +24,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
@@ -441,7 +442,9 @@ func MigrateEnv(
 		return "", "", fmt.Errorf("cannot get head branch: %s", err)
 	}
 
-	err = os.RemoveAll(tmpPath + "/flux")
+	owner, repoName := scm.Split(oldRepoName)
+	deployKeyName := fmt.Sprintf("deploy-key-%s.yaml", gitops.UniqueName(repoPerEnv, owner, repoName, envName))
+	err = os.Remove(tmpPath + "/flux/" + deployKeyName)
 	if err != nil {
 		return "", "", fmt.Errorf("cannot remove: %s", err)
 	}
