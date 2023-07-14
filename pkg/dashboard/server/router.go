@@ -167,6 +167,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Get("/api/repo/{owner}/{name}/env/{env}/chartSchema", chartSchema)
 		r.Get(("/api/app"), application)
 		r.Post(("/api/saveEnvToDB"), saveEnvToDB)
+		r.Post(("/api/spinOutBuiltInEnv"), spinOutBuiltInEnv)
 		r.Post(("/api/deleteEnvFromDB"), deleteEnvFromDB)
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)

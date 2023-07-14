@@ -19,6 +19,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	"github.com/sosedoff/gitkit"
@@ -31,6 +32,11 @@ func bootstrapBuiltInEnv(
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 ) error {
+	_, err := store.KeyValue(model.SpinnedOut)
+	if err == nil { // built in env has been spinned out
+		return nil
+	}
+
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
 		panic(err)
@@ -138,6 +144,7 @@ func initRepo(url string) (*git.Repository, string, error) {
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
+
 	err = nativeGit.StageFile(w, "", "README.md")
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
@@ -146,6 +153,13 @@ func initRepo(url string) (*git.Repository, string, error) {
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
+
+	b := plumbing.ReferenceName("refs/heads/main")
+	err = w.Checkout(&git.CheckoutOptions{Create: true, Force: false, Branch: b})
+	if err != nil {
+		return nil, tmpPath, fmt.Errorf("cannot checkout to main: %s", err)
+	}
+
 	_, err = repo.CreateRemote(&gitConfig.RemoteConfig{
 		Name: "origin",
 		URLs: []string{url},

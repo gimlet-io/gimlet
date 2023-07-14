@@ -15,6 +15,7 @@
 package model
 
 const OrgRepos = "orgRepos"
+const SpinnedOut = "spinnedOut"
 
 // ReposWithCleanupPolicy an array of repo names that have a cleanup policy
 const ReposWithCleanupPolicy = "reposWithCleanupPolicy"

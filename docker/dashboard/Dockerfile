@@ -8,6 +8,8 @@ ENV DATABASE_CONFIG=/var/lib/gimlet-dashboard/gimlet-dashboard.sqlite
 ENV XDG_CACHE_HOME /var/lib/gimlet-dashboard
 ENV GIT_ROOT=/var/lib/gimlet-dashboard/git-root/
 
+RUN git config --global init.defaultBranch main
+
 RUN addgroup -S gimlet-dashboard && adduser -S gimlet-dashboard -G gimlet-dashboard
 
 ADD docker/dashboard/known_hosts /etc/ssh/ssh_known_hosts

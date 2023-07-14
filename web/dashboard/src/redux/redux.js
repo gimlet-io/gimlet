@@ -41,6 +41,8 @@ export const ACTION_TYPE_ALERTS = 'alerts'
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
+export const ACTION_TYPE_ENVSPINNEDOUT = 'envSpinnedOut';
+
 export const ACTION_TYPE_OPEN_DEPLOY_PANEL = 'openDeployPanel';
 export const ACTION_TYPE_CLOSE_DEPLOY_PANEL = 'closeDeployPanel';
 
@@ -183,6 +185,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.openDeployPanel(state)
     case ACTION_TYPE_CLOSE_DEPLOY_PANEL:
       return eventHandlers.closeDeployPanel(state)
+    case ACTION_TYPE_ENVSPINNEDOUT:
+      return eventHandlers.envSpinnedOut(state, action.payload)
     default:
       console.log('Could not process redux event: ' + JSON.stringify(action));
       return state;

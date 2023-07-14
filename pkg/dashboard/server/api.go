@@ -25,7 +25,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 )
 
 const fluxPattern = "flux-%s"
@@ -485,6 +486,158 @@ func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(lowerCaseEnvNameToSave))
+}
+
+func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	store := ctx.Value("store").(*store.Store)
+
+	_, err := store.KeyValue(model.SpinnedOut)
+	if err == nil {
+		http.Error(w, http.StatusText(http.StatusPreconditionFailed)+" - built-in env already spinned out", http.StatusPreconditionFailed)
+		return
+	}
+
+	envs, err := store.GetEnvironments()
+	if err != nil {
+		logrus.Errorf("cannot get envs: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	var builtInEnv *model.Environment
+	for _, env := range envs {
+		if env.BuiltIn {
+			builtInEnv = env
+			break
+		}
+	}
+	if builtInEnv == nil {
+		http.Error(w, http.StatusText(http.StatusPreconditionFailed)+" - built-in environment missing", http.StatusPreconditionFailed)
+		return
+	}
+
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
+	gitToken, _, _ := tokenManager.Token()
+
+	user := ctx.Value("user").(*model.User)
+
+	oldInfraRepo := builtInEnv.InfraRepo
+	oldAppsRepo := builtInEnv.AppsRepo
+	builtInEnv.InfraRepo = fmt.Sprintf("%s/gitops-%s-infra", dynamicConfig.Org(), builtInEnv.Name)
+	builtInEnv.AppsRepo = fmt.Sprintf("%s/gitops-%s-apps", dynamicConfig.Org(), builtInEnv.Name)
+
+	// Creating repos
+	_, err = AssureRepoExists(
+		builtInEnv.InfraRepo,
+		user.AccessToken,
+		gitToken,
+		user.Login,
+		gitServiceImpl,
+	)
+	if err != nil {
+		logrus.Errorf("cannot assure repo exists: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	_, err = AssureRepoExists(
+		builtInEnv.AppsRepo,
+		user.AccessToken,
+		gitToken,
+		user.Login,
+		gitServiceImpl,
+	)
+	if err != nil {
+		logrus.Errorf("cannot assure repo exists: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	gitUser, err := store.User("git")
+	if err != nil {
+		logrus.Errorf("cannot get git user: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	_, _, err = MigrateEnv(
+		gitRepoCache,
+		gitServiceImpl,
+		builtInEnv.Name,
+		oldInfraRepo,
+		builtInEnv.InfraRepo,
+		true,
+		gitToken,
+		true,
+		true,
+		false,
+		false,
+		dynamicConfig.ScmURL(),
+		gitUser,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	_, _, err = MigrateEnv(
+		gitRepoCache,
+		gitServiceImpl,
+		builtInEnv.Name,
+		oldAppsRepo,
+		builtInEnv.AppsRepo,
+		true,
+		gitToken,
+		true,
+		false,
+		false,
+		false,
+		dynamicConfig.ScmURL(),
+		gitUser,
+	)
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// preventing from creating another built-in env
+	err = store.SaveKeyValue(&model.KeyValue{
+		Key:   model.SpinnedOut,
+		Value: "true",
+	})
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	builtInEnv.BuiltIn = false
+	err = store.UpdateEnvironment(builtInEnv)
+	if err != nil {
+		logrus.Errorf("cannot update env: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	resultBytes, err := json.Marshal(builtInEnv)
+	if err != nil {
+		log.Errorf("could not serialize results: %v", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(resultBytes)
 }
 
 func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {

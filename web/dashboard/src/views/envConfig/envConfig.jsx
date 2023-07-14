@@ -62,7 +62,7 @@ class EnvConfig extends Component {
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
 
       if (!this.state.values) {
-        this.setLocalEnvConfigState(reduxState, repoName, env, config);
+        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
       }
     });
 
@@ -70,9 +70,9 @@ class EnvConfig extends Component {
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
   }
 
-  setLocalEnvConfigState(reduxState, repoName, env, config) {
+  setLocalEnvConfigState(envConfigs, repoName, env, config, defaultChart) {
     const { action } = this.props.match.params;
-    let configFileContent = configFileContentFromEnvConfigs(reduxState.envConfigs, repoName, env, config);
+    let configFileContent = configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart);
     if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
       let envConfig = configFileContent.values;
 
@@ -99,7 +99,7 @@ class EnvConfig extends Component {
 
     if (prevProps.match.params.config !== config) {
       let reduxState = this.props.store.getState();
-      this.setLocalEnvConfigState(reduxState, repoName, env, config);
+      this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
     }
   }
 
@@ -132,7 +132,7 @@ class EnvConfig extends Component {
     }
 
     let reduxState = this.props.store.getState();
-    this.setLocalEnvConfigState(reduxState, repoName, env, config);
+    this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
   }
 
   ensureRepoAssociationExists(repoName, repoMetas) {
@@ -719,7 +719,7 @@ function LinkToDefaultVariables({ repoMetas }) {
   )
 }
 
-function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
+function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart) {
   if (envConfigs[repoName]) {
     if (envConfigs[repoName][env]) {
       const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
@@ -731,7 +731,34 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config) {
       }
     } else {
       // "envConfigs loaded, but we don't have data for env"
-      return {}
+
+      // if this is the default config, we should fake it for magic deploy
+      const repoOnly = repoName.split("/")[1]
+      if (config === repoOnly) {
+        if (!defaultChart) {
+          return undefined // if data not loaded yet, store.subscribe will take care of this
+        }
+        return {
+          app: config,
+          namespace: "default",
+          env:       env,
+          chart: defaultChart.reference,
+          values: {
+            gitRepository: repoName,
+            gitSha:        "{{ .SHA }}",
+            image: {
+              repository: "127.0.0.1:32447/"+repoOnly,
+              tag:        "{{ .SHA }}",
+              pullPolicy: "Always",
+            },
+            resources: {
+              ignore: true,
+            },
+          },
+        }
+      } else {
+        return {}
+      }
     }
   } else {
     // envConfigs not loaded, we shall wait for it to be loaded

@@ -234,15 +234,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := ctx.Value("user").(*model.User)
-	orgRepos, err := getOrgRepos(db)
-	if err != nil {
-		logrus.Errorf("cannot get repo list: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
 
 	_, err = AssureRepoExists(
-		orgRepos,
 		environment.InfraRepo,
 		user.AccessToken,
 		gitToken,
@@ -256,7 +249,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = AssureRepoExists(
-		orgRepos,
 		environment.AppsRepo,
 		user.AccessToken,
 		gitToken,
@@ -420,6 +412,127 @@ func BootstrapEnv(
 	return gitopsRepoFileName, secretFileName, nil
 }
 
+func MigrateEnv(
+	gitRepoCache *nativeGit.RepoCache,
+	gitServiceImpl customScm.CustomGitService,
+	envName string,
+	oldRepoName string,
+	newRepoName string,
+	repoPerEnv bool,
+	token string,
+	shouldGenerateController bool,
+	shouldGenerateDependencies bool,
+	kustomizationPerApp bool,
+	deployKeyCanWrite bool,
+	scmURL string,
+	gitUser *model.User,
+) (string, string, error) {
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(oldRepoName)
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot get repo: %s", err)
+	}
+
+	if repoPerEnv {
+		envName = ""
+	}
+	headBranch, err := nativeGit.HeadBranch(repo)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot get head branch: %s", err)
+	}
+
+	err = os.RemoveAll(tmpPath + "/flux")
+	if err != nil {
+		return "", "", fmt.Errorf("cannot remove: %s", err)
+	}
+
+	scmHost := strings.Split(scmURL, "://")[1]
+	gitopsRepoFileName, publicKey, secretFileName, err := gitops.GenerateManifests(gitops.ManifestOpts{
+		ShouldGenerateController:           shouldGenerateController,
+		ShouldGenerateDependencies:         shouldGenerateDependencies,
+		KustomizationPerApp:                kustomizationPerApp,
+		Env:                                envName,
+		SingleEnv:                          repoPerEnv,
+		GitopsRepoPath:                     tmpPath,
+		ShouldGenerateKustomizationAndRepo: true,
+		ShouldGenerateDeployKey:            true,
+		GitopsRepoUrl:                      fmt.Sprintf("git@%s:%s.git", scmHost, newRepoName),
+		Branch:                             headBranch,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("cannot generate manifest: %s", err)
+	}
+
+	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Migrating")
+	if err != nil {
+		return "", "", fmt.Errorf("cannot stage commit and push: %s", err)
+	}
+
+	head, _ := repo.Head()
+	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, newRepoName)
+	err = nativeGit.NativeForcePushWithToken(
+		url,
+		tmpPath,
+		head.Name().Short(),
+	)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot push to new repo: %s", err)
+	}
+
+	owner, repository := ParseRepo(newRepoName)
+	err = gitServiceImpl.AddDeployKeyToRepo(
+		owner,
+		repository,
+		token,
+		"flux",
+		publicKey,
+		deployKeyCanWrite,
+	)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot add deploy key to repo: %s", err)
+	}
+
+	gitRepoCache.Invalidate(oldRepoName)
+
+	return gitopsRepoFileName, secretFileName, nil
+}
+
+func stageCommitAndPush(repo *git.Repository, tmpPath string, user string, password string, msg string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	err = worktree.AddWithOptions(&git.AddOptions{
+		All: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Temporarily staging deleted files to git with a simple CLI command until the
+	// following issue is not solved:
+	// https://github.com/go-git/go-git/issues/223
+	cmd := exec.Command("git", "add", ".")
+	cmd.Dir = tmpPath
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	_, err = nativeGit.Commit(repo, msg)
+	if err != nil {
+		return err
+	}
+
+	err = nativeGit.PushWithBasicAuth(repo, user, password)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
 	tmpPath, _ := ioutil.TempDir("", "gitops-")
 	repo, err := git.PlainInit(tmpPath, false)
@@ -494,17 +607,13 @@ func BootstrapNotifications(
 	return notificationsFileName, nil
 }
 
-func AssureRepoExists(orgRepos []string,
+func AssureRepoExists(
 	repoName string,
 	userToken string,
 	orgToken string,
 	loggedInUser string,
 	gitServiceImpl customScm.CustomGitService,
 ) (bool, error) {
-	if hasRepo(orgRepos, repoName) {
-		return false, nil
-	}
-
 	owner := ""
 	parts := strings.Split(repoName, "/")
 	if len(parts) == 2 {
@@ -513,6 +622,11 @@ func AssureRepoExists(orgRepos []string,
 	}
 
 	err := gitServiceImpl.CreateRepository(owner, repoName, loggedInUser, orgToken, userToken)
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
 	return true, err
 }
 

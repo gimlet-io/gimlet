@@ -13,7 +13,8 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVUPDATED,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
-  ACTION_TYPE_RELEASE_STATUSES
+  ACTION_TYPE_RELEASE_STATUSES,
+  ACTION_TYPE_ENVSPINNEDOUT
 } from "../../redux/redux";
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
@@ -117,6 +118,35 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
     }
 
     setErrors({ ...errors, [variable]: validationErrors })
+  }
+
+  const spinOutBuiltInEnv = () => {
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Converting environment..."
+      }
+    });
+    gimletClient.spinOutBuiltInEnv()
+    .then((data) => {
+      store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+          header: "Success",
+          message: "Environment was converted",
+        }
+      });
+      store.dispatch({
+        type: ACTION_TYPE_ENVSPINNEDOUT,
+        payload: data
+      });
+    }, (err) => {
+      store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+          header: "Error",
+          message: err.statusText
+        }
+      });
+      resetPopupWindowAfterThreeSeconds()
+    })
   }
 
   const resetPopupWindowAfterThreeSeconds = () => {
@@ -365,8 +395,19 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
         <div className="ml-3">
           <h3 className="text-sm font-medium text-blue-800">This is a built-in environment</h3>
           <div className="mt-2 text-sm text-blue-700">
-            Gimlet made this environment for you so you can quickly get started, but you can't make changes to it.<br />
-            Create another environment to tailor it to your needs.
+            Gimlet made this environment for you so you can quickly start deploying.<br />
+            To make edits to it,
+            <span className="cursor-pointer font-medium pl-1 text-blue-800"
+              onClick={() => {
+                // eslint-disable-next-line no-restricted-globals
+                confirm(`Are you sure you want to convert to a gitops environment?`) &&
+                  spinOutBuiltInEnv()
+              }}
+            >
+              convert it to a gitops environment
+            </span> first.
+            <br />
+            By doing so, Gimlet will create two git repositories to host the infrastructure and application manifests.
           </div>
         </div>
       </div>

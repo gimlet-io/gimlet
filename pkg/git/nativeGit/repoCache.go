@@ -117,10 +117,23 @@ func (r *RepoCache) Run() {
 }
 
 func (r *RepoCache) syncGitRepo(repoName string) {
-	token, user, err := r.tokenManager.Token()
-	if err != nil {
-		logrus.Errorf("couldn't get scm token: %s", err)
-		return
+	var auth *http.BasicAuth
+	owner, _ := scm.Split(repoName)
+	if owner == "builtin" {
+		auth = &http.BasicAuth{
+			Username: r.gitUser.Login,
+			Password: r.gitUser.Secret,
+		}
+	} else {
+		token, _, err := r.tokenManager.Token()
+		if err != nil {
+			logrus.Errorf("couldn't get scm token: %s", err)
+			return
+		}
+		auth = &http.BasicAuth{
+			Username: "123",
+			Password: token,
+		}
 	}
 
 	if _, ok := r.repos[repoName]; !ok {
@@ -133,19 +146,16 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 
 	opts := &git.FetchOptions{
 		RefSpecs: FetchRefSpec,
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: token,
-		},
-		Depth: 100,
-		Tags:  git.NoTags,
-		Prune: true,
+		Auth:     auth,
+		Depth:    100,
+		Tags:     git.NoTags,
+		Prune:    true,
 	}
 	if repoData.withHistory {
 		opts.Depth = 0
 	}
 
-	err = repo.Fetch(opts)
+	err := repo.Fetch(opts)
 	if err == git.NoErrAlreadyUpToDate {
 		return
 	}

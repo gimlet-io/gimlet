@@ -156,6 +156,10 @@ func NativePushWithToken(url, repoPath, branch string) error {
 	return execCommand(repoPath, "git", "push", url, branch)
 }
 
+func NativeForcePushWithToken(url, repoPath, branch string) error {
+	return execCommand(repoPath, "git", "push", "--force", url, branch)
+}
+
 func execCommand(rootPath string, cmdName string, args ...string) error {
 	cmd := exec.CommandContext(context.TODO(), cmdName, args...)
 	cmd.Dir = rootPath
@@ -196,6 +200,39 @@ func RemoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, pa
 
 	head := BranchHeadHash(repo, branch)
 	headCommit, err := repo.CommitObject(head)
+	if err != nil {
+		return files, fmt.Errorf("cannot get head commit: %s", err)
+	}
+
+	t, err := headCommit.Tree()
+	if err != nil {
+		return files, fmt.Errorf("cannot get head tree: %s", err)
+	}
+
+	subTree, err := t.Tree(path)
+	if err != nil {
+		return files, fmt.Errorf("cannot get %s tree: %s", path, err)
+	}
+
+	for _, entry := range subTree.Entries {
+		f, err := subTree.File(entry.Name)
+		if err != nil {
+			return files, fmt.Errorf("cannot get file: %s", err)
+		}
+		contents, err := f.Contents()
+		if err != nil {
+			return files, fmt.Errorf("cannot get file: %s", err)
+		}
+		files[entry.Name] = contents
+	}
+
+	return files, nil
+}
+
+func RemoteFolderOnHashWithoutCheckout(repo *git.Repository, hash string, path string) (map[string]string, error) {
+	files := map[string]string{}
+
+	headCommit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return files, fmt.Errorf("cannot get head commit: %s", err)
 	}
