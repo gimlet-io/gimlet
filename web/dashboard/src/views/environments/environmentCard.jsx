@@ -402,7 +402,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
               convert it to a gitops environment
             </span> first.
             <br />
-            By doing so, Gimlet will create two git repositories.
+            By doing so, Gimlet will create two git repositories to host the infrastructure and application manifests.
           </div>
         </div>
       </div>
