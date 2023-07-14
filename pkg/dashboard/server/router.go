@@ -154,6 +154,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Get("/api/refreshRepos", refreshRepos)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)
+		r.Get("/api/repo/{owner}/{name}/triggerCommitSync", triggerCommitSync)
 		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)

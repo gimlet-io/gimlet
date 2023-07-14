@@ -116,6 +116,19 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	w.Write(commitsString)
 }
 
+func triggerCommitSync(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	name := chi.URLParam(r, "name")
+	repoName := fmt.Sprintf("%s/%s", owner, name)
+
+	ctx := r.Context()
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	gitRepoCache.Invalidate(repoName)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}
+
 type DeployTarget struct {
 	App        string `json:"app"`
 	Env        string `json:"env"`

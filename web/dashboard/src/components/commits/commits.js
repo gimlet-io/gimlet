@@ -108,7 +108,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, magicDeployHan
                 </p>
               </div>
             </div>
-            <div className="pr-4">
+            <div>
               <ReleaseBadges
                 sha={commit.sha}
                 connectedAgents={connectedAgents}

@@ -109,6 +109,7 @@ export default class Repo extends Component {
     this.linkToDeployment = this.linkToDeployment.bind(this)
     this.newConfig = this.newConfig.bind(this)
     this.setSelectedTenant = this.setSelectedTenant.bind(this)
+    this.refreshCommits = this.refreshCommits.bind(this)
   }
 
   componentDidMount() {
@@ -324,6 +325,10 @@ export default class Repo extends Component {
     this.props.store.dispatch({
       type: ACTION_TYPE_DEPLOY, payload: target
     });
+  }
+
+  triggerCommitSync(owner, repo) {
+    this.props.gimletClient.triggerCommitSync(owner, repo)
   }
 
   magicDeploy(env, repo, sha) {
@@ -563,6 +568,9 @@ export default class Repo extends Component {
                         changeHandler={(newBranch) => this.branchChange(newBranch)}
                       />
                     </div>
+                    <svg onClick={() => this.triggerCommitSync(owner, repo)} xmlns="http://www.w3.org/2000/svg" className="absolute right-0 top-0 m-4 h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
                     {commits &&
                       <Commits
                         commits={commits[repoName]}
