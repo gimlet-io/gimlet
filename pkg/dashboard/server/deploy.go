@@ -58,17 +58,12 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var builtInEnv *model.Environment
-	for _, env := range envs {
-		if env.BuiltIn {
-			builtInEnv = env
-			break
-		}
-	}
-	if builtInEnv == nil {
+	if len(envs) != 1 {
 		http.Error(w, http.StatusText(http.StatusPreconditionFailed)+" - built-in environment missing", http.StatusPreconditionFailed)
 		return
 	}
+
+	magicEnv := envs[0]
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	repo, repoPath, err := gitRepoCache.InstanceForWrite(deployRequest.Owner + "/" + deployRequest.Repo)
@@ -130,7 +125,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 
 	go createDeployRequest(
 		deployRequest,
-		builtInEnv,
+		magicEnv,
 		store,
 		tag,
 		user.Login,
@@ -139,7 +134,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		user.Login,
 		string(imageBuildId),
 		gitRepoCache,
-		builtInEnv.Name,
+		magicEnv.Name,
 	)
 
 	responseStr, err := json.Marshal(map[string]string{

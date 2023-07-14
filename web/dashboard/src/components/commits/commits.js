@@ -46,13 +46,8 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, magicDeployHan
   const commitWidgets = [];
 
   const envNames = envs.map(env => env["name"]);
-  let builtInEnv;
   for (let env of envs) {
-    if (env.builtIn) {
-      builtInEnv = env;
-      builtInEnv.isOnline = connectedAgents[env.name].isOnline
-      break;
-    }
+    env.isOnline = connectedAgents[env.name].isOnline 
   }
 
   commits.forEach((commit, idx, ar) => {
@@ -120,7 +115,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, magicDeployHan
               />
               <DeployWidget
                 deployTargets={filterDeployTargets(commit.deployTargets, envNames, tenant)}
-                builtInEnv={builtInEnv}
+                envs={envs}
                 deployHandler={deployHandler}
                 magicDeployHandler={magicDeployHandler}
                 sha={commit.sha}

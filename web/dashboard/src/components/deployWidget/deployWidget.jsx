@@ -4,19 +4,21 @@ import {ChevronDownIcon} from '@heroicons/react/solid'
 import logo from "!file-loader!./logo.svg";
 
 export default function DeployWidget(props) {
-  const {deployTargets, deployHandler, magicDeployHandler, sha, repo, builtInEnv } = props;
+  const {deployTargets, deployHandler, magicDeployHandler, sha, repo, envs } = props;
 
   if (!deployTargets) {
-    if (!builtInEnv) {
+    if (envs.length !== 1) {
       return null
-    } else if (!builtInEnv.isOnline) {
+    }
+    const magicEnv = envs[0]
+    if (!magicEnv.isOnline) {
       return null
     }
     return (
       // eslint-disable-next-line
       <button
         type="button"
-        onClick={() => magicDeployHandler(builtInEnv.name, repo, sha)}
+        onClick={() => magicDeployHandler(magicEnv.name, repo, sha)}
         className="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-slate-800"
       >
         <img
