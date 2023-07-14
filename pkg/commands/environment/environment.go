@@ -7,5 +7,6 @@ var Command = cli.Command{
 	Usage: "Interacts with an environment on the cluster",
 	Subcommands: []*cli.Command{
 		&environmentConnectCmd,
+		&environmentCheckCmd,
 	},
 }

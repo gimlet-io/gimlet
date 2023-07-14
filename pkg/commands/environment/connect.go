@@ -71,7 +71,7 @@ func connect(c *cli.Context) error {
 	applyManifests(infraRepoManifests, tmpDir)
 	applyManifests(appsRepoManifests, tmpDir)
 
-	return nil
+	return check(c)
 }
 
 func applyManifests(files map[string]string, filesPath string) {
