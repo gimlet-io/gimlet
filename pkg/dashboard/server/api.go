@@ -25,6 +25,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )
 
@@ -628,8 +629,15 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resultBytes, err := json.Marshal(builtInEnv)
+	if err != nil {
+		log.Errorf("could not serialize results: %v", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	w.Write(resultBytes)
 }
 
 func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {

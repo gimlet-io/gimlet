@@ -13,7 +13,8 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVUPDATED,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
-  ACTION_TYPE_RELEASE_STATUSES
+  ACTION_TYPE_RELEASE_STATUSES,
+  ACTION_TYPE_ENVSPINNEDOUT
 } from "../../redux/redux";
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
@@ -126,12 +127,16 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
       }
     });
     gimletClient.spinOutBuiltInEnv()
-    .then(() => {
+    .then((data) => {
       store.dispatch({
         type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
           header: "Success",
           message: "Environment was converted",
         }
+      });
+      store.dispatch({
+        type: ACTION_TYPE_ENVSPINNEDOUT,
+        payload: data
       });
     }, (err) => {
       store.dispatch({

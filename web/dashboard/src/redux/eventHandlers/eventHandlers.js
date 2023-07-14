@@ -80,6 +80,18 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function envSpinnedOut(state, env) {
+  for (let e of state.envs) {
+    if (e.name === env.name) {
+      e.appsRepo = env.appsRepo
+      e.infraRepo = env.infraRepo
+      e.builtIn = env.builtIn
+      break
+    }
+  }
+  return state;
+}
+
 export function envStackUpdated(state, envName, payload) {
   state.envs = state.envs.map((env) => {
     if (env.name === envName) {
