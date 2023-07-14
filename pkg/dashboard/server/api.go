@@ -491,6 +491,12 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 
+	_, err := store.KeyValue(model.SpinnedOut)
+	if err == nil {
+		http.Error(w, http.StatusText(http.StatusPreconditionFailed)+" - built-in env already spinned out", http.StatusPreconditionFailed)
+		return
+	}
+
 	envs, err := store.GetEnvironments()
 	if err != nil {
 		logrus.Errorf("cannot get envs: %s", err)
@@ -601,7 +607,17 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO Set that we had a built in env once, no need to generate a new one
+	// preventing from creating another built-in env
+	err = store.SaveKeyValue(&model.KeyValue{
+		Key:   model.SpinnedOut,
+		Value: "true",
+	})
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	builtInEnv.BuiltIn = false
 	err = store.UpdateEnvironment(builtInEnv)

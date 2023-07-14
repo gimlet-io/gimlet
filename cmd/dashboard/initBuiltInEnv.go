@@ -32,6 +32,11 @@ func bootstrapBuiltInEnv(
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 ) error {
+	_, err := store.KeyValue(model.SpinnedOut)
+	if err == nil { // built in env has been spinned out
+		return nil
+	}
+
 	envsInDB, err := store.GetEnvironments()
 	if err != nil {
 		panic(err)
