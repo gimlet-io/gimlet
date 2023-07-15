@@ -19,14 +19,19 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -34,9 +39,10 @@ const AnnotationGitRepository = "gimlet.io/git-repository"
 const AnnotationGitSha = "gimlet.io/git-sha"
 
 type KubeEnv struct {
-	Name      string
-	Namespace string
-	Client    kubernetes.Interface
+	Name          string
+	Namespace     string
+	Client        kubernetes.Interface
+	DynamicClient dynamic.Interface
 }
 
 func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
@@ -83,6 +89,64 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	}
 
 	return stacks, nil
+}
+
+var gitRepositoryResource = schema.GroupVersionResource{
+	Group:    "source.toolkit.fluxcd.io",
+	Version:  "v1beta1",
+	Resource: "gitrepositories",
+}
+
+func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
+	gitRepositories, err := e.DynamicClient.
+		Resource(gitRepositoryResource).
+		Namespace("").
+		List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*api.GitRepository{}
+	for _, g := range gitRepositories.Items {
+		gitRepository, err := asGitRepository(g)
+		if err != nil {
+			logrus.Warnf("could not parse gitrepository: %s", err)
+		}
+		result = append(result, gitRepository)
+	}
+
+	return result, nil
+}
+
+func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
+	statusMap := g.Object["status"].(map[string]interface{})
+
+	// TODO
+https: //github.com/fluxcd/flux2/blob/main/cmd/flux/get_source_git.go#L78C43-L78C43
+
+	conditions, ok := statusMap["conditions"].([]interface{})
+	if !ok {
+		// TODO handle case
+	}
+
+	latestStatus := conditions[0].(map[string]interface{})
+	lastTransitionTime := latestStatus["lastTransitionTime"]
+	readyString := latestStatus["status"]
+	ready, err := strconv.ParseBool(readyString.(string))
+	if err != nil {
+		return nil, nil
+	}
+	status := latestStatus["reason"]
+	statusDesc := latestStatus["message"]
+
+	return &api.GitRepository{
+		Name:               g.GetName(),
+		Namespace:          g.GetNamespace(),
+		LastTransitionTime: lastTransitionTime.(string),
+		Ready:              ready,
+		Status:             status.(string),
+		StatusDesc:         statusDesc.(string),
+	}, nil
 }
 
 func (e *KubeEnv) WarningEvents(repo string) ([]api.Event, error) {

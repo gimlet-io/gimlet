@@ -14,7 +14,11 @@
 
 package api
 
-import "github.com/gimlet-io/gimlet-cli/pkg/dx"
+import (
+	"fmt"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+)
 
 type Service struct {
 	Name      string `json:"name"`
@@ -55,6 +59,19 @@ type Ingress struct {
 type ConnectedAgent struct {
 	Name   string   `json:"name"`
 	Stacks []*Stack `json:"stacks"`
+}
+
+type GitRepository struct {
+	Name               string `json:"name"`
+	Namespace          string `json:"namespace"`
+	LastTransitionTime string `json:"lastTransitionTime"`
+	Ready              bool   `json:"ready"`
+	Status             string `json:"status"`
+	StatusDesc         string `json:"statusDesc"`
+}
+
+func (g GitRepository) String() string {
+	return fmt.Sprintf("GitRepository %s/%s - Ready? %t %s - %s: %s", g.Namespace, g.Name, g.Ready, g.LastTransitionTime, g.Status, g.StatusDesc)
 }
 
 type Event struct {

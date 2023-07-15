@@ -28,6 +28,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	apps_v1 "k8s.io/api/apps/v1"
 	batch_v1 "k8s.io/api/batch/v1"
@@ -35,6 +36,8 @@ import (
 	rntme "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -95,6 +98,54 @@ func NewController(
 			}
 		},
 	}, cache.Indexers{})
+
+	return &Controller{
+		name:         name,
+		informer:     informer,
+		indexer:      indexer,
+		queue:        queue,
+		eventHandler: eventHandler,
+	}
+}
+
+// NewController creates a new Controller.
+func NewDynamicController(
+	name string,
+	dynamicClient dynamic.Interface,
+	resource schema.GroupVersionResource,
+	eventHandler func(informerEvent Event, objectMeta meta_v1.ObjectMeta, obj interface{}) error,
+) *Controller {
+	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	var informerEvent Event
+	var err error
+
+	dynInformer := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClient, 0)
+	informer := dynInformer.ForResource(resource).Informer()
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			informerEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
+			informerEvent.eventType = "create"
+			if err == nil {
+				queue.Add(informerEvent)
+			}
+		},
+		UpdateFunc: func(old interface{}, new interface{}) {
+			informerEvent.key, err = cache.MetaNamespaceKeyFunc(old)
+			informerEvent.eventType = "update"
+			if err == nil {
+				queue.Add(informerEvent)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			informerEvent.key, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			informerEvent.eventType = "delete"
+			if err == nil {
+				queue.Add(informerEvent)
+			}
+		},
+	})
+
+	indexer := cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
 
 	return &Controller{
 		name:         name,
