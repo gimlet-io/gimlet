@@ -64,14 +64,14 @@ type ConnectedAgent struct {
 type GitRepository struct {
 	Name               string `json:"name"`
 	Namespace          string `json:"namespace"`
+	Revision           string `json:"revision"`
 	LastTransitionTime string `json:"lastTransitionTime"`
-	Ready              bool   `json:"ready"`
 	Status             string `json:"status"`
 	StatusDesc         string `json:"statusDesc"`
 }
 
 func (g GitRepository) String() string {
-	return fmt.Sprintf("GitRepository %s/%s - Ready? %t %s - %s: %s", g.Namespace, g.Name, g.Ready, g.LastTransitionTime, g.Status, g.StatusDesc)
+	return fmt.Sprintf("GitRepository (@%s) %s/%s - %s - %s: %s", g.Revision, g.Namespace, g.Name, g.LastTransitionTime, g.Status, g.StatusDesc)
 }
 
 type Event struct {

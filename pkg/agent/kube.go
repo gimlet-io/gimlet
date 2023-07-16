@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -118,34 +118,48 @@ func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
 	return result, nil
 }
 
+func statusAndMessage(conditions []interface{}) (string, string, string) {
+	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
+		return c["reason"].(string), c["message"].(string), c["lastTransitionTime"].(string)
+	}
+	return string(metav1.ConditionFalse), "waiting to be reconciled", ""
+}
+
+// findStatusCondition finds the conditionType in conditions.
+func findStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
+	for _, c := range conditions {
+		cMap := c.(map[string]interface{})
+		if cMap["type"] == conditionType {
+			return cMap
+		}
+	}
+
+	return nil
+}
+
 func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
 	statusMap := g.Object["status"].(map[string]interface{})
 
-	// TODO
-https: //github.com/fluxcd/flux2/blob/main/cmd/flux/get_source_git.go#L78C43-L78C43
+	artifact, ok := statusMap["artifact"].(map[string]interface{})
+	if !ok {
+		// TODO handle case
+	}
+	revision := artifact["revision"].(string)
 
 	conditions, ok := statusMap["conditions"].([]interface{})
 	if !ok {
 		// TODO handle case
 	}
 
-	latestStatus := conditions[0].(map[string]interface{})
-	lastTransitionTime := latestStatus["lastTransitionTime"]
-	readyString := latestStatus["status"]
-	ready, err := strconv.ParseBool(readyString.(string))
-	if err != nil {
-		return nil, nil
-	}
-	status := latestStatus["reason"]
-	statusDesc := latestStatus["message"]
+	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
 
 	return &api.GitRepository{
 		Name:               g.GetName(),
 		Namespace:          g.GetNamespace(),
-		LastTransitionTime: lastTransitionTime.(string),
-		Ready:              ready,
-		Status:             status.(string),
-		StatusDesc:         statusDesc.(string),
+		Revision:           revision,
+		LastTransitionTime: lastTransitionTime,
+		Status:             status,
+		StatusDesc:         statusDesc,
 	}, nil
 }
 
