@@ -20,6 +20,7 @@ export default class DeployPanel extends Component {
       deployPanelOpen: reduxState.deployPanelOpen,
       gitopsCommits: reduxState.gitopsCommits,
       envs: reduxState.envs,
+      connectedAgents: reduxState.connectedAgents,
       tabs: defaultTabs,
       runningDeploys: reduxState.runningDeploys,
       scmUrl: reduxState.settings.scmUrl,
@@ -29,11 +30,11 @@ export default class DeployPanel extends Component {
     // handling API and streaming state changes
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
-
       this.setState({
         deployPanelOpen: reduxState.deployPanelOpen,
         gitopsCommits: reduxState.gitopsCommits,
         envs: reduxState.envs,
+        connectedAgents: reduxState.connectedAgents,
         runningDeploys: reduxState.runningDeploys,
         scmUrl: reduxState.settings.scmUrl,
         tabs: reduxState.runningDeploys.length === 0 ? defaultTabs : [
@@ -105,6 +106,56 @@ export default class DeployPanel extends Component {
       );
   }
 
+  renderEnvState(env, state) {
+    // const dateLabel = formatDistance(gitopsCommit.created * 1000, new Date());
+    let color = "bg-yellow-400";
+    let lastCommitStatus = "Trailing";
+    let lastCommitStatusMessage = "Flux is trailing";
+
+    // if (gitopsCommit.status.includes("NotReady")) {
+    //     lastCommitStatus = "Applying";
+    // } else if (gitopsCommit.status.includes("Succeeded")) {
+    //     color = "bg-green-400";
+    //     lastCommitStatus = "Applied";
+    // } else if (gitopsCommit.status.includes("Failed")) {
+    //     color = "bg-red-400";
+    //     lastCommitStatus = "Apply failed";
+    //     lastCommitStatusMessage = gitopsCommit.statusDesc;
+    // }
+
+    console.log(state.fluxState.gitRepositories)
+
+    const gitopsReposWidgets = state.fluxState.gitRepositories.map(gitRepository => {
+      // const dateLabel = formatDistance(gitRepository.lastTransitionTime * 1000, new Date());
+      return (
+        <div key={gitRepository.namespace + "/" + gitRepository.name}>
+          <p>{gitRepository.name}@{gitRepository.revision}</p>
+          <p>{gitRepository.status} {gitRepository.lastTransitionTime}</p>
+        </div>
+      )
+    });
+
+    const kustomizationWidgets = state.fluxState.kustomizations.map(kustomization => {
+      // const dateLabel = formatDistance(gitRepository.lastTransitionTime * 1000, new Date());
+      return (
+        <div key={kustomization.namespace + "/" + kustomization.name}>
+          <p>{kustomization.name} {kustomization.status} {kustomization.lastTransitionTime}</p>
+          <p>{kustomization.statusDesc} {kustomization.lastTransitionTime}</p>
+        </div>
+      )
+    });
+
+    return (
+        <div className="w-full truncate" key={env.name}>
+            <p className="font-semibold">{`${env.name.toUpperCase()}`}</p>
+            <div className="ml-2 font-mono">
+              <div>{gitopsReposWidgets}</div>
+              <div className="mt-2">{kustomizationWidgets}</div>
+            </div>
+        </div>
+    );
+  }
+
   arrayWithFirstCommitOfEnvs(gitopsCommits, envs) {
       let firstCommitOfEnvs = [];
 
@@ -119,22 +170,24 @@ export default class DeployPanel extends Component {
       return firstCommitOfEnvs;
   };
 
-  gitopsStatus(gitopsCommits, envs) {
+  gitopsStatus(gitopsCommits, envs, connectedAgents) {
     if (gitopsCommits.length === 0 ||
       envs.length === 0) {
       return null;
     }
 
-    const firstCommitOfEnvs = this.arrayWithFirstCommitOfEnvs(gitopsCommits, envs)
-    if (firstCommitOfEnvs.length === 0) {
-        return null;
-    }
+    // const firstCommitOfEnvs = this.arrayWithFirstCommitOfEnvs(gitopsCommits, envs)
+    // if (firstCommitOfEnvs.length === 0) {
+    //     return null;
+    // }
+
+    const envWidgets = envs.map(env => this.renderEnvState(env, connectedAgents[env.name]));
 
     return (
       <div className="grid grid-cols-3 left-0 cursor-pointer"
         onClick={() => this.props.store.dispatch({ type: ACTION_TYPE_OPEN_DEPLOY_PANEL })}
       >
-          {firstCommitOfEnvs.slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
+          {envWidgets}
       </div>
     )
   }
@@ -192,12 +245,12 @@ export default class DeployPanel extends Component {
   }
 
   render() {
-    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs, imageBuildLogs } = this.state;
+    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs, imageBuildLogs, connectedAgents } = this.state;
 
     if (!this.state.deployPanelOpen) {
       return (
           <div className="fixed bottom-0 left-0 bg-gray-800 z-50 w-full px-6 py-2 text-gray-100">
-              {this.gitopsStatus(this.state.gitopsCommits, this.state.envs)}
+              {this.gitopsStatus(gitopsCommits, envs, connectedAgents)}
           </div>
       );
     }
@@ -217,7 +270,7 @@ export default class DeployPanel extends Component {
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>
             <div className="pt-4 pb-24 px-6 overflow-y-scroll h-full w-full">
-              {tabs[0].current ? this.gitopsStatus(gitopsCommits, envs) : null}
+              {tabs[0].current ? this.gitopsStatus(gitopsCommits, envs, connectedAgents) : null}
               {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, this.logsEndRef) : null}
             </div>
           </div>
