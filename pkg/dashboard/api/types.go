@@ -125,6 +125,11 @@ type FluxState struct {
 	Kustomizations  []*Kustomization `json:"kustomizations"`
 }
 
+type FluxStateUpdate struct {
+	Event     string    `json:"event"`
+	FluxState FluxState `json:"fluxState"`
+}
+
 type Stack struct {
 	Repo       string      `json:"repo"`
 	Env        string      `json:"env"`

@@ -123,7 +123,9 @@ export default class DeployPanel extends Component {
     //     lastCommitStatusMessage = gitopsCommit.statusDesc;
     // }
 
-    console.log(state.fluxState.gitRepositories)
+    if (!state || !state.fluxState) {
+      return null
+    }
 
     const gitopsReposWidgets = state.fluxState.gitRepositories.map(gitRepository => {
       // const dateLabel = formatDistance(gitRepository.lastTransitionTime * 1000, new Date());

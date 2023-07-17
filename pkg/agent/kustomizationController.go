@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"github.com/sirupsen/logrus"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,35 +18,11 @@ func KustomizationController(kubeEnv *KubeEnv, gimletHost string, agentKey strin
 		func(informerEvent Event, objectMeta meta_v1.ObjectMeta, obj interface{}) error {
 			switch informerEvent.eventType {
 			case "create":
-				logrus.Info("kustomization created: " + objectMeta.Name)
-				kustomizations, err := kubeEnv.Kustomizations()
-				if err != nil {
-					return err
-				}
-
-				for _, k := range kustomizations {
-					logrus.Info(k)
-				}
+				fallthrough
 			case "update":
-				logrus.Info("kustomization updated: " + objectMeta.Name)
-				kustomizations, err := kubeEnv.Kustomizations()
-				if err != nil {
-					return err
-				}
-
-				for _, k := range kustomizations {
-					logrus.Info(k)
-				}
+				fallthrough
 			case "delete":
-				logrus.Info("kustomization deleted: " + objectMeta.Name)
-				kustomizations, err := kubeEnv.Kustomizations()
-				if err != nil {
-					return err
-				}
-
-				for _, k := range kustomizations {
-					logrus.Info(k)
-				}
+				SendFluxState(kubeEnv, gimletHost, agentKey)
 			}
 			return nil
 		})
