@@ -103,11 +103,13 @@ func main() {
 	ingressController := agent.IngressController(kubeEnv, config.Host, config.AgentKey)
 	eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
 	gitRepositoryController := agent.GitRepositoryController(kubeEnv, config.Host, config.AgentKey)
+	kustomizationController := agent.KustomizationController(kubeEnv, config.Host, config.AgentKey)
 	go podController.Run(1, stopCh)
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 	go eventController.Run(1, stopCh)
 	go gitRepositoryController.Run(1, stopCh)
+	go kustomizationController.Run(1, stopCh)
 
 	messages := make(chan *streaming.WSMessage)
 
@@ -281,6 +283,16 @@ func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 
 	for _, g := range gitRepositories {
 		logrus.Info(g)
+	}
+
+	kustomizations, err := kubeEnv.Kustomizations()
+	if err != nil {
+		logrus.Errorf("could not get gitrepositories: %s", err)
+		return
+	}
+
+	for _, k := range kustomizations {
+		logrus.Info(k)
 	}
 }
 

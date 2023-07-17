@@ -97,6 +97,12 @@ var gitRepositoryResource = schema.GroupVersionResource{
 	Resource: "gitrepositories",
 }
 
+var kustomizationResource = schema.GroupVersionResource{
+	Group:    "kustomize.toolkit.fluxcd.io",
+	Version:  "v1beta1",
+	Resource: "kustomizations",
+}
+
 func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
 	gitRepositories, err := e.DynamicClient.
 		Resource(gitRepositoryResource).
@@ -113,6 +119,27 @@ func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
 			logrus.Warnf("could not parse gitrepository: %s", err)
 		}
 		result = append(result, gitRepository)
+	}
+
+	return result, nil
+}
+
+func (e *KubeEnv) Kustomizations() ([]*api.Kustomization, error) {
+	kustomizations, err := e.DynamicClient.
+		Resource(kustomizationResource).
+		Namespace("").
+		List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*api.Kustomization{}
+	for _, k := range kustomizations.Items {
+		kustomization, err := asKustomization(k)
+		if err != nil {
+			logrus.Warnf("could not parse kustomization: %s", err)
+		}
+		result = append(result, kustomization)
 	}
 
 	return result, nil
@@ -157,6 +184,37 @@ func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
 		Name:               g.GetName(),
 		Namespace:          g.GetNamespace(),
 		Revision:           revision,
+		LastTransitionTime: lastTransitionTime,
+		Status:             status,
+		StatusDesc:         statusDesc,
+	}, nil
+}
+
+func asKustomization(g unstructured.Unstructured) (*api.Kustomization, error) {
+	statusMap := g.Object["status"].(map[string]interface{})
+
+	spec, ok := g.Object["spec"].(map[string]interface{})
+	if !ok {
+		// TODO handle case
+	}
+	path := spec["path"].(string)
+	prune := spec["prune"].(bool)
+	sourceRef := spec["sourceRef"].(map[string]interface{})
+	gitRepository := sourceRef["name"].(string)
+
+	conditions, ok := statusMap["conditions"].([]interface{})
+	if !ok {
+		// TODO handle case
+	}
+
+	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+
+	return &api.Kustomization{
+		Name:               g.GetName(),
+		Namespace:          g.GetNamespace(),
+		GitRepository:      gitRepository,
+		Path:               path,
+		Prune:              prune,
 		LastTransitionTime: lastTransitionTime,
 		Status:             status,
 		StatusDesc:         statusDesc,

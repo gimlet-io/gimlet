@@ -74,6 +74,21 @@ func (g GitRepository) String() string {
 	return fmt.Sprintf("GitRepository (@%s) %s/%s - %s - %s: %s", g.Revision, g.Namespace, g.Name, g.LastTransitionTime, g.Status, g.StatusDesc)
 }
 
+type Kustomization struct {
+	Name               string `json:"name"`
+	Namespace          string `json:"namespace"`
+	GitRepository      string `json:"gitRepostory"`
+	Path               string `json:"revision"`
+	Prune              bool   `json:"prune"`
+	LastTransitionTime string `json:"lastTransitionTime"`
+	Status             string `json:"status"`
+	StatusDesc         string `json:"statusDesc"`
+}
+
+func (k Kustomization) String() string {
+	return fmt.Sprintf("Kustomization %s/%s - %s - %s: %s", k.Namespace, k.Name, k.LastTransitionTime, k.Status, k.StatusDesc)
+}
+
 type Event struct {
 	FirstTimestamp int64  `json:"firstTimestamp"`
 	Count          int32  `json:"count"`
