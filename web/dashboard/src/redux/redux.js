@@ -69,6 +69,8 @@ export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 export const EVENT_ARTIFACT_CREATED_EVENT = 'artifactCreatedEvent';
 
+export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
+
 export const initialState = {
   settings: {
     agents: []
@@ -233,6 +235,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateGitopsCommits(state, event);
     case EVENT_COMMIT_STATUS_UPDATED:
       return eventHandlers.updateCommitStatus(state, event);
+    case EVENT_FLUX_STATE_UPDATED_EVENT:
+      return eventHandlers.fluxStateUpdated(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;

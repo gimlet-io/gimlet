@@ -178,8 +178,9 @@ func state(w http.ResponseWriter, r *http.Request) {
 	agent.Stacks = stackPointers
 
 	envs := []*api.ConnectedAgent{{
-		Name:   name,
-		Stacks: stackPointers,
+		Name:      name,
+		Stacks:    stackPointers,
+		FluxState: agent.FluxState,
 	}}
 
 	err = decorateDeployments(r.Context(), envs)
@@ -193,6 +194,36 @@ func state(w http.ResponseWriter, r *http.Request) {
 	jsonString, _ := json.Marshal(streaming.EnvsUpdatedEvent{
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.EnvsUpdatedEventString},
 		Envs:           envs,
+	})
+	clientHub.Broadcast <- jsonString
+}
+
+func fluxState(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+
+	var fluxState api.FluxState
+	err := json.NewDecoder(r.Body).Decode(&fluxState)
+	if err != nil {
+		logrus.Errorf("cannot decode flux state: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agent := agentHub.Agents[name]
+	if agent == nil {
+		time.Sleep(1 * time.Second) // Agenthub has a race condition. Registration is not done when the client sends the state
+		agent = agentHub.Agents[name]
+	}
+	agent.FluxState = &fluxState
+
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.FluxStateUpdatedEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStateUpdatedEventString},
+		EnvName:        name,
+		FluxState:      &fluxState,
 	})
 	clientHub.Broadcast <- jsonString
 }

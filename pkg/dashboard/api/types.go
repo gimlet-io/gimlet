@@ -14,7 +14,11 @@
 
 package api
 
-import "github.com/gimlet-io/gimlet-cli/pkg/dx"
+import (
+	"fmt"
+
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+)
 
 type Service struct {
 	Name      string `json:"name"`
@@ -53,8 +57,37 @@ type Ingress struct {
 }
 
 type ConnectedAgent struct {
-	Name   string   `json:"name"`
-	Stacks []*Stack `json:"stacks"`
+	Name      string     `json:"name"`
+	Stacks    []*Stack   `json:"stacks"`
+	FluxState *FluxState `json:"fluxState"`
+}
+
+type GitRepository struct {
+	Name               string `json:"name"`
+	Namespace          string `json:"namespace"`
+	Revision           string `json:"revision"`
+	LastTransitionTime int64  `json:"lastTransitionTime"`
+	Status             string `json:"status"`
+	StatusDesc         string `json:"statusDesc"`
+}
+
+func (g GitRepository) String() string {
+	return fmt.Sprintf("GitRepository (@%s) %s/%s - %d - %s: %s", g.Revision, g.Namespace, g.Name, g.LastTransitionTime, g.Status, g.StatusDesc)
+}
+
+type Kustomization struct {
+	Name               string `json:"name"`
+	Namespace          string `json:"namespace"`
+	GitRepository      string `json:"gitRepostory"`
+	Path               string `json:"revision"`
+	Prune              bool   `json:"prune"`
+	LastTransitionTime int64  `json:"lastTransitionTime"`
+	Status             string `json:"status"`
+	StatusDesc         string `json:"statusDesc"`
+}
+
+func (k Kustomization) String() string {
+	return fmt.Sprintf("Kustomization %s/%s - %d - %s: %s", k.Namespace, k.Name, k.LastTransitionTime, k.Status, k.StatusDesc)
 }
 
 type Event struct {
@@ -85,6 +118,16 @@ type GitopsBootstrapConfig struct {
 	KusomizationPerApp bool   `json:"kustomizationPerApp"`
 	InfraRepo          string `json:"infraRepo"`
 	AppsRepo           string `json:"appsRepo"`
+}
+
+type FluxState struct {
+	GitReppsitories []*GitRepository `json:"gitRepositories"`
+	Kustomizations  []*Kustomization `json:"kustomizations"`
+}
+
+type FluxStateUpdate struct {
+	Event     string    `json:"event"`
+	FluxState FluxState `json:"fluxState"`
 }
 
 type Stack struct {

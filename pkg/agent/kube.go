@@ -21,12 +21,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -34,9 +39,10 @@ const AnnotationGitRepository = "gimlet.io/git-repository"
 const AnnotationGitSha = "gimlet.io/git-sha"
 
 type KubeEnv struct {
-	Name      string
-	Namespace string
-	Client    kubernetes.Interface
+	Name          string
+	Namespace     string
+	Client        kubernetes.Interface
+	DynamicClient dynamic.Interface
 }
 
 func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
@@ -83,6 +89,137 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	}
 
 	return stacks, nil
+}
+
+var gitRepositoryResource = schema.GroupVersionResource{
+	Group:    "source.toolkit.fluxcd.io",
+	Version:  "v1beta1",
+	Resource: "gitrepositories",
+}
+
+var kustomizationResource = schema.GroupVersionResource{
+	Group:    "kustomize.toolkit.fluxcd.io",
+	Version:  "v1beta1",
+	Resource: "kustomizations",
+}
+
+func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
+	gitRepositories, err := e.DynamicClient.
+		Resource(gitRepositoryResource).
+		Namespace("").
+		List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*api.GitRepository{}
+	for _, g := range gitRepositories.Items {
+		gitRepository, err := asGitRepository(g)
+		if err != nil {
+			logrus.Warnf("could not parse gitrepository: %s", err)
+		}
+		result = append(result, gitRepository)
+	}
+
+	return result, nil
+}
+
+func (e *KubeEnv) Kustomizations() ([]*api.Kustomization, error) {
+	kustomizations, err := e.DynamicClient.
+		Resource(kustomizationResource).
+		Namespace("").
+		List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*api.Kustomization{}
+	for _, k := range kustomizations.Items {
+		kustomization, err := asKustomization(k)
+		if err != nil {
+			logrus.Warnf("could not parse kustomization: %s", err)
+		}
+		result = append(result, kustomization)
+	}
+
+	return result, nil
+}
+
+func statusAndMessage(conditions []interface{}) (string, string, int64) {
+	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
+		transitionTime, _ := time.Parse(time.RFC3339, c["lastTransitionTime"].(string))
+		return c["reason"].(string), c["message"].(string), transitionTime.Unix()
+	}
+	return string(metav1.ConditionFalse), "waiting to be reconciled", time.Now().Unix()
+}
+
+// findStatusCondition finds the conditionType in conditions.
+func findStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
+	for _, c := range conditions {
+		cMap := c.(map[string]interface{})
+		if cMap["type"] == conditionType {
+			return cMap
+		}
+	}
+
+	return nil
+}
+
+func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
+	statusMap := g.Object["status"].(map[string]interface{})
+
+	artifact, ok := statusMap["artifact"].(map[string]interface{})
+	if !ok {
+		// TODO handle case
+	}
+	revision := artifact["revision"].(string)
+
+	conditions, ok := statusMap["conditions"].([]interface{})
+	if !ok {
+		// TODO handle case
+	}
+
+	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+
+	return &api.GitRepository{
+		Name:               g.GetName(),
+		Namespace:          g.GetNamespace(),
+		Revision:           revision,
+		LastTransitionTime: lastTransitionTime,
+		Status:             status,
+		StatusDesc:         statusDesc,
+	}, nil
+}
+
+func asKustomization(g unstructured.Unstructured) (*api.Kustomization, error) {
+	statusMap := g.Object["status"].(map[string]interface{})
+
+	spec, ok := g.Object["spec"].(map[string]interface{})
+	if !ok {
+		// TODO handle case
+	}
+	path := spec["path"].(string)
+	prune := spec["prune"].(bool)
+	sourceRef := spec["sourceRef"].(map[string]interface{})
+	gitRepository := sourceRef["name"].(string)
+
+	conditions, ok := statusMap["conditions"].([]interface{})
+	if !ok {
+		// TODO handle case
+	}
+
+	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+
+	return &api.Kustomization{
+		Name:               g.GetName(),
+		Namespace:          g.GetNamespace(),
+		GitRepository:      gitRepository,
+		Path:               path,
+		Prune:              prune,
+		LastTransitionTime: lastTransitionTime,
+		Status:             status,
+		StatusDesc:         statusDesc,
+	}, nil
 }
 
 func (e *KubeEnv) WarningEvents(repo string) ([]api.Event, error) {

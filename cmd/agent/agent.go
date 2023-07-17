@@ -23,9 +23,10 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
@@ -40,17 +41,17 @@ func main() {
 
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Warnf("could not load .env file, relying on env vars")
+		logrus.Warnf("could not load .env file, relying on env vars")
 	}
 
 	config, err := config.Environ()
 	if err != nil {
-		log.Fatalln("main: invalid configuration")
+		logrus.Fatalln("main: invalid configuration")
 	}
 
 	initLogger(config)
-	if log.IsLevelEnabled(log.TraceLevel) {
-		log.Traceln(config.String())
+	if logrus.IsLevelEnabled(logrus.TraceLevel) {
+		logrus.Traceln(config.String())
 	}
 
 	if config.Host == "" {
@@ -69,21 +70,29 @@ func main() {
 	}
 
 	if namespace != "" {
-		log.Infof("Initializing %s kubeEnv in %s namespace scope", envName, namespace)
+		logrus.Infof("Initializing %s kubeEnv in %s namespace scope", envName, namespace)
 	} else {
-		log.Infof("Initializing %s kubeEnv in cluster scope", envName)
+		logrus.Infof("Initializing %s kubeEnv in cluster scope", envName)
 	}
 
 	k8sConfig, err := k8sConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
 	clientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	dynamicClient, err := dynamic.NewForConfig(k8sConfig)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	kubeEnv := &agent.KubeEnv{
-		Name:      envName,
-		Namespace: namespace,
-		Client:    clientset,
+		Name:          envName,
+		Namespace:     namespace,
+		Client:        clientset,
+		DynamicClient: dynamicClient,
 	}
 
 	stopCh := make(chan struct{})
@@ -93,10 +102,14 @@ func main() {
 	deploymentController := agent.DeploymentController(kubeEnv, config.Host, config.AgentKey)
 	ingressController := agent.IngressController(kubeEnv, config.Host, config.AgentKey)
 	eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
+	gitRepositoryController := agent.GitRepositoryController(kubeEnv, config.Host, config.AgentKey)
+	kustomizationController := agent.KustomizationController(kubeEnv, config.Host, config.AgentKey)
 	go podController.Run(1, stopCh)
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 	go eventController.Run(1, stopCh)
+	go gitRepositoryController.Run(1, stopCh)
+	go kustomizationController.Run(1, stopCh)
 
 	messages := make(chan *streaming.WSMessage)
 
@@ -112,19 +125,19 @@ func main() {
 	// When it gets one it’ll print it out and then notify the program that it can finish.
 	go func() {
 		sig := <-signals
-		log.Info(sig)
+		logrus.Info(sig)
 		done <- true
 	}()
 
-	log.Info("Initialized")
+	logrus.Info("Initialized")
 	<-done
-	log.Info("Exiting")
+	logrus.Info("Exiting")
 }
 
 func k8sConfig(config config.Config) (*rest.Config, error) {
 	k8sConfig, err := rest.InClusterConfig()
 	if err != nil {
-		log.Infof("In-cluster-config didn't work (%s), loading from path in KUBECONFIG if set", err.Error())
+		logrus.Infof("In-cluster-config didn't work (%s), loading from path in KUBECONFIG if set", err.Error())
 		k8sConfig, err = clientcmd.BuildConfigFromFlags("", config.KubeConfig)
 		if err != nil {
 			panic(err.Error())
@@ -135,22 +148,22 @@ func k8sConfig(config config.Config) (*rest.Config, error) {
 
 // helper function configures the logging.
 func initLogger(c config.Config) {
-	log.SetReportCaller(true)
+	logrus.SetReportCaller(true)
 
-	customFormatter := &log.TextFormatter{
+	customFormatter := &logrus.TextFormatter{
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
 			filename := path.Base(f.File)
 			return "", fmt.Sprintf("[%s:%d]", filename, f.Line)
 		},
 	}
 	customFormatter.FullTimestamp = true
-	log.SetFormatter(customFormatter)
+	logrus.SetFormatter(customFormatter)
 
 	if c.Logging.Debug {
-		log.SetLevel(log.DebugLevel)
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 	if c.Logging.Trace {
-		log.SetLevel(log.TraceLevel)
+		logrus.SetLevel(logrus.TraceLevel)
 	}
 }
 
@@ -172,14 +185,15 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 
 		events, err := register(config.Host, kubeEnv.Name, kubeEnv.Namespace, config.AgentKey)
 		if err != nil {
-			log.Errorf("could not connect to Gimlet: %s", err.Error())
+			logrus.Errorf("could not connect to Gimlet: %s", err.Error())
 			time.Sleep(time.Second * 3)
 			continue
 		}
 
-		log.Info("Connected to Gimlet")
+		logrus.Info("Connected to Gimlet")
 		go sendState(kubeEnv, config.Host, config.AgentKey)
 		go sendEvents(kubeEnv, config.Host, config.AgentKey)
+		go sendFluxState(kubeEnv, config.Host, config.AgentKey)
 
 		runningLogStreams := map[string]chan int{}
 
@@ -187,7 +201,7 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 			for {
 				e, more := <-events
 				if more {
-					log.Debugf("event received: %v", e)
+					logrus.Debugf("event received: %v", e)
 					switch e["action"] {
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
@@ -206,7 +220,7 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						go stopPodLogs(runningLogStreams, namespace, svc)
 					}
 				} else {
-					log.Info("event stream closed")
+					logrus.Info("event stream closed")
 					go stopAllPodLogs(runningLogStreams)
 					done <- true
 					return
@@ -216,20 +230,20 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 
 		<-done
 		time.Sleep(time.Second * 3)
-		log.Info("Disconnected from Gimlet")
+		logrus.Info("Disconnected from Gimlet")
 	}
 }
 
 func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	stacks, err := kubeEnv.Services("")
 	if err != nil {
-		log.Errorf("could not get state from k8s apiServer: %v", err)
+		logrus.Errorf("could not get state from k8s apiServer: %v", err)
 		return
 	}
 
 	stacksString, err := json.Marshal(stacks)
 	if err != nil {
-		log.Errorf("could not serialize k8s state: %v", err)
+		logrus.Errorf("could not serialize k8s state: %v", err)
 		return
 	}
 
@@ -238,7 +252,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	reqUrl := fmt.Sprintf("%s/agent/state?%s", gimletHost, params.Encode())
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(stacksString))
 	if err != nil {
-		log.Errorf("could not create http request: %v", err)
+		logrus.Errorf("could not create http request: %v", err)
 		return
 	}
 	req.Header.Set("Authorization", "BEARER "+agentKey)
@@ -253,30 +267,35 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Errorf("could not send k8s state: %d - %v", resp.StatusCode, string(body))
+		logrus.Errorf("could not send k8s state: %d - %v", resp.StatusCode, string(body))
 		return
 	}
 
-	log.Info("init state sent")
+	logrus.Info("init state sent")
+}
+
+func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
+	agent.SendFluxState(kubeEnv, gimletHost, agentKey)
+	logrus.Info("init flux states sent")
 }
 
 func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	events, err := kubeEnv.WarningEvents("")
 	if err != nil {
-		log.Errorf("could not get events from k8s apiServer: %v", err)
+		logrus.Errorf("could not get events from k8s apiServer: %v", err)
 		return
 	}
 
 	eventsString, err := json.Marshal(events)
 	if err != nil {
-		log.Errorf("could not serialize k8s events: %v", err)
+		logrus.Errorf("could not serialize k8s events: %v", err)
 		return
 	}
 
 	reqUrl := fmt.Sprintf("%s/agent/events", gimletHost)
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(eventsString))
 	if err != nil {
-		log.Errorf("could not create http request: %v", err)
+		logrus.Errorf("could not create http request: %v", err)
 		return
 	}
 	req.Header.Set("Authorization", "BEARER "+agentKey)
@@ -291,11 +310,11 @@ func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
+		logrus.Errorf("could not send k8s events: %d - %v", resp.StatusCode, string(body))
 		return
 	}
 
-	log.Info("init events sent")
+	logrus.Info("init events sent")
 }
 
 func stopPodLogs(
@@ -328,7 +347,7 @@ func podLogs(
 
 	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
-		log.Errorf("could not get services: %v", err)
+		logrus.Errorf("could not get services: %v", err)
 		return
 	}
 
@@ -341,13 +360,13 @@ func podLogs(
 
 	allDeployments, err := kubeEnv.Client.AppsV1().Deployments(namespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
-		log.Errorf("could not get deployments: %v", err)
+		logrus.Errorf("could not get deployments: %v", err)
 		return
 	}
 
 	allPods, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
-		log.Errorf("could not get pods: %v", err)
+		logrus.Errorf("could not get pods: %v", err)
 		return
 	}
 
@@ -367,7 +386,7 @@ func podLogs(
 		}
 	}
 
-	log.Debug("pod logs sent")
+	logrus.Debug("pod logs sent")
 }
 
 func httpClient() *http.Client {
@@ -401,7 +420,7 @@ func streamPodLogs(
 
 	podLogs, err := logsReq.Stream(context.Background())
 	if err != nil {
-		log.Errorf("could not stream pod logs: %v", err)
+		logrus.Errorf("could not stream pod logs: %v", err)
 		return
 	}
 	defer podLogs.Close()
@@ -417,7 +436,7 @@ func streamPodLogs(
 	sc := bufio.NewScanner(podLogs)
 	for sc.Scan() {
 		text := sc.Text()
-		log.Infof(text)
+		logrus.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
 			msg := &streaming.WSMessage{
@@ -439,12 +458,12 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			"Authorization": []string{bearerToken},
 		})
 		if err != nil {
-			log.Errorf("dial:%s", err.Error())
+			logrus.Errorf("dial:%s", err.Error())
 			time.Sleep(3 * time.Second)
 			continue
 		}
 
-		log.Info("Connected ws")
+		logrus.Info("Connected ws")
 		defer c.Close()
 
 		done := make(chan struct{})
@@ -454,10 +473,10 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			for {
 				_, message, err := c.ReadMessage()
 				if err != nil {
-					log.Println("read:", err)
+					logrus.Println("read:", err)
 					return
 				}
-				log.Printf("recv: %s", message)
+				logrus.Printf("recv: %s", message)
 			}
 		}()
 
@@ -478,29 +497,29 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 
 				serializedMessage, err := json.Marshal(tick)
 				if err != nil {
-					log.Error("dial:", err)
+					logrus.Error("dial:", err)
 				}
 
 				err = c.WriteMessage(websocket.TextMessage, serializedMessage)
 				if err != nil {
-					log.Println("write:", err)
+					logrus.Println("write:", err)
 					return
 				}
 			case message := <-messages:
 				serializedMessage, err := json.Marshal(message)
 				if err != nil {
-					log.Error("dial:", err)
+					logrus.Error("dial:", err)
 				}
 
 				err = c.WriteMessage(websocket.TextMessage, serializedMessage)
 				if err != nil {
-					log.Println("write:", err)
+					logrus.Println("write:", err)
 					return
 				}
 			}
 
 			if wsDisconnected {
-				log.Info("Disonnected ws")
+				logrus.Info("Disonnected ws")
 				break
 			}
 		}

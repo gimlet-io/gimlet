@@ -66,8 +66,9 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			stack.Env = a.Name
 		}
 		connectedAgents = append(connectedAgents, &api.ConnectedAgent{
-			Name:   a.Name,
-			Stacks: a.Stacks,
+			Name:      a.Name,
+			Stacks:    a.Stacks,
+			FluxState: a.FluxState,
 		})
 	}
 

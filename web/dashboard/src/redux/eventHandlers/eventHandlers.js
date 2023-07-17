@@ -285,6 +285,16 @@ export function updateCommits(state, payload) {
   return state;
 }
 
+export function fluxStateUpdated(state, event) {
+  if (state.connectedAgents[event.envName] === undefined) {
+    return state;
+  }
+
+  state.connectedAgents[event.envName].fluxState = event.fluxState;
+
+  return state
+}
+
 export function updateCommitStatus(state, event) {
   const repo = `${event.owner}/${event.repo}`;
 

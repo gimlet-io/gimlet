@@ -53,6 +53,9 @@ func defaults(c *Config) {
 	if c.GitHost == "" {
 		c.GitHost = "127.0.0.1:9000"
 	}
+	if c.ApiHost == "" {
+		c.ApiHost = c.Host
+	}
 	c.BuiltinEnvFeatureFlag = true
 }
 

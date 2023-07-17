@@ -20,6 +20,7 @@ export default class DeployPanel extends Component {
       deployPanelOpen: reduxState.deployPanelOpen,
       gitopsCommits: reduxState.gitopsCommits,
       envs: reduxState.envs,
+      connectedAgents: reduxState.connectedAgents,
       tabs: defaultTabs,
       runningDeploys: reduxState.runningDeploys,
       scmUrl: reduxState.settings.scmUrl,
@@ -29,11 +30,11 @@ export default class DeployPanel extends Component {
     // handling API and streaming state changes
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
-
       this.setState({
         deployPanelOpen: reduxState.deployPanelOpen,
         gitopsCommits: reduxState.gitopsCommits,
         envs: reduxState.envs,
+        connectedAgents: reduxState.connectedAgents,
         runningDeploys: reduxState.runningDeploys,
         scmUrl: reduxState.settings.scmUrl,
         tabs: reduxState.runningDeploys.length === 0 ? defaultTabs : [
@@ -105,36 +106,86 @@ export default class DeployPanel extends Component {
       );
   }
 
-  arrayWithFirstCommitOfEnvs(gitopsCommits, envs) {
-      let firstCommitOfEnvs = [];
+  renderEnvState(env, state, compact) {
+    if (!state || !state.fluxState) {
+      return (
+        <div className="w-full truncate" key={env.name}>
+            <p className="font-semibold">
+              {`${env.name.toUpperCase()}`}
+              <span title="Disconnected">
+                <svg className="text-red-400 inline fill-current ml-1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20">
+                  <path
+                    d="M0 14v1.498c0 .277.225.502.502.502h.997A.502.502 0 0 0 2 15.498V14c0-.959.801-2.273 2-2.779V9.116C1.684 9.652 0 11.97 0 14zm12.065-9.299l-2.53 1.898c-.347.26-.769.401-1.203.401H6.005C5.45 7 5 7.45 5 8.005v3.991C5 12.55 5.45 13 6.005 13h2.327c.434 0 .856.141 1.203.401l2.531 1.898a3.502 3.502 0 0 0 2.102.701H16V4h-1.832c-.758 0-1.496.246-2.103.701zM17 6v2h3V6h-3zm0 8h3v-2h-3v2z"
+                  />
+                </svg>
+              </span>
+            </p>
+            {!compact &&
+            <p
+              className="cursor-pointer"
+              onClick={() => this.props.history.push(`/environments/${env.name}`)}
+            >Please connect this environment.</p>
+            }
+        </div>
+      )
+    }
 
-      for (let env of envs) {
-          firstCommitOfEnvs.push(gitopsCommits.filter((gitopsCommit) => gitopsCommit.env === env.name)[0]);
+    const kustomizationWidgets = state.fluxState.kustomizations.map(kustomization => {
+      let name = ""
+      if (kustomization.name.endsWith("-infra")){
+        name = "infra"
+      } else if (kustomization.name.endsWith("-apps")){
+        name = "apps"
+      } else {
+        return null
       }
 
-      firstCommitOfEnvs = firstCommitOfEnvs.filter(commit => commit !== undefined);
+      let color = "bg-yellow-400";
+      let status = "applying";
+      let statusDesc = "";
 
-      firstCommitOfEnvs.sort((a, b) => b.created - a.created);
+      if (kustomization.status.includes("Succeeded")) {
+          color = "bg-green-400";
+          status = "Applied";
+          statusDesc = kustomization.statusDesc.replace('main@sha1:', '').replace("Applied revision: ", "").substring(0, 8)
+      } else if (kustomization.status.includes("Failed")) {
+          color = "bg-red-400";
+          status = "failed";
+          statusDesc = kustomization.statusDesc;
+      }
 
-      return firstCommitOfEnvs;
-  };
+      const desc = kustomization.statusDesc.replace('main@sha1:', '')
+      const title = kustomization.status + " at " + new Date(kustomization.lastTransitionTime*1000) + "\n" + desc
+      const dateLabel = formatDistance(kustomization.lastTransitionTime * 1000, new Date());
 
-  gitopsStatus(gitopsCommits, envs) {
-    if (gitopsCommits.length === 0 ||
-      envs.length === 0) {
-      return null;
-    }
-
-    const firstCommitOfEnvs = this.arrayWithFirstCommitOfEnvs(gitopsCommits, envs)
-    if (firstCommitOfEnvs.length === 0) {
-        return null;
-    }
+      return (
+        <div key={kustomization.namespace + "/" + kustomization.name} title={title}>
+          <p>
+            <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
+            {name}: {status} {compact ? statusDesc.substring(0, 27) : statusDesc}{compact && statusDesc.length>27 ? "..." : ""} {dateLabel} ago
+          </p>
+        </div>
+      )
+    });
 
     return (
-      <div className="grid grid-cols-3 left-0 cursor-pointer"
+        <div className="w-full truncate" key={env.name}>
+            <p className="font-semibold">{`${env.name.toUpperCase()}`}</p>
+            <div className="ml-2">
+              <div>{kustomizationWidgets}</div>
+            </div>
+        </div>
+    );
+  }
+
+  gitopsStatus(envs, connectedAgents, compact) {
+    const envWidgets = envs.map(env => this.renderEnvState(env, connectedAgents[env.name], compact));
+
+    return (
+      <div className={compact ? "grid grid-cols-3 cursor-pointer" : "space-y-8"}
         onClick={() => this.props.store.dispatch({ type: ACTION_TYPE_OPEN_DEPLOY_PANEL })}
       >
-          {firstCommitOfEnvs.slice(0, 3).map(gitopsCommit => this.renderGitopsCommit(gitopsCommit))}
+          {envWidgets}
       </div>
     )
   }
@@ -192,12 +243,12 @@ export default class DeployPanel extends Component {
   }
 
   render() {
-    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs, imageBuildLogs } = this.state;
+    const {runningDeploys, envs, scmUrl, gitopsCommits, tabs, imageBuildLogs, connectedAgents } = this.state;
 
     if (!this.state.deployPanelOpen) {
       return (
           <div className="fixed bottom-0 left-0 bg-gray-800 z-50 w-full px-6 py-2 text-gray-100">
-              {this.gitopsStatus(this.state.gitopsCommits, this.state.envs)}
+              {this.gitopsStatus(envs, connectedAgents, true)}
           </div>
       );
     }
@@ -217,7 +268,7 @@ export default class DeployPanel extends Component {
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>
             <div className="pt-4 pb-24 px-6 overflow-y-scroll h-full w-full">
-              {tabs[0].current ? this.gitopsStatus(gitopsCommits, envs) : null}
+              {tabs[0].current ? this.gitopsStatus(envs, connectedAgents, false) : null}
               {tabs[1].current ? this.deployStatus(runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, this.logsEndRef) : null}
             </div>
           </div>

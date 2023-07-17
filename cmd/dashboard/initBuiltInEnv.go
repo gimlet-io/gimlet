@@ -94,6 +94,7 @@ func bootstrapBuiltInEnv(
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
+	
 
 	repo, tmpPath, err = initRepo(fmt.Sprintf("http://%s/%s", config.GitHost, builtInEnv.AppsRepo))
 	defer os.RemoveAll(tmpPath)
