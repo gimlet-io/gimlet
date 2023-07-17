@@ -57,8 +57,9 @@ type Ingress struct {
 }
 
 type ConnectedAgent struct {
-	Name   string   `json:"name"`
-	Stacks []*Stack `json:"stacks"`
+	Name      string     `json:"name"`
+	Stacks    []*Stack   `json:"stacks"`
+	FluxState *FluxState `json:"fluxState"`
 }
 
 type GitRepository struct {
@@ -117,6 +118,11 @@ type GitopsBootstrapConfig struct {
 	KusomizationPerApp bool   `json:"kustomizationPerApp"`
 	InfraRepo          string `json:"infraRepo"`
 	AppsRepo           string `json:"appsRepo"`
+}
+
+type FluxState struct {
+	GitReppsitories []*GitRepository `json:"gitRepositories"`
+	Kustomizations  []*Kustomization `json:"kustomizations"`
 }
 
 type Stack struct {

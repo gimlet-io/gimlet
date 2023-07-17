@@ -14,6 +14,7 @@ const CommitStatusUpdatedEventString = "commitStatusUpdated"
 const PodLogsEventString = "podLogs"
 const ImageBuildLogEventString = "imageBuildLogEvent"
 const ArtifactCreatedEventString = "artifactCreatedEvent"
+const FluxStateUpdatedEventString = "fluxStateUpdatedEvent"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -31,6 +32,12 @@ type AgentDisconnectedEvent struct {
 
 type EnvsUpdatedEvent struct {
 	Envs []*api.ConnectedAgent `json:"envs"`
+	StreamingEvent
+}
+
+type FluxStateUpdatedEvent struct {
+	EnvName   string         `json:"envName"`
+	FluxState *api.FluxState `json:"fluxState"`
 	StreamingEvent
 }
 

@@ -28,6 +28,19 @@ func GitRepositoryController(kubeEnv *KubeEnv, gimletHost string, agentKey strin
 				for _, g := range gitRepositories {
 					logrus.Info(g)
 				}
+
+				// update := &api.StackUpdate{
+				// 	Event:   EventPodCreated,
+				// 	Env:     kubeEnv.Name,
+				// 	Repo:    svc.GetAnnotations()[AnnotationGitRepository],
+				// 	Subject: objectMeta.Namespace + "/" + objectMeta.Name,
+				// 	Svc:     svc.Namespace + "/" + svc.Name,
+
+				// 	Status:     string(createdPod.Status.Phase),
+				// 	Deployment: deployment.Namespace + "/" + deployment.Name,
+				// }
+				// sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
+
 			case "update":
 				logrus.Info("gitRepository updated: " + objectMeta.Name)
 				gitRepositories, err := kubeEnv.GitRepositories()

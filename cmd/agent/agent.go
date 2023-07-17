@@ -20,6 +20,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -294,6 +295,41 @@ func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	for _, k := range kustomizations {
 		logrus.Info(k)
 	}
+
+	fluxStateString, err := json.Marshal(api.FluxState{
+		GitReppsitories: gitRepositories,
+		Kustomizations:  kustomizations,
+	})
+	if err != nil {
+		logrus.Errorf("could not serialize flux state: %v", err)
+		return
+	}
+
+	params := url.Values{}
+	params.Add("name", kubeEnv.Name)
+	reqUrl := fmt.Sprintf("%s/agent/fluxState?%s", gimletHost, params.Encode())
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(fluxStateString))
+	if err != nil {
+		logrus.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		logrus.Errorf("could not send flux state: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	logrus.Info("init flux states sent")
 }
 
 func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
