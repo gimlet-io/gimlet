@@ -145,11 +145,12 @@ func (e *KubeEnv) Kustomizations() ([]*api.Kustomization, error) {
 	return result, nil
 }
 
-func statusAndMessage(conditions []interface{}) (string, string, string) {
+func statusAndMessage(conditions []interface{}) (string, string, int64) {
 	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
-		return c["reason"].(string), c["message"].(string), c["lastTransitionTime"].(string)
+		transitionTime, _ := time.Parse(time.RFC3339, c["lastTransitionTime"].(string))
+		return c["reason"].(string), c["message"].(string), transitionTime.Unix()
 	}
-	return string(metav1.ConditionFalse), "waiting to be reconciled", ""
+	return string(metav1.ConditionFalse), "waiting to be reconciled", time.Now().Unix()
 }
 
 // findStatusCondition finds the conditionType in conditions.

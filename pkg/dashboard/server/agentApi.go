@@ -178,8 +178,9 @@ func state(w http.ResponseWriter, r *http.Request) {
 	agent.Stacks = stackPointers
 
 	envs := []*api.ConnectedAgent{{
-		Name:   name,
-		Stacks: stackPointers,
+		Name:      name,
+		Stacks:    stackPointers,
+		FluxState: agent.FluxState,
 	}}
 
 	err = decorateDeployments(r.Context(), envs)

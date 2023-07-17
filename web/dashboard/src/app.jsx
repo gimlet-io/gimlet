@@ -56,6 +56,7 @@ export default class App extends Component {
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
     const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
+    const DeployPanelWithRouting = withRouter(props => <DeployPanel {...props} store={store} />);
 
     return (
       <Router>
@@ -70,7 +71,7 @@ export default class App extends Component {
 
         <div className="min-h-screen bg-gray-100 pb-20">
           <NavBar />
-          <DeployPanel store={store} />
+          <DeployPanelWithRouting store={store} />
           <div className="py-10">
             <Switch>
               <Route path="/pulse">
