@@ -743,10 +743,10 @@ func PrepInfraComponentManifests(
 		if strings.Contains(err.Error(), "file not found") ||
 			strings.Contains(err.Error(), "cannot get head commit") {
 			url := stack.DefaultStackURL
-			latestTag, _ := stack.LatestVersion(url)
-			if latestTag != "" {
-				url = url + "?tag=" + latestTag
-			}
+			// latestTag, _ := stack.LatestVersion(url)
+			// if latestTag != "" {
+			// 	url = url + "?tag=" + latestTag
+			// }
 
 			stackConfig = &dx.StackConfig{
 				Stack: dx.StackRef{
