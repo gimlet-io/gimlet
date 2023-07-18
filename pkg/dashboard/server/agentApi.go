@@ -1,8 +1,10 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 )
 
@@ -196,6 +199,23 @@ func state(w http.ResponseWriter, r *http.Request) {
 		Envs:           envs,
 	})
 	clientHub.Broadcast <- jsonString
+}
+
+func imageBuild(w http.ResponseWriter, r *http.Request) {
+	imageBuildId := chi.URLParam(r, "imageBuildId")
+
+	ctx := r.Context()
+	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]string)
+
+	tarFileName := imageBuilds[imageBuildId]
+
+	data, err := ioutil.ReadFile(tarFileName)
+	if err != nil {
+		logrus.Errorf("cannot read file: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+	http.ServeContent(w, r, tarFileName, time.Now(), bytes.NewReader(data))
 }
 
 func fluxState(w http.ResponseWriter, r *http.Request) {

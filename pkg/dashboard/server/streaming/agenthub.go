@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/sirupsen/logrus"
 )
 
 // ConnectedAgent represents a connected k8s cluster
@@ -53,6 +54,28 @@ func (h *AgentHub) ForceStateSend() {
 	}
 }
 
+func (h *AgentHub) TriggerImageBuild(env, imageBuildId, image, tag string) {
+	for _, a := range h.Agents {
+		if a.Name != env {
+			continue
+		}
+
+		imageBuildTriggerString, err := json.Marshal(map[string]interface{}{
+			"action":       "imageBuildTrigger",
+			"imageBuildId": imageBuildId,
+			"image":        image,
+			"tag":          tag,
+		})
+
+		if err != nil {
+			logrus.Errorf("could not serialize request: %s", err)
+			return
+		}
+
+		a.EventChannel <- []byte(imageBuildTriggerString)
+	}
+}
+
 func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 	podlogsRequest := map[string]interface{}{
 		"action":      "podLogs",
@@ -62,7 +85,8 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not serialize request: %s", err)
+		return
 	}
 
 	for _, a := range h.Agents {
@@ -79,7 +103,8 @@ func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not serialize request: %s", err)
+		return
 	}
 
 	for _, a := range h.Agents {

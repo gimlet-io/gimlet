@@ -34,8 +34,8 @@ import (
 func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
-	user := ctx.Value("user").(*model.User)
-	clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
+	// user := ctx.Value("user").(*model.User)
+	// clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 
 	body, _ := ioutil.ReadAll(r.Body)
 	var deployRequest dx.MagicDeployRequest
@@ -104,38 +104,45 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config := ctx.Value("config").(*config.Config)
+	// config := ctx.Value("config").(*config.Config)
 
 	imageBuildId := randStringRunes(6)
-	imageBuilderUrl := config.ImageBuilderHost + "/build-image"
+	// imageBuilderUrl := config.ImageBuilderHost + "/build-image"
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	tag := deployRequest.Sha
-	signalCh := make(chan imageBuildingDoneSignal)
-	go buildImage(
-		tarFile.Name(),
-		imageBuilderUrl,
-		image,
-		tag,
-		deployRequest.Repo,
-		signalCh,
-		clientHub,
-		user.Login,
-		string(imageBuildId),
-	)
 
-	go createDeployRequest(
-		deployRequest,
-		magicEnv,
-		store,
-		tag,
-		user.Login,
-		signalCh,
-		clientHub,
-		user.Login,
-		string(imageBuildId),
-		gitRepoCache,
-		magicEnv.Name,
-	)
+	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]string)
+	imageBuilds[imageBuildId] = tarFile.Name()
+
+	agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
+	agentHub.TriggerImageBuild(magicEnv.Name, imageBuildId, image, tag)
+
+	// signalCh := make(chan imageBuildingDoneSignal)
+	// go buildImage(
+	// 	tarFile.Name(),
+	// 	imageBuilderUrl,
+	// 	image,
+	// 	tag,
+	// 	deployRequest.Repo,
+	// 	signalCh,
+	// 	clientHub,
+	// 	user.Login,
+	// 	string(imageBuildId),
+	// )
+
+	// go createDeployRequest(
+	// 	deployRequest,
+	// 	magicEnv,
+	// 	store,
+	// 	tag,
+	// 	user.Login,
+	// 	signalCh,
+	// 	clientHub,
+	// 	user.Login,
+	// 	string(imageBuildId),
+	// 	gitRepoCache,
+	// 	magicEnv.Name,
+	// )
 
 	responseStr, err := json.Marshal(map[string]string{
 		"buildId": string(imageBuildId),

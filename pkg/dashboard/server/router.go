@@ -62,6 +62,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
+	r.Use(middleware.WithValue("imageBuilds", map[string]string{}))
 	r.Use(middleware.WithValue("router", r))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
@@ -192,6 +193,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 		r.Post("/agent/fluxState", fluxState)
+		r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeAgentWs(agentWSHub, w, r)
