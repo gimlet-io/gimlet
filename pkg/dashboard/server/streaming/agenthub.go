@@ -54,7 +54,7 @@ func (h *AgentHub) ForceStateSend() {
 	}
 }
 
-func (h *AgentHub) TriggerImageBuild(env, imageBuildId, image, tag string) {
+func (h *AgentHub) TriggerImageBuild(env, imageBuildId, image, tag, app, userLogin string) {
 	for _, a := range h.Agents {
 		if a.Name != env {
 			continue
@@ -65,6 +65,8 @@ func (h *AgentHub) TriggerImageBuild(env, imageBuildId, image, tag string) {
 			"imageBuildId": imageBuildId,
 			"image":        image,
 			"tag":          tag,
+			"app":          app,
+			"userLogin":    userLogin,
 		})
 
 		if err != nil {

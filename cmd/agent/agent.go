@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -229,7 +228,12 @@ func serverCommunication(
 						imageBuildId := e["imageBuildId"].(string)
 						image := e["image"].(string)
 						tag := e["tag"].(string)
-						go buildImage(gimletHost, agentKey, imageBuildId, image, tag)
+						app := e["app"].(string)
+						userLogin := e["userLogin"].(string)
+						go buildImage(
+							gimletHost, agentKey, imageBuildId, image, tag, app, userLogin,
+							messages,
+						)
 					}
 				} else {
 					logrus.Info("event stream closed")
@@ -451,10 +455,17 @@ func streamPodLogs(
 		logrus.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
+			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
+				Pod:     namespace + "/" + serviceName,
+				Message: chunk,
+			})
+			if err != nil {
+				logrus.Error("cannot serialize payload", err)
+			}
+
 			msg := &streaming.WSMessage{
 				Type:    "log",
-				Message: chunk,
-				Pod:     namespace + "/" + serviceName,
+				Payload: string(serializedPayload),
 			}
 			messages <- msg
 		}
@@ -501,10 +512,9 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			select {
 			case <-done:
 				wsDisconnected = true
-			case t := <-ticker.C:
+			case <-ticker.C:
 				tick := &streaming.WSMessage{
-					Type:    "tick",
-					Message: t.String(),
+					Type: "tick",
 				}
 
 				serializedMessage, err := json.Marshal(tick)
@@ -553,44 +563,6 @@ func chunks(str string, size int) []string {
 		return []string{str}
 	}
 	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
-}
-
-func buildImage(gimletHost, agentKey, imageBuildId, image, tag string) {
-	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
-	if err != nil {
-		logrus.Errorf("cannot get temp file: %s", err)
-		return
-	}
-	defer tarFile.Close()
-
-	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, imageBuildId)
-	req, err := http.NewRequest("GET", reqUrl, nil)
-	if err != nil {
-		logrus.Errorf("could not create http request: %v", err)
-		return
-	}
-	req.Header.Set("Authorization", "BEARER "+agentKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := httpClient()
-	resp, err := client.Do(req)
-	if err != nil {
-		logrus.Errorf("could not download tarfile: %s", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		logrus.Errorf("could download tar file: %d - %v", resp.StatusCode, string(body))
-		return
-	}
-
-	_, err = io.Copy(tarFile, resp.Body)
-	if err != nil {
-		logrus.Errorf("could not download tarfile: %s", err)
-		return
-	}
 }
 
 func logo() string {

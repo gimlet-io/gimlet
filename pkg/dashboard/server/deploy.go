@@ -2,7 +2,6 @@ package server
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
@@ -10,7 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -34,7 +32,7 @@ import (
 func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
-	// user := ctx.Value("user").(*model.User)
+	user := ctx.Value("user").(*model.User)
 	// clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 
 	body, _ := ioutil.ReadAll(r.Body)
@@ -115,7 +113,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	imageBuilds[imageBuildId] = tarFile.Name()
 
 	agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
-	agentHub.TriggerImageBuild(magicEnv.Name, imageBuildId, image, tag)
+	agentHub.TriggerImageBuild(magicEnv.Name, imageBuildId, image, tag, deployRequest.Repo, user.Login)
 
 	// signalCh := make(chan imageBuildingDoneSignal)
 	// go buildImage(
@@ -424,119 +422,6 @@ func tartar(tarName string, paths []string) (err error) {
 		}
 	}
 	return nil
-}
-
-// Creates a new file upload http request with optional extra params
-func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(paramName, filepath.Base(path))
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(part, file)
-	if err != nil {
-		return nil, err
-	}
-
-	for key, val := range params {
-		_ = writer.WriteField(key, val)
-	}
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", uri, body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	return req, err
-}
-
-func buildImage(
-	path string, url string,
-	image string, tag string, app string,
-	signalCh chan imageBuildingDoneSignal,
-	clientHub *streaming.ClientHub,
-	userLogin string,
-	imageBuildId string,
-) {
-	request, err := newfileUploadRequest(url, map[string]string{
-		"image": image,
-		"tag":   tag,
-		"app":   app,
-	}, "data", path)
-	if err != nil {
-		signalCh <- imageBuildingDoneSignal{successful: false}
-		logrus.Errorf("cannot upload file: %s", err)
-		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
-		return
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(request)
-	if err != nil {
-		signalCh <- imageBuildingDoneSignal{successful: false}
-		logrus.Errorf("cannot upload file: %s", err)
-		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", "")
-		return
-	}
-
-	success := streamImageBuilderLogs(resp.Body, clientHub, userLogin, imageBuildId)
-	signalCh <- imageBuildingDoneSignal{successful: success}
-}
-
-func streamImageBuilderLogs(body io.ReadCloser, clientHub *streaming.ClientHub, userLogin string, imageBuildId string) bool {
-	defer body.Close()
-	var sb strings.Builder
-	reader := bufio.NewReader(body)
-	first := true
-	for {
-		line, err := reader.ReadBytes('\n')
-		sb.WriteString(string(line))
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(clientHub, userLogin, imageBuildId, "error", sb.String())
-			return false
-		}
-
-		if first || sb.Len() > 1000 {
-			streamImageBuildEvent(clientHub, userLogin, imageBuildId, "running", sb.String())
-			sb.Reset()
-			first = false
-		}
-	}
-
-	lastLine := sb.String()
-	if strings.HasSuffix(lastLine, "IMAGE BUILT") {
-		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "success", lastLine)
-		return true
-	} else {
-		streamImageBuildEvent(clientHub, userLogin, imageBuildId, "notBuilt", lastLine)
-		return false
-	}
-}
-
-func streamImageBuildEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, logLine string) {
-	jsonString, _ := json.Marshal(streaming.ImageBuildLogEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.ImageBuildLogEventString},
-		BuildId:        imageBuildId,
-		Status:         status,
-		LogLine:        string(logLine),
-	})
-	clientHub.Send <- &streaming.ClientMessage{
-		ClientId: userLogin,
-		Message:  jsonString,
-	}
 }
 
 func streamArtifactCreatedEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, trackingId string) {
