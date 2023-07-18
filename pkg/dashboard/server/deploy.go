@@ -13,20 +13,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
-	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 func magicDeploy(w http.ResponseWriter, r *http.Request) {
@@ -115,33 +110,6 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
 	agentHub.TriggerImageBuild(magicEnv.Name, imageBuildId, image, tag, deployRequest.Repo, user.Login)
 
-	// signalCh := make(chan imageBuildingDoneSignal)
-	// go buildImage(
-	// 	tarFile.Name(),
-	// 	imageBuilderUrl,
-	// 	image,
-	// 	tag,
-	// 	deployRequest.Repo,
-	// 	signalCh,
-	// 	clientHub,
-	// 	user.Login,
-	// 	string(imageBuildId),
-	// )
-
-	// go createDeployRequest(
-	// 	deployRequest,
-	// 	magicEnv,
-	// 	store,
-	// 	tag,
-	// 	user.Login,
-	// 	signalCh,
-	// 	clientHub,
-	// 	user.Login,
-	// 	string(imageBuildId),
-	// 	gitRepoCache,
-	// 	magicEnv.Name,
-	// )
-
 	responseStr, err := json.Marshal(map[string]string{
 		"buildId": string(imageBuildId),
 	})
@@ -153,182 +121,6 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseStr)
-}
-
-type imageBuildingDoneSignal struct {
-	successful bool
-}
-
-func createDeployRequest(
-	deployRequest dx.MagicDeployRequest,
-	builtInEnv *model.Environment,
-	store *store.Store,
-	tag string,
-	triggeredBy string,
-	signal chan imageBuildingDoneSignal,
-	clientHub *streaming.ClientHub,
-	userLogin string,
-	imageBuildId string,
-	gitRepoCache *nativeGit.RepoCache,
-	builtInEnvName string,
-) {
-	// wait until image building is done
-	imageBuildingDoneSignal := <-signal
-	if !imageBuildingDoneSignal.successful {
-		return
-	}
-	envConfig, _ := defaultEnvConfig(
-		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha, builtInEnvName,
-		gitRepoCache,
-	)
-
-	artifact, err := createDummyArtifact(
-		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
-		builtInEnv.Name,
-		store,
-		"127.0.0.1:32447/"+deployRequest.Repo,
-		tag,
-		envConfig,
-	)
-	if err != nil {
-		logrus.Errorf("cannot create artifact: %s", err)
-		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
-		return
-	}
-
-	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
-		Env:         builtInEnv.Name,
-		App:         deployRequest.Repo,
-		ArtifactID:  artifact.ID,
-		TriggeredBy: triggeredBy,
-	})
-	if err != nil {
-		logrus.Errorf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err)
-		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
-		return
-	}
-
-	artifactEvent, err := store.Artifact(artifact.ID)
-	if err != nil {
-		logrus.Errorf("%s - cannot find artifact with id %s", http.StatusText(http.StatusNotFound), artifact.ID)
-		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
-		return
-	}
-	event, err := store.CreateEvent(&model.Event{
-		Type:       model.ReleaseRequestedEvent,
-		Blob:       string(releaseRequestStr),
-		Repository: artifactEvent.Repository,
-	})
-	if err != nil {
-		logrus.Errorf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err)
-		streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "error", "")
-		return
-	}
-
-	streamArtifactCreatedEvent(clientHub, userLogin, imageBuildId, "created", event.ID)
-}
-
-func defaultEnvConfig(
-	owner string, repoName string, sha string, env string,
-	gitRepoCache *nativeGit.RepoCache,
-
-) (*dx.Manifest, error) {
-	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
-	if err != nil {
-		return nil, fmt.Errorf("cannot get repo: %s", err)
-	}
-
-	files, err := helper.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
-	if err != nil {
-		if strings.Contains(err.Error(), "directory not found") {
-			return nil, nil
-		} else {
-			return nil, fmt.Errorf("cannot list files in .gimlet/: %s", err)
-		}
-	}
-
-	for _, content := range files {
-		var envConfig dx.Manifest
-		err = yaml.Unmarshal([]byte(content), &envConfig)
-		if err != nil {
-			logrus.Warnf("cannot parse env config string: %s", err)
-			continue
-		}
-		if envConfig.Env == env && envConfig.App == repoName {
-			return &envConfig, nil
-		}
-	}
-
-	return nil, nil
-}
-
-func createDummyArtifact(
-	owner, repo, sha string,
-	env string,
-	store *store.Store,
-	image, tag string,
-	envConfig *dx.Manifest,
-) (*dx.Artifact, error) {
-
-	if envConfig == nil {
-		envConfig = &dx.Manifest{
-			App:       repo,
-			Namespace: "default",
-			Env:       env,
-			Chart: dx.Chart{
-				Name:       config.DEFAULT_CHART_NAME,
-				Repository: config.DEFAULT_CHART_REPO,
-				Version:    config.DEFAULT_CHART_VERSION,
-			},
-			Values: map[string]interface{}{
-				"containerPort": 80,
-				"gitRepository": owner + "/" + repo,
-				"gitSha":        sha,
-				"image": map[string]interface{}{
-					"repository": image,
-					"tag":        tag,
-					"pullPolicy": "Always",
-				},
-				"resources": map[string]interface{}{
-					"ignore": true,
-				},
-			},
-		}
-	}
-
-	artifact := dx.Artifact{
-		ID:           fmt.Sprintf("%s-%s", owner+"/"+repo, uuid.New().String()),
-		Created:      time.Now().Unix(),
-		Fake:         true,
-		Environments: []*dx.Manifest{envConfig},
-		Version: dx.Version{
-			RepositoryName: owner + "/" + repo,
-			SHA:            sha,
-			Created:        time.Now().Unix(),
-			Branch:         "main",
-			AuthorName:     "TODO",
-			AuthorEmail:    "TODO",
-			CommitterName:  "TODO",
-			CommitterEmail: "TODO",
-			Message:        "TODO",
-			URL:            "TODO",
-		},
-		Vars: map[string]string{
-			"SHA": sha,
-		},
-	}
-
-	event, err := model.ToEvent(artifact)
-	if err != nil {
-		return nil, fmt.Errorf("cannot convert to artifact model: %s", err)
-	}
-
-	_, err = store.CreateEvent(event)
-	if err != nil {
-		return nil, fmt.Errorf("cannot save artifact: %s", err)
-	}
-
-	return &artifact, nil
 }
 
 // https://github.com/vladimirvivien/go-tar/blob/master/tartar/tartar.go
@@ -422,18 +214,6 @@ func tartar(tarName string, paths []string) (err error) {
 		}
 	}
 	return nil
-}
-
-func streamArtifactCreatedEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, trackingId string) {
-	jsonString, _ := json.Marshal(streaming.ArtifactCreatedEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.ArtifactCreatedEventString},
-		BuildId:        imageBuildId,
-		TrackingId:     trackingId,
-	})
-	clientHub.Send <- &streaming.ClientMessage{
-		ClientId: userLogin,
-		Message:  jsonString,
-	}
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
