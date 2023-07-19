@@ -205,9 +205,9 @@ func imageBuild(w http.ResponseWriter, r *http.Request) {
 	imageBuildId := chi.URLParam(r, "imageBuildId")
 
 	ctx := r.Context()
-	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]string)
+	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]streaming.ImageBuildTrigger)
 
-	tarFileName := imageBuilds[imageBuildId]
+	tarFileName := imageBuilds[imageBuildId].SourcePath
 
 	data, err := ioutil.ReadFile(tarFileName)
 	if err != nil {

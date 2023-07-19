@@ -38,6 +38,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(400), 400)
 		return
 	}
+	deployRequest.TriggeredBy = user.Login
 
 	if deployRequest.Owner == "" || deployRequest.Repo == "" || deployRequest.Sha == "" {
 		http.Error(w, fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadRequest), "owner, repo, sha parameters are mandatory"), http.StatusBadRequest)
@@ -104,11 +105,21 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	tag := deployRequest.Sha
 
-	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]string)
-	imageBuilds[imageBuildId] = tarFile.Name()
+	trigger := streaming.ImageBuildTrigger{
+		DeployRequest: deployRequest,
+		Env:           magicEnv.Name,
+		ImageBuildId:  imageBuildId,
+		Image:         image,
+		Tag:           tag,
+		App:           deployRequest.Repo,
+		SourcePath:    tarFile.Name(),
+	}
+
+	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]streaming.ImageBuildTrigger)
+	imageBuilds[imageBuildId] = trigger
 
 	agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
-	agentHub.TriggerImageBuild(magicEnv.Name, imageBuildId, image, tag, deployRequest.Repo, user.Login)
+	agentHub.TriggerImageBuild(trigger)
 
 	responseStr, err := json.Marshal(map[string]string{
 		"buildId": string(imageBuildId),

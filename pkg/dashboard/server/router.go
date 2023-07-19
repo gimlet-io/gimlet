@@ -43,6 +43,7 @@ func SetupRouter(
 	perf *prometheus.HistogramVec,
 	logger *log.Logger,
 	gitServer http.Handler,
+	imageBuilds map[string]streaming.ImageBuildTrigger,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -62,7 +63,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
-	r.Use(middleware.WithValue("imageBuilds", map[string]string{}))
+	r.Use(middleware.WithValue("imageBuilds", imageBuilds))
 	r.Use(middleware.WithValue("router", r))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))

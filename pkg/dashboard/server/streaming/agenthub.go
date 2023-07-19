@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,6 +15,17 @@ type ConnectedAgent struct {
 	EventChannel chan []byte    `json:"-"`
 	Stacks       []*api.Stack   `json:"-"`
 	FluxState    *api.FluxState `json:"-"`
+}
+
+type ImageBuildTrigger struct {
+	Action        string                `json:"action"`
+	DeployRequest dx.MagicDeployRequest `json:"deployRequest"`
+	Env           string                `json:"env"`
+	ImageBuildId  string                `json:"imageBuildId"`
+	Image         string                `json:"image"`
+	Tag           string                `json:"tag"`
+	App           string                `json:"app"`
+	SourcePath    string                `json:"sourcePath"`
 }
 
 // AgentHub is the central registry of all connected agents
@@ -54,21 +66,14 @@ func (h *AgentHub) ForceStateSend() {
 	}
 }
 
-func (h *AgentHub) TriggerImageBuild(env, imageBuildId, image, tag, app, userLogin string) {
+func (h *AgentHub) TriggerImageBuild(trigger ImageBuildTrigger) {
 	for _, a := range h.Agents {
-		if a.Name != env {
+		if a.Name != trigger.Env {
 			continue
 		}
 
-		imageBuildTriggerString, err := json.Marshal(map[string]interface{}{
-			"action":       "imageBuildTrigger",
-			"imageBuildId": imageBuildId,
-			"image":        image,
-			"tag":          tag,
-			"app":          app,
-			"userLogin":    userLogin,
-		})
-
+		trigger.Action = "imageBuildTrigger"
+		imageBuildTriggerString, err := json.Marshal(trigger)
 		if err != nil {
 			logrus.Errorf("could not serialize request: %s", err)
 			return

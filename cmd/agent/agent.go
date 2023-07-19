@@ -225,15 +225,11 @@ func serverCommunication(
 						svc := e["serviceName"].(string)
 						go stopPodLogs(runningLogStreams, namespace, svc)
 					case "imageBuildTrigger":
-						imageBuildId := e["imageBuildId"].(string)
-						image := e["image"].(string)
-						tag := e["tag"].(string)
-						app := e["app"].(string)
-						userLogin := e["userLogin"].(string)
-						go buildImage(
-							gimletHost, agentKey, imageBuildId, image, tag, app, userLogin,
-							messages,
-						)
+						eString, _ := json.Marshal(e)
+						var trigger streaming.ImageBuildTrigger
+						_ = json.Unmarshal(eString, &trigger)
+
+						go buildImage(gimletHost, agentKey, trigger, messages)
 					}
 				} else {
 					logrus.Info("event stream closed")

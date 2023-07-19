@@ -17,10 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func buildImage(
-	gimletHost, agentKey, imageBuildId, image, tag, app, userLogin string,
-	messages chan *streaming.WSMessage,
-) {
+func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger, messages chan *streaming.WSMessage) {
 	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		logrus.Errorf("cannot get temp file: %s", err)
@@ -28,7 +25,7 @@ func buildImage(
 	}
 	defer tarFile.Close()
 
-	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, imageBuildId)
+	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, trigger.ImageBuildId)
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
@@ -61,28 +58,24 @@ func buildImage(
 		tarFile.Name(),
 		// "http://image-builder.infrastructure.svc.cluster.local:9000/build-image",
 		"http://127.0.0.1:8001/build-image",
-		image, tag, app,
-		userLogin,
-		imageBuildId,
+		trigger,
 		messages,
 	)
 }
 
 func imageBuilder(
 	path string, url string,
-	image string, tag string, app string,
-	userLogin string,
-	imageBuildId string,
+	trigger streaming.ImageBuildTrigger,
 	messages chan *streaming.WSMessage,
 ) {
 	request, err := newfileUploadRequest(url, map[string]string{
-		"image": image,
-		"tag":   tag,
-		"app":   app,
+		"image": trigger.Image,
+		"tag":   trigger.Tag,
+		"app":   trigger.App,
 	}, "data", path)
 	if err != nil {
 		logrus.Errorf("cannot upload file: %s", err)
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
+		streamImageBuildEvent(messages, trigger.DeployRequest.TriggeredBy, trigger.ImageBuildId, "error", "")
 		return
 	}
 
@@ -90,11 +83,11 @@ func imageBuilder(
 	resp, err := client.Do(request)
 	if err != nil {
 		logrus.Errorf("cannot upload file: %s", err)
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
+		streamImageBuildEvent(messages, trigger.DeployRequest.TriggeredBy, trigger.ImageBuildId, "error", "")
 		return
 	}
 
-	streamImageBuilderLogs(resp.Body, messages, userLogin, imageBuildId)
+	streamImageBuilderLogs(resp.Body, messages, trigger.DeployRequest.TriggeredBy, trigger.ImageBuildId)
 }
 
 // Creates a new file upload http request with optional extra params
