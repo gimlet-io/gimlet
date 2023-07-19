@@ -229,7 +229,7 @@ func serverCommunication(
 						var trigger streaming.ImageBuildTrigger
 						_ = json.Unmarshal(eString, &trigger)
 
-						go buildImage(gimletHost, agentKey, trigger, messages)
+						go buildImage(gimletHost, agentKey, trigger, messages, config.ImageBuilderHost)
 					}
 				} else {
 					logrus.Info("event stream closed")

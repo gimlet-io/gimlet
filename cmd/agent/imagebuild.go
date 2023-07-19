@@ -17,7 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger, messages chan *streaming.WSMessage) {
+func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger, messages chan *streaming.WSMessage, imageBuilderHost string) {
 	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		logrus.Errorf("cannot get temp file: %s", err)
@@ -56,8 +56,7 @@ func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger
 
 	imageBuilder(
 		tarFile.Name(),
-		// "http://image-builder.infrastructure.svc.cluster.local:9000/build-image",
-		"http://127.0.0.1:8001/build-image",
+		imageBuilderHost,
 		trigger,
 		messages,
 	)

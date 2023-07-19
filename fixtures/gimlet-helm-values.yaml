@@ -8,7 +8,6 @@ probe:
 vars:
   HOST: "http://127.0.0.1:9000"
   API_HOST: http://gimlet.default.svc.cluster.local:9000
-  IMAGE_BUILDER_HOST: http://image-builder.infrastructure.svc.cluster.local:9000
 resources:
   ignoreLimits: true
 volumes:
