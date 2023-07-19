@@ -113,7 +113,7 @@ func main() {
 
 	messages := make(chan *streaming.WSMessage)
 
-	go serverCommunication(kubeEnv, config, messages)
+	go serverCommunication(kubeEnv, config, messages, config.Host, config.AgentKey)
 	go serverWSCommunication(config, messages)
 
 	signals := make(chan os.Signal, 1)
@@ -179,7 +179,13 @@ func parseEnvString(envString string) (string, string, error) {
 	}
 }
 
-func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages chan *streaming.WSMessage) {
+func serverCommunication(
+	kubeEnv *agent.KubeEnv,
+	config config.Config,
+	messages chan *streaming.WSMessage,
+	gimletHost string,
+	agentKey string,
+) {
 	for {
 		done := make(chan bool)
 
@@ -218,6 +224,12 @@ func serverCommunication(kubeEnv *agent.KubeEnv, config config.Config, messages 
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
 						go stopPodLogs(runningLogStreams, namespace, svc)
+					case "imageBuildTrigger":
+						eString, _ := json.Marshal(e)
+						var trigger streaming.ImageBuildTrigger
+						_ = json.Unmarshal(eString, &trigger)
+
+						go buildImage(gimletHost, agentKey, trigger, messages, config.ImageBuilderHost)
 					}
 				} else {
 					logrus.Info("event stream closed")
@@ -439,10 +451,17 @@ func streamPodLogs(
 		logrus.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
+			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
+				Pod:     namespace + "/" + serviceName,
+				Message: chunk,
+			})
+			if err != nil {
+				logrus.Error("cannot serialize payload", err)
+			}
+
 			msg := &streaming.WSMessage{
 				Type:    "log",
-				Message: chunk,
-				Pod:     namespace + "/" + serviceName,
+				Payload: string(serializedPayload),
 			}
 			messages <- msg
 		}
@@ -489,10 +508,9 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			select {
 			case <-done:
 				wsDisconnected = true
-			case t := <-ticker.C:
+			case <-ticker.C:
 				tick := &streaming.WSMessage{
-					Type:    "tick",
-					Message: t.String(),
+					Type: "tick",
 				}
 
 				serializedMessage, err := json.Marshal(tick)

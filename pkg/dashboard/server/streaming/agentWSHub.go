@@ -16,8 +16,19 @@ import (
 
 type WSMessage struct {
 	Type    string `json:"type"`
+	Payload string `json:"payload"`
+}
+
+type PodLogWSMessage struct {
 	Message string `json:"message"`
 	Pod     string `json:"pod"`
+}
+
+type ImageBuildStatusWSMessage struct {
+	BuildId  string `json:"buildId"`
+	Status   string `json:"status"`
+	LogLine  string `json:"logLine"`
+	ClientId string `json:"clientId"`
 }
 
 // Client is a middleman between the websocket connection and the hub.
@@ -65,13 +76,43 @@ func (c *AgentWSClient) readPump() {
 			continue
 		}
 
-		jsonString, _ := json.Marshal(PodLogsEvent{
-			StreamingEvent: StreamingEvent{Event: PodLogsEventString},
-			Pod:            wsMessage.Pod,
-			PodLogs:        wsMessage.Message,
-		})
+		if wsMessage.Type == "logs" {
+			var podLogWSMessage PodLogWSMessage
+			err = json.Unmarshal([]byte(wsMessage.Payload), &podLogWSMessage)
+			if err != nil {
+				log.Errorf("could not decode podlog ws message from agent")
+			}
 
-		c.hub.ClientHub.Broadcast <- jsonString
+			jsonString, _ := json.Marshal(PodLogsEvent{
+				StreamingEvent: StreamingEvent{Event: PodLogsEventString},
+				Pod:            podLogWSMessage.Pod,
+				PodLogs:        podLogWSMessage.Message,
+			})
+			c.hub.ClientHub.Broadcast <- jsonString
+		}
+
+		if wsMessage.Type == "imageBuildLogs" {
+			var imageBuildStatus ImageBuildStatusWSMessage
+			err = json.Unmarshal([]byte(wsMessage.Payload), &imageBuildStatus)
+			if err != nil {
+				log.Errorf("could not decode image build log ws message from agent")
+			}
+
+			jsonString, _ := json.Marshal(ImageBuildLogEvent{
+				StreamingEvent: StreamingEvent{Event: ImageBuildLogEventString},
+				BuildId:        imageBuildStatus.BuildId,
+				Status:         imageBuildStatus.Status,
+				LogLine:        imageBuildStatus.LogLine,
+			})
+			c.hub.ClientHub.Send <- &ClientMessage{
+				ClientId: imageBuildStatus.ClientId,
+				Message:  jsonString,
+			}
+
+			if imageBuildStatus.Status != "running" {
+				c.hub.successfullImageBuilds <- imageBuildStatus
+			}
+		}
 	}
 }
 
@@ -149,14 +190,17 @@ type AgentWSHub struct {
 	Unregister chan *AgentWSClient
 
 	ClientHub *ClientHub
+
+	successfullImageBuilds chan ImageBuildStatusWSMessage
 }
 
-func NewAgentWSHub(clientHub ClientHub) *AgentWSHub {
+func NewAgentWSHub(clientHub ClientHub, successfullImageBuilds chan ImageBuildStatusWSMessage) *AgentWSHub {
 	return &AgentWSHub{
-		Register:       make(chan *AgentWSClient),
-		Unregister:     make(chan *AgentWSClient),
-		AgentWSClients: make(map[*AgentWSClient]bool),
-		ClientHub:      &clientHub,
+		Register:               make(chan *AgentWSClient),
+		Unregister:             make(chan *AgentWSClient),
+		AgentWSClients:         make(map[*AgentWSClient]bool),
+		ClientHub:              &clientHub,
+		successfullImageBuilds: successfullImageBuilds,
 	}
 }
 

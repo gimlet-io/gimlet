@@ -68,7 +68,8 @@ func main() {
 	clientHub := streaming.NewClientHub()
 	go clientHub.Run()
 
-	agentWSHub := streaming.NewAgentWSHub(*clientHub)
+	successfullImageBuilds := make(chan streaming.ImageBuildStatusWSMessage)
+	agentWSHub := streaming.NewAgentWSHub(*clientHub, successfullImageBuilds)
 	go agentWSHub.Run()
 
 	err = reencrypt(store, config.Database.EncryptionKeyNew)
@@ -136,6 +137,10 @@ func main() {
 	}
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
+
+	imageBuilds := map[string]streaming.ImageBuildTrigger{}
+	magicDeployWorker := worker.NewMagicDeployWorker(repoCache, clientHub, store, successfullImageBuilds, imageBuilds)
+	go magicDeployWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
 	if config.ChartVersionUpdaterFeatureFlag {
@@ -213,6 +218,7 @@ func main() {
 		perf,
 		logger,
 		gitServer,
+		imageBuilds,
 	)
 
 	go func() {

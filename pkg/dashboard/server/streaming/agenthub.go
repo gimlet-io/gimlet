@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/sirupsen/logrus"
 )
 
 // ConnectedAgent represents a connected k8s cluster
@@ -13,6 +15,17 @@ type ConnectedAgent struct {
 	EventChannel chan []byte    `json:"-"`
 	Stacks       []*api.Stack   `json:"-"`
 	FluxState    *api.FluxState `json:"-"`
+}
+
+type ImageBuildTrigger struct {
+	Action        string                `json:"action"`
+	DeployRequest dx.MagicDeployRequest `json:"deployRequest"`
+	Env           string                `json:"env"`
+	ImageBuildId  string                `json:"imageBuildId"`
+	Image         string                `json:"image"`
+	Tag           string                `json:"tag"`
+	App           string                `json:"app"`
+	SourcePath    string                `json:"sourcePath"`
 }
 
 // AgentHub is the central registry of all connected agents
@@ -53,6 +66,23 @@ func (h *AgentHub) ForceStateSend() {
 	}
 }
 
+func (h *AgentHub) TriggerImageBuild(trigger ImageBuildTrigger) {
+	for _, a := range h.Agents {
+		if a.Name != trigger.Env {
+			continue
+		}
+
+		trigger.Action = "imageBuildTrigger"
+		imageBuildTriggerString, err := json.Marshal(trigger)
+		if err != nil {
+			logrus.Errorf("could not serialize request: %s", err)
+			return
+		}
+
+		a.EventChannel <- []byte(imageBuildTriggerString)
+	}
+}
+
 func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 	podlogsRequest := map[string]interface{}{
 		"action":      "podLogs",
@@ -62,7 +92,8 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not serialize request: %s", err)
+		return
 	}
 
 	for _, a := range h.Agents {
@@ -79,7 +110,8 @@ func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not serialize request: %s", err)
+		return
 	}
 
 	for _, a := range h.Agents {
