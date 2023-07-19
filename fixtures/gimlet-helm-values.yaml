@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/gimlet-io/gimlet
-  tag: v0.17.0-rc.14@sha256:bcf2613d6132046f29ccde873252017aa46c5d51889f6f4057ecf22608b9ff38
+  tag: v0.17.0-rc.15@sha256:e850de9575853b1474a112abb48ce2cc62bab472df7e01a8c1865cd25ce91133
 containerPort: 9000
 probe:
   enabled: true
