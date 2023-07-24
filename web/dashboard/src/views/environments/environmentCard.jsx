@@ -467,7 +467,9 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             </div>
             {!isOnline &&
               <div className="mb-4">
-                <h3 className="text-lg font-medium p-2 text-gray-900">Connect your cluster</h3>
+                <h3 className="text-lg font-medium pl-2 text-gray-900">Connect your cluster</h3>
+                <div className='pl-2 pb-2 text-gray-700'>Need a cluster? <a className='underline' target='_blank' rel="noopener noreferrer" href="https://gimlet.io/blog/running-kubernetes-on-your-laptop-with-k3d">We recommend using k3d</a> on your laptop if you are evaluating Gimlet.<br />
+                It takes one command, and runs in a container. Give it a try.</div>
                 <BootstrapGuide
                   envName={env.name}
                   token={userToken}
