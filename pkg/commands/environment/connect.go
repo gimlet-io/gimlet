@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 
@@ -41,6 +42,13 @@ var environmentConnectCmd = cli.Command{
 }
 
 func connect(c *cli.Context) error {
+	ctrlC := make(chan os.Signal, 1)
+	signal.Notify(ctrlC, os.Interrupt)
+	go func() {
+		<-ctrlC
+		os.Exit(0)
+	}()
+
 	envName := c.String("env")
 	serverURL := c.String("server")
 	token := c.String("token")

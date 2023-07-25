@@ -2,6 +2,8 @@ package environment
 
 import (
 	"context"
+	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -20,6 +22,13 @@ var environmentCheckCmd = cli.Command{
 }
 
 func check(c *cli.Context) error {
+	ctrlC := make(chan os.Signal, 1)
+	signal.Notify(ctrlC, os.Interrupt)
+	go func() {
+		<-ctrlC
+		os.Exit(0)
+	}()
+
 	f := createFactory()
 	clientSet, err := f.KubernetesClientSet()
 	if err != nil {
@@ -73,8 +82,7 @@ func check(c *cli.Context) error {
 	}
 	spinner.Success()
 
-	spinner = NewSpinner("Done!")
-	spinner.Success()
+	NewSpinner("Done!").Success()
 
 	return nil
 }
