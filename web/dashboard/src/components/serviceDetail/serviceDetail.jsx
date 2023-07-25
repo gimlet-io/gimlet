@@ -7,10 +7,10 @@ import {
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_CLEAR_PODLOGS
 } from "../../redux/redux";
-
+import { copyToClipboard } from '../../views/settings/settings';
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, builtInEnv } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, builtInEnv } = props;
   const ref = useRef(null);
 
   useEffect(() => {
@@ -141,6 +141,7 @@ function ServiceDetail(props) {
                 deployment={stack.deployment}
                 service={stack.service}
                 gimletClient={gimletClient}
+                config={config}
                 setLogsOverlayVisible={setLogsOverlayVisible}
                 setLogsOverlayNamespace={setLogsOverlayNamespace}
                 setLogsOverlayService={setLogsOverlayService}
@@ -175,35 +176,77 @@ class Ingress extends Component {
 }
 
 class Deployment extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isCopied: false,
+    };
+  }
+
+  handleCopyClick() {
+    this.setState({ isCopied: true });
+
+    setTimeout(() => {
+      this.setState({ isCopied: false });
+    }, 2000);
+  };
+
   render() {
-    const { deployment, service, repo, gimletClient, setLogsOverlayVisible, setLogsOverlayNamespace, setLogsOverlayService, scmUrl } = this.props;
+    const { deployment, service, repo, gimletClient, config, setLogsOverlayVisible, setLogsOverlayNamespace, setLogsOverlayService, scmUrl } = this.props;
 
     if (deployment === undefined) {
       return null;
     }
 
+    let port = config ? "80:80" : "<host-port>:<app-port>"
+    if (config?.values?.containerPort) {
+      port = `${config.values.containerPort}:${config.values.containerPort}`
+    }
+
     return (
-      <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
-        <button className="text-xs text-gray-400 absolute top-0 right-0 p-2"
-          onClick={() => {
-            setLogsOverlayVisible(true)
-            setLogsOverlayNamespace(deployment.namespace);
-            setLogsOverlayService(service.name);
-            gimletClient.podLogsRequest(deployment.namespace, service.name);
-          }}
-        >app logs</button>
-        <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
-        <div className="mb-1">
-          <p className="truncate">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</p>
-          <p className="text-xs italic"><a href={`${scmUrl}/${repo}/commit/${deployment.sha}`} target="_blank"
-            rel="noopener noreferrer">{deployment.sha.slice(0, 6)}</a></p>
+      <div className="grid grid-cols-4">
+        <div className="col-span-3 bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
+          <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
+          <div className="mb-1">
+            <p className="truncate">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</p>
+            <p className="text-xs italic"><a href={`${scmUrl}/${repo}/commit/${deployment.sha}`} target="_blank"
+              rel="noopener noreferrer">{deployment.sha.slice(0, 6)}</a></p>
+          </div>
+          <p className="text-xs truncate w-9/12">{deployment.namespace}/{deployment.name}</p>
+          {
+            deployment.pods && deployment.pods.map((pod) => (
+              <Pod key={pod.name} pod={pod} />
+            ))
+          }
         </div>
-        <p className="text-xs truncate w-9/12">{deployment.namespace}/{deployment.name}</p>
-        {
-          deployment.pods && deployment.pods.map((pod) => (
-            <Pod key={pod.name} pod={pod} />
-          ))
-        }
+        <div className="col-span-1 bg-slate-400 rounded-r-lg p-2 text-white text-xs space-y-2 mb-1 text-center">
+          <div className="group mx-auto">
+            <button
+              onClick={() => {
+                setLogsOverlayVisible(true)
+                setLogsOverlayNamespace(deployment.namespace);
+                setLogsOverlayService(service.name);
+                gimletClient.podLogsRequest(deployment.namespace, service.name);
+              }}
+            >app logs
+            </button>
+          </div>
+          <div className="group relative mx-auto">
+            <button
+              onClick={() => {
+                copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${port}`);
+                this.handleCopyClick();
+              }}
+            >port-forward</button>
+            {this.state.isCopied && (
+              <div className="absolute -top-8 right-1/2">
+                <div className="p-2 bg-indigo-600 select-none text-white inline-block rounded">
+                  Copied!
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
