@@ -199,9 +199,10 @@ class Deployment extends Component {
       return null;
     }
 
-    let port = config ? "80:80" : "<host-port>:<app-port>"
+    const randomHostPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
+    let port = config ? `${randomHostPort}:80` : "<host-port>:<app-port>"
     if (config?.values?.containerPort) {
-      port = `${config.values.containerPort}:${config.values.containerPort}`
+      port = `${randomHostPort}:${config.values.containerPort}`
     }
 
     return (
@@ -224,7 +225,7 @@ class Deployment extends Component {
           <Menu as="div" className="relative inline-block text-left">
             <Menu.Button className="flex items-center text-gray-200 hover:text-gray-500">
               <span className="sr-only">Open options</span>
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </Menu.Button>
