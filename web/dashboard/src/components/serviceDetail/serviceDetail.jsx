@@ -199,10 +199,18 @@ class Deployment extends Component {
       return null;
     }
 
-    const randomHostPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
-    let port = config ? `${randomHostPort}:80` : "<host-port>:<app-port>"
-    if (config?.values?.containerPort) {
-      port = `${randomHostPort}:${config.values.containerPort}`
+    let hostPort = "<host-port>"
+    let appPort = "<app-port>"
+    if (config) {
+      appPort = config.values.containerPort ?? 80;
+
+      if (appPort < 99) {
+        hostPort = "100" + appPort
+      } else if (appPort < 999) {
+        hostPort = "10" + appPort
+      } else {
+        hostPort = appPort
+      }
     }
 
     return (
@@ -229,7 +237,7 @@ class Deployment extends Component {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </Menu.Button>
-            <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <Menu.Items className="origin-top-right absolute right-0 md:left-8 md:right-0 md:-top-4 z-10 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
               <div className="py-1">
                 <Menu.Item key="logs">
                   {({ active }) => (
@@ -253,7 +261,7 @@ class Deployment extends Component {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${port}`);
+                        copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${hostPort}:${appPort}`);
                         this.handleCopyClick();
                       }}
                       className={(
