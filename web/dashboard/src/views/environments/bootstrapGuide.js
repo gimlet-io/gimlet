@@ -11,7 +11,7 @@ const BootstrapGuide = ({ envName, token }) => {
         <CopiableCodeSnippet
           copiable
           color="blue"
-          code={`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.23.2/gimlet-$(uname)-$(uname -m)" -o gimlet
+          code={`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.23.3/gimlet-$(uname)-$(uname -m)" -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet`}
         />
