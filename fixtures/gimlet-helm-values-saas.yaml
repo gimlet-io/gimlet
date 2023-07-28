@@ -1,0 +1,20 @@
+image:
+  repository: ghcr.io/gimlet-io/gimlet
+  tag: v0.17.0-rc.15@sha256:e850de9575853b1474a112abb48ce2cc62bab472df7e01a8c1865cd25ce91133
+containerPort: 9000
+probe:
+  enabled: true
+  path: /
+vars:
+  HOST: "https://helm-install.gimlet.io"
+resources:
+  ignoreLimits: true
+volumes:
+  - name: data
+    path: /var/lib/gimlet-dashboard
+    size: 1Gi
+ingress:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+  tlsEnabled: true
+  host: 'helm-install.gimlet.io'
