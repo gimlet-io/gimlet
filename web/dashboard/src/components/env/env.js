@@ -125,7 +125,10 @@ function renderServices(
   services = filteredStacks.map((stack) => {
     configsWeDeployed.push(stack.service.name);
     const configExists = configsWeHave.includes(stack.service.name)
-    const config = envConfigs.find((config) => config.app === stack.service.name)
+    let config = undefined;
+    if (configExists) {
+      config = envConfigs.find((config) => config.app === stack.service.name)
+    }
 
     return (
       <ServiceDetail
