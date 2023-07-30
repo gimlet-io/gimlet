@@ -92,7 +92,7 @@ export function ImageBuild(build, logsEndRef) {
     statusIcon = '✅';
   } else if (build.status === "notBuilt") {
     statusIcon = '😟';
-    instructionsText = "We could not automatically build an image. Please check our documentation (TODO link) to proceed."
+    instructionsText = "We could not automatically build an image. Please check our [documentation](https://deploy-preview-31--elegant-borg-5bd068.netlify.app/docs/container-image-building) to proceed."
   } else if (build.status === "error") {
     statusIcon = '❗';
     statusText = "Could not build image, check server logs."
