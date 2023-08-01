@@ -8,6 +8,7 @@ COPY buildpacks/paketo-buildpacks_npm-start /cnb/buildpacks/paketo-buildpacks_np
 COPY buildpacks/paketo-buildpacks_npm-install /cnb/buildpacks/paketo-buildpacks_npm-install
 
 COPY lifecycle /cnb/lifecycle
+COPY order.toml /cnb/order.toml
 
 # COPY --chown=image-builder:image-builder bin/image-builder-linux-arm64-v8 /bin/image-builder
 

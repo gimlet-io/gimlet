@@ -1,0 +1,9 @@
+[[order]]
+    [[order.group]]
+    id = "paketo-buildpacks/node-engine"
+
+    [[order.group]]
+    id = "paketo-buildpacks/npm-install"
+
+    [[order.group]]
+    id = "paketo-buildpacks/npm-start"
