@@ -59,8 +59,8 @@ jobs:
         file: docker/image-builder/stacks/jammy/build/Dockerfile
         platforms: linux/arm64/v8
         push: true
-        build-args:
-          - base_image: ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}
+        build-args: |
+          "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
         tags: ghcr.io/gimlet-io/jammy-builder:${{ steps.version.outputs.version }}
     # - name: Build and push Docker image
     #   uses: docker/build-push-action@v3.2.0
