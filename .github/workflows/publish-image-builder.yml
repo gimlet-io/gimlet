@@ -107,7 +107,7 @@ jobs:
         cd .. && cd ..
 
         export RELEASE_VERSION=v0.16.5
-        curl -L https://github.com/buildpacks/lifecycle/releases/download/$RELEASE_VERSION/lifecycle-$RELEASE_VERSION+linux.arm64.tgz | tar xfz -    
+        curl -L https://github.com/buildpacks/lifecycle/releases/download/$RELEASE_VERSION/lifecycle-$RELEASE_VERSION+linux.arm64.tgz | tar xfz -
     - name: Build image builder arm64 image
       uses: docker/build-push-action@v3.2.0
       with:

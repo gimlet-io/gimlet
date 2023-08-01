@@ -1,0 +1,2 @@
+[run-image]
+  image = "ghcr.io/gimlet-io/jammy-run:v0.4.0-rc.17"
