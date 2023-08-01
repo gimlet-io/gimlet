@@ -1,5 +1,5 @@
 ARG version
-FROM --platform=linux/arm64/v8 gcr.io/gimlet-io/jammy-build:${version}
+FROM --platform=linux/arm64/v8 ghcr.io/gimlet-io/jammy-build:${version}
 
 RUN mkdir platform && mkdir buildpacks
 
