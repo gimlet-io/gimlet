@@ -1,7 +1,8 @@
 ARG version
 FROM --platform=linux/arm64/v8 ghcr.io/gimlet-io/jammy-build:${version}
 
-RUN mkdir /platform && mkdir -p /cnb/buildpacks
+RUN mkdir /platform
+RUN mkdir -p /cnb/buildpacks
 
 COPY buildpacks/paketo-buildpacks_node-engine /cnb/buildpacks/paketo-buildpacks_node-engine
 COPY buildpacks/paketo-buildpacks_npm-start /cnb/buildpacks/paketo-buildpacks_npm-start
