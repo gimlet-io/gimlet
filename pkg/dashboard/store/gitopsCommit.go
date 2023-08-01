@@ -37,7 +37,7 @@ func (db *Store) GitopsCommits() ([]*model.GitopsCommit, error) {
 }
 
 func (db *Store) SaveOrUpdateGitopsCommit(gitopsCommit *model.GitopsCommit) (bool, error) {
-	if db.driver != "sqlite3" {
+	if db.driver != "sqlite" {
 		return db.saveOrUpdateGitopsCommitWithTx(gitopsCommit)
 	} else {
 		return db.saveOrUpdateGitopsCommitWithoutTx(gitopsCommit)

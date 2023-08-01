@@ -51,7 +51,7 @@ type migration struct {
 }
 
 var migrations = map[string][]migration{
-	"sqlite3": {
+	"sqlite": {
 		{
 			name: createTableUsers,
 			stmt: `

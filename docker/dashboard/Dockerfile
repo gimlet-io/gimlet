@@ -3,7 +3,7 @@ FROM --platform=$BUILDPLATFORM alpine:3.17.1
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
-ENV DATABASE_DRIVER=sqlite3
+ENV DATABASE_DRIVER=sqlite
 ENV DATABASE_CONFIG=/var/lib/gimlet-dashboard/gimlet-dashboard.sqlite
 ENV XDG_CACHE_HOME /var/lib/gimlet-dashboard
 ENV GIT_ROOT=/var/lib/gimlet-dashboard/git-root/
