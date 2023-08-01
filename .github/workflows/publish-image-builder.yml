@@ -49,7 +49,7 @@ jobs:
       with:
         context: docker/image-builder/stacks/jammy/base
         file: docker/image-builder/stacks/jammy/base/Dockerfile
-        platforms: linux/arm64/v8
+        platforms: linux/amd64,linux/arm64/v8
         push: true
         tags: ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}
     - name: Build buildpack builder image

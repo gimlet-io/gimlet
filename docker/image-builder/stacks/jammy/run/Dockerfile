@@ -1,5 +1,5 @@
 ARG base_image
-FROM ${base_image}
+FROM --platform=$BUILDPLATFORM ${base_image}
 
 # Set required CNB information
 ARG stack_id
