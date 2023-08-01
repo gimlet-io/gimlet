@@ -76,14 +76,14 @@ jobs:
           "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
           "stack_id=io.buildpacks.stacks.jammy"
         tags: ghcr.io/gimlet-io/jammy-run:${{ steps.version.outputs.version }}
-    # - name: Build image builder amd64 image
-    #   uses: docker/build-push-action@v3.2.0
-    #   with:
-    #     context: .
-    #     file: docker/image-builder/Dockerfile
-    #     platforms: linux/amd64
-    #     push: true
-    #     tags: ghcr.io/gimlet-io/image-builder:${{ steps.version.outputs.version }},ghcr.io/gimlet-io/image-builder:latest
+    - name: Build image builder amd64 image
+      uses: docker/build-push-action@v3.2.0
+      with:
+        context: .
+        file: docker/image-builder/Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: ghcr.io/gimlet-io/image-builder:${{ steps.version.outputs.version }},ghcr.io/gimlet-io/image-builder:latest
     - name: Prep ARM64 buildpack
       run: |
         mkdir buildpacks

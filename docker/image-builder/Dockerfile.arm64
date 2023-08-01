@@ -11,7 +11,7 @@ COPY lifecycle /cnb/lifecycle
 COPY docker/image-builder/order.toml /cnb/order.toml
 COPY docker/image-builder/stack.toml /cnb/stack.toml
 
-# COPY --chown=image-builder:image-builder bin/image-builder-linux-arm64-v8 /bin/image-builder
+COPY --chown=image-builder:image-builder bin/image-builder-linux-arm64 /bin/image-builder
 
 ENV CNB_PLATFORM_API=0.7
 

@@ -73,7 +73,6 @@ dist-image-builder:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/image-builder-linux-x86_64 github.com/gimlet-io/gimlet-cli/cmd/image-builder
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/image-builder-linux-arm64 github.com/gimlet-io/gimlet-cli/cmd/image-builder
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/image-builder-darwin-x86_64 github.com/gimlet-io/gimlet-cli/cmd/image-builder
 
 build-cli-frontend:
 	(cd web/cli; npm install; npm run build)
