@@ -89,13 +89,22 @@ jobs:
         mkdir buildpacks
 
         git clone https://github.com/paketo-buildpacks/node-engine.git buildpacks/paketo-buildpacks_node-engine/
-        cd buildpacks/paketo-buildpacks_node-engine/ && git reset --hard v1.6.0 && cd .. && cd ..
-
-        git clone https://github.com/paketo-buildpacks/npm-start.git buildpacks/paketo-buildpacks_npm-start/
-        cd buildpacks/paketo-buildpacks_npm-start/ && git reset --hard v1.0.11 && cd .. && cd ..
+        cd buildpacks/paketo-buildpacks_node-engine/
+        git reset --hard v1.6.0
+        ./scripts/build.sh
+        cd .. && cd ..
         
+        git clone https://github.com/paketo-buildpacks/npm-start.git buildpacks/paketo-buildpacks_npm-start/
+        cd buildpacks/paketo-buildpacks_npm-start/
+        git reset --hard v1.0.11
+        ./scripts/build.sh
+        cd .. && cd ..
+
         git clone https://github.com/paketo-buildpacks/npm-install.git buildpacks/paketo-buildpacks_npm-install/
-        cd buildpacks/paketo-buildpacks_npm-install/ && git reset --hard v1.1.4 && cd .. && cd ..
+        cd buildpacks/paketo-buildpacks_npm-install/
+        git reset --hard v1.1.4
+        ./scripts/build.sh
+        cd .. && cd ..
 
         export RELEASE_VERSION=v0.16.5
         curl -L https://github.com/buildpacks/lifecycle/releases/download/$RELEASE_VERSION/lifecycle-$RELEASE_VERSION+linux.arm64.tgz | tar xfz -    
