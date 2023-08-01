@@ -1,6 +1,15 @@
-FROM gcr.io/buildpacks/builder:v1
+ARG version
+FROM --platform=linux/arm64/v8 gcr.io/gimlet-io/jammy-build:${version}
 
-COPY --chown=image-builder:image-builder bin/image-builder-linux-x86_64 /bin/image-builder
+RUN mkdir platform && mkdir buildpacks
+
+COPY buildpacks/paketo-buildpacks_node-engine buildpacks/paketo-buildpacks_node-engine
+COPY buildpacks/paketo-buildpacks_npm-start buildpacks/paketo-buildpacks_npm-start
+COPY buildpacks/paketo-buildpacks_npm-install buildpacks/paketo-buildpacks_npm-install
+
+COPY lifecycle lifecycle
+
+# COPY --chown=image-builder:image-builder bin/image-builder-linux-arm64-v8 /bin/image-builder
 
 ENV CNB_PLATFORM_API=0.7
 
