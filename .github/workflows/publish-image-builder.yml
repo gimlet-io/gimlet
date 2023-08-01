@@ -55,8 +55,8 @@ jobs:
     - name: Build buildpack builder image
       uses: docker/build-push-action@v3.2.0
       with:
-        context: docker/image-builder/stacks/jammy/build
-        file: docker/image-builder/stacks/jammy/build/Dockerfile
+        context: docker/image-builder/stacks/jammy/jammy-build
+        file: docker/image-builder/stacks/jammy/jammyy-build/Dockerfile
         platforms: linux/arm64/v8
         push: true
         build-args: |
