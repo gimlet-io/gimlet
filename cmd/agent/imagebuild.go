@@ -130,7 +130,7 @@ func streamImageBuilderLogs(
 	defer body.Close()
 	var sb strings.Builder
 	reader := bufio.NewReader(body)
-	first := true
+	// first := true
 	for {
 		line, err := reader.ReadBytes('\n')
 		sb.WriteString(string(line))
@@ -144,11 +144,11 @@ func streamImageBuilderLogs(
 			return
 		}
 
-		if first { // || sb.Len() > 300 {
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
-			sb.Reset()
-			first = false
-		}
+		// if first || sb.Len() > 300 {
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+		sb.Reset()
+		// first = false
+		// }
 	}
 
 	lastLine := sb.String()
