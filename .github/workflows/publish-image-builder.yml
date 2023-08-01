@@ -32,10 +32,10 @@ jobs:
         else
             echo "::set-output name=version::$GITHUB_SHA"
         fi
-    # - name: Dist
-    #   run: make dist-image-builder
-    #   env:
-    #     VERSION: ${{ steps.version.outputs.version }}
+    - name: Dist
+      run: make dist-image-builder
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
