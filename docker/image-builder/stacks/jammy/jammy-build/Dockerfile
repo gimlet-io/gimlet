@@ -6,7 +6,7 @@ RUN apt update && \
   apt install -y git wget jq && \
   rm -rf /var/lib/apt/lists/*
 
-COPY ./bin/yj-linux /usr/local/bin/yj
+COPY ./yj-linux /usr/local/bin/yj
 
 # Set required CNB information
 ARG stack_id
