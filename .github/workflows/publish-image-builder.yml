@@ -56,7 +56,7 @@ jobs:
       uses: docker/build-push-action@v3.2.0
       with:
         context: docker/image-builder/stacks/jammy/jammy-build
-        file: docker/image-builder/stacks/jammy/jammyy-build/Dockerfile
+        file: docker/image-builder/stacks/jammy/jammy-build/Dockerfile
         platforms: linux/arm64/v8
         push: true
         build-args: |
