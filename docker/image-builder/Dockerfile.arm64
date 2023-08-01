@@ -2,6 +2,9 @@ ARG version
 FROM --platform=linux/arm64/v8 ghcr.io/gimlet-io/jammy-build:${version}
 
 RUN mkdir /platform && mkdir /workspace && mkdir /layers && mkdir -p /cnb/buildpacks
+RUN chown ${CNB_USER_ID}:${CNB_GROUP_ID} /platform
+RUN chown ${CNB_USER_ID}:${CNB_GROUP_ID} /workspace
+RUN chown ${CNB_USER_ID}:${CNB_GROUP_ID} /layers
 
 COPY buildpacks/paketo-buildpacks_node-engine /cnb/buildpacks/paketo-buildpacks_node-engine
 COPY buildpacks/paketo-buildpacks_npm-start /cnb/buildpacks/paketo-buildpacks_npm-start
@@ -11,9 +14,12 @@ COPY lifecycle /cnb/lifecycle
 COPY docker/image-builder/order.toml /cnb/order.toml
 COPY docker/image-builder/stack.toml /cnb/stack.toml
 
-COPY --chown=image-builder:image-builder bin/image-builder-linux-arm64 /bin/image-builder
+COPY --chown=${CNB_USER_ID}:${CNB_GROUP_ID}bin/image-builder-linux-arm64 /bin/image-builder
 
 ENV CNB_PLATFORM_API=0.7
 
 EXPOSE 5000
 CMD ["/bin/image-builder"]
+
+# Set user and group (as declared in base image)
+USER ${CNB_USER_ID}:${CNB_GROUP_ID}
