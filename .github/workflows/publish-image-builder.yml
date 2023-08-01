@@ -52,16 +52,28 @@ jobs:
         platforms: linux/amd64,linux/arm64/v8
         push: true
         tags: ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}
-    - name: Build buildpack builder image
+    - name: Build buildpack build image
       uses: docker/build-push-action@v3.2.0
       with:
         context: docker/image-builder/stacks/jammy/jammy-build
         file: docker/image-builder/stacks/jammy/jammy-build/Dockerfile
-        platforms: linux/arm64/v8
+        platforms: linux/amd64,linux/arm64/v8
         push: true
         build-args: |
           "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
-        tags: ghcr.io/gimlet-io/jammy-builder:${{ steps.version.outputs.version }}
+          "stack_id=io.buildpacks.stacks.jammy"
+        tags: ghcr.io/gimlet-io/jammy-build:${{ steps.version.outputs.version }}
+    - name: Build buildpack run image
+      uses: docker/build-push-action@v3.2.0
+      with:
+        context: docker/image-builder/stacks/jammy/run
+        file: docker/image-builder/stacks/jammy/run/Dockerfile
+        platforms: linux/amd64,linux/arm64/v8
+        push: true
+        build-args: |
+          "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
+          "stack_id=io.buildpacks.stacks.jammy"
+        tags: ghcr.io/gimlet-io/jammy-run:${{ steps.version.outputs.version }}
     # - name: Build and push Docker image
     #   uses: docker/build-push-action@v3.2.0
     #   with:
