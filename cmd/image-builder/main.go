@@ -120,10 +120,11 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	// shell out to buildpacks
 	command := "/cnb/lifecycle/creator"
 	sourcePathArg := "-app=" + sourcePath
+	logLevelArg := "-log-level=debug"
 	// cacheImage = "-cache-image=" + cacheImage
 	// previousImage = "-previous-image=" + previousImage
 	// cmd := exec.Command(command, sourcePath, cacheImage, previousImage, image)
-	cmd := exec.Command(command, sourcePathArg, image+":"+tag)
+	cmd := exec.Command(command, sourcePathArg, logLevelArg, image+":"+tag)
 	pipeReader, pipeWriter := io.Pipe()
 	cmd.Stdout = pipeWriter
 	cmd.Stderr = pipeWriter

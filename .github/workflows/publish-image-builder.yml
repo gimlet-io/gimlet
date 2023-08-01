@@ -36,6 +36,8 @@ jobs:
       run: make dist-image-builder
       env:
         VERSION: ${{ steps.version.outputs.version }}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     - name: Login to GitHub Container Registry
@@ -44,11 +46,75 @@ jobs:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.PAT }} # `PAT` is a secret that contains your Personal Access Token with `write:packages` scope
-    - name: Build and push Docker image
+    - name: Build buildpack base image
+      uses: docker/build-push-action@v3.2.0
+      with:
+        context: docker/image-builder/stacks/jammy/base
+        file: docker/image-builder/stacks/jammy/base/Dockerfile
+        platforms: linux/amd64,linux/arm64/v8
+        push: true
+        tags: ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}
+    - name: Build buildpack build image
+      uses: docker/build-push-action@v3.2.0
+      with:
+        context: docker/image-builder/stacks/jammy/jammy-build
+        file: docker/image-builder/stacks/jammy/jammy-build/Dockerfile
+        platforms: linux/amd64,linux/arm64/v8
+        push: true
+        build-args: |
+          "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
+          "stack_id=io.buildpacks.stacks.jammy"
+        tags: ghcr.io/gimlet-io/jammy-build:${{ steps.version.outputs.version }}
+    - name: Build buildpack run image
+      uses: docker/build-push-action@v3.2.0
+      with:
+        context: docker/image-builder/stacks/jammy/run
+        file: docker/image-builder/stacks/jammy/run/Dockerfile
+        platforms: linux/amd64,linux/arm64/v8
+        push: true
+        build-args: |
+          "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
+          "stack_id=io.buildpacks.stacks.jammy"
+        tags: ghcr.io/gimlet-io/jammy-run:${{ steps.version.outputs.version }}
+    - name: Build image builder amd64 image
       uses: docker/build-push-action@v3.2.0
       with:
         context: .
         file: docker/image-builder/Dockerfile
-        platforms: linux/amd64,linux/arm64/v8
+        platforms: linux/amd64
         push: true
+        tags: ghcr.io/gimlet-io/image-builder:${{ steps.version.outputs.version }},ghcr.io/gimlet-io/image-builder:latest
+    - name: Prep ARM64 buildpack
+      run: |
+        mkdir buildpacks
+
+        git clone https://github.com/paketo-buildpacks/node-engine.git buildpacks/paketo-buildpacks_node-engine/
+        cd buildpacks/paketo-buildpacks_node-engine/
+        git reset --hard v1.6.0
+        ./scripts/build.sh
+        cd .. && cd ..
+        
+        git clone https://github.com/paketo-buildpacks/npm-start.git buildpacks/paketo-buildpacks_npm-start/
+        cd buildpacks/paketo-buildpacks_npm-start/
+        git reset --hard v1.0.11
+        ./scripts/build.sh
+        cd .. && cd ..
+
+        git clone https://github.com/paketo-buildpacks/npm-install.git buildpacks/paketo-buildpacks_npm-install/
+        cd buildpacks/paketo-buildpacks_npm-install/
+        git reset --hard v1.1.4
+        ./scripts/build.sh
+        cd .. && cd ..
+
+        export RELEASE_VERSION=v0.16.5
+        curl -L https://github.com/buildpacks/lifecycle/releases/download/$RELEASE_VERSION/lifecycle-$RELEASE_VERSION+linux.arm64.tgz | tar xfz -
+    - name: Build image builder arm64 image
+      uses: docker/build-push-action@v3.2.0
+      with:
+        context: .
+        file: docker/image-builder/Dockerfile.arm64
+        platforms: linux/arm64/v8
+        push: true
+        build-args: |
+          "version=${{ steps.version.outputs.version }}"
         tags: ghcr.io/gimlet-io/image-builder:${{ steps.version.outputs.version }},ghcr.io/gimlet-io/image-builder:latest

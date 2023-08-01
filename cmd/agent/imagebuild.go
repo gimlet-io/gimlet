@@ -144,7 +144,7 @@ func streamImageBuilderLogs(
 			return
 		}
 
-		if first || sb.Len() > 300 {
+		if first { // || sb.Len() > 300 {
 			streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
 			sb.Reset()
 			first = false
