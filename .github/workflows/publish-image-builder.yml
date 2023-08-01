@@ -86,13 +86,13 @@ jobs:
       run: |
         mkdir buildpacks
 
-        git clone git@github.com:paketo-buildpacks/node-engine.git buildpacks/paketo-buildpacks_node-engine/
+        git clone https://github.com/paketo-buildpacks/node-engine.git buildpacks/paketo-buildpacks_node-engine/
         cd buildpacks/paketo-buildpacks_node-engine/ && git reset --hard v1.6.0 && cd .. && cd ..
 
-        git clone git@github.com:paketo-buildpacks/npm-start.git buildpacks/paketo-buildpacks_npm-start/
+        git clone https://github.com/paketo-buildpacks/npm-start.git buildpacks/paketo-buildpacks_npm-start/
         cd buildpacks/paketo-buildpacks_npm-start/ && git reset --hard v1.0.11 && cd .. && cd ..
         
-        git clone git@github.com:paketo-buildpacks/npm-install.git buildpacks/paketo-buildpacks_npm-install/
+        git clone https://github.com/paketo-buildpacks/npm-install.git buildpacks/paketo-buildpacks_npm-install/
         cd buildpacks/paketo-buildpacks_npm-install/ && git reset --hard v1.1.4 && cd .. && cd ..
 
         export RELEASE_VERSION=v0.16.5
