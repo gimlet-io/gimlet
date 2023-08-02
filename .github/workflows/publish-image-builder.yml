@@ -76,14 +76,6 @@ jobs:
           "base_image=ghcr.io/gimlet-io/jammy-base:${{ steps.version.outputs.version }}"
           "stack_id=io.buildpacks.stacks.jammy"
         tags: ghcr.io/gimlet-io/jammy-run:${{ steps.version.outputs.version }}
-    - name: Build image builder amd64 image
-      uses: docker/build-push-action@v3.2.0
-      with:
-        context: .
-        file: docker/image-builder/Dockerfile
-        platforms: linux/amd64
-        push: true
-        tags: ghcr.io/gimlet-io/image-builder:amd64-${{ steps.version.outputs.version }}
     - name: Prep ARM64 buildpack
       run: |
         mkdir buildpacks
@@ -108,20 +100,27 @@ jobs:
 
         export RELEASE_VERSION=v0.16.5
         curl -L https://github.com/buildpacks/lifecycle/releases/download/$RELEASE_VERSION/lifecycle-$RELEASE_VERSION+linux.arm64.tgz | tar xfz -
-    - name: Build image builder arm64 image
-      uses: docker/build-push-action@v3.2.0
-      with:
-        context: .
-        file: docker/image-builder/Dockerfile.arm64
-        platforms: linux/arm64/v8
-        push: true
-        build-args: |
-          "version=${{ steps.version.outputs.version }}"
-        tags: ghcr.io/gimlet-io/image-builder:arm64-${{ steps.version.outputs.version }}
     - name: Docker manifest create
       id: manifest
       run: |
         echo $password | docker login ghcr.io -u gimlet-io --password-stdin
+
+        docker build \
+          --platform linux/arm64/v8 \
+          -f docker/image-builder/Dockerfile.arm64 \
+          -t ghcr.io/gimlet-io/image-builder:arm64-${{ steps.version.outputs.version }} \
+          --build-arg version=${{ steps.version.outputs.version }} \
+          .
+        docker push ghcr.io/gimlet-io/image-builder:arm64-${{ steps.version.outputs.version }}
+
+        docker build \
+          --platform linux/amd64 \
+          -f docker/image-builder/Dockerfile.arm64 \
+          -t ghcr.io/gimlet-io/image-builder:amd64-${{ steps.version.outputs.version }} \
+          --build-arg version=${{ steps.version.outputs.version }} \
+          .
+        docker push ghcr.io/gimlet-io/image-builder:amd64-${{ steps.version.outputs.version }}
+
         docker manifest create \
           ghcr.io/gimlet-io/image-builder:$version \
           --amend ghcr.io/gimlet-io/image-builder:amd64-$version \
