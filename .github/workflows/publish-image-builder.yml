@@ -123,9 +123,9 @@ jobs:
       run: |
         echo $password | docker login ghcr.io -u gimlet-io --password-stdin
         docker manifest create \
-          gimlet-io/image-builder:$version \
-          --amend gimlet-io/image-builder:amd64-$version \
-          --amend gimlet-io/image-builder:arm64-$version
+          ghcr.io/gimlet-io/image-builder:$version \
+          --amend ghcr.io/gimlet-io/image-builder:amd64-$version \
+          --amend ghcr.io/gimlet-io/image-builder:arm64-$version
         docker manifest push gimlet-io/image-builder:$version
       env:
         password: ${{ secrets.PAT }} # `PAT` is a secret that contains your Personal Access Token with `write:packages` scope
