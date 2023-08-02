@@ -89,6 +89,8 @@ export const initialState = {
   repoRefreshQueue: [],
   gitRepos: [],
   defaultChart: undefined,
+  defaultTemplates: undefined,
+  selectedTemplate: "",
   envConfigs: {},
   application: {},
   repoMetas: {},

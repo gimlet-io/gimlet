@@ -11,6 +11,7 @@ import (
 const DEFAULT_CHART_NAME = "onechart"
 const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
 const DEFAULT_CHART_VERSION = "0.47.0"
+const DEFAULT_CHARTS = "name=static-site,repo=https://chart.onechart.dev,version=0.1.0;name=onechart,repo=https://chart.onechart.dev,version=0.50.0"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
@@ -33,6 +34,9 @@ func defaults(c *Config) {
 	}
 	if c.ReleaseHistorySinceDays == 0 {
 		c.ReleaseHistorySinceDays = 30
+	}
+	if c.Charts == "" {
+		c.Charts = DEFAULT_CHARTS
 	}
 	if c.Chart.Name == "" {
 		c.Chart.Name = DEFAULT_CHART_NAME
@@ -75,6 +79,7 @@ type Config struct {
 
 	Notifications           Notifications
 	Chart                   Chart
+	Charts                  string `envconfig:"CHARTS"`
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
 	WebhookSecret           string `envconfig:"WEBHOOK_SECRET"`
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
