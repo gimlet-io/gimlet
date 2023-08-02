@@ -111,15 +111,15 @@ jobs:
           -t ghcr.io/gimlet-io/image-builder:arm64-${{ steps.version.outputs.version }} \
           --build-arg version=${{ steps.version.outputs.version }} \
           .
-        docker push ghcr.io/gimlet-io/image-builder:arm64-${{ steps.version.outputs.version }}
+        # docker push ghcr.io/gimlet-io/image-builder:arm64-${{ steps.version.outputs.version }}
 
         docker build \
           --platform linux/amd64 \
-          -f docker/image-builder/Dockerfile.arm64 \
+          -f docker/image-builder/Dockerfile \
           -t ghcr.io/gimlet-io/image-builder:amd64-${{ steps.version.outputs.version }} \
           --build-arg version=${{ steps.version.outputs.version }} \
           .
-        docker push ghcr.io/gimlet-io/image-builder:amd64-${{ steps.version.outputs.version }}
+        # docker push ghcr.io/gimlet-io/image-builder:amd64-${{ steps.version.outputs.version }}
 
         docker manifest create \
           ghcr.io/gimlet-io/image-builder:$version \
