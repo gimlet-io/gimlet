@@ -37,7 +37,7 @@ const SelectAlertByNameAndType = "select-alert-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
 
 var queries = map[string]map[string]string{
-	"sqlite3": {
+	"sqlite": {
 		Dummy: `
 SELECT 1;
 `,

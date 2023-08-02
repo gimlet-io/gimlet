@@ -15,7 +15,7 @@ import (
 	// PostgreSQL driver
 	_ "github.com/lib/pq"
 	// Sqlite driver
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Store is used to access data
@@ -70,8 +70,8 @@ func open(driver, config, encryptionKey, encryptionKeyNew string) *sql.DB {
 // environment variables, with fallback to in-memory sqlite.
 func NewTest(encryptionKey, encryptionKeyNew string) *Store {
 	var (
-		driver = "sqlite3"
-		config = "file::memory:"
+		driver = "sqlite"
+		config = ":memory:"
 	)
 	if os.Getenv("DATABASE_DRIVER") != "" {
 		driver = os.Getenv("DATABASE_DRIVER")
@@ -84,7 +84,7 @@ func NewTest(encryptionKey, encryptionKeyNew string) *Store {
 	}
 
 	// if not in-memory DB, recreate tables between tests
-	if driver != "sqlite3" {
+	if driver != "sqlite" {
 		store.Exec(`
 drop table migrations;
 drop table users;
@@ -125,7 +125,7 @@ func setupDatabase(driver string, db *sql.DB) error {
 // based on the selected driver name.
 func setupMeddler(driver, encryptionKey, encryptionKeyNew string) {
 	switch driver {
-	case "sqlite3":
+	case "sqlite":
 		meddler.Default = meddler.SQLite
 	case "postgres":
 		meddler.Default = meddler.PostgreSQL

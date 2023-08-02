@@ -21,7 +21,7 @@ func LoadConfig() (*Config, error) {
 
 func defaults(c *Config) {
 	if c.Database.Driver == "" {
-		c.Database.Driver = "sqlite3"
+		c.Database.Driver = "sqlite"
 	}
 	if c.Database.Config == "" {
 		c.Database.Config = "gimlet-dashboard.sqlite"
