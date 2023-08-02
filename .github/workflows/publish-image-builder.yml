@@ -127,6 +127,6 @@ jobs:
           --amend gimlet-io/image-builder:amd64-$version \
           --amend gimlet-io/image-builder:arm64-$version
         docker manifest push gimlet-io/image-builder:$version
-      with:
+      env:
         password: ${{ secrets.PAT }} # `PAT` is a secret that contains your Personal Access Token with `write:packages` scope
         version: ${{ steps.version.outputs.version }}
