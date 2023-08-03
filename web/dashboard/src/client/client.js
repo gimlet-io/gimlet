@@ -41,7 +41,9 @@ export default class GimletClient {
 
   getBranches = (owner, name) => this.get(`/api/repo/${owner}/${name}/branches`);
 
-  getChartSchema = (owner, name, env) => this.get(`/api/repo/${owner}/${name}/env/${env}/chartSchema`);
+  getChartSchema = (owner, name, env, chartReference) => this.postWithAxios(`/api/repo/${owner}/${name}/env/${env}/chartSchema`, JSON.stringify(chartReference));
+
+  getCharts = () => this.getWithAxios("/api/charts")
 
   getEnvConfigs = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/envConfigs`);
 

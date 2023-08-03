@@ -240,10 +240,8 @@ export function application(state, application) {
   return state;
 }
 
-export function schemas(state, payload) {
-  state.defaultChart = payload.schemas;
-  state.templates = payload.templates;
-  state.selectedTemplate = payload.templates[0];
+export function schemas(state, schemas) {
+  state.defaultChart = schemas;
   return state;
 }
 

@@ -311,16 +311,17 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 	return nil
 }
 
-type Chart struct {
-	Name           string      `json:"name"`
-	Schema         interface{} `json:"schema"`
-	UISchema       interface{} `json:"uiSchema"`
-	ChartReference dx.Chart    `json:"chartReference"`
-}
-
 func chartSchema(w http.ResponseWriter, r *http.Request) {
+	var chartFromBody dx.Chart
+	err := json.NewDecoder(r.Body).Decode(&chartFromBody)
+	if err != nil {
+		logrus.Errorf("cannot decode env name to save: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	dashConfig := ctx.Value("config").(*config.Config)
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
@@ -336,76 +337,98 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	charts, err := ParseCharts(config.Charts)
+	validChart := dashConfig.Chart
+	if chartFromBody.Name != "" {
+		validChart = config.Chart{
+			Name:    chartFromBody.Name,
+			Repo:    chartFromBody.Repository,
+			Version: chartFromBody.Version,
+		}
+	}
+
+	m, err := getManifest(&validChart, repo, env)
 	if err != nil {
-		logrus.Errorf("cannot parse charts: %s", err)
+		logrus.Errorf("cannot get manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	var schemas []Chart
-	for _, chart := range charts {
-		m, err := getManifest(chart, repo, env)
-		if err != nil {
-			logrus.Errorf("cannot get manifest: %s", err)
-			continue
-		}
-
-		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
-		if err != nil {
-			logrus.Errorf("cannot get schema from manifest: %s", err)
-			continue
-		}
-
-		chartName, err := chartName(m)
-		if err != nil {
-			logrus.Errorf("cannot get schema from manifest: %s", err)
-			continue
-		}
-
-		var schema interface{}
-		err = json.Unmarshal([]byte(schemaString), &schema)
-		if err != nil {
-			logrus.Errorf("cannot parse schema: %s", err)
-			continue
-		}
-
-		var schemaUI interface{}
-		err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
-		if err != nil {
-			logrus.Errorf("cannot parse UI schema: %s", err)
-			continue
-		}
-
-		chartReference := chartFromConfig(chart)
-
-		schemas = append(schemas, Chart{
-			Name:           chartName,
-			Schema:         schema,
-			UISchema:       schemaUI,
-			ChartReference: chartReference,
-		})
-	}
-
-	var templates []string
-	for _, schema := range schemas {
-		templates = append(templates, schema.Name)
-	}
-
-	data := map[string]interface{}{
-		"schemas":   schemas,
-		"templates": templates,
-	}
-
-	dataString, err := json.Marshal(data)
+	schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
 	if err != nil {
-		logrus.Errorf("cannot serialize data: %s", err)
+		logrus.Errorf("cannot get schema from manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var schema interface{}
+	err = json.Unmarshal([]byte(schemaString), &schema)
+	if err != nil {
+		logrus.Errorf("cannot parse schema: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var schemaUI interface{}
+	err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
+	if err != nil {
+		logrus.Errorf("cannot parse UI schema: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	chartReference := chartFromConfig(&validChart)
+
+	schemas := map[string]interface{}{}
+	schemas["schema"] = schema
+	schemas["uiSchema"] = schemaUI
+	schemas["reference"] = chartReference
+
+	schemasString, err := json.Marshal(schemas)
+	if err != nil {
+		logrus.Errorf("cannot serialize schemas: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(dataString))
+	w.Write([]byte(schemasString))
+}
+
+type ChartTest struct {
+	Name           string   `json:"name"`
+	ChartReference dx.Chart `json:"chartReference"`
+}
+
+func charts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+
+	parsedCharts, err := ParseCharts(config.Charts)
+	if err != nil {
+		logrus.Errorf("cannot parse charts from config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var charts []ChartTest
+	for _, chart := range parsedCharts {
+		chartReference := chartFromConfig(chart)
+
+		charts = append(charts, ChartTest{
+			Name:           chart.Name,
+			ChartReference: chartReference,
+		})
+	}
+
+	chartsString, err := json.Marshal(charts)
+	if err != nil {
+		logrus.Errorf("cannot serialize charts: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(chartsString))
 }
 
 func chartName(m *dx.Manifest) (string, error) {
