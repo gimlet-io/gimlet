@@ -36,7 +36,8 @@ class EnvConfig extends Component {
       defaultChart: reduxState.defaultChart,
       templateNames: [],
       templates: {},
-      selectedTemplate: "TODO",
+      selectedTemplate: "",
+      helmId: uuidv4(),
       fileInfos: reduxState.fileInfos,
 
       timeoutTimer: {},
@@ -116,7 +117,7 @@ class EnvConfig extends Component {
 
     gimletClient.getChartSchema(owner, repo, env, {})
       .then(data => {
-        this.setState({ chartSchemaLoading: false });
+        this.setState({ selectedTemplate: data.reference.name});
         store.dispatch({
           type: ACTION_TYPE_CHARTSCHEMA, payload: data
         });
@@ -449,7 +450,10 @@ class EnvConfig extends Component {
                               const chart = this.state.templates.find(t => t.name === template)
                               this.props.gimletClient.getChartSchema(owner, repo, env, chart.chartReference)
                                 .then(data => {
-                                  this.setState({ chartSchemaLoading: false });
+                                  this.setState({
+                                    chartSchemaLoading: false,
+                                    helmId: uuidv4(),
+                                  });
                                   this.props.store.dispatch({
                                     type: ACTION_TYPE_CHARTSCHEMA, payload: data
                                   });
@@ -611,7 +615,7 @@ class EnvConfig extends Component {
             <Spinner />
             :
             <HelmUI
-              key={uuidv4()}
+              key={this.state.helmId}
               schema={this.state.defaultChart.schema}
               config={this.state.defaultChart.uiSchema}
               values={this.state.values}
