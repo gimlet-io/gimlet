@@ -377,6 +377,11 @@ type envConfig struct {
 	DeployEvent     *dx.GitEvent
 }
 
+type ConfigChart struct {
+	Name      string   `json:"name"`
+	Reference dx.Chart `json:"reference"`
+}
+
 type Chart struct {
 	Repository string
 	Name       string

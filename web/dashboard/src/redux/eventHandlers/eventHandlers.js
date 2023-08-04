@@ -245,6 +245,17 @@ export function schemas(state, schemas) {
   return state;
 }
 
+export function charts(state, charts) {
+  const templateNames = [];
+  charts.forEach((chart) => {
+    templateNames.push(chart.name);
+    state.templates[chart.name] = chart.reference;
+  });
+  state.templateNames = templateNames;
+  console.log(state)
+  return state;
+}
+
 export function search(state, search) {
   state.search = search;
   return state;

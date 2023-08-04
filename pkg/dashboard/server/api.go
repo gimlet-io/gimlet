@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,9 +27,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"sigs.k8s.io/yaml"
 )
 
@@ -394,29 +390,22 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(schemasString))
 }
 
-type ChartTest struct {
-	Name           string   `json:"name"`
-	ChartReference dx.Chart `json:"chartReference"`
-}
-
 func charts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 
-	parsedCharts, err := ParseCharts(config.Charts)
+	parsedCharts, err := parseCharts(config.Charts)
 	if err != nil {
 		logrus.Errorf("cannot parse charts from config: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	var charts []ChartTest
+	var charts []ConfigChart
 	for _, chart := range parsedCharts {
-		chartReference := chartFromConfig(chart)
-
-		charts = append(charts, ChartTest{
-			Name:           chart.Name,
-			ChartReference: chartReference,
+		charts = append(charts, ConfigChart{
+			Name:      chart.Name,
+			Reference: chartFromConfig(chart),
 		})
 	}
 
@@ -431,39 +420,7 @@ func charts(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(chartsString))
 }
 
-func chartName(m *dx.Manifest) (string, error) {
-	chartLoader := action.NewShow(action.ShowChart)
-	var settings = helmCLI.New()
-	chartLoader.ChartPathOptions.RepoURL = m.Chart.Repository
-	chartLoader.ChartPathOptions.Version = m.Chart.Version
-
-	var err error
-	var tmpChartName string
-	if strings.HasPrefix(m.Chart.Name, "git@") ||
-		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
-		tmpChartName, err = dx.CloneChartFromRepo(m, "")
-		if err != nil {
-			return "", fmt.Errorf("cannot fetch chart from git %s", err.Error())
-		}
-		defer os.RemoveAll(tmpChartName)
-	} else {
-		tmpChartName = m.Chart.Name
-	}
-
-	chartPath, err := chartLoader.ChartPathOptions.LocateChart(tmpChartName, settings)
-	if err != nil {
-		return "", fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
-
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return "", fmt.Errorf("could not load %s Helm chart", err.Error())
-	}
-
-	return chart.Metadata.Name, nil
-}
-
-func ParseCharts(chartsString string) ([]*config.Chart, error) {
+func parseCharts(chartsString string) ([]*config.Chart, error) {
 	charts := []*config.Chart{}
 	splittedCharts := strings.Split(chartsString, ";")
 

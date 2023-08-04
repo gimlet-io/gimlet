@@ -8,6 +8,7 @@ import { Spinner } from "../repositories/repositories";
 import { v4 as uuidv4 } from 'uuid';
 import {
   ACTION_TYPE_CHARTSCHEMA,
+  ACTION_TYPE_CHARTS,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ADD_ENVCONFIG,
@@ -34,8 +35,10 @@ class EnvConfig extends Component {
 
     this.state = {
       defaultChart: reduxState.defaultChart,
-      templateNames: [],
-      templates: {},
+      initChart: {},
+      templateNames: reduxState.templateNames,
+      templates: reduxState.templates,
+      defaultTemplate: "",
       selectedTemplate: "",
       helmId: uuidv4(),
       fileInfos: reduxState.fileInfos,
@@ -58,6 +61,9 @@ class EnvConfig extends Component {
 
       this.setState({
         defaultChart: reduxState.defaultChart,
+        templateNames: reduxState.templateNames,
+        templates: reduxState.templates,
+
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -117,7 +123,10 @@ class EnvConfig extends Component {
 
     gimletClient.getChartSchema(owner, repo, env, {})
       .then(data => {
-        this.setState({ selectedTemplate: data.reference.name});
+        this.setState({ selectedTemplate: data.reference.name });
+        this.setState({ defaultTemplate: data.reference.name });
+        this.setState({ initChart: data });
+        // defaultSelectedTemplate, defaultSelectedChart
         store.dispatch({
           type: ACTION_TYPE_CHARTSCHEMA, payload: data
         });
@@ -126,10 +135,9 @@ class EnvConfig extends Component {
 
     gimletClient.getCharts()
       .then(data => {
-        let chartNames = []
-        data.forEach(chart => chartNames.push(chart.name));
-        this.setState({ templateNames: chartNames });
-        this.setState({ templates: data });
+        store.dispatch({
+          type: ACTION_TYPE_CHARTS, payload: data
+        });
       }, () => {/* Generic error handler deals with it */
       });
 
@@ -388,6 +396,9 @@ class EnvConfig extends Component {
       return null;
     }
 
+    console.log(this.state.templateNames)
+    console.log(this.state.templates)
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
@@ -442,13 +453,13 @@ class EnvConfig extends Component {
                         {({ active }) => (
                           <button
                             onClick={() => {
-                              this.setState({
-                                selectedTemplate: template,
-                                chartSchemaLoading: true,
-                              });
+                              if (template === this.state.selectedTemplate) {
+                                return
+                              }
+                              this.setState({ selectedTemplate: template });
+                              this.setState({ chartSchemaLoading: true });
 
-                              const chart = this.state.templates.find(t => t.name === template)
-                              this.props.gimletClient.getChartSchema(owner, repo, env, chart.chartReference)
+                              this.props.gimletClient.getChartSchema(owner, repo, env, this.state.templates[template])
                                 .then(data => {
                                   this.setState({
                                     chartSchemaLoading: false,
@@ -475,7 +486,7 @@ class EnvConfig extends Component {
               </span>
             </Menu>
           </div>
-          <div className="mt-8 mb-4 items-center">
+          <div className="mb-4 items-center">
             <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
               App name*
             </label>
@@ -737,6 +748,8 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
                 this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
+                this.setState({ selectedTemplate: this.state.defaultTemplate })
+                this.setState({ defaultChart: this.state.initChart })
               }}
             >
               Reset
