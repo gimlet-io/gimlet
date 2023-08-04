@@ -12,40 +12,38 @@ import (
 )
 
 func Test_create(t *testing.T) {
-	// t.Run("Should resolve <repo>/<chart> format chart names from local helm repo", func(t *testing.T) {
-	// 	createdManifestPath, err := ioutil.TempFile("", "gimlet-cli-test")
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	defer os.Remove(createdManifestPath.Name())
+	t.Run("Should resolve <repo>/<chart> format chart names from local helm repo", func(t *testing.T) {
+		createdManifestPath, err := ioutil.TempFile("", "gimlet-cli-test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(createdManifestPath.Name())
 
-	// 	// TODO: set up the onechart repo with helm add in this test so it can run on CI
+		args := strings.Split("gimlet manifest create", " ")
+		args = append(args, "--env", "staging")
+		args = append(args, "--app", "my-app")
+		args = append(args, "--namespace", "staging")
+		args = append(args, "--chart", "onechart/onechart")
+		args = append(args, "-o", createdManifestPath.Name())
 
-	// 	args := strings.Split("gimlet manifest create", " ")
-	// 	args = append(args, "--env", "staging")
-	// 	args = append(args, "--app", "my-app")
-	// 	args = append(args, "--namespace", "staging")
-	// 	args = append(args, "--chart", "onechart/onechart")
-	// 	args = append(args, "-o", createdManifestPath.Name())
+		err = commands.Run(&Command, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		manifestString, err := ioutil.ReadFile(createdManifestPath.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	err = commands.Run(&Command, args)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	manifestString, err := ioutil.ReadFile(createdManifestPath.Name())
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-
-	// 	var m dx.Manifest
-	// 	err = yaml.Unmarshal(manifestString, &m)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	if m.Chart.Repository != "https://chart.onechart.dev" {
-	// 		t.Error("Should resolve chart repo url")
-	// 	}
-	// })
+		var m dx.Manifest
+		err = yaml.Unmarshal(manifestString, &m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if m.Chart.Repository != "https://chart.onechart.dev" {
+			t.Error("Should resolve chart repo url")
+		}
+	})
 
 	t.Run("Should resolve git@github.com:gimlet-io/onechart.git format chart names from git", func(t *testing.T) {
 		createdManifestPath, err := ioutil.TempFile("", "gimlet-cli-test")
