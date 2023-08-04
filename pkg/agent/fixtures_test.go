@@ -1,3 +1,4 @@
+//go:build fixtures
 // +build fixtures
 
 package agent
