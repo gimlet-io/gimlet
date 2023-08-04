@@ -130,6 +130,10 @@ export default class DeployPanel extends Component {
       )
     }
 
+    return compact ? this.compactEnvState(env, state) : this.extendedEnvState(env, state)
+  }
+
+  compactEnvState(env, state) {
     const kustomizationWidgets = state.fluxState.kustomizations.map(kustomization => {
       let name = ""
       if (kustomization.name.endsWith("-infra")){
@@ -162,17 +166,95 @@ export default class DeployPanel extends Component {
         <div key={kustomization.namespace + "/" + kustomization.name} title={title}>
           <p>
             <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
-            {name}: {status} {compact ? statusDesc.substring(0, 27) : statusDesc}{compact && statusDesc.length>27 ? "..." : ""} {dateLabel} ago
+            {name}: {status} {statusDesc.substring(0, 27)}{statusDesc.length>27 ? "..." : ""} {dateLabel} ago
           </p>
         </div>
       )
     });
 
     return (
-        <div className="w-full truncate" key={env.name}>
+      <div className="w-full truncate" key={env.name}>
+          <p className="font-semibold">{`${env.name.toUpperCase()}`}</p>
+          <div className="ml-2">
+            <div>{kustomizationWidgets}</div>
+          </div>
+      </div>
+    );
+  }
+
+  extendedEnvState(env, state) {
+    const gitrepositoryWidgets = state.fluxState.gitRepositories.map(repository => {
+      let color = "bg-yellow-400";
+      let status = "applying";
+      // let statusDesc = "";
+
+      if (repository.status.includes("Succeeded")) {
+          color = "text-green-400";
+          status = "Applied";
+          // statusDesc = repository.statusDesc.replace('main@sha1:', '').replace("Applied revision: ", "").substring(0, 8)
+      } else if (repository.status.includes("Failed")) {
+          color = "text-red-400";
+          status = "failed";
+          // statusDesc = repository.statusDesc;
+      }
+
+      // const desc = repository.statusDesc.replace('main@sha1:', '')
+      const title = repository.status + " at " + new Date(repository.lastTransitionTime*1000) + "\n"// + desc
+      const dateLabel = formatDistance(repository.lastTransitionTime * 1000, new Date());
+      const nameAndNamespace = repository.namespace + "/" + repository.name;
+
+      return (
+        <div key={nameAndNamespace} title={title}>
+          <p>
+              <span>
+                <svg className={color + " inline fill-current h-5 w-5 mr-1"} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20">
+                  <path
+                    d="M0 14v1.498c0 .277.225.502.502.502h.997A.502.502 0 0 0 2 15.498V14c0-.959.801-2.273 2-2.779V9.116C1.684 9.652 0 11.97 0 14zm12.065-9.299l-2.53 1.898c-.347.26-.769.401-1.203.401H6.005C5.45 7 5 7.45 5 8.005v3.991C5 12.55 5.45 13 6.005 13h2.327c.434 0 .856.141 1.203.401l2.531 1.898a3.502 3.502 0 0 0 2.102.701H16V4h-1.832c-.758 0-1.496.246-2.103.701zM17 6v2h3V6h-3zm0 8h3v-2h-3v2z"
+                  />
+                </svg>
+              </span>
+            <span className="font-bold">{nameAndNamespace}</span>: "{repository.statusDesc}" {dateLabel} ago
+          </p>
+        </div>
+      )
+    });
+
+    const kustomizationWidgets = state.fluxState.kustomizations.map(kustomization => {
+      let color = "bg-yellow-400";
+      let status = "applying";
+      let statusDesc = "";
+
+      if (kustomization.status.includes("Succeeded")) {
+          color = "bg-green-400";
+          statusDesc = kustomization.statusDesc
+      } else if (kustomization.status.includes("Failed")) {
+          color = "bg-red-400";
+          statusDesc = kustomization.statusDesc;
+      }
+
+      const desc = kustomization.statusDesc.replace('main@sha1:', '')
+      const title = kustomization.status + " at " + new Date(kustomization.lastTransitionTime*1000) + "\n" + desc
+      const dateLabel = formatDistance(kustomization.lastTransitionTime * 1000, new Date());
+      const nameAndNamespace = kustomization.namespace + "/" + kustomization.name;
+
+      return (
+        <div key={nameAndNamespace} title={title}>
+          <p>
+            <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
+            <span className="font-bold">{nameAndNamespace}</span>: "{statusDesc}" {dateLabel} ago
+          </p>
+        </div>
+      )
+    });
+
+    return (
+        <div className="w-full truncate text-lg" key={env.name}>
             <p className="font-semibold">{`${env.name.toUpperCase()}`}</p>
             <div className="ml-2">
-              <div>{kustomizationWidgets}</div>
+              <h3 className="mt-2 text-lg">Git Repositories:</h3>
+              <div className="ml-2">{gitrepositoryWidgets}</div>
+              <h3 className="mt-4 text-lg">Kustomizations:</h3>
+              <div className="ml-2">{kustomizationWidgets}</div>
             </div>
         </div>
     );
