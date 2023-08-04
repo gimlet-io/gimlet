@@ -42,7 +42,6 @@ require (
 	github.com/fluxcd/pkg/sourceignore v0.3.4
 	github.com/fluxcd/pkg/ssh v0.8.0
 	github.com/fluxcd/source-controller/api v1.0.0
-	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/chi/v5 v5.0.8
