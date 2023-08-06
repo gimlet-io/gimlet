@@ -14,6 +14,7 @@ test-prep:
 	touch pkg/commands/chart/bundle.js
 	touch pkg/commands/chart/bundle.js.LICENSE.txt
 	touch pkg/commands/chart/index.html
+	helm repo add onechart https://chart.onechart.dev
 
 test: test-prep
 	go test -timeout 60s $(shell go list ./...)
