@@ -89,13 +89,6 @@ EOF
 
 source ~/.gimlet/config`}
                   </code>
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Getting the latest releases
-                  </h3>
-                  <code
-                    className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
-                    {`gimlet release status --env staging`}
-                  </code>
                 </div>
               </div>
             </div>
