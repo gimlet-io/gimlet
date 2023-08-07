@@ -13,6 +13,13 @@ jobs:
       uses: styfle/cancel-workflow-action@0.9.1
       with:
         access_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 3.11.1
+        token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
