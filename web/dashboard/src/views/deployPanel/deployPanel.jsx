@@ -185,17 +185,11 @@ export default class DeployPanel extends Component {
   extendedEnvState(env, state) {
     const gitrepositoryWidgets = state.fluxState.gitRepositories.map(repository => {
       let color = "bg-yellow-400";
-      let status = "applying";
-      // let statusDesc = "";
 
       if (repository.status.includes("Succeeded")) {
           color = "text-green-400";
-          status = "Applied";
-          // statusDesc = repository.statusDesc.replace('main@sha1:', '').replace("Applied revision: ", "").substring(0, 8)
       } else if (repository.status.includes("Failed")) {
           color = "text-red-400";
-          status = "failed";
-          // statusDesc = repository.statusDesc;
       }
 
       // const desc = repository.statusDesc.replace('main@sha1:', '')
@@ -221,7 +215,6 @@ export default class DeployPanel extends Component {
 
     const kustomizationWidgets = state.fluxState.kustomizations.map(kustomization => {
       let color = "bg-yellow-400";
-      let status = "applying";
       let statusDesc = "";
 
       if (kustomization.status.includes("Succeeded")) {
