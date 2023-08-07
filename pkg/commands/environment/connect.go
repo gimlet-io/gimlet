@@ -10,7 +10,6 @@ import (
 	"sort"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/client"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
@@ -83,26 +82,25 @@ func connect(c *cli.Context) error {
 }
 
 func applyManifests(files map[string]string, filesPath string) {
-	sortedFiles := sortByFluxFirst(files)
+	sortedKeys := sortByFluxFirst(files)
 
-	for fileName, content := range sortedFiles {
+	for _, fileName := range sortedKeys {
+		content := files[fileName]
 		filePath := filepath.Join(filesPath, fileName)
 		err := ioutil.WriteFile(filePath, []byte(fmt.Sprintf("%v", content)), 0666)
 		if err != nil {
-			logrus.Warnf("cannot write files to %s", filePath)
+			panic(err)
 		}
 
 		infos, err := getObjects(filePath)
 		if err != nil {
-			logrus.Warnf("cannot get objects: %s", err)
-			continue
+			panic(err)
 		}
 
 		for _, info := range infos {
 			response, err := applyObject(info)
 			if err != nil {
-				logrus.Warnf("cannot apply object: %s", err)
-				continue
+				panic(err)
 			}
 			fmt.Println(response)
 		}
@@ -110,17 +108,17 @@ func applyManifests(files map[string]string, filesPath string) {
 		if fileName == "flux.yaml" {
 			err := waitFor("crd/gitrepositories.source.toolkit.fluxcd.io")
 			if err != nil {
-				logrus.Warnf("cannot wait for crd/gitrepositories.source.toolkit.fluxcd.io: %s", err)
+				panic(err)
 			}
 			err = waitFor("crd/kustomizations.kustomize.toolkit.fluxcd.io")
 			if err != nil {
-				logrus.Warnf("cannot wait for crd/kustomizations.kustomize.toolkit.fluxcd.io: %s", err)
+				panic(err)
 			}
 		}
 	}
 }
 
-func sortByFluxFirst(files map[string]string) map[string]string {
+func sortByFluxFirst(files map[string]string) []string {
 	keys := make([]string, 0, len(files))
 	for k := range files {
 		keys = append(keys, k)
@@ -137,9 +135,5 @@ func sortByFluxFirst(files map[string]string) map[string]string {
 		return keys[i] < keys[j]
 	})
 
-	sortedFiles := make(map[string]string)
-	for _, k := range keys {
-		sortedFiles[k] = files[k]
-	}
-	return sortedFiles
+	return keys
 }
