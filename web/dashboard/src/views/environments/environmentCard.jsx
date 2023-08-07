@@ -19,7 +19,7 @@ import {
 import { renderPullRequests } from '../../components/env/env';
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 
-const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl, userToken }) => {
+const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refreshEnvs, tab, envFromParams, releaseStatuses, popupWindow, pullRequests, scmUrl, userToken, settings }) => {
   const [repoPerEnv, setRepoPerEnv] = useState(true)
   const [kustomizationPerApp, setKustomizationPerApp] = useState(false)
   const [infraRepo, setInfraRepo] = useState("gitops-infra")
@@ -479,7 +479,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
             {isOnline &&
             <>
               <div className="hidden sm:block">
-                {env.builtIn && builtInEnvInfo()}
+                {env.builtIn && settings.provider && settings.provider !== "" && builtInEnvInfo()}
                 <div className="border-b border-gray-200">
                   <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     {tabs.map((tab) => (

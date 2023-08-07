@@ -23,7 +23,7 @@ class Environments extends Component {
             popupWindow: reduxState.popupWindow,
             releaseStatuses: reduxState.releaseStatuses,
             scmUrl: reduxState.settings.scmUrl,
-            host: reduxState.settings.host
+            settings: reduxState.settings,
         };
         this.props.store.subscribe(() => {
             let reduxState = this.props.store.getState();
@@ -35,7 +35,7 @@ class Environments extends Component {
                 popupWindow: reduxState.popupWindow,
                 releaseStatuses: reduxState.releaseStatuses,
                 scmUrl: reduxState.settings.scmUrl,
-                host: reduxState.settings.host
+                settings: reduxState.settings
             });
         });
 
@@ -65,7 +65,7 @@ class Environments extends Component {
     }
 
     getEnvironmentCards() {
-        const { connectedAgents, envs, releaseStatuses, popupWindow, scmUrl, user } = this.state;
+        const { connectedAgents, envs, releaseStatuses, popupWindow, scmUrl, user, settings } = this.state;
         const { environment, tab } = this.props.match.params;
         const sortedEnvs = this.sortingByName(envs);
 
@@ -85,6 +85,7 @@ class Environments extends Component {
                 pullRequests={env.pullRequests}
                 scmUrl={scmUrl}
                 userToken={user.token}
+                settings={settings}
             />))
         )
     }
@@ -208,6 +209,7 @@ class Environments extends Component {
                     <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                         <div className="px-4 py-8 sm:px-0">
                             {this.getEnvironmentCards()}
+                            {this.state.settings.provider && this.state.settings.provider !== "" &&
                             <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
                                 <div className="px-4 py-5 sm:px-6">
                                     <h3 className="text-lg leading-6 font-medium text-gray-900">Create new environment</h3>
@@ -228,6 +230,7 @@ class Environments extends Component {
                                     </div>
                                 </div>
                             </div>
+                            }
                         </div>
                     </div>
                 </main>
