@@ -14,7 +14,7 @@ Gimlet composes the best of open-source out of the box.
 
 ## Installation
 
-### CLI
+#### CLI
 Linux / Mac
 
 ```console
@@ -24,7 +24,7 @@ sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version
 ```
 
-### Dashboard
+#### Dashboard
 
 Gimlet is installable by a kubectl apply:
 
