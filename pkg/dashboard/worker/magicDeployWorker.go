@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
@@ -75,6 +76,7 @@ func createDummyArtifact(
 	env string,
 	image, tag string,
 	envConfig *dx.Manifest,
+	version dx.Version,
 ) (*dx.Artifact, error) {
 
 	if envConfig == nil {
@@ -108,18 +110,7 @@ func createDummyArtifact(
 		Created:      time.Now().Unix(),
 		Fake:         true,
 		Environments: []*dx.Manifest{envConfig},
-		Version: dx.Version{
-			RepositoryName: owner + "/" + repo,
-			SHA:            sha,
-			Created:        time.Now().Unix(),
-			Branch:         "main",
-			AuthorName:     "TODO",
-			AuthorEmail:    "TODO",
-			CommitterName:  "TODO",
-			CommitterEmail: "TODO",
-			Message:        "TODO",
-			URL:            "TODO",
-		},
+		Version:      version,
 		Vars: map[string]string{
 			"SHA": sha,
 		},
@@ -149,7 +140,7 @@ func createDeployRequest(
 	gitRepoCache *nativeGit.RepoCache,
 	builtInEnvName string,
 ) {
-	envConfig, _ := defaultEnvConfig(
+	envConfig, version, _ := defaultEnvConfig(
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha, builtInEnvName,
 		gitRepoCache,
 	)
@@ -160,6 +151,7 @@ func createDeployRequest(
 		"127.0.0.1:32447/"+deployRequest.Repo,
 		tag,
 		envConfig,
+		version,
 	)
 	if err != nil {
 		logrus.Errorf("cannot create artifact: %s", err)
@@ -217,18 +209,35 @@ func defaultEnvConfig(
 	owner string, repoName string, sha string, env string,
 	gitRepoCache *nativeGit.RepoCache,
 
-) (*dx.Manifest, error) {
+) (*dx.Manifest, dx.Version, error) {
 	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
 	if err != nil {
-		return nil, fmt.Errorf("cannot get repo: %s", err)
+		return nil, dx.Version{}, fmt.Errorf("cannot get repo: %s", err)
+	}
+
+	c, err := repo.CommitObject(plumbing.NewHash(sha))
+	if err != nil {
+		return nil, dx.Version{}, fmt.Errorf("cannot get commit: %s", err)
+	}
+	version := dx.Version{
+		RepositoryName: owner + "/" + repoName,
+		SHA:            sha,
+		Created:        time.Now().Unix(),
+		Branch:         "TODO",
+		AuthorName:     c.Author.Name,
+		AuthorEmail:    c.Author.Email,
+		CommitterName:  c.Committer.Name,
+		CommitterEmail: c.Committer.Email,
+		Message:        c.Message,
+		URL:            "TODO",
 	}
 
 	files, err := nativeGit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
-			return nil, nil
+			return nil, version, nil
 		} else {
-			return nil, fmt.Errorf("cannot list files in .gimlet/: %s", err)
+			return nil, version, fmt.Errorf("cannot list files in .gimlet/: %s", err)
 		}
 	}
 
@@ -240,9 +249,9 @@ func defaultEnvConfig(
 			continue
 		}
 		if envConfig.Env == env && envConfig.App == repoName {
-			return &envConfig, nil
+			return &envConfig, version, nil
 		}
 	}
 
-	return nil, nil
+	return nil, version, nil
 }
