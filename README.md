@@ -5,11 +5,12 @@
 
 ## Overview
 
-With Gimlet, you can start with one-click-deploys then stair-step your way to a gitops based application delivery platform when you need to. Gimlet features the best of open-source out of the box.
+Kubernetes deployment tooling.
 
-Gimlet is a command line tool and a dashboard that packages a set of conventions and matching workflows to manage a gitops developer platform effectively.
+- You can start with as little Kubernetes as you want - even on your laptop.
+- Then progress to a gitops based application delivery platform when you need to.
 
-Caters for developer and cluster admin workflows.
+Gimlet composes the best of open-source out of the box.
 
 ## Installation
 
