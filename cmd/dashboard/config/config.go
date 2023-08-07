@@ -24,7 +24,7 @@ func defaults(c *Config) {
 		c.Database.Driver = "sqlite"
 	}
 	if c.Database.Config == "" {
-		c.Database.Config = "gimlet-dashboard.sqlite"
+		c.Database.Config = "gimlet-dashboard.sqlite?_pragma=busy_timeout=10000"
 	}
 	if c.RepoCachePath == "" {
 		c.RepoCachePath = "/tmp/gimlet-dashboard"

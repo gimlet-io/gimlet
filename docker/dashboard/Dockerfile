@@ -4,7 +4,7 @@ RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
 ENV DATABASE_DRIVER=sqlite
-ENV DATABASE_CONFIG=/var/lib/gimlet-dashboard/gimlet-dashboard.sqlite
+ENV DATABASE_CONFIG=/var/lib/gimlet-dashboard/gimlet-dashboard.sqlite?_pragma=busy_timeout=10000
 ENV XDG_CACHE_HOME /var/lib/gimlet-dashboard
 ENV GIT_ROOT=/var/lib/gimlet-dashboard/git-root/
 
