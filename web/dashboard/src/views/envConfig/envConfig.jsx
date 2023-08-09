@@ -34,7 +34,6 @@ class EnvConfig extends Component {
 
     this.state = {
       defaultChart: reduxState.defaultChart,
-      initChart: {},
       templateNames: reduxState.templateNames,
       templates: reduxState.templates,
       defaultTemplate: "",
@@ -61,7 +60,6 @@ class EnvConfig extends Component {
         defaultChart: reduxState.defaultChart,
         templateNames: reduxState.templateNames,
         templates: reduxState.templates,
-
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -121,10 +119,10 @@ class EnvConfig extends Component {
 
     gimletClient.getChartSchema(owner, repo, env, {})
       .then(data => {
-        this.setState({ selectedTemplate: data.reference.name });
-        this.setState({ defaultTemplate: data.reference.name });
-        this.setState({ initChart: data });
-        // defaultSelectedTemplate, defaultSelectedChart
+        this.setState({ 
+          selectedTemplate: data.reference.name,
+          defaultTemplate: data.reference.name,
+        });
         store.dispatch({
           type: ACTION_TYPE_CHARTSCHEMA, payload: data
         });
@@ -160,7 +158,7 @@ class EnvConfig extends Component {
   ensureRepoAssociationExists(repoName, repoMetas) {
     if (this.state.defaultState && repoMetas) {
       if (!this.state.defaultState.gitSha) {
-        this.setGitSha("{{ .SHA }}");
+          this.setGitSha("{{ .SHA }}");
       }
 
       if (!this.state.defaultState.gitRepository) {
@@ -447,191 +445,189 @@ class EnvConfig extends Component {
         </button>
 
         <div className="mt-8 mb-16">
-          <div className="mb-4 items-center">
-            <div className="text-gray-700 block text-sm font-medium">Deployment template</div>
-            <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+        <div className="mb-4 items-center">
+          <div className="text-gray-700 block text-sm font-medium">Deployment template</div>
+          <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+            <Menu.Button
+              className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700">
+              {this.state.selectedTemplate}
+            </Menu.Button>
+            <span className="-ml-px relative block">
               <Menu.Button
-                className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
-              >
-                {this.state.selectedTemplate}
+                className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                <span className="sr-only">Open options</span>
+                <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
               </Menu.Button>
-              <span className="-ml-px relative block">
-                <Menu.Button
-                  className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
-                  <span className="sr-only">Open options</span>
-                  <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                </Menu.Button>
-                <Menu.Items
-                  className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    {this.state.templateNames.map((template) => (
-                      <Menu.Item key={template}>
-                        {({ active }) => (
-                          <button
-                            onClick={() => this.fetchChart(template)}
-                            className={(
-                              active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                              ' block px-4 py-2 text-sm w-full text-left'
-                            }
-                          >
-                            {template}
-                          </button>
-                        )}
-                      </Menu.Item>
-                    ))}
-                  </div>
-                </Menu.Items>
-              </span>
-            </Menu>
+              <Menu.Items
+                className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  {this.state.templateNames.map((template) => (
+                  <Menu.Item key={template}>
+                    {({ active }) => (
+                    <button onClick={()=> this.fetchChart(template)}
+                      className={(
+                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                      ' block px-4 py-2 text-sm w-full text-left'
+                      }
+                      >
+                      {template}
+                    </button>
+                    )}
+                  </Menu.Item>
+                  ))}
+                </div>
+              </Menu.Items>
+            </span>
+          </Menu>
+        </div>
+        <div className="mb-4 items-center">
+          <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+            App name*
+          </label>
+          <input
+            type="text"
+            name="appName"
+            id="appName"
+            disabled={action !== "new"}
+            value={this.state.appName}
+            onChange={e => { this.setState({ appName: e.target.value }) }}
+            className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
+          />
+        </div>
+        <div className="mb-4 items-center">
+          <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+            Namespace*
+          </label>
+          <input
+            type="text"
+            name="namespace"
+            id="namespace"
+            value={this.state.namespace}
+            onChange={e => { this.setState({ namespace: e.target.value }) }}
+            className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+          />
+        </div>
+        <div className="mb-4 items-center">
+          <div className="text-gray-700 block text-sm font-medium">Policy based releases</div>
+          <div className="text-sm mb-4 text-gray-500 leading-loose">
+            You can automate releases to your staging or production environment.
           </div>
-          <div className="mb-4 items-center">
-            <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
-              App name*
-            </label>
-            <input
-              type="text"
-              name="appName"
-              id="appName"
-              disabled={action !== "new"}
-              value={this.state.appName}
-              onChange={e => { this.setState({ appName: e.target.value }) }}
-              className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
-            />
-          </div>
-          <div className="mb-4 items-center">
-            <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
-              Namespace*
-            </label>
-            <input
-              type="text"
-              name="namespace"
-              id="namespace"
-              value={this.state.namespace}
-              onChange={e => { this.setState({ namespace: e.target.value }) }}
-              className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-            />
-          </div>
-          <div className="mb-4 items-center">
-            <div className="text-gray-700 block text-sm font-medium">Policy based releases</div>
-            <div className="text-sm mb-4 text-gray-500 leading-loose">
-              You can automate releases to your staging or production environment.
-            </div>
-            <div className="max-w-lg flex rounded-md">
-              <Switch
-                checked={this.state.useDeployPolicy}
-                onChange={() => this.setState({ useDeployPolicy: !this.state.useDeployPolicy })}
+          <div className="max-w-lg flex rounded-md">
+            <Switch
+              checked={this.state.useDeployPolicy}
+              onChange={() => this.setState({ useDeployPolicy: !this.state.useDeployPolicy })}
+              className={(
+                this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
+                " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
+              }
+            >
+              <span className="sr-only">Use setting</span>
+              <span
+                aria-hidden="true"
                 className={(
-                  this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
-                  " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
+                  this.state.useDeployPolicy ? "translate-x-5" : "translate-x-0") +
+                  " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
                 }
-              >
-                <span className="sr-only">Use setting</span>
-                <span
-                  aria-hidden="true"
-                  className={(
-                    this.state.useDeployPolicy ? "translate-x-5" : "translate-x-0") +
-                    " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
-                  }
-                />
-              </Switch>
+              />
+            </Switch>
+          </div>
+        </div>
+
+        {this.state.useDeployPolicy &&
+          <div className="ml-8 mb-8">
+            <div className="mb-4 items-center">
+              <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
+                Deploy event*
+              </label>
+              <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                >
+
+                  {this.state.selectedDeployEvent}
+                </Menu.Button>
+                <span className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      {this.state.deployEvents.map((deployEvent) => (
+                        <Menu.Item key={`${deployEvent}`}>
+                          {({ active }) => (
+                            <button
+                              onClick={() => {
+                                this.setState({
+                                  selectedDeployEvent: deployEvent,
+                                })
+                              }}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {deployEvent}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </span>
+              </Menu>
+            </div>
+            <div className="mb-4 items-center">
+              <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
+                {`${this.state.selectedDeployEvent === "tag" ? "Tag" : "Branch"} filter`}
+              </label>
+              <input
+                type="text"
+                name="deployFilterInput"
+                id="deployFilterInput"
+                value={this.state.deployFilterInput ?? ""}
+                onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
+                className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+              />
+              <ul className="list-none text-sm text-gray-500 mt-2">
+                {this.state.selectedDeployEvent === "tag" ?
+                  <>
+                    <li>
+                      Filter tags to deploy based on tag name patterns.
+                    </li>
+                    <li>
+                      Use glob patterns like <code>`v1.*`</code> or negated conditions like <code>`!v2.*`</code>.
+                    </li>
+                  </>
+                  :
+                  <>
+                    <li>
+                      Filter branches to deploy based on branch name patterns.
+                    </li>
+                    <li>
+                      Use glob patterns like <code>`feature/*`</code> or negated conditions like <code>`!main`</code>.
+                    </li>
+                  </>}
+              </ul>
             </div>
           </div>
-
-          {this.state.useDeployPolicy &&
-            <div className="ml-8 mb-8">
-              <div className="mb-4 items-center">
-                <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
-                  Deploy event*
-                </label>
-                <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
-                  <Menu.Button
-                    className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
-                  >
-
-                    {this.state.selectedDeployEvent}
-                  </Menu.Button>
-                  <span className="-ml-px relative block">
-                    <Menu.Button
-                      className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
-                      <span className="sr-only">Open options</span>
-                      <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                    </Menu.Button>
-                    <Menu.Items
-                      className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <div className="py-1">
-                        {this.state.deployEvents.map((deployEvent) => (
-                          <Menu.Item key={`${deployEvent}`}>
-                            {({ active }) => (
-                              <button
-                                onClick={() => {
-                                  this.setState({
-                                    selectedDeployEvent: deployEvent,
-                                  })
-                                }}
-                                className={(
-                                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                                  ' block px-4 py-2 text-sm w-full text-left'
-                                }
-                              >
-                                {deployEvent}
-                              </button>
-                            )}
-                          </Menu.Item>
-                        ))}
-                      </div>
-                    </Menu.Items>
-                  </span>
-                </Menu>
-              </div>
-              <div className="mb-4 items-center">
-                <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
-                  {`${this.state.selectedDeployEvent === "tag" ? "Tag" : "Branch"} filter`}
-                </label>
-                <input
-                  type="text"
-                  name="deployFilterInput"
-                  id="deployFilterInput"
-                  value={this.state.deployFilterInput ?? ""}
-                  onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
-                  className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
-                />
-                <ul className="list-none text-sm text-gray-500 mt-2">
-                  {this.state.selectedDeployEvent === "tag" ?
-                    <>
-                      <li>
-                        Filter tags to deploy based on tag name patterns.
-                      </li>
-                      <li>
-                        Use glob patterns like <code>`v1.*`</code> or negated conditions like <code>`!v2.*`</code>.
-                      </li>
-                    </>
-                    :
-                    <>
-                      <li>
-                        Filter branches to deploy based on branch name patterns.
-                      </li>
-                      <li>
-                        Use glob patterns like <code>`feature/*`</code> or negated conditions like <code>`!main`</code>.
-                      </li>
-                    </>}
-                </ul>
-              </div>
-            </div>
-          }
+        }
         </div>
         <div className="container mx-auto m-8">
-          {this.state.chartSchemaLoading ?
-            <Spinner />
-            :
-            <HelmUI
-              key={this.state.defaultChart.reference.name}
-              schema={this.state.defaultChart.schema}
-              config={this.state.defaultChart.uiSchema}
-              values={this.state.values}
-              setValues={this.setValues}
-              validate={true}
-              validationCallback={this.validationCallback}
-            />}
+        {this.state.chartSchemaLoading ?
+          <Spinner />
+          :
+          <HelmUI
+            key={this.state.defaultChart.reference.name}
+            schema={this.state.defaultChart.schema}
+            config={this.state.defaultChart.uiSchema}
+            values={this.state.values}
+            setValues={this.setValues}
+            validate={true}
+            validationCallback={this.validationCallback}
+          />}
           <div className="w-full mt-16">
             <ReactDiffViewer
               oldValue={YAML.stringify(this.state.configFile)}
@@ -747,7 +743,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
                 this.setState({ selectedTemplate: this.state.defaultTemplate })
-                this.setState({ defaultChart: this.state.initChart })
+                this.fetchChart(this.state.defaultTemplate)
               }}
             >
               Reset
@@ -827,14 +823,14 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defa
         return {
           app: config,
           namespace: "default",
-          env: env,
+          env:       env,
           chart: defaultChart.reference,
           values: {
             gitRepository: repoName,
-            gitSha: "{{ .SHA }}",
+            gitSha:        "{{ .SHA }}",
             image: {
-              repository: "127.0.0.1:32447/" + repoOnly,
-              tag: "{{ .SHA }}",
+              repository: "127.0.0.1:32447/"+repoOnly,
+              tag:        "{{ .SHA }}",
               pullPolicy: "Always",
             },
             resources: {
