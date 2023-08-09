@@ -252,7 +252,6 @@ export function charts(state, charts) {
     state.templates[chart.name] = chart.reference;
   });
   state.templateNames = templateNames;
-  console.log(state)
   return state;
 }
 

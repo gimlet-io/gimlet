@@ -5,7 +5,6 @@ import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
 import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
-import { v4 as uuidv4 } from 'uuid';
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_CHARTS,
@@ -40,7 +39,6 @@ class EnvConfig extends Component {
       templates: reduxState.templates,
       defaultTemplate: "",
       selectedTemplate: "",
-      helmId: uuidv4(),
       fileInfos: reduxState.fileInfos,
 
       timeoutTimer: {},
@@ -377,6 +375,27 @@ class EnvConfig extends Component {
     return nonDefaultConfigFile;
   }
 
+  fetchChart(template) {
+    const { owner, repo, env } = this.props.match.params;
+
+    if (template === this.state.selectedTemplate) {
+      return
+    }
+
+    this.setState({ selectedTemplate: template });
+    this.setState({ chartSchemaLoading: true });
+
+    this.props.gimletClient.getChartSchema(owner, repo, env, this.state.templates[template])
+      .then(data => {
+        this.setState({ chartSchemaLoading: false });
+        this.props.store.dispatch({
+          type: ACTION_TYPE_CHARTSCHEMA, payload: data
+        });
+      }, () => {/* Generic error handler deals with it */
+        this.setState({ chartSchemaLoading: false });
+      });
+  }
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -395,9 +414,6 @@ class EnvConfig extends Component {
     if (!this.state.values) {
       return null;
     }
-
-    console.log(this.state.templateNames)
-    console.log(this.state.templates)
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -452,25 +468,7 @@ class EnvConfig extends Component {
                       <Menu.Item key={template}>
                         {({ active }) => (
                           <button
-                            onClick={() => {
-                              if (template === this.state.selectedTemplate) {
-                                return
-                              }
-                              this.setState({ selectedTemplate: template });
-                              this.setState({ chartSchemaLoading: true });
-
-                              this.props.gimletClient.getChartSchema(owner, repo, env, this.state.templates[template])
-                                .then(data => {
-                                  this.setState({
-                                    chartSchemaLoading: false,
-                                    helmId: uuidv4(),
-                                  });
-                                  this.props.store.dispatch({
-                                    type: ACTION_TYPE_CHARTSCHEMA, payload: data
-                                  });
-                                }, () => {/* Generic error handler deals with it */
-                                });
-                            }}
+                            onClick={() => this.fetchChart(template)}
                             className={(
                               active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
                               ' block px-4 py-2 text-sm w-full text-left'
@@ -626,7 +624,7 @@ class EnvConfig extends Component {
             <Spinner />
             :
             <HelmUI
-              key={this.state.helmId}
+              key={this.state.defaultChart.reference.name}
               schema={this.state.defaultChart.schema}
               config={this.state.defaultChart.uiSchema}
               values={this.state.values}
