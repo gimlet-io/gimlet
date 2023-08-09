@@ -370,10 +370,6 @@ class EnvConfig extends Component {
   }
 
   changeDeploymentTemplate(template) {
-    if (template === this.state.selectedTemplate) {
-      return
-    }
-
     this.setState({ selectedTemplate: template });
     this.setState({ values: Object.assign({}, this.state.defaultState) });
     this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
@@ -394,15 +390,7 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!this.state.defaultChart) {
-      return null;
-    }
-
-    if (!this.state.values) {
-      return null;
-    }
-
-    if (!this.state.templates) {
+    if (!this.state.defaultChart || !this.state.values || !this.state.templates) {
       return <Spinner />;
     }
 

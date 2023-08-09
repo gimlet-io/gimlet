@@ -388,8 +388,9 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 
 	var charts []DeploymentTemplate
 	for _, chart := range parsedCharts {
+		chartReference := chartFromConfig(chart)
 		m := &dx.Manifest{
-			Chart: chartFromConfig(chart),
+			Chart: chartReference,
 		}
 
 		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
@@ -417,7 +418,7 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 
 		charts = append(charts, DeploymentTemplate{
 			Name:      chart.Name,
-			Reference: chartFromConfig(chart),
+			Reference: chartReference,
 			Schema:    schema,
 			UISchema:  schemaUI,
 		})
