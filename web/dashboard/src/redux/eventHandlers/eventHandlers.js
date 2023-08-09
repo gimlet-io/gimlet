@@ -241,17 +241,19 @@ export function application(state, application) {
 }
 
 export function schemas(state, schemas) {
-  state.defaultChart = schemas;
+  const referenceName = schemas.reference.name
+  if (!state.defaultChart[referenceName]) {
+    state.defaultChart[referenceName] = {}
+  }
+
+  state.defaultChart[referenceName] = schemas;
   return state;
 }
 
 export function charts(state, charts) {
-  const templateNames = [];
   charts.forEach((chart) => {
-    templateNames.push(chart.name);
     state.templates[chart.name] = chart.reference;
   });
-  state.templateNames = templateNames;
   return state;
 }
 

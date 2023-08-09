@@ -34,7 +34,6 @@ class EnvConfig extends Component {
 
     this.state = {
       defaultChart: reduxState.defaultChart,
-      templateNames: reduxState.templateNames,
       templates: reduxState.templates,
       defaultTemplate: "",
       selectedTemplate: "",
@@ -58,7 +57,6 @@ class EnvConfig extends Component {
 
       this.setState({
         defaultChart: reduxState.defaultChart,
-        templateNames: reduxState.templateNames,
         templates: reduxState.templates,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
@@ -281,8 +279,9 @@ class EnvConfig extends Component {
     });
     this.startApiCallTimeOutHandler();
 
+    const defaultChart = this.state.defaultChart[this.state.selectedTemplate]
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
-    const chartToSave = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
+    const chartToSave = this.state.chartFromConfigFile ?? defaultChart.reference;
 
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
@@ -345,8 +344,8 @@ class EnvConfig extends Component {
     }
   }
 
-  updateNonDefaultConfigFile(configFile) {
-    if (!configFile || !this.state.defaultChart) {
+  updateNonDefaultConfigFile(configFile, defaultChart) {
+    if (!configFile || !defaultChart) {
       return null
     }
 
@@ -357,7 +356,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
+    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? defaultChart.reference;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
@@ -380,6 +379,8 @@ class EnvConfig extends Component {
       return
     }
 
+    this.setState({ values: Object.assign({}, this.state.defaultState) });
+    this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
     this.setState({ selectedTemplate: template });
     this.setState({ chartSchemaLoading: true });
 
@@ -397,7 +398,8 @@ class EnvConfig extends Component {
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile);
+    const defaultChart = this.state.defaultChart[this.state.selectedTemplate];
+    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile, defaultChart);
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -405,8 +407,8 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!this.state.defaultChart) {
-      return null;
+    if (!defaultChart || this.state.chartSchemaLoading) {
+      return <Spinner />;
     }
 
     if (!this.state.values) {
@@ -461,7 +463,7 @@ class EnvConfig extends Component {
               <Menu.Items
                 className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <div className="py-1">
-                  {this.state.templateNames.map((template) => (
+                  {Object.keys(this.state.templates).map((template) => (
                   <Menu.Item key={template}>
                     {({ active }) => (
                     <button onClick={()=> this.fetchChart(template)}
@@ -620,9 +622,9 @@ class EnvConfig extends Component {
           <Spinner />
           :
           <HelmUI
-            key={this.state.defaultChart.reference.name}
-            schema={this.state.defaultChart.schema}
-            config={this.state.defaultChart.uiSchema}
+            key={defaultChart.reference.name}
+            schema={defaultChart.schema}
+            config={defaultChart.uiSchema}
             values={this.state.values}
             setValues={this.setValues}
             validate={true}
