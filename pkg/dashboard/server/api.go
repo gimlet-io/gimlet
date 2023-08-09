@@ -308,16 +308,8 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 }
 
 func chartSchema(w http.ResponseWriter, r *http.Request) {
-	var chartFromBody dx.Chart
-	err := json.NewDecoder(r.Body).Decode(&chartFromBody)
-	if err != nil {
-		logrus.Errorf("cannot decode env name to save: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
 	ctx := r.Context()
-	dashConfig := ctx.Value("config").(*config.Config)
+	config := ctx.Value("config").(*config.Config)
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
@@ -333,16 +325,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validChart := dashConfig.Chart
-	if chartFromBody.Name != "" {
-		validChart = config.Chart{
-			Name:    chartFromBody.Name,
-			Repo:    chartFromBody.Repository,
-			Version: chartFromBody.Version,
-		}
-	}
-
-	m, err := getManifest(&validChart, repo, env)
+	m, err := getManifest(&config.Chart, repo, env)
 	if err != nil {
 		logrus.Errorf("cannot get manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -372,7 +355,7 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chartReference := chartFromConfig(&validChart)
+	chartReference := chartFromConfig(&config.Chart)
 
 	schemas := map[string]interface{}{}
 	schemas["schema"] = schema
@@ -390,9 +373,11 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(schemasString))
 }
 
-func charts(w http.ResponseWriter, r *http.Request) {
+func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	installationToken, _, _ := tokenManager.Token()
 
 	parsedCharts, err := parseCharts(config.Charts)
 	if err != nil {
@@ -401,11 +386,40 @@ func charts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var charts []ConfigChart
+	var charts []DeploymentTemplate
 	for _, chart := range parsedCharts {
-		charts = append(charts, ConfigChart{
+		m := &dx.Manifest{
+			Chart: chartFromConfig(chart),
+		}
+
+		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
+		if err != nil {
+			logrus.Errorf("cannot get schema from manifest: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		var schema interface{}
+		err = json.Unmarshal([]byte(schemaString), &schema)
+		if err != nil {
+			logrus.Errorf("cannot parse schema: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		var schemaUI interface{}
+		err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
+		if err != nil {
+			logrus.Errorf("cannot parse UI schema: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		charts = append(charts, DeploymentTemplate{
 			Name:      chart.Name,
 			Reference: chartFromConfig(chart),
+			Schema:    schema,
+			UISchema:  schemaUI,
 		})
 	}
 

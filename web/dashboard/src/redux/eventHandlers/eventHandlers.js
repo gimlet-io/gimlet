@@ -241,19 +241,19 @@ export function application(state, application) {
 }
 
 export function schemas(state, schemas) {
-  const referenceName = schemas.reference.name
-  if (!state.defaultChart[referenceName]) {
-    state.defaultChart[referenceName] = {}
-  }
-
-  state.defaultChart[referenceName] = schemas;
+  state.defaultChart = schemas;
   return state;
 }
 
-export function charts(state, charts) {
-  charts.forEach((chart) => {
-    state.templates[chart.name] = chart.reference;
+export function deploymentTemplates(state, templates) {
+  templates.forEach((template) => {
+    state.templates[template.name] = {
+      reference: template.reference,
+      schema: template.schema,
+      uiSchema: template.uiSchema,
+    };
   });
+
   return state;
 }
 

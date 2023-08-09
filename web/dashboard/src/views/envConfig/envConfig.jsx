@@ -7,7 +7,7 @@ import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
 import {
   ACTION_TYPE_CHARTSCHEMA,
-  ACTION_TYPE_CHARTS,
+  ACTION_TYPE_DEPLOYMENT_TEMPLATES,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ADD_ENVCONFIG,
@@ -35,8 +35,8 @@ class EnvConfig extends Component {
     this.state = {
       defaultChart: reduxState.defaultChart,
       templates: reduxState.templates,
-      defaultTemplate: "",
-      selectedTemplate: "",
+      selectedTemplate: reduxState.defaultChart?.reference?.name ?? "",
+      defaultTemplate: reduxState.defaultChart?.reference?.name ?? "",
       fileInfos: reduxState.fileInfos,
 
       timeoutTimer: {},
@@ -115,22 +115,20 @@ class EnvConfig extends Component {
 
     const { gimletClient, store } = this.props;
 
-    gimletClient.getChartSchema(owner, repo, env, {})
+    gimletClient.getChartSchema(owner, repo, env)
       .then(data => {
-        this.setState({ 
-          selectedTemplate: data.reference.name,
-          defaultTemplate: data.reference.name,
-        });
+        this.setState({ defaultTemplate: data.reference.name });
+        this.setState({ selectedTemplate: data.reference.name });
         store.dispatch({
           type: ACTION_TYPE_CHARTSCHEMA, payload: data
         });
       }, () => {/* Generic error handler deals with it */
       });
 
-    gimletClient.getCharts()
+    gimletClient.getDeploymentTemplates()
       .then(data => {
         store.dispatch({
-          type: ACTION_TYPE_CHARTS, payload: data
+          type: ACTION_TYPE_DEPLOYMENT_TEMPLATES, payload: data
         });
       }, () => {/* Generic error handler deals with it */
       });
@@ -279,9 +277,8 @@ class EnvConfig extends Component {
     });
     this.startApiCallTimeOutHandler();
 
-    const defaultChart = this.state.defaultChart[this.state.selectedTemplate]
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
-    const chartToSave = this.state.chartFromConfigFile ?? defaultChart.reference;
+    const chartToSave = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
 
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
@@ -344,8 +341,8 @@ class EnvConfig extends Component {
     }
   }
 
-  updateNonDefaultConfigFile(configFile, defaultChart) {
-    if (!configFile || !defaultChart) {
+  updateNonDefaultConfigFile(configFile) {
+    if (!configFile || !this.state.defaultChart) {
       return null
     }
 
@@ -356,7 +353,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? defaultChart.reference;
+    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
@@ -372,34 +369,24 @@ class EnvConfig extends Component {
     return nonDefaultConfigFile;
   }
 
-  fetchChart(template) {
-    const { owner, repo, env } = this.props.match.params;
-
+  changeDeploymentTemplate(template) {
     if (template === this.state.selectedTemplate) {
       return
     }
 
+    this.setState({ selectedTemplate: template });
     this.setState({ values: Object.assign({}, this.state.defaultState) });
     this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
-    this.setState({ selectedTemplate: template });
-    this.setState({ chartSchemaLoading: true });
-
-    this.props.gimletClient.getChartSchema(owner, repo, env, this.state.templates[template])
-      .then(data => {
-        this.setState({ chartSchemaLoading: false });
-        this.props.store.dispatch({
-          type: ACTION_TYPE_CHARTSCHEMA, payload: data
-        });
-      }, () => {/* Generic error handler deals with it */
-        this.setState({ chartSchemaLoading: false });
-      });
+    const deploymentTemplate = this.state.templates[template]
+    this.props.store.dispatch({
+      type: ACTION_TYPE_CHARTSCHEMA, payload: deploymentTemplate
+    });
   }
 
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const defaultChart = this.state.defaultChart[this.state.selectedTemplate];
-    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile, defaultChart);
+    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile);
 
     const fileName = this.findFileName(env, config)
     const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
@@ -407,12 +394,16 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!defaultChart || this.state.chartSchemaLoading) {
-      return <Spinner />;
+    if (!this.state.defaultChart) {
+      return null;
     }
 
     if (!this.state.values) {
       return null;
+    }
+
+    if (!this.state.templates) {
+      return <Spinner />;
     }
 
     return (
@@ -466,7 +457,7 @@ class EnvConfig extends Component {
                   {Object.keys(this.state.templates).map((template) => (
                   <Menu.Item key={template}>
                     {({ active }) => (
-                    <button onClick={()=> this.fetchChart(template)}
+                    <button onClick={()=> this.changeDeploymentTemplate(template)}
                       className={(
                       active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
                       ' block px-4 py-2 text-sm w-full text-left'
@@ -618,18 +609,15 @@ class EnvConfig extends Component {
         }
         </div>
         <div className="container mx-auto m-8">
-        {this.state.chartSchemaLoading ?
-          <Spinner />
-          :
           <HelmUI
-            key={defaultChart.reference.name}
-            schema={defaultChart.schema}
-            config={defaultChart.uiSchema}
+            key={this.state.defaultChart.reference.name}
+            schema={this.state.defaultChart.schema}
+            config={this.state.defaultChart.uiSchema}
             values={this.state.values}
             setValues={this.setValues}
             validate={true}
             validationCallback={this.validationCallback}
-          />}
+          />
           <div className="w-full mt-16">
             <ReactDiffViewer
               oldValue={YAML.stringify(this.state.configFile)}
@@ -745,7 +733,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
                 this.setState({ selectedTemplate: this.state.defaultTemplate })
-                this.fetchChart(this.state.defaultTemplate)
+                this.changeDeploymentTemplate(this.state.defaultTemplate)
               }}
             >
               Reset
