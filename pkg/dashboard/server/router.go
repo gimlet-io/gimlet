@@ -8,6 +8,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/session"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -182,12 +183,9 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 }
 
 func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string) {
-	agentAuth = jwtauth.New("HS256", []byte(jwtSecret), nil)
-
 	r.Group(func(r chi.Router) {
-		r.Use(jwtauth.Verifier(agentAuth))
-		r.Use(jwtauth.Authenticator)
-		r.Use(mustAgent)
+		r.Use(session.SetUser())
+		r.Use(combinedAuthorizer)
 
 		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
@@ -295,5 +293,28 @@ func mustAgent(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func combinedAuthorizer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+
+		// check if a user is authenticated
+		_, userSet := ctx.Value("user").(*model.User)
+		if userSet {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// do agent authentication and authorization
+		dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+		agentAuth = jwtauth.New("HS256", []byte(dynamicConfig.JWTSecret), nil)
+
+		verifierFunc := jwtauth.Verifier(agentAuth)
+		authenticatorFunc := jwtauth.Authenticator
+
+		verifierFunc(authenticatorFunc(mustAgent(next))).ServeHTTP(w, r)
 	})
 }
