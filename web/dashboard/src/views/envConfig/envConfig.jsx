@@ -35,8 +35,6 @@ class EnvConfig extends Component {
     this.state = {
       defaultChart: reduxState.defaultChart,
       templates: reduxState.templates,
-      selectedTemplate: reduxState.defaultChart?.reference?.name ?? "",
-      defaultTemplate: reduxState.defaultChart?.reference?.name ?? "",
       fileInfos: reduxState.fileInfos,
 
       timeoutTimer: {},
@@ -82,6 +80,13 @@ class EnvConfig extends Component {
     if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
       let envConfig = configFileContent.values;
 
+      if (configFileContent.chart) {
+        this.setState({
+          selectedTemplate: configFileContent.chart.name,
+          defaultTemplate: configFileContent.chart.name,
+        });
+      }
+
       this.setState({
         configFile: (action === "new" ? {} : configFileContent),
         chartFromConfigFile: configFileContent.chart,
@@ -117,12 +122,16 @@ class EnvConfig extends Component {
 
     gimletClient.getChartSchema(owner, repo, env)
       .then(data => {
-        this.setState({ defaultTemplate: data.reference.name });
-        this.setState({ selectedTemplate: data.reference.name });
+        this.setState({
+          selectedTemplate: data.reference.name,
+          defaultTemplate: data.reference.name,
+        });
         store.dispatch({
           type: ACTION_TYPE_CHARTSCHEMA, payload: data
         });
+        this.setState({ chartSchemaLoaded: true });
       }, () => {/* Generic error handler deals with it */
+        this.setState({ chartSchemaLoaded: true });
       });
 
     gimletClient.getDeploymentTemplates()
@@ -390,9 +399,19 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!this.state.defaultChart || !this.state.values || !this.state.templates) {
+    if (!this.state.defaultChart || !this.state.chartSchemaLoaded) {
       return <Spinner />;
     }
+
+    if (!this.state.values) {
+      return <Spinner />;
+    }
+
+    if (Object.keys(this.state.templates).length === 0) {
+      return <Spinner />;
+    }
+
+    console.log(this.state.templates)
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -426,41 +445,44 @@ class EnvConfig extends Component {
         </button>
 
         <div className="mt-8 mb-16">
-        <div className="mb-4 items-center">
-          <div className="text-gray-700 block text-sm font-medium">Deployment template</div>
-          <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
-            <Menu.Button
-              className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700">
-              {this.state.selectedTemplate}
-            </Menu.Button>
-            <span className="-ml-px relative block">
-              <Menu.Button
-                className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
-                <span className="sr-only">Open options</span>
-                <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-              </Menu.Button>
-              <Menu.Items
-                className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  {Object.keys(this.state.templates).map((template) => (
-                  <Menu.Item key={template}>
-                    {({ active }) => (
-                    <button onClick={()=> this.changeDeploymentTemplate(template)}
-                      className={(
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                      ' block px-4 py-2 text-sm w-full text-left'
-                      }
-                      >
-                      {template}
-                    </button>
-                    )}
-                  </Menu.Item>
-                  ))}
-                </div>
-              </Menu.Items>
-            </span>
-          </Menu>
-        </div>
+          <div className="mb-4 items-center">
+            <div className="text-gray-700 block text-sm font-medium">Deployment template</div>
+            {action === "new" ?
+              <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                  {this.state.selectedTemplate}
+                </Menu.Button>
+                <span className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      {Object.keys(this.state.templates).map((template) => (
+                        <Menu.Item key={template}>
+                          {({ active }) => (
+                            <button onClick={() => this.changeDeploymentTemplate(template)}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {template}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </span>
+              </Menu>
+              :
+              <p className="text-gray-900 px-3 py-2">{this.state.selectedTemplate}</p>}
+          </div>
         <div className="mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*

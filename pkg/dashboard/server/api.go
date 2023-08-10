@@ -355,12 +355,10 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chartReference := chartFromConfig(&config.Chart)
-
 	schemas := map[string]interface{}{}
 	schemas["schema"] = schema
 	schemas["uiSchema"] = schemaUI
-	schemas["reference"] = chartReference
+	schemas["reference"] = m.Chart
 
 	schemasString, err := json.Marshal(schemas)
 	if err != nil {
