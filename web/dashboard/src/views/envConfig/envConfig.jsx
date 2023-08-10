@@ -93,7 +93,7 @@ class EnvConfig extends Component {
         appName: configFileContent.app,
         namespace: configFileContent.namespace ?? "default",
         defaultAppName: configFileContent.app,
-        defaultNamespace: configFileContent.namespace,
+        defaultNamespace: configFileContent.namespace ?? "default",
 
         values: Object.assign({}, envConfig),
         nonDefaultValues: Object.assign({}, envConfig),
@@ -378,7 +378,7 @@ class EnvConfig extends Component {
     return nonDefaultConfigFile;
   }
 
-  changeDeploymentTemplate(template) {
+  setDeploymentTemplate(template) {
     this.setState({ selectedTemplate: template });
     this.setState({ values: Object.assign({}, this.state.defaultState) });
     this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
@@ -463,7 +463,7 @@ class EnvConfig extends Component {
                       {Object.keys(this.state.templates).map((template) => (
                         <Menu.Item key={template}>
                           {({ active }) => (
-                            <button onClick={() => this.changeDeploymentTemplate(template)}
+                            <button onClick={() => this.setDeploymentTemplate(template)}
                               className={(
                                 active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
                                 ' block px-4 py-2 text-sm w-full text-left'
@@ -741,7 +741,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
                 this.setState({ selectedTemplate: this.state.defaultTemplate })
-                this.changeDeploymentTemplate(this.state.defaultTemplate)
+                this.setDeploymentTemplate(this.state.defaultTemplate)
               }}
             >
               Reset
