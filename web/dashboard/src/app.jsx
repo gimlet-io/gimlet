@@ -16,7 +16,6 @@ import LoginPage from './views/login/loginPage';
 import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
-import Userflow from './userflow';
 import DeployPanel from './views/deployPanel/deployPanel';
 
 export default class App extends Component {
@@ -63,7 +62,6 @@ export default class App extends Component {
         <StreamingBackendWithLocation />
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
-        <Userflow store={store} />
 
         <Route exact path="/">
           <Redirect to="/repositories" />

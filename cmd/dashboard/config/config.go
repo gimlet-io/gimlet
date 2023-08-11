@@ -75,7 +75,6 @@ type Config struct {
 	WebhookSecret           string `envconfig:"WEBHOOK_SECRET"`
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
 	BootstrapEnv            string `envconfig:"BOOTSTRAP_ENV"`
-	UserflowToken           string `envconfig:"USERFLOW_TOKEN"`
 
 	AdminToken string `envconfig:"ADMIN_TOKEN"`
 

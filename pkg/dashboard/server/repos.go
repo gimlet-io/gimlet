@@ -257,7 +257,6 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	settings := map[string]interface{}{
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
 		"scmUrl":                  dynamicConfig.ScmURL(),
-		"userflowToken":           config.UserflowToken,
 		"host":                    config.Host,
 		"provider":                provider,
 	}
