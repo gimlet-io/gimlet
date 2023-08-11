@@ -10,8 +10,8 @@ import (
 
 const DEFAULT_CHART_NAME = "onechart"
 const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
-const DEFAULT_CHART_VERSION = "0.50.0"
-const DEFAULT_CHARTS = "name=onechart,repo=https://chart.onechart.dev,version=0.50.0;name=static-site,repo=https://chart.onechart.dev,version=0.1.0"
+const DEFAULT_CHART_VERSION = "0.51.0"
+const DEFAULT_CHARTS = "name=onechart/onechart,repo=https://chart.onechart.dev,version=0.51.0;name=onechart/static-site,repo=https://chart.onechart.dev,version=0.51.0"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
