@@ -41,9 +41,7 @@ export default class GimletClient {
 
   getBranches = (owner, name) => this.get(`/api/repo/${owner}/${name}/branches`);
 
-  getChartSchema = (owner, name, env) => this.get(`/api/repo/${owner}/${name}/env/${env}/chartSchema`);
-
-  getDeploymentTemplates = () => this.getWithAxios("/api/deploymentTemplates")
+  getDeploymentTemplates = (owner, name, env, config) => this.getWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${config}/deploymentTemplates`);
 
   getEnvConfigs = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/envConfigs`);
 

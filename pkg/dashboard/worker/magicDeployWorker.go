@@ -78,17 +78,17 @@ func createDummyArtifact(
 	envConfig *dx.Manifest,
 	version dx.Version,
 ) (*dx.Artifact, error) {
+	defaultChart, err := config.DefaultChart()
+	if err != nil {
+		return nil, err
+	}
 
 	if envConfig == nil {
 		envConfig = &dx.Manifest{
 			App:       repo,
 			Namespace: "default",
 			Env:       env,
-			Chart: dx.Chart{
-				Name:       config.DEFAULT_CHART_NAME,
-				Repository: config.DEFAULT_CHART_REPO,
-				Version:    config.DEFAULT_CHART_VERSION,
-			},
+			Chart:     *defaultChart,
 			Values: map[string]interface{}{
 				"containerPort": 80,
 				"gitRepository": owner + "/" + repo,

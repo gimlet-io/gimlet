@@ -34,6 +34,7 @@ class EnvConfig extends Component {
 
     this.state = {
       defaultChart: reduxState.defaultChart,
+      defaultTemplate: reduxState.defaultTemplate,
       templates: reduxState.templates,
       fileInfos: reduxState.fileInfos,
 
@@ -55,6 +56,7 @@ class EnvConfig extends Component {
 
       this.setState({
         defaultChart: reduxState.defaultChart,
+        defaultTemplate: reduxState.defaultTemplate,
         templates: reduxState.templates,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
@@ -79,13 +81,6 @@ class EnvConfig extends Component {
     let configFileContent = configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart);
     if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
       let envConfig = configFileContent.values;
-
-      if (configFileContent.chart) {
-        this.setState({
-          selectedTemplate: configFileContent.chart.name,
-          defaultTemplate: configFileContent.chart.name,
-        });
-      }
 
       this.setState({
         configFile: (action === "new" ? {} : configFileContent),
@@ -120,26 +115,14 @@ class EnvConfig extends Component {
 
     const { gimletClient, store } = this.props;
 
-    gimletClient.getChartSchema(owner, repo, env)
-      .then(data => {
-        this.setState({
-          selectedTemplate: data.reference.name,
-          defaultTemplate: data.reference.name,
-        });
-        store.dispatch({
-          type: ACTION_TYPE_CHARTSCHEMA, payload: data
-        });
-        this.setState({ chartSchemaLoaded: true });
-      }, () => {/* Generic error handler deals with it */
-        this.setState({ chartSchemaLoaded: true });
-      });
-
-    gimletClient.getDeploymentTemplates()
+    gimletClient.getDeploymentTemplates(owner, repo, env, config)
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_DEPLOYMENT_TEMPLATES, payload: data
         });
+        this.setState({ templatesLoaded: true });
       }, () => {/* Generic error handler deals with it */
+        this.setState({ templatesLoaded: true });
       });
 
     this.props.gimletClient.getRepoMetas(owner, repo)
@@ -399,15 +382,15 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    if (!this.state.defaultChart || !this.state.chartSchemaLoaded) {
+    if (!this.state.templatesLoaded) {
+      return <Spinner />;
+    }
+
+    if (!this.state.defaultChart) {
       return <Spinner />;
     }
 
     if (!this.state.values) {
-      return <Spinner />;
-    }
-
-    if (Object.keys(this.state.templates).length === 0) {
       return <Spinner />;
     }
 
@@ -449,7 +432,7 @@ class EnvConfig extends Component {
               <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
                 <Menu.Button
                   className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                  {this.state.selectedTemplate}
+                  {this.state.selectedTemplate ?? this.state.defaultTemplate}
                 </Menu.Button>
                 <span className="-ml-px relative block">
                   <Menu.Button
@@ -479,7 +462,7 @@ class EnvConfig extends Component {
                 </span>
               </Menu>
               :
-              <p className="text-gray-900 px-3 py-2">{this.state.selectedTemplate}</p>}
+              <p className="text-gray-900 px-3 py-2">{this.state.defaultTemplate}</p>}
           </div>
         <div className="mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
@@ -740,7 +723,6 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
                 this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
-                this.setState({ selectedTemplate: this.state.defaultTemplate })
                 this.setDeploymentTemplate(this.state.defaultTemplate)
               }}
             >

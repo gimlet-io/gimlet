@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -307,15 +306,15 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 	return nil
 }
 
-func chartSchema(w http.ResponseWriter, r *http.Request) {
+func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
+	configName := chi.URLParam(r, "config")
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
-
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
@@ -325,70 +324,17 @@ func chartSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := getManifest(&config.Chart, repo, env)
+	charts, err := getCharts(config, repo, env, configName)
 	if err != nil {
-		logrus.Errorf("cannot get manifest: %s", err)
+		logrus.Errorf("cannot get manifest chart: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
-	if err != nil {
-		logrus.Errorf("cannot get schema from manifest: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	var schema interface{}
-	err = json.Unmarshal([]byte(schemaString), &schema)
-	if err != nil {
-		logrus.Errorf("cannot parse schema: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	var schemaUI interface{}
-	err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
-	if err != nil {
-		logrus.Errorf("cannot parse UI schema: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	schemas := map[string]interface{}{}
-	schemas["schema"] = schema
-	schemas["uiSchema"] = schemaUI
-	schemas["reference"] = m.Chart
-
-	schemasString, err := json.Marshal(schemas)
-	if err != nil {
-		logrus.Errorf("cannot serialize schemas: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(schemasString))
-}
-
-func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	installationToken, _, _ := tokenManager.Token()
-
-	parsedCharts, err := parseCharts(config.Charts)
-	if err != nil {
-		logrus.Errorf("cannot parse charts from config: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	var charts []DeploymentTemplate
-	for _, chart := range parsedCharts {
-		chartReference := chartFromConfig(chart)
+	var templates []DeploymentTemplate
+	for _, chart := range charts {
 		m := &dx.Manifest{
-			Chart: chartReference,
+			Chart: chart,
 		}
 
 		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
@@ -414,15 +360,15 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		charts = append(charts, DeploymentTemplate{
+		templates = append(templates, DeploymentTemplate{
 			Name:      chart.Name,
-			Reference: chartReference,
+			Reference: chart,
 			Schema:    schema,
 			UISchema:  schemaUI,
 		})
 	}
 
-	chartsString, err := json.Marshal(charts)
+	templatesString, err := json.Marshal(templates)
 	if err != nil {
 		logrus.Errorf("cannot serialize charts: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -430,74 +376,13 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(chartsString))
+	w.Write([]byte(templatesString))
 }
 
-func parseCharts(chartsString string) ([]*config.Chart, error) {
-	charts := []*config.Chart{}
-	splittedCharts := strings.Split(chartsString, ";")
-
-	for _, chartsString := range splittedCharts {
-		if chartsString == "" {
-			continue
-		}
-
-		parsedchartsString, err := parse(chartsString)
-		if err != nil {
-			return nil, fmt.Errorf("invalid charts format: %s", err)
-		}
-
-		chart := &config.Chart{
-			Name:    parsedchartsString.Get("name"),
-			Repo:    parsedchartsString.Get("repo"),
-			Version: parsedchartsString.Get("version"),
-		}
-		charts = append(charts, chart)
-	}
-
-	return charts, nil
-}
-
-func parse(query string) (url.Values, error) {
-	m := make(url.Values)
-	err := parseQuery(m, query)
-	return m, err
-}
-
-func parseQuery(m url.Values, query string) (err error) {
-	for query != "" {
-		var key string
-		key, query, _ = strings.Cut(query, ",")
-		if strings.Contains(key, ";") {
-			err = fmt.Errorf("invalid semicolon separator in query")
-			continue
-		}
-		if key == "" {
-			continue
-		}
-		key, value, _ := strings.Cut(key, "=")
-		key, err1 := url.QueryUnescape(key)
-		if err1 != nil {
-			if err == nil {
-				err = err1
-			}
-			continue
-		}
-		value, err1 = url.QueryUnescape(value)
-		if err1 != nil {
-			if err == nil {
-				err = err1
-			}
-			continue
-		}
-		m[key] = append(m[key], value)
-	}
-	return err
-}
-
-func getManifest(chart *config.Chart, repo *git.Repository, env string) (*dx.Manifest, error) {
-	defaultManifest := &dx.Manifest{
-		Chart: chartFromConfig(chart),
+func getCharts(config *config.Config, repo *git.Repository, env string, configName string) ([]dx.Chart, error) {
+	defaultCharts, err := config.Charts.Parse()
+	if err != nil {
+		return nil, err
 	}
 
 	branch, err := helper.HeadBranch(repo)
@@ -508,7 +393,7 @@ func getManifest(chart *config.Chart, repo *git.Repository, env string) (*dx.Man
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
-			return defaultManifest, nil
+			return defaultCharts, nil
 		} else {
 			return nil, err
 		}
@@ -526,27 +411,12 @@ func getManifest(chart *config.Chart, repo *git.Repository, env string) (*dx.Man
 	}
 
 	for _, envConfig := range envConfigs {
-		if envConfig.Env == env {
-			return &envConfig, nil
+		if envConfig.Env == env && envConfig.App == configName {
+			return []dx.Chart{envConfig.Chart}, nil
 		}
 	}
 
-	return defaultManifest, nil
-}
-
-func chartFromConfig(chart *config.Chart) dx.Chart {
-	if strings.HasPrefix(chart.Name, "git@") ||
-		strings.Contains(chart.Name, ".git") {
-		return dx.Chart{
-			Name: chart.Name,
-		}
-	}
-
-	return dx.Chart{
-		Repository: chart.Repo,
-		Name:       chart.Name,
-		Version:    chart.Version,
-	}
+	return defaultCharts, nil
 }
 
 func application(w http.ResponseWriter, r *http.Request) {
@@ -584,7 +454,6 @@ func application(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(appinfosString))
-
 }
 
 func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
