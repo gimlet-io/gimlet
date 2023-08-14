@@ -82,8 +82,16 @@ func ParseRequest(r *http.Request, fn SecretFunc) (*Token, error) {
 	// authorization header.
 	var token = r.Header.Get("Authorization")
 	if len(token) != 0 {
-		fmt.Sscanf(token, "Bearer %s", &token)
-		return Parse(token, fn)
+		cnt, _ := fmt.Sscanf(token, "Bearer %s", &token)
+		if cnt != 0 {
+			return Parse(token, fn)
+		}
+	}
+	if len(token) != 0 {
+		cnt, _ := fmt.Sscanf(token, "BEARER %s", &token)
+		if cnt != 0 {
+			return Parse(token, fn)
+		}
 	}
 
 	// then we attempt to get the token from the
