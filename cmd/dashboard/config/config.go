@@ -1,9 +1,11 @@
 package config
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sirupsen/logrus"
 )
 
 const DEFAULT_CHART_NAME = "onechart"
@@ -56,7 +58,9 @@ func defaults(c *Config) {
 	if c.ApiHost == "" {
 		c.ApiHost = c.Host
 	}
-	c.BuiltinEnvFeatureFlag = true
+	if c.BuiltinEnvFeatureFlagString == "" {
+		c.BuiltinEnvFeatureFlagString = "true"
+	}
 }
 
 // Config holds Gimlet configuration that can only be set with environment variables
@@ -87,9 +91,9 @@ type Config struct {
 	GitSSHAddressFormat     string `envconfig:"GIT_SSH_ADDRESS_FORMAT"`
 	ReleaseStats            string `envconfig:"RELEASE_STATS"`
 
-	TermsOfServiceFeatureFlag      bool `envconfig:"FEATURE_TERMS_OF_SERVICE"`
-	ChartVersionUpdaterFeatureFlag bool `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
-	BuiltinEnvFeatureFlag          bool `envconfig:"FEATURE_BUILT_IN_ENV"`
+	TermsOfServiceFeatureFlag      bool   `envconfig:"FEATURE_TERMS_OF_SERVICE"`
+	ChartVersionUpdaterFeatureFlag bool   `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
+	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
 
 	GitHost          string `envconfig:"GIT_HOST"`
 	ApiHost          string `envconfig:"API_HOST"`
@@ -161,4 +165,13 @@ func (m *Multiline) Decode(value string) error {
 
 func (m *Multiline) String() string {
 	return string(*m)
+}
+
+func (c *Config) BuiltinEnvFeatureFlag() bool {
+	flag, err := strconv.ParseBool(c.BuiltinEnvFeatureFlagString)
+	if err != nil {
+		logrus.Warnf("could not parse FEATURE_BUILT_IN_ENV: %s", err)
+		return true
+	}
+	return flag
 }

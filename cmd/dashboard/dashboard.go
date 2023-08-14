@@ -196,7 +196,7 @@ func main() {
 	logger.Formatter = &customFormatter{}
 
 	var gitServer http.Handler
-	if config.BuiltinEnvFeatureFlag {
+	if config.BuiltinEnvFeatureFlag() {
 		gitServer, err = builtInGitServer(gitUser, config.GitRoot)
 		if err != nil {
 			panic(err)
@@ -228,7 +228,7 @@ func main() {
 		}
 	}()
 
-	if config.BuiltinEnvFeatureFlag {
+	if config.BuiltinEnvFeatureFlag() {
 		time.Sleep(time.Millisecond * 100) // wait til the router is up
 		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config, dynamicConfig)
 		if err != nil {
