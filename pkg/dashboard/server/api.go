@@ -361,7 +361,6 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 		}
 
 		templates = append(templates, DeploymentTemplate{
-			Name:      chart.Name,
 			Reference: chart,
 			Schema:    schema,
 			UISchema:  schemaUI,

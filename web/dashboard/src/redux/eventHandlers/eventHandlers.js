@@ -248,10 +248,10 @@ export function schemas(state, schemas) {
 export function deploymentTemplates(state, templates) {
   const firstTemplate = templates[0]
   state.defaultChart = firstTemplate;
-  state.defaultTemplate = firstTemplate.name;
+  state.defaultTemplate = firstTemplate.reference.name;
 
   templates.forEach((template) => {
-    state.templates[template.name] = {
+    state.templates[template.reference.name] = {
       reference: template.reference,
       schema: template.schema,
       uiSchema: template.uiSchema,

@@ -378,7 +378,6 @@ type envConfig struct {
 }
 
 type DeploymentTemplate struct {
-	Name      string      `json:"name"`
 	Reference dx.Chart    `json:"reference"`
 	Schema    interface{} `json:"schema"`
 	UISchema  interface{} `json:"uiSchema"`
