@@ -167,7 +167,7 @@ func (c *Config) BuiltinEnvFeatureFlag() bool {
 	return flag
 }
 
-func DefaultChart() (dx.Chart, error) {
+func DefaultChart() (*dx.Chart, error) {
 	splittedCharts := strings.Split(DEFAULT_CHARTS, ";")
 	return parseChartString(splittedCharts[0])
 }
@@ -177,28 +177,30 @@ func (c *Charts) Decode(value string) error {
 	splittedCharts := strings.Split(value, ";")
 
 	for _, chartsString := range splittedCharts {
-		if chartsString == "" {
-			continue
-		}
-
 		parsedChart, err := parseChartString(chartsString)
 		if err != nil {
 			return fmt.Errorf("invalid chart format: %s", err)
 		}
 
-		charts = append(charts, parsedChart)
+		if parsedChart != nil {
+			charts = append(charts, *parsedChart)
+		}
 	}
 	*c = charts
 	return nil
 }
 
-func parseChartString(chartsString string) (dx.Chart, error) {
-	parsedValues, err := parse(chartsString)
-	if err != nil {
-		return dx.Chart{}, err
+func parseChartString(chartsString string) (*dx.Chart, error) {
+	if chartsString == "" {
+		return nil, nil
 	}
 
-	chart := dx.Chart{
+	parsedValues, err := parse(chartsString)
+	if err != nil {
+		return nil, err
+	}
+
+	chart := &dx.Chart{
 		Name:       parsedValues.Get("name"),
 		Repository: parsedValues.Get("repo"),
 		Version:    parsedValues.Get("version"),

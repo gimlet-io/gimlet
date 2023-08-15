@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/alecthomas/assert"
+)
 
 func TestBuiltInEnvFlag(t *testing.T) {
 	c := &Config{}
@@ -36,4 +40,14 @@ func TestBuiltInEnvFlag(t *testing.T) {
 	if !flag {
 		t.Errorf("FEATURE_BUILT_IN_ENV should default to true in case of parse errors")
 	}
+}
+
+func TestParseChartString(t *testing.T) {
+	chartString := "name=onechart,repo=https://chart.onechart.dev,version=0.52.0"
+	chart, err := parseChartString(chartString)
+	assert.Nil(t, err)
+	assert.Equal(t, "onechart", chart.Name)
+
+	chart, _ = parseChartString("")
+	assert.Nil(t, chart)
 }

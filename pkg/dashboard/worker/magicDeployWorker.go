@@ -88,7 +88,7 @@ func createDummyArtifact(
 			App:       repo,
 			Namespace: "default",
 			Env:       env,
-			Chart:     defaultChart,
+			Chart:     *defaultChart,
 			Values: map[string]interface{}{
 				"containerPort": 80,
 				"gitRepository": owner + "/" + repo,
