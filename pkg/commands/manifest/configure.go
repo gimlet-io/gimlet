@@ -205,7 +205,7 @@ func helmChartInfo(chart string) (string, string, string, error) {
 
 	defaultChart, err := config.DefaultChart()
 	if err != nil {
-		return "", "", "", fmt.Errorf("cannot get the default chart from config: %s", err)
+		return "", "", "", fmt.Errorf("cannot get default chart from config: %s", err)
 	}
 
 	return defaultChart.Name, defaultChart.Repository, defaultChart.Version, nil

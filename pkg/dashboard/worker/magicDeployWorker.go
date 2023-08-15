@@ -80,7 +80,7 @@ func createDummyArtifact(
 ) (*dx.Artifact, error) {
 	defaultChart, err := config.DefaultChart()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot get default chart from config: %s", err)
 	}
 
 	if envConfig == nil {
@@ -88,7 +88,7 @@ func createDummyArtifact(
 			App:       repo,
 			Namespace: "default",
 			Env:       env,
-			Chart:     *defaultChart,
+			Chart:     defaultChart,
 			Values: map[string]interface{}{
 				"containerPort": 80,
 				"gitRepository": owner + "/" + repo,

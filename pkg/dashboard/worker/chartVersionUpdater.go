@@ -115,8 +115,8 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 	}
 
 	defaultChart, err := config.DefaultChart()
-	if err == nil {
-		return fmt.Errorf("cannot get the default chart from config: %s", err)
+	if err != nil {
+		return fmt.Errorf("cannot get default chart from config: %s", err)
 	}
 
 	for fileName, content := range files {

@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const DEFAULT_CHARTS Charts = "name=onechart,repo=https://chart.onechart.dev,version=0.52.0;name=static-site,repo=https://chart.onechart.dev,version=0.52.0"
+const DEFAULT_CHARTS = "name=onechart,repo=https://chart.onechart.dev,version=0.52.0;name=static-site,repo=https://chart.onechart.dev,version=0.52.0"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
@@ -35,8 +35,8 @@ func defaults(c *Config) {
 	if c.ReleaseHistorySinceDays == 0 {
 		c.ReleaseHistorySinceDays = 30
 	}
-	if c.Charts == "" {
-		c.Charts = DEFAULT_CHARTS
+	if c.Charts == nil {
+		c.Charts.Decode(DEFAULT_CHARTS)
 	}
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"
@@ -146,7 +146,7 @@ type GitopsRepoConfig struct {
 
 type Multiline string
 
-type Charts string
+type Charts []dx.Chart
 
 func (m *Multiline) Decode(value string) error {
 	value = strings.ReplaceAll(value, "\\n", "\n")
@@ -167,23 +167,14 @@ func (c *Config) BuiltinEnvFeatureFlag() bool {
 	return flag
 }
 
-func DefaultChart() (*dx.Chart, error) {
-	configCharts := DEFAULT_CHARTS
-	charts, err := configCharts.Parse()
-	if err != nil {
-		return nil, err
-	}
-
-	return &charts[0], nil
+func DefaultChart() (dx.Chart, error) {
+	splittedCharts := strings.Split(DEFAULT_CHARTS, ";")
+	return parseChartString(splittedCharts[0])
 }
 
-func (c *Charts) String() string {
-	return string(*c)
-}
-
-func (c *Charts) Parse() ([]dx.Chart, error) {
+func (c *Charts) Decode(value string) error {
 	charts := []dx.Chart{}
-	splittedCharts := strings.Split(c.String(), ";")
+	splittedCharts := strings.Split(value, ";")
 
 	for _, chartsString := range splittedCharts {
 		if chartsString == "" {
@@ -192,13 +183,13 @@ func (c *Charts) Parse() ([]dx.Chart, error) {
 
 		parsedChart, err := parseChartString(chartsString)
 		if err != nil {
-			return nil, fmt.Errorf("invalid chart format: %s", err)
+			return fmt.Errorf("invalid chart format: %s", err)
 		}
 
 		charts = append(charts, parsedChart)
 	}
-
-	return charts, nil
+	*c = charts
+	return nil
 }
 
 func parseChartString(chartsString string) (dx.Chart, error) {

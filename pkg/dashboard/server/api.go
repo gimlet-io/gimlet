@@ -380,11 +380,6 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 }
 
 func getCharts(config *config.Config, repo *git.Repository, env string, configName string) ([]dx.Chart, error) {
-	defaultCharts, err := config.Charts.Parse()
-	if err != nil {
-		return nil, err
-	}
-
 	branch, err := helper.HeadBranch(repo)
 	if err != nil {
 		return nil, err
@@ -393,7 +388,7 @@ func getCharts(config *config.Config, repo *git.Repository, env string, configNa
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
-			return defaultCharts, nil
+			return config.Charts, nil
 		} else {
 			return nil, err
 		}
@@ -416,7 +411,7 @@ func getCharts(config *config.Config, repo *git.Repository, env string, configNa
 		}
 	}
 
-	return defaultCharts, nil
+	return config.Charts, nil
 }
 
 func application(w http.ResponseWriter, r *http.Request) {
