@@ -168,7 +168,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Post("/api/repo/{owner}/{name}/env/{env}/config/{config}", saveEnvConfig)
 		r.Post("/api/saveFavoriteRepos", saveFavoriteRepos)
 		r.Post("/api/saveFavoriteServices", saveFavoriteServices)
-		r.Get("/api/repo/{owner}/{name}/env/{env}/chartSchema", chartSchema)
+		r.Get("/api/repo/{owner}/{name}/env/{env}/config/{config}/deploymentTemplates", deploymentTemplates)
 		r.Get(("/api/app"), application)
 		r.Post(("/api/saveEnvToDB"), saveEnvToDB)
 		r.Post(("/api/spinOutBuiltInEnv"), spinOutBuiltInEnv)

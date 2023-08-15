@@ -114,8 +114,9 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		}
 	}
 
+	chart := c.config.Charts[0]
 	for fileName, content := range files {
-		latestVersion := c.config.Chart.Version
+		latestVersion := chart.Version
 
 		chartFromGitRepo, err := isChartFromGitRepo(content)
 		if err != nil {
@@ -123,7 +124,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			continue
 		}
 		if chartFromGitRepo {
-			latestVersion = c.config.Chart.Name
+			latestVersion = chart.Name
 		}
 		updatedContent := updateChartVersion(content, latestVersion)
 

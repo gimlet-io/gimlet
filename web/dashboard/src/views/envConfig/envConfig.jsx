@@ -4,8 +4,10 @@ import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
 import CopiableCodeSnippet from "./copiableCodeSnippet";
+import { Spinner } from "../repositories/repositories";
 import {
   ACTION_TYPE_CHARTSCHEMA,
+  ACTION_TYPE_DEPLOYMENT_TEMPLATES,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ADD_ENVCONFIG,
@@ -32,6 +34,8 @@ class EnvConfig extends Component {
 
     this.state = {
       defaultChart: reduxState.defaultChart,
+      defaultTemplate: reduxState.defaultTemplate,
+      templates: reduxState.templates,
       fileInfos: reduxState.fileInfos,
 
       timeoutTimer: {},
@@ -52,6 +56,8 @@ class EnvConfig extends Component {
 
       this.setState({
         defaultChart: reduxState.defaultChart,
+        defaultTemplate: reduxState.defaultTemplate,
+        templates: reduxState.templates,
         fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
         repoMetas: reduxState.repoMetas,
@@ -60,6 +66,8 @@ class EnvConfig extends Component {
       });
 
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
+
+      this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
 
       if (!this.state.values) {
         this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
@@ -82,7 +90,7 @@ class EnvConfig extends Component {
         appName: configFileContent.app,
         namespace: configFileContent.namespace ?? "default",
         defaultAppName: configFileContent.app,
-        defaultNamespace: configFileContent.namespace,
+        defaultNamespace: configFileContent.namespace ?? "default",
 
         values: Object.assign({}, envConfig),
         nonDefaultValues: Object.assign({}, envConfig),
@@ -109,12 +117,14 @@ class EnvConfig extends Component {
 
     const { gimletClient, store } = this.props;
 
-    gimletClient.getChartSchema(owner, repo, env)
+    gimletClient.getDeploymentTemplates(owner, repo, env, config)
       .then(data => {
         store.dispatch({
-          type: ACTION_TYPE_CHARTSCHEMA, payload: data
+          type: ACTION_TYPE_DEPLOYMENT_TEMPLATES, payload: data
         });
+        this.setState({ templatesLoaded: true });
       }, () => {/* Generic error handler deals with it */
+        this.setState({ templatesLoaded: true });
       });
 
     this.props.gimletClient.getRepoMetas(owner, repo)
@@ -171,6 +181,30 @@ class EnvConfig extends Component {
         gitRepository: repoName
       },
     }))
+  }
+
+  ensureGitCloneUrlExists(defaultChart, scmUrl) {
+    const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    if (this.state.defaultState && defaultChart) {
+      if (defaultChart.reference.name === "static-site" && !this.state.defaultState.gitCloneUrl) {
+        this.setGitCloneUrl(`${scmUrl}/${repoName}.git`)
+      }
+    }
+  }
+
+  setGitCloneUrl(gitCloneUrl) {
+    this.setState(prevState => ({
+      values: {
+        ...prevState.values,
+        gitCloneUrl: gitCloneUrl
+      },
+      nonDefaultValues: {
+        ...prevState.nonDefaultValues,
+        gitCloneUrl: gitCloneUrl
+      },
+    }));
   }
 
   setDeployPolicy(deploy) {
@@ -353,6 +387,16 @@ class EnvConfig extends Component {
     return nonDefaultConfigFile;
   }
 
+  setDeploymentTemplate(template) {
+    this.setState({ selectedTemplate: template });
+    this.setState({ values: Object.assign({}, this.state.defaultState) });
+    this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
+    const deploymentTemplate = this.state.templates[template]
+    this.props.store.dispatch({
+      type: ACTION_TYPE_CHARTSCHEMA, payload: deploymentTemplate
+    });
+  }
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -364,12 +408,16 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
+    if (!this.state.templatesLoaded) {
+      return <Spinner />;
+    }
+
     if (!this.state.defaultChart) {
-      return null;
+      return <Spinner />;
     }
 
     if (!this.state.values) {
-      return null;
+      return <Spinner />;
     }
 
     return (
@@ -404,7 +452,45 @@ class EnvConfig extends Component {
         </button>
 
         <div className="mt-8 mb-16">
-        <div className="mt-8 mb-4 items-center">
+          <div className="mb-4 items-center">
+            <div className="text-gray-700 block text-sm font-medium">Deployment template</div>
+            {action === "new" ?
+              <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
+                <Menu.Button
+                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                  {this.state.selectedTemplate ?? this.state.defaultTemplate}
+                </Menu.Button>
+                <span className="-ml-px relative block">
+                  <Menu.Button
+                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                    <span className="sr-only">Open options</span>
+                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+                  </Menu.Button>
+                  <Menu.Items
+                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      {Object.keys(this.state.templates).map((template) => (
+                        <Menu.Item key={template}>
+                          {({ active }) => (
+                            <button onClick={() => this.setDeploymentTemplate(template)}
+                              className={(
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                                ' block px-4 py-2 text-sm w-full text-left'
+                              }
+                            >
+                              {template}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </Menu.Items>
+                </span>
+              </Menu>
+              :
+              <p className="text-gray-900 px-3 py-2">{this.state.defaultTemplate}</p>}
+          </div>
+        <div className="mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
           </label>
@@ -541,6 +627,7 @@ class EnvConfig extends Component {
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
+            key={this.state.defaultChart.reference.name}
             schema={this.state.defaultChart.schema}
             config={this.state.defaultChart.uiSchema}
             values={this.state.values}
@@ -662,6 +749,7 @@ gimlet manifest template -f manifest.yaml`}
                 this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
                 this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
                 this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
+                this.setDeploymentTemplate(this.state.defaultTemplate)
               }}
             >
               Reset

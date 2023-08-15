@@ -1,16 +1,17 @@
 package config
 
 import (
+	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 )
 
-const DEFAULT_CHART_NAME = "onechart"
-const DEFAULT_CHART_REPO = "https://chart.onechart.dev"
-const DEFAULT_CHART_VERSION = "0.47.0"
+const DEFAULT_CHARTS = "name=onechart,repo=https://chart.onechart.dev,version=0.52.0;name=static-site,repo=https://chart.onechart.dev,version=0.52.0"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
@@ -34,14 +35,8 @@ func defaults(c *Config) {
 	if c.ReleaseHistorySinceDays == 0 {
 		c.ReleaseHistorySinceDays = 30
 	}
-	if c.Chart.Name == "" {
-		c.Chart.Name = DEFAULT_CHART_NAME
-	}
-	if c.Chart.Repo == "" {
-		c.Chart.Repo = DEFAULT_CHART_REPO
-	}
-	if c.Chart.Version == "" {
-		c.Chart.Version = DEFAULT_CHART_VERSION
+	if c.Charts == nil {
+		c.Charts.Decode(DEFAULT_CHARTS)
 	}
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"
@@ -74,7 +69,7 @@ type Config struct {
 	Gitlab    Gitlab
 
 	Notifications           Notifications
-	Chart                   Chart
+	Charts                  Charts `envconfig:"CHARTS"`
 	RepoCachePath           string `envconfig:"REPO_CACHE_PATH"`
 	WebhookSecret           string `envconfig:"WEBHOOK_SECRET"`
 	ReleaseHistorySinceDays int    `envconfig:"RELEASE_HISTORY_SINCE_DAYS"`
@@ -128,12 +123,6 @@ type Gitlab struct {
 	URL        string `envconfig:"GITLAB_URL"`
 }
 
-type Chart struct {
-	Name    string `envconfig:"CHART_NAME"`
-	Repo    string `envconfig:"CHART_REPO"`
-	Version string `envconfig:"CHART_VERSION"`
-}
-
 type Database struct {
 	Driver           string `envconfig:"DATABASE_DRIVER"`
 	Config           string `envconfig:"DATABASE_CONFIG"`
@@ -157,6 +146,8 @@ type GitopsRepoConfig struct {
 
 type Multiline string
 
+type Charts []dx.Chart
+
 func (m *Multiline) Decode(value string) error {
 	value = strings.ReplaceAll(value, "\\n", "\n")
 	*m = Multiline(value)
@@ -174,4 +165,76 @@ func (c *Config) BuiltinEnvFeatureFlag() bool {
 		return true
 	}
 	return flag
+}
+
+func DefaultChart() (*dx.Chart, error) {
+	splittedCharts := strings.Split(DEFAULT_CHARTS, ";")
+	return parseChartString(splittedCharts[0])
+}
+
+func (c *Charts) Decode(value string) error {
+	charts := []dx.Chart{}
+	splittedCharts := strings.Split(value, ";")
+
+	for _, chartsString := range splittedCharts {
+		parsedChart, err := parseChartString(chartsString)
+		if err != nil {
+			return fmt.Errorf("invalid chart format: %s", err)
+		}
+
+		if parsedChart != nil {
+			charts = append(charts, *parsedChart)
+		}
+	}
+	*c = charts
+	return nil
+}
+
+func parseChartString(chartsString string) (*dx.Chart, error) {
+	if chartsString == "" {
+		return nil, nil
+	}
+
+	parsedValues, err := parse(chartsString)
+	if err != nil {
+		return nil, err
+	}
+
+	chart := &dx.Chart{
+		Name:       parsedValues.Get("name"),
+		Repository: parsedValues.Get("repo"),
+		Version:    parsedValues.Get("version"),
+	}
+
+	return chart, nil
+}
+
+func parse(query string) (url.Values, error) {
+	values := make(url.Values)
+	err := populateValues(values, query)
+	return values, err
+}
+
+func populateValues(values url.Values, query string) error {
+	for query != "" {
+		var key string
+		key, query, _ = strings.Cut(query, ",")
+		if strings.Contains(key, ";") {
+			return fmt.Errorf("invalid semicolon separator in query")
+		}
+		if key == "" {
+			continue
+		}
+		key, value, _ := strings.Cut(key, "=")
+		key, err := url.QueryUnescape(key)
+		if err != nil {
+			return err
+		}
+		value, err = url.QueryUnescape(value)
+		if err != nil {
+			return err
+		}
+		values[key] = append(values[key], value)
+	}
+	return nil
 }
