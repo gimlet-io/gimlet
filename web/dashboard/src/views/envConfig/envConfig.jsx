@@ -67,8 +67,7 @@ class EnvConfig extends Component {
 
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
 
-      let gitCloneUrl = `${reduxState.settings.scmUrl}/${repoName}.git`
-      this.ensureGitCloneUrlExists(reduxState.defaultChart, gitCloneUrl);
+      this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
 
       if (!this.state.values) {
         this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
@@ -184,10 +183,13 @@ class EnvConfig extends Component {
     }))
   }
 
-  ensureGitCloneUrlExists(defaultChart, gitCloneUrl) {
+  ensureGitCloneUrlExists(defaultChart, scmUrl) {
+    const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
     if (this.state.defaultState && defaultChart) {
       if (defaultChart.reference.name === "static-site" && !this.state.defaultState.gitCloneUrl) {
-        this.setGitCloneUrl(gitCloneUrl)
+        this.setGitCloneUrl(`${scmUrl}/${repoName}.git`)
       }
     }
   }

@@ -114,13 +114,9 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		}
 	}
 
-	defaultChart, err := config.DefaultChart()
-	if err != nil {
-		return fmt.Errorf("cannot get default chart from config: %s", err)
-	}
-
+	chart := c.config.Charts[0]
 	for fileName, content := range files {
-		latestVersion := defaultChart.Version
+		latestVersion := chart.Version
 
 		chartFromGitRepo, err := isChartFromGitRepo(content)
 		if err != nil {
@@ -128,7 +124,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			continue
 		}
 		if chartFromGitRepo {
-			latestVersion = defaultChart.Name
+			latestVersion = chart.Name
 		}
 		updatedContent := updateChartVersion(content, latestVersion)
 
