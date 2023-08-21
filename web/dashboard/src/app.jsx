@@ -17,6 +17,7 @@ import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
 import DeployPanel from './views/deployPanel/deployPanel';
+import { ACTION_TYPE_USER } from "./redux/redux";
 
 export default class App extends Component {
   constructor(props) {
@@ -26,7 +27,9 @@ export default class App extends Component {
     const gimletClient = new GimletClient(
       (response) => {
         if (response.status === 401) {
-          window.location.replace("/login");
+          if (!window.location.pathname.includes("/login")) {
+            window.location.replace("/login");
+          }
         } else {
           console.log(`${response.status}: ${response.statusText} on ${response.path}`);
         }
@@ -37,6 +40,15 @@ export default class App extends Component {
       store: store,
       gimletClient: gimletClient
     }
+  }
+
+  componentDidMount() {
+    this.state.gimletClient.getUser()
+      .then(data => {
+        this.state.store.dispatch({ type: ACTION_TYPE_USER, payload: data });
+        this.setState({ authenticated: true });
+      }, () => {/* Generic error handler deals with it */
+      });
   }
 
   render() {
@@ -56,6 +68,22 @@ export default class App extends Component {
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
     const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
     const DeployPanelWithRouting = withRouter(props => <DeployPanel {...props} store={store} />);
+
+    if (!this.state.authenticated) {
+      return (
+        <Router>
+          <div className="min-h-screen bg-gray-100 pb-20">
+            <div className="py-10">
+              <Switch>
+                <Route path="/login">
+                  <LoginPage />
+                </Route>
+              </Switch>
+            </div>
+          </div>
+        </Router>
+      )
+    }
 
     return (
       <Router>
