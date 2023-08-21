@@ -17,6 +17,7 @@ import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
 import DeployPanel from './views/deployPanel/deployPanel';
+import { ACTION_TYPE_USER } from "./redux/redux";
 
 export default class App extends Component {
   constructor(props) {
@@ -43,7 +44,10 @@ export default class App extends Component {
 
   componentDidMount() {
     this.state.gimletClient.getUser()
-      .then(() => this.setState({ authenticated: true }), () => {/* Generic error handler deals with it */
+      .then(data => {
+        this.state.store.dispatch({ type: ACTION_TYPE_USER, payload: data });
+        this.setState({ authenticated: true });
+      }, () => {/* Generic error handler deals with it */
       });
   }
 

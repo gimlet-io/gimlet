@@ -4,7 +4,6 @@ import {
   ACTION_TYPE_ENVS,
   ACTION_TYPE_GIT_REPOS,
   ACTION_TYPE_GITOPS_COMMITS,
-  ACTION_TYPE_USER,
   ACTION_TYPE_USERS,
   ACTION_TYPE_APPLICATION,
   ACTION_TYPE_SETTINGS,
@@ -21,9 +20,6 @@ export default class APIBackend extends Component {
 
     this.props.gimletClient.getAgents()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_AGENTS, payload: data }), () => {/* Generic error handler deals with it */
-      });
-    this.props.gimletClient.getUser()
-      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_USER, payload: data }), () => {/* Generic error handler deals with it */
       });
     this.props.gimletClient.getUsers()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_USERS, payload: data }), () => {/* Generic error handler deals with it */
