@@ -219,6 +219,7 @@ func main() {
 		logger,
 		gitServer,
 		imageBuilds,
+		gitUser,
 	)
 
 	go func() {

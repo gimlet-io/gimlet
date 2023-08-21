@@ -45,6 +45,7 @@ func SetupRouter(
 	logger *log.Logger,
 	gitServer http.Handler,
 	imageBuilds map[string]streaming.ImageBuildTrigger,
+	gitUser *model.User,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -66,6 +67,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
 	r.Use(middleware.WithValue("imageBuilds", imageBuilds))
 	r.Use(middleware.WithValue("router", r))
+	r.Use(middleware.WithValue("gitUser", gitUser))
 
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))

@@ -43,7 +43,7 @@ func TestBuiltInEnvFlag(t *testing.T) {
 }
 
 func TestParseChartString(t *testing.T) {
-	chartString := "name=onechart,repo=https://chart.onechart.dev,version=0.52.0"
+	chartString := "name=onechart,repo=https://chart.onechart.dev,version=0.54.0"
 	chart, err := parseChartString(chartString)
 	assert.Nil(t, err)
 	assert.Equal(t, "onechart", chart.Name)
