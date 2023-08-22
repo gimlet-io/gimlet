@@ -5,19 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"sigs.k8s.io/yaml"
 )
 
 type MagicDeployWorker struct {
@@ -140,10 +138,26 @@ func createDeployRequest(
 	gitRepoCache *nativeGit.RepoCache,
 	builtInEnvName string,
 ) {
-	envConfig, version, _ := defaultEnvConfig(
-		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha, builtInEnvName,
-		gitRepoCache,
-	)
+	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", deployRequest.Owner, deployRequest.Repo))
+	if err != nil {
+		logrus.Errorf("cannot clone repository: %s", err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+
+	version, err := gitops.Version(deployRequest.Owner, deployRequest.Repo, repo, deployRequest.Sha)
+	if err != nil {
+		logrus.Errorf("cannot extract version information: %s", err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+
+	envConfig, err := gitops.Manifest(repo, deployRequest.Sha, builtInEnvName, deployRequest.Repo)
+	if err != nil {
+		logrus.Errorf("cannot get manifest: %s", err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
 
 	artifact, err := createDummyArtifact(
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
@@ -151,7 +165,7 @@ func createDeployRequest(
 		"127.0.0.1:32447/"+deployRequest.Repo,
 		tag,
 		envConfig,
-		version,
+		*version,
 	)
 	if err != nil {
 		logrus.Errorf("cannot create artifact: %s", err)
@@ -203,55 +217,4 @@ func createDeployRequest(
 	}
 
 	streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "created", event.ID)
-}
-
-func defaultEnvConfig(
-	owner string, repoName string, sha string, env string,
-	gitRepoCache *nativeGit.RepoCache,
-
-) (*dx.Manifest, dx.Version, error) {
-	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
-	if err != nil {
-		return nil, dx.Version{}, fmt.Errorf("cannot get repo: %s", err)
-	}
-
-	c, err := repo.CommitObject(plumbing.NewHash(sha))
-	if err != nil {
-		return nil, dx.Version{}, fmt.Errorf("cannot get commit: %s", err)
-	}
-	version := dx.Version{
-		RepositoryName: owner + "/" + repoName,
-		SHA:            sha,
-		Created:        time.Now().Unix(),
-		Branch:         "TODO",
-		AuthorName:     c.Author.Name,
-		AuthorEmail:    c.Author.Email,
-		CommitterName:  c.Committer.Name,
-		CommitterEmail: c.Committer.Email,
-		Message:        c.Message,
-		URL:            "TODO",
-	}
-
-	files, err := nativeGit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
-	if err != nil {
-		if strings.Contains(err.Error(), "directory not found") {
-			return nil, version, nil
-		} else {
-			return nil, version, fmt.Errorf("cannot list files in .gimlet/: %s", err)
-		}
-	}
-
-	for _, content := range files {
-		var envConfig dx.Manifest
-		err = yaml.Unmarshal([]byte(content), &envConfig)
-		if err != nil {
-			logrus.Warnf("cannot parse env config string: %s", err)
-			continue
-		}
-		if envConfig.Env == env && envConfig.App == repoName {
-			return &envConfig, version, nil
-		}
-	}
-
-	return nil, version, nil
 }

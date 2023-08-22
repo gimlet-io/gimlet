@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,7 +14,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -21,6 +24,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,7 +32,6 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	store := ctx.Value("store").(*store.Store)
 	user := ctx.Value("user").(*model.User)
-	// clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
 
 	body, _ := ioutil.ReadAll(r.Body)
 	var deployRequest dx.MagicDeployRequest
@@ -57,7 +60,9 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	magicEnv := envs[0]
+	magicApp := deployRequest.Repo
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	repo, repoPath, err := gitRepoCache.InstanceForWrite(deployRequest.Owner + "/" + deployRequest.Repo)
@@ -68,46 +73,93 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	worktree, err := repo.Worktree()
+	envConfig, err := gitops.Manifest(repo, deployRequest.Sha, magicEnv.Name, magicApp)
 	if err != nil {
-		logrus.Errorf("cannot get worktree: %s", err)
+		logrus.Errorf("cannot get repo instance: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	}
+
+	var imageBuildId string
+	if envConfig != nil && envConfig.Chart.Name == "static-site" {
+		imageBuildId = "static-" + randStringRunes(6)
+
+		version, err := gitops.Version(deployRequest.Owner, deployRequest.Repo, repo, deployRequest.Sha)
+		if err != nil {
+			logrus.Errorf("cannot get version: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		clientHub, _ := ctx.Value("clientHub").(*streaming.ClientHub)
+
+		go createDummyArtifactAndStreamToClient(
+			deployRequest,
+			version,
+			envConfig,
+			imageBuildId,
+			magicEnv.Name,
+			store,
+			clientHub,
+		)
+	} else {
+		imageBuildId, err = triggerImageBuild(repo, repoPath, deployRequest, magicEnv.Name, ctx)
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	responseStr, err := json.Marshal(map[string]string{
+		"buildId": string(imageBuildId),
+	})
+	if err != nil {
+		logrus.Errorf("cannot serialize response: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseStr)
+}
+
+func triggerImageBuild(
+	repo *git.Repository,
+	repoPath string,
+	deployRequest dx.MagicDeployRequest,
+	env string,
+	ctx context.Context,
+) (string, error) {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("cannot get worktree: %s", err)
 	}
 	err = worktree.Reset(&git.ResetOptions{
 		Commit: plumbing.NewHash(deployRequest.Sha),
 		Mode:   git.HardReset,
 	})
 	if err != nil {
-		logrus.Errorf("cannot set version: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return "", fmt.Errorf("cannot set version: %s", err)
 	}
 
 	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
-		logrus.Errorf("cannot get temp file: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return "", fmt.Errorf("cannot get temp file: %s", err)
 	}
 
 	err = tartar(tarFile.Name(), []string{repoPath})
 	if err != nil {
-		logrus.Errorf("cannot tar folder: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return "", fmt.Errorf("cannot tar folder: %s", err)
 	}
 
-	// config := ctx.Value("config").(*config.Config)
-
 	imageBuildId := randStringRunes(6)
-	// imageBuilderUrl := config.ImageBuilderHost + "/build-image"
 	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
 	tag := deployRequest.Sha
 
 	trigger := streaming.ImageBuildTrigger{
 		DeployRequest: deployRequest,
-		Env:           magicEnv.Name,
+		Env:           env,
 		ImageBuildId:  imageBuildId,
 		Image:         image,
 		Tag:           tag,
@@ -121,17 +173,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
 	agentHub.TriggerImageBuild(trigger)
 
-	responseStr, err := json.Marshal(map[string]string{
-		"buildId": string(imageBuildId),
-	})
-	if err != nil {
-		logrus.Errorf("cannot serialize response: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseStr)
+	return imageBuildId, nil
 }
 
 // https://github.com/vladimirvivien/go-tar/blob/master/tartar/tartar.go
@@ -235,4 +277,84 @@ func randStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func createDummyArtifactAndStreamToClient(
+	deployRequest dx.MagicDeployRequest,
+	version *dx.Version,
+	manifest *dx.Manifest,
+	imageBuildId string,
+	env string,
+	store *store.Store,
+	clientHub *streaming.ClientHub,
+) {
+	time.Sleep(time.Millisecond * 200) // wait til client learns about the buildID
+	artifact := &dx.Artifact{
+		ID:           fmt.Sprintf("%s-%s", deployRequest.Owner+"/"+deployRequest.Repo, uuid.New().String()),
+		Created:      time.Now().Unix(),
+		Fake:         true,
+		Environments: []*dx.Manifest{manifest},
+		Version:      *version,
+		Vars: map[string]string{
+			"SHA": deployRequest.Sha,
+		},
+	}
+
+	event, err := model.ToEvent(*artifact)
+	if err != nil {
+		logrus.Errorf("cannot convert to artifact model: %s", err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+
+	_, err = store.CreateEvent(event)
+	if err != nil {
+		logrus.Errorf("cannot save artifact: %s", err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+
+	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
+		Env:         env,
+		App:         deployRequest.Repo,
+		ArtifactID:  artifact.ID,
+		TriggeredBy: deployRequest.TriggeredBy,
+	})
+	if err != nil {
+		logrus.Errorf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+
+	artifactEvent, err := store.Artifact(artifact.ID)
+	if err != nil {
+		logrus.Errorf("%s - cannot find artifact with id %s", http.StatusText(http.StatusNotFound), artifact.ID)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+	event, err = store.CreateEvent(&model.Event{
+		Type:       model.ReleaseRequestedEvent,
+		Blob:       string(releaseRequestStr),
+		Repository: artifactEvent.Repository,
+	})
+	if err != nil {
+		logrus.Errorf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err)
+		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
+		return
+	}
+
+	streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "created", event.ID)
+
+}
+
+func streamArtifactCreatedEvent(clientHub *streaming.ClientHub, userLogin string, imageBuildId string, status string, trackingId string) {
+	jsonString, _ := json.Marshal(streaming.ArtifactCreatedEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.ArtifactCreatedEventString},
+		BuildId:        imageBuildId,
+		TrackingId:     trackingId,
+	})
+	clientHub.Send <- &streaming.ClientMessage{
+		ClientId: userLogin,
+		Message:  jsonString,
+	}
 }

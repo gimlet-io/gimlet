@@ -13,10 +13,12 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 const Dir_RWX_RX_R = 0754
@@ -298,4 +300,57 @@ func releaseFromCommit(c *object.Commit, app string, env string) *dx.Release {
 		Created:   c.Committer.When.Unix(),
 		GitopsRef: c.Hash.String(),
 	}
+}
+
+func Version(
+	owner, name string,
+	repo *git.Repository,
+	sha string,
+) (*dx.Version, error) {
+	c, err := repo.CommitObject(plumbing.NewHash(sha))
+	if err != nil {
+		return nil, fmt.Errorf("cannot get commit: %s", err)
+	}
+	return &dx.Version{
+		RepositoryName: owner + "/" + name,
+		SHA:            sha,
+		Created:        time.Now().Unix(),
+		Branch:         "TODO",
+		AuthorName:     c.Author.Name,
+		AuthorEmail:    c.Author.Email,
+		CommitterName:  c.Committer.Name,
+		CommitterEmail: c.Committer.Email,
+		Message:        c.Message,
+		URL:            "TODO",
+	}, nil
+}
+
+func Manifest(
+	repo *git.Repository,
+	sha string,
+	env string,
+	app string,
+) (*dx.Manifest, error) {
+	files, err := nativeGit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
+	if err != nil {
+		if strings.Contains(err.Error(), "directory not found") {
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("cannot list files in .gimlet/: %s", err)
+		}
+	}
+
+	for _, content := range files {
+		var envConfig dx.Manifest
+		err = yaml.Unmarshal([]byte(content), &envConfig)
+		if err != nil {
+			logrus.Warnf("cannot parse env config string: %s", err)
+			continue
+		}
+		if envConfig.Env == env && envConfig.App == app {
+			return &envConfig, nil
+		}
+	}
+
+	return nil, nil
 }
