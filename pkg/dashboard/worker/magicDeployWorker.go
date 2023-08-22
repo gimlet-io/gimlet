@@ -58,7 +58,6 @@ func (m *MagicDeployWorker) Run() {
 					m.clientHub,
 					string(imageBuild.ImageBuildId),
 					m.gitRepoCache,
-					imageBuild.Env,
 				)
 			}
 
@@ -136,7 +135,6 @@ func createDeployRequest(
 	clientHub *streaming.ClientHub,
 	imageBuildId string,
 	gitRepoCache *nativeGit.RepoCache,
-	builtInEnvName string,
 ) {
 	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", deployRequest.Owner, deployRequest.Repo))
 	if err != nil {
@@ -152,7 +150,7 @@ func createDeployRequest(
 		return
 	}
 
-	envConfig, err := gitops.Manifest(repo, deployRequest.Sha, builtInEnvName, deployRequest.Repo)
+	envConfig, err := gitops.Manifest(repo, deployRequest.Sha, deployRequest.Env, deployRequest.App)
 	if err != nil {
 		logrus.Errorf("cannot get manifest: %s", err)
 		streamArtifactCreatedEvent(clientHub, deployRequest.TriggeredBy, imageBuildId, "error", "")
@@ -161,8 +159,8 @@ func createDeployRequest(
 
 	artifact, err := createDummyArtifact(
 		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
-		builtInEnvName,
-		"127.0.0.1:32447/"+deployRequest.Repo,
+		deployRequest.Env,
+		"127.0.0.1:32447/"+deployRequest.App,
 		tag,
 		envConfig,
 		*version,
@@ -188,8 +186,8 @@ func createDeployRequest(
 	}
 
 	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
-		Env:         builtInEnvName,
-		App:         deployRequest.Repo,
+		Env:         deployRequest.Env,
+		App:         deployRequest.App,
 		ArtifactID:  artifact.ID,
 		TriggeredBy: deployRequest.TriggeredBy,
 	})

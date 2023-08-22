@@ -70,7 +70,7 @@ func imageBuilder(
 	request, err := newfileUploadRequest(url, map[string]string{
 		"image": trigger.Image,
 		"tag":   trigger.Tag,
-		"app":   trigger.App,
+		"app":   trigger.DeployRequest.App,
 	}, "data", path)
 	if err != nil {
 		logrus.Errorf("cannot upload file: %s", err)

@@ -240,7 +240,6 @@ export default class Repo extends Component {
   }
 
   checkDeployStatus(trackingId) {
-    console.log("checking deploys")
     const { owner, repo } = this.props.match.params;
 
     this.props.gimletClient.getDeployStatus(trackingId)
@@ -331,11 +330,11 @@ export default class Repo extends Component {
     this.props.gimletClient.triggerCommitSync(owner, repo)
   }
 
-  magicDeploy(env, repo, sha) {
+  magicDeploy(env, app, repo, sha) {
     let target = {}
     const owner = repo.split("/")[0]
     const repoName = repo.split("/")[1]
-    this.props.gimletClient.magicDeploy(owner, repoName, sha)
+    this.props.gimletClient.magicDeploy(owner, repoName, env, app, sha)
       .then(data => {
         target.buildId = data.buildId;
         this.props.store.dispatch({
@@ -585,6 +584,7 @@ export default class Repo extends Component {
                         branch={this.state.selectedBranch}
                         scmUrl={scmUrl}
                         tenant={this.state.selectedTenant}
+                        envConfigs={envConfigs}
                       />
                     }
                   </div>}

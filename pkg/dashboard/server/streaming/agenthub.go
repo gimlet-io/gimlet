@@ -20,11 +20,9 @@ type ConnectedAgent struct {
 type ImageBuildTrigger struct {
 	Action        string                `json:"action"`
 	DeployRequest dx.MagicDeployRequest `json:"deployRequest"`
-	Env           string                `json:"env"`
 	ImageBuildId  string                `json:"imageBuildId"`
 	Image         string                `json:"image"`
 	Tag           string                `json:"tag"`
-	App           string                `json:"app"`
 	SourcePath    string                `json:"sourcePath"`
 }
 
@@ -68,7 +66,7 @@ func (h *AgentHub) ForceStateSend() {
 
 func (h *AgentHub) TriggerImageBuild(trigger ImageBuildTrigger) {
 	for _, a := range h.Agents {
-		if a.Name != trigger.Env {
+		if a.Name != trigger.DeployRequest.Env {
 			continue
 		}
 

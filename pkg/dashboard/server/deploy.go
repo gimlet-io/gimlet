@@ -48,22 +48,6 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envs, err := store.GetEnvironments()
-	if err != nil {
-		logrus.Errorf("cannot get envs: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	if len(envs) != 1 {
-		http.Error(w, http.StatusText(http.StatusPreconditionFailed)+" - built-in environment missing", http.StatusPreconditionFailed)
-		return
-	}
-
-	// TODO
-	magicEnv := envs[0]
-	magicApp := deployRequest.Repo
-
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	repo, repoPath, err := gitRepoCache.InstanceForWrite(deployRequest.Owner + "/" + deployRequest.Repo)
 	defer os.RemoveAll(repoPath)
@@ -73,7 +57,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envConfig, err := gitops.Manifest(repo, deployRequest.Sha, magicEnv.Name, magicApp)
+	envConfig, err := gitops.Manifest(repo, deployRequest.Sha, deployRequest.Env, deployRequest.App)
 	if err != nil {
 		logrus.Errorf("cannot get repo instance: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -98,12 +82,11 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 			version,
 			envConfig,
 			imageBuildId,
-			magicEnv.Name,
 			store,
 			clientHub,
 		)
 	} else {
-		imageBuildId, err = triggerImageBuild(repo, repoPath, deployRequest, magicEnv.Name, ctx)
+		imageBuildId, err = triggerImageBuild(repo, repoPath, deployRequest, ctx)
 		if err != nil {
 			logrus.Error(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -128,7 +111,6 @@ func triggerImageBuild(
 	repo *git.Repository,
 	repoPath string,
 	deployRequest dx.MagicDeployRequest,
-	env string,
 	ctx context.Context,
 ) (string, error) {
 	worktree, err := repo.Worktree()
@@ -154,16 +136,14 @@ func triggerImageBuild(
 	}
 
 	imageBuildId := randStringRunes(6)
-	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.Repo
+	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.App
 	tag := deployRequest.Sha
 
 	trigger := streaming.ImageBuildTrigger{
 		DeployRequest: deployRequest,
-		Env:           env,
 		ImageBuildId:  imageBuildId,
 		Image:         image,
 		Tag:           tag,
-		App:           deployRequest.Repo,
 		SourcePath:    tarFile.Name(),
 	}
 
@@ -284,7 +264,6 @@ func createDummyArtifactAndStreamToClient(
 	version *dx.Version,
 	manifest *dx.Manifest,
 	imageBuildId string,
-	env string,
 	store *store.Store,
 	clientHub *streaming.ClientHub,
 ) {
@@ -315,8 +294,8 @@ func createDummyArtifactAndStreamToClient(
 	}
 
 	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
-		Env:         env,
-		App:         deployRequest.Repo,
+		Env:         deployRequest.Env,
+		App:         deployRequest.App,
 		ArtifactID:  artifact.ID,
 		TriggeredBy: deployRequest.TriggeredBy,
 	})
