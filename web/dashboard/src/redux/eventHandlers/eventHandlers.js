@@ -367,6 +367,7 @@ export function repoMetas(state, payload) {
 
 export function settings(state, payload) {
   state.settings.releaseHistorySinceDays = payload.releaseHistorySinceDays;
+  state.settings.posthogApiKey = payload.posthogApiKey;
   state.settings.scmUrl = payload.scmUrl;
   state.settings.host = payload.host;
   state.settings.provider = payload.provider;

@@ -18,6 +18,7 @@ import Environments from './views/environments/environments'
 import PopUpWindow from './popUpWindow';
 import DeployPanel from './views/deployPanel/deployPanel';
 import { ACTION_TYPE_USER } from "./redux/redux";
+import Posthog from './posthog';
 
 export default class App extends Component {
   constructor(props) {
@@ -90,6 +91,7 @@ export default class App extends Component {
         <StreamingBackendWithLocation />
         <APIBackendWithLocation />
         <PopUpWindowWithLocation />
+        <Posthog store={store} />
 
         <Route exact path="/">
           <Redirect to="/repositories" />

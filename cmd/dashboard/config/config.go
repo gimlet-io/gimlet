@@ -90,6 +90,8 @@ type Config struct {
 	ChartVersionUpdaterFeatureFlag bool   `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
 
+	PosthogApiKey string `envconfig:"POSTHOG_API_KEY"`
+
 	GitHost          string `envconfig:"GIT_HOST"`
 	ApiHost          string `envconfig:"API_HOST"`
 	GitRoot          string `envconfig:"GIT_ROOT"`
