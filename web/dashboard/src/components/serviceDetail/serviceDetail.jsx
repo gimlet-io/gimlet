@@ -307,6 +307,7 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
     logsEndRef.current.scrollIntoView();
   }, [logs]);
 
+  // TODO custom text color for every container
   return (
     <div
       className={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}

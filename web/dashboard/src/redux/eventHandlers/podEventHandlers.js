@@ -89,7 +89,12 @@ export function podDeleted(state, event) {
 }
 
 export function podLogs(state, event) {
-  state.podLogs[event.pod] = (state.podLogs[event.pod] + event.podLogs + "\n");
+  if (!state.podLogs[event.pod]) {
+    state.podLogs[event.pod] = ""
+  }
+  
+  const line = `[${event.container}] ${event.podLogs}\n`
+  state.podLogs[event.pod] = (state.podLogs[event.pod] + line);
   return state;
 }
 

@@ -20,8 +20,9 @@ type WSMessage struct {
 }
 
 type PodLogWSMessage struct {
-	Message string `json:"message"`
-	Pod     string `json:"pod"`
+	Container string `json:"container"`
+	Message   string `json:"message"`
+	Pod       string `json:"pod"`
 }
 
 type ImageBuildStatusWSMessage struct {
@@ -85,6 +86,7 @@ func (c *AgentWSClient) readPump() {
 
 			jsonString, _ := json.Marshal(PodLogsEvent{
 				StreamingEvent: StreamingEvent{Event: PodLogsEventString},
+				Container:      podLogWSMessage.Container,
 				Pod:            podLogWSMessage.Pod,
 				PodLogs:        podLogWSMessage.Message,
 			})

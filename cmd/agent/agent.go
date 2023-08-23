@@ -389,7 +389,10 @@ func podLogs(
 					for _, pod := range allPods.Items {
 						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
 							pod.Namespace == deployment.Namespace {
-							streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, runningLogStreams)
+							containers := podContainers(pod.Spec)
+							for _, container := range containers {
+								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, runningLogStreams)
+							}
 							return
 						}
 					}
@@ -419,12 +422,14 @@ func streamPodLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
 	pod string,
+	containerName string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams map[string]chan int,
 ) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
+		Container: containerName,
 		TailLines: &count,
 		Follow:    true,
 	}
@@ -452,8 +457,9 @@ func streamPodLogs(
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
 			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
-				Pod:     namespace + "/" + serviceName,
-				Message: chunk,
+				Container: containerName,
+				Pod:       namespace + "/" + serviceName,
+				Message:   chunk,
 			})
 			if err != nil {
 				logrus.Error("cannot serialize payload", err)
@@ -559,6 +565,13 @@ func chunks(str string, size int) []string {
 		return []string{str}
 	}
 	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
+}
+
+func podContainers(podSpec v1.PodSpec) (containers []v1.Container) {
+	containers = append(containers, podSpec.InitContainers...)
+	containers = append(containers, podSpec.Containers...)
+
+	return containers
 }
 
 func logo() string {
