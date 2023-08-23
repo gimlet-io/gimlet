@@ -256,6 +256,9 @@ func settings(w http.ResponseWriter, r *http.Request) {
 
 	settings := map[string]interface{}{
 		"releaseHistorySinceDays": config.ReleaseHistorySinceDays,
+		"posthogFeatureFlag":      config.PosthogFeatureFlag(),
+		"posthogIdentifyUser":     config.PosthogIdentifyUser,
+		"posthogApiKey":           config.PosthogApiKey,
 		"scmUrl":                  dynamicConfig.ScmURL(),
 		"host":                    config.Host,
 		"provider":                provider,

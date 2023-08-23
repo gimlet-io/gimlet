@@ -56,6 +56,12 @@ func defaults(c *Config) {
 	if c.BuiltinEnvFeatureFlagString == "" {
 		c.BuiltinEnvFeatureFlagString = "true"
 	}
+	if c.PosthogFeatureFlagString == "" {
+		c.PosthogFeatureFlagString = "true"
+	}
+	if c.PosthogApiKey == "" {
+		c.PosthogApiKey = "phc_J9BPccikTHu60117bET17Qlz3v3asOF4H6L7b9XwHrS"
+	}
 }
 
 // Config holds Gimlet configuration that can only be set with environment variables
@@ -89,6 +95,10 @@ type Config struct {
 	TermsOfServiceFeatureFlag      bool   `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool   `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
+
+	PosthogFeatureFlagString string `envconfig:"FEATURE_POSTHOG"`
+	PosthogIdentifyUser      bool   `envconfig:"POSTHOG_IDENTIFY_USER"`
+	PosthogApiKey            string `envconfig:"POSTHOG_API_KEY"`
 
 	GitHost          string `envconfig:"GIT_HOST"`
 	ApiHost          string `envconfig:"API_HOST"`
@@ -160,6 +170,15 @@ func (m *Multiline) String() string {
 
 func (c *Config) BuiltinEnvFeatureFlag() bool {
 	flag, err := strconv.ParseBool(c.BuiltinEnvFeatureFlagString)
+	if err != nil {
+		logrus.Warnf("could not parse FEATURE_BUILT_IN_ENV: %s", err)
+		return true
+	}
+	return flag
+}
+
+func (c *Config) PosthogFeatureFlag() bool {
+	flag, err := strconv.ParseBool(c.PosthogFeatureFlagString)
 	if err != nil {
 		logrus.Warnf("could not parse FEATURE_BUILT_IN_ENV: %s", err)
 		return true
