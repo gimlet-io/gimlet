@@ -27,10 +27,10 @@ const Posthog = ({ store }) => {
     if (!posthog.__loaded && posthogApiKey) {
       posthog.init(posthogApiKey, {
         api_host: 'https://eu.posthog.com',
-        disable_session_recording: !posthogIdentifyUser, // TODO disable on open source usage
+        disable_session_recording: !posthogIdentifyUser,
         enable_recording_console_log: false,
         session_recording: {
-          maskTextSelector: "*" // Masks all text elements
+          maskTextSelector: "*",
         },
         capture_pageview: false,
         capture_pageleave: false,
