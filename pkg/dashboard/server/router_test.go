@@ -37,6 +37,7 @@ func Test_MustUser(t *testing.T) {
 		&logger,
 		nil,
 		make(map[string]streaming.ImageBuildTrigger),
+		nil,
 	)
 	server := httptest.NewServer(router)
 	defer server.Close()

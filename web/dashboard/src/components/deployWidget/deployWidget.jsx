@@ -4,31 +4,106 @@ import {ChevronDownIcon} from '@heroicons/react/solid'
 import logo from "!file-loader!./logo.svg";
 
 export default function DeployWidget(props) {
-  const {deployTargets, deployHandler, magicDeployHandler, sha, repo, envs } = props;
+  const {deployTargets, deployHandler, magicDeployHandler, sha, repo, envs, envConfigs } = props;
 
-  if (!deployTargets) {
-    if (envs.length !== 1) {
+  if (!deployTargets) { // magic deploy cases
+    if(!envConfigs) {
       return null
     }
-    const magicEnv = envs[0]
-    if (!magicEnv.isOnline) {
+
+    if(envs.length === 0) {
       return null
     }
+
+    let targets = [];
+    for (const env of envs) {
+      if (!env.isOnline) {
+        continue
+      }
+      targets.push({ // Adding default deploy option
+        env: env.name,
+        app: repo.split("/")[1],
+      })
+      const configs = envConfigs[env.name];
+      if (!configs) {
+        continue
+      }
+      for (const config of configs) { // Adding env configs
+        const exists = targets.find(t => t.app === config.app && t.env === env.name);
+        if (exists) {
+          continue
+        }
+        targets.push({
+          env: env.name,
+          app: config.app,
+        })
+      }
+    }
+
+    if (targets.length === 1) {
+      return (
+        // eslint-disable-next-line
+        <button
+          type="button"
+          onClick={() => magicDeployHandler(targets[0].env, targets[0].app, repo, sha)}
+          className="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-slate-800"
+        >
+          <img
+            className="h-5 w-auto" src={logo} alt="Deploy"/>
+          <span
+            className="bg-gradient-to-r from-orange-400 from-0% via-pink-400 via-40% to-pink-500 to-90% text-transparent bg-clip-text">
+            Deploy
+          </span>
+        </button>
+      )
+    } else {
     return (
-      // eslint-disable-next-line
-      <button
-        type="button"
-        onClick={() => magicDeployHandler(magicEnv.name, repo, sha)}
-        className="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-slate-800"
-      >
-        <img
-          className="h-5 w-auto" src={logo} alt="Deploy"/>
-        <span
-          className="bg-gradient-to-r from-orange-400 from-0% via-pink-400 via-40% to-pink-500 to-90% text-transparent bg-clip-text">
-          Deploy
-        </span>
-      </button>
-    )
+      <span className="relative inline-flex flex-row rounded-md">
+        <Menu as="span" className="relative inline-flex shadow-sm rounded-md align-middle">
+          <Menu.Button
+            className="inline-flex items-center gap-x-1.5 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-slate-800 
+                       relative cursor-pointer px-4 py-2 rounded-l-md"
+          >
+            <img
+              className="h-5 w-auto" src={logo} alt="Deploy"/>
+            <span
+              className="bg-gradient-to-r from-orange-400 from-0% via-pink-400 via-40% to-pink-500 to-90% text-transparent bg-clip-text">
+              Deploy
+            </span>
+          </Menu.Button>
+          <span className="-ml-px relative block">
+            <Menu.Button
+              className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-pink-500 bg-slate-800">
+              <span className="sr-only">Open options</span>
+              <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+            </Menu.Button>
+            <Menu.Items
+              className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-slate-800 text-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="py-1">
+                {
+                  targets.map((target) => (
+                      <Menu.Item key={`${target.app}-${target.env}`}>
+                      {({ active }) => (
+                        <button
+                          onClick={() => magicDeployHandler(target.env, target.app, repo, sha)}
+                          className={(
+                            active ? 'bg-slate-600 text-slate-100' : 'text-slate-100') +
+                            ' block px-4 py-2 text-sm w-full text-left'
+                          }
+                        >
+                          {target.app} to {target.env}
+                        </button>
+                      )}
+                      </Menu.Item>
+                  ))
+                }
+              </div>
+            </Menu.Items>
+          </span>
+        </Menu>
+      </span>
+      )
+    }
   }
 
   let deployTargetsByEnv = {};

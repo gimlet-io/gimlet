@@ -284,7 +284,7 @@ export default class DeployPanel extends Component {
     if (runningDeploy.trackingId) {
       deployStatusWidget = DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
     }
-    if (runningDeploy.buildId) {
+    if (runningDeploy.buildId && !runningDeploy.buildId.startsWith('static-')) {
       imageBuildWidget = ImageBuild(imageBuildLogs[runningDeploy.buildId], logsEndRef);
     }
 

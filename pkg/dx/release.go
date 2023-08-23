@@ -44,6 +44,8 @@ type ReleaseRequest struct {
 type MagicDeployRequest struct {
 	Owner       string `json:"owner"`
 	Repo        string `json:"repo"`
+	Env         string `json:"env"`
+	App         string `json:"app"`
 	Sha         string `json:"sha"`
 	TriggeredBy string `json:"triggeredBy"`
 }
