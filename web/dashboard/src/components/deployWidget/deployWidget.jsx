@@ -2,9 +2,11 @@ import {Menu} from '@headlessui/react'
 import {ChevronDownIcon} from '@heroicons/react/solid'
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import logo from "!file-loader!./logo.svg";
+import { usePostHog } from 'posthog-js/react'
 
 export default function DeployWidget(props) {
   const {deployTargets, deployHandler, magicDeployHandler, sha, repo, envs, envConfigs } = props;
+  const posthog = usePostHog()
 
   if (!deployTargets) { // magic deploy cases
     if(!envConfigs) {
@@ -45,7 +47,10 @@ export default function DeployWidget(props) {
         // eslint-disable-next-line
         <button
           type="button"
-          onClick={() => magicDeployHandler(targets[0].env, targets[0].app, repo, sha)}
+          onClick={() => {
+            posthog?.capture('Magic deploy button pushed')
+            magicDeployHandler(targets[0].env, targets[0].app, repo, sha)
+          }}
           className="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-slate-800"
         >
           <img
@@ -85,7 +90,10 @@ export default function DeployWidget(props) {
                       <Menu.Item key={`${target.app}-${target.env}`}>
                       {({ active }) => (
                         <button
-                          onClick={() => magicDeployHandler(target.env, target.app, repo, sha)}
+                          onClick={() => {
+                            posthog?.capture('Magic deploy button pushed')
+                            magicDeployHandler(target.env, target.app, repo, sha)
+                          }}
                           className={(
                             active ? 'bg-slate-600 text-slate-100' : 'text-slate-100') +
                             ' block px-4 py-2 text-sm w-full text-left'
