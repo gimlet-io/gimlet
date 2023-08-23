@@ -76,7 +76,7 @@ func (c *AgentWSClient) readPump() {
 			continue
 		}
 
-		if wsMessage.Type == "logs" {
+		if wsMessage.Type == "log" {
 			var podLogWSMessage PodLogWSMessage
 			err = json.Unmarshal([]byte(wsMessage.Payload), &podLogWSMessage)
 			if err != nil {
