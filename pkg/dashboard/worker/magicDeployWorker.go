@@ -69,8 +69,7 @@ func (m *MagicDeployWorker) Run() {
 	}
 }
 func createDummyArtifact(
-	owner, repo, sha string,
-	env string,
+	deployRequest dx.MagicDeployRequest,
 	image, tag string,
 	envConfig *dx.Manifest,
 	version dx.Version,
@@ -82,14 +81,14 @@ func createDummyArtifact(
 
 	if envConfig == nil {
 		envConfig = &dx.Manifest{
-			App:       repo,
+			App:       deployRequest.App,
 			Namespace: "default",
-			Env:       env,
+			Env:       deployRequest.Env,
 			Chart:     *defaultChart,
 			Values: map[string]interface{}{
 				"containerPort": 80,
-				"gitRepository": owner + "/" + repo,
-				"gitSha":        sha,
+				"gitRepository": deployRequest.Owner + "/" + deployRequest.Repo,
+				"gitSha":        deployRequest.Sha,
 				"image": map[string]interface{}{
 					"repository": image,
 					"tag":        tag,
@@ -103,13 +102,13 @@ func createDummyArtifact(
 	}
 
 	artifact := dx.Artifact{
-		ID:           fmt.Sprintf("%s-%s", owner+"/"+repo, uuid.New().String()),
+		ID:           fmt.Sprintf("%s-%s", deployRequest.Owner+"/"+deployRequest.Repo, uuid.New().String()),
 		Created:      time.Now().Unix(),
 		Fake:         true,
 		Environments: []*dx.Manifest{envConfig},
 		Version:      version,
 		Vars: map[string]string{
-			"SHA": sha,
+			"SHA": deployRequest.Sha,
 		},
 	}
 
@@ -158,8 +157,7 @@ func createDeployRequest(
 	}
 
 	artifact, err := createDummyArtifact(
-		deployRequest.Owner, deployRequest.Repo, deployRequest.Sha,
-		deployRequest.Env,
+		deployRequest,
 		"127.0.0.1:32447/"+deployRequest.App,
 		tag,
 		envConfig,
