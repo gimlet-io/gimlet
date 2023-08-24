@@ -1,7 +1,9 @@
 import { copyToClipboard } from "../settings/settings";
 import { useState } from 'react';
+import { usePostHog } from 'posthog-js/react'
 
 const CopiableCodeSnippet = ({ code, copiable, color = 'gray' }) => {
+  const posthog = usePostHog()
   const [isCopied, setIsCopied] = useState(false);
 
   const textColorClasses = {
@@ -27,6 +29,7 @@ const CopiableCodeSnippet = ({ code, copiable, color = 'gray' }) => {
         {copiable &&
           <svg
             onClick={() => {
+              if (code.includes("gimlet environment connect")) posthog?.capture('Agent connect command copied')
               copyToClipboard(code)
               handleCopyClick()
             }}

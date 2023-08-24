@@ -9,10 +9,12 @@ import {
 } from "../../redux/redux";
 import { copyToClipboard } from '../../views/settings/settings';
 import { Menu } from '@headlessui/react'
+import { usePostHog } from 'posthog-js/react'
 
 function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, builtInEnv } = props;
   const ref = useRef(null);
+  const posthog = usePostHog()
 
   useEffect(() => {
     if (deploymentFromParams === stack.service.name) {
@@ -103,7 +105,10 @@ function ServiceDetail(props) {
                     </path>
                   </svg>
                 </span>
-                <span onClick={() => navigateToConfigEdit(envName, stack.service.name)}>
+                <span onClick={() => {
+                  posthog?.capture('Env config edit pushed')
+                  navigateToConfigEdit(envName, stack.service.name)
+                  }}>
                   <svg
                     className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1  h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

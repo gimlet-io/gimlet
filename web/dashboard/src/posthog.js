@@ -34,6 +34,7 @@ const Posthog = ({ store }) => {
         },
         capture_pageview: false,
         capture_pageleave: false,
+        property_blacklist: ["$current_url", "$screen_name"],
         autocapture: {
           url_allowlist: [/\/repositories/, /\/environments/, /\/settings/, /\/profile/],
           element_allowlist: ['a', 'button', 'form', 'input', 'select', 'textarea', 'label'],

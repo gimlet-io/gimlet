@@ -22,6 +22,7 @@ import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
 import EnvVarsTable from "./envVarsTable";
 import { Switch } from '@headlessui/react'
+import posthog from "posthog-js"
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -758,7 +759,10 @@ gimlet manifest template -f manifest.yaml`}
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible || !this.state.namespace || !this.state.appName}
               className={(hasChange && !this.state.popupWindow.visible && this.state.namespace && this.state.appName ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
-              onClick={() => this.save()}
+              onClick={() => {
+                posthog?.capture('Env config save pushed')
+                this.save()
+              }}
             >
               Save
             </button>
