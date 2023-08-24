@@ -20,6 +20,7 @@ type WSMessage struct {
 }
 
 type PodLogWSMessage struct {
+	Timestamp string `json:"timestamp"`
 	Container string `json:"container"`
 	Message   string `json:"message"`
 	Pod       string `json:"pod"`
@@ -86,9 +87,10 @@ func (c *AgentWSClient) readPump() {
 
 			jsonString, _ := json.Marshal(PodLogsEvent{
 				StreamingEvent: StreamingEvent{Event: PodLogsEventString},
+				Timestamp:      podLogWSMessage.Timestamp,
 				Container:      podLogWSMessage.Container,
 				Pod:            podLogWSMessage.Pod,
-				PodLogs:        podLogWSMessage.Message,
+				Message:        podLogWSMessage.Message,
 			})
 			c.hub.ClientHub.Broadcast <- jsonString
 		}

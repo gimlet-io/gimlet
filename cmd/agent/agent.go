@@ -432,9 +432,10 @@ func streamPodLogs(
 ) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
-		Container: containerName,
-		TailLines: &count,
-		Follow:    true,
+		Container:  containerName,
+		TailLines:  &count,
+		Follow:     true,
+		Timestamps: true,
 	}
 	logsReq := kubeEnv.Client.CoreV1().Pods(namespace).GetLogs(pod, &podLogOpts)
 
@@ -461,10 +462,12 @@ func streamPodLogs(
 		logrus.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
+			timestamp, message := parseMessage(chunk)
 			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
+				Timestamp: timestamp,
 				Container: containerName,
 				Pod:       namespace + "/" + serviceName,
-				Message:   chunk,
+				Message:   message,
 			})
 			if err != nil {
 				logrus.Error("cannot serialize payload", err)
@@ -577,6 +580,12 @@ func podContainers(podSpec v1.PodSpec) (containers []v1.Container) {
 	containers = append(containers, podSpec.Containers...)
 
 	return containers
+}
+
+func parseMessage(chunk string) (string, string) {
+	parts := strings.SplitN(chunk, " ", 2)
+
+	return parts[0], parts[1]
 }
 
 func logo() string {

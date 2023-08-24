@@ -90,16 +90,21 @@ export function podDeleted(state, event) {
 
 export function podLogs(state, event) {
   if (!state.podLogs[event.pod]) {
-    state.podLogs[event.pod] = ""
+    state.podLogs[event.pod] = [];
   }
   
-  const line = `[${event.container}] ${event.podLogs}\n`
-  state.podLogs[event.pod] = (state.podLogs[event.pod] + line);
+  const line = {
+    timestamp: new Date(event.timestamp),
+    content: `[${event.container}] ${event.message}`
+  };
+  state.podLogs[event.pod].push(line);
+  state.podLogs[event.pod].sort((a, b) => a.timestamp - b.timestamp);
+  
   return state;
 }
 
 export function clearPodLogs(state, payload) {
-  state.podLogs[payload.pod] = "";
+  state.podLogs[payload.pod] = [];
   return state;
 }
 

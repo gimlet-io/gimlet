@@ -328,7 +328,7 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
             </button>
           </div>
           <div className="h-full relative overflow-y-auto p-4 bg-slate-800 rounded-lg">
-            {logs?.split('\n').map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line}</p>)}
+            {logs?.map((line, idx) => <p key={idx} className='font-mono text-xs text-yellow-200'>{line.content}</p>)}
             <p ref={logsEndRef} />
           </div>
         </div>
