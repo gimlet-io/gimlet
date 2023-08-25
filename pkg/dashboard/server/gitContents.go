@@ -554,7 +554,6 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			Created: int(createdPR.Created.Unix()),
 			Updated: int(createdPR.Updated.Unix()),
 		},
-		"manifest": manifest,
 	}
 
 	responseJson, err := json.Marshal(response)
