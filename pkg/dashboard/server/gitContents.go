@@ -543,7 +543,6 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"envName": env,
 		"createdPr": &api.PR{
 			Sha:     createdPR.Sha,
 			Link:    createdPR.Link,

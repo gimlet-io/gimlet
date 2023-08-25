@@ -320,7 +320,7 @@ class EnvConfig extends Component {
           type: ACTION_TYPE_SAVE_REPO_PULLREQUEST,
           payload: {
             repoName: repoName,
-            envName: data.envName,
+            envName: env,
             createdPr: data.createdPr
           }
         });
