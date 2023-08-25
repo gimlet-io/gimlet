@@ -690,6 +690,20 @@ gimlet manifest template -f manifest.yaml`}
             </>}
         </div>
         <div className="p-0 flow-root">
+          {action !== "new" &&
+            <span className="inline-flex gap-x-3 float-left">
+              <button
+                type="button"
+                className="bg-red-600 hover:bg-red-500 focus:outline-none focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700 inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
+                onClick={() => {
+                  // eslint-disable-next-line no-restricted-globals
+                  confirm(`Are you sure you want to delete ${this.state.appName}?`) &&
+                    console.log("TODO")
+                }}
+              >
+                Delete
+              </button>
+            </span>}
           <span className="inline-flex gap-x-3 float-right">
             <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
               <Menu.Button
@@ -742,7 +756,7 @@ gimlet manifest template -f manifest.yaml`}
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
-              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-yellow-600 hover:bg-yellow-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-yellow-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
