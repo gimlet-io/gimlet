@@ -6,7 +6,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.52.0
+    helm.sh/chart: onechart-0.57.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -34,7 +34,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.52.0
+    helm.sh/chart: onechart-0.57.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -45,7 +45,6 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-    
   selector:
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
@@ -57,7 +56,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.52.0
+    helm.sh/chart: onechart-0.57.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -74,7 +73,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 9c435fdf7aed47e65cdfa6ae04b20eb2ead27eeaf10daea5f7400a98497f3975
+        checksum/config: b18b2916e03891542e5101d0420ff7553bd964d5944b658cf026e2fa83b0e6bc
       labels:
         app.kubernetes.io/name: onechart
         app.kubernetes.io/instance: gimlet
@@ -86,9 +85,8 @@ spec:
         - name: gimlet
           securityContext: &securityContext
             {}
-          image: "ghcr.io/gimlet-io/gimlet:v0.17.2"
+          image: "ghcr.io/gimlet-io/gimlet:v0.18.0"
           imagePullPolicy: IfNotPresent
-          
           envFrom: &envFrom
             - configMapRef:
                 name: gimlet
@@ -96,7 +94,6 @@ spec:
             - name: http
               containerPort: 9000
               protocol: TCP
-            
           readinessProbe:
             httpGet:
               path: /
@@ -107,7 +104,6 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 3
-          
           volumeMounts: &volumeMounts
             - name: data
               mountPath: /var/lib/gimlet-dashboard
@@ -115,7 +111,6 @@ spec:
             requests:
               cpu: 200m
               memory: 200Mi
-      
       volumes:
         - name: data
           persistentVolumeClaim:
