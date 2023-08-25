@@ -354,6 +354,55 @@ class EnvConfig extends Component {
       })
   }
 
+  delete() {
+    const { owner, repo, env } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Deleting..."
+      }
+    });
+    this.startApiCallTimeOutHandler();
+
+    this.props.gimletClient.deleteEnvConfig(owner, repo, env, this.state.appName)
+      .then((data) => {
+        if (!this.state.popupWindow.visible) {
+          // if no deleting is in progress, practically it timed out
+          return
+        }
+
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Pull request was created",
+            link: data.createdPr.link
+          }
+        });
+        this.props.store.dispatch({
+          type: ACTION_TYPE_SAVE_REPO_PULLREQUEST,
+          payload: {
+            repoName: repoName,
+            envName: env,
+            createdPr: data.createdPr
+          }
+        });
+
+        clearTimeout(this.state.timeoutTimer);
+        this.props.history.replace(`/repo/${repoName}`);
+        window.scrollTo({ top: 0, left: 0 });
+      }, err => {
+        clearTimeout(this.state.timeoutTimer);
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.data?.message ?? err.statusText
+          }
+        });
+        this.resetNotificationStateAfterThreeSeconds();
+      })
+  }
+
   findFileName(envName, appName) {
     if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
       return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
@@ -698,7 +747,7 @@ gimlet manifest template -f manifest.yaml`}
                 onClick={() => {
                   // eslint-disable-next-line no-restricted-globals
                   confirm(`Are you sure you want to delete ${this.state.appName}?`) &&
-                    console.log("TODO")
+                    this.delete()
                 }}
               >
                 Delete
