@@ -108,6 +108,7 @@ export const initialState = {
     errorList: null
   },
   podLogs: {},
+  textColors: {},
   imageBuildLogs: {},
   users: [],
   deployPanelOpen: false

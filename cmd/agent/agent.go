@@ -15,6 +15,7 @@ import (
 	"path"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -389,7 +390,11 @@ func podLogs(
 					for _, pod := range allPods.Items {
 						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
 							pod.Namespace == deployment.Namespace {
-							streamPodLogs(kubeEnv, namespace, pod.Name, serviceName, messages, runningLogStreams)
+							containers := podContainers(pod.Spec)
+							var mutex sync.Mutex
+							for _, container := range containers {
+								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, &mutex, runningLogStreams)
+							}
 							return
 						}
 					}
@@ -419,14 +424,18 @@ func streamPodLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
 	pod string,
+	containerName string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
+	mutex *sync.Mutex,
 	runningLogStreams map[string]chan int,
 ) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
-		TailLines: &count,
-		Follow:    true,
+		Container:  containerName,
+		TailLines:  &count,
+		Follow:     true,
+		Timestamps: true,
 	}
 	logsReq := kubeEnv.Client.CoreV1().Pods(namespace).GetLogs(pod, &podLogOpts)
 
@@ -438,7 +447,9 @@ func streamPodLogs(
 	defer podLogs.Close()
 
 	stopCh := make(chan int)
+	mutex.Lock()
 	runningLogStreams[namespace+"/"+serviceName] = stopCh
+	mutex.Unlock()
 
 	go func() {
 		<-stopCh
@@ -451,9 +462,12 @@ func streamPodLogs(
 		logrus.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
+			timestamp, message := parseMessage(chunk)
 			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
-				Pod:     namespace + "/" + serviceName,
-				Message: chunk,
+				Timestamp: timestamp,
+				Container: containerName,
+				Pod:       namespace + "/" + serviceName,
+				Message:   message,
 			})
 			if err != nil {
 				logrus.Error("cannot serialize payload", err)
@@ -559,6 +573,19 @@ func chunks(str string, size int) []string {
 		return []string{str}
 	}
 	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
+}
+
+func podContainers(podSpec v1.PodSpec) (containers []v1.Container) {
+	containers = append(containers, podSpec.InitContainers...)
+	containers = append(containers, podSpec.Containers...)
+
+	return containers
+}
+
+func parseMessage(chunk string) (string, string) {
+	parts := strings.SplitN(chunk, " ", 2)
+
+	return parts[0], parts[1]
 }
 
 func logo() string {

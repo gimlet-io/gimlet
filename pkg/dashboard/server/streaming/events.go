@@ -75,7 +75,9 @@ type CommitStatusUpdatedEvent struct {
 }
 
 type PodLogsEvent struct {
-	PodLogs string `json:"podLogs"`
-	Pod     string `json:"pod"`
+	Timestamp string `json:"timestamp"`
+	Container string `json:"container"`
+	Message   string `json:"message"`
+	Pod       string `json:"pod"`
 	StreamingEvent
 }

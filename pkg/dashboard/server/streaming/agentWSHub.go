@@ -20,8 +20,10 @@ type WSMessage struct {
 }
 
 type PodLogWSMessage struct {
-	Message string `json:"message"`
-	Pod     string `json:"pod"`
+	Timestamp string `json:"timestamp"`
+	Container string `json:"container"`
+	Message   string `json:"message"`
+	Pod       string `json:"pod"`
 }
 
 type ImageBuildStatusWSMessage struct {
@@ -76,7 +78,7 @@ func (c *AgentWSClient) readPump() {
 			continue
 		}
 
-		if wsMessage.Type == "logs" {
+		if wsMessage.Type == "log" {
 			var podLogWSMessage PodLogWSMessage
 			err = json.Unmarshal([]byte(wsMessage.Payload), &podLogWSMessage)
 			if err != nil {
@@ -85,8 +87,10 @@ func (c *AgentWSClient) readPump() {
 
 			jsonString, _ := json.Marshal(PodLogsEvent{
 				StreamingEvent: StreamingEvent{Event: PodLogsEventString},
+				Timestamp:      podLogWSMessage.Timestamp,
+				Container:      podLogWSMessage.Container,
 				Pod:            podLogWSMessage.Pod,
-				PodLogs:        podLogWSMessage.Message,
+				Message:        podLogWSMessage.Message,
 			})
 			c.hub.ClientHub.Broadcast <- jsonString
 		}

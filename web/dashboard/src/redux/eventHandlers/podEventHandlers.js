@@ -89,12 +89,38 @@ export function podDeleted(state, event) {
 }
 
 export function podLogs(state, event) {
-  state.podLogs[event.pod] = (state.podLogs[event.pod] + event.podLogs + "\n");
+  assignContainerTextColors(state, event)
+
+  if (!state.podLogs[event.pod]) {
+    state.podLogs[event.pod] = [];
+  }
+
+  const line = {
+    color: state.textColors[event.container],
+    timestamp: new Date(event.timestamp),
+    content: `[${event.container}] ${event.message}`
+  };
+  state.podLogs[event.pod].push(line);
+  state.podLogs[event.pod].sort((a, b) => a.timestamp - b.timestamp);
+
   return state;
 }
 
+function assignContainerTextColors(state, event) {
+  const textColors = ["text-red-200", "text-purple-200", "text-green-200", "text-blue-200", "text-yellow-200", "text-orange-200"];
+
+  if (!state.textColors[event.container]) {
+    const availableColors = textColors.filter(color => !Object.values(state.textColors).includes(color));
+    if (availableColors.length > 0) {
+      state.textColors[event.container] = availableColors[0];
+    } else {
+      state.textColors[event.container] = state.textColors[Object.keys(state.textColors)[0]];
+    }
+  }
+}
+
 export function clearPodLogs(state, payload) {
-  state.podLogs[payload.pod] = "";
+  state.podLogs[payload.pod] = [];
   return state;
 }
 
