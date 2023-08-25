@@ -113,7 +113,7 @@ function ServiceDetail(props) {
       />
       <div className="w-full flex items-center justify-between space-x-6">
         <div className="flex-1">
-          <h3 ref={ref} className="flex text-lg font-bold">
+          <h3 ref={ref} className="flex text-lg font-bold hover:bg-gray-100 rounded px-2">
             {stack.service.name}
             {(configExists || defaultConfigCase) ?
               <>
@@ -150,7 +150,7 @@ function ServiceDetail(props) {
                 </span>
               </>
               :
-              <div className="flex items-center ml-2">
+              <div className="flex items-center ml-auto">
                 <svg xmlns="http://www.w3.org/2000/svg"
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
