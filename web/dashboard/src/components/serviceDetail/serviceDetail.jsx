@@ -154,7 +154,7 @@ function ServiceDetail(props) {
                 <svg xmlns="http://www.w3.org/2000/svg"
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
-                    confirm(`Are you sure you want to delete ${stack.service.name}?`) &&
+                    confirm(`Are you sure you want to delete the ${stack.service.name} application instance?`) &&
                     deleteAppInstance()
                   }}
                   className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
