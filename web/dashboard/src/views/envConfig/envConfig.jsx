@@ -320,28 +320,63 @@ class EnvConfig extends Component {
           type: ACTION_TYPE_SAVE_REPO_PULLREQUEST,
           payload: {
             repoName: repoName,
-            envName: data.envName,
+            envName: env,
             createdPr: data.createdPr
           }
         });
-        this.setDeployPolicy(data.manifest.deploy);
 
         clearTimeout(this.state.timeoutTimer);
-        this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
-        this.setState({
-          configFile: data.manifest,
-          appName: data.manifest.app,
-          namespace: data.manifest.namespace,
-          defaultAppName: data.manifest.app,
-          defaultNamespace: data.manifest.namespace,
-
-          values: Object.assign({}, data.manifest.values),
-          nonDefaultValues: Object.assign({}, data.manifest.values),
-          defaultState: Object.assign({}, data.manifest.values),
+        this.props.history.push(`/repo/${repoName}`);
+        window.scrollTo({ top: 0, left: 0 });
+      }, err => {
+        clearTimeout(this.state.timeoutTimer);
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.data?.message ?? err.statusText
+          }
         });
-        if (action === "new") {
-          this.props.history.replace(encodeURI(`/repo/${repoName}/envs/${env}/config/${appNameToSave}`));
+        this.resetNotificationStateAfterThreeSeconds();
+      })
+  }
+
+  delete() {
+    const { owner, repo, env } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Deleting..."
+      }
+    });
+    this.startApiCallTimeOutHandler();
+
+    this.props.gimletClient.deleteEnvConfig(owner, repo, env, this.state.appName)
+      .then((data) => {
+        if (!this.state.popupWindow.visible) {
+          // if no deleting is in progress, practically it timed out
+          return
         }
+
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Pull request was created",
+            link: data.createdPr.link
+          }
+        });
+        this.props.store.dispatch({
+          type: ACTION_TYPE_SAVE_REPO_PULLREQUEST,
+          payload: {
+            repoName: repoName,
+            envName: env,
+            createdPr: data.createdPr
+          }
+        });
+
+        clearTimeout(this.state.timeoutTimer);
+        this.props.history.replace(`/repo/${repoName}`);
+        window.scrollTo({ top: 0, left: 0 });
       }, err => {
         clearTimeout(this.state.timeoutTimer);
         this.props.store.dispatch({
@@ -690,6 +725,20 @@ gimlet manifest template -f manifest.yaml`}
             </>}
         </div>
         <div className="p-0 flow-root">
+          {action !== "new" &&
+            <span className="inline-flex gap-x-3 float-left">
+              <button
+                type="button"
+                className="bg-red-600 hover:bg-red-500 focus:outline-none focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700 inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
+                onClick={() => {
+                  // eslint-disable-next-line no-restricted-globals
+                  confirm(`Are you sure you want to delete the ${this.state.appName} deployment configuration? (deployed app instances of this configuration will remain deployed, and you can delete them later)`) &&
+                    this.delete()
+                }}
+              >
+                Delete
+              </button>
+            </span>}
           <span className="inline-flex gap-x-3 float-right">
             <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
               <Menu.Button
@@ -742,7 +791,7 @@ gimlet manifest template -f manifest.yaml`}
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
-              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-yellow-600 hover:bg-yellow-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-yellow-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
