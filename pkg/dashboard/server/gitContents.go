@@ -433,7 +433,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envConfigFileName := envConfigPath(env, envConfigData, existingEnvConfigs)
+	envConfigFileName := envConfigPath(env, envConfigData.AppName, existingEnvConfigs)
 	envConfigFilePath := fmt.Sprintf(".gimlet/%s", envConfigFileName)
 
 	// Temporary solution for some encoding problem (https://github.com/remix-run/history/issues/505), which fixed in https://github.com/remix-run/history/releases/tag/v5.0.0.
@@ -567,12 +567,128 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseJson)
 }
 
+func deleteEnvConfig(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
+	env := chi.URLParam(r, "env")
+	configName := chi.URLParam(r, "config")
+
+	ctx := r.Context()
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	user := ctx.Value("user").(*model.User)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
+
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(fmt.Sprintf("%s/%s", owner, repoName))
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		logrus.Errorf("cannot get repo: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	headBranch, err := helper.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get head branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	existingEnvConfigs, err := existingEnvConfigs(repo, headBranch)
+	if err != nil {
+		logrus.Errorf(err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	envConfigFileName := envConfigPath(env, configName, existingEnvConfigs)
+	envConfigFilePath := fmt.Sprintf(".gimlet/%s", envConfigFileName)
+	_, _, err = goScm.Content(token, repoPath, envConfigFilePath, headBranch)
+	if err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			logrus.Errorf("config file not found: %s", err)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			w.Write([]byte("{}"))
+			return
+		} else {
+			logrus.Errorf("cannot fetch envConfig from github: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			w.Write([]byte("{}"))
+			return
+		}
+	}
+
+	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+	if err != nil {
+		logrus.Errorf("cannot generate branch name: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+	if err != nil {
+		logrus.Errorf("cannot checkout branch: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = os.Remove(filepath.Join(tmpPath, envConfigFilePath))
+	if err != nil {
+		logrus.Errorf("cannot write file: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	err = StageCommitAndPush(repo, tmpPath, token, fmt.Sprintf("[Gimlet] Deleting %s gimlet manifest for the %s env", configName, env))
+	if err != nil {
+		logrus.Errorf("cannot stage commit and push: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch,
+		fmt.Sprintf("[Gimlet] `%s` ➡️ `%s` deployment configuration change", configName, env),
+		fmt.Sprintf("@%s is deleting the `%s` deployment configuration for the `%s` environment.", user.Login, configName, env))
+	if err != nil {
+		logrus.Errorf("cannot create pr: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"createdPr": &api.PR{
+			Sha:     createdPR.Sha,
+			Link:    createdPR.Link,
+			Title:   createdPR.Title,
+			Source:  createdPR.Source,
+			Number:  createdPR.Number,
+			Author:  createdPR.Author.Login,
+			Created: int(createdPR.Created.Unix()),
+			Updated: int(createdPR.Updated.Unix()),
+		},
+	}
+
+	responseJson, err := json.Marshal(response)
+	if err != nil {
+		logrus.Errorf("cannot marshal manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitRepoCache.Invalidate(repoPath)
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseJson)
+}
+
 // envConfigPath returns the envconfig file name based on convention, or the name of an existing file describing this env
-func envConfigPath(env string, envConfigData *envConfig, existingEnvConfigs map[string]*dx.Manifest) string {
-	envConfigFileName := fmt.Sprintf("%s-%s.yaml", env, envConfigData.AppName)
+func envConfigPath(env string, appName string, existingEnvConfigs map[string]*dx.Manifest) string {
+	envConfigFileName := fmt.Sprintf("%s-%s.yaml", env, appName)
 	for fileName, existingEnvConfig := range existingEnvConfigs {
 		if existingEnvConfig.Env == env &&
-			existingEnvConfig.App == envConfigData.AppName {
+			existingEnvConfig.App == appName {
 			envConfigFileName = fileName
 			break
 		}

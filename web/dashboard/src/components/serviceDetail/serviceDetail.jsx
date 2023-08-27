@@ -216,6 +216,10 @@ class Deployment extends Component {
       } else {
         hostPort = appPort
       }
+
+      if (hostPort === "10080") { // Connections to HTTP, HTTPS or FTP servers on port 10080 will fail. This is a mitigation for the NAT Slipstream 2.0 attack.
+        hostPort = "10081"
+      }
     }
 
     return (
