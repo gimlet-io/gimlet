@@ -69,6 +69,8 @@ export default class GimletClient {
 
   deleteEnvFromDB = (envName) => this.postWithAxios("/api/deleteEnvFromDB", JSON.stringify(envName));
 
+  deleteAppInstance = (env, app) => this.postWithAxios(`/api/delete?env=${env}&app=${app}`,)
+
   deploy = (artifactId, env, app, tenant) => this.post('/api/releases', JSON.stringify({ env, app, artifactId, tenant }));
 
   magicDeploy = (owner, repo, env, app, sha) => this.post('/api/deploy', JSON.stringify({ owner, repo, env, app, sha }));

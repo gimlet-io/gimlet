@@ -22,12 +22,12 @@ export default function DeployWidget(props) {
       if (!env.isOnline) {
         continue
       }
-      targets.push({ // Adding default deploy option
-        env: env.name,
-        app: repo.split("/")[1],
-      })
       const configs = envConfigs[env.name];
       if (!configs) {
+        targets.push({ // Adding default deploy option
+          env: env.name,
+          app: repo.split("/")[1],
+        })
         continue
       }
       for (const config of configs) { // Adding env configs

@@ -5,7 +5,11 @@ import { XIcon } from '@heroicons/react/solid'
 import { KubernetesAlertBox } from '../../views/pulse/pulse';
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
-  ACTION_TYPE_CLEAR_PODLOGS
+  ACTION_TYPE_CLEAR_PODLOGS,
+  ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWRESET,
+  ACTION_TYPE_POPUPWINDOWSUCCESS,
+  ACTION_TYPE_POPUPWINDOWPROGRESS,
 } from "../../redux/redux";
 import { copyToClipboard } from '../../views/settings/settings';
 import { Menu } from '@headlessui/react'
@@ -66,6 +70,36 @@ function ServiceDetail(props) {
     }
   }, [logsOverlayVisible]);
 
+  const deleteAppInstance = () => {
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Deleting application instance..."
+      }
+    });
+
+    gimletClient.deleteAppInstance(envName, stack.service.name)
+      .then(() => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Application instance deleted",
+          }
+        });
+      }, (err) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+        setTimeout(() => {
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWRESET
+          });
+        }, 3000);
+      });
+  }
+
   const defaultConfigCase = stack.service.name === repoName;
 
   return (
@@ -79,11 +113,10 @@ function ServiceDetail(props) {
       />
       <div className="w-full flex items-center justify-between space-x-6">
         <div className="flex-1">
-          <h3 ref={ref} className="flex text-lg font-bold">
+          <h3 ref={ref} className="flex text-lg font-bold hover:bg-gray-100 rounded px-2">
             {stack.service.name}
-            {(configExists || defaultConfigCase) &&
+            {(configExists || defaultConfigCase) ?
               <>
-                {configExists &&
                 <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
                   <svg xmlns="http://www.w3.org/2000/svg"
                     className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
@@ -93,7 +126,6 @@ function ServiceDetail(props) {
                       d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                   </svg>
                 </a>
-                }
                 <span onClick={() => linkToDeployment(envName, stack.service.name)}>
                   <svg
                     className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1 h-5 w-5"
@@ -117,6 +149,18 @@ function ServiceDetail(props) {
                   </svg>
                 </span>
               </>
+              :
+              <div className="flex items-center ml-auto">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                  onClick={() => {
+                    // eslint-disable-next-line no-restricted-globals
+                    confirm(`Are you sure you want to delete the ${stack.service.name} application instance?`) &&
+                    deleteAppInstance()
+                  }}
+                  className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
             }
           </h3>
           {<div className="px-3 py-4">
