@@ -746,7 +746,7 @@ gimlet manifest template -f manifest.yaml`}
                 className="bg-red-600 hover:bg-red-500 focus:outline-none focus:border-red-700 focus:shadow-outline-indigo active:bg-red-700 inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
                 onClick={() => {
                   // eslint-disable-next-line no-restricted-globals
-                  confirm(`Are you sure you want to delete ${this.state.appName}?`) &&
+                  confirm(`Are you sure you want to delete the ${this.state.appName} deployment configuration? (deployed app instances of this configuration will remain deployed, and you can delete them later)`) &&
                     this.delete()
                 }}
               >
