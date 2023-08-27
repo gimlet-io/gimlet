@@ -154,10 +154,13 @@ export function saveEnvPullRequest(state, payload) {
 }
 
 export function saveRepoPullRequest(state, payload) {
-  if (!state.pullRequests[payload.repoName][payload.envName]) {
-    state.pullRequests[payload.repoName][payload.envName] = [];
+  if (!state.pullRequests.configChanges[payload.repoName]) {
+    state.pullRequests.configChanges[payload.repoName] = {}
   }
-  state.pullRequests[payload.repoName][payload.envName].push(payload.createdPr);
+  if (!state.pullRequests.configChanges[payload.repoName][payload.envName]) {
+    state.pullRequests.configChanges[payload.repoName][payload.envName] = [];
+  }
+  state.pullRequests.configChanges[payload.repoName][payload.envName].push(payload.createdPr);
   return state;
 }
 
