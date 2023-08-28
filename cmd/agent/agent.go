@@ -15,7 +15,6 @@ import (
 	"path"
 	"runtime"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -202,7 +201,7 @@ func serverCommunication(
 		go sendEvents(kubeEnv, config.Host, config.AgentKey)
 		go sendFluxState(kubeEnv, config.Host, config.AgentKey)
 
-		runningLogStreams := map[string]chan int{}
+		runningLogStreams := NewRunningLogStreams()
 
 		go func(events chan map[string]interface{}) {
 			for {
@@ -224,7 +223,7 @@ func serverCommunication(
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
-						go stopPodLogs(runningLogStreams, namespace, svc)
+						go runningLogStreams.Stop(namespace, svc)
 					case "imageBuildTrigger":
 						eString, _ := json.Marshal(e)
 						var trigger streaming.ImageBuildTrigger
@@ -234,7 +233,7 @@ func serverCommunication(
 					}
 				} else {
 					logrus.Info("event stream closed")
-					go stopAllPodLogs(runningLogStreams)
+					go runningLogStreams.StopAll()
 					done <- true
 					return
 				}
@@ -330,32 +329,12 @@ func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	logrus.Info("init events sent")
 }
 
-func stopPodLogs(
-	runningLogStreams map[string]chan int,
-	namespace string,
-	serviceName string,
-) {
-	for svc, stopCh := range runningLogStreams {
-		if svc == namespace+"/"+serviceName {
-			stopCh <- 0
-		}
-	}
-}
-
-func stopAllPodLogs(
-	runningLogStreams map[string]chan int,
-) {
-	for _, stopCh := range runningLogStreams {
-		stopCh <- 0
-	}
-}
-
 func podLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
-	runningLogStreams map[string]chan int,
+	runningLogStreams *runningLogStreams,
 ) {
 
 	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
@@ -391,9 +370,8 @@ func podLogs(
 						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
 							pod.Namespace == deployment.Namespace {
 							containers := podContainers(pod.Spec)
-							var mutex sync.Mutex
 							for _, container := range containers {
-								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, &mutex, runningLogStreams)
+								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, runningLogStreams)
 							}
 							return
 						}
@@ -427,8 +405,7 @@ func streamPodLogs(
 	containerName string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
-	mutex *sync.Mutex,
-	runningLogStreams map[string]chan int,
+	runningLogStreams *runningLogStreams,
 ) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
@@ -447,9 +424,7 @@ func streamPodLogs(
 	defer podLogs.Close()
 
 	stopCh := make(chan int)
-	mutex.Lock()
-	runningLogStreams[namespace+"/"+serviceName] = stopCh
-	mutex.Unlock()
+	runningLogStreams.Regsiter(stopCh, namespace, serviceName)
 
 	go func() {
 		<-stopCh
