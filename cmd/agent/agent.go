@@ -15,7 +15,6 @@ import (
 	"path"
 	"runtime"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -371,9 +370,8 @@ func podLogs(
 						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
 							pod.Namespace == deployment.Namespace {
 							containers := podContainers(pod.Spec)
-							var mutex sync.Mutex
 							for _, container := range containers {
-								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, &mutex, runningLogStreams)
+								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, runningLogStreams)
 							}
 							return
 						}
@@ -407,7 +405,6 @@ func streamPodLogs(
 	containerName string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
-	mutex *sync.Mutex,
 	runningLogStreams *runningLogStreams,
 ) {
 	count := int64(100)
