@@ -89,7 +89,7 @@ test('should save single repo PR', () => {
   };
 
   const state = deepCopy(initialState)
-  state.pullRequests[repo] = {
+  state.pullRequests.configChanges[repo] = {
     "staging": [
       {
         "sha": "abc123",
@@ -99,8 +99,8 @@ test('should save single repo PR', () => {
   }
   let reduced = rootReducer(state, prSaved);
 
-  expect(Object.keys(reduced.pullRequests[repo]["staging"]).length).toEqual(2);
-  expect(reduced.pullRequests[repo]["staging"][1].link).toEqual("http://alsodoesnotexist");
+  expect(Object.keys(reduced.pullRequests.configChanges[repo]["staging"]).length).toEqual(2);
+  expect(reduced.pullRequests.configChanges[repo]["staging"][1].link).toEqual("http://alsodoesnotexist");
 });
 
 test('should set infra PR list', () => {
