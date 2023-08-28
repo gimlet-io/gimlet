@@ -2,18 +2,18 @@ package main
 
 import "sync"
 
-type logStreamsManager struct {
+type runningLogStreams struct {
 	runningLogStreams map[string]chan int
 	lock              sync.Mutex
 }
 
-func NewLogStreamsManager() *logStreamsManager {
-	return &logStreamsManager{
+func NewRunningLogStreams() *runningLogStreams {
+	return &runningLogStreams{
 		runningLogStreams: make(map[string]chan int),
 	}
 }
 
-func (l *logStreamsManager) Open(channel chan int, namespace string, serviceName string) {
+func (l *runningLogStreams) Regsiter(channel chan int, namespace string, serviceName string) {
 	pod := namespace + "/" + serviceName
 
 	l.lock.Lock()
@@ -21,7 +21,7 @@ func (l *logStreamsManager) Open(channel chan int, namespace string, serviceName
 	l.lock.Unlock()
 }
 
-func (l *logStreamsManager) Stop(namespace string, serviceName string) {
+func (l *runningLogStreams) Stop(namespace string, serviceName string) {
 	l.lock.Lock()
 	for svc, stopCh := range l.runningLogStreams {
 		if svc == namespace+"/"+serviceName {
@@ -31,7 +31,7 @@ func (l *logStreamsManager) Stop(namespace string, serviceName string) {
 	l.lock.Unlock()
 }
 
-func (l *logStreamsManager) StopAll() {
+func (l *runningLogStreams) StopAll() {
 	l.lock.Lock()
 	for _, stopCh := range l.runningLogStreams {
 		stopCh <- 0

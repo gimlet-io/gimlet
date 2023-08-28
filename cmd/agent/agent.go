@@ -202,7 +202,7 @@ func serverCommunication(
 		go sendEvents(kubeEnv, config.Host, config.AgentKey)
 		go sendFluxState(kubeEnv, config.Host, config.AgentKey)
 
-		logStreamsManager := NewLogStreamsManager()
+		runningLogStreams := NewRunningLogStreams()
 
 		go func(events chan map[string]interface{}) {
 			for {
@@ -219,12 +219,12 @@ func serverCommunication(
 							e["namespace"].(string),
 							e["serviceName"].(string),
 							messages,
-							logStreamsManager,
+							runningLogStreams,
 						)
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
-						go logStreamsManager.Stop(namespace, svc)
+						go runningLogStreams.Stop(namespace, svc)
 					case "imageBuildTrigger":
 						eString, _ := json.Marshal(e)
 						var trigger streaming.ImageBuildTrigger
@@ -234,7 +234,7 @@ func serverCommunication(
 					}
 				} else {
 					logrus.Info("event stream closed")
-					go logStreamsManager.StopAll()
+					go runningLogStreams.StopAll()
 					done <- true
 					return
 				}
@@ -335,7 +335,7 @@ func podLogs(
 	namespace string,
 	serviceName string,
 	messages chan *streaming.WSMessage,
-	logStreamsManager *logStreamsManager,
+	runningLogStreams *runningLogStreams,
 ) {
 
 	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
@@ -373,7 +373,7 @@ func podLogs(
 							containers := podContainers(pod.Spec)
 							var mutex sync.Mutex
 							for _, container := range containers {
-								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, &mutex, logStreamsManager)
+								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, &mutex, runningLogStreams)
 							}
 							return
 						}
@@ -408,7 +408,7 @@ func streamPodLogs(
 	serviceName string,
 	messages chan *streaming.WSMessage,
 	mutex *sync.Mutex,
-	logStreamsManager *logStreamsManager,
+	runningLogStreams *runningLogStreams,
 ) {
 	count := int64(100)
 	podLogOpts := v1.PodLogOptions{
@@ -427,7 +427,7 @@ func streamPodLogs(
 	defer podLogs.Close()
 
 	stopCh := make(chan int)
-	logStreamsManager.Open(stopCh, namespace, serviceName)
+	runningLogStreams.Regsiter(stopCh, namespace, serviceName)
 
 	go func() {
 		<-stopCh
