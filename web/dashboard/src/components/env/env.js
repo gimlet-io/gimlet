@@ -19,7 +19,7 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history } = this.props;
+    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, env.builtIn);
 
@@ -70,7 +70,7 @@ export class Env extends Component {
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
               }
-              {env.isOnline && searchFilter === '' &&
+              {env.isOnline &&
                 <>
                   {renderedServices}
                   <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
@@ -81,9 +81,6 @@ export class Env extends Component {
                     New deployment configuration
                   </h4>
                 </>
-              }
-              {env.isOnline && searchFilter !== '' &&
-                emptyStateSearch()
               }
             </div>
           </>

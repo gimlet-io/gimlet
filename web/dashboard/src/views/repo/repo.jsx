@@ -534,7 +534,6 @@ export default class Repo extends Component {
                 {envConfigs && Object.keys(filteredEnvs).sort().map((envName) =>
                   <Env
                     key={envName}
-                    searchFilter={search.filter}
                     env={filteredEnvs[envName]}
                     repoRolloutHistory={repoRolloutHistory}
                     envConfigs={this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)}
