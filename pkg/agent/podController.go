@@ -75,7 +75,7 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 						if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
 							if HasLabels(deployment.Spec.Selector.MatchLabels, updatedPod.GetObjectMeta().GetLabels()) &&
 								updatedPod.Namespace == deployment.Namespace {
-								podStatus := podStatus(*updatedPod)
+								podStatus := PodStatus(*updatedPod)
 								podLogs := ""
 								if "CrashLoopBackOff" == podStatus {
 									podLogs = logs(kubeEnv, *updatedPod)

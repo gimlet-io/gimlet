@@ -146,7 +146,7 @@ func (e *KubeEnv) Kustomizations() ([]*api.Kustomization, error) {
 }
 
 func statusAndMessage(conditions []interface{}) (string, string, int64) {
-	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
+	if c := FindStatusCondition(conditions, meta.ReadyCondition); c != nil {
 		transitionTime, _ := time.Parse(time.RFC3339, c["lastTransitionTime"].(string))
 		return c["reason"].(string), c["message"].(string), transitionTime.Unix()
 	}
@@ -154,7 +154,7 @@ func statusAndMessage(conditions []interface{}) (string, string, int64) {
 }
 
 // findStatusCondition finds the conditionType in conditions.
-func findStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
+func FindStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
 	for _, c := range conditions {
 		cMap := c.(map[string]interface{})
 		if cMap["type"] == conditionType {
@@ -309,7 +309,7 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 				return nil, err
 			}
 			for _, pod := range p.Items {
-				podStatus := podStatus(pod)
+				podStatus := PodStatus(pod)
 				podLogs := ""
 				if "CrashLoopBackOff" == podStatus || "Error" == podStatus {
 					podLogs = logs(e, pod)
@@ -359,7 +359,7 @@ func podErrorCause(pod v1.Pod) string {
 	return ""
 }
 
-func podStatus(pod v1.Pod) string {
+func PodStatus(pod v1.Pod) string {
 	if pod.DeletionTimestamp != nil {
 		return "Terminating" //https://github.com/kubernetes/kubernetes/issues/61376#issuecomment-374437926
 	}

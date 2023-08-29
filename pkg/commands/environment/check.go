@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/fluxcd/pkg/apis/meta"
+	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/urfave/cli/v2"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,16 +64,16 @@ func check(c *cli.Context) error {
 	}
 
 	spinner := NewSpinner("Installing Flux")
-	if err := waitForDeployment(clientSet, "flux-system", "helm-controller"); err != nil {
+	if err := waitForDeployment(clientSet, "flux-system", "helm-controller", spinner); err != nil {
 		return spinner.Fail(err)
 	}
-	if err := waitForDeployment(clientSet, "flux-system", "kustomize-controller"); err != nil {
+	if err := waitForDeployment(clientSet, "flux-system", "kustomize-controller", spinner); err != nil {
 		return spinner.Fail(err)
 	}
-	if err := waitForDeployment(clientSet, "flux-system", "notification-controller"); err != nil {
+	if err := waitForDeployment(clientSet, "flux-system", "notification-controller", spinner); err != nil {
 		return spinner.Fail(err)
 	}
-	if err := waitForDeployment(clientSet, "flux-system", "source-controller"); err != nil {
+	if err := waitForDeployment(clientSet, "flux-system", "source-controller", spinner); err != nil {
 		return spinner.Fail(err)
 	}
 	spinner.Success()
@@ -92,7 +94,7 @@ func check(c *cli.Context) error {
 	spinner.Success()
 
 	spinner = NewSpinner("Waiting for Gimlet Agent")
-	if err := waitForDeployment(clientSet, "infrastructure", "gimlet-agent"); err != nil {
+	if err := waitForDeployment(clientSet, "infrastructure", "gimlet-agent", spinner); err != nil {
 		return spinner.Fail(err)
 	}
 	spinner.Success()
@@ -102,9 +104,9 @@ func check(c *cli.Context) error {
 	return nil
 }
 
-func waitForDeployment(clientSet *kubernetes.Clientset, namespace, deploymentName string) error {
+func waitForDeployment(clientSet *kubernetes.Clientset, namespace, deploymentName string, spinner *Spinner) error {
 	for {
-		deploy, err := clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
+		deployment, err := clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
 		if err != nil && !strings.Contains(err.Error(), "not found") {
 			return err
 		}
@@ -116,12 +118,35 @@ func waitForDeployment(clientSet *kubernetes.Clientset, namespace, deploymentNam
 			return err
 		}
 
-		if deploy != nil &&
-			deploy.Spec.Replicas != nil &&
-			*deploy.Spec.Replicas == deploy.Status.ReadyReplicas {
+		pod, err := getDeploymentPod(clientSet, deployment.Spec.Selector.MatchLabels, namespace)
+		if err != nil {
+			return err
+		}
+
+		spinner.Infof("Pod %s/%s: %s", namespace, pod.Name, agent.PodStatus(*pod))
+
+		if deployment != nil &&
+			deployment.Spec.Replicas != nil &&
+			*deployment.Spec.Replicas == deployment.Status.ReadyReplicas {
 			return nil
 		}
 	}
+}
+
+func getDeploymentPod(clientSet *kubernetes.Clientset, matchLabels map[string]string, namespace string) (*v1.Pod, error) {
+	allPods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pod := range allPods.Items {
+		if agent.HasLabels(matchLabels, pod.GetObjectMeta().GetLabels()) &&
+			pod.Namespace == namespace {
+
+			return &pod, nil
+		}
+	}
+	return nil, nil
 }
 
 func waitForResources(client dynamic.Interface, gvr schema.GroupVersionResource, envName string, spinner *Spinner) error {
@@ -185,19 +210,8 @@ func getStatus(resource *unstructured.Unstructured) (bool, string) {
 }
 
 func reasonAndStatus(conditions []interface{}) (string, string) {
-	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
+	if c := agent.FindStatusCondition(conditions, meta.ReadyCondition); c != nil {
 		return c["reason"].(string), c["status"].(string)
 	}
 	return string(meta_v1.ConditionFalse), "waiting to be reconciled"
-}
-
-func findStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
-	for _, c := range conditions {
-		cMap := c.(map[string]interface{})
-		if cMap["type"] == conditionType {
-			return cMap
-		}
-	}
-
-	return nil
 }
