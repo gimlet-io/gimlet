@@ -2,6 +2,7 @@ package environment
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/fluxcd/pkg/apis/meta"
-	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/urfave/cli/v2"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,7 +123,7 @@ func waitForDeployment(clientSet *kubernetes.Clientset, namespace, deploymentNam
 			return err
 		}
 
-		spinner.Infof("Pod %s/%s: %s", namespace, pod.Name, agent.PodStatus(*pod))
+		spinner.Infof("Pod %s/%s: %s", namespace, pod.Name, podStatus(*pod))
 
 		if deployment != nil &&
 			deployment.Spec.Replicas != nil &&
@@ -140,13 +140,46 @@ func getDeploymentPod(clientSet *kubernetes.Clientset, matchLabels map[string]st
 	}
 
 	for _, pod := range allPods.Items {
-		if agent.HasLabels(matchLabels, pod.GetObjectMeta().GetLabels()) &&
+		if hasLabels(matchLabels, pod.GetObjectMeta().GetLabels()) &&
 			pod.Namespace == namespace {
 
 			return &pod, nil
 		}
 	}
 	return nil, nil
+}
+
+func hasLabels(selector map[string]string, labels map[string]string) bool {
+	for selectorLabel, selectorValue := range selector {
+		hasLabel := false
+		for label, value := range labels {
+			if label == selectorLabel && value == selectorValue {
+				hasLabel = true
+			}
+		}
+		if !hasLabel {
+			return false
+		}
+	}
+
+	return true
+}
+
+func podStatus(pod v1.Pod) string {
+	if pod.DeletionTimestamp != nil {
+		return "Terminating" //https://github.com/kubernetes/kubernetes/issues/61376#issuecomment-374437926
+	}
+
+	if v1.PodPending == pod.Status.Phase ||
+		v1.PodRunning == pod.Status.Phase {
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if containerStatus.State.Waiting != nil {
+				return fmt.Sprint(containerStatus.State.Waiting.Reason)
+			}
+		}
+	}
+
+	return fmt.Sprint(pod.Status.Phase)
 }
 
 func waitForResources(client dynamic.Interface, gvr schema.GroupVersionResource, envName string, spinner *Spinner) error {
@@ -210,8 +243,19 @@ func getStatus(resource *unstructured.Unstructured) (bool, string) {
 }
 
 func reasonAndStatus(conditions []interface{}) (string, string) {
-	if c := agent.FindStatusCondition(conditions, meta.ReadyCondition); c != nil {
+	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
 		return c["reason"].(string), c["status"].(string)
 	}
 	return string(meta_v1.ConditionFalse), "waiting to be reconciled"
+}
+
+func findStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
+	for _, c := range conditions {
+		cMap := c.(map[string]interface{})
+		if cMap["type"] == conditionType {
+			return cMap
+		}
+	}
+
+	return nil
 }
