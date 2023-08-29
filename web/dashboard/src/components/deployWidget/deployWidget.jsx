@@ -24,10 +24,6 @@ export default function DeployWidget(props) {
       }
       const configs = envConfigs[env.name];
       if (!configs) {
-        targets.push({ // Adding default deploy option
-          env: env.name,
-          app: repo.split("/")[1],
-        })
         continue
       }
       for (const config of configs) { // Adding env configs
@@ -40,6 +36,10 @@ export default function DeployWidget(props) {
           app: config.app,
         })
       }
+    }
+
+    if (targets.length === 0) {
+      return null
     }
 
     if (targets.length === 1) {
