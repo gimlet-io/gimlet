@@ -2,7 +2,6 @@ package environment
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -79,14 +78,14 @@ func check(c *cli.Context) error {
 
 	envName := c.String("env")
 	spinner = NewSpinner("Setting up git connection")
-	err = waitForResources(client, spinner, gitRepositoryResource, envName)
+	err = waitForResources(client, gitRepositoryResource, envName, spinner)
 	if err != nil {
 		return spinner.Fail(err)
 	}
 	spinner.Success()
 
 	spinner = NewSpinner("Deploying infrastructure components")
-	err = waitForResources(client, spinner, kustomizationResource, envName)
+	err = waitForResources(client, kustomizationResource, envName, spinner)
 	if err != nil {
 		return spinner.Fail(err)
 	}
@@ -125,14 +124,14 @@ func waitForDeployment(clientSet *kubernetes.Clientset, namespace, deploymentNam
 	}
 }
 
-func waitForResources(client dynamic.Interface, spinner *Spinner, resource schema.GroupVersionResource, envName string) error {
-	resources, err := relatedResources(client, resource, envName)
+func waitForResources(client dynamic.Interface, gvr schema.GroupVersionResource, envName string, spinner *Spinner) error {
+	resources, err := environmentRelatedResources(client, gvr, envName)
 	if err != nil {
 		return err
 	}
 
 	for _, r := range resources {
-		err := waitForReadyResource(client, spinner, resource, r)
+		err := waitForReadyResource(client, gvr, r.GetName(), spinner)
 		if err != nil {
 			return err
 		}
@@ -141,62 +140,9 @@ func waitForResources(client dynamic.Interface, spinner *Spinner, resource schem
 	return nil
 }
 
-func waitForReadyResource(client dynamic.Interface, spinner *Spinner, resource schema.GroupVersionResource, r unstructured.Unstructured) error {
-	for {
-		updatedResource, err := getUpdatedResource(client, resource, r)
-		if err != nil {
-			return err
-		}
-
-		ready, reason, err := getResourceStatus(updatedResource)
-		if err != nil {
-			return err
-		}
-
-		spinner.Infof("Resource %s/%s: %s", resource.Resource, r.GetName(), reason)
-
-		if ready {
-			break
-		}
-	}
-
-	return nil
-}
-
-func getUpdatedResource(client dynamic.Interface, resource schema.GroupVersionResource, r unstructured.Unstructured) (unstructured.Unstructured, error) {
-	updatedResources, err := client.Resource(resource).Namespace("").List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		return unstructured.Unstructured{}, err
-	}
-
-	for _, updatedResource := range updatedResources.Items {
-		if updatedResource.GetName() == r.GetName() {
-			return updatedResource, nil
-		}
-	}
-
-	return unstructured.Unstructured{}, fmt.Errorf("resource not found")
-}
-
-func getResourceStatus(resource unstructured.Unstructured) (bool, string, error) {
-	statusMap := resource.Object["status"].(map[string]interface{})
-	conditions, ok := statusMap["conditions"].([]interface{})
-	if !ok {
-		return false, "", fmt.Errorf("status conditions not found")
-	}
-
-	reason, status := reasonAndStatus(conditions)
-	ready, _ := strconv.ParseBool(status)
-	if ready {
-		return true, reason, nil
-	}
-
-	return false, reason, nil
-}
-
-func relatedResources(client dynamic.Interface, resource schema.GroupVersionResource, envName string) ([]unstructured.Unstructured, error) {
+func environmentRelatedResources(client dynamic.Interface, gvr schema.GroupVersionResource, envName string) ([]unstructured.Unstructured, error) {
 	var relatedResources []unstructured.Unstructured
-	resources, err := client.Resource(resource).Namespace("").List(context.TODO(), meta_v1.ListOptions{})
+	resources, err := client.Resource(gvr).Namespace("flux-system").List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		return relatedResources, err
 	}
@@ -208,6 +154,34 @@ func relatedResources(client dynamic.Interface, resource schema.GroupVersionReso
 	}
 
 	return relatedResources, nil
+}
+
+func waitForReadyResource(client dynamic.Interface, gvr schema.GroupVersionResource, resourceName string, spinner *Spinner) error {
+	for {
+		resource, err := client.Resource(gvr).Namespace("flux-system").Get(context.TODO(), resourceName, meta_v1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		ready, reason := getStatus(resource)
+
+		spinner.Infof("Resource %s/%s: %s", gvr.Resource, resourceName, reason)
+
+		if ready {
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+func getStatus(resource *unstructured.Unstructured) (bool, string) {
+	ready := false
+	statusMap := resource.Object["status"].(map[string]interface{})
+	conditions, _ := statusMap["conditions"].([]interface{})
+	reason, status := reasonAndStatus(conditions)
+	ready, _ = strconv.ParseBool(status)
+
+	return ready, reason
 }
 
 func reasonAndStatus(conditions []interface{}) (string, string) {
