@@ -92,7 +92,7 @@ export function ImageBuild(build, logsEndRef) {
     statusIcon = '✅';
   } else if (build.status === "notBuilt") {
     statusIcon = '😟';
-    instructionsText = <p>We could not automatically build an image. Please check our <a className="font-bold underline" target="_blank" rel="noreferrer" href='https://gimlet.io/docs/container-image-building'>documentation</a> to proceed."</p>
+    instructionsText = <p>We could not build an image automatically. Please check our <a className="font-bold underline" target="_blank" rel="noreferrer" href='https://gimlet.io/docs/container-image-building'>documentation</a> to proceed."</p>
   } else if (build.status === "error") {
     statusIcon = '❗';
     statusText = "Could not build image, check server logs."
