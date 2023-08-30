@@ -3,6 +3,7 @@ import {ChevronDownIcon} from '@heroicons/react/solid'
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import logo from "!file-loader!./logo.svg";
 import { usePostHog } from 'posthog-js/react'
+import { commits } from '../../redux/eventHandlers/eventHandlers';
 
 export default function DeployWidget(props) {
   const {deployTargets, deployHandler, magicDeployHandler, sha, repo, envs, envConfigs } = props;
@@ -31,6 +32,23 @@ export default function DeployWidget(props) {
         if (exists) {
           continue
         }
+
+        const repository = config.values.image?.repository
+        const tag = config.values.image?.tag
+        const hasVariable = repository?.includes("{{") || tag?.includes("{{")
+        const pointsToBuiltInRegistry = repository?.includes("127.0.0.1:32447")
+
+        if (hasVariable && !pointsToBuiltInRegistry) {
+          // this is the dynamic image tag case when CI sends an artifact
+
+          this only regards the configs at the latest commit
+          what we should do instead is that for static + static-site + buildpacks commits we should
+          create an artifact right when we learn about the commit (analyize configs + create artifacts),
+          then magic deploy and regular deploy paths move closer
+
+          continue
+        }
+
         targets.push({
           env: env.name,
           app: config.app,
