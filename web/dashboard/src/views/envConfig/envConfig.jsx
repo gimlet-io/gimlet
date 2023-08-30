@@ -23,6 +23,7 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import EnvVarsTable from "./envVarsTable";
 import { Switch } from '@headlessui/react'
 import posthog from "posthog-js"
+import ImageWidget from "./imageWidget";
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -34,7 +35,7 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     this.state = {
-      defaultChart: reduxState.defaultChart,
+      defaultChart: this.patchImageWidget(reduxState.defaultChart),
       defaultTemplate: reduxState.defaultTemplate,
       templates: reduxState.templates,
       fileInfos: reduxState.fileInfos,
@@ -56,7 +57,7 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        defaultChart: reduxState.defaultChart,
+        defaultChart: this.patchImageWidget(reduxState.defaultChart),
         defaultTemplate: reduxState.defaultTemplate,
         templates: reduxState.templates,
         fileInfos: reduxState.fileInfos,
@@ -193,6 +194,27 @@ class EnvConfig extends Component {
         this.setGitCloneUrl(`${scmUrl}/${repoName}.git`)
       }
     }
+  }
+
+  patchImageWidget(chart) {
+    if (!chart) {
+      return chart
+    }
+
+    if (chart.reference.name !== "onechart") {
+      return chart  
+    }
+
+    if (!chart.uiSchema[0].uiSchema["#/properties/image"]) {
+      chart.uiSchema[0].uiSchema = {
+        ...chart.uiSchema[0].uiSchema,
+        "#/properties/image": {
+          "ui:field": "imageWidget"
+        },
+      }
+    }
+   
+    return chart
   }
 
   setGitCloneUrl(gitCloneUrl) {
@@ -444,6 +466,12 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
+    console.log(this.state.values)
+
+    const customFields = {
+      imageWidget: ImageWidget,
+    }
+
     if (!this.state.templatesLoaded) {
       return <Spinner />;
     }
@@ -666,6 +694,7 @@ class EnvConfig extends Component {
             key={this.state.defaultChart.reference.name}
             schema={this.state.defaultChart.schema}
             config={this.state.defaultChart.uiSchema}
+            fields={customFields}
             values={this.state.values}
             setValues={this.setValues}
             validate={true}
@@ -791,7 +820,7 @@ gimlet manifest template -f manifest.yaml`}
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
-              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-yellow-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-blue-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
