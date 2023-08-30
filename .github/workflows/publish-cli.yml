@@ -73,3 +73,12 @@ jobs:
         push: true
         tags: |
           ghcr.io/gimlet-io/gimlet-cli:${{ steps.version.outputs.version }}
+    - name: Build and push Docker image (Wolfi)
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: docker/cli/Dockerfile.wolfi
+        platforms: linux/amd64
+        push: true
+        tags: |
+          ghcr.io/gimlet-io/gimlet-cli-wolfi:${{ steps.version.outputs.version }}
