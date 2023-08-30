@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import Installer from './installer';
 import { InformationCircleIcon } from '@heroicons/react/solid';
 import DefaultProfilePicture from '../profile/defaultProfilePicture.png';
@@ -268,28 +268,9 @@ function Users({ users, scmUrl, deleteUser }) {
                 alt={user.login} />
               <div className="ml-4">{user.login}</div>
             </div>
-            {user.token &&
-              <div className="rounded-md bg-blue-50 p-4 w-5/6">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">API key:</h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      <div className="flex items-center">
-                        <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{user.token}</span>
-                        <div className="ml-3 cursor-pointer" onClick={() => { copyToClipboard(user.token) }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
+            <TokenInfo 
+              token={user.token}
+            />
             <div className="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg"
                 onClick={() => {
@@ -306,6 +287,54 @@ function Users({ users, scmUrl, deleteUser }) {
       </div>
   )
 }
+
+function TokenInfo({ token }) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyClick = () => {
+    setIsCopied(true);
+
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
+  };
+
+  if (!token) {
+    return null
+  }
+
+  return (
+    <div className="rounded-md bg-blue-50 p-4 w-5/6">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-blue-800">API key:</h3>
+          <div className="mt-2 text-sm text-blue-700">
+            <div className="flex items-center">
+              <span className="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">{token}</span>
+              <div className="relative ml-3 cursor-pointer" onClick={() => {
+                copyToClipboard(token);
+                handleCopyClick();
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                {isCopied && (
+                  <div className="absolute top-6 right-0">
+                    <div className="p-2 bg-indigo-600 select-none text-white inline-block rounded">
+                      Copied!
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>)
+};
 
 function dashboardVersion(application) {
   if (!application.dashboardVersion) {
