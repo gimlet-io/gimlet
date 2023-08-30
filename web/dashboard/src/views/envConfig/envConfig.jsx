@@ -791,7 +791,7 @@ gimlet manifest template -f manifest.yaml`}
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
-              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-yellow-600 hover:bg-yellow-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-yellow-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-yellow-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
