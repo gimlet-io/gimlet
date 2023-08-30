@@ -237,6 +237,29 @@ export default class DeployPanel extends Component {
       )
     });
 
+    const helmReleasesWidgets = state.fluxState.helmReleases.map(helmRelease => {
+      let color = "bg-yellow-400";
+
+      if (helmRelease.status.includes("Succeeded")) {
+        color = "bg-green-400";
+      } else if (helmRelease.status.includes("Failed")) {
+        color = "bg-red-400";
+      }
+
+      const title = helmRelease.status + " at " + new Date(helmRelease.lastTransitionTime * 1000) + "\n" + helmRelease.statusDesc
+      const dateLabel = formatDistance(helmRelease.lastTransitionTime * 1000, new Date());
+      const nameAndNamespace = helmRelease.namespace + "/" + helmRelease.name;
+
+      return (
+        <div key={nameAndNamespace} title={title}>
+          <p>
+            <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
+            <span className="font-bold">{nameAndNamespace}</span>: "{helmRelease.statusDesc}" {dateLabel} ago
+          </p>
+        </div>
+      )
+    });
+
     return (
         <div className="w-full truncate text-lg" key={env.name}>
             <p className="font-semibold">{`${env.name.toUpperCase()}`}</p>
@@ -245,6 +268,8 @@ export default class DeployPanel extends Component {
               <div className="ml-2">{gitrepositoryWidgets}</div>
               <h3 className="mt-4 text-lg">Kustomizations:</h3>
               <div className="ml-2">{kustomizationWidgets}</div>
+              <h3 className="mt-4 text-lg">HelmReleases:</h3>
+              <div className="ml-2">{helmReleasesWidgets}</div>
             </div>
         </div>
     );
