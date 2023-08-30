@@ -87,6 +87,13 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	user := ctx.Value("user").(*model.User)
+	if usernameToDelete == user.Login {
+		logrus.Errorf("self-deletion is not allowed")
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
 	store := ctx.Value("store").(*store.Store)
 
 	err = store.DeleteUser(usernameToDelete)
