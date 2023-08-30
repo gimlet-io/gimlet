@@ -215,14 +215,11 @@ export default class DeployPanel extends Component {
 
     const kustomizationWidgets = state.fluxState.kustomizations.map(kustomization => {
       let color = "bg-yellow-400";
-      let statusDesc = "";
 
       if (kustomization.status.includes("Succeeded")) {
           color = "bg-green-400";
-          statusDesc = kustomization.statusDesc
       } else if (kustomization.status.includes("Failed")) {
           color = "bg-red-400";
-          statusDesc = kustomization.statusDesc;
       }
 
       const desc = kustomization.statusDesc.replace('main@sha1:', '')
@@ -234,7 +231,7 @@ export default class DeployPanel extends Component {
         <div key={nameAndNamespace} title={title}>
           <p>
             <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
-            <span className="font-bold">{nameAndNamespace}</span>: "{statusDesc}" {dateLabel} ago
+            <span className="font-bold">{nameAndNamespace}</span>: "{kustomization.statusDesc}" {dateLabel} ago
           </p>
         </div>
       )
