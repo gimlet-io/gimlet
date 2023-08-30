@@ -109,6 +109,7 @@ func createDummyArtifact(
 		Version:      version,
 		Vars: map[string]string{
 			"SHA": deployRequest.Sha,
+			"APP": deployRequest.App,
 		},
 	}
 

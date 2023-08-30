@@ -63,9 +63,40 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	if envConfig == nil {
+		logrus.Errorf("requested app config does not exist: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	image := envConfig.Values["image"]
+	hasVariable := false
+	pointsToBuiltInRegistry := false
+
+	if image != nil {
+		imageMap := image.(map[string]interface{})
+		repository := imageMap["repository"]
+		tag := imageMap["tag"]
+		if repository != nil && strings.Contains(repository.(string), "{{") ||
+			tag != nil && strings.Contains(tag.(string), "{{") {
+			hasVariable = true
+		}
+		if repository != nil && strings.Contains(repository.(string), "127.0.0.1:32447") {
+			pointsToBuiltInRegistry = true
+		}
+	}
+
+	strategy := "static"
+	if hasVariable {
+		if pointsToBuiltInRegistry {
+			strategy = "buildpacks"
+		} else {
+			strategy = "dynamic"
+		}
+	}
 
 	var imageBuildId string
-	if envConfig != nil && envConfig.Chart.Name == "static-site" {
+	if strategy == "static" || envConfig.Chart.Name == "static-site" {
 		imageBuildId = "static-" + randStringRunes(6)
 
 		version, err := gitops.Version(deployRequest.Owner, deployRequest.Repo, repo, deployRequest.Sha)
@@ -85,13 +116,17 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 			store,
 			clientHub,
 		)
-	} else {
+	} else if strategy == "buildpacks" {
 		imageBuildId, err = triggerImageBuild(repo, repoPath, deployRequest, ctx)
 		if err != nil {
 			logrus.Error(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+	} else {
+		logrus.Errorf("dynamic images cannot be deployed by magc deploy: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
 	}
 
 	responseStr, err := json.Marshal(map[string]string{
@@ -276,6 +311,7 @@ func createDummyArtifactAndStreamToClient(
 		Version:      *version,
 		Vars: map[string]string{
 			"SHA": deployRequest.Sha,
+			"APP": deployRequest.App,
 		},
 	}
 
