@@ -48,6 +48,7 @@ type MagicDeployRequest struct {
 	App         string `json:"app"`
 	Sha         string `json:"sha"`
 	TriggeredBy string `json:"triggeredBy"`
+	ArtifactID  string `json:"artifactID"`
 }
 
 // RollbackRequest contains all metadata about the rollback intent

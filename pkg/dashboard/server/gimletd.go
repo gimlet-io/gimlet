@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"time"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
+	"github.com/go-git/go-git/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )
@@ -127,12 +132,21 @@ func orderRolloutHistoryFromAscending(rolloutHistory []*Env) []*Env {
 	return orderedRolloutHistory
 }
 
-func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store) ([]*Commit, error) {
+func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store, repo *git.Repository, owner string, repoName string) ([]*Commit, error) {
 	var hashes []string
 	for _, c := range commits {
 		hashes = append(hashes, c.SHA)
 	}
 
+	err := generateFakeArtifactsForCommits(hashes, store, repo, owner, repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	return doDecorateCommitsWithGimletArtifacts(hashes, commits, store)
+}
+
+func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, store *store.Store) ([]*Commit, error) {
 	events, err := store.Artifacts(
 		"", "",
 		nil,
@@ -159,13 +173,13 @@ func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store) (
 
 	var decoratedCommits []*Commit
 	for _, c := range commits {
-		if artifact, ok := artifactsBySha[c.SHA]; ok && !artifact.Fake {
+		if artifact, ok := artifactsBySha[c.SHA]; ok {
 			for _, targetEnv := range artifact.Environments {
 				targetEnv.ResolveVars(artifact.CollectVariables())
 				if c.DeployTargets == nil {
-					c.DeployTargets = []*DeployTarget{}
+					c.DeployTargets = []*api.DeployTarget{}
 				}
-				c.DeployTargets = append(c.DeployTargets, &DeployTarget{
+				c.DeployTargets = append(c.DeployTargets, &api.DeployTarget{
 					App:        targetEnv.App,
 					Env:        targetEnv.Env,
 					Tenant:     targetEnv.Tenant.Name,
@@ -177,4 +191,86 @@ func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store) (
 	}
 
 	return decoratedCommits, nil
+}
+
+func generateFakeArtifactsForCommits(hashes []string, store *store.Store, repo *git.Repository, owner string, repoName string) error {
+	for _, hash := range hashes {
+		key := fmt.Sprintf("%s-%s", model.CommitArtifactsGenerated, hash)
+		_, err := store.KeyValue(key)
+		if err == nil {
+			continue
+		}
+
+		err = generateFakeArtifact(hash, store, repo, owner, repoName)
+		if err != nil {
+			return err
+		}
+
+		store.SaveKeyValue(&model.KeyValue{
+			Key: key,
+		})
+	}
+
+	return nil
+}
+
+func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository, owner string, repoName string) error {
+	manifests, err := gitops.Manifests(repo, hash)
+	if err != nil {
+		return err
+	}
+
+	manifestsThatNeedFakeArtifact := []*dx.Manifest{}
+	for _, m := range manifests {
+		strategy := extractImageStrategy(m)
+
+		if strategy == "static" ||
+			strategy == "static-site" ||
+			strategy == "buildpacks" {
+			manifestsThatNeedFakeArtifact = append(manifestsThatNeedFakeArtifact, m)
+		}
+	}
+
+	err = doGenerateFakeArtifact(hash, manifestsThatNeedFakeArtifact, store, owner, repoName, repo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func doGenerateFakeArtifact(
+	hash string,
+	manifests []*dx.Manifest,
+	store *store.Store,
+	owner string, repoName string,
+	repo *git.Repository,
+) error {
+	version, err := gitops.Version(owner, repoName, repo, hash)
+	if err != nil {
+		return err
+	}
+
+	artifact := &dx.Artifact{
+		ID:           fmt.Sprintf("%s/%s-%s", owner, repoName, uuid.New().String()),
+		Created:      time.Now().Unix(),
+		Fake:         true,
+		Environments: manifests,
+		Version:      *version,
+		Vars: map[string]string{
+			"SHA": hash,
+		},
+	}
+
+	event, err := model.ToEvent(*artifact)
+	if err != nil {
+		return err
+	}
+
+	_, err = store.CreateEvent(event)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

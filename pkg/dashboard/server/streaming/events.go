@@ -70,7 +70,7 @@ type CommitStatusUpdatedEvent struct {
 	Owner         string                `json:"owner"`
 	Sha           string                `json:"sha"`
 	RepoName      string                `json:"repo"`
-	DeployTargets []*model.DeployTarget `json:"deployTargets"`
+	DeployTargets []*api.DeployTarget   `json:"deployTargets"`
 	StreamingEvent
 }
 

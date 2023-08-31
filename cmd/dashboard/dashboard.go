@@ -139,8 +139,8 @@ func main() {
 	log.Info("Repo cache initialized")
 
 	imageBuilds := map[string]streaming.ImageBuildTrigger{}
-	magicDeployWorker := worker.NewMagicDeployWorker(repoCache, clientHub, store, successfullImageBuilds, imageBuilds)
-	go magicDeployWorker.Run()
+	imageBuildWorker := worker.NewImageBuildWorker(repoCache, clientHub, store, successfullImageBuilds, imageBuilds)
+	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
 	if config.ChartVersionUpdaterFeatureFlag {

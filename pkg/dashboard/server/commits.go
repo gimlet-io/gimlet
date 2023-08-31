@@ -98,7 +98,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commits, err = decorateCommitsWithGimletArtifacts(commits, dao)
+	commits, err = decorateCommitsWithGimletArtifacts(commits, dao, repo, owner, repoName)
 	if err != nil {
 		logrus.Warnf("cannot get deplyotargets: %s", err)
 	}
@@ -129,13 +129,6 @@ func triggerCommitSync(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-type DeployTarget struct {
-	App        string `json:"app"`
-	Env        string `json:"env"`
-	Tenant     string `json:"tenant"`
-	ArtifactId string `json:"artifactId"`
-}
-
 // Commit represents a Github commit
 type Commit struct {
 	SHA           string               `json:"sha"`
@@ -147,7 +140,7 @@ type Commit struct {
 	CreatedAt     int64                `json:"created_at"`
 	Tags          []string             `json:"tags,omitempty"`
 	Status        model.CombinedStatus `json:"status,omitempty"`
-	DeployTargets []*DeployTarget      `json:"deployTargets,omitempty"`
+	DeployTargets []*api.DeployTarget  `json:"deployTargets,omitempty"`
 }
 
 func decorateCommitsWithSCMData(

@@ -238,28 +238,53 @@ func release(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
-		Env:         releaseRequest.Env,
-		App:         releaseRequest.App,
-		Tenant:      releaseRequest.Tenant,
-		ArtifactID:  releaseRequest.ArtifactID,
-		TriggeredBy: user.Login,
-	})
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
-		return
-	}
-
-	artifact, err := store.Artifact(releaseRequest.ArtifactID)
+	artifactEvent, err := store.Artifact(releaseRequest.ArtifactID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s - cannot find artifact with id %s", http.StatusText(http.StatusNotFound), releaseRequest.ArtifactID), http.StatusNotFound)
 		return
 	}
-	event, err := store.CreateEvent(&model.Event{
-		Type:       model.ReleaseRequestedEvent,
-		Blob:       string(releaseRequestStr),
-		Repository: artifact.Repository,
-	})
+	artifact, err := model.ToArtifact(artifactEvent)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	var imageBuildEvent *model.Event
+	for _, manifest := range artifact.Environments {
+		if manifest.Env != releaseRequest.Env {
+			continue
+		}
+		if manifest.App != releaseRequest.App {
+			continue
+		}
+
+		strategy := extractImageStrategy(manifest)
+
+		if strategy == "buildpacks" {
+			imageBuildId, err = triggerImageBuild(repo, repoPath, deployRequest, ctx)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+
+			imageBuildEvent := xx
+
+			break
+		}
+	}
+
+	var event *model.Event
+	if imageBuildEvent != nil {
+		event = imageBuildEvent
+	} else {
+		event, err = releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+	}
+
+	event, err = store.CreateEvent(event)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
 		return
@@ -271,6 +296,27 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(eventIDBytes)
+}
+
+func releaseRequestEvent(releaseRequest dx.ReleaseRequest, repository string, login string) (*model.Event, error) {
+	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
+		Env:         releaseRequest.Env,
+		App:         releaseRequest.App,
+		Tenant:      releaseRequest.Tenant,
+		ArtifactID:  releaseRequest.ArtifactID,
+		TriggeredBy: login,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s - cannot serialize release request: %s", http.StatusText(http.StatusInternalServerError), err)
+	}
+
+	event := &model.Event{
+		Type:       model.ReleaseRequestedEvent,
+		Blob:       string(releaseRequestStr),
+		Repository: repository,
+	}
+
+	return event, nil
 }
 
 func performRollback(w http.ResponseWriter, r *http.Request) {

@@ -69,31 +69,7 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	image := envConfig.Values["image"]
-	hasVariable := false
-	pointsToBuiltInRegistry := false
-
-	if image != nil {
-		imageMap := image.(map[string]interface{})
-		repository := imageMap["repository"]
-		tag := imageMap["tag"]
-		if repository != nil && strings.Contains(repository.(string), "{{") ||
-			tag != nil && strings.Contains(tag.(string), "{{") {
-			hasVariable = true
-		}
-		if repository != nil && strings.Contains(repository.(string), "127.0.0.1:32447") {
-			pointsToBuiltInRegistry = true
-		}
-	}
-
-	strategy := "static"
-	if hasVariable {
-		if pointsToBuiltInRegistry {
-			strategy = "buildpacks"
-		} else {
-			strategy = "dynamic"
-		}
-	}
+	strategy := extractImageStrategy(envConfig)
 
 	var imageBuildId string
 	if strategy == "static" || envConfig.Chart.Name == "static-site" {
@@ -140,6 +116,36 @@ func magicDeploy(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseStr)
+}
+
+func extractImageStrategy(envConfig *dx.Manifest) string {
+	image := envConfig.Values["image"]
+	hasVariable := false
+	pointsToBuiltInRegistry := false
+
+	if image != nil {
+		imageMap := image.(map[string]interface{})
+		repository := imageMap["repository"]
+		tag := imageMap["tag"]
+		if repository != nil && strings.Contains(repository.(string), "{{") ||
+			tag != nil && strings.Contains(tag.(string), "{{") {
+			hasVariable = true
+		}
+		if repository != nil && strings.Contains(repository.(string), "127.0.0.1:32447") {
+			pointsToBuiltInRegistry = true
+		}
+	}
+
+	strategy := "static"
+	if hasVariable {
+		if pointsToBuiltInRegistry {
+			strategy = "buildpacks"
+		} else {
+			strategy = "dynamic"
+		}
+	}
+
+	return strategy
 }
 
 func triggerImageBuild(

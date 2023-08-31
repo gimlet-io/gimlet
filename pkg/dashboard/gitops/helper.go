@@ -331,6 +331,24 @@ func Manifest(
 	env string,
 	app string,
 ) (*dx.Manifest, error) {
+	manifests, err := Manifests(repo, sha)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range manifests {
+		if m.Env == env && m.App == app {
+			return m, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func Manifests(
+	repo *git.Repository,
+	sha string,
+) ([]*dx.Manifest, error) {
 	files, err := nativeGit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
@@ -340,6 +358,7 @@ func Manifest(
 		}
 	}
 
+	manifests := []*dx.Manifest{}
 	for _, content := range files {
 		var envConfig dx.Manifest
 		err = yaml.Unmarshal([]byte(content), &envConfig)
@@ -347,10 +366,8 @@ func Manifest(
 			logrus.Warnf("cannot parse env config string: %s", err)
 			continue
 		}
-		if envConfig.Env == env && envConfig.App == app {
-			return &envConfig, nil
-		}
+		manifests = append(manifests, &envConfig)
 	}
 
-	return nil, nil
+	return manifests, nil
 }
