@@ -374,8 +374,7 @@ const EnvironmentCard = ({ store, isOnline, env, deleteEnv, gimletClient, refres
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
             <button
               onClick={() => bootstrapGitops(env.name, repoPerEnv, kustomizationPerApp)}
-              disabled={popupWindow.visible}
-              className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              className='bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150'
             >
               Bootstrap gitops repository
             </button>
