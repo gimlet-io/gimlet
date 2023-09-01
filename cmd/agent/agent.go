@@ -21,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -225,11 +226,13 @@ func serverCommunication(
 						svc := e["serviceName"].(string)
 						go runningLogStreams.Stop(namespace, svc)
 					case "imageBuildTrigger":
-						eString, _ := json.Marshal(e)
-						var trigger streaming.ImageBuildTrigger
-						_ = json.Unmarshal(eString, &trigger)
+						requestString, _ := json.Marshal(e["request"])
+						buildId := e["buildId"].(string)
 
-						go buildImage(gimletHost, agentKey, trigger, messages, config.ImageBuilderHost)
+						var imageBuildRequest dx.ImageBuildRequest
+						_ = json.Unmarshal(requestString, &imageBuildRequest)
+
+						go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
 					}
 				} else {
 					logrus.Info("event stream closed")

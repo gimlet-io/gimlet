@@ -2,6 +2,7 @@ package worker
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -38,10 +39,34 @@ func (m *ImageBuildWorker) Run() {
 			}
 
 			if imageBuildStatus.Status != "running" {
-				// os.RemoveAll(imageBuild.SourcePath)
-				// delete(m.imageBuilds, imageBuildStatus.BuildId)
+				go handleImageBuildError(imageBuildStatus.BuildId, m.store)
 			}
 		}
+	}
+}
+
+func handleImageBuildError(buildId string, store *store.Store) {
+	event, err := store.Event(buildId)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	var imageBuildRequest dx.ImageBuildRequest
+	err = json.Unmarshal([]byte(event.Blob), &imageBuildRequest)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	os.RemoveAll(imageBuildRequest.SourcePath)
+
+	event.Status = model.Failure.String()
+	event.StatusDesc = "image build failed"
+	err = store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, "")
+	if err != nil {
+		logrus.Error(err)
+		return
 	}
 }
 
@@ -94,4 +119,6 @@ func createDeployRequest(buildId string, store *store.Store) {
 		logrus.Error(err)
 		return
 	}
+
+	os.RemoveAll(imageBuildRequest.SourcePath)
 }

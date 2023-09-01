@@ -14,21 +14,24 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/sirupsen/logrus"
 )
 
-func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger, messages chan *streaming.WSMessage, imageBuilderHost string) {
+func buildImage(gimletHost, agentKey, buildId string, trigger dx.ImageBuildRequest, messages chan *streaming.WSMessage, imageBuilderHost string) {
 	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		logrus.Errorf("cannot get temp file: %s", err)
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 	defer tarFile.Close()
 
-	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, trigger.ImageBuildId)
+	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 	req.Header.Set("Authorization", "BEARER "+agentKey)
@@ -38,6 +41,7 @@ func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger
 	resp, err := client.Do(req)
 	if err != nil {
 		logrus.Errorf("could not download tarfile: %s", err)
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 	defer resp.Body.Close()
@@ -45,12 +49,14 @@ func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		logrus.Errorf("could download tar file: %d - %v", resp.StatusCode, string(body))
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 
 	_, err = io.Copy(tarFile, resp.Body)
 	if err != nil {
 		logrus.Errorf("could not download tarfile: %s", err)
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 
@@ -59,22 +65,24 @@ func buildImage(gimletHost, agentKey string, trigger streaming.ImageBuildTrigger
 		imageBuilderHost,
 		trigger,
 		messages,
+		buildId,
 	)
 }
 
 func imageBuilder(
 	path string, url string,
-	trigger streaming.ImageBuildTrigger,
+	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
+	buildId string,
 ) {
 	request, err := newfileUploadRequest(url, map[string]string{
 		"image": trigger.Image,
 		"tag":   trigger.Tag,
-		"app":   trigger.DeployRequest.App,
+		"app":   trigger.App,
 	}, "data", path)
 	if err != nil {
 		logrus.Errorf("cannot upload file: %s", err)
-		streamImageBuildEvent(messages, trigger.DeployRequest.TriggeredBy, trigger.ImageBuildId, "error", "")
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 
@@ -82,11 +90,11 @@ func imageBuilder(
 	resp, err := client.Do(request)
 	if err != nil {
 		logrus.Errorf("cannot upload file: %s", err)
-		streamImageBuildEvent(messages, trigger.DeployRequest.TriggeredBy, trigger.ImageBuildId, "error", "")
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 
-	streamImageBuilderLogs(resp.Body, messages, trigger.DeployRequest.TriggeredBy, trigger.ImageBuildId)
+	streamImageBuilderLogs(resp.Body, messages, trigger.TriggeredBy, buildId)
 }
 
 // Creates a new file upload http request with optional extra params

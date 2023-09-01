@@ -17,15 +17,6 @@ type ConnectedAgent struct {
 	FluxState    *api.FluxState `json:"-"`
 }
 
-type ImageBuildTrigger struct {
-	Action        string               `json:"action"`
-	DeployRequest dx.ImageBuildRequest `json:"deployRequest"`
-	ImageBuildId  string               `json:"imageBuildId"`
-	Image         string               `json:"image"`
-	Tag           string               `json:"tag"`
-	SourcePath    string               `json:"sourcePath"`
-}
-
 // AgentHub is the central registry of all connected agents
 type AgentHub struct {
 	Agents map[string]*ConnectedAgent
@@ -64,14 +55,17 @@ func (h *AgentHub) ForceStateSend() {
 	}
 }
 
-func (h *AgentHub) TriggerImageBuild(trigger ImageBuildTrigger) {
+func (h *AgentHub) TriggerImageBuild(imageBuildId string, imageBuildRequest *dx.ImageBuildRequest) {
 	for _, a := range h.Agents {
-		if a.Name != trigger.DeployRequest.Env {
+		if a.Name != imageBuildRequest.Env {
 			continue
 		}
 
-		trigger.Action = "imageBuildTrigger"
-		imageBuildTriggerString, err := json.Marshal(trigger)
+		imageBuildTriggerString, err := json.Marshal(map[string]interface{}{
+			"action":  "imageBuildTrigger",
+			"buildId": imageBuildId,
+			"request": imageBuildRequest,
+		})
 		if err != nil {
 			logrus.Errorf("could not serialize request: %s", err)
 			return

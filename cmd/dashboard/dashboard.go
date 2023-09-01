@@ -138,7 +138,6 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
-	imageBuilds := map[string]streaming.ImageBuildTrigger{}
 	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
 	go imageBuildWorker.Run()
 
@@ -218,7 +217,6 @@ func main() {
 		perf,
 		logger,
 		gitServer,
-		imageBuilds,
 		gitUser,
 	)
 

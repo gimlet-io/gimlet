@@ -9,7 +9,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gorilla/securecookie"
@@ -36,7 +35,6 @@ func Test_MustUser(t *testing.T) {
 		nil,
 		&logger,
 		nil,
-		make(map[string]streaming.ImageBuildTrigger),
 		nil,
 	)
 	server := httptest.NewServer(router)

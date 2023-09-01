@@ -47,6 +47,9 @@ type ImageBuildRequest struct {
 	Sha         string `json:"sha"`
 	TriggeredBy string `json:"triggeredBy"`
 	ArtifactID  string `json:"artifactID"`
+	Image       string `json:"image"`
+	Tag         string `json:"tag"`
+	SourcePath  string `json:"sourcePath"`
 }
 
 // RollbackRequest contains all metadata about the rollback intent

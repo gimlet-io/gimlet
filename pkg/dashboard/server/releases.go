@@ -282,6 +282,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 	if imageBuildEvent != nil {
 		event = imageBuildEvent
 	} else {
+		// TODO source path and the other fields are not added yet
 		event, err = releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -297,7 +298,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 	if imageBuildEvent != nil {
 		gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-		imageBuilds, _ := ctx.Value("imageBuilds").(map[string]streaming.ImageBuildTrigger)
 		agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
 
 		err = triggerImageBuild(
@@ -305,7 +305,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 			imageBuildRequest,
 			imageBuildEvent.ID,
 			artifact.Version.RepositoryName,
-			imageBuilds,
 			agentHub,
 		)
 		if err != nil {
@@ -372,10 +371,9 @@ func imageBuildRequestEvent(
 
 func triggerImageBuild(
 	gitRepCache *nativeGit.RepoCache,
-	deployRequest *dx.ImageBuildRequest,
+	imageBuildRequest *dx.ImageBuildRequest,
 	eventId string,
 	ownerAndRepo string,
-	imageBuilds map[string]streaming.ImageBuildTrigger,
 	agentHub *streaming.AgentHub,
 ) error {
 	repo, repoPath, err := gitRepCache.InstanceForWrite(ownerAndRepo)
@@ -387,7 +385,7 @@ func triggerImageBuild(
 		return fmt.Errorf("cannot get worktree: %s", err)
 	}
 	err = worktree.Reset(&git.ResetOptions{
-		Commit: plumbing.NewHash(deployRequest.Sha),
+		Commit: plumbing.NewHash(imageBuildRequest.Sha),
 		Mode:   git.HardReset,
 	})
 	if err != nil {
@@ -404,19 +402,7 @@ func triggerImageBuild(
 		return fmt.Errorf("cannot tar folder: %s", err)
 	}
 
-	image := "registry.infrastructure.svc.cluster.local:5000/" + deployRequest.App
-	tag := deployRequest.Sha
-
-	trigger := streaming.ImageBuildTrigger{
-		DeployRequest: *deployRequest,
-		ImageBuildId:  eventId,
-		Image:         image,
-		Tag:           tag,
-		SourcePath:    tarFile.Name(),
-	}
-
-	imageBuilds[eventId] = trigger
-	agentHub.TriggerImageBuild(trigger)
+	agentHub.TriggerImageBuild(eventId, imageBuildRequest)
 
 	return nil
 }
