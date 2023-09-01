@@ -314,7 +314,7 @@ export default class Repo extends Component {
         target.sha = sha;
         target.trackingId = data.id;
         setTimeout(() => {
-          this.checkDeployStatus(target);
+          this.checkDeployStatus(target.trackingId);
         }, 500);
       }, () => {/* Generic error handler deals with it */
       });

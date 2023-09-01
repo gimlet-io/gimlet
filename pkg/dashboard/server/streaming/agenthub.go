@@ -18,12 +18,12 @@ type ConnectedAgent struct {
 }
 
 type ImageBuildTrigger struct {
-	Action        string                `json:"action"`
-	DeployRequest dx.MagicDeployRequest `json:"deployRequest"`
-	ImageBuildId  string                `json:"imageBuildId"`
-	Image         string                `json:"image"`
-	Tag           string                `json:"tag"`
-	SourcePath    string                `json:"sourcePath"`
+	Action        string               `json:"action"`
+	DeployRequest dx.ImageBuildRequest `json:"deployRequest"`
+	ImageBuildId  string               `json:"imageBuildId"`
+	Image         string               `json:"image"`
+	Tag           string               `json:"tag"`
+	SourcePath    string               `json:"sourcePath"`
 }
 
 // AgentHub is the central registry of all connected agents

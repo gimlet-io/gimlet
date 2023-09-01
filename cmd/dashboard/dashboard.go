@@ -139,7 +139,7 @@ func main() {
 	log.Info("Repo cache initialized")
 
 	imageBuilds := map[string]streaming.ImageBuildTrigger{}
-	imageBuildWorker := worker.NewImageBuildWorker(repoCache, clientHub, store, successfullImageBuilds, imageBuilds)
+	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
 	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}

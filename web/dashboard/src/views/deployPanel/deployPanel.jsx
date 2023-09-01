@@ -279,11 +279,12 @@ export default class DeployPanel extends Component {
     let deployStatusWidget = null
 
     if (runningDeploy.trackingId) {
+      console.log(runningDeploy.trackingId)
       deployStatusWidget = DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
     }
-    if (runningDeploy.buildId && !runningDeploy.buildId.startsWith('static-')) {
-      imageBuildWidget = ImageBuild(imageBuildLogs[runningDeploy.buildId], logsEndRef);
-    }
+    // if (runningDeploy.buildId && !runningDeploy.buildId.startsWith('static-')) {
+    //   imageBuildWidget = ImageBuild(imageBuildLogs[runningDeploy.buildId], logsEndRef);
+    // }
 
     const deployHeaderWidget = deployHeader(scmUrl, runningDeploy)
 

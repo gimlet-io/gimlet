@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
+	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
 	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
@@ -138,7 +139,7 @@ func decorateCommitsWithGimletArtifacts(commits []*Commit, store *store.Store, r
 		hashes = append(hashes, c.SHA)
 	}
 
-	err := generateFakeArtifactsForCommits(hashes, store, repo, owner, repoName)
+	err := generateFakeArtifactsForCommits(hashes, store, repo, repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +194,7 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 	return decoratedCommits, nil
 }
 
-func generateFakeArtifactsForCommits(hashes []string, store *store.Store, repo *git.Repository, owner string, repoName string) error {
+func generateFakeArtifactsForCommits(hashes []string, store *store.Store, repo *git.Repository, repoName string) error {
 	for _, hash := range hashes {
 		key := fmt.Sprintf("%s-%s", model.CommitArtifactsGenerated, hash)
 		_, err := store.KeyValue(key)
@@ -201,7 +202,7 @@ func generateFakeArtifactsForCommits(hashes []string, store *store.Store, repo *
 			continue
 		}
 
-		err = generateFakeArtifact(hash, store, repo, owner, repoName)
+		err = generateFakeArtifact(hash, store, repo, repoName)
 		if err != nil {
 			return err
 		}
@@ -214,7 +215,7 @@ func generateFakeArtifactsForCommits(hashes []string, store *store.Store, repo *
 	return nil
 }
 
-func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository, owner string, repoName string) error {
+func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository, repoName string) error {
 	manifests, err := gitops.Manifests(repo, hash)
 	if err != nil {
 		return err
@@ -222,7 +223,7 @@ func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository,
 
 	manifestsThatNeedFakeArtifact := []*dx.Manifest{}
 	for _, m := range manifests {
-		strategy := extractImageStrategy(m)
+		strategy := gitops.ExtractImageStrategy(m)
 
 		if strategy == "static" ||
 			strategy == "static-site" ||
@@ -231,7 +232,7 @@ func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository,
 		}
 	}
 
-	err = doGenerateFakeArtifact(hash, manifestsThatNeedFakeArtifact, store, owner, repoName, repo)
+	err = doGenerateFakeArtifact(hash, manifestsThatNeedFakeArtifact, store, repoName, repo)
 	if err != nil {
 		return err
 	}
@@ -243,16 +244,17 @@ func doGenerateFakeArtifact(
 	hash string,
 	manifests []*dx.Manifest,
 	store *store.Store,
-	owner string, repoName string,
+	repoName string,
 	repo *git.Repository,
 ) error {
-	version, err := gitops.Version(owner, repoName, repo, hash)
+	owner, name := scm.Split(repoName)
+	version, err := gitops.Version(owner, name, repo, hash)
 	if err != nil {
 		return err
 	}
 
 	artifact := &dx.Artifact{
-		ID:           fmt.Sprintf("%s/%s-%s", owner, repoName, uuid.New().String()),
+		ID:           fmt.Sprintf("%s-%s", repoName, uuid.New().String()),
 		Created:      time.Now().Unix(),
 		Fake:         true,
 		Environments: manifests,

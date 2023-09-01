@@ -425,16 +425,6 @@ export function deployStatus(state, payload) {
   return state;
 }
 
-export function artifactCreated(state, payload) {
-  for (let runningDeploy of state.runningDeploys) {
-    if (runningDeploy.buildId === payload.buildId) {
-      runningDeploy.trackingId = payload.trackingId;
-    }
-  }
-
-  return state;
-}
-
 export function clearDeployStatus(state) {
   state.runningDeploys = [];
   return state;

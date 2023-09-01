@@ -40,10 +40,8 @@ type ReleaseRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
-// MagicDeployRequest contains all metadata about a simplified release intent
-type MagicDeployRequest struct {
-	Owner       string `json:"owner"`
-	Repo        string `json:"repo"`
+// ImageBuildRequest contains all metadata to be able to build an image
+type ImageBuildRequest struct {
 	Env         string `json:"env"`
 	App         string `json:"app"`
 	Sha         string `json:"sha"`
