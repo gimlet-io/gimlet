@@ -34,9 +34,7 @@ func (m *ImageBuildWorker) Run() {
 		case imageBuildStatus := <-m.successfullImageBuilds:
 			if imageBuildStatus.Status == "success" {
 				go createDeployRequest(imageBuildStatus.BuildId, m.store)
-			}
-
-			if imageBuildStatus.Status != "running" {
+			} else if imageBuildStatus.Status != "running" {
 				go handleImageBuildError(imageBuildStatus.BuildId, m.store)
 			}
 		}
