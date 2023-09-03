@@ -257,7 +257,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var imageBuildEvent *model.Event
 	var imageBuildRequest *dx.ImageBuildRequest
 	for _, manifest := range artifact.Environments {
 		if manifest.Env != releaseRequest.Env {
@@ -267,48 +266,55 @@ func release(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		strategy := gitops.ExtractImageStrategy(manifest)
+		strategy, imageRepository, imageTag := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" {
-			imageBuildEvent, imageBuildRequest, err = imageBuildRequestEvent(releaseRequest, artifactEvent.Repository, user.Login, artifact.Version.SHA)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusNotFound)
-				return
+			imageBuildRequest = &dx.ImageBuildRequest{
+				Env:         releaseRequest.Env,
+				App:         releaseRequest.App,
+				Sha:         artifact.Version.SHA,
+				ArtifactID:  releaseRequest.ArtifactID,
+				TriggeredBy: user.Login,
+				Image:       imageRepository,
+				Tag:         imageTag,
 			}
 			break
 		}
 	}
 
 	var event *model.Event
-	if imageBuildEvent != nil {
-		event = imageBuildEvent
-	} else {
-		// TODO source path and the other fields are not added yet
-		event, err = releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
+	if imageBuildRequest != nil {
+		gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+		sourcePath, err := prepSourceForImageBuild(
+			gitRepoCache, artifact.Version.RepositoryName, artifact.Version.SHA,
+		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-	}
+		imageBuildRequest.SourcePath = sourcePath
 
-	event, err = store.CreateEvent(event)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
-		return
-	}
-
-	if imageBuildEvent != nil {
-		gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-		agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
-
-		err = triggerImageBuild(
-			gitRepoCache,
-			imageBuildRequest,
-			imageBuildEvent.ID,
-			artifact.Version.RepositoryName,
-			agentHub,
-		)
+		imageBuildEvent, err := imageBuildRequestEvent(imageBuildRequest, artifactEvent.Repository)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		event, err = store.CreateEvent(imageBuildEvent)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
+			return
+		}
+
+		agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
+		agentHub.TriggerImageBuild(imageBuildEvent.ID, imageBuildRequest)
+	} else {
+		event, err := releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		event, err = store.CreateEvent(event)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -342,22 +348,10 @@ func releaseRequestEvent(releaseRequest dx.ReleaseRequest, repository string, lo
 	return event, nil
 }
 
-func imageBuildRequestEvent(
-	releaseRequest dx.ReleaseRequest,
-	repository string,
-	login string,
-	sha string,
-) (*model.Event, *dx.ImageBuildRequest, error) {
-	imageBuildRequest := dx.ImageBuildRequest{
-		Env:         releaseRequest.Env,
-		App:         releaseRequest.App,
-		Sha:         sha,
-		ArtifactID:  releaseRequest.ArtifactID,
-		TriggeredBy: login,
-	}
+func imageBuildRequestEvent(imageBuildRequest *dx.ImageBuildRequest, repository string) (*model.Event, error) {
 	requestStr, err := json.Marshal(imageBuildRequest)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%s - cannot serialize request: %s", http.StatusText(http.StatusInternalServerError), err)
+		return nil, err
 	}
 
 	event := &model.Event{
@@ -366,45 +360,37 @@ func imageBuildRequestEvent(
 		Repository: repository,
 	}
 
-	return event, &imageBuildRequest, nil
+	return event, nil
 }
 
-func triggerImageBuild(
-	gitRepCache *nativeGit.RepoCache,
-	imageBuildRequest *dx.ImageBuildRequest,
-	eventId string,
-	ownerAndRepo string,
-	agentHub *streaming.AgentHub,
-) error {
+func prepSourceForImageBuild(gitRepCache *nativeGit.RepoCache, ownerAndRepo string, sha string) (string, error) {
 	repo, repoPath, err := gitRepCache.InstanceForWrite(ownerAndRepo)
 	if err != nil {
-		return fmt.Errorf("cannot get repo: %s", err)
+		return "", fmt.Errorf("cannot get repo: %s", err)
 	}
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return fmt.Errorf("cannot get worktree: %s", err)
+		return "", fmt.Errorf("cannot get worktree: %s", err)
 	}
 	err = worktree.Reset(&git.ResetOptions{
-		Commit: plumbing.NewHash(imageBuildRequest.Sha),
+		Commit: plumbing.NewHash(sha),
 		Mode:   git.HardReset,
 	})
 	if err != nil {
-		return fmt.Errorf("cannot set version: %s", err)
+		return "", fmt.Errorf("cannot set version: %s", err)
 	}
 
 	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
-		return fmt.Errorf("cannot get temp file: %s", err)
+		return "", fmt.Errorf("cannot get temp file: %s", err)
 	}
 
 	err = tartar(tarFile.Name(), []string{repoPath})
 	if err != nil {
-		return fmt.Errorf("cannot tar folder: %s", err)
+		return "", fmt.Errorf("cannot tar folder: %s", err)
 	}
 
-	agentHub.TriggerImageBuild(eventId, imageBuildRequest)
-
-	return nil
+	return tarFile.Name(), nil
 }
 
 // https://github.com/vladimirvivien/go-tar/blob/master/tartar/tartar.go

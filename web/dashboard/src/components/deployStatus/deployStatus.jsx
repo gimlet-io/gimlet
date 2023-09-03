@@ -17,9 +17,9 @@ export function DeployStatus(
 
   if (deploy.status === 'error') {
     gitopsWidget = (
-      <div className="">
+      <div className="pt-4">
         <p className="text-red-500 font-semibold">
-          Gitops write failed
+          Error
         </p>
         <p className="text-red-500 font-base">
           {deploy.statusDesc}

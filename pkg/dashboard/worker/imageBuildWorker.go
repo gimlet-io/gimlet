@@ -61,9 +61,9 @@ func handleImageBuildError(buildId string, store *store.Store) {
 
 	os.RemoveAll(imageBuildRequest.SourcePath)
 
-	event.Status = model.Failure.String()
+	event.Status = model.StatusError
 	event.StatusDesc = "image build failed"
-	err = store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, "")
+	err = store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, "[]")
 	if err != nil {
 		logrus.Error(err)
 		return
