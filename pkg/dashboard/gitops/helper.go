@@ -372,15 +372,15 @@ func Manifests(
 	return manifests, nil
 }
 
-func ExtractImageStrategy(envConfig *dx.Manifest) (string, string, string) {
+func ExtractImageStrategy(envConfig *dx.Manifest) string {
 	image := envConfig.Values["image"]
 	hasVariable := false
 	pointsToBuiltInRegistry := false
 
-	var repository, tag string
 	if image != nil {
 		imageMap := image.(map[string]interface{})
 
+		var repository, tag string
 		if val, ok := imageMap["repository"]; ok {
 			repository = val.(string)
 		}
@@ -406,5 +406,24 @@ func ExtractImageStrategy(envConfig *dx.Manifest) (string, string, string) {
 		}
 	}
 
-	return strategy, repository, tag
+	return strategy
+}
+
+func ExtractImageRepoAndTag(envConfig *dx.Manifest, vars map[string]string) (string, string) {
+	envConfig.ResolveVars(vars)
+	image := envConfig.Values["image"]
+
+	var repository, tag string
+	if image != nil {
+		imageMap := image.(map[string]interface{})
+
+		if val, ok := imageMap["repository"]; ok {
+			repository = val.(string)
+		}
+		if val, ok := imageMap["tag"]; ok {
+			tag = val.(string)
+		}
+	}
+
+	return repository, tag
 }

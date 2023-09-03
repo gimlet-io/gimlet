@@ -223,7 +223,7 @@ func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository,
 
 	manifestsThatNeedFakeArtifact := []*dx.Manifest{}
 	for _, m := range manifests {
-		strategy, _, _ := gitops.ExtractImageStrategy(m)
+		strategy := gitops.ExtractImageStrategy(m)
 
 		if strategy == "static" ||
 			strategy == "static-site" ||

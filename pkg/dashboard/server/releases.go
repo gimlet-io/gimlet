@@ -266,8 +266,10 @@ func release(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		strategy, imageRepository, imageTag := gitops.ExtractImageStrategy(manifest)
+		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" {
+			vars := artifact.CollectVariables()
+			imageRepository, imageTag := gitops.ExtractImageRepoAndTag(manifest, vars)
 			imageBuildRequest = &dx.ImageBuildRequest{
 				Env:         releaseRequest.Env,
 				App:         releaseRequest.App,

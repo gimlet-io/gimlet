@@ -32,8 +32,6 @@ func (m *ImageBuildWorker) Run() {
 	for {
 		select {
 		case imageBuildStatus := <-m.successfullImageBuilds:
-			// imageBuild := m.imageBuilds[imageBuildStatus.BuildId]
-
 			if imageBuildStatus.Status == "success" {
 				go createDeployRequest(imageBuildStatus.BuildId, m.store)
 			}
