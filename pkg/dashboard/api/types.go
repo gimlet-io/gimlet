@@ -44,6 +44,7 @@ type Deployment struct {
 	Pods          []*Pod `json:"pods,omitempty"`
 	SHA           string `json:"sha"`
 	CommitMessage string `json:"commitMessage"`
+	Details       string `json:"details,omitempty"`
 }
 
 func (d *Deployment) FQN() string {

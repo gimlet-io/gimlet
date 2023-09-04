@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 const AnnotationGitRepository = "gimlet.io/git-repository"
@@ -41,6 +42,7 @@ const AnnotationGitSha = "gimlet.io/git-sha"
 type KubeEnv struct {
 	Name          string
 	Namespace     string
+	Config        *rest.Config
 	Client        kubernetes.Interface
 	DynamicClient dynamic.Interface
 }
