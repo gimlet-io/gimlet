@@ -99,6 +99,8 @@ class EnvConfig extends Component {
       });
 
       this.setDeployPolicy(configFileContent.deploy);
+
+      if (action === "new") this.default({blabla: "FOOBAR", blabla2: "foobarbaz"})
     }
   }
 
@@ -167,6 +169,19 @@ class EnvConfig extends Component {
       nonDefaultValues: {
         ...prevState.nonDefaultValues,
         gitSha: gitSha
+      },
+    }));
+  }
+
+  default(object) {
+    this.setState(prevState => ({
+      values: {
+        ...prevState.values,
+        ...object
+      },
+      nonDefaultValues: {
+        ...prevState.nonDefaultValues,
+        ...object
       },
     }));
   }
