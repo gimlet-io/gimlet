@@ -58,9 +58,20 @@ func SendFluxState(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 		logrus.Info(k)
 	}
 
+	helmReleases, err := kubeEnv.HelmReleases()
+	if err != nil {
+		logrus.Errorf("could not get gitrepositories: %s", err)
+		return
+	}
+
+	for _, h := range helmReleases {
+		logrus.Info(h)
+	}
+
 	fluxStateString, err := json.Marshal(api.FluxState{
 		GitReppsitories: gitRepositories,
 		Kustomizations:  kustomizations,
+		HelmReleases:    helmReleases,
 	})
 	if err != nil {
 		logrus.Errorf("could not serialize flux state: %v", err)
