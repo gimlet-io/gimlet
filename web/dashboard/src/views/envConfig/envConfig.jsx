@@ -516,19 +516,27 @@ class EnvConfig extends Component {
           <div className="mb-16 items-center">
             {action === "new" ?
               <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-                {Object.keys(this.state.templates).map((template) => (
+                {Object.keys(this.state.templates).map((template) => {
+                  let title = "Web application template"
+                  let description = "To deploy any web application. Multiple image build options available."
+                  if (template === "static-site") {
+                    title = "Static site template"
+                    description = "If your build generates static files only, let us host it in an Nginx container."
+                  }
+                  return (
                   <div
-                    className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none ${(this.state.selectedTemplate ?? this.state.defaultTemplate) === template ? "bg-gray-100" : "bg-gray-300"}`}
+                    className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 ${(this.state.selectedTemplate ?? this.state.defaultTemplate) === template ? "border border-blue-500" : "bg-gray-300 opacity-50 text-gray-600"}`}
                     onClick={() => this.setDeploymentTemplate(template)}
                   >
                     <span className="flex flex-1">
                       <span className="flex flex-col">
-                        <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{template}</span>
-                        <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm text-gray-500 select-none">Lorem ipsum dolor sit amet consectetur adipisicing elit. Placeat, vero?</span>
+                        <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
+                        <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm select-none">{description}</span>
                       </span>
                     </span>
                   </div>
-                ))}
+                  )
+                })}
               </div>
               :
               <p className="text-gray-900 px-3 py-2">{this.state.defaultTemplate}</p>}
