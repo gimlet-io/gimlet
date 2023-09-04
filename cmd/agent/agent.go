@@ -104,12 +104,14 @@ func main() {
 	eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
 	gitRepositoryController := agent.GitRepositoryController(kubeEnv, config.Host, config.AgentKey)
 	kustomizationController := agent.KustomizationController(kubeEnv, config.Host, config.AgentKey)
+	helmReleaseController := agent.HelmReleaseController(kubeEnv, config.Host, config.AgentKey)
 	go podController.Run(1, stopCh)
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 	go eventController.Run(1, stopCh)
 	go gitRepositoryController.Run(1, stopCh)
 	go kustomizationController.Run(1, stopCh)
+	go helmReleaseController.Run(1, stopCh)
 
 	messages := make(chan *streaming.WSMessage)
 

@@ -103,6 +103,12 @@ var kustomizationResource = schema.GroupVersionResource{
 	Resource: "kustomizations",
 }
 
+var helmReleaseResource = schema.GroupVersionResource{
+	Group:    "helm.toolkit.fluxcd.io",
+	Version:  "v2beta1",
+	Resource: "helmreleases",
+}
+
 func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
 	gitRepositories, err := e.DynamicClient.
 		Resource(gitRepositoryResource).
@@ -140,6 +146,27 @@ func (e *KubeEnv) Kustomizations() ([]*api.Kustomization, error) {
 			logrus.Warnf("could not parse kustomization: %s", err)
 		}
 		result = append(result, kustomization)
+	}
+
+	return result, nil
+}
+
+func (e *KubeEnv) HelmReleases() ([]*api.HelmRelease, error) {
+	helmReleases, err := e.DynamicClient.
+		Resource(helmReleaseResource).
+		Namespace("").
+		List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*api.HelmRelease{}
+	for _, h := range helmReleases.Items {
+		helmRelease, err := asHelmRelease(h)
+		if err != nil {
+			logrus.Warnf("could not parse kustomization: %s", err)
+		}
+		result = append(result, helmRelease)
 	}
 
 	return result, nil
@@ -216,6 +243,25 @@ func asKustomization(g unstructured.Unstructured) (*api.Kustomization, error) {
 		GitRepository:      gitRepository,
 		Path:               path,
 		Prune:              prune,
+		LastTransitionTime: lastTransitionTime,
+		Status:             status,
+		StatusDesc:         statusDesc,
+	}, nil
+}
+
+func asHelmRelease(g unstructured.Unstructured) (*api.HelmRelease, error) {
+	statusMap := g.Object["status"].(map[string]interface{})
+
+	conditions, ok := statusMap["conditions"].([]interface{})
+	if !ok {
+		// TODO handle case
+	}
+
+	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+
+	return &api.HelmRelease{
+		Name:               g.GetName(),
+		Namespace:          g.GetNamespace(),
 		LastTransitionTime: lastTransitionTime,
 		Status:             status,
 		StatusDesc:         statusDesc,

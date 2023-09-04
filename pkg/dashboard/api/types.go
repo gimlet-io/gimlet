@@ -90,6 +90,18 @@ func (k Kustomization) String() string {
 	return fmt.Sprintf("Kustomization %s/%s - %d - %s: %s", k.Namespace, k.Name, k.LastTransitionTime, k.Status, k.StatusDesc)
 }
 
+type HelmRelease struct {
+	Name               string `json:"name"`
+	Namespace          string `json:"namespace"`
+	LastTransitionTime int64  `json:"lastTransitionTime"`
+	Status             string `json:"status"`
+	StatusDesc         string `json:"statusDesc"`
+}
+
+func (h HelmRelease) String() string {
+	return fmt.Sprintf("HelmRelease %s/%s - %d - %s: %s", h.Namespace, h.Name, h.LastTransitionTime, h.Status, h.StatusDesc)
+}
+
 type Event struct {
 	FirstTimestamp int64  `json:"firstTimestamp"`
 	Count          int32  `json:"count"`
@@ -123,6 +135,7 @@ type GitopsBootstrapConfig struct {
 type FluxState struct {
 	GitReppsitories []*GitRepository `json:"gitRepositories"`
 	Kustomizations  []*Kustomization `json:"kustomizations"`
+	HelmReleases    []*HelmRelease   `json:"helmReleases"`
 }
 
 type FluxStateUpdate struct {
