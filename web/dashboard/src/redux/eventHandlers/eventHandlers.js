@@ -396,16 +396,6 @@ export function settings(state, payload) {
 export function deploy(state, payload) {
   state.runningDeploys = [payload];
   state = openDeployPanel(state)
-
-  if (payload.buildId) {
-    if (!state.imageBuildLogs[payload.buildId]) {
-      state.imageBuildLogs[payload.buildId] = {
-        status: "pending",
-        logLines: [],
-      };
-    }
-  }
-
   return state;
 }
 
@@ -414,36 +404,18 @@ export function deployStatus(state, payload) {
     return state
   }
 
-  if (payload.buildId) {
-    state.runningDeploys[0].buildId = payload.buildId
-  }
   if (payload.trackingId) {
     state.runningDeploys[0].trackingId = payload.trackingId
+  }
+
+  if (payload.imageBuildTrackingId) {
+    state.runningDeploys[0].imageBuildTrackingId = payload.imageBuildTrackingId
   }
 
   if (payload.status) {
     state.runningDeploys[0].status = payload.status
     state.runningDeploys[0].statusDesc = payload.statusDesc
     state.runningDeploys[0].results = payload.results
-  }
-
-  if (payload.buildId) {
-    if (!state.imageBuildLogs[payload.buildId]) {
-      state.imageBuildLogs[payload.buildId] = {
-        status: "pending",
-        logLines: [],
-      };
-    }
-  }
-
-  return state;
-}
-
-export function artifactCreated(state, payload) {
-  for (let runningDeploy of state.runningDeploys) {
-    if (runningDeploy.buildId === payload.buildId) {
-      runningDeploy.trackingId = payload.trackingId;
-    }
   }
 
   return state;

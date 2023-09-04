@@ -10,6 +10,11 @@ const defaultTabs = [
   { name: 'Deploy Status', current: false },
 ]
 
+const deployTabOpen = [
+  { name: 'Gitops Status', current: false },
+  { name: 'Deploy Status', current: true },
+]
+
 export default class DeployPanel extends Component {
   constructor(props) {
     super(props);
@@ -24,24 +29,30 @@ export default class DeployPanel extends Component {
       tabs: defaultTabs,
       runningDeploys: reduxState.runningDeploys,
       scmUrl: reduxState.settings.scmUrl,
-      imageBuildLogs: reduxState.imageBuildLogs
+      imageBuildLogs: reduxState.imageBuildLogs,
+      runningDeployId: "",
     }
 
     // handling API and streaming state changes
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
-      this.setState({
-        deployPanelOpen: reduxState.deployPanelOpen,
-        gitopsCommits: reduxState.gitopsCommits,
-        envs: reduxState.envs,
-        connectedAgents: reduxState.connectedAgents,
-        runningDeploys: reduxState.runningDeploys,
-        scmUrl: reduxState.settings.scmUrl,
-        tabs: reduxState.runningDeploys.length === 0 ? defaultTabs : [
-          { name: 'Gitops Status', current: false },
-          { name: 'Deploy Status', current: true },
-        ],
-        imageBuildLogs: reduxState.imageBuildLogs
+      this.setState((prevState) => {
+        let runningDeployId = "";
+        if (reduxState.runningDeploys.length !== 0) {
+          runningDeployId = reduxState.runningDeploys[0].trackingId
+        }
+
+        return {
+          deployPanelOpen: reduxState.deployPanelOpen,
+          gitopsCommits: reduxState.gitopsCommits,
+          envs: reduxState.envs,
+          connectedAgents: reduxState.connectedAgents,
+          runningDeploys: reduxState.runningDeploys,
+          scmUrl: reduxState.settings.scmUrl,
+          tabs: prevState.runningDeployId !== runningDeployId ? deployTabOpen : prevState.tabs,
+          imageBuildLogs: reduxState.imageBuildLogs,
+          runningDeployId: runningDeployId
+        }
       });
 
       if (this.logsEndRef.current) {
@@ -304,10 +315,16 @@ export default class DeployPanel extends Component {
     let deployStatusWidget = null
 
     if (runningDeploy.trackingId) {
+      // console.log(runningDeploy)
       deployStatusWidget = DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
     }
-    if (runningDeploy.buildId && !runningDeploy.buildId.startsWith('static-')) {
-      imageBuildWidget = ImageBuild(imageBuildLogs[runningDeploy.buildId], logsEndRef);
+    if (runningDeploy.type === "imageBuild") {
+      let trackingId = runningDeploy.trackingId
+      if (runningDeploy.imageBuildTrackingId) {
+        trackingId = runningDeploy.imageBuildTrackingId
+      }
+
+      imageBuildWidget = ImageBuild(imageBuildLogs[trackingId], logsEndRef);
     }
 
     const deployHeaderWidget = deployHeader(scmUrl, runningDeploy)

@@ -138,9 +138,8 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
-	imageBuilds := map[string]streaming.ImageBuildTrigger{}
-	magicDeployWorker := worker.NewMagicDeployWorker(repoCache, clientHub, store, successfullImageBuilds, imageBuilds)
-	go magicDeployWorker.Run()
+	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
+	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
 	if config.ChartVersionUpdaterFeatureFlag {
@@ -218,7 +217,6 @@ func main() {
 		perf,
 		logger,
 		gitServer,
-		imageBuilds,
 		gitUser,
 	)
 

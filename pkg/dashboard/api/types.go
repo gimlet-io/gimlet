@@ -191,3 +191,10 @@ type PR struct {
 	Created int    `json:"created"`
 	Updated int    `json:"updated"`
 }
+
+type DeployTarget struct {
+	App        string `json:"app"`
+	Env        string `json:"env"`
+	Tenant     string `json:"tenant"`
+	ArtifactId string `json:"artifactId"`
+}

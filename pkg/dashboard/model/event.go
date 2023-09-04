@@ -13,6 +13,7 @@ const StatusError = "error"
 
 const ArtifactCreatedEvent = "artifact"
 const ReleaseRequestedEvent = "release"
+const ImageBuildRequestedEvent = "imageBuild"
 const RollbackRequestedEvent = "rollback"
 const BranchDeletedEvent = "branchDeleted"
 
@@ -45,6 +46,8 @@ type Result struct {
 
 	GitopsRef  string
 	GitopsRepo string
+
+	TriggeredDeployRequestID string `json:"triggeredDeployRequestID"`
 }
 
 type Event struct {

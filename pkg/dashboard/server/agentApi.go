@@ -15,6 +15,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 )
@@ -205,9 +206,23 @@ func imageBuild(w http.ResponseWriter, r *http.Request) {
 	imageBuildId := chi.URLParam(r, "imageBuildId")
 
 	ctx := r.Context()
-	imageBuilds, _ := ctx.Value("imageBuilds").(map[string]streaming.ImageBuildTrigger)
+	store := ctx.Value("store").(*store.Store)
 
-	tarFileName := imageBuilds[imageBuildId].SourcePath
+	imageBuildRequestEvent, err := store.Event(imageBuildId)
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	var imageBuildRequest dx.ImageBuildRequest
+	err = json.Unmarshal([]byte(imageBuildRequestEvent.Blob), &imageBuildRequest)
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	tarFileName := imageBuildRequest.SourcePath
 
 	data, err := ioutil.ReadFile(tarFileName)
 	if err != nil {

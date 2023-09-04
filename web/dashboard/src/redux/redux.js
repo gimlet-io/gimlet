@@ -69,7 +69,6 @@ export const EVENT_INGRESS_UPDATED = 'ingressUpdated';
 export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 
 export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
-export const EVENT_ARTIFACT_CREATED_EVENT = 'artifactCreatedEvent';
 
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
 
@@ -226,8 +225,6 @@ function processStreamingEvent(state, event) {
       return podEventHandlers.podLogs(state, event);
     case EVENT_IMAGE_BUILD_LOG_EVENT:
       return deploymentEventHandlers.imageBuildLogs(state, event);
-    case EVENT_ARTIFACT_CREATED_EVENT:
-      return eventHandlers.artifactCreated(state, event);
     case EVENT_DEPLOYMENT_CREATED:
       return deploymentEventHandlers.deploymentCreated(state, event);
     case EVENT_DEPLOYMENT_UPDATED:

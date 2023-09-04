@@ -9,10 +9,10 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
@@ -142,49 +142,17 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	events, err := dao.Artifacts(
-		"", "",
-		nil,
-		"",
-		[]string{sha},
-		0, 0,
-		nil, nil,
-	)
+	r, err := repoCache.InstanceForRead(repo)
 	if err != nil {
-		logrus.Errorf("cannot get artifacts: %s", err)
+		logrus.Errorf("Could get repo, %v", err)
 		return
 	}
-
-	artifacts := []*dx.Artifact{}
-	for _, a := range events {
-		artifact, err := model.ToArtifact(a)
-		if err != nil {
-			logrus.Errorf("cannot deserialize artifact: %s", err)
-			return
-		}
-		artifacts = append(artifacts, artifact)
+	decoratedCommits, err := decorateCommitsWithGimletArtifacts([]*Commit{{SHA: sha}}, dao, r, owner, name)
+	if err != nil {
+		logrus.Warnf("cannot get deplyotargets: %s", err)
 	}
 
-	artifactsBySha := map[string]*dx.Artifact{}
-	for _, a := range artifacts {
-		artifactsBySha[a.Version.SHA] = a
-	}
-
-	deployTargets := []*model.DeployTarget{}
-	for _, c := range commits {
-		if artifact, ok := artifactsBySha[c.SHA]; ok {
-			for _, targetEnv := range artifact.Environments {
-				targetEnv.ResolveVars(artifact.CollectVariables())
-				deployTargets = append(deployTargets, &model.DeployTarget{
-					App:        targetEnv.App,
-					Env:        targetEnv.Env,
-					ArtifactId: artifact.ID,
-				})
-			}
-		}
-	}
-
-	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], deployTargets)
+	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], decoratedCommits[0].DeployTargets)
 
 	if len(statusOnCommits) != 0 {
 		err = dao.SaveStatusesOnCommits(repo, statusOnCommits)
@@ -203,7 +171,7 @@ func broadcastUpdateCommitStatusEvent(
 	name string,
 	sha string,
 	commitStatus *model.CombinedStatus,
-	deployTargets []*model.DeployTarget,
+	deployTargets []*api.DeployTarget,
 ) {
 	jsonString, _ := json.Marshal(streaming.CommitStatusUpdatedEvent{
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.CommitStatusUpdatedEventString},

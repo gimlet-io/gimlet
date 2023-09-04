@@ -75,8 +75,6 @@ export default class GimletClient {
 
   deploy = (artifactId, env, app, tenant) => this.post('/api/releases', JSON.stringify({ env, app, artifactId, tenant }));
 
-  magicDeploy = (owner, repo, env, app, sha) => this.post('/api/deploy', JSON.stringify({ owner, repo, env, app, sha }));
-
   rollback = (env, app, rollbackTo) => this.post(`/api/rollback?env=${env}&app=${app}&sha=${rollbackTo}`);
 
   getDeployStatus = (trackingId) => this.get(`/api/eventReleaseTrack?id=${trackingId}`);

@@ -168,6 +168,15 @@ func processEvent(
 			token,
 			store,
 		)
+	case model.ImageBuildRequestedEvent:
+		requestedAt := time.Unix(event.Created, 0)
+		anHourAgo := time.Now().Add(-1 * time.Hour)
+
+		if requestedAt.Before(anHourAgo) {
+			err = fmt.Errorf("image build timed out")
+		} else {
+			return
+		}
 	}
 
 	// associate gitops writes with events
@@ -351,7 +360,9 @@ func processReleaseEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		err = manifest.ResolveVars(artifact.CollectVariables())
+		vars := artifact.CollectVariables()
+		vars["APP"] = releaseRequest.App
+		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()

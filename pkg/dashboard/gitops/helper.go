@@ -331,6 +331,24 @@ func Manifest(
 	env string,
 	app string,
 ) (*dx.Manifest, error) {
+	manifests, err := Manifests(repo, sha)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range manifests {
+		if m.Env == env && m.App == app {
+			return m, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func Manifests(
+	repo *git.Repository,
+	sha string,
+) ([]*dx.Manifest, error) {
 	files, err := nativeGit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
@@ -340,6 +358,7 @@ func Manifest(
 		}
 	}
 
+	manifests := []*dx.Manifest{}
 	for _, content := range files {
 		var envConfig dx.Manifest
 		err = yaml.Unmarshal([]byte(content), &envConfig)
@@ -347,10 +366,64 @@ func Manifest(
 			logrus.Warnf("cannot parse env config string: %s", err)
 			continue
 		}
-		if envConfig.Env == env && envConfig.App == app {
-			return &envConfig, nil
+		manifests = append(manifests, &envConfig)
+	}
+
+	return manifests, nil
+}
+
+func ExtractImageStrategy(envConfig *dx.Manifest) string {
+	image := envConfig.Values["image"]
+	hasVariable := false
+	pointsToBuiltInRegistry := false
+
+	if image != nil {
+		imageMap := image.(map[string]interface{})
+
+		var repository, tag string
+		if val, ok := imageMap["repository"]; ok {
+			repository = val.(string)
+		}
+		if val, ok := imageMap["tag"]; ok {
+			tag = val.(string)
+		}
+
+		if strings.Contains(repository, "{{") ||
+			strings.Contains(tag, "{{") {
+			hasVariable = true
+		}
+		if strings.Contains(repository, "127.0.0.1:32447") {
+			pointsToBuiltInRegistry = true
 		}
 	}
 
-	return nil, nil
+	strategy := "static"
+	if hasVariable {
+		if pointsToBuiltInRegistry {
+			strategy = "buildpacks"
+		} else {
+			strategy = "dynamic"
+		}
+	}
+
+	return strategy
+}
+
+func ExtractImageRepoAndTag(envConfig *dx.Manifest, vars map[string]string) (string, string) {
+	envConfig.ResolveVars(vars)
+	image := envConfig.Values["image"]
+
+	var repository, tag string
+	if image != nil {
+		imageMap := image.(map[string]interface{})
+
+		if val, ok := imageMap["repository"]; ok {
+			repository = val.(string)
+		}
+		if val, ok := imageMap["tag"]; ok {
+			tag = val.(string)
+		}
+	}
+
+	return repository, tag
 }

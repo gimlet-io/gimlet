@@ -3,14 +3,14 @@ import HelmUI from "helm-react-ui";
 import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
-import CopiableCodeSnippet from "./copiableCodeSnippet";
+// import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_DEPLOYMENT_TEMPLATES,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
-  ACTION_TYPE_ADD_ENVCONFIG,
+  // ACTION_TYPE_ADD_ENVCONFIG,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -20,9 +20,9 @@ import {
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import EnvVarsTable from "./envVarsTable";
 import { Switch } from '@headlessui/react'
 import posthog from "posthog-js"
+import ImageWidget from "./imageWidget";
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -34,7 +34,7 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     this.state = {
-      defaultChart: reduxState.defaultChart,
+      defaultChart: this.patchImageWidget(reduxState.defaultChart),
       defaultTemplate: reduxState.defaultTemplate,
       templates: reduxState.templates,
       fileInfos: reduxState.fileInfos,
@@ -56,7 +56,7 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        defaultChart: reduxState.defaultChart,
+        defaultChart: this.patchImageWidget(reduxState.defaultChart),
         defaultTemplate: reduxState.defaultTemplate,
         templates: reduxState.templates,
         fileInfos: reduxState.fileInfos,
@@ -193,6 +193,27 @@ class EnvConfig extends Component {
         this.setGitCloneUrl(`${scmUrl}/${repoName}.git`)
       }
     }
+  }
+
+  patchImageWidget(chart) {
+    if (!chart) {
+      return chart
+    }
+
+    if (chart.reference.name !== "onechart") {
+      return chart  
+    }
+
+    if (!chart.uiSchema[0].uiSchema["#/properties/image"]) {
+      chart.uiSchema[0].uiSchema = {
+        ...chart.uiSchema[0].uiSchema,
+        "#/properties/image": {
+          "ui:field": "imageWidget"
+        },
+      }
+    }
+   
+    return chart
   }
 
   setGitCloneUrl(gitCloneUrl) {
@@ -444,6 +465,10 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
+    const customFields = {
+      imageWidget: ImageWidget,
+    }
+
     if (!this.state.templatesLoaded) {
       return <Spinner />;
     }
@@ -666,6 +691,7 @@ class EnvConfig extends Component {
             key={this.state.defaultChart.reference.name}
             schema={this.state.defaultChart.schema}
             config={this.state.defaultChart.uiSchema}
+            fields={customFields}
             values={this.state.values}
             setValues={this.setValues}
             validate={true}
@@ -685,7 +711,7 @@ class EnvConfig extends Component {
                 }
               }} />
           </div>
-          {!this.state.environmentVariablesExpanded ?
+          {/* {!this.state.environmentVariablesExpanded ?
             <Button
               text={"Check the list of environment variables you can use in the Gimlet manifest"}
               action={() => this.setState({ environmentVariablesExpanded: true })}
@@ -697,8 +723,8 @@ class EnvConfig extends Component {
                 repoMetas={this.state.repoMetas}
               />
             </div>
-          }
-          {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
+          } */}
+          {/* {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
             <>
               {!this.state.codeSnippetExpanded ?
                 <Button
@@ -722,9 +748,9 @@ gimlet manifest template -f manifest.yaml`}
                   </div>
                 </div>
               }
-            </>}
+            </>} */}
         </div>
-        <div className="p-0 flow-root">
+        <div className="p-0 flow-root my-16">
           {action !== "new" &&
             <span className="inline-flex gap-x-3 float-left">
               <button
@@ -740,7 +766,7 @@ gimlet manifest template -f manifest.yaml`}
               </button>
             </span>}
           <span className="inline-flex gap-x-3 float-right">
-            <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
+            {/* <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
               <Menu.Button
                 className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -787,11 +813,11 @@ gimlet manifest template -f manifest.yaml`}
                   </div>
                 </Menu.Items>
               </span>
-            </Menu>
+            </Menu> */}
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
-              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-yellow-600 hover:bg-yellow-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-yellow-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
+              className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-blue-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
                 this.setState({ values: Object.assign({}, this.state.defaultState) });
                 this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
@@ -822,43 +848,43 @@ gimlet manifest template -f manifest.yaml`}
   }
 }
 
-function Button({ text, action }) {
-  return (
-    <div>
-      <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
-        onClick={action}
-      >
-        {text}
-      </button>
-    </div>)
-}
+// function Button({ text, action }) {
+//   return (
+//     <div>
+//       <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
+//         onClick={action}
+//       >
+//         {text}
+//       </button>
+//     </div>)
+// }
 
-function LinkToDefaultVariables({ repoMetas }) {
-  if (!repoMetas.githubActions && !repoMetas.circleCi) {
-    return null
-  }
+// function LinkToDefaultVariables({ repoMetas }) {
+//   if (!repoMetas.githubActions && !repoMetas.circleCi) {
+//     return null
+//   }
 
-  let defaultVariablesUrl = "";
+//   let defaultVariablesUrl = "";
 
-  if (repoMetas.githubActions) {
-    defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
-  } else if (repoMetas.circleCi) {
-    defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
-  }
+//   if (repoMetas.githubActions) {
+//     defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
+//   } else if (repoMetas.circleCi) {
+//     defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
+//   }
 
-  return (
-    <div className="mt-2">
-      <a
-        href={defaultVariablesUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="text-gray-500 hover:text-gray-700 text-xs"
-      >
-        Additionally you can use all built-in environment variables from CI
-      </a>
-    </div>
-  )
-}
+//   return (
+//     <div className="mt-2">
+//       <a
+//         href={defaultVariablesUrl}
+//         target="_blank"
+//         rel="noreferrer"
+//         className="text-gray-500 hover:text-gray-700 text-xs"
+//       >
+//         Additionally you can use all built-in environment variables from CI
+//       </a>
+//     </div>
+//   )
+// }
 
 function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart) {
   if (envConfigs[repoName]) {
@@ -890,7 +916,6 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defa
             image: {
               repository: "127.0.0.1:32447/"+repoOnly,
               tag:        "{{ .SHA }}",
-              pullPolicy: "Always",
             },
             resources: {
               ignore: true,

@@ -17,9 +17,9 @@ export function DeployStatus(
 
   if (deploy.status === 'error') {
     gitopsWidget = (
-      <div className="">
+      <div className="pt-4">
         <p className="text-red-500 font-semibold">
-          Gitops write failed
+          Error
         </p>
         <p className="text-red-500 font-base">
           {deploy.statusDesc}
@@ -81,6 +81,10 @@ export function deployHeader(scmUrl, deploy) {
 }
 
 export function ImageBuild(build, logsEndRef) {
+  if (!build) {
+    return null
+  }
+
   let statusIcon = '⏳';
   let statusText = (
     <div className="w-4/5 font-mono text-xs">

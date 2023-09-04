@@ -201,7 +201,11 @@ func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
 	if !ok {
 		// TODO handle case
 	}
-	revision := artifact["revision"].(string)
+
+	revision := ""
+	if val, ok := artifact["revision"]; ok {
+		revision = val.(string)
+	}
 
 	conditions, ok := statusMap["conditions"].([]interface{})
 	if !ok {

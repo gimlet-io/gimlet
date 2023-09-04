@@ -19,7 +19,7 @@ export class Env extends Component {
   }
 
   render() {
-    const { searchFilter, env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history } = this.props;
+    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history } = this.props;
 
     const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, env.builtIn);
 
@@ -70,7 +70,7 @@ export class Env extends Component {
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
               }
-              {env.isOnline && searchFilter === '' &&
+              { env.isOnline && renderedServices.length !== 0 &&
                 <>
                   {renderedServices}
                   <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
@@ -82,9 +82,7 @@ export class Env extends Component {
                   </h4>
                 </>
               }
-              {env.isOnline && searchFilter !== '' &&
-                emptyStateSearch()
-              }
+              { env.isOnline && renderedServices.length === 0 && emptyStateDeployThisRepo(newConfig, env.name, repoName) }
             </div>
           </>
         )}
@@ -202,10 +200,6 @@ function fileName(fileInfos, appName) {
   }
 }
 
-function emptyStateSearch() {
-  return <p className="text-xs text-gray-800">No service matches the search</p>
-}
-
 function connectEnvCard(history) {
   return (
     <div className="rounded-md bg-blue-50 p-4">
@@ -251,3 +245,30 @@ export function renderPullRequests(pullRequests) {
     </div>
   )
 };
+
+function emptyStateDeployThisRepo(newConfig, envName, repoName) {
+  return <div
+    target="_blank"
+    rel="noreferrer"
+    onClick={() => {
+      newConfig(envName, repoName)
+    }}
+    className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-pink-400 cursor-pointer text-gray-500 hover:text-pink-500"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="mx-auto h-12 w-12"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+    <div className="mt-2 block text-sm font-bold">
+      Add deployment configuration
+    </div>
+  </div>
+}

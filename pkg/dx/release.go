@@ -40,14 +40,16 @@ type ReleaseRequest struct {
 	TriggeredBy string `json:"triggeredBy"`
 }
 
-// MagicDeployRequest contains all metadata about a simplified release intent
-type MagicDeployRequest struct {
-	Owner       string `json:"owner"`
-	Repo        string `json:"repo"`
+// ImageBuildRequest contains all metadata to be able to build an image
+type ImageBuildRequest struct {
 	Env         string `json:"env"`
 	App         string `json:"app"`
 	Sha         string `json:"sha"`
 	TriggeredBy string `json:"triggeredBy"`
+	ArtifactID  string `json:"artifactID"`
+	Image       string `json:"image"`
+	Tag         string `json:"tag"`
+	SourcePath  string `json:"sourcePath"`
 }
 
 // RollbackRequest contains all metadata about the rollback intent
@@ -67,14 +69,16 @@ type Result struct {
 	// GitopsCommitStatus shows the status of the gitops commit of the Gimlet environment manifest processing
 	// While manifests are processed succesfully, and gitops commits are written, Flux may fail to apply them
 	// This field holds the Flux results
-	GitopsCommitStatus     string `json:"gitopsCommitStatus,omitempty"`
-	GitopsCommitStatusDesc string `json:"gitopsCommitStatusDesc,omitempty"`
-	Env                    string `json:"env,omitempty"`
-	StatusDesc             string `json:"statusDesc,omitempty"`
+	GitopsCommitStatus       string `json:"gitopsCommitStatus,omitempty"`
+	GitopsCommitStatusDesc   string `json:"gitopsCommitStatusDesc,omitempty"`
+	Env                      string `json:"env,omitempty"`
+	StatusDesc               string `json:"statusDesc,omitempty"`
+	TriggeredDeployRequestID string `json:"triggeredDeployRequestID,omitempty"`
 }
 
 // ReleaseStatus is the result of an artifact shipping or an on-demand deploy
 type ReleaseStatus struct {
+	Type string `json:"type"`
 
 	// Status of the artifact processing or an on-demand deploy event's processing
 	Status string `json:"status"`
