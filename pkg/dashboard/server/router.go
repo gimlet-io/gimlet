@@ -196,6 +196,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 		r.Post("/agent/fluxState", fluxState)
+		r.Post("/agent/deploymentDetails", deploymentDetails)
 		r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
