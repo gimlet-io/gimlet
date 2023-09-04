@@ -360,7 +360,9 @@ func processReleaseEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		err = manifest.ResolveVars(artifact.CollectVariables())
+		vars := artifact.CollectVariables()
+		vars["APP"] = releaseRequest.App
+		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
