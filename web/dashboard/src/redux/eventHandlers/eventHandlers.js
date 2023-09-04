@@ -314,6 +314,20 @@ export function fluxStateUpdated(state, event) {
   return state
 }
 
+export function deploymentDetails(state, event) {
+  if (!state.deploymentDetails[event.deployment]) {
+    state.deploymentDetails[event.deploymentName] = [];
+  }
+
+  state.deploymentDetails[event.deployment] = event.details.split("\n");
+  return state;
+}
+
+export function clearDeploymentDetails(state, payload) {
+  state.deploymentDetails[payload.deployment] = undefined;
+  return state;
+}
+
 export function updateCommitStatus(state, event) {
   const repo = `${event.owner}/${event.repo}`;
 

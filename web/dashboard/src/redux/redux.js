@@ -37,6 +37,7 @@ export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
 export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
+export const ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS = 'clearDeploymentDetails'
 export const ACTION_TYPE_ALERTS = 'alerts'
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
@@ -70,6 +71,8 @@ export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
+
+export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
 
 export const initialState = {
   settings: {
@@ -107,6 +110,7 @@ export const initialState = {
     errorList: null
   },
   podLogs: {},
+  deploymentDetails: {},
   textColors: {},
   imageBuildLogs: {},
   users: [],
@@ -185,6 +189,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.clearDeployStatus(state)
     case ACTION_TYPE_CLEAR_PODLOGS:
        return podEventHandlers.clearPodLogs(state, action.payload)
+    case ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS:
+      return eventHandlers.clearDeploymentDetails(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
     case ACTION_TYPE_OPEN_DEPLOY_PANEL:
@@ -239,6 +245,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateCommitStatus(state, event);
     case EVENT_FLUX_STATE_UPDATED_EVENT:
       return eventHandlers.fluxStateUpdated(state, event);
+    case EVENT_DEPLOYMENT_DETAILS_EVENT:
+      return eventHandlers.deploymentDetails(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;

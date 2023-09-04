@@ -93,6 +93,24 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 	}
 }
 
+func (h *AgentHub) DeploymentDetails(namespace string, serviceName string) {
+	deploymentDetailsRequest := map[string]interface{}{
+		"action":      "deploymentDetails",
+		"namespace":   namespace,
+		"serviceName": serviceName,
+	}
+
+	deploymentDetailsRequestString, err := json.Marshal(deploymentDetailsRequest)
+	if err != nil {
+		logrus.Errorf("could not serialize request: %s", err)
+		return
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(deploymentDetailsRequestString)
+	}
+}
+
 func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
 	podlogsRequest := map[string]interface{}{
 		"action":      "stopPodLogs",
