@@ -3,10 +3,9 @@ import {ChevronDownIcon} from '@heroicons/react/solid'
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import logo from "!file-loader!./logo.svg";
 import { usePostHog } from 'posthog-js/react'
-import { commits } from '../../redux/eventHandlers/eventHandlers';
 
 export default function DeployWidget(props) {
-  const {deployTargets, deployHandler, magicDeployHandler, sha, repo, envs, envConfigs } = props;
+  const {deployTargets, deployHandler, sha, repo } = props;
   const posthog = usePostHog()
 
   if (!deployTargets) {

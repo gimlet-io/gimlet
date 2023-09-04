@@ -564,7 +564,6 @@ export default class Repo extends Component {
                         envs={envs}
                         connectedAgents={filteredEnvs}
                         deployHandler={this.deploy}
-                        magicDeployHandler={this.magicDeploy}
                         repo={repo}
                         gimletClient={this.props.gimletClient}
                         store={this.props.store}
