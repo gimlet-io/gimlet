@@ -154,6 +154,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Get("/api/envs", envs)
 		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/stopPodLogs", stopPodLogs)
+		r.Get("/api/deploymentDetails", getDeploymentDetails)
 		r.Get("/api/alerts", getAlerts)
 		r.Get("/api/gitRepos", gitRepos)
 		r.Get("/api/refreshRepos", refreshRepos)

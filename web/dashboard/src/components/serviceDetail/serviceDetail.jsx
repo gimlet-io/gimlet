@@ -314,6 +314,24 @@ class Deployment extends Component {
                   {({ active }) => (
                     <button
                       onClick={() => {
+                        setLogsOverlayVisible(true);
+                        setLogsOverlayNamespace(deployment.namespace);
+                        setLogsOverlayService(service.name);
+                        gimletClient.deploymentDetailsRequest(deployment.namespace, service.name);
+                      }}
+                      className={(
+                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
+                        ' block px-4 py-2 text-sm w-full text-left'
+                      }
+                    >
+                      View deployment details
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => {
                         copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${hostPort}:${appPort}`);
                         this.handleCopyClick();
                       }}
