@@ -269,6 +269,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" {
 			vars := artifact.CollectVariables()
+			vars["APP"] = releaseRequest.App
 			imageRepository, imageTag := gitops.ExtractImageRepoAndTag(manifest, vars)
 			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
 			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")

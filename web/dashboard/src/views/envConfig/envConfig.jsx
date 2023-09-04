@@ -3,14 +3,14 @@ import HelmUI from "helm-react-ui";
 import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
 import YAML from "json-to-pretty-yaml";
-import CopiableCodeSnippet from "./copiableCodeSnippet";
+// import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_DEPLOYMENT_TEMPLATES,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
-  ACTION_TYPE_ADD_ENVCONFIG,
+  // ACTION_TYPE_ADD_ENVCONFIG,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -20,7 +20,6 @@ import {
 } from "../../redux/redux";
 import { Menu } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import EnvVarsTable from "./envVarsTable";
 import { Switch } from '@headlessui/react'
 import posthog from "posthog-js"
 import ImageWidget from "./imageWidget";
@@ -714,7 +713,7 @@ class EnvConfig extends Component {
                 }
               }} />
           </div>
-          {!this.state.environmentVariablesExpanded ?
+          {/* {!this.state.environmentVariablesExpanded ?
             <Button
               text={"Check the list of environment variables you can use in the Gimlet manifest"}
               action={() => this.setState({ environmentVariablesExpanded: true })}
@@ -726,8 +725,8 @@ class EnvConfig extends Component {
                 repoMetas={this.state.repoMetas}
               />
             </div>
-          }
-          {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
+          } */}
+          {/* {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
             <>
               {!this.state.codeSnippetExpanded ?
                 <Button
@@ -751,9 +750,9 @@ gimlet manifest template -f manifest.yaml`}
                   </div>
                 </div>
               }
-            </>}
+            </>} */}
         </div>
-        <div className="p-0 flow-root">
+        <div className="p-0 flow-root my-16">
           {action !== "new" &&
             <span className="inline-flex gap-x-3 float-left">
               <button
@@ -769,7 +768,7 @@ gimlet manifest template -f manifest.yaml`}
               </button>
             </span>}
           <span className="inline-flex gap-x-3 float-right">
-            <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
+            {/* <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
               <Menu.Button
                 className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -816,7 +815,7 @@ gimlet manifest template -f manifest.yaml`}
                   </div>
                 </Menu.Items>
               </span>
-            </Menu>
+            </Menu> */}
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
@@ -851,43 +850,43 @@ gimlet manifest template -f manifest.yaml`}
   }
 }
 
-function Button({ text, action }) {
-  return (
-    <div>
-      <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
-        onClick={action}
-      >
-        {text}
-      </button>
-    </div>)
-}
+// function Button({ text, action }) {
+//   return (
+//     <div>
+//       <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
+//         onClick={action}
+//       >
+//         {text}
+//       </button>
+//     </div>)
+// }
 
-function LinkToDefaultVariables({ repoMetas }) {
-  if (!repoMetas.githubActions && !repoMetas.circleCi) {
-    return null
-  }
+// function LinkToDefaultVariables({ repoMetas }) {
+//   if (!repoMetas.githubActions && !repoMetas.circleCi) {
+//     return null
+//   }
 
-  let defaultVariablesUrl = "";
+//   let defaultVariablesUrl = "";
 
-  if (repoMetas.githubActions) {
-    defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
-  } else if (repoMetas.circleCi) {
-    defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
-  }
+//   if (repoMetas.githubActions) {
+//     defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
+//   } else if (repoMetas.circleCi) {
+//     defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
+//   }
 
-  return (
-    <div className="mt-2">
-      <a
-        href={defaultVariablesUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="text-gray-500 hover:text-gray-700 text-xs"
-      >
-        Additionally you can use all built-in environment variables from CI
-      </a>
-    </div>
-  )
-}
+//   return (
+//     <div className="mt-2">
+//       <a
+//         href={defaultVariablesUrl}
+//         target="_blank"
+//         rel="noreferrer"
+//         className="text-gray-500 hover:text-gray-700 text-xs"
+//       >
+//         Additionally you can use all built-in environment variables from CI
+//       </a>
+//     </div>
+//   )
+// }
 
 function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart) {
   if (envConfigs[repoName]) {
