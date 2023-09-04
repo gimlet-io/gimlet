@@ -20,6 +20,7 @@ export default class Settings extends Component {
       application: reduxState.application,
       settings: reduxState.settings,
       users: reduxState.users,
+      login: reduxState.user.login,
       input: "",
       saveButtonTriggered: false,
     }
@@ -31,6 +32,7 @@ export default class Settings extends Component {
       this.setState({ application: reduxState.application });
       this.setState({ settings: reduxState.settings });
       this.setState({ users: reduxState.users });
+      this.setState({ login: reduxState.user.login });
     });
 
     this.deleteUser = this.deleteUser.bind(this)
@@ -132,7 +134,7 @@ export default class Settings extends Component {
   }
 
   render() {
-    const { settings, application, users, input, saveButtonTriggered } = this.state;
+    const { settings, application, users, login, input, saveButtonTriggered } = this.state;
     const sortedUsers = this.sortAlphabetically(users);
 
     return (
@@ -155,6 +157,7 @@ export default class Settings extends Component {
                   </div>
                   <Users
                     users={sortedUsers}
+                    login={login}
                     scmUrl={settings.scmUrl}
                     deleteUser={this.deleteUser}
                   />
@@ -254,9 +257,8 @@ function gimletInstaller() {
   )
 }
 
-function Users({ users, scmUrl, deleteUser }) {
+function Users({ users, login, scmUrl, deleteUser }) {
   return (
-
       <div className="px-4 py-5 sm:px-6">
         {users.map(user => (
           <div key={user.login} className="flex justify-between p-2 hover:bg-gray-100 rounded">
@@ -271,17 +273,19 @@ function Users({ users, scmUrl, deleteUser }) {
             <TokenInfo 
               token={user.token}
             />
-            <div className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                onClick={() => {
-                  // eslint-disable-next-line no-restricted-globals
-                  confirm(`Are you sure you want to delete ${user.login}?`) &&
-                    deleteUser(user.login);
-                }}
-                className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
+            {user.login !== login &&
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                  onClick={() => {
+                    // eslint-disable-next-line no-restricted-globals
+                    confirm(`Are you sure you want to delete ${user.login}?`) &&
+                      deleteUser(user.login);
+                  }}
+                  className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+            }
           </div>
         ))}
       </div>
