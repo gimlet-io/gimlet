@@ -13,7 +13,7 @@ const StatusError = "error"
 
 const ArtifactCreatedEvent = "artifact"
 const ReleaseRequestedEvent = "release"
-const ImageBuildRequestedEvent = "imagerBuild"
+const ImageBuildRequestedEvent = "imageBuild"
 const RollbackRequestedEvent = "rollback"
 const BranchDeletedEvent = "branchDeleted"
 

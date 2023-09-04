@@ -311,7 +311,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 		agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
 		agentHub.TriggerImageBuild(imageBuildEvent.ID, imageBuildRequest)
 	} else {
-		event, err := releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
+		event, err = releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -324,7 +324,8 @@ func release(w http.ResponseWriter, r *http.Request) {
 	}
 
 	eventIDBytes, _ := json.Marshal(map[string]string{
-		"id": event.ID,
+		"id":   event.ID,
+		"type": event.Type,
 	})
 
 	w.WriteHeader(http.StatusCreated)
@@ -644,6 +645,8 @@ func delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("tracking start", "")
+
 	var id string
 
 	params := r.URL.Query()
@@ -699,10 +702,13 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
+		Type:       event.Type,
 		Status:     event.Status,
 		StatusDesc: event.StatusDesc,
 		Results:    results,
 	})
+
+	logrus.Info("tracking end", "")
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(statusBytes)

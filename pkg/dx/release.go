@@ -78,6 +78,7 @@ type Result struct {
 
 // ReleaseStatus is the result of an artifact shipping or an on-demand deploy
 type ReleaseStatus struct {
+	Type string `json:"type"`
 
 	// Status of the artifact processing or an on-demand deploy event's processing
 	Status string `json:"status"`

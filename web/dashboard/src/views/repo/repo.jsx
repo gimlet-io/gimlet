@@ -102,7 +102,6 @@ export default class Repo extends Component {
 
     this.branchChange = this.branchChange.bind(this)
     this.deploy = this.deploy.bind(this)
-    this.magicDeploy = this.magicDeploy.bind(this)
     this.rollback = this.rollback.bind(this)
     this.checkDeployStatus = this.checkDeployStatus.bind(this)
     this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
@@ -253,8 +252,6 @@ export default class Repo extends Component {
           }
         });
 
-        console.log({id: trackingId, status: data.status, results: data.results })
-
         if (data.status === "new") {
           setTimeout(() => {
             this.checkDeployStatus(trackingId);
@@ -307,15 +304,15 @@ export default class Repo extends Component {
           }
         }
 
-        if (data.status === "success") {
-          if (data.results.length === 1) {
-            const triggeredReleaseId = data.results[0].triggeredDeployRequestID
-            if (triggeredReleaseId) {
-              this.checkDeployStatus(triggeredReleaseId);
+        if (data.type === "imageBuild" && data.status === "success") {
+          const triggeredReleaseId = data.results[0].triggeredDeployRequestID
+          this.props.store.dispatch({
+            type: ACTION_TYPE_DEPLOY_STATUS, payload: {
+              imageBuildTrackingId: trackingId,
             }
-          }
+          });
+          this.checkDeployStatus(triggeredReleaseId);
         }
-
 
       }, () => {/* Generic error handler deals with it */
       });
@@ -326,42 +323,20 @@ export default class Repo extends Component {
       .then(data => {
         target.sha = sha;
         target.trackingId = data.id;
+        target.repo = repo;
+        target.type = data.type;
+        this.props.store.dispatch({
+          type: ACTION_TYPE_DEPLOY, payload: target
+        });
         setTimeout(() => {
           this.checkDeployStatus(target.trackingId);
         }, 500);
       }, () => {/* Generic error handler deals with it */
       });
-
-    target.sha = sha;
-    target.repo = repo;
-    this.props.store.dispatch({
-      type: ACTION_TYPE_DEPLOY, payload: target
-    });
   }
 
   triggerCommitSync(owner, repo) {
     this.props.gimletClient.triggerCommitSync(owner, repo)
-  }
-
-  magicDeploy(env, app, repo, sha) {
-    let target = {}
-    const owner = repo.split("/")[0]
-    const repoName = repo.split("/")[1]
-    this.props.gimletClient.magicDeploy(owner, repoName, env, app, sha)
-      .then(data => {
-        target.buildId = data.buildId;
-        this.props.store.dispatch({
-          type: ACTION_TYPE_DEPLOY_STATUS, payload: target
-        });
-      }, () => {/* Generic error handler deals with it */
-      });
-
-    target.sha = sha;
-    target.repo = repo;
-    target.env = env;
-    this.props.store.dispatch({
-      type: ACTION_TYPE_DEPLOY, payload: target
-    });
   }
 
   rollback(env, app, rollbackTo, e) {
@@ -373,6 +348,7 @@ export default class Repo extends Component {
     this.props.gimletClient.rollback(env, app, rollbackTo)
       .then(data => {
         target.trackingId = data.id;
+        target.type = data.type;
         setTimeout(() => {
           this.checkDeployStatus(target);
         }, 500);
