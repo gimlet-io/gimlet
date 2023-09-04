@@ -465,8 +465,6 @@ class EnvConfig extends Component {
       nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
       this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
 
-    console.log(this.state.values)
-
     const customFields = {
       imageWidget: ImageWidget,
     }
@@ -918,7 +916,6 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defa
             image: {
               repository: "127.0.0.1:32447/"+repoOnly,
               tag:        "{{ .SHA }}",
-              pullPolicy: "Always",
             },
             resources: {
               ignore: true,
