@@ -18,7 +18,7 @@ Gimlet composes the best of open-source out of the box.
 Linux / Mac
 
 ```console
-curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.23.4/gimlet-$(uname)-$(uname -m)" -o gimlet
+curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.24.0/gimlet-$(uname)-$(uname -m)" -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version
