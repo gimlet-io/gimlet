@@ -114,17 +114,25 @@ func track(c *cli.Context) error {
 			releaseStatus.StatusDesc,
 		)
 
-		if releaseStatus.Status == model.StatusNew {
-			fmt.Printf("\t%v The release is not processed yet...\n", emoji.HourglassNotDone)
-		} else if releaseStatus.Status == model.StatusError {
-			return fmt.Errorf(releaseStatus.StatusDesc)
+		if releaseStatus.Type == "imageBuild" {
+			if releaseStatus.Status == model.Success.String() {
+				trackingID = releaseStatus.Results[0].TriggeredDeployRequestID
+				fmt.Printf("\tImage building was successful and a subsequent deploy started with id %s\n", trackingID)
+				continue
+			}
 		} else {
-			printGitopsStatuses(releaseStatus)
-			allGitopsCommitsApplied, gitopsCommitsHaveFailed := releaseStatus.ExtractGitopsEndState()
-			if gitopsCommitsHaveFailed {
-				return fmt.Errorf("gitops commits have failed to apply")
-			} else if allGitopsCommitsApplied {
-				return nil
+			if releaseStatus.Status == model.StatusNew {
+				fmt.Printf("\t%v The release is not processed yet...\n", emoji.HourglassNotDone)
+			} else if releaseStatus.Status == model.StatusError {
+				return fmt.Errorf(releaseStatus.StatusDesc)
+			} else {
+				printGitopsStatuses(releaseStatus)
+				allGitopsCommitsApplied, gitopsCommitsHaveFailed := releaseStatus.ExtractGitopsEndState()
+				if gitopsCommitsHaveFailed {
+					return fmt.Errorf("gitops commits have failed to apply")
+				} else if allGitopsCommitsApplied {
+					return nil
+				}
 			}
 		}
 
