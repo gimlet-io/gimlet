@@ -140,7 +140,7 @@ class ImageWidget extends Component {
                 <span className="flex flex-col">
                   <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">Using a Dockerfile</span>
                   <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm text-gray-500 select-none">If there is a Dockerfile in your source code and want Gimlet to build it</span>
-                  <span id="project-type-1-description-1" class="mt-6 text-sm font-medium text-gray-900">Coming soon</span>
+                  <span id="project-type-1-description-1" className="mt-6 text-sm font-medium text-gray-900">Coming soon</span>
                 </span>
               </span>
               <svg className={`absolute top-0 right-0 m-4 h-5 w-5 text-indigo-600 ${strategy === "dockerfile" ? "" : "hidden"}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
