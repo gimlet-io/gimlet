@@ -6,6 +6,7 @@ import { KubernetesAlertBox } from '../../views/pulse/pulse';
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_CLEAR_PODLOGS,
+  ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -57,6 +58,15 @@ function ServiceDetail(props) {
     });
   }
 
+  const closeDetailsHandler = (namespace, serviceName) => {
+    setLogsOverlayVisible(false)
+    store.dispatch({
+      type: ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS, payload: {
+        deployment: namespace + "/" + serviceName
+      }
+    });
+  }
+
   useEffect(() => {
     if (typeof window != 'undefined' && window.document) {
       if (logsOverlayVisible) {
@@ -104,8 +114,9 @@ function ServiceDetail(props) {
 
   return (
     <>
-      <PodLogsOverlay
+      <LogsOverlay
         closeLogsOverlayHandler={closeLogsOverlayHandler}
+        closeDetailsHandler={closeDetailsHandler}
         namespace={logsOverlayNamespace}
         svc={logsOverlayService}
         visible={logsOverlayVisible}
@@ -362,37 +373,45 @@ class Deployment extends Component {
 
 export default ServiceDetail;
 
-const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, store }) => {
+const LogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, closeDetailsHandler, store }) => {
   let reduxState = store.getState();
-  const pod = namespace + "/" + svc;
+  const service = namespace + "/" + svc;
 
-  const [logs, setLogs] = useState(reduxState.podLogs[pod])
+  const [logs, setLogs] = useState(reduxState.podLogs[service])
+  const [details, setDetails] = useState(reduxState.deploymentDetails[service])
 
   store.subscribe(() => {
-    setLogs(reduxState.podLogs[pod])
+    setLogs(reduxState.podLogs[service])
+    setDetails(reduxState.deploymentDetails[service])
   });
 
   const logsEndRef = useRef(null);
 
   useEffect(() => {
     logsEndRef.current.scrollIntoView();
-  }, [logs]);
+  }, [logs, details]);
+
+  const handleClose = () => {
+    if (details) {
+      closeDetailsHandler(namespace, svc);
+    } else {
+      closeLogsOverlayHandler(namespace, svc);
+    }
+  };
 
   return (
     <div
       className={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}
-      onClick={() => { closeLogsOverlayHandler(namespace, svc) }}
+      onClick={handleClose}
     >
       <div className="flex self-center items-center justify-center w-full p-8 h-4/5">
         <div className="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6"
-          onClick={e => { e.stopPropagation() }}
+          onClick={e => e.stopPropagation()}
         >
           <div className="absolute top-0 right-0 p-1.5">
             <button
               className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
-              onClick={() => {
-                closeLogsOverlayHandler(namespace, svc);
-              }}
+              onClick={handleClose}
             >
               <span className="sr-only">Close</span>
               <XIcon className="h-5 w-5" aria-hidden="true" />
@@ -400,6 +419,7 @@ const PodLogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, stor
           </div>
           <div className="h-full relative overflow-y-auto p-4 bg-slate-800 rounded-lg">
             {logs?.map((line, idx) => <p key={idx} className={`font-mono text-xs ${line.color}`}>{line.content}</p>)}
+            {details?.map((line, idx) => <p key={idx} className="font-mono text-xs text-yellow-200 whitespace-pre">{line}</p>)}
             <p ref={logsEndRef} />
           </div>
         </div>
