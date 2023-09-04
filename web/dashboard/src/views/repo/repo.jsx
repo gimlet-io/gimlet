@@ -253,6 +253,8 @@ export default class Repo extends Component {
           }
         });
 
+        console.log({id: trackingId, status: data.status, results: data.results })
+
         if (data.status === "new") {
           setTimeout(() => {
             this.checkDeployStatus(trackingId);
@@ -304,6 +306,17 @@ export default class Repo extends Component {
             }
           }
         }
+
+        if (data.status === "success") {
+          if (data.results.length === 1) {
+            const triggeredReleaseId = data.results[0].triggeredDeployRequestID
+            if (triggeredReleaseId) {
+              this.checkDeployStatus(triggeredReleaseId);
+            }
+          }
+        }
+
+
       }, () => {/* Generic error handler deals with it */
       });
   }

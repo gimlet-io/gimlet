@@ -667,6 +667,13 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 
 	results := []dx.Result{}
 	for _, result := range event.Results {
+		if result.TriggeredDeployRequestID != "" {
+			results = append(results, dx.Result{
+				TriggeredDeployRequestID: result.TriggeredDeployRequestID,
+			})
+			continue
+		}
+
 		gitopsCommitStatus, gitopsCommitStatusDesc, _ := gitopsCommitMetasFromHash(store, result.GitopsRef)
 		if event.Type == "rollback" {
 			results = append(results, dx.Result{

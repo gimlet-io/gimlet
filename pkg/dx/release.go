@@ -69,10 +69,11 @@ type Result struct {
 	// GitopsCommitStatus shows the status of the gitops commit of the Gimlet environment manifest processing
 	// While manifests are processed succesfully, and gitops commits are written, Flux may fail to apply them
 	// This field holds the Flux results
-	GitopsCommitStatus     string `json:"gitopsCommitStatus,omitempty"`
-	GitopsCommitStatusDesc string `json:"gitopsCommitStatusDesc,omitempty"`
-	Env                    string `json:"env,omitempty"`
-	StatusDesc             string `json:"statusDesc,omitempty"`
+	GitopsCommitStatus       string `json:"gitopsCommitStatus,omitempty"`
+	GitopsCommitStatusDesc   string `json:"gitopsCommitStatusDesc,omitempty"`
+	Env                      string `json:"env,omitempty"`
+	StatusDesc               string `json:"statusDesc,omitempty"`
+	TriggeredDeployRequestID string `json:"triggeredDeployRequestID,omitempty"`
 }
 
 // ReleaseStatus is the result of an artifact shipping or an on-demand deploy

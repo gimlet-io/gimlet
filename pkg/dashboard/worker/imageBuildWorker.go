@@ -91,7 +91,7 @@ func createDeployRequest(buildId string, store *store.Store) {
 		return
 	}
 
-	_, err = store.CreateEvent(&model.Event{
+	triggeredDeployRequestEvent, err := store.CreateEvent(&model.Event{
 		Type:       model.ReleaseRequestedEvent,
 		Blob:       string(releaseRequestStr),
 		Repository: event.Repository,
@@ -102,9 +102,9 @@ func createDeployRequest(buildId string, store *store.Store) {
 	}
 
 	event.Status = model.Success.String()
-
-	// TODO Add releae request to the results
-	// prepare tracking for this type of result
+	event.Results = append(event.Results, model.Result{
+		TriggeredDeployRequestID: triggeredDeployRequestEvent.ID,
+	})
 	resultsString, err := json.Marshal(event.Results)
 	if err != nil {
 		logrus.Error(err)
