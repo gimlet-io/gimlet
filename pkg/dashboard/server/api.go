@@ -180,6 +180,14 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	agentHub.StopPodLogs(namespace, serviceName)
 }
 
+func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
+	namespace := r.URL.Query().Get("namespace")
+	serviceName := r.URL.Query().Get("serviceName")
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.DeploymentDetails(namespace, serviceName)
+}
+
 func getAlerts(w http.ResponseWriter, r *http.Request) {
 	// db := r.Context().Value("store").(*store.Store)
 	// alerts, err := db.FiringAlerts()

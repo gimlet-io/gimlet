@@ -248,6 +248,26 @@ func fluxState(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
+func deploymentDetails(w http.ResponseWriter, r *http.Request) {
+	var deployment api.Deployment
+	err := json.NewDecoder(r.Body).Decode(&deployment)
+	if err != nil {
+		logrus.Errorf("cannot decode deployment: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.DeploymentDetailsEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.DeploymentDetailsEventString},
+		Deployment:     deployment.FQN(),
+		Details:        deployment.Details,
+	})
+	clientHub.Broadcast <- jsonString
+}
+
 func update(w http.ResponseWriter, r *http.Request) {
 	var update api.StackUpdate
 	err := json.NewDecoder(r.Body).Decode(&update)

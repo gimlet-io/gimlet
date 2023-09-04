@@ -20,12 +20,15 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -34,6 +37,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/kubectl/pkg/describe"
 )
 
 func main() {
@@ -91,6 +95,7 @@ func main() {
 	kubeEnv := &agent.KubeEnv{
 		Name:          envName,
 		Namespace:     namespace,
+		Config:        k8sConfig,
 		Client:        clientset,
 		DynamicClient: dynamicClient,
 	}
@@ -226,6 +231,14 @@ func serverCommunication(
 						namespace := e["namespace"].(string)
 						svc := e["serviceName"].(string)
 						go runningLogStreams.Stop(namespace, svc)
+					case "deploymentDetails":
+						go deploymentDetails(
+							kubeEnv,
+							e["namespace"].(string),
+							e["serviceName"].(string),
+							config.Host,
+							config.AgentKey,
+						)
 					case "imageBuildTrigger":
 						eString, _ := json.Marshal(e)
 						var trigger streaming.ImageBuildTrigger
@@ -384,6 +397,62 @@ func podLogs(
 	}
 
 	logrus.Debug("pod logs sent")
+}
+
+func deploymentDetails(
+	kubeEnv *agent.KubeEnv,
+	namespace string,
+	serviceName string,
+	gimletHost string,
+	agentKey string,
+) {
+	describer, ok := describe.DescriberFor(schema.GroupKind{Group: appsv1.GroupName, Kind: "Deployment"}, kubeEnv.Config)
+	if !ok {
+		logrus.Errorf("could not get describer for deployment")
+		return
+	}
+
+	output, err := describer.Describe(namespace, serviceName, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
+	if err != nil {
+		logrus.Errorf("could not get output of describer: %s", err)
+		return
+	}
+
+	deployment := api.Deployment{
+		Namespace: namespace,
+		Name:      serviceName,
+		Details:   output,
+	}
+
+	deploymentString, err := json.Marshal(deployment)
+	if err != nil {
+		logrus.Errorf("could not serialize deployment: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/deploymentDetails", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(deploymentString))
+	if err != nil {
+		logrus.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		logrus.Errorf("could not send deployment details: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	logrus.Debug("deployment details sent")
 }
 
 func httpClient() *http.Client {
