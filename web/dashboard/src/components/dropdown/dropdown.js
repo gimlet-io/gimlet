@@ -17,6 +17,7 @@ export default function Dropdown(props) {
     const params = new URLSearchParams(location.search);
     params.set('branch', selected);
     history.replace({ pathname: location.pathname, search: params.toString() });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
   if (!items) {
