@@ -174,12 +174,6 @@ function ServiceDetail(props) {
               </div>
             }
           </h3>
-          {<div className="px-3 py-4">
-            <KubernetesAlertBox
-              alerts={kubernetesAlerts}
-              hideButton
-            />
-          </div>}
           <div className="my-2 mb-4 sm:my-4 sm:mb-6">
             <RolloutHistory
               env={envName}
