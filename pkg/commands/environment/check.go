@@ -206,7 +206,7 @@ func environmentRelatedResources(client dynamic.Interface, gvr schema.GroupVersi
 	}
 
 	for _, r := range resources.Items {
-		if strings.Contains(r.GetName(), envName) {
+		if strings.Contains(r.GetName(), envName) || strings.Contains(r.GetName(), "builtin") {
 			relatedResources = append(relatedResources, r)
 		}
 	}
