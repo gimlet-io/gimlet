@@ -454,6 +454,30 @@ class EnvConfig extends Component {
     });
   }
 
+  renderTemplateFromConfig() {
+    let title = "Web application template"
+    let description = "To deploy any web application. Multiple image build options available."
+    if (this.state.chartFromConfigFile?.name === "static-site") {
+      title = "Static site template"
+      description = "If your build generates static files only, let us host it in an Nginx container."
+    }
+
+    return (
+      <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+        <div
+          className="relative flex rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 border border-blue-500"
+        >
+          <span className="flex flex-1">
+            <span className="flex flex-col">
+              <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
+              <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm select-none">{description}</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -539,7 +563,8 @@ class EnvConfig extends Component {
                 })}
               </div>
               :
-              <p className="text-gray-900 px-3 py-2">{this.state.defaultTemplate}</p>}
+              this.renderTemplateFromConfig()
+            }
           </div>
         <div className="mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
