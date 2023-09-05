@@ -71,7 +71,7 @@ export class RolloutHistory extends Component {
 
     if (releaseHistorySinceDays && releasesCount === 0) {
       return (
-        <div className="text-xs text-gray-500 py-2">
+        <div className="text-xs text-gray-500 p-2">
           No releases in the past {releaseHistorySinceDays} days.
         </div>)
     }

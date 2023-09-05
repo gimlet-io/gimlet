@@ -73,13 +73,18 @@ export class Env extends Component {
               { env.isOnline && renderedServices.length !== 0 &&
                 <>
                   {renderedServices}
-                  <h4 className="text-xs cursor-pointer text-gray-500 hover:text-gray-700"
+                  <button
+                  title="New deployment configuration"
                     onClick={() => {
                       const newAppName = `${repoName}-${uuidv4().slice(0, 4)}`
                       newConfig(env.name, newAppName)
-                    }}>
-                    New deployment configuration
-                  </h4>
+                    }}
+                    type="button"
+                    className="inline-block rounded-full p-2 mx-2 uppercase leading-normal text-white bg-gray-500 hover:bg-gray-400 transition duration-150 ease-in-out">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                  </button>
                 </>
               }
               { env.isOnline && renderedServices.length === 0 && emptyStateDeployThisRepo(newConfig, env.name, repoName) }
