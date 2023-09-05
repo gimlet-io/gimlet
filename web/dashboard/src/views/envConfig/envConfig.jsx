@@ -463,10 +463,8 @@ class EnvConfig extends Component {
     }
 
     return (
-      <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-        <div
-          className="relative flex rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 border border-blue-500"
-        >
+      <div className="mb-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+        <div className="relative flex rounded-lg bg-gray-200 p-4 focus:outline-none text-gray-500 opacity-70">
           <span className="flex flex-1">
             <span className="flex flex-col">
               <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
@@ -537,8 +535,8 @@ class EnvConfig extends Component {
         </button>
 
         <div className="mt-8 mb-16">
-          <div className="mb-16 items-center">
-            {action === "new" ?
+          {action === "new" ?
+            <div className="mb-16 items-center">
               <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
                 {Object.keys(this.state.templates).map((template) => {
                   let title = "Web application template"
@@ -548,24 +546,24 @@ class EnvConfig extends Component {
                     description = "If your build generates static files only, let us host it in an Nginx container."
                   }
                   return (
-                  <div
-                    className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 ${(this.state.selectedTemplate ?? this.state.defaultTemplate) === template ? "border border-blue-500" : "bg-gray-300 opacity-50 text-gray-600"}`}
-                    onClick={() => this.setDeploymentTemplate(template)}
-                  >
-                    <span className="flex flex-1">
-                      <span className="flex flex-col">
-                        <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
-                        <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm select-none">{description}</span>
+                    <div
+                      className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 ${(this.state.selectedTemplate ?? this.state.defaultTemplate) === template ? "border border-blue-500" : "bg-gray-300 opacity-50 text-gray-600"}`}
+                      onClick={() => this.setDeploymentTemplate(template)}
+                    >
+                      <span className="flex flex-1">
+                        <span className="flex flex-col">
+                          <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
+                          <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm select-none">{description}</span>
+                        </span>
                       </span>
-                    </span>
-                  </div>
+                    </div>
                   )
                 })}
               </div>
-              :
-              this.renderTemplateFromConfig()
-            }
-          </div>
+            </div>
+            :
+            this.renderTemplateFromConfig()
+          }
         <div className="mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
