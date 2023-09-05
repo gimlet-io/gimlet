@@ -1,14 +1,24 @@
 import {Fragment, useEffect, useState} from 'react'
+import { useHistory, useLocation } from 'react-router-dom'
 import {Listbox, Transition} from '@headlessui/react'
 import {CheckIcon, SelectorIcon} from '@heroicons/react/solid'
 
 export default function Dropdown(props) {
   const {items, value, changeHandler} = props;
   const [selected, setSelected] = useState(value)
+  const history = useHistory();
+  const location = useLocation();
 
   useEffect(() => {
     changeHandler(selected)
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    params.set('branch', selected);
+    history.replace({ pathname: location.pathname, search: params.toString() });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   if (!items) {
     return null;
