@@ -110,8 +110,6 @@ function ServiceDetail(props) {
       });
   }
 
-  const defaultConfigCase = stack.service.name === repoName;
-
   return (
     <>
       <LogsOverlay
@@ -126,7 +124,7 @@ function ServiceDetail(props) {
         <div className="flex-1">
           <h3 ref={ref} className="flex text-lg font-bold hover:bg-gray-100 rounded px-2">
             {stack.service.name}
-            {(configExists || defaultConfigCase) ?
+            {configExists ?
               <>
                 <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
                   <svg xmlns="http://www.w3.org/2000/svg"
