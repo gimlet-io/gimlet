@@ -35,7 +35,7 @@ export default class Repo extends Component {
       commits: reduxState.commits,
       branches: reduxState.branches,
       envConfigs: reduxState.envConfigs[repoName],
-      selectedBranch: '',
+      selectedBranch: queryParams.get("branch") ?? '',
       selectedTenant: queryParams.get("tenant") ?? '',
       settings: reduxState.settings,
       refreshQueue: reduxState.repoRefreshQueue.filter(repo => repo === repoName).length,
@@ -156,7 +156,7 @@ export default class Repo extends Component {
           }
         }
 
-        this.branchChange(defaultBranch)
+        if (this.state.selectedBranch === "") this.branchChange(defaultBranch)
         return data;
       })
       .then(data => {
