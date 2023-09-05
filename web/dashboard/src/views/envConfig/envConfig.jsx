@@ -454,6 +454,28 @@ class EnvConfig extends Component {
     });
   }
 
+  renderTemplateFromConfig() {
+    let title = "Web application template"
+    let description = "To deploy any web application. Multiple image build options available."
+    if (this.state.chartFromConfigFile?.name === "static-site") {
+      title = "Static site template"
+      description = "If your build generates static files only, let us host it in an Nginx container."
+    }
+
+    return (
+      <div className="mb-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+        <div className="relative flex rounded-lg bg-gray-200 p-4 focus:outline-none text-gray-500 opacity-70">
+          <span className="flex flex-1">
+            <span className="flex flex-col">
+              <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
+              <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm select-none">{description}</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -513,44 +535,35 @@ class EnvConfig extends Component {
         </button>
 
         <div className="mt-8 mb-16">
-          <div className="mb-4 items-center">
-            <div className="text-gray-700 block text-sm font-medium">Deployment template</div>
-            {action === "new" ?
-              <Menu as="span" className="mt-2 relative inline-flex shadow-sm rounded-md align-middle">
-                <Menu.Button
-                  className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                  {this.state.selectedTemplate ?? this.state.defaultTemplate}
-                </Menu.Button>
-                <span className="-ml-px relative block">
-                  <Menu.Button
-                    className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500">
-                    <span className="sr-only">Open options</span>
-                    <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                  </Menu.Button>
-                  <Menu.Items
-                    className="origin-top-right absolute z-50 left-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <div className="py-1">
-                      {Object.keys(this.state.templates).map((template) => (
-                        <Menu.Item key={template}>
-                          {({ active }) => (
-                            <button onClick={() => this.setDeploymentTemplate(template)}
-                              className={(
-                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                                ' block px-4 py-2 text-sm w-full text-left'
-                              }
-                            >
-                              {template}
-                            </button>
-                          )}
-                        </Menu.Item>
-                      ))}
+          {action === "new" ?
+            <div className="mb-16 items-center">
+              <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+                {Object.keys(this.state.templates).map((template) => {
+                  let title = "Web application template"
+                  let description = "To deploy any web application. Multiple image build options available."
+                  if (template === "static-site") {
+                    title = "Static site template"
+                    description = "If your build generates static files only, let us host it in an Nginx container."
+                  }
+                  return (
+                    <div
+                      className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 ${(this.state.selectedTemplate ?? this.state.defaultTemplate) === template ? "border border-blue-500" : "bg-gray-300 opacity-50 text-gray-600"}`}
+                      onClick={() => this.setDeploymentTemplate(template)}
+                    >
+                      <span className="flex flex-1">
+                        <span className="flex flex-col">
+                          <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
+                          <span id="project-type-0-description-0" className="mt-1 flex items-center text-sm select-none">{description}</span>
+                        </span>
+                      </span>
                     </div>
-                  </Menu.Items>
-                </span>
-              </Menu>
-              :
-              <p className="text-gray-900 px-3 py-2">{this.state.defaultTemplate}</p>}
-          </div>
+                  )
+                })}
+              </div>
+            </div>
+            :
+            this.renderTemplateFromConfig()
+          }
         <div className="mb-4 items-center">
           <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
