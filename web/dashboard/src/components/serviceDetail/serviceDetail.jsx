@@ -2,7 +2,6 @@ import React, { Component, useEffect, useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { XIcon } from '@heroicons/react/solid'
-import { KubernetesAlertBox } from '../../views/pulse/pulse';
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_CLEAR_PODLOGS,
@@ -17,7 +16,7 @@ import { Menu } from '@headlessui/react'
 import { usePostHog } from 'posthog-js/react'
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, builtInEnv } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
 

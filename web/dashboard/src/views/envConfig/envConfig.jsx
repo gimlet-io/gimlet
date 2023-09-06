@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import HelmUI from "helm-react-ui";
 import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
-import YAML from "json-to-pretty-yaml";
+import yaml from "js-yaml";
 // import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
 import {
@@ -712,8 +712,8 @@ class EnvConfig extends Component {
           />
           <div className="w-full mt-16">
             <ReactDiffViewer
-              oldValue={YAML.stringify(this.state.configFile)}
-              newValue={YAML.stringify(nonDefaultConfigFile)}
+              oldValue={yaml.dump(this.state.configFile)}
+              newValue={yaml.dump(nonDefaultConfigFile)}
               splitView={false}
               showDiffOnly={false}
               styles={{
@@ -721,7 +721,8 @@ class EnvConfig extends Component {
                   overflowX: "auto",
                   display: "block",
                   "& pre": { whiteSpace: "pre" }
-                }
+                },
+                emptyLine: { background: "#fff" }
               }} />
           </div>
           {/* {!this.state.environmentVariablesExpanded ?
