@@ -721,7 +721,8 @@ class EnvConfig extends Component {
                   overflowX: "auto",
                   display: "block",
                   "& pre": { whiteSpace: "pre" }
-                }
+                },
+                emptyLine: { background: "#fff" }
               }} />
           </div>
           {/* {!this.state.environmentVariablesExpanded ?
