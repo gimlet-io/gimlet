@@ -90,3 +90,86 @@ values: {}
 
 	assert.Equal(t, "git@github.com:gimlet-io/onechart.git?sha=abcdef&path=/charts/cron-job/", updatedManifest.Chart.Name)
 }
+
+func Test_configsPerEnv(t *testing.T) {
+	files := map[string]string{
+		"file1": `app: 'gimlet-dashboard'
+env: staging
+`,
+		"file2": `app: 'gimlet-dashboard2'
+env: preview
+`,
+		"file3": `app: 'gimlet-dashboard'
+env: staging
+`,
+	}
+
+	expected := map[string]map[string]string{
+		"staging": {
+			"file1": `app: 'gimlet-dashboard'
+env: staging
+`,
+			"file3": `app: 'gimlet-dashboard'
+env: staging
+`,
+		},
+		"preview": {
+			"file2": `app: 'gimlet-dashboard2'
+env: preview
+`,
+		},
+	}
+
+	configs, err := configsPerEnv(files)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, configs)
+}
+
+func Test_getChartLatestVersion(t *testing.T) {
+	charts := []dx.Chart{
+		{
+			Name:    "onechart",
+			Version: "0.47.0",
+		},
+		{
+			Name:    "static-site",
+			Version: "0.57.0",
+		},
+	}
+
+	raw := `app: 'gimlet-dashboard'
+env: staging
+namespace: 'default'
+chart:
+  repository: https://chart.onechart.dev
+  name: static-site
+  version: 0.39.0
+values: {}
+`
+
+	latestVersion, err := chartLatestVersion(raw, charts)
+	assert.Nil(t, err)
+	assert.Equal(t, charts[1].Version, latestVersion)
+}
+
+func Test_getChartLatestVersionGitRepoHTTPSScheme(t *testing.T) {
+	charts := []dx.Chart{
+		{
+			Name: "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/",
+		},
+		{
+			Name: "https://github.com/my-fork/onechart.git?sha=ghijk&path=/charts/static-site/",
+		},
+	}
+
+	raw := `app: 'gimlet-dashboard'
+env: staging
+namespace: 'default'
+chart:
+  name: https://github.com/my-fork/onechart.git?sha=a988d33fdff367d6f8efddfeb311b2b1c74c8ff2&path=/charts/onechart/
+values: {}
+`
+
+	latestVersion, _ := chartLatestVersion(raw, charts)
+	assert.Equal(t, charts[0].Name, latestVersion)
+}
