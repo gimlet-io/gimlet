@@ -209,6 +209,15 @@ func (c *Charts) Decode(value string) error {
 	return nil
 }
 
+func (charts Charts) Find(chart string) (*dx.Chart, error) {
+	for _, c := range charts {
+		if strings.Contains(c.Name, chart) {
+			return &c, nil
+		}
+	}
+	return nil, fmt.Errorf("cannot find chart %s in config", chart)
+}
+
 func parseChartString(chartsString string) (*dx.Chart, error) {
 	if chartsString == "" {
 		return nil, nil

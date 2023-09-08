@@ -372,6 +372,19 @@ func Branch(repo *git.Repository, ref string) error {
 	return nil
 }
 
+func Checkout(repo *git.Repository, ref string) error {
+	b := plumbing.ReferenceName(ref)
+	w, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	err = w.Checkout(&git.CheckoutOptions{Create: false, Force: false, Branch: b})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func DelDir(repo *git.Repository, path string) error {
 	worktree, err := repo.Worktree()
 	if err != nil {
