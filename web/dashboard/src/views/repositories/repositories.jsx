@@ -5,6 +5,7 @@ import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
 import RefreshRepos from './refreshRepos';
 import { renderChartUpdatePullRequests } from '../pulse/pulse';
 import { InformationCircleIcon } from '@heroicons/react/solid'
+import RefreshButton from '../../components/refreshButton/refreshButton';
 
 export default class Repositories extends Component {
   constructor(props) {
@@ -205,26 +206,26 @@ export default class Repositories extends Component {
       <div>
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-            <div>
+            <div className="flex justify-between">
               <h1 className="text-3xl font-bold leading-tight text-gray-900">Repositories</h1>
-              <div className="space-y-2">
-                <button className="flex text-xs text-gray-700 hover:text-blue-700 mt-2"
-                  onClick={() => {
-                    this.setState({ isOpen: true });
-                    this.refresh();
-                  }}
-                >
-                  Refresh repositories
-                </button>
-                {isOpen &&
-                  <RefreshRepos
-                    added={this.state.added}
-                    deleted={this.state.deleted}
-                    repositoriesRefreshing={this.state.repositoriesRefreshing}
-                    installationURL={this.state.application.installationURL}
-                  />}
-              </div>
+              <RefreshButton
+                title="Refresh repositories"
+                refreshFunc={() => {
+                  this.setState({ isOpen: true });
+                  this.refresh();
+                }}
+              />
             </div>
+            {isOpen &&
+              <div className="mt-8">
+                <RefreshRepos
+                  added={this.state.added}
+                  deleted={this.state.deleted}
+                  repositoriesRefreshing={this.state.repositoriesRefreshing}
+                  installationURL={this.state.application.installationURL}
+                />
+              </div>
+            }
             {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
           </div>
         </header>
