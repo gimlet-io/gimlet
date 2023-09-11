@@ -209,13 +209,25 @@ func (c *Charts) Decode(value string) error {
 	return nil
 }
 
-func (charts Charts) Find(chart string) (*dx.Chart, error) {
+func (charts Charts) Find(chart string) string {
 	for _, c := range charts {
 		if strings.Contains(c.Name, chart) {
-			return &c, nil
+			return c.Version
 		}
 	}
-	return nil, fmt.Errorf("cannot find chart %s in config", chart)
+	return ""
+}
+
+func (charts Charts) FindGitRepoHTTPSScheme(chart string) string {
+	for _, c := range charts {
+		if !strings.HasPrefix(c.Name, "git@") && !strings.Contains(c.Name, ".git") {
+			continue
+		}
+		if strings.Contains(c.Name, chart) {
+			return c.Name
+		}
+	}
+	return ""
 }
 
 func parseChartString(chartsString string) (*dx.Chart, error) {

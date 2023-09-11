@@ -130,11 +130,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		}
 
 		for fileName, content := range configs {
-			latestVersion, err := chartLatestVersion(content, c.config.Charts)
-			if err != nil {
-				logrus.Warnf("cannot extract latest chart version: %s", err)
-				continue
-			}
+			latestVersion := findLatestVersion(content, c.config.Charts)
 
 			updatedContent := updateChartVersion(content, latestVersion)
 
@@ -179,6 +175,10 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 }
 
 func updateChartVersion(raw string, latestVersion string) string {
+	if latestVersion == "" {
+		return raw
+	}
+
 	gitAddress, _ := giturl.Parse(latestVersion)
 	gitUrl := strings.ReplaceAll(latestVersion, gitAddress.RawQuery, "")
 	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
@@ -221,49 +221,30 @@ func configsPerEnv(files map[string]string) (map[string]map[string]string, error
 	return configsPerEnv, nil
 }
 
-func chartLatestVersion(content string, charts config.Charts) (string, error) {
+func findLatestVersion(content string, charts config.Charts) string {
 	var manifest dx.Manifest
 	err := yaml.Unmarshal([]byte(content), &manifest)
 	if err != nil {
-		return "", err
+		logrus.Warnf("cannot parse manifest %s", err)
+		return ""
 	}
 
-	chart, err := findChartInConfig(charts, manifest.Chart.Name)
-	if err != nil {
-		return "", err
-	}
-
-	if strings.HasPrefix(manifest.Chart.Name, "git@") || strings.Contains(manifest.Chart.Name, ".git") {
-		return chart.Name, nil
-	}
-
-	return chart.Version, nil
+	return findChartInConfig(charts, manifest.Chart.Name)
 }
 
-func findChartInConfig(charts config.Charts, chartName string) (*dx.Chart, error) {
-	chart := chartName
-	var err error
-
+func findChartInConfig(charts config.Charts, chartName string) string {
 	if strings.HasPrefix(chartName, "git@") || strings.Contains(chartName, ".git") {
-		chart, err = chartPath(chartName)
-		if err != nil {
-			return nil, err
-		}
+		path := chartPath(chartName)
+		return charts.FindGitRepoHTTPSScheme(path)
 	}
 
-	return charts.Find(chart)
+	return charts.Find(chartName)
 }
 
-func chartPath(chartName string) (string, error) {
-	gitAddress, err := giturl.Parse(chartName)
-	if err != nil {
-		return "", fmt.Errorf("cannot parse chart's git address: %s", err)
-	}
-
+func chartPath(chartName string) string {
+	gitAddress, _ := giturl.Parse(chartName)
 	params, _ := url.ParseQuery(gitAddress.RawQuery)
-	if v, found := params["path"]; found {
-		return v[0], nil
-	}
+	v := params["path"]
 
-	return "", fmt.Errorf("cannot find chart path in %s", chartName)
+	return v[0]
 }

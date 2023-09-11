@@ -147,8 +147,7 @@ chart:
 values: {}
 `
 
-	latestVersion, err := chartLatestVersion(raw, charts)
-	assert.Nil(t, err)
+	latestVersion := findLatestVersion(raw, charts)
 	assert.Equal(t, charts[1].Version, latestVersion)
 }
 
@@ -170,6 +169,30 @@ chart:
 values: {}
 `
 
-	latestVersion, _ := chartLatestVersion(raw, charts)
+	latestVersion := findLatestVersion(raw, charts)
 	assert.Equal(t, charts[0].Name, latestVersion)
+}
+
+func Test_NonExistingLatestVersion(t *testing.T) {
+	charts := []dx.Chart{
+		{
+			Name: "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/",
+		},
+		{
+			Name: "https://github.com/my-fork/onechart.git?sha=ghijk&path=/charts/static-site/",
+		},
+	}
+
+	raw := `app: 'gimlet-dashboard'
+env: staging
+namespace: 'default'
+chart:
+  repository: https://chart.onechart.dev
+  name: static-site
+  version: 0.30.0
+values: {}
+`
+
+	latestVersion := findLatestVersion(raw, charts)
+	assert.Equal(t, "", latestVersion)
 }
