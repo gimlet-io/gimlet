@@ -17,6 +17,7 @@ import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
 import { decorateKubernetesAlertsWithEnvAndRepo } from '../pulse/pulse';
 import TenantSelector from './tenantSelector';
+import RefreshButton from '../../components/refreshButton/refreshButton';
 
 export default class Repo extends Component {
   constructor(props) {
@@ -491,20 +492,25 @@ export default class Repo extends Component {
     return (
       <div>
         <header>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:flex items-start">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className='flex-1'>
-              <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
-                <a href={`${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
-                  <svg xmlns="http://www.w3.org/2000/svg"
-                    className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
-                    viewBox="0 0 24 24">
-                    <path d="M0 0h24v24H0z" fill="none" />
-                    <path
-                      d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-                  </svg>
-                </a>
-                {this.ciConfigAndShipperStatuses(repoName)}
-              </h1>
+              <div className="flex justify-between">
+                <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
+                  <a href={`${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
+                      viewBox="0 0 24 24">
+                      <path d="M0 0h24v24H0z" fill="none" />
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                    </svg>
+                  </a>
+                  {this.ciConfigAndShipperStatuses(repoName)}
+                </h1>
+                <RefreshButton
+                  refreshFunc={() => this.triggerCommitSync(owner, repo)}
+                />
+              </div>
               <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push("/repositories")}>
                 &laquo; back
               </button>
@@ -555,9 +561,6 @@ export default class Repo extends Component {
                         changeHandler={(newBranch) => this.branchChange(newBranch)}
                       />
                     </div>
-                    <svg onClick={() => this.triggerCommitSync(owner, repo)} xmlns="http://www.w3.org/2000/svg" className="absolute right-0 top-0 m-4 h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
                     {commits &&
                       <Commits
                         commits={commits[repoName]}
