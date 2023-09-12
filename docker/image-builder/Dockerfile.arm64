@@ -12,7 +12,7 @@ COPY buildpacks/paketo-buildpacks_npm-install /cnb/buildpacks/paketo-buildpacks_
 
 COPY lifecycle /cnb/lifecycle
 COPY docker/image-builder/order.toml /cnb/order.toml
-COPY docker/image-builder/stack.toml /cnb/stack.toml
+COPY docker/image-builder/stack.toml.arm64 /cnb/stack.toml
 
 COPY --chown=${CNB_USER_ID}:${CNB_GROUP_ID} bin/image-builder-linux-arm64 /bin/image-builder
 
