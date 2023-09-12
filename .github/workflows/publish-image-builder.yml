@@ -80,21 +80,25 @@ jobs:
       run: |
         mkdir buildpacks
 
-        git clone https://github.com/paketo-buildpacks/node-engine.git buildpacks/paketo-buildpacks_node-engine/
+        git clone https://github.com/gimlet-io/node-engine.git buildpacks/paketo-buildpacks_node-engine/
         cd buildpacks/paketo-buildpacks_node-engine/
-        git reset --hard v1.6.0
+        git reset --hard 7038a75c2378d653f1f14528267d0ca6565b4fc7
         ./scripts/build.sh
         cd .. && cd ..
         
         git clone https://github.com/paketo-buildpacks/npm-start.git buildpacks/paketo-buildpacks_npm-start/
         cd buildpacks/paketo-buildpacks_npm-start/
         git reset --hard v1.0.11
+        sed -i 's/GOOS=linux/GOOS=linux GOARCH=arm64/g' scripts/build.sh
+        sed -i 's/GOOS=\"linux\"/GOOS=linux GOARCH=arm64/g' scripts/build.sh
         ./scripts/build.sh
         cd .. && cd ..
 
         git clone https://github.com/paketo-buildpacks/npm-install.git buildpacks/paketo-buildpacks_npm-install/
         cd buildpacks/paketo-buildpacks_npm-install/
         git reset --hard v1.1.4
+        sed -i 's/GOOS=linux/GOOS=linux GOARCH=arm64/g' scripts/build.sh
+        sed -i 's/GOOS=\"linux\"/GOOS=linux GOARCH=arm64/g' scripts/build.sh
         ./scripts/build.sh
         cd .. && cd ..
 

@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM ubuntu:jammy
+FROM --platform=$TARGETPLATFORM ubuntu:jammy
 
 ARG cnb_uid=1000
 ARG cnb_gid=1000

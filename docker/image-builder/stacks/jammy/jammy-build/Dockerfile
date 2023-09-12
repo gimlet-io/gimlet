@@ -1,5 +1,5 @@
 ARG base_image
-FROM --platform=$BUILDPLATFORM ${base_image}
+FROM --platform=$TARGETPLATFORM ${base_image}
 
 # Install packages that we want to make available at build time
 RUN apt update && \
