@@ -63,7 +63,7 @@ jobs:
       with:
         context: .
         file: docker/dashboard/Dockerfile
-        platforms: linux/amd64,linux/arm64v8
+        platforms: linux/amd64,linux/arm64/v8
         push: true
         tags: |
           ghcr.io/gimlet-io/gimlet:${{ steps.version.outputs.version }}
