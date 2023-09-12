@@ -1,8 +1,4 @@
-FROM --platform=$BUILDPLATFORM alpine:3.18.3
-
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+FROM --platform=$TARGETPLATFORM alpine:3.18.3
 
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
@@ -20,7 +16,8 @@ RUN mkdir /var/lib/gimlet-dashboard
 RUN chown gimlet-dashboard:gimlet-dashboard /var/lib/gimlet-dashboard
 WORKDIR /gimlet-dashboard
 
-
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 # COPY --chown=gimlet-dashboard:gimlet-dashboard bin/${TARGETPLATFORM}/gimlet-dashboard gimlet-dashboard
 # COPY --chown=gimlet-dashboard:gimlet-dashboard web/dashboard/build ./web/build/

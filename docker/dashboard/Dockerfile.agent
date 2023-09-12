@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM alpine:3
+FROM --platform=$TARGETPLATFORM alpine:3
 
 RUN apk update && apk upgrade && \
     apk add --no-cache bash openssh
