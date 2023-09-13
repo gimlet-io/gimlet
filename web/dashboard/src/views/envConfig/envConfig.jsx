@@ -66,13 +66,9 @@ class EnvConfig extends Component {
         scmUrl: reduxState.settings.scmUrl
       });
 
+      this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
-
       this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
-
-      if (!this.state.values) {
-        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
-      }
     });
 
     this.setValues = this.setValues.bind(this);
@@ -88,9 +84,9 @@ class EnvConfig extends Component {
       this.setState({
         configFile: (action === "new" ? {} : configFileContent),
         chartFromConfigFile: configFileContent.chart,
-        appName: configFileContent.app,
+        appName: configFileContent.app ?? config,
         namespace: configFileContent.namespace ?? "default",
-        defaultAppName: configFileContent.app,
+        defaultAppName: configFileContent.app ?? config,
         defaultNamespace: configFileContent.namespace ?? "default",
 
         values: Object.assign({}, envConfig),
@@ -932,7 +928,7 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defa
               tag:        "{{ .SHA }}",
             },
             resources: {
-              ignore: true,
+              ignoreLimits: true,
             },
           },
         }
