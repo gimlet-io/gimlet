@@ -2,7 +2,7 @@ import './style.css'
 import React, { Component } from 'react'
 import { Tile } from './tile';
 import HelmUI from "helm-react-ui";
-import { XIcon } from "@heroicons/react/outline";
+import { InformationCircleIcon } from '@heroicons/react/solid'
 import { Remarkable } from "remarkable";
 
 export class Category extends Component {
@@ -103,75 +103,47 @@ export class Category extends Component {
     }
 
     const componentConfigPanel = selectedComponentName === undefined ? null : (
-      <div className="py-6 px-4 space-y-6 sm:p-6">
-        <HelmUI
-          schema={selectedComponent.schema}
-          config={selectedComponent.uiSchema}
-          values={selectedComponentConfig}
-          setValues={componentSaver}
-          validate={true}
-          validationCallback={validationCallback}
-        />
-      </div>
+      <HelmUI
+        schema={selectedComponent.schema}
+        config={selectedComponent.uiSchema}
+        values={selectedComponentConfig}
+        setValues={componentSaver}
+        validate={true}
+        validationCallback={validationCallback}
+      />
     );
 
     const md = new Remarkable();
     const gettingStartedPanel = selectedComponentName === undefined ? null : (
-      <div className="py-6 px-4 space-y-6 sm:p-6">
-        <div className="prose" dangerouslySetInnerHTML={{ __html: md.render(selectedComponent.onePager) }} />
-      </div>
+      <div className="prose" dangerouslySetInnerHTML={{ __html: md.render(selectedComponent.onePager) }} />
     );
 
-    const notSelectedTabStyle = "cursor-default border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm";
-    const selectedTabStyle = "cursor-default border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm";
-    const tabState = this.state.tabState
-
     return (
-      <div className="my-8">
-        <h2 className="text-lg">{category.name}</h2>
+      <div>
         <div className="flex space-x-2 my-2">
           {componentTitles}
         </div>
         <div className="my-2">
           {selectedComponentName !== undefined &&
-            <div className="px-8 py-4 shadow sm:rounded-md sm:overflow-hidden bg-white relative">
-              <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
-                <span
-                  className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  onClick={() => this.toggleComponent(category.id, selectedComponent.variable)}
-                >
-                  <span className="sr-only">Close</span>
-                  <XIcon className="h-6 w-6" aria-hidden="true" />
-                </span>
-              </div>
-              <div>
-                <div className="hidden sm:block">
-                  <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                      <span
-                        className={tabState[selectedComponentName] === 'getting-started' ? selectedTabStyle : notSelectedTabStyle}
-                        aria-current={tabState[selectedComponentName] === 'getting-started' ? 'page' : undefined}
-                        onClick={() => this.switchTab(selectedComponentName, 'getting-started')}
-                      >
-                        Getting Started
-                      </span>
-                      <span
-                        className={tabState[selectedComponentName] === 'config' ? selectedTabStyle : notSelectedTabStyle}
-                        aria-current={tabState[selectedComponentName] === 'config' ? 'page' : undefined}
-                        onClick={() => this.switchTab(selectedComponentName, 'config')}
-                      >
-                        Config
-                      </span>
-                    </nav>
+            <div className="p-4 shadow sm:rounded-md sm:overflow-hidden bg-white relative">
+              <div className="grid grid-cols-12 gap-x-5">
+                <div className="col-span-3">
+                  {componentConfigPanel}
+                </div>
+                <div className="rounded-md bg-blue-50 p-2 col-span-9 overflow-x-scroll">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
+                      <div className="mt-2 text-sm text-blue-700">
+                        {gettingStartedPanel}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-              {tabState[selectedComponentName] === 'getting-started' &&
-                gettingStartedPanel
-              }
-              {tabState[selectedComponentName] === 'config' &&
-                componentConfigPanel
-              }
             </div>
           }
         </div>

@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWERRORLIST,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_ENVSPINNEDOUT,
+  ACTION_TYPE_ENVUPDATED,
+  ACTION_TYPE_SAVE_ENV_PULLREQUEST,
   ACTION_TYPE_RELEASE_STATUSES,
+  ACTION_TYPE_ENVSPINNEDOUT
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
@@ -13,6 +16,7 @@ import { format, formatDistance } from "date-fns";
 import SeparateEnvironments from '../environments/separateEnvironments';
 import KustomizationPerApp from '../environments/kustomizationPerApp';
 import BootstrapGuide from '../environments/bootstrapGuide';
+import StackUI from '../environments/stack-ui';
 
 export default class EnvironmentView extends Component {
   constructor(props) {
@@ -131,6 +135,58 @@ export default class EnvironmentView extends Component {
     )
   }
 
+  saveComponents() {
+    const { gimletClient, store } = this.props;
+    const { errors, environment, stackNonDefaultValues } = this.state;
+
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Saving components..."
+      }
+    });
+
+    for (const variable of Object.keys(errors)) {
+      if (errors[variable] !== null) {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
+            header: "Error",
+            errorList: errors
+          }
+        });
+        return false
+      }
+    }
+
+    gimletClient.saveInfrastructureComponents(environment.name, stackNonDefaultValues)
+      .then((data) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Pull request was created",
+            link: data.createdPr.link
+          }
+        });
+        store.dispatch({
+          type: ACTION_TYPE_SAVE_ENV_PULLREQUEST, payload: {
+            envName: data.envName,
+            createdPr: data.createdPr
+          }
+        });
+        store.dispatch({
+          type: ACTION_TYPE_ENVUPDATED, name: environment.name, payload: data.stackConfig
+        });
+      }, (err) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+        this.resetPopupWindowAfterThreeSeconds()
+      })
+  }
+
+
   spinOutBuiltInEnv() {
     const { gimletClient, store } = this.props;
 
@@ -216,39 +272,56 @@ export default class EnvironmentView extends Component {
     );
   }
 
+  setValues = (variable, values, nonDefaultValues) => {
+    console.log("TODO")
+  }
+
+  validationCallback(variable, validationErrors) {
+    if (validationErrors !== null) {
+      validationErrors = validationErrors.filter(error => error.keyword !== 'oneOf');
+      validationErrors = validationErrors.filter(error => error.dataPath !== '.enabled');
+    }
+
+    console.log("TODO set error")
+    // setErrors({ ...errors, [variable]: validationErrors })
+  }
+
   infrastructureComponentsTab() {
     const { environment, settings } = this.state;
+
+    if (!environment.infraRepo || !environment.appsRepo) {
+      return this.gitopsBootstrapWizard();
+    }
+
     if (environment.builtIn && settings.provider && settings.provider !== "") {
       return this.builtInEnvInfo();
     }
 
-    if (!environment.infraRepo || !environment.appsRepo) {
-      return (
-        <div className="mt-4 text-gray-700">
-          <div>
-            TODO BOOTSTRAP FIRST MESSAGE
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="mt-4 text-gray-700">
-        <div>
-          TODO STACK UI AND SAVE
+        <div className='fixed bottom-28 right-10 flex items-end px-4 py-6 pointer-events-none z-10'>
+          <button
+            onClick={() => this.saveComponents()}
+            disabled={this.state.popupWindow.visible}
+            className={(this.state.popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150 ml-auto tracking-wide pointer-events-auto`}>
+            Save components
+          </button>
         </div>
+        <StackUI
+          stack={{}}
+          stackDefinition={environment.stackDefinition}
+          setValues={this.setValues}
+          validationCallback={this.validationCallback}
+        />
       </div>
     )
   }
 
   gitopsCommitsTab() {
     const { environment, scmUrl, releaseStatuses } = this.state;
-    console.log(releaseStatuses)
     if (!releaseStatuses) {
       return null
     }
-
-    console.log(releaseStatuses)
 
     let renderReleaseStatuses = [];
 
