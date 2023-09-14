@@ -66,7 +66,9 @@ class EnvConfig extends Component {
         scmUrl: reduxState.settings.scmUrl
       });
 
-      this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
+      if (!this.state.values) {
+        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
+      }
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
       this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
     });

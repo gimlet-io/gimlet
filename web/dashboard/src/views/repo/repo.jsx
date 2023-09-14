@@ -8,7 +8,6 @@ import {
   ACTION_TYPE_DEPLOY_STATUS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY,
-  ACTION_TYPE_ADD_ENVCONFIG,
   ACTION_TYPE_REPO_PULLREQUESTS,
   ACTION_TYPE_RELEASE_STATUSES,
 } from "../../redux/redux";
@@ -376,17 +375,6 @@ export default class Repo extends Component {
 
   newConfig(env, config) {
     const { owner, repo } = this.props.match.params;
-
-    this.props.store.dispatch({
-      type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
-        repo: `${owner}/${repo}`,
-        env: env,
-        envConfig: {
-          app: config,
-          env: env
-        },
-      }
-    });
     this.props.history.push(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}/new`));
   }
 
