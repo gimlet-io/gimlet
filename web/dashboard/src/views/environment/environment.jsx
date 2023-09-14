@@ -13,10 +13,10 @@ import {
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
 import { format, formatDistance } from "date-fns";
-import SeparateEnvironments from '../environments/separateEnvironments';
-import KustomizationPerApp from '../environments/kustomizationPerApp';
-import BootstrapGuide from '../environments/bootstrapGuide';
-import StackUI from '../environments/stack-ui';
+import SeparateEnvironments from './separateEnvironments';
+import KustomizationPerApp from './kustomizationPerApp';
+import BootstrapGuide from './bootstrapGuide';
+import StackUI from './stack-ui';
 
 export default class EnvironmentView extends Component {
   constructor(props) {
@@ -32,6 +32,10 @@ export default class EnvironmentView extends Component {
       releaseStatuses: reduxState.releaseStatuses[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
+      kustomizationPerApp: false,
+      repoPerEnv: true,
+      infraRepo: "gitops-infra",
+      appsRepo: "gitops-apps",
     };
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
@@ -46,6 +50,11 @@ export default class EnvironmentView extends Component {
         settings: reduxState.settings
       });
     });
+
+    this.setRepoPerEnv = this.setRepoPerEnv.bind(this)
+    this.setKustomizationPerApp = this.setKustomizationPerApp.bind(this)
+    this.setInfraRepo = this.setInfraRepo.bind(this)
+    this.setAppsRepo = this.setAppsRepo.bind(this)
   }
 
   componentDidMount() {
@@ -74,24 +83,10 @@ export default class EnvironmentView extends Component {
   };
 
   configurationTab() {
-    const { environment, connectedAgents, scmUrl, user } = this.state;
+    const { environment, scmUrl } = this.state;
 
     if (!environment.infraRepo || !environment.appsRepo) {
       return this.gitopsBootstrapWizard();
-    }
-
-    const isOnline = this.isOnline(connectedAgents, environment)
-
-    if (!isOnline) {
-      return (
-        <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-gray-200 px-4 py-5 sm:px-6">
-          <h3 className="text-lg font-medium pl-2 text-gray-900">Connect your cluster</h3>
-          <BootstrapGuide
-            envName={environment.name}
-            token={user.token}
-          />
-        </div>
-      )
     }
 
     const isRepoPerEnvEnabled = environment.repoPerEnv ? "enabled" : "disabled";
@@ -186,7 +181,6 @@ export default class EnvironmentView extends Component {
       })
   }
 
-
   spinOutBuiltInEnv() {
     const { gimletClient, store } = this.props;
 
@@ -273,7 +267,7 @@ export default class EnvironmentView extends Component {
   }
 
   setValues = (variable, values, nonDefaultValues) => {
-    console.log("TODO")
+    console.log("TODO set values")
   }
 
   validationCallback(variable, validationErrors) {
@@ -288,31 +282,28 @@ export default class EnvironmentView extends Component {
 
   infrastructureComponentsTab() {
     const { environment, settings } = this.state;
-
-    if (!environment.infraRepo || !environment.appsRepo) {
-      return this.gitopsBootstrapWizard();
-    }
-
-    if (environment.builtIn && settings.provider && settings.provider !== "") {
-      return this.builtInEnvInfo();
-    }
+    const builtIn = environment.builtIn && settings.provider && settings.provider !== ""
 
     return (
       <div className="mt-4 text-gray-700">
         <div className='fixed bottom-28 right-10 flex items-end px-4 py-6 pointer-events-none z-10'>
           <button
             onClick={() => this.saveComponents()}
-            disabled={this.state.popupWindow.visible}
-            className={(this.state.popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150 ml-auto tracking-wide pointer-events-auto`}>
+            disabled={environment.builtIn}
+            className={(environment.builtIn ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150 ml-auto tracking-wide pointer-events-auto`}>
             Save components
           </button>
         </div>
-        <StackUI
-          stack={{}}
-          stackDefinition={environment.stackDefinition}
-          setValues={this.setValues}
-          validationCallback={this.validationCallback}
-        />
+        {builtIn ?
+          this.builtInEnvInfo()
+          :
+          <StackUI
+            stack={{}}
+            stackDefinition={environment.stackDefinition}
+            setValues={this.setValues}
+            validationCallback={this.validationCallback}
+          />
+        }
       </div>
     )
   }
@@ -350,7 +341,24 @@ export default class EnvironmentView extends Component {
     )
   }
 
-  bootstrapGitops(envName, repoPerEnv, kustomizationPerApp) {
+  setKustomizationPerApp(value) {
+    this.setState({ kustomizationPerApp: value });
+  }
+
+  setRepoPerEnv(value) {
+    this.setState({ repoPerEnv: value });
+  }
+
+  setInfraRepo(value) {
+    this.setState({ infraRepo: value });
+  }
+
+  setAppsRepo(value) {
+    this.setState({ appsRepo: value });
+  }
+
+  bootstrapGitops() {
+    const { environment, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo } = this.state;
     const { gimletClient, store } = this.props;
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
@@ -358,7 +366,7 @@ export default class EnvironmentView extends Component {
       }
     });
 
-    gimletClient.bootstrapGitops(envName, repoPerEnv, kustomizationPerApp, "infraRepo", "appsRepo")
+    gimletClient.bootstrapGitops(environment.name, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo)
       .then(() => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
@@ -380,7 +388,20 @@ export default class EnvironmentView extends Component {
   }
 
   gitopsBootstrapWizard() {
-    const { environment, popupWindow } = this.state;
+    const { environment, popupWindow, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo } = this.state;
+    if (repoPerEnv && infraRepo === "gitops-infra") {
+      this.setInfraRepo(`gitops-${environment.name}-infra`);
+    }
+    if (repoPerEnv && appsRepo === "gitops-apps") {
+      this.setAppsRepo(`gitops-${environment.name}-apps`);
+    }
+    if (!repoPerEnv && infraRepo === `gitops-${environment.name}-infra`) {
+      this.setInfraRepo("gitops-infra");
+    }
+    if (!repoPerEnv && appsRepo === `gitops-${environment.name}-apps`) {
+      this.setAppsRepo("gitops-apps");
+    }
+
     return (
       <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-gray-200 px-4 py-5 sm:px-6">
         <div className="mt-2 pb-4 border-b border-gray-200">
@@ -390,22 +411,22 @@ export default class EnvironmentView extends Component {
           </p>
         </div>
         <KustomizationPerApp
-          kustomizationPerApp={"kustomizationPerApp"}
-          setKustomizationPerApp={"setKustomizationPerApp"}
+          kustomizationPerApp={kustomizationPerApp}
+          setKustomizationPerApp={this.setKustomizationPerApp}
         />
         <SeparateEnvironments
-          repoPerEnv={"repoPerEnv"}
-          setRepoPerEnv={"setRepoPerEnv"}
-          infraRepo={"infraRepo"}
-          appsRepo={"appsRepo"}
-          setInfraRepo={"setInfraRepo"}
-          setAppsRepo={"setAppsRepo"}
-          envName={"env.name"}
+          repoPerEnv={repoPerEnv}
+          setRepoPerEnv={this.setRepoPerEnv}
+          infraRepo={infraRepo}
+          appsRepo={appsRepo}
+          setInfraRepo={this.setInfraRepo}
+          setAppsRepo={this.setAppsRepo}
+          envName={environment.name}
         />
         <div className="p-0 flow-root mt-8">
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
             <button
-              onClick={() => this.bootstrapGitops(environment.name, "repoPerEnv", "kustomizationPerApp")}
+              onClick={() => this.bootstrapGitops(environment.name, repoPerEnv, kustomizationPerApp)}
               disabled={popupWindow.visible}
               className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
             >
@@ -418,7 +439,7 @@ export default class EnvironmentView extends Component {
   }
 
   render() {
-    let { environment, connectedAgents } = this.state;
+    let { environment, connectedAgents, user } = this.state;
     const isOnline = this.isOnline(connectedAgents, environment)
 
     if (!environment) {
@@ -491,13 +512,31 @@ export default class EnvironmentView extends Component {
                 </div>
               </div>
               <div className="my-8">
-                {navigation[0].href === this.props.location.pathname ?
-                  this.configurationTab()
+                {environment.infraRepo ?
+                  <>
+                    {isOnline ?
+                      <>
+                        {navigation[0].href === this.props.location.pathname ?
+                          this.configurationTab()
+                          :
+                          navigation[1].href === this.props.location.pathname ?
+                            this.infrastructureComponentsTab()
+                            :
+                            this.gitopsCommitsTab()
+                        }
+                      </>
+                      :
+                      <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-gray-200 px-4 py-5 sm:px-6">
+                        <h3 className="text-lg font-medium pl-2 text-gray-900">Connect your cluster</h3>
+                        <BootstrapGuide
+                          envName={environment.name}
+                          token={user.token}
+                        />
+                      </div>
+                    }
+                  </>
                   :
-                  navigation[1].href === this.props.location.pathname ?
-                    this.infrastructureComponentsTab()
-                    :
-                    this.gitopsCommitsTab()
+                  this.gitopsBootstrapWizard()
                 }
               </div>
             </div>
