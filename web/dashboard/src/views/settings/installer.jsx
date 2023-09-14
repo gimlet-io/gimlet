@@ -57,15 +57,15 @@ const Installer = () => {
 
           <ul className="pl-8 list-disc">
             <li>When you integrate with Github you create a Github Apps application.</li>
-            <li>This application will be owned by you*, thus you don't give access to any third party or the makers of Gimlet.</li>
-            <li>*When we say you, we mean your Github user.<br />If you want to integrate your company's Github repositories, make sure to fill this input field with the name of your Github Organization:
+            <li>This application will be owned by your personal Github account, thus you don't give access to any third party or the makers of Gimlet.</li>
+            <li>(optional) In case you want to integrate your company's Github repositories, provide your company's Github Organization:
               <input id="org" name="org"
                 value={org}
                 onChange={e => setOrg(e.target.value)}
                 className="ml-2 p-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 type="text" />
             </li>
-            <li>Github Apps - unlike Github OAuth Apps or personal access tokens - allow fine-grained integrations, so you will be able to pick the repositories that you want to integrate with Gimlet.</li>
+            <li>Github Apps allow fine-grained integrations, so you will be able to pick the repositories that you want to integrate with Gimlet.</li>
           </ul>
 
           <input type="submit" value="Create Github app & Integrate Gimlet"
