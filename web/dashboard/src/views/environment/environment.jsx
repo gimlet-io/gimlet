@@ -8,7 +8,8 @@ import {
   ACTION_TYPE_ENVUPDATED,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
   ACTION_TYPE_RELEASE_STATUSES,
-  ACTION_TYPE_ENVSPINNEDOUT
+  ACTION_TYPE_ENVSPINNEDOUT,
+  ACTION_TYPE_ENVS
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
@@ -17,6 +18,7 @@ import SeparateEnvironments from './separateEnvironments';
 import KustomizationPerApp from './kustomizationPerApp';
 import BootstrapGuide from './bootstrapGuide';
 import StackUI from './stack-ui';
+import DeleteButton from './deleteButton';
 
 export default class EnvironmentView extends Component {
   constructor(props) {
@@ -55,6 +57,7 @@ export default class EnvironmentView extends Component {
     this.setKustomizationPerApp = this.setKustomizationPerApp.bind(this)
     this.setInfraRepo = this.setInfraRepo.bind(this)
     this.setAppsRepo = this.setAppsRepo.bind(this)
+    this.delete = this.delete.bind(this)
   }
 
   componentDidMount() {
@@ -179,6 +182,45 @@ export default class EnvironmentView extends Component {
         });
         this.resetPopupWindowAfterThreeSeconds()
       })
+  }
+
+  refreshEnvs() {
+    this.props.gimletClient.getEnvs()
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_ENVS,
+          payload: data
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
+  }
+
+  delete(envName) {
+    this.props.store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Deleting..."
+      }
+    });
+
+    this.props.gimletClient.deleteEnvFromDB(envName)
+      .then(() => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Success",
+            message: "Environment deleted"
+          }
+        });
+        this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
+        this.refreshEnvs();
+        this.props.history.push("/environments");
+      }, err => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+      });
   }
 
   spinOutBuiltInEnv() {
@@ -472,7 +514,14 @@ export default class EnvironmentView extends Component {
                     </svg>
                   </span>}
               </h1>
-              <button className="absolute top-0 right-0 py-1.5">TODO delete button</button>
+              {!isOnline &&
+                <div className="absolute top-0 right-0">
+                  <DeleteButton
+                    envName={environment.name}
+                    deleteFunc={this.delete}
+                  />
+                </div>
+              }
               <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push("/environments")}>
                 &laquo; back
               </button>
