@@ -323,7 +323,31 @@ export default class EnvironmentView extends Component {
   }
 
   infrastructureComponentsTab() {
-    const { environment } = this.state;
+    const { environment, settings } = this.state;
+
+    if (!settings.provider || settings.provider === "") {
+      return (
+        <div className="rounded-md bg-blue-50 p-4 mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">Integrate Github</h3>
+              <div className="mt-2 text-sm text-blue-700">
+                This view will load your git repositories once you integrated Github.<br />
+                <button
+                  className="font-medium"
+                  onClick={() => { this.props.history.push("/settings"); return true }}
+                >
+                  Click to integrate Github on the Settings page.
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
 
     if (environment.builtIn) {
       return this.builtInEnvInfo();
