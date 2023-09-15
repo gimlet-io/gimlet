@@ -482,40 +482,40 @@ export default class EnvironmentView extends Component {
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
-              <div className="block">
-                <div className="border-b border-gray-200">
-                  <nav className="-mb-px flex" aria-label="Tabs">
-                    {navigation.map((item) => {
-                      const selected = this.props.location.pathname === item.href;
-                      return (
-                        <button
-                          key={item.name}
-                          href="#"
-                          className={(
-                            selected
-                              ? 'border-indigo-500 text-indigo-600'
-                              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700') +
-                            ' w-1/4 border-b-2 py-4 px-1 text-center text-sm font-medium'
-                          }
-                          aria-current={selected ? 'page' : undefined}
-                          onClick={() => {
-                            this.props.history.push(item.href);
-                            return true
-                          }}
-                        >
-                          {item.name}
-                        </button>
-                      )
-                    })
-                    }
-                  </nav>
-                </div>
-              </div>
-              <div className="my-8">
-                {environment.infraRepo ?
-                  <>
-                    {isOnline ?
-                      <>
+              {environment.infraRepo ?
+                <>
+                  {isOnline ?
+                    <div>
+                      <div className="block">
+                        <div className="border-b border-gray-200">
+                          <nav className="-mb-px flex" aria-label="Tabs">
+                            {navigation.map((item) => {
+                              const selected = this.props.location.pathname === item.href;
+                              return (
+                                <button
+                                  key={item.name}
+                                  href="#"
+                                  className={(
+                                    selected
+                                      ? 'border-indigo-500 text-indigo-600'
+                                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700') +
+                                    ' w-1/4 border-b-2 py-4 px-1 text-center text-sm font-medium'
+                                  }
+                                  aria-current={selected ? 'page' : undefined}
+                                  onClick={() => {
+                                    this.props.history.push(item.href);
+                                    return true
+                                  }}
+                                >
+                                  {item.name}
+                                </button>
+                              )
+                            })
+                            }
+                          </nav>
+                        </div>
+                      </div>
+                      <div className="my-8">
                         {navigation[0].href === this.props.location.pathname ?
                           this.configurationTab()
                           :
@@ -524,21 +524,21 @@ export default class EnvironmentView extends Component {
                             :
                             this.gitopsCommitsTab()
                         }
-                      </>
-                      :
-                      <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-gray-200 px-4 py-5 sm:px-6">
-                        <h3 className="text-lg font-medium pl-2 text-gray-900">Connect your cluster</h3>
-                        <BootstrapGuide
-                          envName={environment.name}
-                          token={user.token}
-                        />
                       </div>
-                    }
-                  </>
-                  :
-                  this.gitopsBootstrapWizard()
-                }
-              </div>
+                    </div>
+                    :
+                    <div className="my-4 bg-white overflow-hidden shadow rounded-lg divide-gray-200 px-4 py-5 sm:px-6">
+                      <h3 className="text-lg font-medium pl-2 text-gray-900">Connect your cluster</h3>
+                      <BootstrapGuide
+                        envName={environment.name}
+                        token={user.token}
+                      />
+                    </div>}
+                </>
+                :
+                this.gitopsBootstrapWizard()
+              }
+
             </div>
           </div>
         </main>
