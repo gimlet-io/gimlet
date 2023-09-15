@@ -125,24 +125,39 @@ export class Category extends Component {
         </div>
         <div className="my-2">
           {selectedComponentName !== undefined &&
-            <div className="p-4 shadow sm:rounded-md sm:overflow-hidden bg-white relative">
-              <div className="grid grid-cols-12 gap-x-5">
-                <div className="col-span-3">
+            <div className='flex'>
+              <div className="p-4 max-w-lg shadow sm:rounded-md sm:overflow-hidden bg-white relative">
+                <div className="col-span-6">
                   {componentConfigPanel}
                 </div>
-                <div className="rounded-md bg-blue-50 p-2 col-span-9 overflow-x-scroll">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
-                      <div className="mt-2 text-sm text-blue-700">
-                        {gettingStartedPanel}
-                      </div>
+              </div>
+              <div className='relative'>
+              <div className="rounded-md bg-blue-50 p-2 overflow-x-scroll">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      {gettingStartedPanel}
                     </div>
                   </div>
                 </div>
+              </div>
+              <div className="absolute left-72 rounded-md bg-blue-50 p-2 overflow-x-scroll">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      {gettingStartedPanel}
+                    </div>
+                  </div>
+                </div>
+              </div>
               </div>
             </div>
           }

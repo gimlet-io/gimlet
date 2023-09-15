@@ -27,7 +27,7 @@ class StackUI extends Component {
 
     const { categories, name, description } = stackDefinition;
     const sidebar = categories.length > 1
-    let gridClass = 'lg:grid lg:grid-cols-12 lg:gap-x-2';
+    let gridClass = 'lg:grid lg:grid-cols-12 lg:gap-x-16 pt-8';
     let gridSpan = 'lg:col-span-10'
     if (!sidebar) {
       gridClass = '';

@@ -285,8 +285,8 @@ export default class EnvironmentView extends Component {
     const builtIn = environment.builtIn && settings.provider && settings.provider !== ""
 
     return (
-      <div className="mt-4 text-gray-700">
-        <div className='fixed bottom-28 right-10 flex items-end px-4 py-6 pointer-events-none z-10'>
+      <div className="relative mt-4 text-gray-700">
+        <div className='absolute right-0 top-0 pointer-events-none z-10 py-1'>
           <button
             onClick={() => this.saveComponents()}
             disabled={environment.builtIn}
