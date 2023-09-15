@@ -34,6 +34,9 @@ export default class EnvironmentView extends Component {
       releaseStatuses: reduxState.releaseStatuses[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
+      stack: {},
+      stackNonDefaultValues: {},
+      errors: {},
       kustomizationPerApp: false,
       repoPerEnv: true,
       infraRepo: "gitops-infra",
@@ -53,11 +56,13 @@ export default class EnvironmentView extends Component {
       });
     });
 
+    this.setValues = this.setValues.bind(this)
     this.setRepoPerEnv = this.setRepoPerEnv.bind(this)
     this.setKustomizationPerApp = this.setKustomizationPerApp.bind(this)
     this.setInfraRepo = this.setInfraRepo.bind(this)
     this.setAppsRepo = this.setAppsRepo.bind(this)
     this.delete = this.delete.bind(this)
+    this.validationCallback = this.validationCallback.bind(this)
   }
 
   componentDidMount() {
@@ -76,6 +81,17 @@ export default class EnvironmentView extends Component {
       }, () => {/* Generic error handler deals with it */
       })
   }
+
+  componentDidUpdate() {
+    const { environment } = this.state;
+    console.log(environment)
+  }
+  // useEffect(() => {
+  //   if (env.stackConfig) {
+  //     setStack(env.stackConfig.config);
+  //     setStackNonDefaultValues(env.stackConfig.config);
+  //   }
+  // }, [env.stackConfig]);
 
   isOnline(onlineEnvs, singleEnv) {
     return Object.keys(onlineEnvs)
@@ -136,6 +152,10 @@ export default class EnvironmentView extends Component {
   saveComponents() {
     const { gimletClient, store } = this.props;
     const { errors, environment, stackNonDefaultValues } = this.state;
+
+    console.log("saving...")
+    console.log(stackNonDefaultValues)
+    return
 
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
@@ -309,7 +329,10 @@ export default class EnvironmentView extends Component {
   }
 
   setValues = (variable, values, nonDefaultValues) => {
-    console.log("TODO set values")
+    this.setState((prevState) => ({
+      stack: { ...prevState.stack, [variable]: values },
+      stackNonDefaultValues: { ...prevState.stackNonDefaultValues, [variable]: nonDefaultValues },
+    }));
   }
 
   validationCallback(variable, validationErrors) {
@@ -318,12 +341,13 @@ export default class EnvironmentView extends Component {
       validationErrors = validationErrors.filter(error => error.dataPath !== '.enabled');
     }
 
-    console.log("TODO set error")
-    // setErrors({ ...errors, [variable]: validationErrors })
+    this.setState((prevState) => ({
+      errors: { ...prevState.errors, [variable]: validationErrors },
+    }));
   }
 
   infrastructureComponentsTab() {
-    const { environment, settings } = this.state;
+    const { environment, settings, stack } = this.state;
 
     if (!settings.provider || settings.provider === "") {
       return (
@@ -364,7 +388,7 @@ export default class EnvironmentView extends Component {
           </button>
         </div>
         <StackUI
-          stack={{}}
+          stack={stack}
           stackDefinition={environment.stackDefinition}
           setValues={this.setValues}
           validationCallback={this.validationCallback}
