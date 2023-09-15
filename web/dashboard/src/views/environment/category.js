@@ -11,7 +11,6 @@ export class Category extends Component {
 
     this.state = {
       toggleState: {},
-      tabState: {}
     }
 
     this.toggleComponent = this.toggleComponent.bind(this)
@@ -23,19 +22,6 @@ export class Category extends Component {
         ...prevState.toggleState,
         [category]: prevState.toggleState[category] === component ? undefined : component
       },
-      tabState: {
-        ...prevState.tabState,
-        [component]: prevState.tabState[component] === undefined ? 'getting-started' : prevState.tabState[component]
-      }
-    }))
-  }
-
-  switchTab(component, tab) {
-    this.setState(prevState => ({
-      tabState: {
-        ...prevState.tabState,
-        [component]: tab
-      }
     }))
   }
 
@@ -83,6 +69,7 @@ export class Category extends Component {
 
       return (
         <Tile
+          key={component.variable}
           category={category}
           component={component}
           componentConfig={stack[component.variable]}
@@ -117,51 +104,39 @@ export class Category extends Component {
     const gettingStartedPanel = selectedComponentName === undefined ? null : (
       <div className="prose" dangerouslySetInnerHTML={{ __html: md.render(selectedComponent.onePager) }} />
     );
+    const emptyOnePager = selectedComponentName === undefined ? null : selectedComponent.onePager === "";
 
     return (
       <div>
         <div className="flex space-x-2 my-2">
           {componentTitles}
         </div>
-        <div className="my-2">
-          {selectedComponentName !== undefined &&
-            <div className='flex'>
-              <div className="p-4 max-w-lg shadow sm:rounded-md sm:overflow-hidden bg-white relative">
-                <div className="col-span-6">
-                  {componentConfigPanel}
-                </div>
-              </div>
-              <div className='relative'>
-              <div className="rounded-md bg-blue-50 p-2 overflow-x-scroll">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      {gettingStartedPanel}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute left-72 rounded-md bg-blue-50 p-2 overflow-x-scroll">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      {gettingStartedPanel}
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {selectedComponentName !== undefined &&
+          <div className='flex my-2'>
+            <div className="p-4 max-w-lg min-w-[500px] shadow sm:rounded-md sm:overflow-hidden bg-white relative">
+              <div className="col-span-6">
+                {componentConfigPanel}
               </div>
             </div>
-          }
-        </div>
+            {!emptyOnePager &&
+              <div className='relative'>
+                <div className="absolute min-w-[600px] py-6 px-10 space-y-6 sm:p-6 rounded-md bg-blue-50">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
+                      <div className="mt-2 text-sm text-blue-700">
+                        {gettingStartedPanel}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
     )
   }
