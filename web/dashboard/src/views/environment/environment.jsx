@@ -281,8 +281,11 @@ export default class EnvironmentView extends Component {
   }
 
   infrastructureComponentsTab() {
-    const { environment, settings } = this.state;
-    const builtIn = environment.builtIn && settings.provider && settings.provider !== ""
+    const { environment } = this.state;
+
+    if (environment.builtIn) {
+      return this.builtInEnvInfo();
+    }
 
     return (
       <div className="relative mt-4 text-gray-700">
@@ -294,16 +297,12 @@ export default class EnvironmentView extends Component {
             Save components
           </button>
         </div>
-        {builtIn ?
-          this.builtInEnvInfo()
-          :
-          <StackUI
-            stack={{}}
-            stackDefinition={environment.stackDefinition}
-            setValues={this.setValues}
-            validationCallback={this.validationCallback}
-          />
-        }
+        <StackUI
+          stack={{}}
+          stackDefinition={environment.stackDefinition}
+          setValues={this.setValues}
+          validationCallback={this.validationCallback}
+        />
       </div>
     )
   }
