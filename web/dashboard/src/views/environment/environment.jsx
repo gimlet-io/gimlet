@@ -456,7 +456,7 @@ export default class EnvironmentView extends Component {
       <div>
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:flex items-start">
-            <div className='flex-1'>
+            <div className='relative flex-1'>
               <h1 className="flex text-3xl font-bold capitalize leading-tight text-gray-900">
                 {environment.name}
                 <span title={isOnline ? "Connected" : "Disconnected"}>
@@ -473,6 +473,7 @@ export default class EnvironmentView extends Component {
                     </svg>
                   </span>}
               </h1>
+              <button className="absolute top-0 right-0 py-1.5">TODO delete button</button>
               <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push("/environments")}>
                 &laquo; back
               </button>
