@@ -10,10 +10,17 @@ import (
 	"github.com/russross/meddler"
 )
 
+func (db *Store) Alerts() ([]*model.Alert, error) {
+	query := sql.Stmt(db.driver, sql.SelectAlerts)
+	data := []*model.Alert{}
+	err := meddler.QueryAll(db, &data, query)
+	return data, err
+}
+
 func (db *Store) AlertsByState(status string) ([]*model.Alert, error) {
 	stmt := sql.Stmt(db.driver, sql.SelectAlertsByState)
 	data := []*model.Alert{}
-	err := meddler.QueryAll(db, &data, status, stmt)
+	err := meddler.QueryAll(db, &data, stmt, status)
 
 	if err == sys_sql.ErrNoRows {
 		return nil, nil
@@ -31,7 +38,7 @@ func (db *Store) UpdateAlertState(id int64, status string) error {
 }
 
 func (db *Store) SetFiringAlertState(id int64, alertType string) error {
-	stmt := sql.Stmt(db.driver, sql.UpdateAlertStatus)
+	stmt := sql.Stmt(db.driver, sql.SetAlertFiringStatus)
 	_, err := db.Exec(stmt, alertType, model.FIRING, time.Now().Unix(), id)
 	return err
 }
@@ -43,7 +50,7 @@ func (db *Store) CreateAlert(alert *model.Alert) (*model.Alert, error) {
 func (db *Store) RelatedAlerts(name string, alertType string) ([]*model.Alert, error) {
 	stmt := sql.Stmt(db.driver, sql.SelectAlertsByNameAndType)
 	alerts := []*model.Alert{}
-	err := meddler.QueryAll(db, alerts, stmt, name, alertType)
+	err := meddler.QueryAll(db, &alerts, stmt, name, alertType)
 
 	return alerts, err
 }

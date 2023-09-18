@@ -91,7 +91,7 @@ func main() {
 	notificationsManager := initNotifications(config, dynamicConfig, tokenManager)
 
 	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
-	// go alertStateManager.Run()
+	go alertStateManager.Run()
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)

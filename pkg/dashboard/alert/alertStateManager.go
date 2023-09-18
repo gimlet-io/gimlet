@@ -29,13 +29,7 @@ func (a AlertStateManager) Run() {
 			logrus.Errorf("couldn't get pending alerts: %s", err)
 		}
 		for _, alert := range alerts {
-			status, err := a.status(alert.Name, alert.Type)
-			if err != nil {
-				logrus.Errorf("couldn't get status from alert: %s", err)
-				continue
-			}
-
-			t := tresholds()[status]
+			t := tresholds()[alert.Type]
 			if t != nil && t.Reached(nil, alert) {
 				a.notifManager.Broadcast(&notifications.AlertMessage{
 					Alert: *alert,
@@ -88,6 +82,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			if podErrorState(pod.Status) {
 				_, err := a.store.CreateAlert(&model.Alert{
 					Name:            podName,
+					Type:            pod.Status,
 					DeploymentName:  deploymentName,
 					Status:          model.PENDING,
 					LastStateChange: currentTime,
@@ -150,22 +145,6 @@ func (a AlertStateManager) TrackEvents(events []api.Event) error {
 	// 	}
 	// }
 	return nil
-}
-
-func (a AlertStateManager) status(name string, alertType string) (string, error) {
-	if alertType == "pod" {
-		pod, err := a.store.Pod(name)
-		if err != nil {
-			return "", err
-		}
-		return pod.Status, nil
-	}
-
-	event, err := a.store.KubeEvent(name)
-	if err != nil {
-		return "", err
-	}
-	return event.Status, nil
 }
 
 func (a AlertStateManager) statusNotChanged(podName string, podStatus string) bool {

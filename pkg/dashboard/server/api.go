@@ -189,14 +189,14 @@ func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAlerts(w http.ResponseWriter, r *http.Request) {
-	// db := r.Context().Value("store").(*store.Store)
-	// alerts, err := db.FiringAlerts()
-	// if err != nil {
-	// 	logrus.Errorf("cannot get alerts from database: %s", err)
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// }
+	db := r.Context().Value("store").(*store.Store)
+	alerts, err := db.Alerts()
+	if err != nil {
+		logrus.Errorf("cannot get alerts from database: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 
-	alertsString, err := json.Marshal([]*model.Alert{}) //(alerts)
+	alertsString, err := json.Marshal(alerts)
 	if err != nil {
 		logrus.Errorf("cannot serialize alerts: %s", err)
 		http.Error(w, http.StatusText(500), 500)

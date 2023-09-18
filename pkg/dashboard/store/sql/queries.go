@@ -32,6 +32,7 @@ const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
+const SelectAlerts = "select-alerts"
 const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertsByNameAndType = "select-alerts-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
@@ -119,6 +120,10 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
+		SelectAlerts: `
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+FROM alerts
+`,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
@@ -132,10 +137,10 @@ WHERE name = $1
 AND type = $2;
 `,
 		UpdateAlertStatus: `
-UPDATE alerts SET status = $1, last_state_change=$2 WHERE id = $3;
+UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
 `,
 		SetAlertFiringStatus: `
-UPDATE alerts SET type = $1, status = $2, last_state_change=$3 WHERE id = $4;
+UPDATE alerts SET type = $1, status = $2, last_state_change = $3 WHERE id = $4;
 `,
 	},
 	"postgres": {
@@ -218,6 +223,10 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
+		SelectAlerts: `
+SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+FROM alerts
+`,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
@@ -236,10 +245,10 @@ FROM alerts
 WHERE status LIKE 'Pending';
 `,
 		UpdateAlertStatus: `
-UPDATE alerts SET status = $1, last_state_change=$2 WHERE id = $3;
+UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
 `,
 		SetAlertFiringStatus: `
-UPDATE alerts SET type = $1, status = $2, last_state_change=$3 WHERE id = $4;
+UPDATE alerts SET type = $1, status = $2, last_state_change = $3 WHERE id = $4;
 `,
 	},
 }

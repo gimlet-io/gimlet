@@ -1,57 +1,57 @@
 package store
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestAlertCRUD(t *testing.T) {
-// 	s := NewTest(encryptionKey, encryptionKeyNew)
-// 	defer func() {
-// 		s.Close()
-// 	}()
+func Test_Alerts(t *testing.T) {
+	s := NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		s.Close()
+	}()
 
-// 	alert := model.Alert{
-// 		Type:   "pod",
-// 		Name:   "default/pod1",
-// 		Status: "Firing",
-// 	}
+	a, err := s.Alerts()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(a))
 
-// 	err := s.SaveOrUpdateAlert(&alert)
-// 	assert.Nil(t, err)
+	alerts, err := s.AlertsByState(model.PENDING)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(alerts))
+}
 
-// 	alerts, err := s.FiringAlerts()
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, 1, len(alerts))
+func Test_RelatedAlerts(t *testing.T) {
+	s := NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		s.Close()
+	}()
 
-// 	a, err := s.Alert(alert.Name, alert.Type)
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, alert.Name, a.Name)
-// }
+	alerts, err := s.RelatedAlerts("pod", model.POD_ALERT)
+	assert.Nil(t, err)
+	assert.NotNil(t, alerts)
+}
 
-// func TestGetPendingAlerts(t *testing.T) {
-// 	s := NewTest(encryptionKey, encryptionKeyNew)
-// 	defer func() {
-// 		s.Close()
-// 	}()
+func Test_SetFiringAlertState(t *testing.T) {
+	s := NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		s.Close()
+	}()
 
-// 	alert1 := model.Alert{
-// 		Type:   "pod",
-// 		Name:   "default/pod1",
-// 		Status: "Pending",
-// 	}
+	alert, err := s.CreateAlert(&model.Alert{
+		Name:           "pod",
+		Type:           "Failed",
+		DeploymentName: "deployment",
+		Status:         model.PENDING,
+	})
+	assert.Nil(t, err)
 
-// 	alert2 := model.Alert{
-// 		Name:   "default/pod2",
-// 		Status: "Firing",
-// 	}
+	err = s.SetFiringAlertState(alert.ID, "Failed")
+	assert.Nil(t, err)
 
-// 	s.SaveOrUpdateAlert(&alert1)
-// 	s.SaveOrUpdateAlert(&alert2)
+	alerts, err := s.Alerts()
+	assert.Nil(t, err)
 
-// 	pendingAlerts, err := s.PendingAlerts()
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, 1, len(pendingAlerts))
-// }
+	assert.Equal(t, model.FIRING, alerts[0].Status)
+}
