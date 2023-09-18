@@ -1,5 +1,10 @@
 package model
 
+const POD_ALERT = "pod"
+
+const PENDING = "Pending"
+const FIRING = "Firing"
+
 type Alert struct {
 	ID              int64  `json:"-"  meddler:"id,pk"`
 	Type            string `json:"type,omitempty"  meddler:"type"`

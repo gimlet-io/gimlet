@@ -7,54 +7,39 @@ import (
 )
 
 type threshold interface {
-	isFired() bool
-	toAlert() model.Alert
+	Reached(relatedObject interface{}, alert *model.Alert) bool
 }
 
-type podStrategy struct {
-	pod      model.Alert
+func tresholds() map[string]threshold {
+	return map[string]threshold{
+		"ImagePullBackOff": imagePullBackOffTreshold{
+			waitTime: 2,
+		},
+		"Failed": failedEventThreshold{
+			MinimumCount:   6,
+			CountPerMinute: 1,
+		},
+	}
+}
+
+type imagePullBackOffTreshold struct {
 	waitTime time.Duration
 }
 
-type eventStrategy struct {
-	event                  model.Alert
-	expectedCountPerMinute float64
-	expectedCount          int32
+type failedEventThreshold struct {
+	MinimumCount   int32
+	CountPerMinute float64
 }
 
-func (s podStrategy) isFired() bool {
-	podLastStateChangeTime := time.Unix(s.pod.LastStateChange, 0)
+func (s imagePullBackOffTreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	alertPendingSince := time.Unix(alert.LastStateChange, 0)
 	waitTime := time.Now().Add(-time.Minute * s.waitTime)
-
-	return podLastStateChangeTime.Before(waitTime)
+	return alertPendingSince.Before(waitTime)
 }
 
-func (s eventStrategy) isFired() bool {
-	lastStateChangeInMinutes := time.Since(time.Unix(s.event.LastStateChange, 0)).Minutes()
-	countPerMinute := float64(s.event.Count) / lastStateChangeInMinutes
+func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	lastStateChangeInMinutes := time.Since(time.Unix(alert.LastStateChange, 0)).Minutes()
+	countPerMinute := float64(alert.Count) / lastStateChangeInMinutes
 
-	return countPerMinute >= s.expectedCountPerMinute && s.event.Count >= s.expectedCount
-}
-
-func (s podStrategy) toAlert() model.Alert {
-	return s.pod
-}
-
-func (s eventStrategy) toAlert() model.Alert {
-	return s.event
-}
-
-func ToThreshold(a *model.Alert, waitTime time.Duration, expectedCount int32, expectedCountPerMinute float64) threshold {
-	if a.Type == "pod" {
-		return &podStrategy{
-			pod:      *a,
-			waitTime: waitTime,
-		}
-	}
-
-	return &eventStrategy{
-		event:                  *a,
-		expectedCount:          expectedCount,
-		expectedCountPerMinute: expectedCountPerMinute,
-	}
+	return countPerMinute >= s.CountPerMinute && alert.Count >= s.MinimumCount
 }

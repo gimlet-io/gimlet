@@ -67,12 +67,6 @@ func (am *AlertMessage) AsDiscordMessage() (*discordMessage, error) {
 	return msg, nil
 }
 
-func MessageFromAlert(alert model.Alert) Message {
-	return &AlertMessage{
-		Alert: alert,
-	}
-}
-
 func (am *AlertMessage) RepositoryName() string {
 	return ""
 }

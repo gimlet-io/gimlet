@@ -156,15 +156,15 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	// alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
-	// for _, stack := range stacks {
-	// 	err := alertStateManager.TrackPods(stack.Deployment.Pods)
-	// 	if err != nil {
-	// 		logrus.Errorf("cannot track pods: %s", err)
-	// 		http.Error(w, http.StatusText(500), 500)
-	// 		return
-	// 	}
-	// }
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
+	for _, stack := range stacks {
+		err := alertStateManager.TrackPods(stack.Deployment.Pods)
+		if err != nil {
+			logrus.Errorf("cannot track pods: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+	}
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	agent := agentHub.Agents[name]
@@ -344,7 +344,7 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 
 func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
 	if update.Event == agent.EventPodDeleted {
-		return nil
+		return nil //TODO
 	}
 
 	deploymentParts := strings.Split(update.Deployment, "/")

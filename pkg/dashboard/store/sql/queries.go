@@ -32,9 +32,10 @@ const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
-const SelectFiringAlerts = "select-firing-alerts"
+const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertByNameAndType = "select-alert-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
+const UpdateAlertStatus = "update-alert-status"
 
 var queries = map[string]map[string]string{
 	"sqlite": {
@@ -117,10 +118,10 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
-		SelectFiringAlerts: `
+		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
-WHERE status LIKE 'Firing'
+WHERE status = $1
 ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
@@ -129,10 +130,8 @@ FROM alerts
 WHERE name = $1
 AND type = $2;
 `,
-		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
-FROM alerts
-WHERE status LIKE 'Pending';
+		UpdateAlertStatus: `
+UPDATE alerts SET status = $1, last_state_change=$2 WHERE id = $3;
 `,
 	},
 	"postgres": {
@@ -215,10 +214,10 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
-		SelectFiringAlerts: `
+		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
-WHERE status LIKE 'Firing'
+WHERE status = $1
 ORDER BY last_state_change desc;
 `,
 		SelectAlertByNameAndType: `
@@ -231,6 +230,9 @@ AND type = $2;
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE status LIKE 'Pending';
+`,
+		UpdateAlertStatus: `
+UPDATE alerts SET status = $1, last_state_change=$2 WHERE id = $3;
 `,
 	},
 }
