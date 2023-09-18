@@ -41,7 +41,7 @@ func (a AlertStateManager) Run() {
 					Alert: *alert,
 				})
 
-				err := a.store.UpdateAlertState(alert.ID, model.FIRING)
+				err := a.store.SetFiringAlertState(alert.ID, thresholdType(t))
 				if err != nil {
 					logrus.Errorf("couldn't set firing state for alerts: %s", err)
 				}
@@ -58,32 +58,60 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 		deploymentName := fmt.Sprintf("%s/%s", pod.Namespace, pod.DeploymentName)
 		currentTime := time.Now().Unix()
 
-		if a.alreadyAlerted(podName, model.POD_ALERT) || a.statusNotChanged(podName, pod.Status) {
+		if a.statusNotChanged(podName, pod.Status) {
 			continue
 		}
 
-		err := a.store.SaveOrUpdatePod(&model.Pod{
+		dbPod := &model.Pod{
 			Name:       podName,
 			Status:     pod.Status,
 			StatusDesc: pod.StatusDescription,
-		})
+		}
+		err := a.store.SaveOrUpdatePod(dbPod)
 		if err != nil {
 			return err
 		}
 
-		if podErrorState(pod.Status) {
-			_, err := a.store.CreateAlert(&model.Alert{
-				Type:            model.POD_ALERT,
-				Name:            podName,
-				DeploymentName:  deploymentName,
-				Status:          model.PENDING,
-				StatusDesc:      pod.StatusDescription, // TODO this field may be renamed to (??) Cause
-				LastStateChange: currentTime,
-			})
-			if err != nil {
-				return err
+		alerts, err := a.store.RelatedAlerts(podName, model.POD_ALERT)
+		if err != nil && err != sql.ErrNoRows {
+			logrus.Errorf("couldn't get alert from db: %s", err)
+			return err
+		}
+		nonResolvedAlerts := []*model.Alert{}
+		for _, a := range alerts {
+			if a.Status != model.RESOLVED {
+				nonResolvedAlerts = append(nonResolvedAlerts, a)
 			}
 		}
+
+		if len(nonResolvedAlerts) == 0 {
+			if podErrorState(pod.Status) {
+				_, err := a.store.CreateAlert(&model.Alert{
+					Name:            podName,
+					DeploymentName:  deploymentName,
+					Status:          model.PENDING,
+					LastStateChange: currentTime,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			for _, nonResolvedAlert := range nonResolvedAlerts {
+				t := thresholdByType(nonResolvedAlert.Type)
+				if t.Resolved(dbPod) {
+					a.notifManager.Broadcast(&notifications.AlertMessage{
+						Alert: *nonResolvedAlert,
+					})
+
+					err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
+					if err != nil {
+						logrus.Errorf("couldn't set resolved state for alerts: %s", err)
+					}
+				}
+			}
+		}
+
 	}
 	return nil
 }
@@ -138,18 +166,6 @@ func (a AlertStateManager) status(name string, alertType string) (string, error)
 		return "", err
 	}
 	return event.Status, nil
-}
-
-func (a AlertStateManager) alreadyAlerted(name string, alertType string) bool {
-	alert, err := a.store.Alert(name, alertType)
-	if err == sql.ErrNoRows {
-		return false
-	} else if err != nil {
-		logrus.Errorf("couldn't get pod from db: %s", err)
-		return false
-	}
-
-	return alert.Status == "Firing"
 }
 
 func (a AlertStateManager) statusNotChanged(podName string, podStatus string) bool {

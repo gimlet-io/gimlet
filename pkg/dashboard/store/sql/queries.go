@@ -33,9 +33,10 @@ const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAlertsByState = "select-alerts-by-state"
-const SelectAlertByNameAndType = "select-alert-by-name-and-type"
+const SelectAlertsByNameAndType = "select-alerts-by-name-and-type"
 const SelectPendingAlerts = "select-pending-alerts"
 const UpdateAlertStatus = "update-alert-status"
+const SetAlertFiringStatus = "set-alert-firing-status"
 
 var queries = map[string]map[string]string{
 	"sqlite": {
@@ -124,7 +125,7 @@ FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;
 `,
-		SelectAlertByNameAndType: `
+		SelectAlertsByNameAndType: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE name = $1
@@ -132,6 +133,9 @@ AND type = $2;
 `,
 		UpdateAlertStatus: `
 UPDATE alerts SET status = $1, last_state_change=$2 WHERE id = $3;
+`,
+		SetAlertFiringStatus: `
+UPDATE alerts SET type = $1, status = $2, last_state_change=$3 WHERE id = $4;
 `,
 	},
 	"postgres": {
@@ -220,7 +224,7 @@ FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;
 `,
-		SelectAlertByNameAndType: `
+		SelectAlertsByNameAndType: `
 SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
 FROM alerts
 WHERE name = $1
@@ -233,6 +237,9 @@ WHERE status LIKE 'Pending';
 `,
 		UpdateAlertStatus: `
 UPDATE alerts SET status = $1, last_state_change=$2 WHERE id = $3;
+`,
+		SetAlertFiringStatus: `
+UPDATE alerts SET type = $1, status = $2, last_state_change=$3 WHERE id = $4;
 `,
 	},
 }

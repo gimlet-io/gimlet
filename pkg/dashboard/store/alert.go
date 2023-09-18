@@ -30,14 +30,20 @@ func (db *Store) UpdateAlertState(id int64, status string) error {
 	return err
 }
 
+func (db *Store) SetFiringAlertState(id int64, alertType string) error {
+	stmt := sql.Stmt(db.driver, sql.UpdateAlertStatus)
+	_, err := db.Exec(stmt, alertType, model.FIRING, time.Now().Unix(), id)
+	return err
+}
+
 func (db *Store) CreateAlert(alert *model.Alert) (*model.Alert, error) {
 	return alert, meddler.Insert(db, "alerts", alert)
 }
 
-func (db *Store) Alert(name string, alertType string) (*model.Alert, error) {
-	stmt := sql.Stmt(db.driver, sql.SelectAlertByNameAndType)
-	alert := new(model.Alert)
-	err := meddler.QueryRow(db, alert, stmt, name, alertType)
+func (db *Store) RelatedAlerts(name string, alertType string) ([]*model.Alert, error) {
+	stmt := sql.Stmt(db.driver, sql.SelectAlertsByNameAndType)
+	alerts := []*model.Alert{}
+	err := meddler.QueryAll(db, alerts, stmt, name, alertType)
 
-	return alert, err
+	return alerts, err
 }
