@@ -219,11 +219,11 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;

@@ -64,7 +64,7 @@ func TestTrackPods_imagePullBackOff(t *testing.T) {
 		*store,
 		0,
 		map[string]threshold{
-			"ImagePullBackOff": imagePullBackOffTreshold{
+			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
 	)

@@ -28,7 +28,7 @@ func Test_RelatedAlerts(t *testing.T) {
 		s.Close()
 	}()
 
-	alerts, err := s.RelatedAlerts("pod", model.POD_ALERT)
+	alerts, err := s.RelatedAlerts("pod")
 	assert.Nil(t, err)
 	assert.NotNil(t, alerts)
 }

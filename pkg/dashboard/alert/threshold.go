@@ -13,9 +13,9 @@ type threshold interface {
 	Resolved(relatedObject interface{}) bool
 }
 
-func tresholds() map[string]threshold {
+func Thresholds() map[string]threshold {
 	return map[string]threshold{
-		"ImagePullBackOff": imagePullBackOffTreshold{
+		"ImagePullBackOff": imagePullBackOffThreshold{
 			waitTime: 2,
 		},
 		"Failed": failedEventThreshold{
@@ -42,7 +42,7 @@ func thresholdType(myvar interface{}) string {
 	}
 }
 
-type imagePullBackOffTreshold struct {
+type imagePullBackOffThreshold struct {
 	waitTime time.Duration
 }
 
@@ -51,13 +51,13 @@ type failedEventThreshold struct {
 	CountPerMinute float64
 }
 
-func (s imagePullBackOffTreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
 	alertPendingSince := time.Unix(alert.LastStateChange, 0)
 	waitTime := time.Now().Add(-time.Minute * s.waitTime)
 	return alertPendingSince.Before(waitTime)
 }
 
-func (s imagePullBackOffTreshold) Resolved(relatedObject interface{}) bool {
+func (s imagePullBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	return pod.Status == "Running"
 }
