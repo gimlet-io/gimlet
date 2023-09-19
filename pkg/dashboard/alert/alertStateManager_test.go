@@ -15,42 +15,6 @@ var (
 	encryptionKeyNew = ""
 )
 
-// func TestTrackPods(t *testing.T) {
-// 	store := store.NewTest(encryptionKey, encryptionKeyNew)
-// 	defer func() {
-// 		store.Close()
-// 	}()
-
-// 	dummyNotificationsManager := notifications.NewDummyManager()
-// 	pod1 := api.Pod{Namespace: "ns1", Name: "pod1", Status: "Running"}
-// 	pod2 := api.Pod{Namespace: "ns1", Name: "pod2", Status: "PodFailed"}
-// 	pod3 := api.Pod{Namespace: "ns2", Name: "pod3", Status: "Pending"}
-// 	pods := []*api.Pod{&pod1, &pod2, &pod3}
-
-// 	p := NewAlertStateManager(dummyNotificationsManager, *store, 2)
-// 	p.TrackPods(pods)
-
-// 	expectedPods := []model.Pod{
-// 		{Name: "ns1/pod1"},
-// 		{Name: "ns1/pod2"},
-// 		{Name: "ns2/pod3"},
-// 	}
-// 	for _, pod := range expectedPods {
-// 		p, _ := store.Pod(pod.Name)
-
-// 		assert.Equal(t, p.Name, pod.Name)
-// 	}
-
-// 	expectedAlerts := []model.Alert{
-// 		{Name: "ns1/pod2", Type: "pod", Status: "Pending"},
-// 	}
-// 	for _, alert := range expectedAlerts {
-// 		a, _ := store.Alert(alert.Name, alert.Type)
-
-// 		assert.Equal(t, a.Status, alert.Status)
-// 	}
-// }
-
 func TestTrackPods_imagePullBackOff(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
@@ -87,7 +51,95 @@ func TestTrackPods_imagePullBackOff(t *testing.T) {
 	alertStateManager.TrackPods([]*api.Pod{{
 		Namespace: "ns1",
 		Name:      "pod1",
-		Status:    "Running",
+		Status:    model.POD_RUNNING,
+	}})
+
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
+}
+
+func TestTrackPods_crashLoopBackOff(t *testing.T) {
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+
+	alertStateManager := NewAlertStateManager(
+		dummyNotificationsManager,
+		*store,
+		0,
+		map[string]threshold{
+			"CrashLoopBackOff": crashLoopBackOffThreshold{
+				waitTime: 0,
+			}},
+	)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "CrashLoopBackOff",
+	}})
+
+	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.PENDING, relatedAlerts[0].Status)
+
+	alertStateManager.evaluatePendingAlerts()
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    model.POD_RUNNING,
+	}})
+
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
+}
+
+func TestTrackPods_createContainerConfigError(t *testing.T) {
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+
+	alertStateManager := NewAlertStateManager(
+		dummyNotificationsManager,
+		*store,
+		0,
+		map[string]threshold{
+			"CreateContainerConfigError": createContainerConfigErrorThreshold{
+				waitTime: 0,
+			}},
+	)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "CreateContainerConfigError",
+	}})
+
+	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.PENDING, relatedAlerts[0].Status)
+
+	alertStateManager.evaluatePendingAlerts()
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    model.POD_RUNNING,
 	}})
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
@@ -122,7 +174,7 @@ func TestTrackPods_deleted(t *testing.T) {
 	alertStateManager.TrackPods([]*api.Pod{{
 		Namespace: "ns1",
 		Name:      "pod1",
-		Status:    model.POD_DELETED,
+		Status:    model.POD_TERMINATED,
 	}})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
