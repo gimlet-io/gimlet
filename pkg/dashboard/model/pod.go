@@ -1,6 +1,9 @@
 package model
 
-const POD_DELETED = "Deleted"
+const (
+	POD_RUNNING    = "Running"
+	POD_TERMINATED = "Terminated"
+)
 
 type Pod struct {
 	ID         int64  `json:"-"  meddler:"id,pk"`

@@ -59,7 +59,7 @@ func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *mod
 
 func (s imagePullBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
-	return pod.Status == "Running"
+	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
 }
 
 func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {

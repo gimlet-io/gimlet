@@ -352,7 +352,7 @@ func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store
 			{
 				Namespace: namespace,
 				Name:      name,
-				Status:    model.POD_DELETED,
+				Status:    model.POD_TERMINATED,
 			},
 		})
 	}
