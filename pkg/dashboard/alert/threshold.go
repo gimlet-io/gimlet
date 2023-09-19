@@ -25,8 +25,7 @@ func tresholds() map[string]threshold {
 	}
 }
 
-func thresholdByType(thresholdTypeString string) threshold {
-	thresholds := tresholds()
+func thresholdByType(thresholds map[string]threshold, thresholdTypeString string) threshold {
 	for _, t := range thresholds {
 		if thresholdType(t) == thresholdTypeString {
 			return t

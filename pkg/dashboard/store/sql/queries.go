@@ -34,10 +34,9 @@ const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAlerts = "select-alerts"
 const SelectAlertsByState = "select-alerts-by-state"
-const SelectAlertsByNameAndType = "select-alerts-by-name-and-type"
+const SelectAlertsByName = "select-alerts-by-name"
 const SelectPendingAlerts = "select-pending-alerts"
 const UpdateAlertStatus = "update-alert-status"
-const SetAlertFiringStatus = "set-alert-firing-status"
 
 var queries = map[string]map[string]string{
 	"sqlite": {
@@ -121,26 +120,22 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;
 `,
-		SelectAlertsByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlertsByName: `
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
-WHERE name = $1
-AND type = $2;
+WHERE name = $1;
 `,
 		UpdateAlertStatus: `
 UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
-`,
-		SetAlertFiringStatus: `
-UPDATE alerts SET type = $1, status = $2, last_state_change = $3 WHERE id = $4;
 `,
 	},
 	"postgres": {
@@ -233,22 +228,18 @@ FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;
 `,
-		SelectAlertsByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlertsByName: `
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
-WHERE name = $1
-AND type = $2;
+WHERE name = $1;
 `,
 		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change, count
 FROM alerts
 WHERE status LIKE 'Pending';
 `,
 		UpdateAlertStatus: `
 UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
-`,
-		SetAlertFiringStatus: `
-UPDATE alerts SET type = $1, status = $2, last_state_change = $3 WHERE id = $4;
 `,
 	},
 }

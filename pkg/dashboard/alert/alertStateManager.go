@@ -16,33 +16,37 @@ type AlertStateManager struct {
 	notifManager notifications.Manager
 	store        store.Store
 	waitTime     time.Duration
+	thresholds   map[string]threshold
 }
 
-func NewAlertStateManager(notifManager notifications.Manager, store store.Store, waitTime time.Duration) *AlertStateManager {
-	return &AlertStateManager{notifManager: notifManager, store: store, waitTime: waitTime}
+func NewAlertStateManager(notifManager notifications.Manager, store store.Store, waitTime time.Duration, thresholds map[string]threshold) *AlertStateManager {
+	return &AlertStateManager{notifManager: notifManager, store: store, waitTime: waitTime, thresholds: thresholds}
 }
 
 func (a AlertStateManager) Run() {
 	for {
-		alerts, err := a.store.AlertsByState(model.PENDING)
-		if err != nil {
-			logrus.Errorf("couldn't get pending alerts: %s", err)
-		}
-		for _, alert := range alerts {
-			t := tresholds()[alert.Type]
-			if t != nil && t.Reached(nil, alert) {
-				a.notifManager.Broadcast(&notifications.AlertMessage{
-					Alert: *alert,
-				})
+		a.evaluatePendingAlerts()
+		time.Sleep(a.waitTime * time.Minute)
+	}
+}
 
-				err := a.store.SetFiringAlertState(alert.ID, thresholdType(t))
-				if err != nil {
-					logrus.Errorf("couldn't set firing state for alerts: %s", err)
-				}
+func (a AlertStateManager) evaluatePendingAlerts() {
+	alerts, err := a.store.AlertsByState(model.PENDING)
+	if err != nil {
+		logrus.Errorf("couldn't get pending alerts: %s", err)
+	}
+	for _, alert := range alerts {
+		t := thresholdByType(a.thresholds, alert.Type)
+		if t != nil && t.Reached(nil, alert) {
+			a.notifManager.Broadcast(&notifications.AlertMessage{
+				Alert: *alert,
+			})
+
+			err := a.store.UpdateAlertState(alert.ID, model.FIRING)
+			if err != nil {
+				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
 		}
-
-		time.Sleep(a.waitTime * time.Minute)
 	}
 }
 
@@ -66,7 +70,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			return err
 		}
 
-		alerts, err := a.store.RelatedAlerts(podName, model.POD_ALERT)
+		alerts, err := a.store.RelatedAlerts(podName)
 		if err != nil && err != sql.ErrNoRows {
 			logrus.Errorf("couldn't get alert from db: %s", err)
 			return err
@@ -79,10 +83,10 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 		}
 
 		if len(nonResolvedAlerts) == 0 {
-			if podErrorState(pod.Status) {
+			if t, ok := a.thresholds[pod.Status]; ok {
 				_, err := a.store.CreateAlert(&model.Alert{
 					Name:            podName,
-					Type:            pod.Status,
+					Type:            thresholdType(t),
 					DeploymentName:  deploymentName,
 					Status:          model.PENDING,
 					LastStateChange: currentTime,
@@ -93,7 +97,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			}
 		} else {
 			for _, nonResolvedAlert := range nonResolvedAlerts {
-				t := thresholdByType(nonResolvedAlert.Type)
+				t := thresholdByType(a.thresholds, nonResolvedAlert.Type)
 				if t.Resolved(dbPod) {
 					a.notifManager.Broadcast(&notifications.AlertMessage{
 						Alert: *nonResolvedAlert,
@@ -157,10 +161,4 @@ func (a AlertStateManager) statusNotChanged(podName string, podStatus string) bo
 	}
 
 	return podStatus == podFromDb.Status
-}
-
-func podErrorState(status string) bool {
-	return status != "Running" && status != "Pending" && status != "Terminating" &&
-		status != "Succeeded" && status != "Unknown" && status != "ContainerCreating" &&
-		status != "PodInitializing"
 }

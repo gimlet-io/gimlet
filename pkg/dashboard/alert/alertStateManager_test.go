@@ -1,20 +1,19 @@
 package alert
 
-// import (
-// 	"testing"
-// 	"time"
+import (
+	"testing"
 
-// 	"github.com/alecthomas/assert"
-// 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-// 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-// 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-// 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-// )
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/stretchr/testify/assert"
+)
 
-// var (
-// 	encryptionKey    = "the-key-has-to-be-32-bytes-long!"
-// 	encryptionKeyNew = ""
-// )
+var (
+	encryptionKey    = "the-key-has-to-be-32-bytes-long!"
+	encryptionKeyNew = ""
+)
 
 // func TestTrackPods(t *testing.T) {
 // 	store := store.NewTest(encryptionKey, encryptionKeyNew)
@@ -51,6 +50,50 @@ package alert
 // 		assert.Equal(t, a.Status, alert.Status)
 // 	}
 // }
+
+func TestTrackPods_imagePullBackOff(t *testing.T) {
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+
+	alertStateManager := NewAlertStateManager(
+		dummyNotificationsManager,
+		*store,
+		0,
+		map[string]threshold{
+			"ImagePullBackOff": imagePullBackOffTreshold{
+				waitTime: 0,
+			}},
+	)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "ImagePullBackOff",
+	}})
+
+	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.PENDING, relatedAlerts[0].Status)
+
+	alertStateManager.evaluatePendingAlerts()
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "Running",
+	}})
+
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
+}
 
 // func TestTrackEvents(t *testing.T) {
 // 	store := store.NewTest(encryptionKey, encryptionKeyNew)
