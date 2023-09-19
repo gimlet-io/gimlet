@@ -62,6 +62,9 @@ func defaults(c *Config) {
 	if c.PosthogApiKey == "" {
 		c.PosthogApiKey = "phc_J9BPccikTHu60117bET17Qlz3v3asOF4H6L7b9XwHrS"
 	}
+	if c.AlertEvaluationFrequencySeconds == 0 {
+		c.AlertEvaluationFrequencySeconds = 30
+	}
 }
 
 // Config holds Gimlet configuration that can only be set with environment variables
@@ -95,6 +98,8 @@ type Config struct {
 	TermsOfServiceFeatureFlag      bool   `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool   `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
+
+	AlertEvaluationFrequencySeconds int `envconfig:"ALERT_EVALUATION_FREQUENCY_SECONDS"`
 
 	PosthogFeatureFlagString string `envconfig:"FEATURE_POSTHOG"`
 	PosthogIdentifyUser      bool   `envconfig:"POSTHOG_IDENTIFY_USER"`

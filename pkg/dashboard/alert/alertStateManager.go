@@ -19,14 +19,24 @@ type AlertStateManager struct {
 	thresholds   map[string]threshold
 }
 
-func NewAlertStateManager(notifManager notifications.Manager, store store.Store, waitTime time.Duration, thresholds map[string]threshold) *AlertStateManager {
-	return &AlertStateManager{notifManager: notifManager, store: store, waitTime: waitTime, thresholds: thresholds}
+func NewAlertStateManager(
+	notifManager notifications.Manager,
+	store store.Store,
+	alertEvaluationFrequencySeconds int,
+	thresholds map[string]threshold,
+) *AlertStateManager {
+	return &AlertStateManager{
+		notifManager: notifManager,
+		store:        store,
+		waitTime:     time.Duration(alertEvaluationFrequencySeconds) * time.Second,
+		thresholds:   thresholds,
+	}
 }
 
 func (a AlertStateManager) Run() {
 	for {
 		a.evaluatePendingAlerts()
-		time.Sleep(a.waitTime * time.Minute)
+		time.Sleep(a.waitTime)
 	}
 }
 
