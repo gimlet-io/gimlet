@@ -13,7 +13,6 @@ type threshold interface {
 	Resolved(relatedObject interface{}) bool
 }
 
-// TODO CrashLoopBackOff (restarts), CreateContainerConfigError / CreateContainerError
 func Thresholds() map[string]threshold {
 	return map[string]threshold{
 		"ImagePullBackOff": imagePullBackOffThreshold{
