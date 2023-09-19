@@ -343,15 +343,22 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 }
 
 func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
+	parts := strings.Split(update.Subject, "/")
+	namespace := parts[0]
+	name := parts[1]
+
 	if update.Event == agent.EventPodDeleted {
-		return nil //TODO
+		return alertStateManager.TrackPods([]*api.Pod{
+			{
+				Namespace: namespace,
+				Name:      name,
+				Status:    model.POD_DELETED,
+			},
+		})
 	}
 
 	deploymentParts := strings.Split(update.Deployment, "/")
 	deployment := deploymentParts[1]
-	parts := strings.Split(update.Subject, "/")
-	namespace := parts[0]
-	name := parts[1]
 
 	return alertStateManager.TrackPods([]*api.Pod{
 		{

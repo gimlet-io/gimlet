@@ -95,6 +95,41 @@ func TestTrackPods_imagePullBackOff(t *testing.T) {
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
+func TestTrackPods_deleted(t *testing.T) {
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+
+	alertStateManager := NewAlertStateManager(
+		dummyNotificationsManager,
+		*store,
+		0,
+		map[string]threshold{
+			"ImagePullBackOff": imagePullBackOffThreshold{
+				waitTime: 0,
+			}},
+	)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "ImagePullBackOff",
+	}})
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    model.POD_DELETED,
+	}})
+
+	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
+}
+
 // func TestTrackEvents(t *testing.T) {
 // 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 // 	defer func() {

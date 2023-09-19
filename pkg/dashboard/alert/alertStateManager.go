@@ -98,7 +98,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 		} else {
 			for _, nonResolvedAlert := range nonResolvedAlerts {
 				t := thresholdByType(a.thresholds, nonResolvedAlert.Type)
-				if t.Resolved(dbPod) {
+				if t.Resolved(dbPod) || dbPod.Status == model.POD_DELETED {
 					a.notifManager.Broadcast(&notifications.AlertMessage{
 						Alert: *nonResolvedAlert,
 					})
