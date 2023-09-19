@@ -13,10 +13,17 @@ type threshold interface {
 	Resolved(relatedObject interface{}) bool
 }
 
+// TODO CrashLoopBackOff (restarts), CreateContainerConfigError / CreateContainerError
 func Thresholds() map[string]threshold {
 	return map[string]threshold{
 		"ImagePullBackOff": imagePullBackOffThreshold{
-			waitTime: 2,
+			waitTime: 120,
+		},
+		"CrashLoopBackOff": crashLoopBackOffThreshold{
+			waitTime: 120,
+		},
+		"CreateContainerConfigError": createContainerConfigErrorThreshold{
+			waitTime: 60,
 		},
 		"Failed": failedEventThreshold{
 			MinimumCount:   6,
@@ -51,9 +58,17 @@ type failedEventThreshold struct {
 	CountPerMinute float64
 }
 
+type crashLoopBackOffThreshold struct {
+	waitTime time.Duration
+}
+
+type createContainerConfigErrorThreshold struct {
+	waitTime time.Duration
+}
+
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
 	alertPendingSince := time.Unix(alert.LastStateChange, 0)
-	waitTime := time.Now().Add(-time.Minute * s.waitTime)
+	waitTime := time.Now().Add(-time.Second * s.waitTime)
 	return alertPendingSince.Before(waitTime)
 }
 
@@ -71,4 +86,26 @@ func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Al
 
 func (s failedEventThreshold) Resolved(relatedObject interface{}) bool {
 	return false
+}
+
+func (s crashLoopBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	alertPendingSince := time.Unix(alert.LastStateChange, 0)
+	waitTime := time.Now().Add(-time.Second * s.waitTime)
+	return alertPendingSince.Before(waitTime)
+}
+
+func (s crashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
+	pod := relatedObject.(*model.Pod)
+	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
+}
+
+func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	alertPendingSince := time.Unix(alert.LastStateChange, 0)
+	waitTime := time.Now().Add(-time.Second * s.waitTime)
+	return alertPendingSince.Before(waitTime)
+}
+
+func (s createContainerConfigErrorThreshold) Resolved(relatedObject interface{}) bool {
+	pod := relatedObject.(*model.Pod)
+	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
 }
