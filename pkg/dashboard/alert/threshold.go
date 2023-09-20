@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
@@ -24,9 +25,12 @@ func Thresholds() map[string]threshold {
 		"CreateContainerConfigError": createContainerConfigErrorThreshold{
 			waitTime: 60,
 		},
+		"Pending": pendingThreshold{
+			waitTime: 600,
+		},
 		"Failed": failedEventThreshold{
-			MinimumCount:   6,
-			CountPerMinute: 1,
+			MinimumCount:          6,
+			MinimumCountPerMinute: 1,
 		},
 	}
 }
@@ -53,8 +57,8 @@ type imagePullBackOffThreshold struct {
 }
 
 type failedEventThreshold struct {
-	MinimumCount   int32
-	CountPerMinute float64
+	MinimumCount          int32
+	MinimumCountPerMinute float64
 }
 
 type crashLoopBackOffThreshold struct {
@@ -62,6 +66,10 @@ type crashLoopBackOffThreshold struct {
 }
 
 type createContainerConfigErrorThreshold struct {
+	waitTime time.Duration
+}
+
+type pendingThreshold struct {
 	waitTime time.Duration
 }
 
@@ -77,10 +85,11 @@ func (s imagePullBackOffThreshold) Resolved(relatedObject interface{}) bool {
 }
 
 func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	event := relatedObject.(*api.Event)
 	lastStateChangeInMinutes := time.Since(time.Unix(alert.LastStateChange, 0)).Minutes()
-	countPerMinute := float64(alert.Count) / lastStateChangeInMinutes
+	countPerMinute := float64(event.Count) / lastStateChangeInMinutes
 
-	return countPerMinute >= s.CountPerMinute && alert.Count >= s.MinimumCount
+	return countPerMinute >= s.MinimumCountPerMinute && event.Count >= s.MinimumCount
 }
 
 func (s failedEventThreshold) Resolved(relatedObject interface{}) bool {
@@ -105,6 +114,17 @@ func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, 
 }
 
 func (s createContainerConfigErrorThreshold) Resolved(relatedObject interface{}) bool {
+	pod := relatedObject.(*model.Pod)
+	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
+}
+
+func (s pendingThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	alertPendingSince := time.Unix(alert.LastStateChange, 0)
+	waitTime := time.Now().Add(-time.Second * s.waitTime)
+	return alertPendingSince.Before(waitTime)
+}
+
+func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
 }
