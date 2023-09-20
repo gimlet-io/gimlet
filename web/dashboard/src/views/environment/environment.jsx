@@ -34,8 +34,6 @@ export default class EnvironmentView extends Component {
       releaseStatuses: reduxState.releaseStatuses[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
-      stack: {},
-      stackNonDefaultValues: {},
       errors: {},
       kustomizationPerApp: false,
       repoPerEnv: true,
@@ -54,6 +52,10 @@ export default class EnvironmentView extends Component {
         scmUrl: reduxState.settings.scmUrl,
         settings: reduxState.settings
       });
+
+      if (!this.state.stack) {
+        this.setLocalStackConfig(this.state.environment)
+      }
     });
 
     this.setValues = this.setValues.bind(this)
@@ -82,16 +84,14 @@ export default class EnvironmentView extends Component {
       })
   }
 
-  componentDidUpdate() {
-    const { environment } = this.state;
-    console.log(environment)
+  setLocalStackConfig(env) {
+    if (env && env.stackConfig) {
+      this.setState({
+        stack: Object.assign({}, env.stackConfig.config),
+        stackNonDefaultValues: Object.assign({}, env.stackConfig.config),
+      })
+    }
   }
-  // useEffect(() => {
-  //   if (env.stackConfig) {
-  //     setStack(env.stackConfig.config);
-  //     setStackNonDefaultValues(env.stackConfig.config);
-  //   }
-  // }, [env.stackConfig]);
 
   isOnline(onlineEnvs, singleEnv) {
     return Object.keys(onlineEnvs)
@@ -152,10 +152,6 @@ export default class EnvironmentView extends Component {
   saveComponents() {
     const { gimletClient, store } = this.props;
     const { errors, environment, stackNonDefaultValues } = this.state;
-
-    console.log("saving...")
-    console.log(stackNonDefaultValues)
-    return
 
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
