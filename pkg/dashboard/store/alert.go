@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 
 	sys_sql "database/sql"
@@ -32,7 +33,17 @@ func (db *Store) AlertsByState(status string) ([]*model.Alert, error) {
 }
 
 func (db *Store) UpdateAlertState(id int64, status string) error {
-	stmt := sql.Stmt(db.driver, sql.UpdateAlertStatus)
+	var query string
+
+	if status == model.FIRING {
+		query = sql.UpdateAlertStatusReached
+	} else if status == model.RESOLVED {
+		query = sql.UpdateAlertStatusResolved
+	} else {
+		return fmt.Errorf("invalid status provided")
+	}
+
+	stmt := sql.Stmt(db.driver, query)
 	_, err := db.Exec(stmt, status, time.Now().Unix(), id)
 	return err
 }

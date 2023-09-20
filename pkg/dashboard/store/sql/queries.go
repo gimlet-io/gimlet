@@ -35,8 +35,8 @@ const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAlerts = "select-alerts"
 const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertsByName = "select-alerts-by-name"
-const SelectPendingAlerts = "select-pending-alerts"
-const UpdateAlertStatus = "update-alert-status"
+const UpdateAlertStatusReached = "update-alert-status-reached"
+const UpdateAlertStatusResolved = "update-alert-status-resolved"
 
 var queries = map[string]map[string]string{
 	"sqlite": {
@@ -120,7 +120,7 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change
+SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
 FROM alerts
 `,
 		SelectAlertsByState: `
@@ -134,8 +134,11 @@ SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE name = $1;
 `,
-		UpdateAlertStatus: `
-UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
+		UpdateAlertStatusReached: `
+UPDATE alerts SET status = $1, reached_at = $2 WHERE id = $3;
+`,
+		UpdateAlertStatusResolved: `
+UPDATE alerts SET status = $1, resolved_at = $2 WHERE id = $3;
 `,
 	},
 	"postgres": {
@@ -219,7 +222,7 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change
+SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
 FROM alerts
 `,
 		SelectAlertsByState: `
@@ -233,8 +236,11 @@ SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE name = $1;
 `,
-		UpdateAlertStatus: `
-UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
+		UpdateAlertStatusReached: `
+UPDATE alerts SET status = $1, reached_at = $2 WHERE id = $3;
+`,
+		UpdateAlertStatusResolved: `
+UPDATE alerts SET status = $1, resolved_at = $2 WHERE id = $3;
 `,
 	},
 }

@@ -44,6 +44,9 @@ const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const createTableKubeEvents = "create-table-kube-events"
 const createTableAlerts = "create-table-alerts"
+const addCreatedAtToAlertsTable = "add-created-at-to-alerts-table"
+const addReachedAtToAlertsTable = "add-reached-at-to-alerts-table"
+const addResolvedAtToAlertsTable = "add-resolved-at-to-alerts-table"
 
 type migration struct {
 	name string
@@ -259,11 +262,24 @@ type			  TEXT,
 name			  TEXT,
 deployment_name   TEXT,
 status			  TEXT,
+status_desc 	  TEXT,
 last_state_change INTEGER,
 count			  INTEGER,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addCreatedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN created_at INTEGER;`,
+		},
+		{
+			name: addReachedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN reached_at INTEGER;`,
+		},
+		{
+			name: addResolvedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN resolved_at INTEGER;`,
 		},
 	},
 	"postgres": {
@@ -473,11 +489,24 @@ type			  TEXT,
 name			  TEXT,
 deployment_name   TEXT,
 status			  TEXT,
+status_desc 	  TEXT,
 last_state_change INTEGER,
 count			  INTEGER,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addCreatedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN created_at INTEGER;`,
+		},
+		{
+			name: addReachedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN reached_at INTEGER;`,
+		},
+		{
+			name: addResolvedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN resolved_at INTEGER;`,
 		},
 	},
 }

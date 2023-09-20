@@ -95,11 +95,11 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 		if len(nonResolvedAlerts) == 0 {
 			if t, ok := a.thresholds[pod.Status]; ok {
 				_, err := a.store.CreateAlert(&model.Alert{
-					ObjectName:      podName,
-					Type:            thresholdType(t),
-					DeploymentName:  deploymentName,
-					Status:          model.PENDING,
-					LastStateChange: currentTime,
+					ObjectName:     podName,
+					Type:           thresholdType(t),
+					DeploymentName: deploymentName,
+					Status:         model.PENDING,
+					CreatedAt:      currentTime,
 				})
 				if err != nil {
 					return err
