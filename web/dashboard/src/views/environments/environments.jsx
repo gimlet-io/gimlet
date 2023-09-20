@@ -165,12 +165,10 @@ class Environments extends Component {
                   />))
                 }
                 {this.state.settings.provider && this.state.settings.provider !== "" &&
-                  <li className="col-span-1 relative block w-full border-2 border-gray-300 border-dashed rounded-lg text-center hover:border-pink-400 cursor-pointer text-gray-500 hover:text-pink-500">
-                    <div className="w-full flex items-center justify-between p-6 space-x-6 cursor-pointer"
-                      onClick={() => this.setState({ isOpen: true })}>
-                      <div className="block text-sm font-bold">
-                        Create new environment
-                      </div>
+                  <li className="col-span-1 relative flex items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-pink-400 cursor-pointer text-gray-500 hover:text-pink-500"
+                    onClick={() => this.setState({ isOpen: true })}>
+                    <div className="flex items-center justify-center">
+                      <p className="text-sm font-bold py-2">Create new environment</p>
                     </div>
                   </li>
                 }
