@@ -17,7 +17,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.Name)
+	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.ObjectName)
 	msg.Blocks = append(msg.Blocks,
 		Block{
 			Type: section,
@@ -60,7 +60,7 @@ func (am *AlertMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.Name)
+	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.ObjectName)
 	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", "TODO: related object and alert type")
 	msg.Embed.Color = 15158332
 

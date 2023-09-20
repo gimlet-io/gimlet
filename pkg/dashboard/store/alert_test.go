@@ -40,7 +40,7 @@ func Test_SetFiringAlertState(t *testing.T) {
 	}()
 
 	alert, err := s.CreateAlert(&model.Alert{
-		Name:           "pod",
+		ObjectName:     "pod",
 		Type:           "Failed",
 		DeploymentName: "deployment",
 		Status:         model.PENDING,

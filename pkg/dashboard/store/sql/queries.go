@@ -120,17 +120,17 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;
 `,
 		SelectAlertsByName: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE name = $1;
 `,
@@ -219,24 +219,19 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE status = $1
 ORDER BY last_state_change desc;
 `,
 		SelectAlertsByName: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
+SELECT id, type, name, deployment_name, status, last_state_change
 FROM alerts
 WHERE name = $1;
-`,
-		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, last_state_change, count
-FROM alerts
-WHERE status LIKE 'Pending';
 `,
 		UpdateAlertStatus: `
 UPDATE alerts SET status = $1, last_state_change = $2 WHERE id = $3;
