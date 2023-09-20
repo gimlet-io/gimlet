@@ -4,7 +4,7 @@ const DeleteButton = ({ envName, deleteFunc }) => {
       onClick={() => {
         // eslint-disable-next-line no-restricted-globals
         confirm(`Are you sure you want to delete ${envName}?`) &&
-          deleteFunc()
+          deleteFunc(envName)
       }}
       className="h-10 bg-red-500 hover:bg-red-400 focus:outline-none focus:shadow-outline-indigo gap-x-1.5 px-4 py-2.5 inline-flex items-center border border-gray-300 text-sm leading-6 font-medium rounded-md text-white transition ease-in-out duration-150">
       <svg xmlns="http://www.w3.org/2000/svg" className="cursor-pointer inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

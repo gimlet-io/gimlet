@@ -230,7 +230,6 @@ export default class EnvironmentView extends Component {
             message: "Environment deleted"
           }
         });
-        this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
         this.refreshEnvs();
         this.props.history.push("/environments");
       }, err => {
