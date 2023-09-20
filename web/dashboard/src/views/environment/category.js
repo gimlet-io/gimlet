@@ -102,7 +102,7 @@ export class Category extends Component {
 
     const md = new Remarkable();
     const gettingStartedPanel = selectedComponentName === undefined ? null : (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: md.render(selectedComponent.onePager) }} />
+      <div className="prose max-w-lg" dangerouslySetInnerHTML={{ __html: md.render(selectedComponent.onePager) }} />
     );
     const emptyOnePager = selectedComponentName === undefined ? null : selectedComponent.onePager === "";
 
@@ -119,18 +119,14 @@ export class Category extends Component {
               </div>
             </div>
             {!emptyOnePager &&
-              <div className='relative'>
-                <div className="absolute min-w-[600px] py-6 px-10 space-y-6 sm:p-6 rounded-md bg-blue-50">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">Getting started</h3>
-                      <div className="mt-2 text-sm text-blue-700">
-                        {gettingStartedPanel}
-                      </div>
-                    </div>
+              <div className='overflow-visible'>
+                <div className="py-6 pl-10 sm:p-6 rounded-md bg-blue-50">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-400 inline" aria-hidden="true" />
+                    <span className='pl-1'>Getting started</span>
+                    </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    {gettingStartedPanel}
                   </div>
                 </div>
               </div>

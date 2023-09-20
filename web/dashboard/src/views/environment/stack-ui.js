@@ -27,21 +27,15 @@ class StackUI extends Component {
 
     const { categories, name, description } = stackDefinition;
     const sidebar = categories.length > 1
-    let gridClass = 'lg:grid lg:grid-cols-12 lg:gap-x-16 pt-8';
-    let gridSpan = 'lg:col-span-10'
-    if (!sidebar) {
-      gridClass = '';
-      gridSpan = '';
-    }
 
     return (
       <div>
-        <h1 className={hideTitle ? "hidden" : "text-2xl font-bold mb-4"}>{name}
+        <h1 className={hideTitle ? "hidden" : "text-2xl font-bold my-16"}>{name}
           <span className="font-normal text-lg block">{description}</span>
         </h1>
-        <div className={gridClass}>
+        <div className="flex mb-32">
           {sidebar &&
-            <aside className="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-2">
+            <aside className="flex-none py-6 px-2 sm:px-6 lg:py-0 lg:px-0 w-32">
               <nav className="flex flex-1 flex-col" aria-label="Sidebar">
                 <ul className="-mx-2 space-y-1">
                   {categories.map((category) => {
@@ -74,7 +68,7 @@ class StackUI extends Component {
               </nav>
             </aside>
           }
-          <div className={gridSpan}>
+          <div className="pl-16">
             <Category
               category={this.state.selected}
               stackDefinition={stackDefinition}
