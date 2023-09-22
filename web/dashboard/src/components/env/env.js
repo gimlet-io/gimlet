@@ -19,9 +19,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history } = this.props;
+    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history, alerts } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, env.builtIn);
+    const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, env.builtIn, alerts);
 
     return (
       <div>
@@ -113,7 +113,8 @@ function renderServices(
   kubernetesAlerts,
   deploymentFromParams,
   scmUrl,
-  builtInEnv) {
+  builtInEnv,
+  alerts) {
   let services = [];
 
   let configsWeHave = [];
@@ -132,6 +133,7 @@ function renderServices(
     if (configExists) {
       config = envConfigs.find((config) => config.app === stack.service.name)
     }
+    const deployment = config.namespace + "/" + config.app
 
     return (
       <ServiceDetail
@@ -154,6 +156,7 @@ function renderServices(
         deploymentFromParams={deploymentFromParams}
         scmUrl={scmUrl}
         builtInEnv={builtInEnv}
+        serviceAlerts={alerts.filter((alert) => alert.deploymentName === deployment)}
       />
     )
   })

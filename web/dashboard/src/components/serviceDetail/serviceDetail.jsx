@@ -14,9 +14,10 @@ import {
 import { copyToClipboard } from '../../views/settings/settings';
 import { Menu } from '@headlessui/react'
 import { usePostHog } from 'posthog-js/react'
+import Timeline from './timeline';
 
 function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
 
@@ -180,6 +181,20 @@ function ServiceDetail(props) {
               releaseHistorySinceDays={releaseHistorySinceDays}
               scmUrl={scmUrl}
               builtInEnv={builtInEnv}
+            />
+             <h1 className="mt-6">2 day</h1>
+            <Timeline
+              // alerts={serviceAlerts}
+              interval={2}
+              />
+            <h1 className="mt-6">1 week</h1>
+            <Timeline
+              // alerts={serviceAlerts}
+              />
+              <h1 className="mt-6">2 week</h1>
+            <Timeline
+              // alerts={serviceAlerts}
+              interval={14}
             />
           </div>
           <div className="flex flex-wrap text-sm">

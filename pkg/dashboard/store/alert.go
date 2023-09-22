@@ -11,13 +11,6 @@ import (
 	"github.com/russross/meddler"
 )
 
-func (db *Store) Alerts() ([]*model.Alert, error) {
-	query := sql.Stmt(db.driver, sql.SelectAlerts)
-	data := []*model.Alert{}
-	err := meddler.QueryAll(db, &data, query)
-	return data, err
-}
-
 func (db *Store) AlertsByState(status string) ([]*model.Alert, error) {
 	stmt := sql.Stmt(db.driver, sql.SelectAlertsByState)
 	data := []*model.Alert{}

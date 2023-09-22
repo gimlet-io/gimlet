@@ -46,7 +46,8 @@ export default class Repo extends Component {
       pullRequests: reduxState.pullRequests.configChanges[repoName],
       kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
       runningDeploys: reduxState.runningDeploys,
-      trackedDeploys: []
+      trackedDeploys: [],
+      alerts: reduxState.alerts,
     }
 
     // handling API and streaming state changes
@@ -66,6 +67,7 @@ export default class Repo extends Component {
         pullRequests: reduxState.pullRequests.configChanges[repoName],
         kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl,
+        alerts: reduxState.alerts,
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -536,6 +538,7 @@ export default class Repo extends Component {
                     deploymentFromParams={deployment}
                     scmUrl={scmUrl}
                     history={this.props.history}
+                    alerts={this.state.alerts}
                   />
                 )
                 }

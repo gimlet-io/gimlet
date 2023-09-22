@@ -182,6 +182,46 @@ func TestTrackPods_deleted(t *testing.T) {
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
+// TODO, if we starting a pod, saved as "Pending" threshold, if its updated for example ImagePullBackOff error, TrackPods will skip that change
+func TestTrackPods_from_pending_to_imagePullBackoff(t *testing.T) {
+	t.Skip()
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+
+	alertStateManager := NewAlertStateManager(
+		dummyNotificationsManager,
+		*store,
+		0,
+		map[string]threshold{
+			// "Pending": pendingThreshold{
+			// 	waitTime: 0,
+			// },
+			"ImagePullBackOff": imagePullBackOffThreshold{
+				waitTime: 0,
+			}},
+	)
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "Pending",
+	}})
+
+	alertStateManager.TrackPods([]*api.Pod{{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "ImagePullBackOff",
+	}})
+
+	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, "imagePullBackOffThreshold", relatedAlerts[0].Type)
+}
+
 // func TestTrackEvents(t *testing.T) {
 // 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 // 	defer func() {

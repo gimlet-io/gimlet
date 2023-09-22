@@ -7,21 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Alerts(t *testing.T) {
-	s := NewTest(encryptionKey, encryptionKeyNew)
-	defer func() {
-		s.Close()
-	}()
-
-	a, err := s.Alerts()
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(a))
-
-	alerts, err := s.AlertsByState(model.PENDING)
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(alerts))
-}
-
 func Test_RelatedAlerts(t *testing.T) {
 	s := NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
@@ -50,7 +35,7 @@ func Test_SetFiringAlertState(t *testing.T) {
 	err = s.UpdateAlertState(alert.ID, model.FIRING)
 	assert.Nil(t, err)
 
-	alerts, err := s.Alerts()
+	alerts, err := s.AlertsByState(model.FIRING)
 	assert.Nil(t, err)
 
 	assert.Equal(t, model.FIRING, alerts[0].Status)
