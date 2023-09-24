@@ -169,7 +169,6 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 
 	artifactsBySha := map[string][]*dx.Artifact{}
 	for _, a := range artifacts {
-		logrus.Infof("artifact found: %s", a.ID)
 		if artifactsBySha[a.Version.SHA] == nil {
 			artifactsBySha[a.Version.SHA] = []*dx.Artifact{}
 		}
@@ -178,12 +177,9 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 
 	var decoratedCommits []*Commit
 	for _, c := range commits {
-		logrus.Infof("gathering artifacts for: %s, %d", c.SHA, len(artifactsBySha[c.SHA]))
 		if as, ok := artifactsBySha[c.SHA]; ok {
 			for _, artifact := range as {
-				logrus.Infof("handling artifact: %s", artifact.ID)
 				for _, targetEnv := range artifact.Environments {
-					logrus.Infof("handling targetenv: %s, %s", targetEnv.App, targetEnv.Env)
 					targetEnv.ResolveVars(artifact.CollectVariables())
 					if c.DeployTargets == nil {
 						c.DeployTargets = []*api.DeployTarget{}
