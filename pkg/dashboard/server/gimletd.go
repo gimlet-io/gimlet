@@ -177,9 +177,12 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 
 	var decoratedCommits []*Commit
 	for _, c := range commits {
+		logrus.Infof("gathering artifacts for: %s", c.SHA)
 		if as, ok := artifactsBySha[c.SHA]; ok {
 			for _, artifact := range as {
+				logrus.Infof("handling artifact: %s", artifact.ID)
 				for _, targetEnv := range artifact.Environments {
+					logrus.Infof("handling targetenv: %s, %s", targetEnv.App, targetEnv.Env)
 					targetEnv.ResolveVars(artifact.CollectVariables())
 					if c.DeployTargets == nil {
 						c.DeployTargets = []*api.DeployTarget{}
