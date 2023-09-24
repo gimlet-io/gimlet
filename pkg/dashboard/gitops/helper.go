@@ -395,18 +395,19 @@ func ExtractImageStrategy(envConfig *dx.Manifest) string {
 		if strings.Contains(repository, "127.0.0.1:32447") {
 			pointsToBuiltInRegistry = true
 		}
-	}
 
-	strategy := "static"
-	if hasVariable {
-		if pointsToBuiltInRegistry {
-			strategy = "buildpacks"
-		} else {
-			strategy = "dynamic"
+		strategy := "static"
+		if hasVariable {
+			if pointsToBuiltInRegistry {
+				strategy = "buildpacks"
+			} else {
+				strategy = "dynamic"
+			}
 		}
+		return strategy
+	} else {
+		return "dynamic"
 	}
-
-	return strategy
 }
 
 func ExtractImageRepoAndTag(envConfig *dx.Manifest, vars map[string]string) (string, string) {
