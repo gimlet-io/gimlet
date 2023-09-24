@@ -373,6 +373,17 @@ func Manifests(
 }
 
 func ExtractImageStrategy(envConfig *dx.Manifest) string {
+	onechart := strings.Contains(envConfig.Chart.Repository, "chart.onechart.dev")
+	staticSite := onechart && envConfig.Chart.Name == "static-site"
+
+	if staticSite {
+		return "static-site"
+	}
+
+	if !onechart {
+		return "dynamic"
+	}
+
 	image := envConfig.Values["image"]
 	hasVariable := false
 	pointsToBuiltInRegistry := false

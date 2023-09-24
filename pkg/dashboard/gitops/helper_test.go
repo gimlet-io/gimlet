@@ -3,6 +3,7 @@ package gitops
 import (
 	"testing"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
@@ -158,4 +159,67 @@ func initHistory() *git.Repository {
 	)
 
 	return repo
+}
+
+func Test_ExtractImageStrategy(t *testing.T) {
+	strategy := ExtractImageStrategy(&dx.Manifest{})
+	assert.Equal(t, "dynamic", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
+	})
+	assert.Equal(t, "static", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
+		Values: map[string]interface{}{
+			"image": map[string]interface{}{
+				"repository": "nginx",
+				"tag":        "1.19",
+			},
+		},
+	})
+	assert.Equal(t, "static", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "static-site",
+		},
+	})
+	assert.Equal(t, "static-site", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
+		Values: map[string]interface{}{
+			"image": map[string]interface{}{
+				"repository": "myimage",
+				"tag":        "{{ .SHA }}",
+			},
+		},
+	})
+	assert.Equal(t, "dynamic", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
+		Values: map[string]interface{}{
+			"image": map[string]interface{}{
+				"repository": "127.0.0.1:32447",
+				"tag":        "{{ .SHA }}",
+			},
+		},
+	})
+	assert.Equal(t, "buildpacks", strategy)
 }

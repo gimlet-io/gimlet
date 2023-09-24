@@ -153,7 +153,7 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 		nil,
 		"",
 		hashes,
-		0, 0, nil, nil)
+		500, 0, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get artifacts: %s", err)
 	}
@@ -167,31 +167,49 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 		artifacts = append(artifacts, artifact)
 	}
 
-	artifactsBySha := map[string]*dx.Artifact{}
+	artifactsBySha := map[string][]*dx.Artifact{}
 	for _, a := range artifacts {
-		artifactsBySha[a.Version.SHA] = a
+		if artifactsBySha[a.Version.SHA] == nil {
+			artifactsBySha[a.Version.SHA] = []*dx.Artifact{}
+		}
+		artifactsBySha[a.Version.SHA] = append(artifactsBySha[a.Version.SHA], a)
 	}
 
 	var decoratedCommits []*Commit
 	for _, c := range commits {
-		if artifact, ok := artifactsBySha[c.SHA]; ok {
-			for _, targetEnv := range artifact.Environments {
-				targetEnv.ResolveVars(artifact.CollectVariables())
-				if c.DeployTargets == nil {
-					c.DeployTargets = []*api.DeployTarget{}
+		if as, ok := artifactsBySha[c.SHA]; ok {
+			for _, artifact := range as {
+				for _, targetEnv := range artifact.Environments {
+					targetEnv.ResolveVars(artifact.CollectVariables())
+					if c.DeployTargets == nil {
+						c.DeployTargets = []*api.DeployTarget{}
+					}
+					if deployTargetExists(c.DeployTargets, targetEnv.App, targetEnv.Env) {
+						continue
+					}
+					c.DeployTargets = append(c.DeployTargets, &api.DeployTarget{
+						App:        targetEnv.App,
+						Env:        targetEnv.Env,
+						Tenant:     targetEnv.Tenant.Name,
+						ArtifactId: artifact.ID,
+					})
 				}
-				c.DeployTargets = append(c.DeployTargets, &api.DeployTarget{
-					App:        targetEnv.App,
-					Env:        targetEnv.Env,
-					Tenant:     targetEnv.Tenant.Name,
-					ArtifactId: artifact.ID,
-				})
 			}
 		}
 		decoratedCommits = append(decoratedCommits, c)
 	}
 
 	return decoratedCommits, nil
+}
+
+func deployTargetExists(targets []*api.DeployTarget, app string, env string) bool {
+	for _, t := range targets {
+		if t.App == app && t.Env == env {
+			return true
+		}
+	}
+
+	return false
 }
 
 func generateFakeArtifactsForCommits(hashes []string, store *store.Store, repo *git.Repository, repoName string) error {
@@ -230,6 +248,10 @@ func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository,
 			strategy == "buildpacks" {
 			manifestsThatNeedFakeArtifact = append(manifestsThatNeedFakeArtifact, m)
 		}
+	}
+
+	if len(manifestsThatNeedFakeArtifact) == 0 {
+		return nil
 	}
 
 	err = doGenerateFakeArtifact(hash, manifestsThatNeedFakeArtifact, store, repoName, repo)

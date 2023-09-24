@@ -50,4 +50,10 @@ func TestParseChartString(t *testing.T) {
 
 	chart, _ = parseChartString("")
 	assert.Nil(t, chart)
+
+	chartString = "name=https://github.com/mycompany/onechart.git?sha=xxx&path=/charts/onechart/"
+	chart, err = parseChartString(chartString)
+	assert.Nil(t, err)
+	assert.Equal(t, "https://github.com/mycompany/onechart.git?sha=xxx&path=/charts/onechart/", chart.Name)
+
 }
