@@ -153,7 +153,7 @@ func doDecorateCommitsWithGimletArtifacts(hashes []string, commits []*Commit, st
 		nil,
 		"",
 		hashes,
-		0, 0, nil, nil)
+		500, 0, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get artifacts: %s", err)
 	}
