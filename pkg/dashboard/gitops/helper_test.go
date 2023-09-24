@@ -166,6 +166,18 @@ func Test_ExtractImageStrategy(t *testing.T) {
 	assert.Equal(t, "dynamic", strategy)
 
 	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
+	})
+	assert.Equal(t, "static", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
 		Values: map[string]interface{}{
 			"image": map[string]interface{}{
 				"repository": "nginx",
@@ -176,6 +188,18 @@ func Test_ExtractImageStrategy(t *testing.T) {
 	assert.Equal(t, "static", strategy)
 
 	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "static-site",
+		},
+	})
+	assert.Equal(t, "static-site", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
 		Values: map[string]interface{}{
 			"image": map[string]interface{}{
 				"repository": "myimage",
@@ -186,6 +210,10 @@ func Test_ExtractImageStrategy(t *testing.T) {
 	assert.Equal(t, "dynamic", strategy)
 
 	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
 		Values: map[string]interface{}{
 			"image": map[string]interface{}{
 				"repository": "127.0.0.1:32447",
