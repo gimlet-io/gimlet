@@ -32,6 +32,7 @@ const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
+const SelectAlerts = "select-alerts"
 const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertsByName = "select-alerts-by-name"
 const UpdateAlertStatusReached = "update-alert-status-reached"
@@ -117,6 +118,10 @@ WHERE name = $1;
 `,
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
+`,
+		SelectAlerts: `
+		SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
+FROM alerts
 `,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
@@ -214,6 +219,10 @@ WHERE name = $1;
 `,
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
+`,
+		SelectAlerts: `
+SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
+FROM alerts
 `,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at

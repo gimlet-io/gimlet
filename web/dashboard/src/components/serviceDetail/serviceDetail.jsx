@@ -15,6 +15,7 @@ import { copyToClipboard } from '../../views/settings/settings';
 import { Menu } from '@headlessui/react'
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
+import { KubernetesAlertBox } from '../../views/pulse/pulse';
 
 function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
@@ -172,7 +173,7 @@ function ServiceDetail(props) {
               </div>
             }
           </h3>
-          <div className="my-2 mb-4 sm:my-4 sm:mb-6">
+          <div className="my-2 mb-4 sm:my-4 sm:mb-6 space-y-6">
             <RolloutHistory
               env={envName}
               app={stack.service.name}
@@ -182,19 +183,12 @@ function ServiceDetail(props) {
               scmUrl={scmUrl}
               builtInEnv={builtInEnv}
             />
-             <h1 className="mt-6">2 day</h1>
+            <KubernetesAlertBox
+              alerts={serviceAlerts.filter(alert => alert.status === "Firing")}
+              hideButton
+            />
             <Timeline
-              // alerts={serviceAlerts}
-              interval={2}
-              />
-            <h1 className="mt-6">1 week</h1>
-            <Timeline
-              // alerts={serviceAlerts}
-              />
-              <h1 className="mt-6">2 week</h1>
-            <Timeline
-              // alerts={serviceAlerts}
-              interval={14}
+              alerts={serviceAlerts}
             />
           </div>
           <div className="flex flex-wrap text-sm">

@@ -14,7 +14,6 @@ import {
 import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
-import { decorateKubernetesAlertsWithEnvAndRepo } from '../pulse/pulse';
 import TenantSelector from './tenantSelector';
 import RefreshButton from '../../components/refreshButton/refreshButton';
 
@@ -44,7 +43,6 @@ export default class Repo extends Component {
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests.configChanges[repoName],
-      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
       runningDeploys: reduxState.runningDeploys,
       trackedDeploys: [],
       alerts: reduxState.alerts,
@@ -65,7 +63,6 @@ export default class Repo extends Component {
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests.configChanges[repoName],
-        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl,
         alerts: reduxState.alerts,
       });
@@ -420,10 +417,6 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  kubernetesAlertsByEnv(envName) {
-    return this.state.kubernetesAlerts.filter(event => event.envName === envName)
-  }
-
   setSelectedTenant(tenant) {
     this.setState({ selectedTenant: tenant });
     const queryParam = tenant === "" ? tenant : `?tenant=${tenant}`
@@ -533,7 +526,6 @@ export default class Repo extends Component {
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={this.props.gimletClient}
                     store={this.props.store}
-                    kubernetesAlerts={this.kubernetesAlertsByEnv(envName)}
                     envFromParams={environment}
                     deploymentFromParams={deployment}
                     scmUrl={scmUrl}

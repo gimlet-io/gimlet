@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import ServiceDetail from "../serviceDetail/serviceDetail";
-import { parseDeploymentName } from "../../views/pulse/pulse";
 import { InformationCircleIcon } from '@heroicons/react/solid'
 
 export class Env extends Component {
@@ -19,9 +18,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history, alerts } = this.props;
+    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, history, alerts } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, env.builtIn, alerts);
+    const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, env.builtIn, alerts);
 
     return (
       <div>
@@ -110,7 +109,6 @@ function renderServices(
   releaseHistorySinceDays,
   gimletClient,
   store,
-  kubernetesAlerts,
   deploymentFromParams,
   scmUrl,
   builtInEnv,
@@ -152,7 +150,6 @@ function renderServices(
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         store={store}
-        kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, stack.service.name)}
         deploymentFromParams={deploymentFromParams}
         scmUrl={scmUrl}
         builtInEnv={builtInEnv}
@@ -187,8 +184,7 @@ function renderServices(
         configExists={true}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
-        store={store}
-        kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, config)}
+        store={store} 
         deploymentFromParams={deploymentFromParams}
         scmUrl={scmUrl}
       />
@@ -196,10 +192,6 @@ function renderServices(
     )
   )
   return services.slice(0, 10)
-}
-
-function kubernetesAlertsByDeploymentName(kubernetesAlerts, deploymentName) {
-  return kubernetesAlerts.filter(event => parseDeploymentName(event.deploymentName) === deploymentName)
 }
 
 function fileName(fileInfos, appName) {
