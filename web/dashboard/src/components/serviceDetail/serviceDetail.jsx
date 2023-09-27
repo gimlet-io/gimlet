@@ -15,7 +15,7 @@ import { copyToClipboard } from '../../views/settings/settings';
 import { Menu } from '@headlessui/react'
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
-import { KubernetesAlertBox } from '../../views/pulse/pulse';
+import { AlertPanel } from '../../views/pulse/pulse';
 
 function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
@@ -183,7 +183,7 @@ function ServiceDetail(props) {
               scmUrl={scmUrl}
               builtInEnv={builtInEnv}
             />
-            <KubernetesAlertBox
+            <AlertPanel
               alerts={serviceAlerts.filter(alert => alert.status === "Firing")}
               hideButton
             />

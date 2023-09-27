@@ -4,7 +4,7 @@ const Timeline = ({ alerts, interval = 7 }) => {
   if (!alerts) {
     return null
   }
-  
+
   const endDate = new Date();
   const startDate = new Date(endDate);
   startDate.setDate(endDate.getDate() - interval);
@@ -34,6 +34,11 @@ const Timeline = ({ alerts, interval = 7 }) => {
             const startPosition = Math.max(0, (createdAt - startDate) / 86400000); // 86400000 milliseconds in a day
             const endPosition = Math.min(interval, (resolvedAt - startDate) / 86400000);
 
+            const endDateUnix = (new Date(endDate).getTime() / 1000).toFixed(0)
+            const total = (alert.resolvedAt ?? endDateUnix) - alert.createdAt
+            const pendingInterval = alert.reachedAt - alert.createdAt
+            const firingInterval = (alert.resolvedAt ?? endDateUnix) - alert.reachedAt
+
             const alertStyle = {
               left: `${(startPosition / interval) * 100}%`,
               width: `${((endPosition - startPosition) / interval) * 100}%`,
@@ -45,10 +50,20 @@ const Timeline = ({ alerts, interval = 7 }) => {
                 className="absolute"
                 style={alertStyle}
               >
-                <Alert
-                  endDate={endDate}
-                  alert={alert}
-                />
+                <div
+                  title={`${alert.objectName} reached at
+${format(alert.createdAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
+${formatDistance(alert.createdAt * 1000, new Date())}`}
+                  className="flex h-8 bg-slate-300">
+                  <div
+                    style={{ width: `${pendingInterval / total * 100}%` }}
+                    className="bg-yellow-300 transition-all duration-500 ease-out"
+                  ></div>
+                  <div
+                    style={{ width: `${firingInterval / total * 100}%` }}
+                    className="bg-red-400 transition-all duration-500 ease-out"
+                  ></div>
+                </div>
               </div>
             );
           })}
@@ -56,30 +71,6 @@ const Timeline = ({ alerts, interval = 7 }) => {
       </div>
     </div>
   );
-};
-
-const Alert = ({ alert, endDate }) => {
-  const endDateUnix = (new Date(endDate).getTime() / 1000).toFixed(0)
-  const total = (alert.resolvedAt ?? endDateUnix) - alert.createdAt
-  let pendingInterval = alert.reachedAt - alert.createdAt
-  let firingInterval = (alert.resolvedAt ?? endDateUnix) - alert.reachedAt
-
-  return (
-    <div
-      title={`${alert.name} reached at
-${format(alert.createdAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
-${formatDistance(alert.createdAt * 1000, new Date())}`}
-      className="flex h-8 bg-slate-300">
-      <div
-        style={{ width: `${pendingInterval / total * 100}%` }}
-        className="bg-yellow-300 transition-all duration-500 ease-out"
-      ></div>
-      <div
-        style={{ width: `${firingInterval / total * 100}%` }}
-        className="bg-red-400 transition-all duration-500 ease-out"
-      ></div>
-    </div>
-  )
 };
 
 export default Timeline;

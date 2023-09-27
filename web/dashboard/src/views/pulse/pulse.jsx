@@ -41,7 +41,7 @@ export default class Pulse extends Component {
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
               {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
-              {<KubernetesAlertBox
+              {<AlertPanel
                 alerts={this.state.alerts}
                 history={this.props.history}
               />}
@@ -114,7 +114,7 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
   )
 }
 
-export function KubernetesAlertBox({ alerts, history, hideButton }) {
+export function AlertPanel({ alerts, history, hideButton }) {
   if (alerts.length === 0) {
     return null;
   }
@@ -127,7 +127,7 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
-                  {alert.name} {alert.type} alert
+                  {alert.objectName} {alert.type} alert
                 </p>
                 <p>
                   {alert.statusDesc}
