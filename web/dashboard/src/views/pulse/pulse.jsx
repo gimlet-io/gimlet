@@ -115,13 +115,19 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
 }
 
 export function AlertPanel({ alerts, history, hideButton }) {
+  if (!alerts) {
+    return null;
+  }
+
   if (alerts.length === 0) {
     return null;
   }
 
+  const firingAlerts = alerts.filter(alert => alert.status === "Firing")
+
   return (
     <ul className="p-2 space-y-2 text-sm text-red-800">
-      {alerts.map(alert => {
+      {firingAlerts.map(alert => {
         return (
           <div key={`${alert.type} ${alert.name}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">

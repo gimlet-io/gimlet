@@ -184,7 +184,7 @@ function ServiceDetail(props) {
               builtInEnv={builtInEnv}
             />
             <AlertPanel
-              alerts={serviceAlerts.filter(alert => alert.status === "Firing")}
+              alerts={serviceAlerts}
               hideButton
             />
             <Timeline
