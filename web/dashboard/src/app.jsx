@@ -15,6 +15,7 @@ import Repo from "./views/repo/repo";
 import LoginPage from './views/login/loginPage';
 import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
+import Environment from './views/environment/environment';
 import PopUpWindow from './popUpWindow';
 import DeployPanel from './views/deployPanel/deployPanel';
 import { ACTION_TYPE_USER } from "./redux/redux";
@@ -64,6 +65,7 @@ export default class App extends Component {
     const PulseWithRouting = withRouter(props => <Pulse {...props} store={store} gimletClient={gimletClient} />);
     const RepositoriesWithRouting = withRouter(props => <Repositories {...props} store={store} gimletClient={gimletClient} />);
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
+    const EnvironmentWithRouting = withRouter(props => <Environment {...props} store={store} gimletClient={gimletClient} />);
     const ChartUIWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
@@ -110,8 +112,12 @@ export default class App extends Component {
                 <RepositoriesWithRouting />
               </Route>
 
-              <Route path="/environments/:environment?/:tab?">
+              <Route path="/environments">
                 <EnvironmentsWithRouting />
+              </Route>
+
+              <Route path="/env/:env/:tab?">
+                <EnvironmentWithRouting />
               </Route>
 
               <Route path="/profile">
