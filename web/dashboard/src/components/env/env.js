@@ -65,7 +65,7 @@ export class Env extends Component {
           <>
             {renderPullRequests(pullRequests)}
             <div className="bg-white shadow p-4 sm:p-6 lg:p-8 space-y-4">
-              {!env.isOnline && connectEnvCard(history)}
+              {!env.isOnline && connectEnvCard(history, env.name)}
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
               }
@@ -202,7 +202,7 @@ function fileName(fileInfos, appName) {
   }
 }
 
-function connectEnvCard(history) {
+function connectEnvCard(history, envName) {
   return (
     <div className="rounded-md bg-blue-50 p-4">
     <div className="flex">
@@ -215,7 +215,7 @@ function connectEnvCard(history) {
           This environment is disconnected.<br />
           <button
             className="font-medium"
-            onClick={() => {history.push("/environments");return true}}
+            onClick={() => {history.push(`/env/${envName}`);return true}}
           >
             Click to connect this environment to a cluster on the Environments page.
           </button>

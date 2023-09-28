@@ -102,7 +102,7 @@ export default class DeployPanel extends Component {
           <div className="w-full truncate" key={gitopsCommit.sha}>
               <p className="font-semibold">{`${gitopsCommit.env.toUpperCase()}`}</p>
               <div className="w-72 cursor-pointer truncate text-sm"
-                  onClick={() => navigationHistory.push(`/environments/${gitopsCommit.env}/gitops-commits`)}
+                  onClick={() => navigationHistory.push(`/env/${gitopsCommit.env}/gitops-commits`)}
                   title={gitopsCommit.statusDesc}>
                   <span>
                       <span className={(color === "bg-yellow-400" && "animate-pulse") + ` h-4 w-4 rounded-full mr-1 relative top-1 inline-block ${color}`} />
@@ -134,7 +134,7 @@ export default class DeployPanel extends Component {
             {!compact &&
             <p
               className="cursor-pointer"
-              onClick={() => this.props.history.push(`/environments/${env.name}`)}
+              onClick={() => this.props.history.push(`/env/${env.name}`)}
             >Please connect this environment.</p>
             }
         </div>

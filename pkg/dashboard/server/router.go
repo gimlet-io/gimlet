@@ -107,6 +107,7 @@ func SetupRouter(
 	fileServer(r, "/settings", filesDir)
 	fileServer(r, "/repo", filesDir)
 	fileServer(r, "/environments", filesDir)
+	fileServer(r, "/env", filesDir)
 
 	return r
 }
@@ -277,7 +278,7 @@ func fileServer(r chi.Router, path string, root http.FileSystem) {
 		ctx := chi.RouteContext(r.Context())
 		pathPrefix := strings.TrimSuffix(ctx.RoutePattern(), "/*")
 		if pathPrefix == "/repo" ||
-			pathPrefix == "/environments" {
+			pathPrefix == "/env" {
 			pathPrefix = r.URL.Path
 		}
 		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
