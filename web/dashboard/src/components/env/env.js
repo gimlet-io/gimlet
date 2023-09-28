@@ -133,8 +133,6 @@ function renderServices(
     }
     const deployment = config.namespace + "/" + config.app
 
-    const serviceAlerts = alerts.filter((alert) => alert.deploymentName === deployment)
-
     return (
       <ServiceDetail
         key={stack.service.name}
@@ -155,7 +153,7 @@ function renderServices(
         deploymentFromParams={deploymentFromParams}
         scmUrl={scmUrl}
         builtInEnv={builtInEnv}
-        serviceAlerts={serviceAlerts}
+        serviceAlerts={alerts[deployment]}
       />
     )
   })

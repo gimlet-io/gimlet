@@ -99,7 +99,7 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 					Type:           thresholdType(t),
 					DeploymentName: deploymentName,
 					Status:         model.PENDING,
-					CreatedAt:      currentTime,
+					PendingAt:      currentTime,
 				})
 				if err != nil {
 					return err

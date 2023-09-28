@@ -173,7 +173,7 @@ function ServiceDetail(props) {
               </div>
             }
           </h3>
-          <div className="my-2 mb-4 sm:my-4 sm:mb-6 space-y-6">
+          <div className="my-2 mb-4 sm:my-4 sm:mb-6">
             <RolloutHistory
               env={envName}
               app={stack.service.name}
@@ -183,12 +183,12 @@ function ServiceDetail(props) {
               scmUrl={scmUrl}
               builtInEnv={builtInEnv}
             />
-            <AlertPanel
-              alerts={serviceAlerts}
-              hideButton
-            />
             <Timeline
               alerts={serviceAlerts}
+            />
+            <AlertPanel
+              alerts={serviceAlerts?.filter(alert => alert.status === "Firing")}
+              hideButton
             />
           </div>
           <div className="flex flex-wrap text-sm">

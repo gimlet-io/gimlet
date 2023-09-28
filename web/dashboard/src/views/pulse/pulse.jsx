@@ -123,20 +123,18 @@ export function AlertPanel({ alerts, history, hideButton }) {
     return null;
   }
 
-  const firingAlerts = alerts.filter(alert => alert.status === "Firing")
-
   return (
     <ul className="p-2 space-y-2 text-sm text-red-800">
-      {firingAlerts.map(alert => {
+      {alerts.map(alert => {
         return (
-          <div key={`${alert.type} ${alert.name}`} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${alert.type} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
-                  {alert.objectName} {alert.type}
+                  {alert.objectName}
                 </p>
                 <p>
-                  {alert.status}
+                  {alert.type}
                 </p>
               </span>
             </div>
@@ -155,7 +153,8 @@ export function AlertPanel({ alerts, history, hideButton }) {
                   </button>
                 </div>}
               </>}
-            {dateLabel(alert.reachedAt)}
+            {dateLabel(alert.firedAt)}
+            {dateLabel(alert.firedAt)}
           </div>
         )
       })}

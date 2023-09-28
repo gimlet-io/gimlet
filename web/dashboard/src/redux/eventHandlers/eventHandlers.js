@@ -348,8 +348,13 @@ export function updateCommitStatus(state, event) {
   return state;
 }
 
-export function alerts(state, payload) {
-  state.alerts = payload;
+export function alerts(state, alerts) {
+  alerts.forEach(alert => {
+    if (!state.alerts[alert.deploymentName]) {
+      state.alerts[alert.deploymentName] = []
+    }
+    state.alerts[alert.deploymentName].push(alert)
+  });
   return state;
 }
 

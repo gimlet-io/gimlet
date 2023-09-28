@@ -35,7 +35,7 @@ const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAlerts = "select-alerts"
 const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertsByName = "select-alerts-by-name"
-const UpdateAlertStatusReached = "update-alert-status-reached"
+const UpdateAlertStatusFired = "update-alert-status-fired"
 const UpdateAlertStatusResolved = "update-alert-status-resolved"
 
 var queries = map[string]map[string]string{
@@ -120,11 +120,11 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-		SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
+		SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
 WHERE status = $1;
 `,
@@ -133,8 +133,8 @@ SELECT id, type, name, deployment_name, status
 FROM alerts
 WHERE name = $1;
 `,
-		UpdateAlertStatusReached: `
-UPDATE alerts SET status = $1, reached_at = $2 WHERE id = $3;
+		UpdateAlertStatusFired: `
+UPDATE alerts SET status = $1, fired_at = $2 WHERE id = $3;
 `,
 		UpdateAlertStatusResolved: `
 UPDATE alerts SET status = $1, resolved_at = $2 WHERE id = $3;
@@ -221,11 +221,11 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, created_at, reached_at, resolved_at
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
 WHERE status = $1;
 `,
@@ -234,8 +234,8 @@ SELECT id, type, name, deployment_name, status
 FROM alerts
 WHERE name = $1;
 `,
-		UpdateAlertStatusReached: `
-UPDATE alerts SET status = $1, reached_at = $2 WHERE id = $3;
+		UpdateAlertStatusFired: `
+UPDATE alerts SET status = $1, fired_at = $2 WHERE id = $3;
 `,
 		UpdateAlertStatusResolved: `
 UPDATE alerts SET status = $1, resolved_at = $2 WHERE id = $3;

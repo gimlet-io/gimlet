@@ -75,7 +75,7 @@ type createContainerConfigErrorThreshold struct {
 // }
 
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
-	alertPendingSince := time.Unix(alert.CreatedAt, 0)
+	alertPendingSince := time.Unix(alert.PendingAt, 0)
 	waitTime := time.Now().Add(-time.Second * s.waitTime)
 	return alertPendingSince.Before(waitTime)
 }
@@ -87,8 +87,8 @@ func (s imagePullBackOffThreshold) Resolved(relatedObject interface{}) bool {
 
 func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
 	event := relatedObject.(*api.Event)
-	lastStateChangeInMinutes := time.Since(time.Unix(alert.CreatedAt, 0)).Minutes()
-	countPerMinute := float64(event.Count) / lastStateChangeInMinutes
+	alertPendingSinceInMinutes := time.Since(time.Unix(alert.PendingAt, 0)).Minutes()
+	countPerMinute := float64(event.Count) / alertPendingSinceInMinutes
 
 	return countPerMinute >= s.MinimumCountPerMinute && event.Count >= s.MinimumCount
 }
@@ -98,7 +98,7 @@ func (s failedEventThreshold) Resolved(relatedObject interface{}) bool {
 }
 
 func (s crashLoopBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
-	alertPendingSince := time.Unix(alert.CreatedAt, 0)
+	alertPendingSince := time.Unix(alert.PendingAt, 0)
 	waitTime := time.Now().Add(-time.Second * s.waitTime)
 	return alertPendingSince.Before(waitTime)
 }
@@ -109,7 +109,7 @@ func (s crashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
 }
 
 func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
-	alertPendingSince := time.Unix(alert.CreatedAt, 0)
+	alertPendingSince := time.Unix(alert.PendingAt, 0)
 	waitTime := time.Now().Add(-time.Second * s.waitTime)
 	return alertPendingSince.Before(waitTime)
 }

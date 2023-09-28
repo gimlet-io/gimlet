@@ -99,7 +99,7 @@ export const initialState = {
   fileInfos: [],
   envs: [],
   gitopsCommits: [],
-  alerts: [],
+  alerts: {},
   popupWindow: {
     visible: false,
     finished: false,

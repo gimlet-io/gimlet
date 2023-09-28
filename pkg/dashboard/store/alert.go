@@ -36,7 +36,7 @@ func (db *Store) UpdateAlertState(id int64, status string) error {
 	var query string
 
 	if status == model.FIRING {
-		query = sql.UpdateAlertStatusReached
+		query = sql.UpdateAlertStatusFired
 	} else if status == model.RESOLVED {
 		query = sql.UpdateAlertStatusResolved
 	} else {

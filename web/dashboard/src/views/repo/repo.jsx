@@ -463,7 +463,7 @@ export default class Repo extends Component {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings } = this.state;
-    const { branches, selectedBranch, envConfigs, scmUrl } = this.state;
+    const { branches, selectedBranch, envConfigs, scmUrl, alerts } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
 
@@ -530,7 +530,7 @@ export default class Repo extends Component {
                     deploymentFromParams={deployment}
                     scmUrl={scmUrl}
                     history={this.props.history}
-                    alerts={this.state.alerts}
+                    alerts={alerts}
                   />
                 )
                 }
