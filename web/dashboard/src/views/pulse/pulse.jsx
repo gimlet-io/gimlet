@@ -133,10 +133,10 @@ export function AlertPanel({ alerts, history, hideButton }) {
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
-                  {alert.objectName} {alert.type} alert
+                  {alert.objectName} {alert.type}
                 </p>
                 <p>
-                  {alert.statusDesc}
+                  {alert.status}
                 </p>
               </span>
             </div>
@@ -155,7 +155,7 @@ export function AlertPanel({ alerts, history, hideButton }) {
                   </button>
                 </div>}
               </>}
-            {dateLabel(alert.lastStateChange)}
+            {dateLabel(alert.reachedAt)}
           </div>
         )
       })}
