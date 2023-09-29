@@ -161,7 +161,7 @@ function ServiceDetail(props) {
                 </button>
                 </>
                 }
-                { rolloutHistory.length != 0 &&
+                { rolloutHistory && rolloutHistory.length != 0 &&
                 <button 
                   className="inline-flex items-center bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   >
@@ -188,7 +188,7 @@ function ServiceDetail(props) {
               
             }
           </h3>
-          {/* <AlertPanel alerts={serviceAlerts?.filter(alert => alert.status === "Firing")} hideButton /> */}
+          <AlertPanel alerts={serviceAlerts?.filter(alert => alert.status === "Firing")} hideButton />
           <div>
             <div className="grid grid-cols-12 mt-4 px-4">
               <div className="col-span-5 border-r space-y-4">
@@ -501,34 +501,28 @@ function Pod(props) {
   let pulsar;
   switch (pod.status) {
     case 'Running':
-      color = 'text-blue-200';
+      color = 'bg-green-200';
       pulsar = '';
       break;
     case 'PodInitializing':
     case 'ContainerCreating':
     case 'Pending':
-      color = 'text-blue-100';
-      pulsar = 'pulsar-green';
+      color = 'bg-blue-300';
+      pulsar = 'animate-pulse';
       break;
     case 'Terminating':
-      color = 'text-blue-800';
-      pulsar = 'pulsar-gray';
+      color = 'bg-gray-500';
+      pulsar = 'animate-pulse';
       break;
     default:
-      color = 'text-red-600';
+      color = 'bg-red-600';
       pulsar = '';
       break;
   }
 
   return (
-    <span className="inline-block w-4 mr-1 mt-2">
-      <svg viewBox="0 0 1 1"
-           className={`fill-current ${color} ${pulsar}`}>
-        <g>
-          <title>{pod.name} - {pod.status}</title>
-          <rect width="1" height="1"/>
-        </g>
-      </svg>
+    <span className={`inline-block mr-1 mt-2 shadow-lg ${color} ${pulsar} font-bold px-2 cursor-default`} title={`${pod.name} - ${pod.status}`}>
+      {pod.status}
     </span>
   );
 }

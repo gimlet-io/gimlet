@@ -81,7 +81,7 @@ func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *mod
 
 func (s imagePullBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
-	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
+	return pod.Status == model.POD_RUNNING
 }
 
 func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -104,7 +104,7 @@ func (s crashLoopBackOffThreshold) Reached(relatedObject interface{}, alert *mod
 
 func (s crashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
-	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
+	return pod.Status == model.POD_RUNNING
 }
 
 func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -115,7 +115,7 @@ func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, 
 
 func (s createContainerConfigErrorThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
-	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
+	return pod.Status == model.POD_RUNNING
 }
 
 func (s pendingThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {

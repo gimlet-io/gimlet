@@ -15,7 +15,7 @@ var (
 	encryptionKeyNew = ""
 )
 
-func TestTrackPods_imagePullBackOff(t *testing.T) {
+func TestTrackPod_imagePullBackOff(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -33,11 +33,11 @@ func TestTrackPods_imagePullBackOff(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	}})
+	})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -48,18 +48,18 @@ func TestTrackPods_imagePullBackOff(t *testing.T) {
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_RUNNING,
-	}})
+	})
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
-func TestTrackPods_crashLoopBackOff(t *testing.T) {
+func TestTrackPod_crashLoopBackOff(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -77,11 +77,11 @@ func TestTrackPods_crashLoopBackOff(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "CrashLoopBackOff",
-	}})
+	})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -92,18 +92,18 @@ func TestTrackPods_crashLoopBackOff(t *testing.T) {
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_RUNNING,
-	}})
+	})
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
-func TestTrackPods_createContainerConfigError(t *testing.T) {
+func TestTrackPod_createContainerConfigError(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -121,11 +121,11 @@ func TestTrackPods_createContainerConfigError(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "CreateContainerConfigError",
-	}})
+	})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -136,18 +136,18 @@ func TestTrackPods_createContainerConfigError(t *testing.T) {
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_RUNNING,
-	}})
+	})
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
-func TestTrackPods_deleted(t *testing.T) {
+func TestTrackPod_deleted(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -165,24 +165,24 @@ func TestTrackPods_deleted(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	}})
+	})
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_TERMINATED,
-	}})
+	})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
-func TestTrackPods_from_pending_to_imagePullBackoff(t *testing.T) {
+func TestTrackPod_from_pending_to_imagePullBackoff(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
 		store.Close()
@@ -203,17 +203,17 @@ func TestTrackPods_from_pending_to_imagePullBackoff(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "Pending",
-	}})
+	})
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	}})
+	})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 2, len(relatedAlerts))
@@ -241,23 +241,23 @@ func TestPodsTrack(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	}})
+	})
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ErrImagePull",
-	}})
+	})
 
-	alertStateManager.TrackPods([]*api.Pod{{
+	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	}})
+	})
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))

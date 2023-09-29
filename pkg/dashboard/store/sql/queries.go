@@ -35,6 +35,7 @@ const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAlerts = "select-alerts"
 const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertsByName = "select-alerts-by-name"
+const SelectAlertsByDeploymentName = "select-alerts-by-deployment-name"
 const UpdateAlertStatusFired = "update-alert-status-fired"
 const UpdateAlertStatusResolved = "update-alert-status-resolved"
 
@@ -132,6 +133,11 @@ WHERE status = $1;
 SELECT id, type, name, deployment_name, status
 FROM alerts
 WHERE name = $1;
+`,
+		SelectAlertsByDeploymentName: `
+SELECT id, type, name, deployment_name, status
+FROM alerts
+WHERE deployment_name = $1;
 `,
 		UpdateAlertStatusFired: `
 UPDATE alerts SET status = $1, fired_at = $2 WHERE id = $3;
@@ -233,6 +239,11 @@ WHERE status = $1;
 SELECT id, type, name, deployment_name, status
 FROM alerts
 WHERE name = $1;
+`,
+		SelectAlertsByDeploymentName: `
+SELECT id, type, name, deployment_name, status
+FROM alerts
+WHERE deployment_name = $1;
 `,
 		UpdateAlertStatusFired: `
 UPDATE alerts SET status = $1, fired_at = $2 WHERE id = $3;

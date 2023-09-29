@@ -158,7 +158,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 	for _, stack := range stacks {
-		err := alertStateManager.TrackPods(stack.Deployment.Pods)
+		err := alertStateManager.TrackDeploymentPods(stack.Deployment.Pods)
 		if err != nil {
 			logrus.Errorf("cannot track pods: %s", err)
 			http.Error(w, http.StatusText(500), 500)
@@ -348,30 +348,19 @@ func notifyAlertManager(alertStateManager *alert.AlertStateManager, db *store.St
 	name := parts[1]
 
 	if update.Event == agent.EventPodDeleted {
-		err := alertStateManager.TrackPods([]*api.Pod{
-			{
-				Namespace: namespace,
-				Name:      name,
-				Status:    model.POD_TERMINATED,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		return db.DeletePod(update.Subject)
+		return alertStateManager.DeletePod(update.Subject)
 	}
 
 	deploymentParts := strings.Split(update.Deployment, "/")
 	deployment := deploymentParts[1]
 
-	return alertStateManager.TrackPods([]*api.Pod{
-		{
+	return alertStateManager.TrackPod(
+		&api.Pod{
 			Namespace:         namespace,
 			Name:              name,
 			DeploymentName:    deployment,
 			Status:            update.Status,
 			StatusDescription: update.ErrorCause,
 		},
-	})
+	)
 }

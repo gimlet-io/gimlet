@@ -59,3 +59,11 @@ func (db *Store) RelatedAlerts(name string) ([]*model.Alert, error) {
 
 	return alerts, err
 }
+
+func (db *Store) AlertsByDeployment(name string) ([]*model.Alert, error) {
+	stmt := sql.Stmt(db.driver, sql.SelectAlertsByDeploymentName)
+	alerts := []*model.Alert{}
+	err := meddler.QueryAll(db, &alerts, stmt, name)
+
+	return alerts, err
+}
