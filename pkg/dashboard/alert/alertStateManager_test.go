@@ -182,8 +182,6 @@ func TestTrackPods_deleted(t *testing.T) {
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
-// TODO, if we starting a pod, saved as "Pending" threshold, if its updated for example ImagePullBackOff error, TrackPods will skip that change
-// set pending to resolved, and save a new alert
 func TestTrackPods_from_pending_to_imagePullBackoff(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
@@ -263,6 +261,7 @@ func TestPodsTrack(t *testing.T) {
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, "imagePullBackOffThreshold", relatedAlerts[0].Type)
 }
 
 // func TestTrackEvents(t *testing.T) {

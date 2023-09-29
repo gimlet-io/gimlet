@@ -92,37 +92,48 @@ func (a AlertStateManager) TrackPods(pods []*api.Pod) error {
 			}
 		}
 
-		if len(nonResolvedAlerts) == 0 {
-			if t, ok := a.thresholds[pod.Status]; ok {
-				_, err := a.store.CreateAlert(&model.Alert{
-					ObjectName:     podName,
-					Type:           thresholdType(t),
-					DeploymentName: deploymentName,
-					Status:         model.PENDING,
-					PendingAt:      currentTime,
-				})
+		if t, ok := a.thresholds[pod.Status]; ok {
+			alertToCreate := &model.Alert{
+				ObjectName:     podName,
+				Type:           thresholdType(t),
+				DeploymentName: deploymentName,
+				Status:         model.PENDING,
+				PendingAt:      currentTime,
+			}
+			if !alertExists(nonResolvedAlerts, alertToCreate) {
+				_, err := a.store.CreateAlert(alertToCreate)
 				if err != nil {
 					return err
 				}
 			}
-		} else {
-			for _, nonResolvedAlert := range nonResolvedAlerts {
-				t := thresholdByType(a.thresholds, nonResolvedAlert.Type)
-				if t.Resolved(dbPod) {
-					a.notifManager.Broadcast(&notifications.AlertMessage{
-						Alert: *nonResolvedAlert,
-					})
+		}
 
-					err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
-					if err != nil {
-						logrus.Errorf("couldn't set resolved state for alerts: %s", err)
-					}
+		for _, nonResolvedAlert := range nonResolvedAlerts {
+			t := thresholdByType(a.thresholds, nonResolvedAlert.Type)
+			if t.Resolved(dbPod) {
+				a.notifManager.Broadcast(&notifications.AlertMessage{
+					Alert: *nonResolvedAlert,
+				})
+
+				err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
+				if err != nil {
+					logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 				}
 			}
 		}
 
 	}
 	return nil
+}
+
+func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
+	for _, nonResolvedAlert := range nonResolvedAlerts {
+		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlert.Type == alert.Type {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (a AlertStateManager) TrackEvents(events []api.Event) error {
