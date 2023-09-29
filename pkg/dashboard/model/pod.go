@@ -1,6 +1,7 @@
 package model
 
 const (
+	POD_PENDING    = "Pending"
 	POD_RUNNING    = "Running"
 	POD_TERMINATED = "Terminated"
 )

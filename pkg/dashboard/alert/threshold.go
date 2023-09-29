@@ -25,10 +25,9 @@ func Thresholds() map[string]threshold {
 		"CreateContainerConfigError": createContainerConfigErrorThreshold{
 			waitTime: 60,
 		},
-		// TODO, if we starting a pod, saved as "Pending" threshold, if its updated for example ImagePullBackOff error, TrackPods will skip that change
-		// "Pending": pendingThreshold{
-		// 	waitTime: 600,
-		// },
+		"Pending": pendingThreshold{
+			waitTime: 600,
+		},
 		"Failed": failedEventThreshold{
 			minimumCount:          6,
 			minimumCountPerMinute: 1,
@@ -70,9 +69,9 @@ type createContainerConfigErrorThreshold struct {
 	waitTime time.Duration
 }
 
-// type pendingThreshold struct {
-// 	waitTime time.Duration
-// }
+type pendingThreshold struct {
+	waitTime time.Duration
+}
 
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
 	alertPendingSince := time.Unix(alert.PendingAt, 0)
@@ -119,13 +118,13 @@ func (s createContainerConfigErrorThreshold) Resolved(relatedObject interface{})
 	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
 }
 
-// func (s pendingThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
-// 	alertPendingSince := time.Unix(alert.CreatedAt, 0)
-// 	waitTime := time.Now().Add(-time.Second * s.waitTime)
-// 	return alertPendingSince.Before(waitTime)
-// }
+func (s pendingThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	alertPendingSince := time.Unix(alert.PendingAt, 0)
+	waitTime := time.Now().Add(-time.Second * s.waitTime)
+	return alertPendingSince.Before(waitTime)
+}
 
-// func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
-// 	pod := relatedObject.(*model.Pod)
-// 	return pod.Status == model.POD_RUNNING || pod.Status == model.POD_TERMINATED
-// }
+func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
+	pod := relatedObject.(*model.Pod)
+	return pod.Status != model.POD_PENDING
+}
