@@ -30,8 +30,8 @@ func Thresholds() map[string]threshold {
 		// 	waitTime: 600,
 		// },
 		"Failed": failedEventThreshold{
-			MinimumCount:          6,
-			MinimumCountPerMinute: 1,
+			minimumCount:          6,
+			minimumCountPerMinute: 1,
 		},
 	}
 }
@@ -58,8 +58,8 @@ type imagePullBackOffThreshold struct {
 }
 
 type failedEventThreshold struct {
-	MinimumCount          int32
-	MinimumCountPerMinute float64
+	minimumCount          int32
+	minimumCountPerMinute float64
 }
 
 type crashLoopBackOffThreshold struct {
@@ -90,7 +90,7 @@ func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Al
 	alertPendingSinceInMinutes := time.Since(time.Unix(alert.PendingAt, 0)).Minutes()
 	countPerMinute := float64(event.Count) / alertPendingSinceInMinutes
 
-	return countPerMinute >= s.MinimumCountPerMinute && event.Count >= s.MinimumCount
+	return countPerMinute >= s.minimumCountPerMinute && event.Count >= s.minimumCount
 }
 
 func (s failedEventThreshold) Resolved(relatedObject interface{}) bool {

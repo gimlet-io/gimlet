@@ -2,39 +2,56 @@ import { useState } from "react";
 import { format, formatDistance } from "date-fns";
 
 const Timeline = ({ alerts }) => {
-  const [hours, setHours] = useState(1)
+  const [hours, setHours] = useState([
+    { hour: 24, current: false },
+    { hour: 6, current: false },
+    { hour: 1, current: true }
+  ]);
+  const selected = "font-semibold"
 
   if (!alerts) {
     return null;
   }
 
+  const hourHandler = (input) => {
+    setHours(hours.map(hour => {
+      if (hour.hour === input) {
+        return { ...hour, current: true }
+      } else {
+        return { ...hour, current: false }
+      }
+    }))
+  }
+
+  const currentHour = hours.find(hour => hour.current)
+  console.log(currentHour.hour)
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setHours(endDate.getHours() - hours);
+  startDate.setHours(endDate.getHours() - currentHour.hour);
 
   return (
     <div className="p-2">
       <div className="h-8">
         <div className="flex justify-end divide-x space-x-1 divide-gray-300 text-gray-500 text-xs">
-          <button
-            onClick={() => setHours(24)}>
-            last 24 hours
-          </button>
-          <button className="pl-1"
-            onClick={() => setHours(6)}>
-            last 6 hours
-          </button>
-          <button className="pl-1"
-            onClick={() => setHours(1)}>
-            last hour
-          </button>
+          {hours.map(hour => {
+            return (
+              <button
+                  key={hour.hour}
+                  type="button"
+                  onClick={() => hourHandler(hour.hour)}
+                  className={(hour.current ? selected : "") + ' pl-1'}
+                >
+                  latest {hour.hour} hours
+                </button>
+            )
+          })}
         </div>
         <div className="relative flex bg-green-400 h-4">
           {alerts.map((alert, index) => {
             const pendingAt = new Date(alert.pendingAt * 1000);
             const resolvedAt = new Date(alert.resolvedAt ? (alert.resolvedAt * 1000) : Date.now());
             const startPosition = Math.max(0, (pendingAt - startDate) / (60 * 60 * 1000));
-            const endPosition = Math.min(hours, (resolvedAt - startDate) / (60 * 60 * 1000));
+            const endPosition = Math.min(currentHour.hour, (resolvedAt - startDate) / (60 * 60 * 1000));
 
             const endDateUnix = (new Date(endDate).getTime() / 1000).toFixed(0)
             const total = (alert.resolvedAt ?? endDateUnix) - alert.pendingAt
@@ -42,8 +59,8 @@ const Timeline = ({ alerts }) => {
             const firingInterval = (alert.resolvedAt ?? endDateUnix) - alert.firedAt
 
             const alertStyle = {
-              left: `${(startPosition / hours) * 100}%`,
-              width: `${((endPosition - startPosition) / hours) * 100}%`,
+              left: `${(startPosition / currentHour.hour) * 100}%`,
+              width: `${((endPosition - startPosition) / currentHour.hour) * 100}%`,
             };
 
             let title = ""
