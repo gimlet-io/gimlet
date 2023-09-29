@@ -61,24 +61,24 @@ export class RolloutHistory extends Component {
         color = "bg-red-300";
       }
 
-      let border = showDate ? 'lg:border-l' : '';
-
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
-      markers.push(marker(rollout, border, color, showDate, dateLabel, exactDate, this.toggle))
+      const first = idx == 0;
+
+      markers.push(marker(rollout, color, showDate, dateLabel, exactDate, this.toggle, first))
       rollouts.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl, builtInEnv))
     })
 
     if (releaseHistorySinceDays && releasesCount === 0) {
       return (
-        <div className="text-xs text-gray-500 p-2">
+        <div className="text-xs text-gray-500">
           No releases in the past {releaseHistorySinceDays} days.
         </div>)
     }
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-10 p-2">
+        <div className="grid grid-cols-10 pb-6">
           {markers}
         </div>
         {open &&
@@ -131,12 +131,14 @@ function Commit(props) {
   )
 }
 
-function marker(rollout, border, color, showDate, dateLabel, exactDate, toggle) {
+function marker(rollout, color, showDate, dateLabel, exactDate, toggle, first) {
   const title = `[${rollout.version.sha.slice(0, 6)}] ${truncate(rollout.version.message)}
 
 Deployed by ${rollout.triggeredBy}
 
 at ${exactDate}`;
+
+  const border = showDate && !first ? 'lg:border-l' : '';
 
   return (
     <div key={nanoid()} className={`h-8 ${border} cursor-pointer`} title={title} onClick={() => toggle()}>
@@ -204,7 +206,7 @@ export function rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app
               <p className="font-semibold text-gray-700">{rollout.triggeredBy}</p>
               {!rollback && <p className="font-medium text-gray-700">{rollout.app}</p>}
               <p className="text-gray-700">
-                <span>Released</span>
+                <span>Deployed</span>
                 { !builtInEnv &&
                 <a
                   className="ml-1"

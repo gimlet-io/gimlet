@@ -64,7 +64,7 @@ export class Env extends Component {
         {this.state.isClosed ? null : (
           <>
             {renderPullRequests(pullRequests)}
-            <div className="bg-white shadow p-4 sm:p-6 lg:p-8 space-y-4">
+            <div className="bg-white shadow p-4 space-y-4">
               {!env.isOnline && connectEnvCard(history, env.name)}
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>

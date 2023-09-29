@@ -7,7 +7,7 @@ const Timeline = ({ alerts }) => {
     { hour: 6, current: false },
     { hour: 1, current: true }
   ]);
-  const selected = "font-semibold"
+  const selected = "font-medium"
 
   if (!alerts) {
     return null;
@@ -24,13 +24,12 @@ const Timeline = ({ alerts }) => {
   }
 
   const currentHour = hours.find(hour => hour.current)
-  console.log(currentHour.hour)
   const endDate = new Date();
   const startDate = new Date();
   startDate.setHours(endDate.getHours() - currentHour.hour);
 
   return (
-    <div className="p-2">
+    <div>
       <div className="h-8">
         <div className="flex justify-end divide-x space-x-1 divide-gray-300 text-gray-500 text-xs">
           {hours.map(hour => {
@@ -41,12 +40,13 @@ const Timeline = ({ alerts }) => {
                   onClick={() => hourHandler(hour.hour)}
                   className={(hour.current ? selected : "") + ' pl-1'}
                 >
-                  latest {hour.hour} hours
+                  {hour.hour == 1 ? "Last hour" : ` Last ${hour.hour} hours`}
+                 
                 </button>
             )
           })}
         </div>
-        <div className="relative flex bg-green-400 h-4">
+        <div className="relative flex bg-green-300">
           {alerts.map((alert, index) => {
             const pendingAt = new Date(alert.pendingAt * 1000);
             const resolvedAt = new Date(alert.resolvedAt ? (alert.resolvedAt * 1000) : Date.now());
@@ -78,14 +78,14 @@ ${formatDistance(alert.firedAt * 1000, new Date())} ago`
               >
                 <div
                   title={title}
-                  className="flex h-4 bg-slate-300">
+                  className="flex h-6 bg-slate-300">
                   <div
                     style={{ width: `${pendingInterval / total * 100}%` }}
-                    className="bg-yellow-400 transition-all duration-500 ease-out"
+                    className="bg-yellow-300 transition-all duration-500 ease-out"
                   ></div>
                   <div
                     style={{ width: `${firingInterval / total * 100}%` }}
-                    className="bg-red-400 transition-all duration-500 ease-out"
+                    className="bg-red-300 transition-all duration-500 ease-out"
                   ></div>
                 </div>
               </div>

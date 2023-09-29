@@ -111,6 +111,9 @@ function ServiceDetail(props) {
       });
   }
 
+  const deployment = stack.deployment;
+  const repo = stack.repo;
+
   return (
     <>
       <LogsOverlay
@@ -121,43 +124,54 @@ function ServiceDetail(props) {
         visible={logsOverlayVisible}
         store={store}
       />
-      <div className="w-full flex items-center justify-between space-x-6">
+      <div className="w-full flex items-center justify-between space-x-6 bg-stone-100 pb-6 rounded-lg">
         <div className="flex-1">
-          <h3 ref={ref} className="flex text-lg font-bold hover:bg-gray-100 rounded px-2">
-            {stack.service.name}
+          <h3 ref={ref} className="flex text-lg font-bold rounded cursor-pointer p-4">
+            <span onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
             {configExists ?
               <>
-                <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
-                  <svg xmlns="http://www.w3.org/2000/svg"
-                    className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
-                    viewBox="0 0 24 24">
-                    <path d="M0 0h24v24H0z" fill="none" />
-                    <path
-                      d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-                  </svg>
-                </a>
-                <span onClick={() => linkToDeployment(envName, stack.service.name)}>
-                  <svg
-                    className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1 h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
-                    </path>
-                  </svg>
-                </span>
-                <span onClick={() => {
-                  posthog?.capture('Env config edit pushed')
-                  navigateToConfigEdit(envName, stack.service.name)
-                  }}>
-                  <svg
-                    className="cursor-pointer inline text-gray-500 hover:text-gray-700 ml-1  h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </span>
+              <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
+                viewBox="0 0 24 24">
+                <path d="M0 0h24v24H0z" fill="none" />
+                <path
+                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+              </svg>
+              </a>
+              <div className="flex items-center ml-auto space-x-2">
+                <button 
+                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
+                  onClick={() => {
+                    posthog?.capture('Env config edit pushed')
+                    navigateToConfigEdit(envName, stack.service.name)
+                    }}
+                  >
+                  Edit
+                </button>
+                { deployment &&
+                <>
+                <button 
+                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
+                  >
+                  Logs
+                </button>
+                <button className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                  Describe
+                </button>
+                </>
+                }
+                { rolloutHistory.length != 0 &&
+                <button 
+                  className="inline-flex items-center bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                    <span>Instant rollback</span>
+                </button>
+                }
+              </div>
               </>
               :
               <div className="flex items-center ml-auto">
@@ -171,27 +185,79 @@ function ServiceDetail(props) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
+              
             }
           </h3>
-          <div className="my-2 mb-4 sm:my-4 sm:mb-6">
-            <RolloutHistory
-              env={envName}
-              app={stack.service.name}
-              rollback={rollback}
-              appRolloutHistory={rolloutHistory}
-              releaseHistorySinceDays={releaseHistorySinceDays}
-              scmUrl={scmUrl}
-              builtInEnv={builtInEnv}
-            />
-            <Timeline
-              alerts={serviceAlerts}
-            />
-            <AlertPanel
-              alerts={serviceAlerts?.filter(alert => alert.status === "Firing")}
-              hideButton
-            />
+          {/* <AlertPanel alerts={serviceAlerts?.filter(alert => alert.status === "Firing")} hideButton /> */}
+          <div>
+            <div className="grid grid-cols-12 mt-4 px-4">
+              <div className="col-span-5 border-r space-y-4">
+                <div>
+                  <p className="text-base text-gray-600">Status</p>
+                  {
+                    deployment && deployment.pods && deployment.pods.map((pod) => (
+                      <Pod key={pod.name} pod={pod} />
+                    ))
+                  }
+                </div>
+                { deployment &&
+                <div>
+                  <p className="text-base text-gray-600">Version</p>
+                  <p className="text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" className="h4 w-4 inline fill-current"><path d="M320 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160zm156.8-48C462 361 397.4 416 320 416s-142-55-156.8-128H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H163.2C178 151 242.6 96 320 96s142 55 156.8 128H608c17.7 0 32 14.3 32 32s-14.3 32-32 32H476.8z"/></svg>
+                    <span className="text-xs pl-2 font-mono"><a href={`${scmUrl}/${repo}/commit/${deployment.sha}`} target="_blank" rel="noopener noreferrer">{deployment.sha.slice(0, 8)}</a></span>
+                    <span className="pl-2 text-sm font-normal">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</span>
+                  </p>
+                </div>
+                }
+              </div>
+              <div className="col-span-7 space-y-4 pl-2">
+                { deployment &&
+                <div>
+                  <p className="text-base text-gray-600">Address</p>
+                  <div className="text-gray-900 text-sm">
+                    <div className="relative">
+                    {stack.service.name}.{stack.service.namespace}.svc.cluster.local
+                    <button className="absolute right-0 bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                      Port-forward command
+                    </button>
+                    </div>
+                    {stack.ingresses ? stack.ingresses.map((ingress) =>
+                      <p key={`${ingress.namespace}/${ingress.name}`}>
+                        <a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}</a>
+                      </p>
+                      ) : null
+                    }
+                  </div>
+                </div>
+                }
+                { deployment &&
+                <div>
+                  <p className="text-base text-gray-600">Health</p>
+                  <div className="text-gray-900 text-sm">
+                    <Timeline alerts={serviceAlerts} />
+                  </div>
+                </div>
+                }
+                <div>
+                  <p className="text-base text-gray-600">Deployed</p>
+                  <div className="text-gray-900 text-sm pt-2">
+                    <RolloutHistory
+                      env={envName}
+                      app={stack.service.name}
+                      rollback={rollback}
+                      appRolloutHistory={rolloutHistory}
+                      releaseHistorySinceDays={releaseHistorySinceDays}
+                      scmUrl={scmUrl}
+                      builtInEnv={builtInEnv}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* <p className="text-xs truncate w-9/12">{deployment.namespace}/{deployment.name}</p> */}
           </div>
-          <div className="flex flex-wrap text-sm">
+          {/* <div className="flex flex-wrap text-sm">
             <div className="flex-1 min-w-full md:min-w-0">
               {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} key={`${ingress.namespace}/${ingress.name}`} />) : null}
             </div>
@@ -210,7 +276,7 @@ function ServiceDetail(props) {
               />
             </div>
             <div className="flex-1 min-w-full md:min-w-0" />
-          </div>
+          </div> */}
         </div>
       </div>
     </>
