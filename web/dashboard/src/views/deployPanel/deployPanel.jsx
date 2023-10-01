@@ -248,7 +248,7 @@ export default class DeployPanel extends Component {
       )
     });
 
-    const helmReleasesWidgets = state.fluxState.helmReleases.map(helmRelease => {
+    const helmReleasesWidgets = !state.fluxState.helmReleases ? [] : state.fluxState.helmReleases.map(helmRelease => {
       let color = "bg-yellow-400";
 
       if (helmRelease.status.includes("Succeeded")) {

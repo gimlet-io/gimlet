@@ -40,7 +40,7 @@ const Timeline = ({ alerts }) => {
                   onClick={() => hourHandler(hour.hour)}
                   className={(hour.current ? selected : "") + ' pl-1'}
                 >
-                  {hour.hour == 1 ? "Last hour" : ` Last ${hour.hour} hours`}
+                  {hour.hour === 1 ? "Last hour" : ` Last ${hour.hour} hours`}
                  
                 </button>
             )

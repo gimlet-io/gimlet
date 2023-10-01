@@ -131,7 +131,11 @@ function renderServices(
     if (configExists) {
       config = envConfigs.find((config) => config.app === stack.service.name)
     }
-    const deployment = config.namespace + "/" + config.app
+
+    let deployment = "";
+    if (stack.deployment) {
+      deployment = stack.deployment.namespace + "/" + stack.deployment.name
+    }
 
     return (
       <ServiceDetail

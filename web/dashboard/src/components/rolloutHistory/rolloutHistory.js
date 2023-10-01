@@ -63,7 +63,7 @@ export class RolloutHistory extends Component {
 
       const currentlyReleased = rollout.gitopsRef === currentlyReleasedRef
 
-      const first = idx == 0;
+      const first = idx === 0;
 
       markers.push(marker(rollout, color, showDate, dateLabel, exactDate, this.toggle, first))
       rollouts.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, rollback, env, app, currentlyReleased, rollout, scmUrl, builtInEnv))

@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { XIcon } from '@heroicons/react/solid'
@@ -12,7 +12,6 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
 } from "../../redux/redux";
 import { copyToClipboard } from '../../views/settings/settings';
-import { Menu } from '@headlessui/react'
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
 import { AlertPanel } from '../../views/pulse/pulse';
@@ -21,6 +20,7 @@ function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
+
 
   useEffect(() => {
     if (deploymentFromParams === stack.service.name) {
@@ -81,6 +81,16 @@ function ServiceDetail(props) {
     }
   }, [logsOverlayVisible]);
 
+  const [isCopied, setCopied] = useState(false)
+
+  const handleCopyClick = () => {
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
   const deleteAppInstance = () => {
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
@@ -113,6 +123,24 @@ function ServiceDetail(props) {
 
   const deployment = stack.deployment;
   const repo = stack.repo;
+
+  let hostPort = "<host-port>"
+  let appPort = "<app-port>"
+  if (config) {
+    appPort = config.values.containerPort ?? 80;
+
+    if (appPort < 99) {
+      hostPort = "100" + appPort
+    } else if (appPort < 999) {
+      hostPort = "10" + appPort
+    } else {
+      hostPort = appPort
+    }
+
+    if (hostPort === "10080") { // Connections to HTTP, HTTPS or FTP servers on port 10080 will fail. This is a mitigation for the NAT Slipstream 2.0 attack.
+      hostPort = "10081"
+    }
+  }
 
   return (
     <>
@@ -151,17 +179,30 @@ function ServiceDetail(props) {
                 </button>
                 { deployment &&
                 <>
-                <button 
+                <button
+                  onClick={() => {
+                    setLogsOverlayVisible(true)
+                    setLogsOverlayNamespace(deployment.namespace);
+                    setLogsOverlayService(stack.service.name);
+                    gimletClient.podLogsRequest(deployment.namespace, stack.service.name);
+                  }}
                   className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   >
                   Logs
                 </button>
-                <button className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                <button
+                  onClick={() => {
+                    setLogsOverlayVisible(true);
+                    setLogsOverlayNamespace(deployment.namespace);
+                    setLogsOverlayService(stack.service.name);
+                    gimletClient.deploymentDetailsRequest(deployment.namespace, stack.service.name);
+                  }}
+                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
                   Describe
                 </button>
                 </>
                 }
-                { rolloutHistory && rolloutHistory.length != 0 &&
+                { rolloutHistory && rolloutHistory.length !== 0 &&
                 <button 
                   className="inline-flex items-center bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   >
@@ -218,13 +259,33 @@ function ServiceDetail(props) {
                   <div className="text-gray-900 text-sm">
                     <div className="relative">
                     {stack.service.name}.{stack.service.namespace}.svc.cluster.local
-                    <button className="absolute right-0 bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                    <button
+                      onClick={() => {
+                        copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${hostPort}:${appPort}`);
+                        handleCopyClick();
+                      }}
+                      className="absolute right-0 bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
                       Port-forward command
                     </button>
+                    {isCopied && (
+                      <div className="absolute -right-12 -top-10">
+                        <div className="p-2 bg-indigo-600 select-none text-white inline-block rounded">
+                          Copied!
+                        </div>
+                      </div>
+                    )}
                     </div>
                     {stack.ingresses ? stack.ingresses.map((ingress) =>
                       <p key={`${ingress.namespace}/${ingress.name}`}>
-                        <a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}</a>
+                        <a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                          className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
+                          viewBox="0 0 24 24">
+                          <path d="M0 0h24v24H0z" fill="none" />
+                          <path
+                            d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                        </svg>
+                        </a>
                       </p>
                       ) : null
                     }
@@ -255,186 +316,11 @@ function ServiceDetail(props) {
                 </div>
               </div>
             </div>
-            {/* <p className="text-xs truncate w-9/12">{deployment.namespace}/{deployment.name}</p> */}
           </div>
-          {/* <div className="flex flex-wrap text-sm">
-            <div className="flex-1 min-w-full md:min-w-0">
-              {stack.ingresses ? stack.ingresses.map((ingress) => <Ingress ingress={ingress} key={`${ingress.namespace}/${ingress.name}`} />) : null}
-            </div>
-            <div className="flex-1 md:ml-2 min-w-full md:min-w-0">
-              <Deployment
-                envName={envName}
-                repo={stack.repo}
-                deployment={stack.deployment}
-                service={stack.service}
-                gimletClient={gimletClient}
-                config={config}
-                setLogsOverlayVisible={setLogsOverlayVisible}
-                setLogsOverlayNamespace={setLogsOverlayNamespace}
-                setLogsOverlayService={setLogsOverlayService}
-                scmUrl={scmUrl}
-              />
-            </div>
-            <div className="flex-1 min-w-full md:min-w-0" />
-          </div> */}
         </div>
       </div>
     </>
   )
-}
-
-class Ingress extends Component {
-  render() {
-    const { ingress } = this.props;
-
-    if (ingress === undefined) {
-      return null;
-    }
-
-    return (
-      <div className="bg-gray-100 p-2 mb-1 border rounded-sm border-gray-200 text-gray-500 relative">
-        <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">ingress</span>
-        <div className="mb-1 truncate "><a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}</a>
-        </div>
-        <p className="text-xs truncate mb-6">{ingress.namespace}/{ingress.name}</p>
-      </div>
-    );
-  }
-}
-
-class Deployment extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      isCopied: false,
-    };
-  }
-
-  handleCopyClick() {
-    this.setState({ isCopied: true });
-
-    setTimeout(() => {
-      this.setState({ isCopied: false });
-    }, 2000);
-  };
-
-  render() {
-    const { deployment, service, repo, gimletClient, config, setLogsOverlayVisible, setLogsOverlayNamespace, setLogsOverlayService, scmUrl } = this.props;
-
-    if (deployment === undefined) {
-      return null;
-    }
-
-    let hostPort = "<host-port>"
-    let appPort = "<app-port>"
-    if (config) {
-      appPort = config.values.containerPort ?? 80;
-
-      if (appPort < 99) {
-        hostPort = "100" + appPort
-      } else if (appPort < 999) {
-        hostPort = "10" + appPort
-      } else {
-        hostPort = appPort
-      }
-
-      if (hostPort === "10080") { // Connections to HTTP, HTTPS or FTP servers on port 10080 will fail. This is a mitigation for the NAT Slipstream 2.0 attack.
-        hostPort = "10081"
-      }
-    }
-
-    return (
-      <div className="grid grid-cols-10">
-        <div className="col-span-9 bg-gray-100 p-2 mb-1 border rounded-sm border-blue-200, text-gray-500 relative">
-          <span className="text-xs text-gray-400 absolute bottom-0 right-0 p-2">deployment</span>
-          <div className="mb-1">
-            <p className="truncate">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</p>
-            <p className="text-xs italic"><a href={`${scmUrl}/${repo}/commit/${deployment.sha}`} target="_blank"
-              rel="noopener noreferrer">{deployment.sha.slice(0, 6)}</a></p>
-          </div>
-          <p className="text-xs truncate w-9/12">{deployment.namespace}/{deployment.name}</p>
-          {
-            deployment.pods && deployment.pods.map((pod) => (
-              <Pod key={pod.name} pod={pod} />
-            ))
-          }
-        </div>
-        <div className="bg-slate-400 rounded-r-lg p-2 text-white text-xs space-y-2 mb-1 text-left relative w-10">
-          <Menu as="div" className="relative inline-block text-left">
-            <Menu.Button className="flex items-center text-gray-200 hover:text-gray-500">
-              <span className="sr-only">Open options</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </Menu.Button>
-            <Menu.Items className="origin-top-right absolute right-0 md:left-8 md:right-0 md:-top-4 z-10 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <div className="py-1">
-                <Menu.Item key="logs">
-                  {({ active }) => (
-                    <button
-                      onClick={() => {
-                        setLogsOverlayVisible(true)
-                        setLogsOverlayNamespace(deployment.namespace);
-                        setLogsOverlayService(service.name);
-                        gimletClient.podLogsRequest(deployment.namespace, service.name);
-                      }}
-                      className={(
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                        ' block px-4 py-2 text-sm w-full text-left'
-                      }
-                    >
-                      View app logs
-                    </button>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => {
-                        setLogsOverlayVisible(true);
-                        setLogsOverlayNamespace(deployment.namespace);
-                        setLogsOverlayService(service.name);
-                        gimletClient.deploymentDetailsRequest(deployment.namespace, service.name);
-                      }}
-                      className={(
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                        ' block px-4 py-2 text-sm w-full text-left'
-                      }
-                    >
-                      View deployment details
-                    </button>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => {
-                        copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${hostPort}:${appPort}`);
-                        this.handleCopyClick();
-                      }}
-                      className={(
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                        ' block px-4 py-2 text-sm w-full text-left'
-                      }
-                    >
-                      Copy kubectl port-forward command
-                    </button>
-                  )}
-                </Menu.Item>
-              </div>
-            </Menu.Items>
-          </Menu>
-          {this.state.isCopied && (
-            <div className="absolute -top-8 right-1/2">
-              <div className="p-2 bg-indigo-600 select-none text-white inline-block rounded">
-                Copied!
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 }
 
 export default ServiceDetail;
