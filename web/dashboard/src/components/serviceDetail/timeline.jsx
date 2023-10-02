@@ -10,7 +10,7 @@ const Timeline = ({ alerts }) => {
   const selected = "font-medium"
 
   if (!alerts) {
-    return null;
+    alerts=[];
   }
 
   const hourHandler = (input) => {
