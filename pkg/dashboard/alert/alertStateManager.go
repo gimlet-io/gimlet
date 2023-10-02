@@ -62,11 +62,11 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
 
-			a.broadcast(&model.Alert{
-				Type:           alert.Type,
+			a.broadcast(&api.Alert{
 				ObjectName:     alert.ObjectName,
 				DeploymentName: alert.DeploymentName,
 				Status:         model.FIRING,
+				Text:           t.Text(),
 				PendingAt:      alert.PendingAt,
 				FiredAt:        time.Now().Unix(),
 			},
@@ -171,7 +171,14 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 				return err
 			}
 
-			a.broadcast(alertToCreate, streaming.AlertPendingEventString)
+			a.broadcast(&api.Alert{
+				ObjectName:     podName,
+				DeploymentName: deploymentName,
+				Status:         model.PENDING,
+				Text:           t.Text(),
+				PendingAt:      currentTime,
+			},
+				streaming.AlertPendingEventString)
 		}
 	}
 
@@ -187,8 +194,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 
-			a.broadcast(&model.Alert{
-				Type:           nonResolvedAlert.Type,
+			a.broadcast(&api.Alert{
 				ObjectName:     nonResolvedAlert.ObjectName,
 				DeploymentName: nonResolvedAlert.DeploymentName,
 				Status:         model.RESOLVED,
@@ -224,8 +230,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 			logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 		}
 
-		a.broadcast(&model.Alert{
-			Type:           nonResolvedAlert.Type,
+		a.broadcast(&api.Alert{
 			ObjectName:     nonResolvedAlert.ObjectName,
 			DeploymentName: nonResolvedAlert.DeploymentName,
 			Status:         model.RESOLVED,
@@ -250,7 +255,7 @@ func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
 	return false
 }
 
-func (a AlertStateManager) broadcast(alert *model.Alert, event string) {
+func (a AlertStateManager) broadcast(alert *api.Alert, event string) {
 	if a.clientHub == nil {
 		return
 	}

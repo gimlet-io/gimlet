@@ -85,6 +85,6 @@ type PodLogsEvent struct {
 }
 
 type AlertEvent struct {
-	Alert *model.Alert `json:"alert"`
+	Alert *api.Alert `json:"alert"`
 	StreamingEvent
 }

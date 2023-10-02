@@ -11,6 +11,7 @@ import (
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
@@ -190,13 +191,28 @@ func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
 
 func getAlerts(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value("store").(*store.Store)
-	alerts, err := db.Alerts()
+	dbAlerts, err := db.Alerts()
 	if err != nil {
 		logrus.Errorf("cannot get alerts from database: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	alertsString, err := json.Marshal(alerts)
+	thresholds := alert.Thresholds()
+	var decoratedAlerts []*api.Alert
+	for _, dbAlert := range dbAlerts {
+		thresholdText := alert.ThresholdTextByType(thresholds, dbAlert.Type)
+		decoratedAlerts = append(decoratedAlerts, &api.Alert{
+			ObjectName:     dbAlert.ObjectName,
+			DeploymentName: dbAlert.DeploymentName,
+			Status:         dbAlert.Status,
+			Text:           thresholdText,
+			PendingAt:      dbAlert.PendingAt,
+			FiredAt:        dbAlert.FiredAt,
+			ResolvedAt:     dbAlert.ResolvedAt,
+		})
+	}
+
+	alertsString, err := json.Marshal(decoratedAlerts)
 	if err != nil {
 		logrus.Errorf("cannot serialize alerts: %s", err)
 		http.Error(w, http.StatusText(500), 500)

@@ -12,6 +12,7 @@ type threshold interface {
 	// Candidate(relatedObject interface{}) bool
 	Reached(relatedObject interface{}, alert *model.Alert) bool
 	Resolved(relatedObject interface{}) bool
+	Text() string
 }
 
 func Thresholds() map[string]threshold {
@@ -42,6 +43,15 @@ func thresholdByType(thresholds map[string]threshold, thresholdTypeString string
 		}
 	}
 	return nil
+}
+
+func ThresholdTextByType(thresholds map[string]threshold, thresholdTypeString string) string {
+	for _, t := range thresholds {
+		if thresholdType(t) == thresholdTypeString {
+			return t.Text()
+		}
+	}
+	return ""
 }
 
 func thresholdType(myvar interface{}) string {
@@ -127,4 +137,24 @@ func (s pendingThreshold) Reached(relatedObject interface{}, alert *model.Alert)
 func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	return pod.Status != model.POD_PENDING
+}
+
+func (t imagePullBackOffThreshold) Text() string {
+	return "TODO"
+}
+
+func (t crashLoopBackOffThreshold) Text() string {
+	return "TODO"
+}
+
+func (t createContainerConfigErrorThreshold) Text() string {
+	return "TODO"
+}
+
+func (t pendingThreshold) Text() string {
+	return "TODO"
+}
+
+func (t failedEventThreshold) Text() string {
+	return "TODO"
 }

@@ -113,6 +113,16 @@ type Event struct {
 	StatusDesc     string `json:"statusDesc"`
 }
 
+type Alert struct {
+	ObjectName     string `json:"objectName"`
+	DeploymentName string `json:"deploymentName"`
+	Status         string `json:"status"`
+	Text           string `json:"text"`
+	PendingAt      int64  `json:"pendingAt"`
+	FiredAt        int64  `json:"firedAt"`
+	ResolvedAt     int64  `json:"resolvedAt"`
+}
+
 type GitopsEnv struct {
 	Name                        string                 `json:"name"`
 	InfraRepo                   string                 `json:"infraRepo"`

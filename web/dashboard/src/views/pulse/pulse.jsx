@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
 import Releases from './releases';
 import { InformationCircleIcon } from '@heroicons/react/solid'
+import { Remarkable } from "remarkable";
 
 export default class Pulse extends Component {
   constructor(props) {
@@ -123,19 +124,21 @@ export function AlertPanel({ alerts, history, hideButton }) {
     return null;
   }
 
+  const md = new Remarkable();
+
   return (
     <ul className="space-y-2 text-sm text-red-800 p-4">
       {alerts.map(alert => {
         return (
-          <div key={`${alert.type} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${alert.text} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
                 <p className="font-medium lowercase mb-2">
                   {alert.objectName}
                 </p>
-                <p>
-                  {alert.type}
-                </p>
+                <div className="text-sm text-red-800">
+                  <div className="prose max-w-lg" dangerouslySetInnerHTML={{ __html: md.render(alert.text) }} />
+                </div>
               </span>
             </div>
             {!hideButton &&
