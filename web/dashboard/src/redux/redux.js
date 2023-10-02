@@ -60,6 +60,10 @@ export const EVENT_POD_UPDATED = 'podUpdated';
 export const EVENT_POD_DELETED = 'podDeleted';
 export const EVENT_POD_LOGS = 'podLogs';
 
+export const EVENT_ALERT_PENDING = 'alertPending';
+export const EVENT_ALERT_FIRED = 'alertFired';
+export const EVENT_ALERT_RESOLVED = 'alertResolved'
+
 export const EVENT_DEPLOYMENT_CREATED = 'deploymentCreated';
 export const EVENT_DEPLOYMENT_UPDATED = 'deploymentUpdated';
 export const EVENT_DEPLOYMENT_DELETED = 'deploymentDeleted';
@@ -215,6 +219,12 @@ function processStreamingEvent(state, event) {
       return eventHandlers.agentDisconnected(state, event);
     case EVENT_ENVS_UPDATED:
       return eventHandlers.agentEnvsUpdated(state, event.envs);
+    case EVENT_ALERT_PENDING:
+      return eventHandlers.alertPending(state, event.alert);
+    case EVENT_ALERT_FIRED:
+      return eventHandlers.alertFired(state, event.alert);
+    case EVENT_ALERT_RESOLVED:
+      return eventHandlers.alertResolved(state, event.alert);
     case EVENT_POD_CREATED:
       return podEventHandlers.podCreated(state, event);
     case EVENT_POD_UPDATED:

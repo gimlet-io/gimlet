@@ -15,6 +15,9 @@ const PodLogsEventString = "podLogs"
 const ImageBuildLogEventString = "imageBuildLogEvent"
 const FluxStateUpdatedEventString = "fluxStateUpdatedEvent"
 const DeploymentDetailsEventString = "deploymentDetailsEvent"
+const AlertPendingEventString = "alertPending"
+const AlertFiredEventString = "alertFired"
+const AlertResolvedEventString = "alertResolved"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -78,5 +81,10 @@ type PodLogsEvent struct {
 	Container string `json:"container"`
 	Message   string `json:"message"`
 	Pod       string `json:"pod"`
+	StreamingEvent
+}
+
+type AlertEvent struct {
+	Alert *model.Alert `json:"alert"`
 	StreamingEvent
 }

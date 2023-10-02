@@ -25,6 +25,7 @@ func TestTrackPod_imagePullBackOff(t *testing.T) {
 
 	alertStateManager := NewAlertStateManager(
 		dummyNotificationsManager,
+		nil,
 		*store,
 		0,
 		map[string]threshold{
@@ -69,6 +70,7 @@ func TestTrackPod_crashLoopBackOff(t *testing.T) {
 
 	alertStateManager := NewAlertStateManager(
 		dummyNotificationsManager,
+		nil,
 		*store,
 		0,
 		map[string]threshold{
@@ -113,6 +115,7 @@ func TestTrackPod_createContainerConfigError(t *testing.T) {
 
 	alertStateManager := NewAlertStateManager(
 		dummyNotificationsManager,
+		nil,
 		*store,
 		0,
 		map[string]threshold{
@@ -157,6 +160,7 @@ func TestTrackPod_deleted(t *testing.T) {
 
 	alertStateManager := NewAlertStateManager(
 		dummyNotificationsManager,
+		nil,
 		*store,
 		0,
 		map[string]threshold{
@@ -192,6 +196,7 @@ func TestTrackPod_from_pending_to_imagePullBackoff(t *testing.T) {
 
 	alertStateManager := NewAlertStateManager(
 		dummyNotificationsManager,
+		nil,
 		*store,
 		0,
 		map[string]threshold{
@@ -233,6 +238,7 @@ func TestPodsTrack(t *testing.T) {
 
 	alertStateManager := NewAlertStateManager(
 		dummyNotificationsManager,
+		nil,
 		*store,
 		0,
 		map[string]threshold{

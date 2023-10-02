@@ -358,6 +358,38 @@ export function alerts(state, alerts) {
   return state;
 }
 
+export function alertPending(state, alert) {
+  if (!state.alerts[alert.deploymentName]) {
+    state.alerts[alert.deploymentName] = []
+  }
+  state.alerts[alert.deploymentName].push(alert);
+
+  return state;
+}
+
+export function alertFired(state, alert) {
+  if (!state.alerts[alert.deploymentName]) {
+    state.alerts[alert.deploymentName] = []
+  }
+  state.alerts[alert.deploymentName].push(alert);
+
+  return state;
+}
+
+export function alertResolved(state, alert) {
+  if (state.alerts[alert.deploymentName] === undefined) {
+    return state;
+  }
+
+  state.alerts[alert.deploymentName].forEach(a => {
+    if (a.objectName === alert.objectName) {
+      a.status = alert.status;
+    }
+  });
+
+  return state;
+}
+
 export function branches(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
   state.branches[repo] = payload.branches;

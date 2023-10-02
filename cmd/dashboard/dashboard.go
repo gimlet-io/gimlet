@@ -92,6 +92,7 @@ func main() {
 
 	alertStateManager := alert.NewAlertStateManager(
 		notificationsManager,
+		clientHub,
 		*store,
 		config.AlertEvaluationFrequencySeconds,
 		alert.Thresholds(),

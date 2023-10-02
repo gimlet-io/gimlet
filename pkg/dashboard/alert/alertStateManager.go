@@ -2,18 +2,21 @@ package alert
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
 )
 
 type AlertStateManager struct {
 	notifManager notifications.Manager
+	clientHub    *streaming.ClientHub
 	store        store.Store
 	waitTime     time.Duration
 	thresholds   map[string]threshold
@@ -21,12 +24,14 @@ type AlertStateManager struct {
 
 func NewAlertStateManager(
 	notifManager notifications.Manager,
+	clientHub *streaming.ClientHub,
 	store store.Store,
 	alertEvaluationFrequencySeconds int,
 	thresholds map[string]threshold,
 ) *AlertStateManager {
 	return &AlertStateManager{
 		notifManager: notifManager,
+		clientHub:    clientHub,
 		store:        store,
 		waitTime:     time.Duration(alertEvaluationFrequencySeconds) * time.Second,
 		thresholds:   thresholds,
@@ -56,6 +61,17 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 			if err != nil {
 				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
+
+			a.broadcast(&model.Alert{
+				Type:           alert.Type,
+				ObjectName:     alert.ObjectName,
+				DeploymentName: alert.DeploymentName,
+				Status:         model.FIRING,
+				PendingAt:      alert.PendingAt,
+				FiredAt:        time.Now().Unix(),
+			},
+				streaming.AlertFiredEventString,
+			)
 		}
 	}
 }
@@ -154,6 +170,8 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 			if err != nil {
 				return err
 			}
+
+			a.broadcast(alertToCreate, streaming.AlertPendingEventString)
 		}
 	}
 
@@ -168,6 +186,18 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 			if err != nil {
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
+
+			a.broadcast(&model.Alert{
+				Type:           nonResolvedAlert.Type,
+				ObjectName:     nonResolvedAlert.ObjectName,
+				DeploymentName: nonResolvedAlert.DeploymentName,
+				Status:         model.RESOLVED,
+				PendingAt:      nonResolvedAlert.PendingAt,
+				FiredAt:        nonResolvedAlert.FiredAt,
+				ResolvedAt:     time.Now().Unix(),
+			},
+				streaming.AlertResolvedEventString,
+			)
 		}
 	}
 
@@ -206,6 +236,17 @@ func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
 	}
 
 	return false
+}
+
+func (a AlertStateManager) broadcast(alert *model.Alert, event string) {
+	if a.clientHub == nil {
+		return
+	}
+	jsonString, _ := json.Marshal(streaming.AlertEvent{
+		Alert:          alert,
+		StreamingEvent: streaming.StreamingEvent{Event: event},
+	})
+	a.clientHub.Broadcast <- jsonString
 }
 
 func (a AlertStateManager) TrackEvents(events []api.Event) error {
