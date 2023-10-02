@@ -62,13 +62,8 @@ const Timeline = ({ alerts }) => {
               left: `${(startPosition / currentHour.hour) * 100}%`,
               width: `${((endPosition - startPosition) / currentHour.hour) * 100}%`,
             };
-
-            let title = ""
-            if (alert.firedAt) {
-              title = `${alert.objectName} fired at
-${format(alert.firedAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
-${formatDistance(alert.firedAt * 1000, new Date())} ago`
-            }
+            const lastStateChange = alert.firedAt ? alert.firedAt : alert.pendingAt;
+            const alertStatus = alert.firedAt ? "fired at" : "pending at";
 
             return (
               <div
@@ -77,7 +72,9 @@ ${formatDistance(alert.firedAt * 1000, new Date())} ago`
                 style={alertStyle}
               >
                 <div
-                  title={title}
+                  title={`${alert.objectName} ${alertStatus}
+${format(lastStateChange * 1000, 'h:mm:ss a, MMMM do yyyy')}
+${formatDistance(lastStateChange * 1000, new Date())} ago`}
                   className="flex h-6 bg-yellow-300">
                   <div
                     style={{ width: `${pendingInterval / total * 100}%` }}
