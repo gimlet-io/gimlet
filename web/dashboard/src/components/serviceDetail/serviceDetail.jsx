@@ -202,16 +202,6 @@ function ServiceDetail(props) {
                 </button>
                 </>
                 }
-                { rolloutHistory && rolloutHistory.length !== 0 &&
-                <button 
-                  className="inline-flex items-center bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                    </svg>
-                    <span>Instant rollback</span>
-                </button>
-                }
               </div>
               </>
               :
