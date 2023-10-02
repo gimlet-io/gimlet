@@ -46,7 +46,7 @@ const Timeline = ({ alerts }) => {
             )
           })}
         </div>
-        <div className="relative flex bg-green-300">
+        <div className="relative flex bg-green-300 h-6">
           {alerts.map((alert, index) => {
             const pendingAt = new Date(alert.pendingAt * 1000);
             const resolvedAt = new Date(alert.resolvedAt ? (alert.resolvedAt * 1000) : Date.now());
@@ -78,7 +78,7 @@ ${formatDistance(alert.firedAt * 1000, new Date())} ago`
               >
                 <div
                   title={title}
-                  className="flex h-6 bg-slate-300">
+                  className="flex h-6 bg-yellow-300">
                   <div
                     style={{ width: `${pendingInterval / total * 100}%` }}
                     className="bg-yellow-300 transition-all duration-500 ease-out"

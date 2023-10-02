@@ -2,6 +2,7 @@ package store
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/stretchr/testify/assert"
@@ -39,4 +40,25 @@ func Test_SetFiringAlertState(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, model.FIRING, alerts[0].Status)
+}
+
+func Test_GetAlerts(t *testing.T) {
+	s := NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		s.Close()
+	}()
+
+	s.CreateAlert(&model.Alert{
+		ObjectName: "pod-new",
+		FiredAt:    time.Now().Add(-1 * time.Hour * 1).Unix(),
+	})
+	s.CreateAlert(&model.Alert{
+		ObjectName: "pod-old",
+		FiredAt:    time.Now().Add(-1 * time.Hour * 30).Unix(),
+	})
+
+	alerts, err := s.Alerts()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(alerts))
+	assert.Equal(t, "pod-new", alerts[0].ObjectName)
 }

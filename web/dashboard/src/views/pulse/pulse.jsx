@@ -124,7 +124,7 @@ export function AlertPanel({ alerts, history, hideButton }) {
   }
 
   return (
-    <ul className="space-y-2 text-sm text-red-800">
+    <ul className="space-y-2 text-sm text-red-800 p-4">
       {alerts.map(alert => {
         return (
           <div key={`${alert.type} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">

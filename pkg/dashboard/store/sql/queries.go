@@ -121,8 +121,9 @@ WHERE name = $1;
 DELETE FROM kube_events where name = $1;
 `,
 		SelectAlerts: `
-		SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
+WHERE fired_at > $1;
 `,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
@@ -229,6 +230,7 @@ DELETE FROM kube_events where name = $1;
 		SelectAlerts: `
 SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
+WHERE fired_at > $1;
 `,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at

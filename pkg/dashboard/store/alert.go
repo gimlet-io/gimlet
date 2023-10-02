@@ -14,7 +14,8 @@ import (
 func (db *Store) Alerts() ([]*model.Alert, error) {
 	query := sql.Stmt(db.driver, sql.SelectAlerts)
 	data := []*model.Alert{}
-	err := meddler.QueryAll(db, &data, query)
+	twentyFourHoursAgo := time.Now().Add(-1 * time.Hour * 24).Unix()
+	err := meddler.QueryAll(db, &data, query, twentyFourHoursAgo)
 	return data, err
 }
 

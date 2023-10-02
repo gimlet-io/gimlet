@@ -154,7 +154,7 @@ function ServiceDetail(props) {
       />
       <div className="w-full flex items-center justify-between space-x-6 bg-stone-100 pb-6 rounded-lg">
         <div className="flex-1">
-          <h3 ref={ref} className="flex text-lg font-bold rounded cursor-pointer p-4">
+          <h3 ref={ref} className="flex text-lg font-bold rounded p-4">
             <span onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
             {configExists ?
               <>
