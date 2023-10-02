@@ -62,6 +62,11 @@ const Timeline = ({ alerts }) => {
               left: `${(startPosition / currentHour.hour) * 100}%`,
               width: `${((endPosition - startPosition) / currentHour.hour) * 100}%`,
             };
+
+            if (((endPosition - startPosition) / currentHour.hour) < 0) {
+              return null
+            }
+
             const lastStateChange = alert.firedAt ? alert.firedAt : alert.pendingAt;
             const alertStatus = alert.firedAt ? "fired at" : "pending at";
 
