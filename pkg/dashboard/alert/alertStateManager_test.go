@@ -169,19 +169,17 @@ func TestTrackPod_deleted(t *testing.T) {
 			}},
 	)
 
-	alertStateManager.TrackPod(&api.Pod{
+	pod := &api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	})
+	}
 
-	alertStateManager.TrackPod(&api.Pod{
-		Namespace: "ns1",
-		Name:      "pod1",
-		Status:    model.POD_TERMINATED,
-	})
+	alertStateManager.TrackPod(pod)
 
-	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	alertStateManager.DeletePod(pod.FQN())
+
+	relatedAlerts, _ := store.RelatedAlerts(pod.FQN())
 	assert.Equal(t, 1, len(relatedAlerts))
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
