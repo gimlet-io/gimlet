@@ -14,7 +14,6 @@ import {
 import Commits from "../../components/commits/commits";
 import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
-import { decorateKubernetesAlertsWithEnvAndRepo } from '../pulse/pulse';
 import TenantSelector from './tenantSelector';
 import RefreshButton from '../../components/refreshButton/refreshButton';
 
@@ -44,9 +43,9 @@ export default class Repo extends Component {
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests.configChanges[repoName],
-      kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
       runningDeploys: reduxState.runningDeploys,
-      trackedDeploys: []
+      trackedDeploys: [],
+      alerts: reduxState.alerts,
     }
 
     // handling API and streaming state changes
@@ -64,8 +63,8 @@ export default class Repo extends Component {
         repoMetas: reduxState.repoMetas,
         fileInfos: reduxState.fileInfos,
         pullRequests: reduxState.pullRequests.configChanges[repoName],
-        kubernetesAlerts: decorateKubernetesAlertsWithEnvAndRepo(reduxState.alerts, reduxState.connectedAgents).filter(event => event.repoName === repoName),
         scmUrl: reduxState.settings.scmUrl,
+        alerts: reduxState.alerts,
       });
 
       const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
@@ -418,10 +417,6 @@ export default class Repo extends Component {
     return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  kubernetesAlertsByEnv(envName) {
-    return this.state.kubernetesAlerts.filter(event => event.envName === envName)
-  }
-
   setSelectedTenant(tenant) {
     this.setState({ selectedTenant: tenant });
     const queryParam = tenant === "" ? tenant : `?tenant=${tenant}`
@@ -468,7 +463,7 @@ export default class Repo extends Component {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
     let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings } = this.state;
-    const { branches, selectedBranch, envConfigs, scmUrl } = this.state;
+    const { branches, selectedBranch, envConfigs, scmUrl, alerts } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
 
@@ -486,14 +481,14 @@ export default class Repo extends Component {
                 <h1 className="text-3xl font-bold leading-tight text-gray-900">{repoName}
                   <a href={`${scmUrl}/${owner}/${repo}`} target="_blank" rel="noopener noreferrer">
                     <svg xmlns="http://www.w3.org/2000/svg"
-                      className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="12" height="12"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
                       viewBox="0 0 24 24">
                       <path d="M0 0h24v24H0z" fill="none" />
                       <path
                         d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                     </svg>
                   </a>
-                  {this.ciConfigAndShipperStatuses(repoName)}
+                  {/* {this.ciConfigAndShipperStatuses(repoName)} */}
                 </h1>
                 <RefreshButton
                   refreshFunc={() => this.triggerCommitSync(owner, repo)}
@@ -531,11 +526,11 @@ export default class Repo extends Component {
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={this.props.gimletClient}
                     store={this.props.store}
-                    kubernetesAlerts={this.kubernetesAlertsByEnv(envName)}
                     envFromParams={environment}
                     deploymentFromParams={deployment}
                     scmUrl={scmUrl}
                     history={this.props.history}
+                    alerts={alerts}
                   />
                 )
                 }

@@ -90,8 +90,14 @@ func main() {
 	tokenManager := customScm.NewTokenManager(dynamicConfig)
 	notificationsManager := initNotifications(config, dynamicConfig, tokenManager)
 
-	alertStateManager := alert.NewAlertStateManager(notificationsManager, *store, 2)
-	// go alertStateManager.Run()
+	alertStateManager := alert.NewAlertStateManager(
+		notificationsManager,
+		clientHub,
+		*store,
+		config.AlertEvaluationFrequencySeconds,
+		alert.Thresholds(),
+	)
+	go alertStateManager.Run()
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)

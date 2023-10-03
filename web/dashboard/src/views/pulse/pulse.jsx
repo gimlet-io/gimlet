@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { format, formatDistance } from "date-fns";
 import Releases from './releases';
 import { InformationCircleIcon } from '@heroicons/react/solid'
+import { Remarkable } from "remarkable";
 
 export default class Pulse extends Component {
   constructor(props) {
@@ -41,7 +42,7 @@ export default class Pulse extends Component {
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="px-4 py-8 sm:px-0">
               {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
-              {<KubernetesAlertBox
+              {<AlertPanel
                 alerts={this.state.alerts}
                 history={this.props.history}
               />}
@@ -114,24 +115,30 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
   )
 }
 
-export function KubernetesAlertBox({ alerts, history, hideButton }) {
+export function AlertPanel({ alerts, history, hideButton }) {
+  if (!alerts) {
+    return null;
+  }
+
   if (alerts.length === 0) {
     return null;
   }
 
+  const md = new Remarkable();
+
   return (
-    <ul className="space-y-2 text-sm text-red-800">
+    <ul className="space-y-2 text-sm text-red-800 p-4">
       {alerts.map(alert => {
         return (
-          <div key={`${alert.type} ${alert.name}`} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${alert.name} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
-                <p className="font-medium lowercase mb-2">
-                  {alert.name} {alert.type} alert
+                <p className="font-medium mb-2">
+                  {alert.name} Alert {alert.status}
                 </p>
-                <p>
-                  {alert.statusDesc}
-                </p>
+                <div className="text-sm text-red-800">
+                  <div className="prose-sm prose-headings:mb-1 prose-headings:mt-1 prose-p:mb-1 prose-code:bg-red-100 prose-code:p-1 prose-code:rounded text-red-900 w-full max-w-5xl" dangerouslySetInnerHTML={{ __html: md.render(alert.text) }} />
+                </div>
               </span>
             </div>
             {!hideButton &&
@@ -149,7 +156,8 @@ export function KubernetesAlertBox({ alerts, history, hideButton }) {
                   </button>
                 </div>}
               </>}
-            {dateLabel(alert.lastStateChange)}
+            {dateLabel(alert.firedAt)}
+            {dateLabel(alert.firedAt)}
           </div>
         )
       })}

@@ -348,8 +348,46 @@ export function updateCommitStatus(state, event) {
   return state;
 }
 
-export function alerts(state, payload) {
-  state.alerts = payload;
+export function alerts(state, alerts) {
+  alerts.forEach(alert => {
+    if (!state.alerts[alert.deploymentName]) {
+      state.alerts[alert.deploymentName] = []
+    }
+    state.alerts[alert.deploymentName].push(alert)
+  });
+  return state;
+}
+
+export function alertPending(state, alert) {
+  if (!state.alerts[alert.deploymentName]) {
+    state.alerts[alert.deploymentName] = []
+  }
+  state.alerts[alert.deploymentName].push(alert);
+
+  return state;
+}
+
+export function alertFired(state, alert) {
+  if (!state.alerts[alert.deploymentName]) {
+    state.alerts[alert.deploymentName] = []
+  }
+  state.alerts[alert.deploymentName].push(alert);
+
+  return state;
+}
+
+export function alertResolved(state, alert) {
+  if (state.alerts[alert.deploymentName] === undefined) {
+    return state;
+  }
+
+  state.alerts[alert.deploymentName].forEach(a => {
+    if (a.objectName === alert.objectName) {
+      a.status = alert.status;
+      a.resolvedAt = alert.resolvedAt;
+    }
+  });
+
   return state;
 }
 

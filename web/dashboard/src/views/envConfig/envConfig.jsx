@@ -532,7 +532,7 @@ class EnvConfig extends Component {
           &laquo; back
         </button>
 
-        <div className="mt-8 mb-16">
+        <div className="mt-16 mb-16">
           {action === "new" ?
             <div className="mb-16 items-center">
               <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">

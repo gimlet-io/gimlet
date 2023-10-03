@@ -156,15 +156,15 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	// alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
-	// for _, stack := range stacks {
-	// 	err := alertStateManager.TrackPods(stack.Deployment.Pods)
-	// 	if err != nil {
-	// 		logrus.Errorf("cannot track pods: %s", err)
-	// 		http.Error(w, http.StatusText(500), 500)
-	// 		return
-	// 	}
-	// }
+	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
+	for _, stack := range stacks {
+		err := alertStateManager.TrackDeploymentPods(stack.Deployment.Pods)
+		if err != nil {
+			logrus.Errorf("cannot track pods: %s", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+	}
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	agent := agentHub.Agents[name]
@@ -296,9 +296,9 @@ func update(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(update.Event, "pod") {
 		alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 		db := r.Context().Value("store").(*store.Store)
-		err := handlePodUpdate(alertStateManager, db, update)
+		err := notifyAlertManager(alertStateManager, db, update)
 		if err != nil {
-			logrus.Errorf("cannot handle pod update: %s", err)
+			logrus.Errorf("cannot notify alert manager: %s", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
@@ -342,24 +342,25 @@ func decorateDeploymentUpdateWithCommitMessage(update api.StackUpdate, r *http.R
 	return update
 }
 
-func handlePodUpdate(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
-	if update.Event == agent.EventPodDeleted {
-		return nil
-	}
-
-	deploymentParts := strings.Split(update.Deployment, "/")
-	deployment := deploymentParts[1]
+func notifyAlertManager(alertStateManager *alert.AlertStateManager, db *store.Store, update api.StackUpdate) error {
 	parts := strings.Split(update.Subject, "/")
 	namespace := parts[0]
 	name := parts[1]
 
-	return alertStateManager.TrackPods([]*api.Pod{
-		{
+	if update.Event == agent.EventPodDeleted {
+		return alertStateManager.DeletePod(update.Subject)
+	}
+
+	deploymentParts := strings.Split(update.Deployment, "/")
+	deployment := deploymentParts[1]
+
+	return alertStateManager.TrackPod(
+		&api.Pod{
 			Namespace:         namespace,
 			Name:              name,
 			DeploymentName:    deployment,
 			Status:            update.Status,
 			StatusDescription: update.ErrorCause,
 		},
-	})
+	)
 }

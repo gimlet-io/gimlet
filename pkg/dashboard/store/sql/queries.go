@@ -32,9 +32,12 @@ const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
-const SelectFiringAlerts = "select-firing-alerts"
-const SelectAlertByNameAndType = "select-alert-by-name-and-type"
-const SelectPendingAlerts = "select-pending-alerts"
+const SelectAlerts = "select-alerts"
+const SelectAlertsByState = "select-alerts-by-state"
+const SelectAlertsByName = "select-alerts-by-name"
+const SelectAlertsByDeploymentName = "select-alerts-by-deployment-name"
+const UpdateAlertStatusFired = "update-alert-status-fired"
+const UpdateAlertStatusResolved = "update-alert-status-resolved"
 
 var queries = map[string]map[string]string{
 	"sqlite": {
@@ -117,22 +120,31 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
-		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlerts: `
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
-WHERE status LIKE 'Firing'
-ORDER BY last_state_change desc;
+WHERE fired_at > $1 OR pending_at > $1;
 `,
-		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlertsByState: `
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
-WHERE name = $1
-AND type = $2;
+WHERE status = $1;
 `,
-		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlertsByName: `
+SELECT id, type, name, deployment_name, status
 FROM alerts
-WHERE status LIKE 'Pending';
+WHERE name = $1;
+`,
+		SelectAlertsByDeploymentName: `
+SELECT id, type, name, deployment_name, status
+FROM alerts
+WHERE deployment_name = $1;
+`,
+		UpdateAlertStatusFired: `
+UPDATE alerts SET status = $1, fired_at = $2 WHERE id = $3;
+`,
+		UpdateAlertStatusResolved: `
+UPDATE alerts SET status = $1, resolved_at = $2 WHERE id = $3;
 `,
 	},
 	"postgres": {
@@ -215,22 +227,31 @@ WHERE name = $1;
 		DeleteKubeEventByName: `
 DELETE FROM kube_events where name = $1;
 `,
-		SelectFiringAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlerts: `
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
-WHERE status LIKE 'Firing'
-ORDER BY last_state_change desc;
+WHERE fired_at > $1 OR pending_at > $1;
 `,
-		SelectAlertByNameAndType: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlertsByState: `
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
-WHERE name = $1
-AND type = $2;
+WHERE status = $1;
 `,
-		SelectPendingAlerts: `
-SELECT id, type, name, deployment_name, status, status_desc, last_state_change, count
+		SelectAlertsByName: `
+SELECT id, type, name, deployment_name, status
 FROM alerts
-WHERE status LIKE 'Pending';
+WHERE name = $1;
+`,
+		SelectAlertsByDeploymentName: `
+SELECT id, type, name, deployment_name, status
+FROM alerts
+WHERE deployment_name = $1;
+`,
+		UpdateAlertStatusFired: `
+UPDATE alerts SET status = $1, fired_at = $2 WHERE id = $3;
+`,
+		UpdateAlertStatusResolved: `
+UPDATE alerts SET status = $1, resolved_at = $2 WHERE id = $3;
 `,
 	},
 }

@@ -44,6 +44,9 @@ const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const createTableKubeEvents = "create-table-kube-events"
 const createTableAlerts = "create-table-alerts"
+const addPendingAtToAlertsTable = "add-pending-at-to-alerts-table"
+const addFiredAtToAlertsTable = "add-fired-at-to-alerts-table"
+const addResolvedAtToAlertsTable = "add-resolved-at-to-alerts-table"
 
 type migration struct {
 	name string
@@ -266,6 +269,18 @@ UNIQUE(id)
 );
 `,
 		},
+		{
+			name: addPendingAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN pending_at INTEGER;`,
+		},
+		{
+			name: addFiredAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN fired_at INTEGER;`,
+		},
+		{
+			name: addResolvedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN resolved_at INTEGER;`,
+		},
 	},
 	"postgres": {
 		{
@@ -480,6 +495,18 @@ count			  INTEGER,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addPendingAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN pending_at INTEGER;`,
+		},
+		{
+			name: addFiredAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN fired_at INTEGER;`,
+		},
+		{
+			name: addResolvedAtToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN resolved_at INTEGER;`,
 		},
 	},
 }

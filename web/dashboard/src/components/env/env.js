@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import ServiceDetail from "../serviceDetail/serviceDetail";
-import { parseDeploymentName } from "../../views/pulse/pulse";
 import { InformationCircleIcon } from '@heroicons/react/solid'
 
 export class Env extends Component {
@@ -19,9 +18,9 @@ export class Env extends Component {
   }
 
   render() {
-    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, history } = this.props;
+    const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, newConfig, rollback, owner, repoName, fileInfos, pullRequests, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, history, alerts } = this.props;
 
-    const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, kubernetesAlerts, deploymentFromParams, scmUrl, env.builtIn);
+    const renderedServices = renderServices(env.stacks, envConfigs, env.name, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, env.builtIn, alerts);
 
     return (
       <div>
@@ -65,7 +64,7 @@ export class Env extends Component {
         {this.state.isClosed ? null : (
           <>
             {renderPullRequests(pullRequests)}
-            <div className="bg-white shadow p-4 sm:p-6 lg:p-8 space-y-4">
+            <div className="bg-white shadow p-4 space-y-4">
               {!env.isOnline && connectEnvCard(history, env.name)}
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
@@ -110,10 +109,10 @@ function renderServices(
   releaseHistorySinceDays,
   gimletClient,
   store,
-  kubernetesAlerts,
   deploymentFromParams,
   scmUrl,
-  builtInEnv) {
+  builtInEnv,
+  alerts) {
   let services = [];
 
   let configsWeHave = [];
@@ -133,6 +132,11 @@ function renderServices(
       config = envConfigs.find((config) => config.app === stack.service.name)
     }
 
+    let deployment = "";
+    if (stack.deployment) {
+      deployment = stack.deployment.namespace + "/" + stack.deployment.name
+    }
+
     return (
       <ServiceDetail
         key={stack.service.name}
@@ -150,10 +154,10 @@ function renderServices(
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
         store={store}
-        kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, stack.service.name)}
         deploymentFromParams={deploymentFromParams}
         scmUrl={scmUrl}
         builtInEnv={builtInEnv}
+        serviceAlerts={alerts[deployment]}
       />
     )
   })
@@ -184,8 +188,7 @@ function renderServices(
         configExists={true}
         releaseHistorySinceDays={releaseHistorySinceDays}
         gimletClient={gimletClient}
-        store={store}
-        kubernetesAlerts={kubernetesAlertsByDeploymentName(kubernetesAlerts, config)}
+        store={store} 
         deploymentFromParams={deploymentFromParams}
         scmUrl={scmUrl}
       />
@@ -193,10 +196,6 @@ function renderServices(
     )
   )
   return services.slice(0, 10)
-}
-
-function kubernetesAlertsByDeploymentName(kubernetesAlerts, deploymentName) {
-  return kubernetesAlerts.filter(event => parseDeploymentName(event.deploymentName) === deploymentName)
 }
 
 function fileName(fileInfos, appName) {

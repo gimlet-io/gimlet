@@ -1,5 +1,10 @@
 package model
 
+const (
+	POD_PENDING = "Pending"
+	POD_RUNNING = "Running"
+)
+
 type Pod struct {
 	ID         int64  `json:"-"  meddler:"id,pk"`
 	Name       string `json:"name,omitempty"  meddler:"name"`

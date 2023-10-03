@@ -16,7 +16,7 @@ func TestPodCRUD(t *testing.T) {
 
 	pod := model.Pod{
 		Name:   "default/pod1",
-		Status: "Running",
+		Status: model.POD_RUNNING,
 	}
 
 	err := s.SaveOrUpdatePod(&pod)
