@@ -131,19 +131,60 @@ func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
 }
 
 func (t imagePullBackOffThreshold) Text() string {
-	return "TODO"
+	return `
+### When It Happens
+
+ImagePullBackOff and ErrImagePull errors occur when Kubernetes cannot fetch the container image specified in your pod configuration.
+
+### How to Fix It
+
+You need to verify the correctness of your image name and double-check your image registry credentials.
+
+- Run ` + "`" + `kubectl describe pod <pod-name>` + "`" + ` to cross check the image name.
+- Check the exact error message at the bottom of the ` + "`" + `kubectl describe output` + "`" + `. It may have further clues.
+
+If the image name is correct, check the access credentials you use with ` + "`" + `kubectl get pod <pod-name> -o=jsonpath='{.spec.imagePullSecrets[0].name}{"\n"}'` + "`" + ` then check the secret values with ` + "`" + `kubectl get secret <your-pull-secret> -o yaml` + "`" + `. You may feed the base64 encoded fields to ` + "`" + `echo xxx | base64 -d` + "`" + `
+`
 }
 
 func (t crashLoopBackOffThreshold) Text() string {
-	return "TODO"
+	return `
+### When It Happens
+
+CrashLoopBackOff signifies that your application keeps starting up and then dying for some reason.
+
+### How to Fix It
+
+Investigate your application logs for bugs, misconfigurations, or resource issues. ` + "`" + `kubectl logs <pod-name>` + "`" + ` is your best bet. The ` + "`" + `--previous` + "`" + ` flag will dump pod logs (stdout) for a previous instantiation of the pod.
+`
 }
 
 func (t createContainerConfigErrorThreshold) Text() string {
-	return "TODO"
+	return `
+### When It Happens
+
+These errors crop up when Kubernetes encounters problems creating containers: a misconfigured ConfigMap or Secret is the most common reason.
+
+### How to Fix It
+
+Run ` + "`" + `kubectl describe pod <pod-name>` + "`" + ` and check the error message at the bottom of the output. It will highlight if you misspelled a ConfigMap name, or a Secret is not created yet.
+
+Remember, if you don't see error messages at the end of ` + "`" + `kubectl describe` + "`" + `, restart the pod by deleting it. Error events are only visible for one hour after pod start.
+`
 }
 
 func (t pendingThreshold) Text() string {
-	return "TODO"
+	return `
+	### When It Happens
+
+A pending pod is a pod that Kubernetes can't schedule on a node, often due to resource constraints or node troubles.
+
+### How to Fix It
+
+Dive into the events section of your pod's description using ` + "`" + `kubectl describe` + "`" + ` to spot scheduling issues.
+
+Verify that your cluster has enough resources available by ` + "`" + `kubectl describe node <node-x>` + "`" + `	
+`
 }
 
 func (t failedEventThreshold) Text() string {

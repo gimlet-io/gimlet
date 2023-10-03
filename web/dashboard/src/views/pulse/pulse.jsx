@@ -130,14 +130,14 @@ export function AlertPanel({ alerts, history, hideButton }) {
     <ul className="space-y-2 text-sm text-red-800 p-4">
       {alerts.map(alert => {
         return (
-          <div key={`${alert.text} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">
+          <div key={`${alert.name} ${alert.objectName}`} className="flex bg-red-300 px-3 py-2 rounded relative">
             <div className="h-fit mb-8">
               <span className="text-sm">
-                <p className="font-medium lowercase mb-2">
-                  {alert.objectName}
+                <p className="font-medium mb-2">
+                  {alert.name} Alert {alert.status}
                 </p>
                 <div className="text-sm text-red-800">
-                  <div className="prose max-w-lg" dangerouslySetInnerHTML={{ __html: md.render(alert.text) }} />
+                  <div className="prose-sm prose-headings:mb-1 prose-headings:mt-1 prose-p:mb-1 prose-code:bg-red-100 prose-code:p-1 prose-code:rounded text-red-900 w-full max-w-5xl" dangerouslySetInnerHTML={{ __html: md.render(alert.text) }} />
                 </div>
               </span>
             </div>

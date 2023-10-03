@@ -54,9 +54,9 @@ const Timeline = ({ alerts }) => {
             const endPosition = Math.min(currentHour.hour, (resolvedAt - startDate) / (60 * 60 * 1000));
 
             const endDateUnix = (new Date(endDate).getTime() / 1000).toFixed(0)
-            const total = (alert.resolvedAt ?? endDateUnix) - alert.pendingAt
+            const total = (alert.resolvedAt && alert.resolvedAt !== 0 ? alert.resolvedAt : endDateUnix) - alert.pendingAt
             const pendingInterval = alert.firedAt - alert.pendingAt
-            const firingInterval = (alert.resolvedAt ?? endDateUnix) - alert.firedAt
+            const firingInterval = (alert.resolvedAt && alert.resolvedAt !== 0 ? alert.resolvedAt : endDateUnix) - alert.firedAt
 
             const alertStyle = {
               left: `${(startPosition / currentHour.hour) * 100}%`,
@@ -67,7 +67,6 @@ const Timeline = ({ alerts }) => {
               return null
             }
 
-            console.log(alert)
             const resolvedAtLabel = alert.resolvedAt !== 0 ? `Resolved at ${format(alert.resolvedAt * 1000, 'h:mm:ss a, MMMM do yyyy')}` : "";
             const firedAtLabel = alert.firedAt !== 0 ? `Alert fired at ${format(alert.firedAt * 1000, 'h:mm:ss a, MMMM do yyyy')}` : "";
 
@@ -92,9 +91,9 @@ Since ${format(alert.pendingAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
                     className="bg-red-300 transition-all duration-500 ease-out"
                     title={`${alert.name} Alert Firing for pod ${alert.objectName}
 
-  Problem first noticed at ${format(alert.pendingAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
-  ${firedAtLabel}
-  ${resolvedAtLabel}`}
+Problem first noticed at ${format(alert.pendingAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
+${firedAtLabel}
+${resolvedAtLabel}`}
                   ></div>
                 </div>
               </div>
