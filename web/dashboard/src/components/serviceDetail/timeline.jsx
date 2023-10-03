@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, formatDistance } from "date-fns";
+import { format } from "date-fns";
 
 const Timeline = ({ alerts }) => {
   const [hours, setHours] = useState([
@@ -67,8 +67,9 @@ const Timeline = ({ alerts }) => {
               return null
             }
 
-            const lastStateChange = alert.firedAt ? alert.firedAt : alert.pendingAt;
-            const alertStatus = alert.firedAt ? "fired at" : "pending at";
+            console.log(alert)
+            const resolvedAtLabel = alert.resolvedAt !== 0 ? `Resolved at ${format(alert.resolvedAt * 1000, 'h:mm:ss a, MMMM do yyyy')}` : "";
+            const firedAtLabel = alert.firedAt !== 0 ? `Alert fired at ${format(alert.firedAt * 1000, 'h:mm:ss a, MMMM do yyyy')}` : "";
 
             return (
               <div
@@ -77,17 +78,23 @@ const Timeline = ({ alerts }) => {
                 style={alertStyle}
               >
                 <div
-                  title={`${alert.objectName} ${alertStatus}
-${format(lastStateChange * 1000, 'h:mm:ss a, MMMM do yyyy')}
-${formatDistance(lastStateChange * 1000, new Date())} ago`}
                   className="flex h-6 bg-yellow-300">
                   <div
                     style={{ width: `${pendingInterval / total * 100}%` }}
                     className="bg-yellow-300 transition-all duration-500 ease-out"
+                    title={`${alert.name} Alert Pending for pod ${alert.objectName}
+
+Since ${format(alert.pendingAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
+`}
                   ></div>
                   <div
                     style={{ width: `${firingInterval / total * 100}%` }}
                     className="bg-red-300 transition-all duration-500 ease-out"
+                    title={`${alert.name} Alert Firing for pod ${alert.objectName}
+
+  Problem first noticed at ${format(alert.pendingAt * 1000, 'h:mm:ss a, MMMM do yyyy')}
+  ${firedAtLabel}
+  ${resolvedAtLabel}`}
                   ></div>
                 </div>
               </div>

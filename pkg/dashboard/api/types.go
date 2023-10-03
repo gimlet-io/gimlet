@@ -117,6 +117,8 @@ type Alert struct {
 	ObjectName     string `json:"objectName"`
 	DeploymentName string `json:"deploymentName"`
 	Status         string `json:"status"`
+	Type           string `json:"type"`
+	Name           string `json:"name"`
 	Text           string `json:"text"`
 	PendingAt      int64  `json:"pendingAt"`
 	FiredAt        int64  `json:"firedAt"`

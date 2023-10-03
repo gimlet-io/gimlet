@@ -384,6 +384,7 @@ export function alertResolved(state, alert) {
   state.alerts[alert.deploymentName].forEach(a => {
     if (a.objectName === alert.objectName) {
       a.status = alert.status;
+      a.resolvedAt = alert.resolvedAt;
     }
   });
 

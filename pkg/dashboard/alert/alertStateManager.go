@@ -51,7 +51,7 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 		logrus.Errorf("couldn't get pending alerts: %s", err)
 	}
 	for _, alert := range alerts {
-		t := thresholdByType(a.thresholds, alert.Type)
+		t := ThresholdByType(a.thresholds, alert.Type)
 		if t != nil && t.Reached(nil, alert) {
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert: *alert,
@@ -183,7 +183,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 	}
 
 	for _, nonResolvedAlert := range nonResolvedAlerts {
-		t := thresholdByType(a.thresholds, nonResolvedAlert.Type)
+		t := ThresholdByType(a.thresholds, nonResolvedAlert.Type)
 		if t.Resolved(dbPod) {
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert: *nonResolvedAlert,

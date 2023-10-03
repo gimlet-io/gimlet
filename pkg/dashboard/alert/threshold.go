@@ -9,10 +9,10 @@ import (
 )
 
 type threshold interface {
-	// Candidate(relatedObject interface{}) bool
 	Reached(relatedObject interface{}, alert *model.Alert) bool
 	Resolved(relatedObject interface{}) bool
 	Text() string
+	Name() string
 }
 
 func Thresholds() map[string]threshold {
@@ -36,22 +36,13 @@ func Thresholds() map[string]threshold {
 	}
 }
 
-func thresholdByType(thresholds map[string]threshold, thresholdTypeString string) threshold {
+func ThresholdByType(thresholds map[string]threshold, thresholdTypeString string) threshold {
 	for _, t := range thresholds {
 		if thresholdType(t) == thresholdTypeString {
 			return t
 		}
 	}
 	return nil
-}
-
-func ThresholdTextByType(thresholds map[string]threshold, thresholdTypeString string) string {
-	for _, t := range thresholds {
-		if thresholdType(t) == thresholdTypeString {
-			return t.Text()
-		}
-	}
-	return ""
 }
 
 func thresholdType(myvar interface{}) string {
@@ -156,5 +147,25 @@ func (t pendingThreshold) Text() string {
 }
 
 func (t failedEventThreshold) Text() string {
+	return "TODO"
+}
+
+func (t imagePullBackOffThreshold) Name() string {
+	return "ImagePullBackOff"
+}
+
+func (t crashLoopBackOffThreshold) Name() string {
+	return "crashLoopBackOff"
+}
+
+func (t createContainerConfigErrorThreshold) Name() string {
+	return "CreateContainerConfigError"
+}
+
+func (t pendingThreshold) Name() string {
+	return "Pending"
+}
+
+func (t failedEventThreshold) Name() string {
 	return "TODO"
 }
