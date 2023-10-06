@@ -243,23 +243,24 @@ export function application(state, application) {
   return state;
 }
 
-export function schemas(state, schemas) {
-  state.defaultChart = schemas;
+export function defaultDeploymentTemplates(state, templates) {
+  state.defaultDeploymentTemplates = templates
+
   return state;
 }
 
 export function deploymentTemplates(state, templates) {
-  const firstTemplate = templates[0]
-  state.defaultChart = firstTemplate;
-  state.defaultTemplate = firstTemplate.reference.name;
+  // const firstTemplate = templates[0]
+  // state.defaultChart = firstTemplate;
+  // state.defaultTemplate = firstTemplate.reference.name;
 
-  templates.forEach((template) => {
-    state.templates[template.reference.name] = {
-      reference: template.reference,
-      schema: template.schema,
-      uiSchema: template.uiSchema,
-    };
-  });
+  // templates.forEach((template) => {
+  //   state.templates[template.reference.name] = {
+  //     reference: template.reference,
+  //     schema: template.schema,
+  //     uiSchema: template.uiSchema,
+  //   };
+  // });
 
   return state;
 }
