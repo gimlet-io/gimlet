@@ -55,8 +55,18 @@ const Timeline = ({ alerts }) => {
 
             const endDateUnix = (new Date(endDate).getTime() / 1000).toFixed(0)
             const total = (alert.resolvedAt && alert.resolvedAt !== 0 ? alert.resolvedAt : endDateUnix) - alert.pendingAt
-            const pendingInterval = alert.firedAt - alert.pendingAt
-            const firingInterval = (alert.resolvedAt && alert.resolvedAt !== 0 ? alert.resolvedAt : endDateUnix) - alert.firedAt
+            let pendingInterval = 0
+            let firingInterval = 0
+
+            if (alert.status === "Pending") {
+              pendingInterval = endDateUnix - alert.pendingAt
+            } else if (alert.status === "Firing") {
+              pendingInterval = alert.firedAt - alert.pendingAt
+              firingInterval = endDateUnix - alert.firedAt
+            } else if (alert.status === "Resolved") {
+              pendingInterval = (alert.firedAt !== 0 ? alert.firedAt : alert.resolvedAt) - alert.pendingAt
+              firingInterval = alert.firedAt !== 0 ? alert.resolvedAt - alert.firedAt : 0
+            }
 
             const alertStyle = {
               left: `${(startPosition / currentHour.hour) * 100}%`,
