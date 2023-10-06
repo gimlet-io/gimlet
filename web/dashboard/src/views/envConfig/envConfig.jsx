@@ -316,12 +316,11 @@ class EnvConfig extends Component {
     this.startApiCallTimeOutHandler();
 
     const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
-    const chartToSave = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
 
     let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
     let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
 
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, chartToSave, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.selectedDeployEvent)
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, this.state.defaultChart.reference, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.selectedDeployEvent)
       .then((data) => {
         if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
@@ -426,7 +425,7 @@ class EnvConfig extends Component {
     nonDefaultConfigFile.app = this.state.appName;
     nonDefaultConfigFile.namespace = this.state.namespace;
     nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.chartFromConfigFile ?? this.state.defaultChart.reference;
+    nonDefaultConfigFile.chart = this.state.defaultChart.reference;
 
     if (this.state.useDeployPolicy) {
       if (this.state.selectedDeployEvent !== "tag") {
