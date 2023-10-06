@@ -3,14 +3,12 @@ import HelmUI from "helm-react-ui";
 import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
 import yaml from "js-yaml";
-// import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
 import {
   ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_DEPLOYMENT_TEMPLATES,
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
-  // ACTION_TYPE_ADD_ENVCONFIG,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -40,11 +38,10 @@ class EnvConfig extends Component {
       fileInfos: reduxState.fileInfos,
 
       timeoutTimer: {},
-      environmentVariablesExpanded: false,
-      codeSnippetExpanded: false,
       deployEvents: ["push", "tag", "pr"],
       selectedDeployEvent: "push",
       useDeployPolicy: false,
+
       popupWindow: reduxState.popupWindow,
       scmUrl: reduxState.settings.scmUrl,
 
@@ -722,44 +719,6 @@ class EnvConfig extends Component {
                 emptyLine: { background: "#fff" }
               }} />
           </div>
-          {/* {!this.state.environmentVariablesExpanded ?
-            <Button
-              text={"Check the list of environment variables you can use in the Gimlet manifest"}
-              action={() => this.setState({ environmentVariablesExpanded: true })}
-            />
-            :
-            <div className="w-full my-16">
-              <EnvVarsTable />
-              <LinkToDefaultVariables
-                repoMetas={this.state.repoMetas}
-              />
-            </div>
-          } */}
-          {/* {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
-            <>
-              {!this.state.codeSnippetExpanded ?
-                <Button
-                  text={"Want to render the manifest locally? Click to see the Gimlet CLI command!"}
-                  action={() => this.setState({ codeSnippetExpanded: true })}
-                />
-                :
-                <div className="my-8">
-                  <h3 className="text-baseline leading-6 text-gray-500">
-                    Copy the code snippet to check the generated Kubernetes manifest on the command line:
-                  </h3>
-                  <div className="w-full mb-16">
-                    <CopiableCodeSnippet
-                      copiable
-                      code={
-                        `cat << EOF > manifest.yaml
-${YAML.stringify(nonDefaultConfigFile)}EOF
-
-gimlet manifest template -f manifest.yaml`}
-                    />
-                  </div>
-                </div>
-              }
-            </>} */}
         </div>
         <div className="p-0 flow-root my-16">
           {action !== "new" &&
