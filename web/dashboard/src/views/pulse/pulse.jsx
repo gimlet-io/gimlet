@@ -87,13 +87,15 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
   }
 
   const prList = [];
-  for (const [repoName, pullRequest] of Object.entries(chartUpdatePullRequests)) {
-    prList.push(
-      <li key={pullRequest.sha}>
-        <a href={pullRequest.link} target="_blank" rel="noopener noreferrer">
-          <span className="font-medium">{repoName}</span>: {pullRequest.title}
-        </a>
-      </li>)
+  for (const [repoName, pullRequests] of Object.entries(chartUpdatePullRequests)) {
+    pullRequests.forEach(p => {
+      prList.push(
+        <li key={p.sha}>
+          <a href={p.link} target="_blank" rel="noopener noreferrer">
+            <span className="font-medium">{repoName}</span>: {p.title}
+          </a>
+        </li>)
+    })
   }
 
   return (

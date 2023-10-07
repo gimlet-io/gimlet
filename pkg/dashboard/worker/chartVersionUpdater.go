@@ -48,7 +48,6 @@ func NewChartVersionUpdater(
 
 func (c *ChartVersionUpdater) Run() {
 	for {
-		(*c.chartUpdatePrList) = map[string]interface{}{}
 		token, _, _ := c.tokenManager.Token()
 		gitSvc := customScm.NewGitService(c.dynamicConfig)
 
@@ -75,14 +74,15 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 	if err != nil {
 		return fmt.Errorf("cannot list pull requests: %s", err)
 	}
+
+	var chartUpdatePRs []*api.PR
 	for _, pullRequest := range prList {
 		if strings.HasPrefix(pullRequest.Source, "gimlet-chart-update") {
-			(*c.chartUpdatePrList)[repoName] = &api.PR{
+			chartUpdatePRs = append(chartUpdatePRs, &api.PR{
 				Sha:   pullRequest.Sha,
 				Link:  pullRequest.Link,
 				Title: pullRequest.Title,
-			}
-			return nil
+			})
 		}
 	}
 
@@ -110,6 +110,18 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 	}
 
 	for envName, configs := range configsPerEnv {
+		create := true
+		for _, pullRequest := range chartUpdatePRs {
+			if strings.Contains(pullRequest.Title, envName) {
+				create = false
+				break
+			}
+		}
+
+		if !create {
+			continue
+		}
+
 		// Checkout the head branch before creating a new branch
 		err = helper.Checkout(repo, fmt.Sprintf("refs/heads/%s", headBranch))
 		if err != nil {
@@ -164,13 +176,15 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			logrus.Warnf("cannot create pull request: %s", err)
 			continue
 		}
-		(*c.chartUpdatePrList)[repoName] = &api.PR{
+		chartUpdatePRs = append(chartUpdatePRs, &api.PR{
 			Sha:   createdPr.Sha,
 			Link:  createdPr.Link,
 			Title: createdPr.Title,
-		}
+		})
 		logrus.Infof("pull request created for %s, %s with chart version update", repoName, envName)
 	}
+
+	(*c.chartUpdatePrList)[repoName] = chartUpdatePRs
 	return nil
 }
 
