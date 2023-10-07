@@ -669,6 +669,32 @@ func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg 
 	return nil
 }
 
+func StageCommitAndPushGimletFolder(repo *git.Repository, tmpPath string, token string, msg string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	err = worktree.AddWithOptions(&git.AddOptions{
+		Path: ".gimlet",
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = nativeGit.Commit(repo, msg)
+	if err != nil {
+		return err
+	}
+
+	err = nativeGit.PushWithToken(repo, token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func PrepNotificationsApiKey(
 	env *model.Environment,
 	db *store.Store,
