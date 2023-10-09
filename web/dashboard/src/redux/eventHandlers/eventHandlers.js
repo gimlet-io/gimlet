@@ -243,12 +243,6 @@ export function application(state, application) {
   return state;
 }
 
-export function defaultDeploymentTemplates(state, templates) {
-  state.defaultDeploymentTemplates = templates
-
-  return state;
-}
-
 export function search(state, search) {
   state.search = search;
   return state;

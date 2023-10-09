@@ -5,7 +5,6 @@ import ReactDiffViewer from "react-diff-viewer";
 import yaml from "js-yaml";
 import { Spinner } from "../repositories/repositories";
 import {
-  ACTION_TYPE_DEFAULT_DEPLOYMENT_TEMPLATES,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -29,7 +28,6 @@ class EnvConfig extends Component {
     let reduxState = this.props.store.getState();
 
     this.state = {
-      templates: reduxState.defaultDeploymentTemplates,
       timeoutTimer: {},
       deployEvents: ["push", "tag", "pr"],
       popupWindow: reduxState.popupWindow,
@@ -41,7 +39,6 @@ class EnvConfig extends Component {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        templates: reduxState.defaultDeploymentTemplates,
         envs: reduxState.envs,
         popupWindow: reduxState.popupWindow,
         scmUrl: reduxState.settings.scmUrl
@@ -64,11 +61,9 @@ class EnvConfig extends Component {
     if (action === "new") {
       gimletClient.getDefaultDeploymentTemplates()
       .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_DEFAULT_DEPLOYMENT_TEMPLATES, payload: data
-        });
         const selectedTemplate = this.patchImageWidget(data[0])
         this.setState({
+          templates: data,
           selectedTemplate: selectedTemplate,
           configFile: {
             app: config,
@@ -89,9 +84,7 @@ class EnvConfig extends Component {
           },
           defaultConfigFile: {},
         });
-      }, () => {/* Generic error handler deals with it */
-        this.setState({ templatesLoaded: true });
-      });
+      }, () => {/* Generic error handler deals with it */ });
     } else {
       gimletClient.getDeploymentTemplates(owner, repo, env, config)
       .then(data => {
@@ -99,9 +92,7 @@ class EnvConfig extends Component {
           templates: data,
           selectedTemplate: this.patchImageWidget(data[0])
         });
-      }, () => {/* Generic error handler deals with it */
-        this.setState({ templatesLoaded: true });
-      });
+      }, () => {/* Generic error handler deals with it */ });
 
       this.props.gimletClient.getRepoMetas(owner, repo)
         .then(data => {
