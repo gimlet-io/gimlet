@@ -163,7 +163,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			continue
 		}
 
-		err = server.StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Deployment template update")
+		err = server.StageCommitAndPushGimletFolder(repo, tmpPath, token, "[Gimlet] Deployment template update")
 		if err != nil {
 			logrus.Warnf("cannot stage, commit and push: %s", err)
 			continue
