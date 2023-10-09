@@ -446,14 +446,14 @@ class EnvConfig extends Component {
   renderTemplateFromConfig() {
     let title = "Web application template"
     let description = "To deploy any web application. Multiple image build options available."
-    if (this.state.chartFromConfigFile?.name === "static-site") {
+    if (this.state.selectedTemplate.reference.name === "static-site") {
       title = "Static site template"
       description = "If your build generates static files only, let us host it in an Nginx container."
     }
 
     return (
-      <div className="mb-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-        <div className="relative flex rounded-lg bg-gray-200 p-4 focus:outline-none text-gray-500 opacity-70">
+      <div className="mb-6 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+        <div className="relative flex rounded-lg p-4 focus:outline-none bg-white text-gray-500">
           <span className="flex flex-1">
             <span className="flex flex-col">
               <span id="project-type-0-label" className="block text-sm font-medium text-gray-900 select-none">{title}</span>
