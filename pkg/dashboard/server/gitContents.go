@@ -172,7 +172,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var prListCreatedByGimlet []*scm.PullRequest
+	prListCreatedByGimlet := []*scm.PullRequest{}
 	for _, pullRequest := range prList {
 		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
 			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
@@ -181,7 +181,7 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 
 	pullRequests := map[string]interface{}{}
 	for _, env := range envsFromDB {
-		var pullRequestsByEnv []*api.PR
+		pullRequestsByEnv := []*api.PR{}
 		for _, pullRequest := range prListCreatedByGimlet {
 			if strings.Contains(pullRequest.Source, env.Name) {
 				pullRequestsByEnv = append(pullRequestsByEnv, &api.PR{
