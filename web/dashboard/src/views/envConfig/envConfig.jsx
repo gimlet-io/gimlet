@@ -1,15 +1,11 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import HelmUI from "helm-react-ui";
 import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
 import yaml from "js-yaml";
 import { Spinner } from "../repositories/repositories";
 import {
-  ACTION_TYPE_CHARTSCHEMA,
   ACTION_TYPE_DEFAULT_DEPLOYMENT_TEMPLATES,
-  ACTION_TYPE_DEPLOYMENT_TEMPLATES,
-  ACTION_TYPE_ENVCONFIGS,
-  ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -27,7 +23,7 @@ class EnvConfig extends Component {
   constructor(props) {
     super(props);
 
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
     let reduxState = this.props.store.getState();
@@ -51,8 +47,8 @@ class EnvConfig extends Component {
         scmUrl: reduxState.settings.scmUrl
       });
 
-      this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
-      this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
+      this.ensureRepoAssociationExists(repoName);
+      this.ensureGitCloneUrlExists();
     });
 
     this.setValues = this.setValues.bind(this);
@@ -106,53 +102,59 @@ class EnvConfig extends Component {
       }, () => {/* Generic error handler deals with it */
         this.setState({ templatesLoaded: true });
       });
-    }
 
-    this.props.gimletClient.getRepoMetas(owner, repo)
-      .then(data => {
-        this.setState({
-          repoMetas: data,
-        })
-      }, () => {/* Generic error handler deals with it */
-    });
-
-    this.props.gimletClient.getEnvConfigs(owner, repo)
-      .then(envConfigs => {         
-        if (envConfigs[env]) {
-          const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
-          let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
+      this.props.gimletClient.getRepoMetas(owner, repo)
+        .then(data => {
           this.setState({
-            configFile: configFileContentFromEnvConfigs,
-            defaultConfigFile: deepCopied,
-          });
-        }
-      }, () => {/* Generic error handler deals with it */
-    });
-  }
+            repoMetas: data,
+          })
+        }, () => {/* Generic error handler deals with it */
+      });
 
-  ensureRepoAssociationExists(repoName, repoMetas) {
-    if (this.state.defaultState && repoMetas) {
-      if (!this.state.defaultState.gitSha) {
-          this.setGitSha("{{ .SHA }}");
-      }
-
-      if (!this.state.defaultState.gitRepository) {
-        this.setGitRepository(repoName);
-      }
+      this.props.gimletClient.getEnvConfigs(owner, repo)
+        .then(envConfigs => {         
+          if (envConfigs[env]) {
+            const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
+            let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
+            this.setState({
+              configFile: configFileContentFromEnvConfigs,
+              defaultConfigFile: deepCopied,
+            });
+          }
+        }, () => {/* Generic error handler deals with it */
+      });
     }
   }
 
-  setGitSha(gitSha) {
-    this.setState(prevState => ({
-      values: {
-        ...prevState.values,
-        gitSha: gitSha
-      },
-      nonDefaultValues: {
-        ...prevState.nonDefaultValues,
-        gitSha: gitSha
-      },
-    }));
+  ensureRepoAssociationExists() {
+    const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    if (this.state.configFile) {
+      if (!this.state.configFile.values.gitSha) {
+        this.setState(prevState => ({
+          configFile: {
+            ...prevState.configFile,
+            values: {
+              ...prevState.configFile.values,
+              gitSha: "{{ .SHA }}"
+            },
+          },
+        }));
+      }
+
+      if (!this.state.configFile.values.gitRepository) {
+        this.setState(prevState => ({
+          configFile: {
+            ...prevState.configFile,
+            values: {
+              ...prevState.configFile.values,
+              gitRepository: repoName
+            },
+          },
+        }));
+      }
+    }
   }
 
   setAppName(appName) {
@@ -219,26 +221,21 @@ class EnvConfig extends Component {
     }));
   }
 
-  setGitRepository(repoName) {
-    this.setState(prevState => ({
-      values: {
-        ...prevState.values,
-        gitRepository: repoName
-      },
-      nonDefaultValues: {
-        ...prevState.nonDefaultValues,
-        gitRepository: repoName
-      },
-    }))
-  }
-
-  ensureGitCloneUrlExists(defaultChart, scmUrl) {
+  ensureGitCloneUrlExists() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    if (this.state.defaultState && defaultChart) {
-      if (defaultChart.reference.name === "static-site" && !this.state.defaultState.gitCloneUrl) {
-        this.setGitCloneUrl(`${scmUrl}/${repoName}.git`)
+    if (this.state.selectedTemplate) {
+      if (this.state.selectedTemplate.reference.name === "static-site" && !this.state.configFile.values.gitCloneUrl) {
+        this.setState(prevState => ({
+          configFile: {
+            ...prevState.configFile,
+            values: {
+              ...prevState.configFile.values,
+              gitCloneUrl: `${this.state.scmUrl}/${repoName}.git`
+            },
+          },
+        }));
       }
     }
   }
@@ -258,19 +255,6 @@ class EnvConfig extends Component {
     }
    
     return chart
-  }
-
-  setGitCloneUrl(gitCloneUrl) {
-    this.setState(prevState => ({
-      values: {
-        ...prevState.values,
-        gitCloneUrl: gitCloneUrl
-      },
-      nonDefaultValues: {
-        ...prevState.nonDefaultValues,
-        gitCloneUrl: gitCloneUrl
-      },
-    }));
   }
 
   setDeployPolicy(deploy) {
@@ -319,7 +303,7 @@ class EnvConfig extends Component {
     this.setState(prevState => ({
       configFile: {
         ...prevState.configFile,
-        values: values
+        values: nonDefaultValues
       }
     }));
   }
@@ -459,34 +443,6 @@ class EnvConfig extends Component {
     }
   }
 
-  constructConfigFile(defaultConfigFile) {
-    if (!defaultConfigFile || !this.state.selectedTemplate) {
-      return null
-    }
-
-    const { env } = this.props.match.params;
-    const configFile = Object.assign({}, defaultConfigFile);
-
-    configFile.env = env;
-    configFile.app = this.state.appName;
-    configFile.namespace = this.state.namespace;
-    configFile.values = this.state.nonDefaultValues;
-    configFile.chart = this.state.selectedTemplate.reference;
-
-    if (this.state.useDeployPolicy) {
-      if (this.state.selectedDeployEvent !== "tag") {
-        configFile.deploy = { branch: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
-      }
-      if (this.state.selectedDeployEvent === "tag") {
-        configFile.deploy = { tag: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
-      }
-    } else {
-      delete configFile.deploy;
-    }
-
-    return configFile;
-  }
-
   setDeploymentTemplate(template) {
     this.setState({ selectedTemplate: this.patchImageWidget(template) });
     this.setState(prevState => {
@@ -497,6 +453,9 @@ class EnvConfig extends Component {
       return {
         configFile: copiedConfigFile,
       }
+    }, () => {
+      this.ensureRepoAssociationExists();
+      this.ensureGitCloneUrlExists();
     })
   }
 
@@ -543,7 +502,7 @@ class EnvConfig extends Component {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
-          {/* {fileName &&
+          {fileName &&
             <>
               <a href={`${this.state.scmUrl}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -554,7 +513,7 @@ class EnvConfig extends Component {
                     d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
                 </svg>
               </a>
-            </>} */}
+            </>}
         </h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
           <a href={`${this.state.scmUrl}/${repoName}`} target="_blank" rel="noopener noreferrer">
@@ -780,54 +739,6 @@ class EnvConfig extends Component {
               </button>
             </span>}
           <span className="inline-flex gap-x-3 float-right">
-            {/* <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
-              <Menu.Button
-                className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Replicate to..
-              </Menu.Button>
-              <span className="-ml-px relative block">
-                <Menu.Button
-                  className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  <span className="sr-only">Open options</span>
-                  <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                </Menu.Button>
-                <Menu.Items
-                  className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    {this.state.envs.map((env) => (
-                      <Menu.Item key={`${env.name}`}>
-                        {({ active }) => (
-                          <button
-                            onClick={() => {
-                              this.props.history.push(encodeURI(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`));
-                              this.props.store.dispatch({
-                                type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
-                                  repo: repoName,
-                                  env: env.name,
-                                  envConfig: {
-                                    ...this.state.configFile,
-                                    app: `${this.state.configFile.app}-copy`,
-                                    env: env.name,
-                                    chart: this.state.chartFromConfigFile,
-                                  },
-                                }
-                              });
-                            }}
-                            className={(
-                              active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                              ' block px-4 py-2 text-sm w-full text-left'
-                            }
-                          >
-                            {env.name}
-                          </button>
-                        )}
-                      </Menu.Item>
-                    ))}
-                  </div>
-                </Menu.Items>
-              </span>
-            </Menu> */}
             { action !== "new" &&
             <button
               type="button"
@@ -859,64 +770,6 @@ class EnvConfig extends Component {
         </div>
       </div>
     );
-  }
-}
-
-// function Button({ text, action }) {
-//   return (
-//     <div>
-//       <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
-//         onClick={action}
-//       >
-//         {text}
-//       </button>
-//     </div>)
-// }
-
-// function LinkToDefaultVariables({ repoMetas }) {
-//   if (!repoMetas.githubActions && !repoMetas.circleCi) {
-//     return null
-//   }
-
-//   let defaultVariablesUrl = "";
-
-//   if (repoMetas.githubActions) {
-//     defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
-//   } else if (repoMetas.circleCi) {
-//     defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
-//   }
-
-//   return (
-//     <div className="mt-2">
-//       <a
-//         href={defaultVariablesUrl}
-//         target="_blank"
-//         rel="noreferrer"
-//         className="text-gray-500 hover:text-gray-700 text-xs"
-//       >
-//         Additionally you can use all built-in environment variables from CI
-//       </a>
-//     </div>
-//   )
-// }
-
-function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (configFileContentFromEnvConfigs.length > 0) {
-        return configFileContentFromEnvConfigs[0]
-      } else {
-        // "envConfigs loaded, we have data for env, but we don't have config for app"
-        return {}
-      }
-    } else {
-      // "envConfigs loaded, but we don't have data for env"
-      return {}
-    }
-  } else {
-    // envConfigs not loaded, we shall wait for it to be loaded
-    return undefined
   }
 }
 
