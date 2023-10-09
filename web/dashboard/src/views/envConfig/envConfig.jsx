@@ -226,16 +226,21 @@ class EnvConfig extends Component {
     const repoName = `${owner}/${repo}`;
 
     if (this.state.selectedTemplate) {
-      if (this.state.selectedTemplate.reference.name === "static-site" && !this.state.configFile.values.gitCloneUrl) {
-        this.setState(prevState => ({
-          configFile: {
-            ...prevState.configFile,
-            values: {
-              ...prevState.configFile.values,
-              gitCloneUrl: `${this.state.scmUrl}/${repoName}.git`
+      if (this.state.selectedTemplate.reference.name === "static-site") {
+        this.setState(prevState => {
+          if (prevState.configFile.values.gitCloneUrl) {
+            return prevState
+          }
+          return {
+            configFile: {
+              ...prevState.configFile,
+              values: {
+                ...prevState.configFile.values,
+                gitCloneUrl: `${this.state.scmUrl}/${repoName}.git`
+              },
             },
-          },
-        }));
+          }
+        });
       }
     }
   }
@@ -437,12 +442,6 @@ class EnvConfig extends Component {
       })
   }
 
-  findFileName(envName, appName) {
-    if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
-      return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
-    }
-  }
-
   setDeploymentTemplate(template) {
     this.setState({ selectedTemplate: this.patchImageWidget(template) });
     this.setState(prevState => {
@@ -501,20 +500,7 @@ class EnvConfig extends Component {
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
-          {fileName &&
-            <>
-              <a href={`${this.state.scmUrl}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
-                  viewBox="0 0 24 24">
-                  <path d="M0 0h24v24H0z" fill="none" />
-                  <path
-                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-                </svg>
-              </a>
-            </>}
-        </h1>
+        <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}</h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
           <a href={`${this.state.scmUrl}/${repoName}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg"
