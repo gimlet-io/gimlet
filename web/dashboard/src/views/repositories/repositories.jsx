@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
-import { ACTION_TYPE_GIT_REPOS } from "../../redux/redux";
+import {
+  ACTION_TYPE_CHART_UPDATE_PULLREQUESTS,
+  ACTION_TYPE_GIT_REPOS
+} from "../../redux/redux";
 import RefreshRepos from './refreshRepos';
 import { renderChartUpdatePullRequests } from '../pulse/pulse';
 import { InformationCircleIcon } from '@heroicons/react/solid'
@@ -134,6 +137,18 @@ export default class Repositories extends Component {
       });
   }
 
+  chartUpdatePullRequests() {
+    this.props.gimletClient.getChartUpdatePullRequests()
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_CHART_UPDATE_PULLREQUESTS,
+          payload: data
+        })
+      }, () => {
+        /* Generic error handler deals with it */
+      });
+  }
+
   render() {
     const { repositories, search, favorites, isOpen, settings } = this.state;
 
@@ -213,6 +228,7 @@ export default class Repositories extends Component {
                 refreshFunc={() => {
                   this.setState({ isOpen: true });
                   this.refresh();
+                  this.chartUpdatePullRequests();
                 }}
               />
             </div>
