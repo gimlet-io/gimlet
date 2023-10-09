@@ -304,11 +304,11 @@ class EnvConfig extends Component {
     });
   }
 
-  setValues(values, nonDefaultValues) {
+  setValues(values) {
     this.setState(prevState => ({
       configFile: {
         ...prevState.configFile,
-        values: nonDefaultValues
+        values: values
       }
     }));
   }
