@@ -545,8 +545,15 @@ class EnvConfig extends Component {
 
   setDeploymentTemplate(template) {
     this.setState({ selectedTemplate: this.patchImageWidget(template) });
-    this.setState({ values: Object.assign({}, this.state.defaultState) });
-    this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
+    this.setState(prevState => {
+      let copiedConfigFile = Object.assign({}, prevState.configFile)
+      delete copiedConfigFile.deploy
+      copiedConfigFile.values = {}
+
+      return {
+        configFile: copiedConfigFile,
+      }
+    })
   }
 
   renderTemplateFromConfig() {
