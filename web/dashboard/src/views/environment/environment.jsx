@@ -305,7 +305,7 @@ export default class EnvironmentView extends Component {
             <div className="mt-2 text-sm text-blue-700">
               Gimlet made this environment for you so you can quickly start deploying.<br />
               To make edits to it,
-              <span className="cursor-pointer font-medium pl-1 text-blue-800"
+              <span className="cursor-pointer underline font-medium pl-1 text-blue-800"
                 onClick={() => {
                   // eslint-disable-next-line no-restricted-globals
                   confirm(`Are you sure you want to convert to a gitops environment?`) &&

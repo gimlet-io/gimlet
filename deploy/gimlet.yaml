@@ -85,7 +85,7 @@ spec:
         - name: gimlet
           securityContext: &securityContext
             {}
-          image: "ghcr.io/gimlet-io/gimlet:v0.19.2"
+          image: "ghcr.io/gimlet-io/gimlet:v0.20.0"
           imagePullPolicy: IfNotPresent
           envFrom: &envFrom
             - configMapRef:
