@@ -8,8 +8,6 @@ export const ACTION_TYPE_ENVS = 'envs';
 export const ACTION_TYPE_USER = 'user';
 export const ACTION_TYPE_USERS = 'users';
 export const ACTION_TYPE_APPLICATION = 'application';
-export const ACTION_TYPE_CHARTSCHEMA = 'chartSchema';
-export const ACTION_TYPE_DEPLOYMENT_TEMPLATES = 'deploymentTemplates';
 export const ACTION_TYPE_SEARCH = 'search';
 export const ACTION_TYPE_ROLLOUT_HISTORY = 'rolloutHistory';
 export const ACTION_TYPE_RELEASE_STATUSES = 'releaseStatuses';
@@ -95,8 +93,6 @@ export const initialState = {
   runningDeploys: [],
   repoRefreshQueue: [],
   gitRepos: [],
-  defaultChart: undefined,
-  templates: {},
   envConfigs: {},
   application: {},
   repoMetas: {},
@@ -149,10 +145,6 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.users(state, action.payload)
     case ACTION_TYPE_APPLICATION:
       return eventHandlers.application(state, action.payload)
-    case ACTION_TYPE_CHARTSCHEMA:
-      return eventHandlers.schemas(state, action.payload)
-    case ACTION_TYPE_DEPLOYMENT_TEMPLATES:
-      return eventHandlers.deploymentTemplates(state, action.payload)
     case ACTION_TYPE_SEARCH:
       return eventHandlers.search(state, action.payload)
     case ACTION_TYPE_ROLLOUT_HISTORY:

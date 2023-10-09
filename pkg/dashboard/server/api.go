@@ -198,7 +198,7 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	thresholds := alert.Thresholds()
-	var decoratedAlerts []*api.Alert
+	decoratedAlerts := []*api.Alert{}
 	for _, dbAlert := range dbAlerts {
 		t := alert.ThresholdByType(thresholds, dbAlert.Type)
 		decoratedAlerts = append(decoratedAlerts, &api.Alert{
@@ -332,9 +332,32 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 	return nil
 }
 
-func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
+func defaultDeploymentTemplates(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	installationToken, _, _ := tokenManager.Token()
+
+	templates, err := deploymentTemplates(config.Charts, installationToken)
+	if err != nil {
+		logrus.Errorf("cannot convert charts: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	templatesString, err := json.Marshal(templates)
+	if err != nil {
+		logrus.Errorf("cannot serialize charts: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(templatesString))
+}
+
+func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	env := chi.URLParam(r, "env")
@@ -350,47 +373,18 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	charts, err := getCharts(config, repo, env, configName)
+	appChart, err := getChartForApp(repo, env, configName)
 	if err != nil {
 		logrus.Errorf("cannot get manifest chart: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	var templates []DeploymentTemplate
-	for _, chart := range charts {
-		m := &dx.Manifest{
-			Chart: chart,
-		}
-
-		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
-		if err != nil {
-			logrus.Errorf("cannot get schema from manifest: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		var schema interface{}
-		err = json.Unmarshal([]byte(schemaString), &schema)
-		if err != nil {
-			logrus.Errorf("cannot parse schema: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		var schemaUI interface{}
-		err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
-		if err != nil {
-			logrus.Errorf("cannot parse UI schema: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		templates = append(templates, DeploymentTemplate{
-			Reference: chart,
-			Schema:    schema,
-			UISchema:  schemaUI,
-		})
+	templates, err := deploymentTemplates([]dx.Chart{*appChart}, installationToken)
+	if err != nil {
+		logrus.Errorf("cannot convert charts: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	templatesString, err := json.Marshal(templates)
@@ -404,7 +398,40 @@ func deploymentTemplates(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(templatesString))
 }
 
-func getCharts(config *config.Config, repo *git.Repository, env string, configName string) ([]dx.Chart, error) {
+func deploymentTemplates(charts []dx.Chart, installationToken string) ([]DeploymentTemplate, error) {
+	var templates []DeploymentTemplate
+	for _, chart := range charts {
+		m := &dx.Manifest{
+			Chart: chart,
+		}
+
+		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
+		if err != nil {
+			return nil, err
+		}
+
+		var schema interface{}
+		err = json.Unmarshal([]byte(schemaString), &schema)
+		if err != nil {
+			return nil, err
+		}
+
+		var schemaUI interface{}
+		err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
+		if err != nil {
+			return nil, err
+		}
+
+		templates = append(templates, DeploymentTemplate{
+			Reference: chart,
+			Schema:    schema,
+			UISchema:  schemaUI,
+		})
+	}
+	return templates, nil
+}
+
+func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, error) {
 	branch, err := helper.HeadBranch(repo)
 	if err != nil {
 		return nil, err
@@ -412,11 +439,7 @@ func getCharts(config *config.Config, repo *git.Repository, env string, configNa
 
 	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
-		if strings.Contains(err.Error(), "directory not found") {
-			return config.Charts, nil
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	envConfigs := []dx.Manifest{}
@@ -431,12 +454,12 @@ func getCharts(config *config.Config, repo *git.Repository, env string, configNa
 	}
 
 	for _, envConfig := range envConfigs {
-		if envConfig.Env == env && envConfig.App == configName {
-			return []dx.Chart{envConfig.Chart}, nil
+		if envConfig.Env == env && envConfig.App == app {
+			return &envConfig.Chart, nil
 		}
 	}
 
-	return config.Charts, nil
+	return nil, nil
 }
 
 func application(w http.ResponseWriter, r *http.Request) {

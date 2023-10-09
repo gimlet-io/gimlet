@@ -243,27 +243,6 @@ export function application(state, application) {
   return state;
 }
 
-export function schemas(state, schemas) {
-  state.defaultChart = schemas;
-  return state;
-}
-
-export function deploymentTemplates(state, templates) {
-  const firstTemplate = templates[0]
-  state.defaultChart = firstTemplate;
-  state.defaultTemplate = firstTemplate.reference.name;
-
-  templates.forEach((template) => {
-    state.templates[template.reference.name] = {
-      reference: template.reference,
-      schema: template.schema,
-      uiSchema: template.uiSchema,
-    };
-  });
-
-  return state;
-}
-
 export function search(state, search) {
   state.search = search;
   return state;

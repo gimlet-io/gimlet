@@ -1,16 +1,10 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import HelmUI from "helm-react-ui";
 import "./style.css";
 import ReactDiffViewer from "react-diff-viewer";
 import yaml from "js-yaml";
-// import CopiableCodeSnippet from "./copiableCodeSnippet";
 import { Spinner } from "../repositories/repositories";
 import {
-  ACTION_TYPE_CHARTSCHEMA,
-  ACTION_TYPE_DEPLOYMENT_TEMPLATES,
-  ACTION_TYPE_ENVCONFIGS,
-  ACTION_TYPE_REPO_METAS,
-  // ACTION_TYPE_ADD_ENVCONFIG,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -28,176 +22,221 @@ class EnvConfig extends Component {
   constructor(props) {
     super(props);
 
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
     let reduxState = this.props.store.getState();
 
     this.state = {
-      defaultChart: this.patchImageWidget(reduxState.defaultChart),
-      defaultTemplate: reduxState.defaultTemplate,
-      templates: reduxState.templates,
-      fileInfos: reduxState.fileInfos,
-
       timeoutTimer: {},
-      environmentVariablesExpanded: false,
-      codeSnippetExpanded: false,
       deployEvents: ["push", "tag", "pr"],
-      selectedDeployEvent: "push",
-      useDeployPolicy: false,
       popupWindow: reduxState.popupWindow,
       scmUrl: reduxState.settings.scmUrl,
-
       envs: reduxState.envs,
-      repoMetas: reduxState.repoMetas,
     };
 
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
 
       this.setState({
-        defaultChart: this.patchImageWidget(reduxState.defaultChart),
-        defaultTemplate: reduxState.defaultTemplate,
-        templates: reduxState.templates,
-        fileInfos: reduxState.fileInfos,
         envs: reduxState.envs,
-        repoMetas: reduxState.repoMetas,
         popupWindow: reduxState.popupWindow,
         scmUrl: reduxState.settings.scmUrl
       });
 
-      if (!this.state.values) {
-        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
-      }
-      this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
-      this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
+      this.ensureRepoAssociationExists(repoName);
+      this.ensureGitCloneUrlExists();
     });
 
     this.setValues = this.setValues.bind(this);
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
   }
 
-  setLocalEnvConfigState(envConfigs, repoName, env, config, defaultChart) {
-    const { action } = this.props.match.params;
-    let configFileContent = configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart);
-    if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
-      let envConfig = configFileContent.values;
-
-      this.setState({
-        configFile: (action === "new" ? {} : configFileContent),
-        chartFromConfigFile: configFileContent.chart,
-        appName: configFileContent.app ?? config,
-        namespace: configFileContent.namespace ?? "default",
-        defaultAppName: configFileContent.app ?? config,
-        defaultNamespace: configFileContent.namespace ?? "default",
-
-        values: Object.assign({}, envConfig),
-        nonDefaultValues: Object.assign({}, envConfig),
-        defaultState: Object.assign({}, envConfig),
-      });
-
-      this.setDeployPolicy(configFileContent.deploy);
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    const { owner, repo, env, config } = this.props.match.params;
-    const repoName = `${owner}/${repo}`;
-
-    if (prevProps.match.params.config !== config) {
-      let reduxState = this.props.store.getState();
-      this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
-    }
-  }
-
   componentDidMount() {
-    const { owner, repo, env, config } = this.props.match.params;
+    const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
     const { gimletClient, store } = this.props;
 
-    gimletClient.getDeploymentTemplates(owner, repo, env, config)
+    if (action === "new") {
+      gimletClient.getDefaultDeploymentTemplates()
       .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_DEPLOYMENT_TEMPLATES, payload: data
+        const selectedTemplate = this.patchImageWidget(data[0])
+        this.setState({
+          templates: data,
+          selectedTemplate: selectedTemplate,
+          configFile: {
+            app: config,
+            namespace: "default",
+            env:       env,
+            chart: selectedTemplate.reference,
+            values: {
+              gitRepository: repoName,
+              gitSha:        "{{ .SHA }}",
+              image: {
+                repository: "127.0.0.1:32447/"+config,
+                tag:        "{{ .SHA }}",
+              },
+              resources: {
+                ignoreLimits: true,
+              },
+            },
+          },
+          defaultConfigFile: {},
         });
-        this.setState({ templatesLoaded: true });
-      }, () => {/* Generic error handler deals with it */
-        this.setState({ templatesLoaded: true });
-      });
-
-    this.props.gimletClient.getRepoMetas(owner, repo)
+      }, () => {/* Generic error handler deals with it */ });
+    } else {
+      gimletClient.getDeploymentTemplates(owner, repo, env, config)
       .then(data => {
-        this.props.store.dispatch({
-          type: ACTION_TYPE_REPO_METAS, payload: {
+        this.setState({
+          templates: data,
+          selectedTemplate: this.patchImageWidget(data[0])
+        });
+      }, () => {/* Generic error handler deals with it */ });
+
+      this.props.gimletClient.getRepoMetas(owner, repo)
+        .then(data => {
+          this.setState({
             repoMetas: data,
-          }
-        });
-      }, () => {/* Generic error handler deals with it */
+          })
+        }, () => {/* Generic error handler deals with it */
       });
 
-    if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
-      loadEnvConfig(gimletClient, store, owner, repo)
-    }
-
-    let reduxState = this.props.store.getState();
-    this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
-  }
-
-  ensureRepoAssociationExists(repoName, repoMetas) {
-    if (this.state.defaultState && repoMetas) {
-      if (!this.state.defaultState.gitSha) {
-          this.setGitSha("{{ .SHA }}");
-      }
-
-      if (!this.state.defaultState.gitRepository) {
-        this.setGitRepository(repoName);
-      }
+      this.props.gimletClient.getEnvConfigs(owner, repo)
+        .then(envConfigs => {         
+          if (envConfigs[env]) {
+            const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
+            let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
+            this.setState({
+              configFile: configFileContentFromEnvConfigs,
+              defaultConfigFile: deepCopied,
+            });
+          }
+        }, () => {/* Generic error handler deals with it */
+      });
     }
   }
 
-  setGitSha(gitSha) {
+  ensureRepoAssociationExists() {
+    const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    if (this.state.configFile) {
+      if (!this.state.configFile.values.gitSha) {
+        this.setState(prevState => ({
+          configFile: {
+            ...prevState.configFile,
+            values: {
+              ...prevState.configFile.values,
+              gitSha: "{{ .SHA }}"
+            },
+          },
+        }));
+      }
+
+      if (!this.state.configFile.values.gitRepository) {
+        this.setState(prevState => ({
+          configFile: {
+            ...prevState.configFile,
+            values: {
+              ...prevState.configFile.values,
+              gitRepository: repoName
+            },
+          },
+        }));
+      }
+    }
+  }
+
+  setAppName(appName) {
     this.setState(prevState => ({
-      values: {
-        ...prevState.values,
-        gitSha: gitSha
-      },
-      nonDefaultValues: {
-        ...prevState.nonDefaultValues,
-        gitSha: gitSha
+      configFile: {
+        ...prevState.configFile,
+        app: appName,
       },
     }));
   }
 
-  setGitRepository(repoName) {
+  setNamespace(namespace) {
     this.setState(prevState => ({
-      values: {
-        ...prevState.values,
-        gitRepository: repoName
+      configFile: {
+        ...prevState.configFile,
+        namespace: namespace,
       },
-      nonDefaultValues: {
-        ...prevState.nonDefaultValues,
-        gitRepository: repoName
-      },
-    }))
+    }));
   }
 
-  ensureGitCloneUrlExists(defaultChart, scmUrl) {
+  setDeployFilter(filter) {
+    this.setState(prevState => {
+      if (prevState.configFile.deploy.event === "tag") {
+        return {
+          configFile: {
+            ...prevState.configFile,
+            deploy: {
+              ...prevState.configFile.deploy,
+              tag: filter
+            },
+          },
+        }
+      }
+
+      return {
+        configFile: {
+          ...prevState.configFile,
+          deploy: {
+            ...prevState.configFile.deploy,
+            branch: filter
+          },
+        },
+      }
+    });
+  }
+
+  setDeployEvent(deployEvent) {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        deploy: {
+          event: deployEvent
+        },
+      },
+    }));
+  }
+
+  toggleDeployPolicy() {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        deploy: prevState.configFile.deploy ? undefined : {event: "push"},
+      },
+    }));
+  }
+
+  ensureGitCloneUrlExists() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    if (this.state.defaultState && defaultChart) {
-      if (defaultChart.reference.name === "static-site" && !this.state.defaultState.gitCloneUrl) {
-        this.setGitCloneUrl(`${scmUrl}/${repoName}.git`)
+    if (this.state.selectedTemplate) {
+      if (this.state.selectedTemplate.reference.name === "static-site") {
+        this.setState(prevState => {
+          if (prevState.configFile.values.gitCloneUrl) {
+            return prevState
+          }
+          return {
+            configFile: {
+              ...prevState.configFile,
+              values: {
+                ...prevState.configFile.values,
+                gitCloneUrl: `${this.state.scmUrl}/${repoName}.git`
+              },
+            },
+          }
+        });
       }
     }
   }
 
   patchImageWidget(chart) {
-    if (!chart) {
-      return chart
-    }
-
     if (chart.reference.name !== "onechart") {
       return chart  
     }
@@ -212,19 +251,6 @@ class EnvConfig extends Component {
     }
    
     return chart
-  }
-
-  setGitCloneUrl(gitCloneUrl) {
-    this.setState(prevState => ({
-      values: {
-        ...prevState.values,
-        gitCloneUrl: gitCloneUrl
-      },
-      nonDefaultValues: {
-        ...prevState.nonDefaultValues,
-        gitCloneUrl: gitCloneUrl
-      },
-    }));
   }
 
   setDeployPolicy(deploy) {
@@ -269,8 +295,13 @@ class EnvConfig extends Component {
     });
   }
 
-  setValues(values, nonDefaultValues) {
-    this.setState({ values: values, nonDefaultValues: nonDefaultValues });
+  setValues(values) {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        values: values
+      }
+    }));
   }
 
   resetNotificationStateAfterThreeSeconds() {
@@ -315,12 +346,7 @@ class EnvConfig extends Component {
     });
     this.startApiCallTimeOutHandler();
 
-    const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
-
-    let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
-    let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
-
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, this.state.defaultChart.reference, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.selectedDeployEvent)
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.configFile.values, this.state.configFile.namespace, this.state.configFile.chart, this.state.configFile.app, this.state.configFile.deploy ? true : false, this.state.configFile.deploy?.branch, this.state.configFile.deploy?.tag, this.state.configFile.deploy?.event)
       .then((data) => {
         if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
@@ -407,48 +433,20 @@ class EnvConfig extends Component {
       })
   }
 
-  findFileName(envName, appName) {
-    if (this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName)) {
-      return this.state.fileInfos.find(fileInfo => fileInfo.envName === envName && fileInfo.appName === appName).fileName
-    }
-  }
-
-  updateNonDefaultConfigFile(configFile) {
-    if (!configFile || !this.state.defaultChart) {
-      return null
-    }
-
-    const { env } = this.props.match.params;
-    const nonDefaultConfigFile = Object.assign({}, configFile);
-
-    nonDefaultConfigFile.env = env;
-    nonDefaultConfigFile.app = this.state.appName;
-    nonDefaultConfigFile.namespace = this.state.namespace;
-    nonDefaultConfigFile.values = this.state.nonDefaultValues;
-    nonDefaultConfigFile.chart = this.state.defaultChart.reference;
-
-    if (this.state.useDeployPolicy) {
-      if (this.state.selectedDeployEvent !== "tag") {
-        nonDefaultConfigFile.deploy = { branch: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
-      }
-      if (this.state.selectedDeployEvent === "tag") {
-        nonDefaultConfigFile.deploy = { tag: this.state.deployFilterInput, event: this.state.selectedDeployEvent };
-      }
-    } else {
-      delete nonDefaultConfigFile.deploy;
-    }
-
-    return nonDefaultConfigFile;
-  }
-
   setDeploymentTemplate(template) {
-    this.setState({ selectedTemplate: template });
-    this.setState({ values: Object.assign({}, this.state.defaultState) });
-    this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
-    const deploymentTemplate = this.state.templates[template]
-    this.props.store.dispatch({
-      type: ACTION_TYPE_CHARTSCHEMA, payload: deploymentTemplate
-    });
+    this.setState({ selectedTemplate: this.patchImageWidget(template) });
+    this.setState(prevState => {
+      let copiedConfigFile = Object.assign({}, prevState.configFile)
+      delete copiedConfigFile.deploy
+      copiedConfigFile.values = {}
+
+      return {
+        configFile: copiedConfigFile,
+      }
+    }, () => {
+      this.ensureRepoAssociationExists();
+      this.ensureGitCloneUrlExists();
+    })
   }
 
   renderTemplateFromConfig() {
@@ -476,46 +474,24 @@ class EnvConfig extends Component {
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const nonDefaultConfigFile = this.updateNonDefaultConfigFile(this.state.configFile);
 
-    const fileName = this.findFileName(env, config)
-    const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
-    const hasChange = (nonDefaultValuesString !== '{ }' &&
-      nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-      this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
+    const hasChange = JSON.stringify(this.state.configFile) !== JSON.stringify(this.state.defaultConfigFile)
 
     const customFields = {
       imageWidget: ImageWidget,
     }
 
-    if (!this.state.templatesLoaded) {
+    if (!this.state.configFile) {
       return <Spinner />;
     }
 
-    if (!this.state.defaultChart) {
-      return <Spinner />;
-    }
-
-    if (!this.state.values) {
+    if (!this.state.selectedTemplate) {
       return <Spinner />;
     }
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}
-          {fileName &&
-            <>
-              <a href={`${this.state.scmUrl}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1" width="16" height="16"
-                  viewBox="0 0 24 24">
-                  <path d="M0 0h24v24H0z" fill="none" />
-                  <path
-                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-                </svg>
-              </a>
-            </>}
-        </h1>
+        <h1 className="text-3xl font-bold leading-tight text-gray-900">Editing {config} config for {env}</h1>
         <h2 className="text-xl leading-tight text-gray-900">{repoName}
           <a href={`${this.state.scmUrl}/${repoName}`} target="_blank" rel="noopener noreferrer">
             <svg xmlns="http://www.w3.org/2000/svg"
@@ -535,16 +511,17 @@ class EnvConfig extends Component {
           {action === "new" ?
             <div className="mb-16 items-center">
               <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-                {Object.keys(this.state.templates).map((template) => {
+                {this.state.templates.map((template) => {
                   let title = "Web application template"
                   let description = "To deploy any web application. Multiple image build options available."
-                  if (template === "static-site") {
+                  if (template.reference.name === "static-site") {
                     title = "Static site template"
                     description = "If your build generates static files only, let us host it in an Nginx container."
                   }
                   return (
                     <div
-                      className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 ${(this.state.selectedTemplate ?? this.state.defaultTemplate) === template ? "border border-blue-500" : "bg-gray-300 opacity-50 text-gray-600"}`}
+                      key={template.reference.name + template.reference.repository + template.reference.version}
+                      className={`relative flex cursor-pointer rounded-lg bg-white p-4 shadow-lg focus:outline-none text-gray-500 ${this.state.selectedTemplate.reference.name  === template.reference.name ? "border border-blue-500" : "bg-gray-300 opacity-50 text-gray-600"}`}
                       onClick={() => this.setDeploymentTemplate(template)}
                     >
                       <span className="flex flex-1">
@@ -562,7 +539,7 @@ class EnvConfig extends Component {
             this.renderTemplateFromConfig()
           }
         <div className="mb-4 items-center">
-          <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+          <label htmlFor="appName" className={`${!this.state.configFile.app ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
           </label>
           <input
@@ -570,21 +547,21 @@ class EnvConfig extends Component {
             name="appName"
             id="appName"
             disabled={action !== "new"}
-            value={this.state.appName}
-            onChange={e => { this.setState({ appName: e.target.value }) }}
+            value={this.state.configFile.app}
+            onChange={e => this.setAppName(e.target.value)}
             className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
           />
         </div>
         <div className="mb-4 items-center">
-          <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+          <label htmlFor="namespace" className={`${!this.state.configFile.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
           <input
             type="text"
             name="namespace"
             id="namespace"
-            value={this.state.namespace}
-            onChange={e => { this.setState({ namespace: e.target.value }) }}
+            value={this.state.configFile.namespace}
+            onChange={e => this.setNamespace(e.target.value)}
             className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
           />
         </div>
@@ -595,10 +572,11 @@ class EnvConfig extends Component {
           </div>
           <div className="max-w-lg flex rounded-md">
             <Switch
-              checked={this.state.useDeployPolicy}
-              onChange={() => this.setState({ useDeployPolicy: !this.state.useDeployPolicy })}
+              key={this.state.configFile.deploy}
+              checked={this.state.configFile.deploy !== undefined}
+              onChange={e => this.toggleDeployPolicy()}
               className={(
-                this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
+                this.state.configFile.deploy !== undefined ? "bg-indigo-600" : "bg-gray-200") +
                 " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
               }
             >
@@ -606,7 +584,7 @@ class EnvConfig extends Component {
               <span
                 aria-hidden="true"
                 className={(
-                  this.state.useDeployPolicy ? "translate-x-5" : "translate-x-0") +
+                  this.state.configFile.deploy !== undefined ? "translate-x-5" : "translate-x-0") +
                   " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
                 }
               />
@@ -614,7 +592,7 @@ class EnvConfig extends Component {
           </div>
         </div>
 
-        {this.state.useDeployPolicy &&
+        {this.state.configFile.deploy &&
           <div className="ml-8 mb-8">
             <div className="mb-4 items-center">
               <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
@@ -625,7 +603,7 @@ class EnvConfig extends Component {
                   className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
                 >
 
-                  {this.state.selectedDeployEvent}
+                  {this.state.configFile.deploy.event}
                 </Menu.Button>
                 <span className="-ml-px relative block">
                   <Menu.Button
@@ -641,9 +619,7 @@ class EnvConfig extends Component {
                           {({ active }) => (
                             <button
                               onClick={() => {
-                                this.setState({
-                                  selectedDeployEvent: deployEvent,
-                                })
+                                this.setDeployEvent(deployEvent)
                               }}
                               className={(
                                 active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
@@ -662,18 +638,19 @@ class EnvConfig extends Component {
             </div>
             <div className="mb-4 items-center">
               <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
-                {`${this.state.selectedDeployEvent === "tag" ? "Tag" : "Branch"} filter`}
+                {`${this.state.configFile.deploy.event === "tag" ? "Tag" : "Branch"} filter`}
               </label>
               <input
+                key={this.state.configFile.deploy.event}
                 type="text"
                 name="deployFilterInput"
                 id="deployFilterInput"
-                value={this.state.deployFilterInput ?? ""}
-                onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
+                value={this.state.configFile.deploy.event === "tag" ? this.state.configFile.deploy.tag : this.state.configFile.deploy.branch}
+                onChange={e => { this.setDeployFilter(e.target.value)}}
                 className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
               />
               <ul className="list-none text-sm text-gray-500 mt-2">
-                {this.state.selectedDeployEvent === "tag" ?
+                {this.state.configFile.deploy.event === "tag" ?
                   <>
                     <li>
                       Filter tags to deploy based on tag name patterns.
@@ -698,19 +675,19 @@ class EnvConfig extends Component {
         </div>
         <div className="container mx-auto m-8">
           <HelmUI
-            key={this.state.defaultChart.reference.name}
-            schema={this.state.defaultChart.schema}
-            config={this.state.defaultChart.uiSchema}
+            key={this.state.selectedTemplate.reference.name + this.state.selectedTemplate.reference.repository + this.state.selectedTemplate.reference.version}
+            schema={this.state.selectedTemplate.schema}
+            config={this.state.selectedTemplate.uiSchema}
             fields={customFields}
-            values={this.state.values}
+            values={this.state.configFile.values}
             setValues={this.setValues}
             validate={true}
             validationCallback={this.validationCallback}
           />
           <div className="w-full mt-16">
             <ReactDiffViewer
-              oldValue={yaml.dump(this.state.configFile)}
-              newValue={yaml.dump(nonDefaultConfigFile)}
+              oldValue={yaml.dump(this.state.defaultConfigFile)}
+              newValue={yaml.dump(this.state.configFile)}
               splitView={false}
               showDiffOnly={false}
               styles={{
@@ -722,44 +699,6 @@ class EnvConfig extends Component {
                 emptyLine: { background: "#fff" }
               }} />
           </div>
-          {/* {!this.state.environmentVariablesExpanded ?
-            <Button
-              text={"Check the list of environment variables you can use in the Gimlet manifest"}
-              action={() => this.setState({ environmentVariablesExpanded: true })}
-            />
-            :
-            <div className="w-full my-16">
-              <EnvVarsTable />
-              <LinkToDefaultVariables
-                repoMetas={this.state.repoMetas}
-              />
-            </div>
-          } */}
-          {/* {nonDefaultConfigFile.app && nonDefaultConfigFile.chart &&
-            <>
-              {!this.state.codeSnippetExpanded ?
-                <Button
-                  text={"Want to render the manifest locally? Click to see the Gimlet CLI command!"}
-                  action={() => this.setState({ codeSnippetExpanded: true })}
-                />
-                :
-                <div className="my-8">
-                  <h3 className="text-baseline leading-6 text-gray-500">
-                    Copy the code snippet to check the generated Kubernetes manifest on the command line:
-                  </h3>
-                  <div className="w-full mb-16">
-                    <CopiableCodeSnippet
-                      copiable
-                      code={
-                        `cat << EOF > manifest.yaml
-${YAML.stringify(nonDefaultConfigFile)}EOF
-
-gimlet manifest template -f manifest.yaml`}
-                    />
-                  </div>
-                </div>
-              }
-            </>} */}
         </div>
         <div className="p-0 flow-root my-16">
           {action !== "new" &&
@@ -777,74 +716,26 @@ gimlet manifest template -f manifest.yaml`}
               </button>
             </span>}
           <span className="inline-flex gap-x-3 float-right">
-            {/* <Menu as="span" className="ml-2 relative inline-flex shadow-sm rounded-md align-middle">
-              <Menu.Button
-                className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Replicate to..
-              </Menu.Button>
-              <span className="-ml-px relative block">
-                <Menu.Button
-                  className="relative z-0 inline-flex items-center px-2 py-3 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  <span className="sr-only">Open options</span>
-                  <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                </Menu.Button>
-                <Menu.Items
-                  className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    {this.state.envs.map((env) => (
-                      <Menu.Item key={`${env.name}`}>
-                        {({ active }) => (
-                          <button
-                            onClick={() => {
-                              this.props.history.push(encodeURI(`/repo/${repoName}/envs/${env.name}/config/${config}-copy/new`));
-                              this.props.store.dispatch({
-                                type: ACTION_TYPE_ADD_ENVCONFIG, payload: {
-                                  repo: repoName,
-                                  env: env.name,
-                                  envConfig: {
-                                    ...this.state.configFile,
-                                    app: `${this.state.configFile.app}-copy`,
-                                    env: env.name,
-                                    chart: this.state.chartFromConfigFile,
-                                  },
-                                }
-                              });
-                            }}
-                            className={(
-                              active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
-                              ' block px-4 py-2 text-sm w-full text-left'
-                            }
-                          >
-                            {env.name}
-                          </button>
-                        )}
-                      </Menu.Item>
-                    ))}
-                  </div>
-                </Menu.Items>
-              </span>
-            </Menu> */}
+            { action !== "new" &&
             <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
               className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-blue-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
-                this.setState({ values: Object.assign({}, this.state.defaultState) });
-                this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
-                this.setState({ namespace: this.state.defaultNamespace })
-                this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
-                this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
-                this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
-                this.setDeploymentTemplate(this.state.defaultTemplate)
+                let deepCopied = JSON.parse(JSON.stringify(this.state.defaultConfigFile))
+                this.setState({ configFile: deepCopied });
+                this.setState({
+                  selectedTemplate: this.patchImageWidget(this.state.templates[0])
+                });
               }}
             >
               Reset
             </button>
+            }
             <button
               type="button"
-              disabled={!hasChange || this.state.popupWindow.visible || !this.state.namespace || !this.state.appName}
-              className={(hasChange && !this.state.popupWindow.visible && this.state.namespace && this.state.appName ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || this.state.popupWindow.visible || !this.state.configFile.namespace || !this.state.configFile.app}
+              className={(hasChange && !this.state.popupWindow.visible && this.state.configFile.namespace && this.state.configFile.app ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => {
                 posthog?.capture('Env config save pushed')
                 this.save()
@@ -857,104 +748,6 @@ gimlet manifest template -f manifest.yaml`}
       </div>
     );
   }
-}
-
-// function Button({ text, action }) {
-//   return (
-//     <div>
-//       <button className="cursor-pointer text-xs leading-6 text-blue-500 hover:text-blue-700"
-//         onClick={action}
-//       >
-//         {text}
-//       </button>
-//     </div>)
-// }
-
-// function LinkToDefaultVariables({ repoMetas }) {
-//   if (!repoMetas.githubActions && !repoMetas.circleCi) {
-//     return null
-//   }
-
-//   let defaultVariablesUrl = "";
-
-//   if (repoMetas.githubActions) {
-//     defaultVariablesUrl = "https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables"
-//   } else if (repoMetas.circleCi) {
-//     defaultVariablesUrl = "https://circleci.com/docs/env-vars?section=pipelines&utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQjwz96WBhC8ARIsAATR251pCKLp8uHHmudeI2J3nRulg38fcPRscyjM0KdiomXQsvsFEMJ-NsIaAgFkEALw_wcB#built-in-environment-variables"
-//   }
-
-//   return (
-//     <div className="mt-2">
-//       <a
-//         href={defaultVariablesUrl}
-//         target="_blank"
-//         rel="noreferrer"
-//         className="text-gray-500 hover:text-gray-700 text-xs"
-//       >
-//         Additionally you can use all built-in environment variables from CI
-//       </a>
-//     </div>
-//   )
-// }
-
-function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart) {
-  if (envConfigs[repoName]) {
-    if (envConfigs[repoName][env]) {
-      const configFileContentFromEnvConfigs = envConfigs[repoName][env].filter(c => c.app === config)
-      if (configFileContentFromEnvConfigs.length > 0) {
-        return configFileContentFromEnvConfigs[0]
-      } else {
-        // "envConfigs loaded, we have data for env, but we don't have config for app"
-        return {}
-      }
-    } else {
-      // "envConfigs loaded, but we don't have data for env"
-
-      // if this is the default config, we should fake it for magic deploy
-      const repoOnly = repoName.split("/")[1]
-      if (config === repoOnly) {
-        if (!defaultChart) {
-          return undefined // if data not loaded yet, store.subscribe will take care of this
-        }
-        return {
-          app: config,
-          namespace: "default",
-          env:       env,
-          chart: defaultChart.reference,
-          values: {
-            gitRepository: repoName,
-            gitSha:        "{{ .SHA }}",
-            image: {
-              repository: "127.0.0.1:32447/"+repoOnly,
-              tag:        "{{ .SHA }}",
-            },
-            resources: {
-              ignoreLimits: true,
-            },
-          },
-        }
-      } else {
-        return {}
-      }
-    }
-  } else {
-    // envConfigs not loaded, we shall wait for it to be loaded
-    return undefined
-  }
-}
-
-function loadEnvConfig(gimletClient, store, owner, repo) {
-  gimletClient.getEnvConfigs(owner, repo)
-    .then(envConfigs => {
-      store.dispatch({
-        type: ACTION_TYPE_ENVCONFIGS, payload: {
-          owner: owner,
-          repo: repo,
-          envConfigs: envConfigs
-        }
-      });
-    }, () => {/* Generic error handler deals with it */
-    });
 }
 
 export default EnvConfig;
