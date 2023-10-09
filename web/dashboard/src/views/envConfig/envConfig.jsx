@@ -69,8 +69,8 @@ class EnvConfig extends Component {
         scmUrl: reduxState.settings.scmUrl
       });
 
-      if (!this.state.values) {
-        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
+      if (!this.state.defaultConfigFile && this.state.selectedTemplate) {
+        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, this.state.selectedTemplate);
       }
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
       this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
@@ -80,36 +80,33 @@ class EnvConfig extends Component {
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
   }
 
-  setLocalEnvConfigState(envConfigs, repoName, env, config, defaultChart) {
+  setLocalEnvConfigState(envConfigs, repoName, env, config, selectedTemplate) {
     const { action } = this.props.match.params;
     if (action === "new") {
       this.setState({
-        appName: config,
-        namespace: "default",
-        values: {},
+        configFile: {
+          app: config,
+          namespace: "default",
+          env:       env,
+          chart: selectedTemplate.reference,
+          values: {
+            gitRepository: repoName,
+            gitSha:        "{{ .SHA }}",
+            image: {
+              repository: "127.0.0.1:32447/"+config,
+              tag:        "{{ .SHA }}",
+            },
+            resources: {
+              ignoreLimits: true,
+            },
+          },
+        },
         defaultConfigFile: {},
-        // defaultConfigFile: {
-        //   app: config,
-        //   namespace: "default",
-        //   env:       env,
-        //   chart: defaultChart.reference,
-        //   values: {
-        //     gitRepository: repoName,
-        //     gitSha:        "{{ .SHA }}",
-        //     image: {
-        //       repository: "127.0.0.1:32447/"+config,
-        //       tag:        "{{ .SHA }}",
-        //     },
-        //     resources: {
-        //       ignoreLimits: true,
-        //     },
-        //   },
-        // }
       })
       return
     }
 
-    let configFileContent = configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart);
+    let configFileContent = {} //configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart);
     if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
       let envConfig = configFileContent.values;
 
@@ -210,6 +207,70 @@ class EnvConfig extends Component {
       nonDefaultValues: {
         ...prevState.nonDefaultValues,
         gitSha: gitSha
+      },
+    }));
+  }
+
+  setAppName(appName) {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        app: appName,
+      },
+    }));
+  }
+
+  setNamespace(namespace) {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        namespace: namespace,
+      },
+    }));
+  }
+
+  setDeployFilter(filter) {
+    this.setState(prevState => {
+      if (prevState.configFile.deploy.event === "tag") {
+        return {
+          configFile: {
+            ...prevState.configFile,
+            deploy: {
+              ...prevState.configFile.deploy,
+              tag: filter
+            },
+          },
+        }
+      }
+
+      return {
+        configFile: {
+          ...prevState.configFile,
+          deploy: {
+            ...prevState.configFile.deploy,
+            branch: filter
+          },
+        },
+      }
+    });
+  }
+
+  setDeployEvent(deployEvent) {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        deploy: {
+          event: deployEvent
+        },
+      },
+    }));
+  }
+
+  toggleDeployPolicy() {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        deploy: prevState.configFile.deploy ? undefined : {event: "push"},
       },
     }));
   }
@@ -533,9 +594,9 @@ class EnvConfig extends Component {
     //   return <Spinner />;
     // }
 
-    // if (!this.state.values) {
-    //   return <Spinner />;
-    // }
+    if (!this.state.configFile) {
+      return <Spinner />;
+    }
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -608,8 +669,8 @@ class EnvConfig extends Component {
             name="appName"
             id="appName"
             disabled={action !== "new"}
-            value={this.state.appName}
-            onChange={e => { this.setState({ appName: e.target.value }) }}
+            value={this.state.configFile.app}
+            onChange={e => this.setAppName(e.target.value)}
             className={action !== "new" ? "border-0 bg-gray-100" : "mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"}
           />
         </div>
@@ -621,8 +682,8 @@ class EnvConfig extends Component {
             type="text"
             name="namespace"
             id="namespace"
-            value={this.state.namespace}
-            onChange={e => { this.setState({ namespace: e.target.value }) }}
+            value={this.state.configFile.namespace}
+            onChange={e => this.setNamespace(e.target.value)}
             className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
           />
         </div>
@@ -633,8 +694,8 @@ class EnvConfig extends Component {
           </div>
           <div className="max-w-lg flex rounded-md">
             <Switch
-              checked={this.state.useDeployPolicy}
-              onChange={() => this.setState({ useDeployPolicy: !this.state.useDeployPolicy })}
+              checked={this.state.configFile.deploy !== undefined}
+              onChange={e => this.toggleDeployPolicy()}
               className={(
                 this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
                 " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
@@ -652,7 +713,7 @@ class EnvConfig extends Component {
           </div>
         </div>
 
-        {this.state.useDeployPolicy &&
+        {this.state.configFile.deploy &&
           <div className="ml-8 mb-8">
             <div className="mb-4 items-center">
               <label htmlFor="deployEvent" className="text-gray-700 mr-4 block text-sm font-medium">
@@ -663,7 +724,7 @@ class EnvConfig extends Component {
                   className="relative cursor-pointer inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
                 >
 
-                  {this.state.selectedDeployEvent}
+                  {this.state.configFile.deploy.event}
                 </Menu.Button>
                 <span className="-ml-px relative block">
                   <Menu.Button
@@ -679,9 +740,7 @@ class EnvConfig extends Component {
                           {({ active }) => (
                             <button
                               onClick={() => {
-                                this.setState({
-                                  selectedDeployEvent: deployEvent,
-                                })
+                                this.setDeployEvent(deployEvent)
                               }}
                               className={(
                                 active ? 'bg-gray-100 text-gray-900' : 'text-gray-700') +
@@ -700,18 +759,19 @@ class EnvConfig extends Component {
             </div>
             <div className="mb-4 items-center">
               <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
-                {`${this.state.selectedDeployEvent === "tag" ? "Tag" : "Branch"} filter`}
+                {`${this.state.configFile.deploy.event === "tag" ? "Tag" : "Branch"} filter`}
               </label>
               <input
+                key={this.state.configFile.deploy.event}
                 type="text"
                 name="deployFilterInput"
                 id="deployFilterInput"
-                value={this.state.deployFilterInput ?? ""}
-                onChange={e => { this.setState({ deployFilterInput: e.target.value }) }}
+                value={this.state.configFile.deploy.event === "tag" ? this.state.configFile.deploy.tag : this.state.configFile.deploy.branch}
+                onChange={e => { this.setDeployFilter(e.target.value)}}
                 className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
               />
               <ul className="list-none text-sm text-gray-500 mt-2">
-                {this.state.selectedDeployEvent === "tag" ?
+                {this.state.configFile.deploy.event === "tag" ?
                   <>
                     <li>
                       Filter tags to deploy based on tag name patterns.
@@ -740,7 +800,7 @@ class EnvConfig extends Component {
             schema={this.state.selectedTemplate.schema}
             config={this.state.selectedTemplate.uiSchema}
             fields={customFields}
-            values={this.state.values}
+            values={this.state.configFile.values}
             setValues={this.setValues}
             validate={true}
             validationCallback={this.validationCallback}
@@ -748,7 +808,7 @@ class EnvConfig extends Component {
           <div className="w-full mt-16">
             <ReactDiffViewer
               oldValue={yaml.dump(this.state.defaultConfigFile)}
-              newValue={yaml.dump(configFile)}
+              newValue={yaml.dump(this.state.configFile)}
               splitView={false}
               showDiffOnly={false}
               styles={{

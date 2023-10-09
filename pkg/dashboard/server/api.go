@@ -198,7 +198,7 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	thresholds := alert.Thresholds()
-	var decoratedAlerts []*api.Alert
+	decoratedAlerts := []*api.Alert{}
 	for _, dbAlert := range dbAlerts {
 		t := alert.ThresholdByType(thresholds, dbAlert.Type)
 		decoratedAlerts = append(decoratedAlerts, &api.Alert{
