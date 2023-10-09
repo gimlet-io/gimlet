@@ -123,16 +123,7 @@ export default class Repo extends Component {
       }, () => {/* Generic error handler deals with it */
     });
 
-    this.props.gimletClient.getPullRequests(owner, repo)
-      .then(data => {
-        this.props.store.dispatch({
-          type: ACTION_TYPE_REPO_PULLREQUESTS, payload: {
-            data: data,
-            repoName: `${owner}/${repo}`
-          }
-        });
-      }, () => {/* Generic error handler deals with it */
-    });
+    this.getPullRequests(owner, repo)
 
     this.props.gimletClient.getEnvConfigs(owner, repo)
       .then(envConfigs => {
@@ -338,6 +329,19 @@ export default class Repo extends Component {
     this.props.gimletClient.triggerCommitSync(owner, repo)
   }
 
+  getPullRequests(owner, repo) {
+    this.props.gimletClient.getPullRequests(owner, repo)
+      .then(data => {
+        this.props.store.dispatch({
+          type: ACTION_TYPE_REPO_PULLREQUESTS, payload: {
+            data: data,
+            repoName: `${owner}/${repo}`
+          }
+        });
+      }, () => {/* Generic error handler deals with it */
+      });
+  }
+
   rollback(env, app, rollbackTo, e) {
     const target = {
       rollback: true,
@@ -491,7 +495,10 @@ export default class Repo extends Component {
                   {/* {this.ciConfigAndShipperStatuses(repoName)} */}
                 </h1>
                 <RefreshButton
-                  refreshFunc={() => this.triggerCommitSync(owner, repo)}
+                  refreshFunc={() => {
+                    this.triggerCommitSync(owner, repo);
+                    this.getPullRequests(owner, repo);
+                  }}
                 />
               </div>
               <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push("/repositories")}>
