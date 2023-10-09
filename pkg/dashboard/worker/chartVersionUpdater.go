@@ -75,7 +75,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		return fmt.Errorf("cannot list pull requests: %s", err)
 	}
 
-	var chartUpdatePRs []*api.PR
+	chartUpdatePRs := []*api.PR{}
 	for _, pullRequest := range prList {
 		if strings.HasPrefix(pullRequest.Source, "gimlet-chart-update") {
 			chartUpdatePRs = append(chartUpdatePRs, &api.PR{
