@@ -34,22 +34,11 @@ class EnvConfig extends Component {
 
     this.state = {
       templates: reduxState.defaultDeploymentTemplates,
-
-      // defaultChart: this.patchImageWidget(reduxState.defaultChart),
-      // defaultTemplate: reduxState.defaultTemplate,
-      // templates: reduxState.templates,
-      // fileInfos: reduxState.fileInfos,
-
       timeoutTimer: {},
       deployEvents: ["push", "tag", "pr"],
-      selectedDeployEvent: "push",
-      useDeployPolicy: false,
-
       popupWindow: reduxState.popupWindow,
       scmUrl: reduxState.settings.scmUrl,
-
       envs: reduxState.envs,
-      repoMetas: reduxState.repoMetas,
     };
 
     this.props.store.subscribe(() => {
@@ -57,84 +46,17 @@ class EnvConfig extends Component {
 
       this.setState({
         templates: reduxState.defaultDeploymentTemplates,
-
-        // defaultChart: this.patchImageWidget(reduxState.defaultChart),
-        // defaultTemplate: reduxState.defaultTemplate,
-        // templates: reduxState.templates,
-        // fileInfos: reduxState.fileInfos,
-
         envs: reduxState.envs,
-        repoMetas: reduxState.repoMetas,
         popupWindow: reduxState.popupWindow,
         scmUrl: reduxState.settings.scmUrl
       });
 
-      if (!this.state.defaultConfigFile && this.state.selectedTemplate) {
-        this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, this.state.selectedTemplate);
-      }
       this.ensureRepoAssociationExists(repoName, reduxState.repoMetas);
       this.ensureGitCloneUrlExists(reduxState.defaultChart, reduxState.settings.scmUrl);
     });
 
     this.setValues = this.setValues.bind(this);
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
-  }
-
-  setLocalEnvConfigState(envConfigs, repoName, env, config, selectedTemplate) {
-    const { action } = this.props.match.params;
-    if (action === "new") {
-      this.setState({
-        configFile: {
-          app: config,
-          namespace: "default",
-          env:       env,
-          chart: selectedTemplate.reference,
-          values: {
-            gitRepository: repoName,
-            gitSha:        "{{ .SHA }}",
-            image: {
-              repository: "127.0.0.1:32447/"+config,
-              tag:        "{{ .SHA }}",
-            },
-            resources: {
-              ignoreLimits: true,
-            },
-          },
-        },
-        defaultConfigFile: {},
-      })
-      return
-    }
-
-    let configFileContent = {} //configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defaultChart);
-    if (configFileContent) { // if data not loaded yet, store.subscribe will take care of this
-      let envConfig = configFileContent.values;
-
-      this.setState({
-        configFile: (action === "new" ? {} : configFileContent),
-        chartFromConfigFile: configFileContent.chart,
-        appName: configFileContent.app ?? config,
-        namespace: configFileContent.namespace ?? "default",
-        defaultAppName: configFileContent.app ?? config,
-        defaultNamespace: configFileContent.namespace ?? "default",
-
-        values: Object.assign({}, envConfig),
-        nonDefaultValues: Object.assign({}, envConfig),
-        defaultState: Object.assign({}, envConfig),
-      });
-
-      this.setDeployPolicy(configFileContent.deploy);
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    const { owner, repo, env, config } = this.props.match.params;
-    const repoName = `${owner}/${repo}`;
-
-    if (prevProps.match.params.config !== config) {
-      let reduxState = this.props.store.getState();
-      this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
-    }
   }
 
   componentDidMount() {
@@ -149,41 +71,63 @@ class EnvConfig extends Component {
         store.dispatch({
           type: ACTION_TYPE_DEFAULT_DEPLOYMENT_TEMPLATES, payload: data
         });
-        this.setState({ 
-          templatesLoaded: true,
+        const selectedTemplate = this.patchImageWidget(data[0])
+        this.setState({
+          selectedTemplate: selectedTemplate,
+          configFile: {
+            app: config,
+            namespace: "default",
+            env:       env,
+            chart: selectedTemplate.reference,
+            values: {
+              gitRepository: repoName,
+              gitSha:        "{{ .SHA }}",
+              image: {
+                repository: "127.0.0.1:32447/"+config,
+                tag:        "{{ .SHA }}",
+              },
+              resources: {
+                ignoreLimits: true,
+              },
+            },
+          },
+          defaultConfigFile: {},
+        });
+      }, () => {/* Generic error handler deals with it */
+        this.setState({ templatesLoaded: true });
+      });
+    } else {
+      gimletClient.getDeploymentTemplates(owner, repo, env, config)
+      .then(data => {
+        this.setState({
+          templates: data,
           selectedTemplate: this.patchImageWidget(data[0])
         });
       }, () => {/* Generic error handler deals with it */
         this.setState({ templatesLoaded: true });
       });
-    } // else {
-    //   gimletClient.getDeploymentTemplates(owner, repo, env, config)
-    //   .then(data => {
-    //     store.dispatch({
-    //       type: ACTION_TYPE_DEPLOYMENT_TEMPLATES, payload: data
-    //     });
-    //     this.setState({ templatesLoaded: true });
-    //   }, () => {/* Generic error handler deals with it */
-    //     this.setState({ templatesLoaded: true });
-    //   });
-    // }
+    }
 
-    // this.props.gimletClient.getRepoMetas(owner, repo)
-    //   .then(data => {
-    //     this.props.store.dispatch({
-    //       type: ACTION_TYPE_REPO_METAS, payload: {
-    //         repoMetas: data,
-    //       }
-    //     });
-    //   }, () => {/* Generic error handler deals with it */
-    //   });
+    this.props.gimletClient.getRepoMetas(owner, repo)
+      .then(data => {
+        this.setState({
+          repoMetas: data,
+        })
+      }, () => {/* Generic error handler deals with it */
+    });
 
-    // if (!this.state.values) { // envConfigs not loaded when we directly navigate to edit
-    //   loadEnvConfig(gimletClient, store, owner, repo)
-    // }
-
-    // let reduxState = this.props.store.getState();
-    // this.setLocalEnvConfigState(reduxState.envConfigs, repoName, env, config, reduxState.defaultChart);
+    this.props.gimletClient.getEnvConfigs(owner, repo)
+      .then(envConfigs => {         
+        if (envConfigs[env]) {
+          const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
+          let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
+          this.setState({
+            configFile: configFileContentFromEnvConfigs,
+            defaultConfigFile: deepCopied,
+          });
+        }
+      }, () => {/* Generic error handler deals with it */
+    });
   }
 
   ensureRepoAssociationExists(repoName, repoMetas) {
@@ -372,7 +316,12 @@ class EnvConfig extends Component {
   }
 
   setValues(values, nonDefaultValues) {
-    this.setState({ values: values, nonDefaultValues: nonDefaultValues });
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        values: values
+      }
+    }));
   }
 
   resetNotificationStateAfterThreeSeconds() {
@@ -577,22 +526,17 @@ class EnvConfig extends Component {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
 
-    // const fileName = this.findFileName(env, config)
     const hasChange = JSON.stringify(this.state.configFile) !== JSON.stringify(this.state.defaultConfigFile)
 
     const customFields = {
       imageWidget: ImageWidget,
     }
 
-    if (!this.state.templatesLoaded) {
+    if (!this.state.configFile) {
       return <Spinner />;
     }
 
-    // if (!this.state.defaultChart) {
-    //   return <Spinner />;
-    // }
-
-    if (!this.state.configFile) {
+    if (!this.state.selectedTemplate) {
       return <Spinner />;
     }
 
@@ -692,10 +636,11 @@ class EnvConfig extends Component {
           </div>
           <div className="max-w-lg flex rounded-md">
             <Switch
+              key={this.state.configFile.deploy}
               checked={this.state.configFile.deploy !== undefined}
               onChange={e => this.toggleDeployPolicy()}
               className={(
-                this.state.useDeployPolicy ? "bg-indigo-600" : "bg-gray-200") +
+                this.state.configFile.deploy !== undefined ? "bg-indigo-600" : "bg-gray-200") +
                 " relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200"
               }
             >
@@ -703,7 +648,7 @@ class EnvConfig extends Component {
               <span
                 aria-hidden="true"
                 className={(
-                  this.state.useDeployPolicy ? "translate-x-5" : "translate-x-0") +
+                  this.state.configFile.deploy !== undefined ? "translate-x-5" : "translate-x-0") +
                   " pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"
                 }
               />
@@ -889,7 +834,8 @@ class EnvConfig extends Component {
               disabled={!hasChange || this.state.popupWindow.visible}
               className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-blue-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
-                this.setState({ configFile: this.state.defaultConfigFile });
+                let deepCopied = JSON.parse(JSON.stringify(this.state.defaultConfigFile))
+                this.setState({ configFile: deepCopied });
                 this.setState({
                   selectedTemplate: this.patchImageWidget(this.state.templates[0])
                 });
@@ -972,20 +918,6 @@ function configFileContentFromEnvConfigs(envConfigs, repoName, env, config, defa
     // envConfigs not loaded, we shall wait for it to be loaded
     return undefined
   }
-}
-
-function loadEnvConfig(gimletClient, store, owner, repo) {
-  gimletClient.getEnvConfigs(owner, repo)
-    .then(envConfigs => {
-      store.dispatch({
-        type: ACTION_TYPE_ENVCONFIGS, payload: {
-          owner: owner,
-          repo: repo,
-          envConfigs: envConfigs
-        }
-      });
-    }, () => {/* Generic error handler deals with it */
-    });
 }
 
 export default EnvConfig;
