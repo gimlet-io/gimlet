@@ -56,7 +56,7 @@ class EnvConfig extends Component {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    const { gimletClient, store } = this.props;
+    const { gimletClient } = this.props;
 
     if (action === "new") {
       gimletClient.getDefaultDeploymentTemplates()
@@ -93,14 +93,6 @@ class EnvConfig extends Component {
           selectedTemplate: this.patchImageWidget(data[0])
         });
       }, () => {/* Generic error handler deals with it */ });
-
-      this.props.gimletClient.getRepoMetas(owner, repo)
-        .then(data => {
-          this.setState({
-            repoMetas: data,
-          })
-        }, () => {/* Generic error handler deals with it */
-      });
 
       this.props.gimletClient.getEnvConfigs(owner, repo)
         .then(envConfigs => {         
@@ -336,7 +328,7 @@ class EnvConfig extends Component {
       return
     }
 
-    const { owner, repo, env, config, action } = this.props.match.params;
+    const { owner, repo, env, config } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
     this.props.store.dispatch({
