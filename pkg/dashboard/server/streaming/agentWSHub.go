@@ -24,6 +24,7 @@ type PodLogWSMessage struct {
 	Container string `json:"container"`
 	Message   string `json:"message"`
 	Pod       string `json:"pod"`
+	Svc       string `json:"svc"`
 }
 
 type ImageBuildStatusWSMessage struct {
@@ -90,6 +91,7 @@ func (c *AgentWSClient) readPump() {
 				Timestamp:      podLogWSMessage.Timestamp,
 				Container:      podLogWSMessage.Container,
 				Pod:            podLogWSMessage.Pod,
+				Svc:            podLogWSMessage.Svc,
 				Message:        podLogWSMessage.Message,
 			})
 			c.hub.ClientHub.Broadcast <- jsonString

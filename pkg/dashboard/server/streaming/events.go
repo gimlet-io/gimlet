@@ -81,6 +81,7 @@ type PodLogsEvent struct {
 	Container string `json:"container"`
 	Message   string `json:"message"`
 	Pod       string `json:"pod"`
+	Svc       string `json:"svc"`
 	StreamingEvent
 }
 

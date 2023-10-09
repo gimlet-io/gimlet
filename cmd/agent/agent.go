@@ -391,9 +391,9 @@ func podLogs(
 							for _, container := range containers {
 								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, runningLogStreams)
 							}
-							return
 						}
 					}
+					return
 				}
 			}
 		}
@@ -515,7 +515,8 @@ func streamPodLogs(
 			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
 				Timestamp: timestamp,
 				Container: containerName,
-				Pod:       namespace + "/" + serviceName,
+				Pod:       pod,
+				Svc:       namespace + "/" + serviceName,
 				Message:   message,
 			})
 			if err != nil {
