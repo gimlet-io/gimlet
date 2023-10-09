@@ -417,12 +417,7 @@ class EnvConfig extends Component {
     });
     this.startApiCallTimeOutHandler();
 
-    const appNameToSave = action === "new" ? this.state.appName : this.state.defaultAppName;
-
-    let deployBranch = !(this.state.selectedDeployEvent === "tag") ? this.state.deployFilterInput : undefined;
-    let deployTag = this.state.selectedDeployEvent === "tag" ? this.state.deployFilterInput : undefined;
-
-    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.nonDefaultValues, this.state.namespace, this.state.defaultChart.reference, appNameToSave, this.state.useDeployPolicy, deployBranch, deployTag, this.state.selectedDeployEvent)
+    this.props.gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), this.state.configFile.values, this.state.configFile.namespace, this.state.configFile.chart, this.state.configFile.app, this.state.configFile.deploy ? true : false, this.state.configFile.deploy?.branch, this.state.configFile.deploy?.tag, this.state.configFile.deploy?.event)
       .then((data) => {
         if (!this.state.popupWindow.visible) {
           // if no saving is in progress, practically it timed out
@@ -581,13 +576,9 @@ class EnvConfig extends Component {
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    const configFile = this.constructConfigFile(this.state.defaultConfigFile);
 
     // const fileName = this.findFileName(env, config)
-    // const nonDefaultValuesString = JSON.stringify(this.state.nonDefaultValues);
-    // const hasChange = (nonDefaultValuesString !== '{ }' &&
-    //   nonDefaultValuesString !== JSON.stringify(this.state.defaultState)) ||
-    //   this.state.namespace !== this.state.defaultNamespace || this.state.deployFilterInput !== this.state.defaultDeployFilterInput || this.state.selectedDeployEvent !== this.state.defaultSelectedDeployEvent || this.state.useDeployPolicy !== this.state.defaultUseDeployPolicy || action === "new";
+    const hasChange = JSON.stringify(this.state.configFile) !== JSON.stringify(this.state.defaultConfigFile)
 
     const customFields = {
       imageWidget: ImageWidget,
@@ -668,7 +659,7 @@ class EnvConfig extends Component {
             this.renderTemplateFromConfig()
           }
         <div className="mb-4 items-center">
-          <label htmlFor="appName" className={`${!this.state.appName ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+          <label htmlFor="appName" className={`${!this.state.configFile.app ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             App name*
           </label>
           <input
@@ -682,7 +673,7 @@ class EnvConfig extends Component {
           />
         </div>
         <div className="mb-4 items-center">
-          <label htmlFor="namespace" className={`${!this.state.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
+          <label htmlFor="namespace" className={`${!this.state.configFile.namespace ? "text-red-600" : "text-gray-700"} mr-4 block text-sm font-medium`}>
             Namespace*
           </label>
           <input
@@ -892,33 +883,32 @@ class EnvConfig extends Component {
                 </Menu.Items>
               </span>
             </Menu> */}
-            {/* <button
+            { action !== "new" &&
+            <button
               type="button"
               disabled={!hasChange || this.state.popupWindow.visible}
               className={(hasChange && !this.state.popupWindow.visible ? `cursor-pointer bg-blue-600 hover:bg-blue-500 focus:border-yellow-700 focus:shadow-outline-indigo active:bg-blue-700` : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150`}
               onClick={() => {
-                this.setState({ values: Object.assign({}, this.state.defaultState) });
-                this.setState({ nonDefaultValues: Object.assign({}, this.state.defaultState) });
-                this.setState({ namespace: this.state.defaultNamespace })
-                this.setState({ useDeployPolicy: this.state.defaultUseDeployPolicy })
-                this.setState({ deployFilterInput: this.state.defaultDeployFilterInput })
-                this.setState({ selectedDeployEvent: this.state.defaultSelectedDeployEvent })
-                this.setDeploymentTemplate(this.state.defaultTemplate)
+                this.setState({ configFile: this.state.defaultConfigFile });
+                this.setState({
+                  selectedTemplate: this.patchImageWidget(this.state.templates[0])
+                });
               }}
             >
               Reset
-            </button> */}
-            {/* <button
+            </button>
+            }
+            <button
               type="button"
-              disabled={!hasChange || this.state.popupWindow.visible || !this.state.namespace || !this.state.appName}
-              className={(hasChange && !this.state.popupWindow.visible && this.state.namespace && this.state.appName ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={!hasChange || this.state.popupWindow.visible || !this.state.configFile.namespace || !this.state.configFile.app}
+              className={(hasChange && !this.state.popupWindow.visible && this.state.configFile.namespace && this.state.configFile.app ? 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700' : `bg-gray-600 cursor-default`) + ` inline-flex items-center px-6 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
               onClick={() => {
                 posthog?.capture('Env config save pushed')
                 this.save()
               }}
             >
               Save
-            </button> */}
+            </button>
           </span>
         </div>
       </div>
