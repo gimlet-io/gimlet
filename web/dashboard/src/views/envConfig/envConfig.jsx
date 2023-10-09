@@ -377,7 +377,7 @@ class EnvConfig extends Component {
   }
 
   delete() {
-    const { owner, repo, env } = this.props.match.params;
+    const { owner, repo, config, env } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
     this.props.store.dispatch({
@@ -387,7 +387,7 @@ class EnvConfig extends Component {
     });
     this.startApiCallTimeOutHandler();
 
-    this.props.gimletClient.deleteEnvConfig(owner, repo, env, this.state.appName)
+    this.props.gimletClient.deleteEnvConfig(owner, repo, env, config)
       .then((data) => {
         if (!this.state.popupWindow.visible) {
           // if no deleting is in progress, practically it timed out
@@ -426,14 +426,16 @@ class EnvConfig extends Component {
   }
 
   setDeploymentTemplate(template) {
-    this.setState({ selectedTemplate: this.patchImageWidget(template) });
+    const selectedTemplate = this.patchImageWidget(template)
     this.setState(prevState => {
       let copiedConfigFile = Object.assign({}, prevState.configFile)
       delete copiedConfigFile.deploy
       copiedConfigFile.values = {}
+      copiedConfigFile.chart = selectedTemplate.reference
 
       return {
         configFile: copiedConfigFile,
+        selectedTemplate: selectedTemplate,
       }
     }, () => {
       this.ensureRepoAssociationExists();
