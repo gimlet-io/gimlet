@@ -108,7 +108,7 @@ func add(c *cli.Context) error {
 
 	if c.String("varsFile") != "" {
 		varsMap, err := godotenv.Read(c.String("varsFile"))
-		if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+		if err != nil {
 			return fmt.Errorf("cannot read variables %s", err)
 		}
 		for k, v := range varsMap {
