@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -24,6 +25,10 @@ var artifactAddCmd = cli.Command{
 			Name:    "file",
 			Aliases: []string{"f"},
 			Usage:   "artifact file to update",
+		},
+		&cli.StringFlag{
+			Name:  "varsFile",
+			Usage: "attach variables from file to the artifact",
 		},
 		&cli.StringSliceFlag{
 			Name:  "field",
@@ -99,6 +104,19 @@ func add(c *cli.Context) error {
 			a.Vars = map[string]string{}
 		}
 		a.Vars[k] = v
+	}
+
+	if c.String("varsFile") != "" {
+		varsMap, err := godotenv.Read(c.String("varsFile"))
+		if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+			return fmt.Errorf("cannot read variables %s", err)
+		}
+		for k, v := range varsMap {
+			if a.Vars == nil {
+				a.Vars = map[string]string{}
+			}
+			a.Vars[k] = v
+		}
 	}
 
 	jsonString := bytes.NewBufferString("")
