@@ -268,12 +268,16 @@ func processBranchDeletedEvent(
 		vars := map[string]string{
 			"BRANCH": branchDeletedEvent.Branch,
 		}
-		err = loadEnvVars(gitopsRepoCache, envFromStore, vars)
+		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
 		if err != nil {
 			result.Status = model.Failure
 			result.StatusDesc = err.Error()
 			results = append(results, result)
 			continue
+		}
+
+		for k, v := range envVars {
+			vars[k] = v
 		}
 
 		err = env.Cleanup.ResolveVars(vars)
@@ -372,12 +376,16 @@ func processReleaseEvent(
 
 		vars := artifact.CollectVariables()
 		vars["APP"] = releaseRequest.App
-		err = loadEnvVars(gitopsRepoCache, envFromStore, vars)
+		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
 			deployResults = append(deployResults, deployResult)
 			continue
+		}
+
+		for k, v := range envVars {
+			vars[k] = v
 		}
 
 		err = manifest.ResolveVars(vars)
@@ -575,12 +583,16 @@ func processArtifactEvent(
 		}
 
 		vars := artifact.CollectVariables()
-		err = loadEnvVars(gitopsRepoCache, envFromStore, vars)
+		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
 			deployResults = append(deployResults, deployResult)
 			continue
+		}
+
+		for k, v := range envVars {
+			vars[k] = v
 		}
 
 		err = manifest.ResolveVars(vars)
@@ -622,10 +634,10 @@ func processArtifactEvent(
 	return deployResults, nil
 }
 
-func loadEnvVars(repoCache *nativeGit.RepoCache, env *model.Environment, vars map[string]string) error {
+func loadEnvVars(repoCache *nativeGit.RepoCache, env *model.Environment) (map[string]string, error) {
 	repo, err := repoCache.InstanceForRead(env.AppsRepo)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	varsPath := filepath.Join(env.Name, ".gimlet/vars")
@@ -635,18 +647,10 @@ func loadEnvVars(repoCache *nativeGit.RepoCache, env *model.Environment, vars ma
 
 	envVarsString, err := nativeGit.Content(repo, varsPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	envVars, err := godotenv.Unmarshal(envVarsString)
-	if err != nil {
-		return err
-	}
-
-	for k, v := range envVars {
-		vars[k] = v
-	}
-	return nil
+	return godotenv.Unmarshal(envVarsString)
 }
 
 func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact) {
