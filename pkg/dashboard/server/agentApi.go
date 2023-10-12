@@ -158,6 +158,9 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 	for _, stack := range stacks {
+		if stack.Deployment == nil {
+			continue
+		}
 		err := alertStateManager.TrackDeploymentPods(stack.Deployment.Pods)
 		if err != nil {
 			logrus.Errorf("cannot track pods: %s", err)
