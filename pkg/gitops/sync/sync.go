@@ -47,7 +47,8 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 			Namespace: options.Namespace,
 		},
 		Spec: sourcev1.GitRepositorySpec{
-			URL: options.URL,
+			Ignore: &options.GimletPath,
+			URL:    options.URL,
 			Interval: metav1.Duration{
 				Duration: options.Interval,
 			},

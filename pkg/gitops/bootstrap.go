@@ -137,6 +137,10 @@ func GenerateManifests(opts ManifestOpts) (string, string, string, error) {
 		if opts.KustomizationPerApp {
 			syncOpts.TargetPath = fluxPath
 		}
+		syncOpts.GimletPath = filepath.Join(opts.Env, ".gimlet")
+		if opts.SingleEnv {
+			syncOpts.GimletPath = ".gimlet"
+		}
 		syncManifest, err := sync.Generate(syncOpts)
 		if err != nil {
 			return "", "", "", fmt.Errorf("cannot generate git manifests %s", err)
