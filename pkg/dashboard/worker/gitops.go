@@ -22,6 +22,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	bootstrap "github.com/gimlet-io/gimlet-cli/pkg/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
+	"github.com/joho/godotenv"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -264,9 +265,22 @@ func processBranchDeletedEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		err = env.Cleanup.ResolveVars(map[string]string{
+		vars := map[string]string{
 			"BRANCH": branchDeletedEvent.Branch,
-		})
+		}
+		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
+		if err != nil {
+			result.Status = model.Failure
+			result.StatusDesc = err.Error()
+			results = append(results, result)
+			continue
+		}
+
+		for k, v := range envVars {
+			vars[k] = v
+		}
+
+		err = env.Cleanup.ResolveVars(vars)
 		if err != nil {
 			result.Status = model.Failure
 			result.StatusDesc = err.Error()
@@ -362,6 +376,18 @@ func processReleaseEvent(
 
 		vars := artifact.CollectVariables()
 		vars["APP"] = releaseRequest.App
+		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = err.Error()
+			deployResults = append(deployResults, deployResult)
+			continue
+		}
+
+		for k, v := range envVars {
+			vars[k] = v
+		}
+
 		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -556,7 +582,20 @@ func processArtifactEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		err = manifest.ResolveVars(artifact.CollectVariables())
+		vars := artifact.CollectVariables()
+		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = err.Error()
+			deployResults = append(deployResults, deployResult)
+			continue
+		}
+
+		for k, v := range envVars {
+			vars[k] = v
+		}
+
+		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -593,6 +632,25 @@ func processArtifactEvent(
 	}
 
 	return deployResults, nil
+}
+
+func loadEnvVars(repoCache *nativeGit.RepoCache, env *model.Environment) (map[string]string, error) {
+	repo, err := repoCache.InstanceForRead(env.AppsRepo)
+	if err != nil {
+		return nil, err
+	}
+
+	varsPath := filepath.Join(env.Name, ".gimlet/vars")
+	if env.RepoPerEnv {
+		varsPath = ".gimlet/vars"
+	}
+
+	envVarsString, err := nativeGit.Content(repo, varsPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return godotenv.Unmarshal(envVarsString)
 }
 
 func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact) {

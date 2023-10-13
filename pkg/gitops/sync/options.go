@@ -29,6 +29,7 @@ type Options struct {
 	Secret               string
 	TargetPath           string
 	DependenciesPath     string
+	GimletPath           string
 	ManifestFile         string
 	GitImplementation    string
 	RecurseSubmodules    bool
