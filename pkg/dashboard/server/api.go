@@ -630,7 +630,7 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 		builtInEnv.AppsRepo,
 		true,
 		gitToken,
-		true,
+		false,
 		false,
 		false,
 		false,
