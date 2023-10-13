@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
@@ -86,11 +85,12 @@ func (s imagePullBackOffThreshold) Resolved(relatedObject interface{}) bool {
 }
 
 func (s failedEventThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
-	event := relatedObject.(*api.Event)
-	alertPendingSinceInMinutes := time.Since(time.Unix(alert.PendingAt, 0)).Minutes()
-	countPerMinute := float64(event.Count) / alertPendingSinceInMinutes
+	// event := relatedObject.(*api.Event)
+	// alertPendingSinceInMinutes := time.Since(time.Unix(alert.PendingAt, 0)).Minutes()
+	// countPerMinute := float64(event.Count) / alertPendingSinceInMinutes
 
-	return countPerMinute >= s.minimumCountPerMinute && event.Count >= s.minimumCount
+	// return countPerMinute >= s.minimumCountPerMinute && event.Count >= s.minimumCount
+	return false
 }
 
 func (s failedEventThreshold) Resolved(relatedObject interface{}) bool {
