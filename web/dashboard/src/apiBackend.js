@@ -8,7 +8,8 @@ import {
   ACTION_TYPE_APPLICATION,
   ACTION_TYPE_SETTINGS,
   ACTION_TYPE_ALERTS,
-  ACTION_TYPE_CHART_UPDATE_PULLREQUESTS
+  ACTION_TYPE_CHART_UPDATE_PULLREQUESTS,
+  ACTION_TYPE_GITOPS_UPDATE_PULLREQUESTS
 } from "./redux/redux";
 
 export default class APIBackend extends Component {
@@ -43,6 +44,9 @@ export default class APIBackend extends Component {
       });
     this.props.gimletClient.getChartUpdatePullRequests()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_CHART_UPDATE_PULLREQUESTS, payload: data }), () => {/* Generic error handler deals with it */
+      });
+      this.props.gimletClient.getGitopsUpdatePullRequests()
+      .then(data => this.props.store.dispatch({ type: ACTION_TYPE_GITOPS_UPDATE_PULLREQUESTS, payload: data }), () => {/* Generic error handler deals with it */
       });
     this.props.gimletClient.getAlerts()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_ALERTS, payload: data }), () => {/* Generic error handler deals with it */

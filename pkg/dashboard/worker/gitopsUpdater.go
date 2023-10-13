@@ -131,9 +131,10 @@ func updateGitopsManifests(
 	for _, pullRequest := range prList {
 		if strings.HasPrefix(pullRequest.Source, "gimlet-gitops-update") {
 			return &api.PR{
-				Sha:   pullRequest.Sha,
-				Link:  pullRequest.Link,
-				Title: pullRequest.Title,
+				Sha:    pullRequest.Sha,
+				Link:   pullRequest.Link,
+				Title:  pullRequest.Title,
+				Number: pullRequest.Number,
 			}, nil
 		}
 	}
@@ -159,8 +160,9 @@ func updateGitopsManifests(
 		return nil, fmt.Errorf("cannot checkout branch: %s", err)
 	}
 
+	env := envName
 	if repoPerEnv {
-		envName = ""
+		env = ""
 	}
 
 	scmHost := strings.Split(scmURL, "://")[1]
@@ -168,7 +170,7 @@ func updateGitopsManifests(
 		ShouldGenerateController:           shouldGenerateController,
 		ShouldGenerateDependencies:         shouldGenerateDependencies,
 		KustomizationPerApp:                kustomizationPerApp,
-		Env:                                envName,
+		Env:                                env,
 		SingleEnv:                          repoPerEnv,
 		GitopsRepoPath:                     tmpPath,
 		ShouldGenerateKustomizationAndRepo: true,
@@ -194,7 +196,7 @@ func updateGitopsManifests(
 	}
 
 	createdPr, _, err := goScmHelper.CreatePR(token, repoName, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet] Gitops manifests update for %s", envName),
+		fmt.Sprintf("[Gimlet] `%s` gitops manifests update for %s", repoName, envName),
 		"This is an automated Pull Request that updates the Gitops manifests.")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create pull request: %s", err)
@@ -202,8 +204,9 @@ func updateGitopsManifests(
 	logrus.Infof("pull request created for %s with gitops update", repoName)
 
 	return &api.PR{
-		Sha:   createdPr.Sha,
-		Link:  createdPr.Link,
-		Title: createdPr.Title,
+		Sha:    createdPr.Sha,
+		Link:   createdPr.Link,
+		Title:  createdPr.Title,
+		Number: createdPr.Number,
 	}, nil
 }

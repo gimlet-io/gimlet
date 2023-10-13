@@ -57,6 +57,8 @@ export default class GimletClient {
 
   getPullRequestsFromInfraRepo = () => this.getWithAxios(`/api/infraRepoPullRequests`);
 
+  getGitopsUpdatePullRequests = () => this.getWithAxios("/api/gitopsUpdatePullRequests");
+
   podLogsRequest = (namespace, serviceName) => this.getWithAxios(`/api/podLogs?namespace=${namespace}&serviceName=${serviceName}`);
 
   stopPodlogsRequest = (namespace, serviceName) => this.getWithAxios(`/api/stopPodLogs?namespace=${namespace}&serviceName=${serviceName}`);

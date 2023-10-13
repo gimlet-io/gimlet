@@ -230,6 +230,7 @@ func main() {
 		tokenManager,
 		repoCache,
 		&chartUpdatePullRequests,
+		&gitopsUpdatePullRequests,
 		alertStateManager,
 		notificationsManager,
 		perf,
