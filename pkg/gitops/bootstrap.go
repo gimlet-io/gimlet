@@ -66,7 +66,7 @@ func GenerateManifests(opts ManifestOpts) (string, string, string, error) {
 	installOpts := install.MakeDefaultOptions()
 	installOpts.ManifestFile = "flux.yaml"
 	installOpts.TargetPath = opts.Env
-	installOpts.Version = "v0.41.2"
+	installOpts.Version = "v2.1.2"
 
 	if !opts.SingleEnv && opts.Env == "" {
 		return "", "", "", fmt.Errorf("either `--env` or `--single-env` is mandatory")

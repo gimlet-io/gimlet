@@ -27,10 +27,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1beta2"
-	notifv1 "github.com/fluxcd/notification-controller/api/v1beta1"
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	notifv1 "github.com/fluxcd/notification-controller/api/v1"
+	notifv1beta2 "github.com/fluxcd/notification-controller/api/v1beta2"
+
 	"github.com/fluxcd/pkg/apis/meta"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 
 	"github.com/fluxcd/flux2/v2/pkg/manifestgen"
 )
@@ -58,7 +60,6 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 			SecretRef: &meta.LocalObjectReference{
 				Name: options.Secret,
 			},
-			GitImplementation: options.GitImplementation,
 			RecurseSubmodules: options.RecurseSubmodules,
 		},
 	}
@@ -90,7 +91,6 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 					Kind: sourcev1.GitRepositoryKind,
 					Name: options.Name,
 				},
-				Validation: "client",
 			},
 		}
 	}
@@ -119,7 +119,6 @@ func Generate(options Options) (*manifestgen.Manifest, error) {
 				Kind: sourcev1.GitRepositoryKind,
 				Name: options.Name,
 			},
-			Validation: "client",
 		},
 	}
 
@@ -156,8 +155,8 @@ func GenerateProviderAndAlert(
 	notificationsName string,
 	fileName string) (*manifestgen.Manifest, error) {
 	namespace := "flux-system"
-	gvk := notifv1.GroupVersion.WithKind(notifv1.ProviderKind)
-	provider := notifv1.Provider{
+	gvk := notifv1beta2.GroupVersion.WithKind(notifv1beta2.ProviderKind)
+	provider := notifv1beta2.Provider{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: gvk.GroupVersion().String(),
 			Kind:       gvk.Kind,
@@ -166,15 +165,15 @@ func GenerateProviderAndAlert(
 			Name:      notificationsName,
 			Namespace: namespace,
 		},
-		Spec: notifv1.ProviderSpec{
+		Spec: notifv1beta2.ProviderSpec{
 			Type:    "generic",
 			Address: fmt.Sprintf("%s/api/flux-events?access_token=%s&env=%s", gimletdUrl, token, envName),
 		},
 	}
 
-	gvk = notifv1.GroupVersion.WithKind(notifv1.AlertKind)
+	gvk = notifv1beta2.GroupVersion.WithKind(notifv1beta2.AlertKind)
 	kk := kustomizev1.GroupVersion.WithKind(kustomizev1.KustomizationKind)
-	alert := notifv1.Alert{
+	alert := notifv1beta2.Alert{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: gvk.GroupVersion().String(),
 			Kind:       gvk.Kind,
@@ -183,7 +182,7 @@ func GenerateProviderAndAlert(
 			Name:      notificationsName,
 			Namespace: namespace,
 		},
-		Spec: notifv1.AlertSpec{
+		Spec: notifv1beta2.AlertSpec{
 			ProviderRef: meta.LocalObjectReference{
 				Name: notificationsName,
 			},
@@ -248,7 +247,6 @@ func GenerateKustomizationForApp(
 				Kind: sourcev1.GitRepositoryKind,
 				Name: sourceName,
 			},
-			Validation: "client",
 		},
 	}
 

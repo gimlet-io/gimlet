@@ -31,7 +31,6 @@ type Options struct {
 	DependenciesPath     string
 	GimletPath           string
 	ManifestFile         string
-	GitImplementation    string
 	RecurseSubmodules    bool
 	GenerateDependencies bool
 }
@@ -46,7 +45,6 @@ func MakeDefaultOptions() Options {
 		Secret:               "flux-system",
 		ManifestFile:         "gotk-sync.yaml",
 		TargetPath:           "",
-		GitImplementation:    "",
 		GenerateDependencies: true,
 	}
 }
