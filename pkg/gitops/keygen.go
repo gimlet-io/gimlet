@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/pem"
 
-	"github.com/caarlos0/sshmarshal"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -15,7 +14,7 @@ func GenerateEd25519() ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	block, err := sshmarshal.MarshalPrivateKey(priv, "keygen@gimlet.io")
+	block, err := ssh.MarshalPrivateKey(priv, "keygen@gimlet.io")
 	if err != nil {
 		return nil, nil, err
 	}
