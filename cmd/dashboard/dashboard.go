@@ -159,6 +159,18 @@ func main() {
 		go chartVersionUpdater.Run()
 	}
 
+	gitopsUpdatePullRequests := map[string]interface{}{}
+	if config.GitopsUpdaterFeatreFlag {
+		gitopsUpdater := worker.NewGitopsUpdater(
+			store,
+			dynamicConfig,
+			tokenManager,
+			repoCache,
+			&gitopsUpdatePullRequests,
+		)
+		go gitopsUpdater.Run()
+	}
+
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
 		config.GitopsRepo,
