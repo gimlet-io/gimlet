@@ -39,6 +39,7 @@ func SetupRouter(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	repoCache *nativeGit.RepoCache,
 	chartUpdatePullRequests *map[string]interface{},
+	gitopsUpdatePullRequests *map[string]interface{},
 	alertStateManager *alert.AlertStateManager,
 	notificationsManager notifications.Manager,
 	perf *prometheus.HistogramVec,
@@ -64,6 +65,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitRepoCache", repoCache))
 	r.Use(middleware.WithValue("alertStateManager", alertStateManager))
 	r.Use(middleware.WithValue("chartUpdatePullRequests", chartUpdatePullRequests))
+	r.Use(middleware.WithValue("gitopsUpdatePullRequests", gitopsUpdatePullRequests))
 	r.Use(middleware.WithValue("router", r))
 	r.Use(middleware.WithValue("gitUser", gitUser))
 
@@ -164,6 +166,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)
 		r.Get("/api/repo/{owner}/{name}/pullRequests", getPullRequests)
 		r.Get("/api/chartUpdatePullRequests", getChartUpdatePullRequests)
+		r.Get("/api/gitopsUpdatePullRequests", getGitopsUpdatePullRequests)
 		r.Get("/api/infraRepoPullRequests", getPullRequestsFromInfraRepos)
 		r.Get("/api/repo/{owner}/{name}/envConfigs", envConfigs)
 		r.Post("/api/repo/{owner}/{name}/env/{env}/config/{config}", saveEnvConfig)

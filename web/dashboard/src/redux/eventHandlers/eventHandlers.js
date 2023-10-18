@@ -139,6 +139,11 @@ export function chartUpdatePullRequests(state, payload) {
   return state
 }
 
+export function gitopsUpdatePullRequests(state, payload) {
+  state.pullRequests.gitopsUpdates = payload;
+  return state
+}
+
 export function saveEnvPullRequest(state, payload) {
   state.envs.forEach(env => {
     if (env.name === payload.envName) {

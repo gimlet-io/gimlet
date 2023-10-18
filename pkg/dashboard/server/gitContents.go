@@ -226,6 +226,21 @@ func getChartUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
 	w.Write(pullRequestsString)
 }
 
+func getGitopsUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	gitopsUpdatePullRequests := ctx.Value("gitopsUpdatePullRequests").(*map[string]interface{})
+
+	gitopsUpdatePullRequestsString, err := json.Marshal(gitopsUpdatePullRequests)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(gitopsUpdatePullRequestsString)
+}
+
 func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)

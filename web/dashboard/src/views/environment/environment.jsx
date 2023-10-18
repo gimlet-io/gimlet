@@ -32,6 +32,7 @@ export default class EnvironmentView extends Component {
       user: reduxState.user,
       popupWindow: reduxState.popupWindow,
       releaseStatuses: reduxState.releaseStatuses[env],
+      pullRequests: reduxState.pullRequests.gitopsUpdates[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
       errors: {},
@@ -49,6 +50,7 @@ export default class EnvironmentView extends Component {
         user: reduxState.user,
         popupWindow: reduxState.popupWindow,
         releaseStatuses: reduxState.releaseStatuses[env],
+        pullRequests: reduxState.pullRequests.gitopsUpdates[env],
         scmUrl: reduxState.settings.scmUrl,
         settings: reduxState.settings
       });
@@ -523,7 +525,7 @@ export default class EnvironmentView extends Component {
   }
 
   render() {
-    let { environment, connectedAgents, user } = this.state;
+    let { environment, connectedAgents, user, pullRequests } = this.state;
     const isOnline = this.isOnline(connectedAgents, environment)
 
     if (!environment) {
@@ -539,36 +541,39 @@ export default class EnvironmentView extends Component {
     return (
       <div>
         <header>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:flex items-start">
-            <div className='relative flex-1'>
-              <h1 className="flex text-3xl font-bold capitalize leading-tight text-gray-900">
-                {environment.name}
-                <span title={isOnline ? "Connected" : "Disconnected"}>
-                  <svg className={(isOnline ? "text-green-400" : "text-red-400") + " inline fill-current ml-2"} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20">
-                    <path
-                      d="M0 14v1.498c0 .277.225.502.502.502h.997A.502.502 0 0 0 2 15.498V14c0-.959.801-2.273 2-2.779V9.116C1.684 9.652 0 11.97 0 14zm12.065-9.299l-2.53 1.898c-.347.26-.769.401-1.203.401H6.005C5.45 7 5 7.45 5 8.005v3.991C5 12.55 5.45 13 6.005 13h2.327c.434 0 .856.141 1.203.401l2.531 1.898a3.502 3.502 0 0 0 2.102.701H16V4h-1.832c-.758 0-1.496.246-2.103.701zM17 6v2h3V6h-3zm0 8h3v-2h-3v2z"
-                    />
-                  </svg>
-                </span>
-                {environment.infraRepo === "" &&
-                  <span title="Gitops automation is not bootstrapped">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="inline ml-2 h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <div className="sm:flex items-start">
+              <div className='relative flex-1'>
+                <h1 className="flex text-3xl font-bold capitalize leading-tight text-gray-900">
+                  {environment.name}
+                  <span title={isOnline ? "Connected" : "Disconnected"}>
+                    <svg className={(isOnline ? "text-green-400" : "text-red-400") + " inline fill-current ml-2"} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20">
+                      <path
+                        d="M0 14v1.498c0 .277.225.502.502.502h.997A.502.502 0 0 0 2 15.498V14c0-.959.801-2.273 2-2.779V9.116C1.684 9.652 0 11.97 0 14zm12.065-9.299l-2.53 1.898c-.347.26-.769.401-1.203.401H6.005C5.45 7 5 7.45 5 8.005v3.991C5 12.55 5.45 13 6.005 13h2.327c.434 0 .856.141 1.203.401l2.531 1.898a3.502 3.502 0 0 0 2.102.701H16V4h-1.832c-.758 0-1.496.246-2.103.701zM17 6v2h3V6h-3zm0 8h3v-2h-3v2z"
+                      />
                     </svg>
-                  </span>}
-              </h1>
-              {!isOnline &&
-                <div className="absolute top-0 right-0">
-                  <DeleteButton
-                    envName={environment.name}
-                    deleteFunc={this.delete}
-                  />
-                </div>
-              }
-              <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push("/environments")}>
-                &laquo; back
-              </button>
+                  </span>
+                  {environment.infraRepo === "" &&
+                    <span title="Gitops automation is not bootstrapped">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="inline ml-2 h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </span>}
+                </h1>
+                {!isOnline &&
+                  <div className="absolute top-0 right-0">
+                    <DeleteButton
+                      envName={environment.name}
+                      deleteFunc={this.delete}
+                    />
+                  </div>
+                }
+                <button className="text-gray-500 hover:text-gray-700" onClick={() => this.props.history.push("/environments")}>
+                  &laquo; back
+                </button>
+              </div>
             </div>
+            {renderGitopsUpdatePullRequests(pullRequests)}
           </div>
         </header>
         <main>
@@ -637,6 +642,44 @@ export default class EnvironmentView extends Component {
       </div>
     )
   }
+}
+
+const renderGitopsUpdatePullRequests = (pullRequests) => {
+  if (!pullRequests) {
+    return null
+  }
+
+  if (pullRequests.length === 0) {
+    return null
+  }
+
+  const prList = [];
+  pullRequests.forEach(p => {
+    prList.push(
+      <li key={p.sha}>
+        <a href={p.link} target="_blank" rel="noopener noreferrer">
+          <span className="font-medium">{`#${p.number}`}</span>: {p.title}
+        </a>
+      </li>)
+  })
+
+  return (
+    <div className="rounded-md bg-blue-50 p-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+        </div>
+        <div className="ml-3 flex-1 text-blue-700 md:flex md:justify-between">
+          <div className="text-xs flex flex-col">
+            <span className="font-semibold text-sm">Gitops manifest updates:</span>
+            <ul className="list-disc list-inside text-xs ml-2">
+              {prList}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const findEnv = (envs, envName) => {
