@@ -275,7 +275,7 @@ func GenerateConfigMap(
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-%s", owner, repository, namespace),
+			Name:      fmt.Sprintf("%s-%s", owner, repository),
 			Namespace: namespace,
 		},
 		Data:      data,
@@ -288,7 +288,7 @@ func GenerateConfigMap(
 	}
 
 	return &manifestgen.Manifest{
-		Path:    path.Join(".", fmt.Sprintf("config-map-%s.yaml", namespace)),
+		Path:    path.Join(".", fmt.Sprintf("configmap-%s-%s-%s.yaml", owner, repository, namespace)),
 		Content: fmt.Sprintf("---\n%s", resourceToString(yamlString)),
 	}, nil
 }

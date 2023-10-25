@@ -731,7 +731,7 @@ func cloneTemplateWriteAndPush(
 		}
 	}
 
-	owner, repository := server.ParseRepo(envFromStore.AppsRepo)
+	owner, repository := server.ParseRepo(releaseMeta.Version.RepositoryName)
 	configMapManifest, err := sync.GenerateConfigMap(owner, repository, manifest.Namespace, envVars)
 	if err != nil {
 		return "", err
