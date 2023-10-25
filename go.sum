@@ -259,6 +259,8 @@ github.com/felixge/httpsnoop v1.0.3 h1:s/nj+GCswXYzN5v2DpNMuMQYe+0DDwt5WVCU6CWBd
 github.com/flowstack/go-jsonschema v0.1.1/go.mod h1:yL7fNggx1o8rm9RlgXv7hTBWxdBM0rVwpMwimd3F3N0=
 github.com/fluxcd/flux2/v2 v2.1.2 h1:UGnvN/Y5vo63xeKSW1yg3NV0zCWBJBeBhRVEiwMwgNg=
 github.com/fluxcd/flux2/v2 v2.1.2/go.mod h1:iHsRzunnfBTHjs8SojTMBBYLwAhr0uQebSPCQBmpscs=
+github.com/fluxcd/helm-controller/api v0.36.2 h1:9JaTc91yocG1oQkM/GMfpZ/nGPpliRjZBNwyAsW5584=
+github.com/fluxcd/helm-controller/api v0.36.2/go.mod h1:zkcRy3PxG0NoxSY5SjiSA5tWOGa6spIbWsChQY8FXqM=
 github.com/fluxcd/kustomize-controller/api v1.1.1 h1:pQcAzvBC3cFGOCgk0zrcsO1Kjtal1tvd6rHXkyp2R78=
 github.com/fluxcd/kustomize-controller/api v1.1.1/go.mod h1:FHJTX6c0+CznUNGMol5+Uc4lQsYRxWgpmIRK/xDCghA=
 github.com/fluxcd/notification-controller/api v1.1.0 h1:qx5t5DmArfPLxG2bsYZXIqDXLnijUddlHeRfciALwQw=
