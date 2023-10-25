@@ -533,6 +533,14 @@ func CommitFilesToGit(
 			continue
 		}
 
+		if strings.HasPrefix(path, "config-map") {
+			err = StageFile(w, content, path)
+			if err != nil {
+				return "", fmt.Errorf("cannot stage file %s", err)
+			}
+			continue
+		}
+
 		err = StageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)

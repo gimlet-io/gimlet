@@ -375,6 +375,18 @@ func processReleaseEvent(
 			vars[k] = v
 		}
 
+		repoVars, err := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = err.Error()
+			deployResults = append(deployResults, deployResult)
+			continue
+		}
+
+		for k, v := range repoVars {
+			envVars[k] = v
+		}
+
 		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -405,6 +417,7 @@ func processReleaseEvent(
 			releaseMeta,
 			perf,
 			store,
+			envVars,
 			gitUser,
 			gitHost,
 		)
@@ -582,6 +595,18 @@ func processArtifactEvent(
 			vars[k] = v
 		}
 
+		repoVars, err := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = err.Error()
+			deployResults = append(deployResults, deployResult)
+			continue
+		}
+
+		for k, v := range repoVars {
+			envVars[k] = v
+		}
+
 		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -607,6 +632,7 @@ func processArtifactEvent(
 			releaseMeta,
 			perf,
 			dao,
+			envVars,
 			gitUser,
 			gitHost,
 		)
@@ -622,14 +648,18 @@ func processArtifactEvent(
 }
 
 func loadEnvVars(repoCache *nativeGit.RepoCache, env *model.Environment) (map[string]string, error) {
-	repo, err := repoCache.InstanceForRead(env.AppsRepo)
-	if err != nil {
-		return nil, err
-	}
-
 	varsPath := filepath.Join(env.Name, ".gimlet/vars")
 	if env.RepoPerEnv {
 		varsPath = ".gimlet/vars"
+	}
+
+	return loadRepoVars(repoCache, env.AppsRepo, varsPath)
+}
+
+func loadRepoVars(repoCache *nativeGit.RepoCache, repoName, varsPath string) (map[string]string, error) {
+	repo, err := repoCache.InstanceForRead(repoName)
+	if err != nil {
+		return nil, err
 	}
 
 	envVarsString, err := nativeGit.Content(repo, varsPath)
@@ -671,6 +701,7 @@ func cloneTemplateWriteAndPush(
 	releaseMeta *dx.Release,
 	perf *prometheus.HistogramVec,
 	store *store.Store,
+	envVars map[string]string,
 	gitUser *model.User,
 	gitHost string,
 ) (string, error) {
@@ -700,6 +731,12 @@ func cloneTemplateWriteAndPush(
 		}
 	}
 
+	owner, repository := server.ParseRepo(envFromStore.AppsRepo)
+	configMapManifest, err := sync.GenerateConfigMap(owner, repository, envVars)
+	if err != nil {
+		return "", err
+	}
+
 	sha, err := gitopsTemplateAndWrite(
 		repo,
 		manifest,
@@ -707,6 +744,7 @@ func cloneTemplateWriteAndPush(
 		nonImpersonatedToken,
 		envFromStore.RepoPerEnv,
 		kustomizationManifest,
+		configMapManifest,
 	)
 	if err != nil {
 		return "", err
@@ -874,6 +912,7 @@ func gitopsTemplateAndWrite(
 	tokenForChartClone string,
 	repoPerEnv bool,
 	kustomizationManifest *manifestgen.Manifest,
+	configMapManifest *manifestgen.Manifest,
 ) (string, error) {
 	if strings.HasPrefix(manifest.Chart.Name, "git@") {
 		return "", fmt.Errorf("only HTTPS git repo urls supported in GimletD for git based charts")
@@ -900,6 +939,10 @@ func gitopsTemplateAndWrite(
 
 	if kustomizationManifest != nil {
 		files[kustomizationManifest.Path] = kustomizationManifest.Content
+	}
+
+	if configMapManifest != nil {
+		files[configMapManifest.Path] = configMapManifest.Content
 	}
 
 	releaseString, err := json.Marshal(release)
