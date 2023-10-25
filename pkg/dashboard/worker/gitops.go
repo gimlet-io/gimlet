@@ -265,22 +265,9 @@ func processBranchDeletedEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		vars := map[string]string{
+		err = env.Cleanup.ResolveVars(map[string]string{
 			"BRANCH": branchDeletedEvent.Branch,
-		}
-		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
-		if err != nil {
-			result.Status = model.Failure
-			result.StatusDesc = err.Error()
-			results = append(results, result)
-			continue
-		}
-
-		for k, v := range envVars {
-			vars[k] = v
-		}
-
-		err = env.Cleanup.ResolveVars(vars)
+		})
 		if err != nil {
 			result.Status = model.Failure
 			result.StatusDesc = err.Error()
