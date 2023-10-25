@@ -732,7 +732,7 @@ func cloneTemplateWriteAndPush(
 	}
 
 	owner, repository := server.ParseRepo(envFromStore.AppsRepo)
-	configMapManifest, err := sync.GenerateConfigMap(owner, repository, envVars)
+	configMapManifest, err := sync.GenerateConfigMap(owner, repository, manifest.Namespace, envVars)
 	if err != nil {
 		return "", err
 	}
