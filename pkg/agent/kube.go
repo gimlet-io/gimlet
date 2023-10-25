@@ -179,8 +179,7 @@ func (e *KubeEnv) HelmReleases() ([]*api.HelmRelease, error) {
 
 func statusAndMessage(conditions []metav1.Condition) (string, string, int64) {
 	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
-		transitionTime, _ := time.Parse(time.RFC3339, c.LastTransitionTime.String())
-		return c.Reason, c.Message, transitionTime.Unix()
+		return c.Reason, c.Message, c.LastTransitionTime.Unix()
 	}
 	return string(metav1.ConditionFalse), "waiting to be reconciled", time.Now().Unix()
 }
