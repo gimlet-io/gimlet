@@ -11,7 +11,7 @@ import (
 
 	"github.com/fluxcd/flux2/v2/pkg/manifestgen/install"
 	"github.com/fluxcd/pkg/ssh"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"

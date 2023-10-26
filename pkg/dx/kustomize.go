@@ -38,7 +38,7 @@ patchesStrategicMerge:
 	}
 
 	if len(jsonPatches) > 0 {
-		kustomization += "patchesJson6902:\n"
+		kustomization += "patches:\n"
 	}
 	for _, jsonPatch := range jsonPatches {
 		fileName := uuid.NewString()
