@@ -111,7 +111,7 @@ func processEvent(
 		token, _, _ = tokenManager.Token()
 	}
 
-	repo, _ := repoCache.InstanceForRead(event.Repository)
+	eventRepo, _ := repoCache.InstanceForRead(event.Repository)
 
 	// process event based on type
 	var err error
@@ -119,7 +119,7 @@ func processEvent(
 	switch event.Type {
 	case model.ArtifactCreatedEvent:
 		results, err = processArtifactEvent(
-			repo,
+			eventRepo,
 			repoCache,
 			token,
 			event,
@@ -130,7 +130,7 @@ func processEvent(
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
-			repo,
+			eventRepo,
 			store,
 			repoCache,
 			token,
@@ -288,7 +288,7 @@ func processBranchDeletedEvent(
 }
 
 func processReleaseEvent(
-	repo *git.Repository,
+	eventRepo *git.Repository,
 	store *store.Store,
 	gitopsRepoCache *nativeGit.RepoCache,
 	nonImpersonatedToken string,
@@ -319,7 +319,7 @@ func processReleaseEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
-	repoVars, err := loadVars(repo, ".gimlet/vars")
+	repoVars, err := loadVars(eventRepo, ".gimlet/vars")
 	if err != nil {
 		return deployResults, err
 	}
@@ -347,7 +347,7 @@ func processReleaseEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
+		appsRepo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 		defer nativeGit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -361,7 +361,7 @@ func processReleaseEvent(
 			varsPath = ".gimlet/vars"
 		}
 
-		envVars, err := loadVars(repo, varsPath)
+		envVars, err := loadVars(appsRepo, varsPath)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -397,7 +397,7 @@ func processReleaseEvent(
 		}
 
 		sha, err := cloneTemplateWriteAndPush(
-			repo,
+			appsRepo,
 			repoTmpPath,
 			gitopsRepoCache,
 			nonImpersonatedToken,
@@ -525,7 +525,7 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 }
 
 func processArtifactEvent(
-	repo *git.Repository,
+	eventRepo *git.Repository,
 	gitopsRepoCache *nativeGit.RepoCache,
 	githubChartAccessToken string,
 	event *model.Event,
@@ -550,7 +550,7 @@ func processArtifactEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
-	repoVars, err := loadVars(repo, ".gimlet/vars")
+	repoVars, err := loadVars(eventRepo, ".gimlet/vars")
 	if err != nil {
 		return deployResults, err
 	}
@@ -573,7 +573,7 @@ func processArtifactEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
+		appsRepo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 		defer nativeGit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -587,7 +587,7 @@ func processArtifactEvent(
 			varsPath = ".gimlet/vars"
 		}
 
-		envVars, err := loadVars(repo, varsPath)
+		envVars, err := loadVars(appsRepo, varsPath)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -617,7 +617,7 @@ func processArtifactEvent(
 		}
 
 		sha, err := cloneTemplateWriteAndPush(
-			repo,
+			appsRepo,
 			repoTmpPath,
 			gitopsRepoCache,
 			githubChartAccessToken,
