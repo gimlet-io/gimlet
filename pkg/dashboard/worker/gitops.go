@@ -363,7 +363,7 @@ func processReleaseEvent(
 
 		envFromStore, err := store.GetEnvironment(manifest.Env)
 		if err != nil {
-			return deployResults, err
+			return deployResults, fmt.Errorf("no such env: %s", manifest.Env)
 		}
 
 		deployResult := model.Result{
