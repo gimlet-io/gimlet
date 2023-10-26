@@ -33,23 +33,19 @@ import (
 )
 
 type GitopsWorker struct {
-	store                   *store.Store
-	gitopsRepo              string
-	gitopsRepoDeployKeyPath string
-	tokenManager            customScm.NonImpersonatedTokenManager
-	notificationsManager    notifications.Manager
-	eventsProcessed         prometheus.Counter
-	repoCache               *nativeGit.RepoCache
-	clientHub               *streaming.ClientHub
-	perf                    *prometheus.HistogramVec
-	gitUser                 *model.User
-	gitHost                 string
+	store                *store.Store
+	tokenManager         customScm.NonImpersonatedTokenManager
+	notificationsManager notifications.Manager
+	eventsProcessed      prometheus.Counter
+	repoCache            *nativeGit.RepoCache
+	clientHub            *streaming.ClientHub
+	perf                 *prometheus.HistogramVec
+	gitUser              *model.User
+	gitHost              string
 }
 
 func NewGitopsWorker(
 	store *store.Store,
-	gitopsRepo string,
-	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	notificationsManager notifications.Manager,
 	eventsProcessed prometheus.Counter,
@@ -60,17 +56,15 @@ func NewGitopsWorker(
 	gitHost string,
 ) *GitopsWorker {
 	return &GitopsWorker{
-		store:                   store,
-		gitopsRepo:              gitopsRepo,
-		gitopsRepoDeployKeyPath: gitopsRepoDeployKeyPath,
-		notificationsManager:    notificationsManager,
-		tokenManager:            tokenManager,
-		eventsProcessed:         eventsProcessed,
-		repoCache:               repoCache,
-		clientHub:               clientHub,
-		perf:                    perf,
-		gitUser:                 gitUser,
-		gitHost:                 gitHost,
+		store:                store,
+		notificationsManager: notificationsManager,
+		tokenManager:         tokenManager,
+		eventsProcessed:      eventsProcessed,
+		repoCache:            repoCache,
+		clientHub:            clientHub,
+		perf:                 perf,
+		gitUser:              gitUser,
+		gitHost:              gitHost,
 	}
 }
 
@@ -86,8 +80,6 @@ func (w *GitopsWorker) Run() {
 		for _, event := range events {
 			w.eventsProcessed.Inc()
 			processEvent(w.store,
-				w.gitopsRepo,
-				w.gitopsRepoDeployKeyPath,
 				w.tokenManager,
 				event,
 				w.notificationsManager,
@@ -105,8 +97,6 @@ func (w *GitopsWorker) Run() {
 
 func processEvent(
 	store *store.Store,
-	gitopsRepo string,
-	gitopsRepoDeployKeyPath string,
 	tokenManager customScm.NonImpersonatedTokenManager,
 	event *model.Event,
 	notificationsManager notifications.Manager,
@@ -121,15 +111,16 @@ func processEvent(
 		token, _, _ = tokenManager.Token()
 	}
 
+	repo, _ := repoCache.InstanceForRead(event.Repository)
+
 	// process event based on type
 	var err error
 	var results []model.Result
 	switch event.Type {
 	case model.ArtifactCreatedEvent:
 		results, err = processArtifactEvent(
-			gitopsRepo,
+			repo,
 			repoCache,
-			gitopsRepoDeployKeyPath,
 			token,
 			event,
 			store,
@@ -139,10 +130,9 @@ func processEvent(
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
+			repo,
 			store,
-			gitopsRepo,
 			repoCache,
-			gitopsRepoDeployKeyPath,
 			token,
 			event,
 			perf,
@@ -151,8 +141,6 @@ func processEvent(
 		)
 	case model.RollbackRequestedEvent:
 		results, err = processRollbackEvent(
-			gitopsRepo,
-			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
 			token,
@@ -162,8 +150,6 @@ func processEvent(
 		)
 	case model.BranchDeletedEvent:
 		results, err = processBranchDeletedEvent(
-			gitopsRepo,
-			gitopsRepoDeployKeyPath,
 			repoCache,
 			event,
 			token,
@@ -235,8 +221,6 @@ func processEvent(
 }
 
 func processBranchDeletedEvent(
-	gitopsRepo string,
-	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	event *model.Event,
 	nonImpersonatedToken string,
@@ -280,9 +264,7 @@ func processBranchDeletedEvent(
 		}
 
 		sha, err := cloneTemplateDeleteAndPush(
-			gitopsRepo,
 			gitopsRepoCache,
-			gitopsRepoDeployKeyPath,
 			env.Cleanup,
 			env.Env,
 			"policy",
@@ -298,7 +280,7 @@ func processBranchDeletedEvent(
 
 		result.Status = model.Success
 		result.GitopsRef = sha
-		result.GitopsRepo = gitopsRepo
+		result.GitopsRepo = envFromStore.AppsRepo
 		results = append(results, result)
 	}
 
@@ -306,10 +288,9 @@ func processBranchDeletedEvent(
 }
 
 func processReleaseEvent(
+	repo *git.Repository,
 	store *store.Store,
-	gitopsRepo string,
 	gitopsRepoCache *nativeGit.RepoCache,
-	gitopsRepoDeployKeyPath string,
 	nonImpersonatedToken string,
 	event *model.Event,
 	perf *prometheus.HistogramVec,
@@ -338,7 +319,7 @@ func processReleaseEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
-	repoVars, _ := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
+	repoVars, err := loadVars(repo, ".gimlet/vars")
 	if err != nil {
 		return deployResults, err
 	}
@@ -366,9 +347,8 @@ func processReleaseEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		vars := artifact.CollectVariables()
-		vars["APP"] = releaseRequest.App
-		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
+		repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
+		defer nativeGit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -376,6 +356,21 @@ func processReleaseEvent(
 			continue
 		}
 
+		varsPath := filepath.Join(envFromStore.Name, ".gimlet/vars")
+		if envFromStore.RepoPerEnv {
+			varsPath = ".gimlet/vars"
+		}
+
+		envVars, err := loadVars(repo, varsPath)
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = err.Error()
+			deployResults = append(deployResults, deployResult)
+			continue
+		}
+
+		vars := artifact.CollectVariables()
+		vars["APP"] = releaseRequest.App
 		for k, v := range envVars {
 			vars[k] = v
 		}
@@ -402,9 +397,9 @@ func processReleaseEvent(
 		}
 
 		sha, err := cloneTemplateWriteAndPush(
-			gitopsRepo,
+			repo,
+			repoTmpPath,
 			gitopsRepoCache,
-			gitopsRepoDeployKeyPath,
 			nonImpersonatedToken,
 			manifest,
 			releaseMeta,
@@ -430,8 +425,6 @@ func processReleaseEvent(
 }
 
 func processRollbackEvent(
-	gitopsRepo string,
-	gitopsRepoDeployKeyPath string,
 	gitopsRepoCache *nativeGit.RepoCache,
 	event *model.Event,
 	nonImpersonatedToken string,
@@ -532,9 +525,8 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 }
 
 func processArtifactEvent(
-	gitopsRepo string,
+	repo *git.Repository,
 	gitopsRepoCache *nativeGit.RepoCache,
-	gitopsRepoDeployKeyPath string,
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
@@ -558,7 +550,7 @@ func processArtifactEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
-	repoVars, _ := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
+	repoVars, err := loadVars(repo, ".gimlet/vars")
 	if err != nil {
 		return deployResults, err
 	}
@@ -581,8 +573,8 @@ func processArtifactEvent(
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		vars := artifact.CollectVariables()
-		envVars, err := loadEnvVars(gitopsRepoCache, envFromStore)
+		repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
+		defer nativeGit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -590,6 +582,20 @@ func processArtifactEvent(
 			continue
 		}
 
+		varsPath := filepath.Join(envFromStore.Name, ".gimlet/vars")
+		if envFromStore.RepoPerEnv {
+			varsPath = ".gimlet/vars"
+		}
+
+		envVars, err := loadVars(repo, varsPath)
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = err.Error()
+			deployResults = append(deployResults, deployResult)
+			continue
+		}
+
+		vars := artifact.CollectVariables()
 		for k, v := range envVars {
 			vars[k] = v
 		}
@@ -611,9 +617,9 @@ func processArtifactEvent(
 		}
 
 		sha, err := cloneTemplateWriteAndPush(
-			gitopsRepo,
+			repo,
+			repoTmpPath,
 			gitopsRepoCache,
-			gitopsRepoDeployKeyPath,
 			githubChartAccessToken,
 			manifest,
 			releaseMeta,
@@ -635,21 +641,7 @@ func processArtifactEvent(
 	return deployResults, nil
 }
 
-func loadEnvVars(repoCache *nativeGit.RepoCache, env *model.Environment) (map[string]string, error) {
-	varsPath := filepath.Join(env.Name, ".gimlet/vars")
-	if env.RepoPerEnv {
-		varsPath = ".gimlet/vars"
-	}
-
-	return loadRepoVars(repoCache, env.AppsRepo, varsPath)
-}
-
-func loadRepoVars(repoCache *nativeGit.RepoCache, repoName, varsPath string) (map[string]string, error) {
-	repo, err := repoCache.InstanceForRead(repoName)
-	if err != nil {
-		return nil, err
-	}
-
+func loadVars(repo *git.Repository, varsPath string) (map[string]string, error) {
 	envVarsString, err := nativeGit.Content(repo, varsPath)
 	if err != nil {
 		return nil, err
@@ -681,9 +673,9 @@ func keepReposWithCleanupPolicyUpToDate(dao *store.Store, artifact *dx.Artifact)
 }
 
 func cloneTemplateWriteAndPush(
-	gitopsRepo string,
+	repo *git.Repository,
+	repoTmpPath string,
 	gitopsRepoCache *nativeGit.RepoCache,
-	gitopsRepoDeployKeyPath string,
 	nonImpersonatedToken string,
 	manifest *dx.Manifest,
 	releaseMeta *dx.Release,
@@ -697,12 +689,6 @@ func cloneTemplateWriteAndPush(
 	t0 := time.Now()
 
 	envFromStore, err := store.GetEnvironment(manifest.Env)
-	if err != nil {
-		return "", err
-	}
-
-	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -775,9 +761,7 @@ func cloneTemplateWriteAndPush(
 }
 
 func cloneTemplateDeleteAndPush(
-	gitopsRepo string,
 	gitopsRepoCache *nativeGit.RepoCache,
-	gitopsRepoDeployKeyPath string,
 	cleanupPolicy *dx.Cleanup,
 	env string,
 	triggeredBy string,
