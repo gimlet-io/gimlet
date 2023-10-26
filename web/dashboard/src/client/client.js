@@ -13,9 +13,9 @@ export default class GimletClient {
 
   getUsers = () => this.get('/api/users');
 
-  deleteUser = (userName) => this.postWithAxios("/api/deleteUser", JSON.stringify(userName))
+  deleteUser = (userName) => this.post("/api/deleteUser", JSON.stringify(userName))
 
-  saveUser = (userName) => this.postWithAxios("/api/saveUser", JSON.stringify(userName));
+  saveUser = (userName) => this.post("/api/saveUser", JSON.stringify(userName));
 
   getAgents = () => this.get('/api/agents');
 
@@ -25,15 +25,15 @@ export default class GimletClient {
 
   refreshRepos = () => this.get('/api/refreshRepos');
 
-  getGitopsCommits = () => this.getWithAxios("/api/gitopsCommits");
+  getGitopsCommits = () => this.get("/api/gitopsCommits");
 
-  getSettings = () => this.getWithAxios("/api/settings");
+  getSettings = () => this.get("/api/settings");
 
-  getChartUpdatePullRequests = () => this.getWithAxios("/api/chartUpdatePullRequests");
+  getChartUpdatePullRequests = () => this.get("/api/chartUpdatePullRequests");
   
   getRolloutHistoryPerApp = (owner, name, env, app) => this.get(`/api/releases?env=${env}&app=${app}&git-repo=${owner}/${name}&limit=10&reverse=true`);
 
-  getReleases = (env, limit) => this.getWithAxios(`/api/releases?env=${env}&limit=${limit}&reverse=true`);
+  getReleases = (env, limit) => this.get(`/api/releases?env=${env}&limit=${limit}&reverse=true`);
 
   getCommits = (owner, name, branch, fromHash) => this.get(`/api/repo/${owner}/${name}/commits?branch=${branch}&fromHash=${fromHash}`);
 
@@ -41,41 +41,41 @@ export default class GimletClient {
 
   getBranches = (owner, name) => this.get(`/api/repo/${owner}/${name}/branches`);
 
-  getDefaultDeploymentTemplates = () => this.getWithAxios(`/api/defaultDeploymentTemplates`);
+  getDefaultDeploymentTemplates = () => this.get(`/api/defaultDeploymentTemplates`);
 
-  getDeploymentTemplates = (owner, name, env, config) => this.getWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${config}/deploymentTemplates`);
+  getDeploymentTemplates = (owner, name, env, config) => this.get(`/api/repo/${owner}/${name}/env/${env}/config/${config}/deploymentTemplates`);
 
-  getEnvConfigs = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/envConfigs`);
+  getEnvConfigs = (owner, name) => this.get(`/api/repo/${owner}/${name}/envConfigs`);
 
-  saveEnvConfig = (owner, name, env, configName, values, namespace, chart, appName, useDeployPolicy, deployBranch, deployTag, deployEvent) => this.postWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${configName}`, JSON.stringify({ values, namespace, chart, appName, useDeployPolicy, deployBranch, deployTag, deployEvent }));
+  saveEnvConfig = (owner, name, env, configName, values, namespace, chart, appName, useDeployPolicy, deployBranch, deployTag, deployEvent) => this.post(`/api/repo/${owner}/${name}/env/${env}/config/${configName}`, JSON.stringify({ values, namespace, chart, appName, useDeployPolicy, deployBranch, deployTag, deployEvent }));
 
-  deleteEnvConfig = (owner, name, env, configName) => this.postWithAxios(`/api/repo/${owner}/${name}/env/${env}/config/${configName}/delete`);
+  deleteEnvConfig = (owner, name, env, configName) => this.post(`/api/repo/${owner}/${name}/env/${env}/config/${configName}/delete`);
 
-  getRepoMetas = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/metas`);
+  getRepoMetas = (owner, name) => this.get(`/api/repo/${owner}/${name}/metas`);
 
-  getPullRequests = (owner, name) => this.getWithAxios(`/api/repo/${owner}/${name}/pullRequests`);
+  getPullRequests = (owner, name) => this.get(`/api/repo/${owner}/${name}/pullRequests`);
 
-  getPullRequestsFromInfraRepo = () => this.getWithAxios(`/api/infraRepoPullRequests`);
+  getPullRequestsFromInfraRepo = () => this.get(`/api/infraRepoPullRequests`);
 
-  getGitopsUpdatePullRequests = () => this.getWithAxios("/api/gitopsUpdatePullRequests");
+  getGitopsUpdatePullRequests = () => this.get("/api/gitopsUpdatePullRequests");
 
-  podLogsRequest = (namespace, serviceName) => this.getWithAxios(`/api/podLogs?namespace=${namespace}&serviceName=${serviceName}`);
+  podLogsRequest = (namespace, serviceName) => this.get(`/api/podLogs?namespace=${namespace}&serviceName=${serviceName}`);
 
-  stopPodlogsRequest = (namespace, serviceName) => this.getWithAxios(`/api/stopPodLogs?namespace=${namespace}&serviceName=${serviceName}`);
+  stopPodlogsRequest = (namespace, serviceName) => this.get(`/api/stopPodLogs?namespace=${namespace}&serviceName=${serviceName}`);
 
-  deploymentDetailsRequest = (namespace, serviceName) => this.getWithAxios(`/api/deploymentDetails?namespace=${namespace}&serviceName=${serviceName}`);
+  deploymentDetailsRequest = (namespace, serviceName) => this.get(`/api/deploymentDetails?namespace=${namespace}&serviceName=${serviceName}`);
 
-  getAlerts = () => this.getWithAxios("/api/alerts");
+  getAlerts = () => this.get("/api/alerts");
   
-  bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo) => this.postWithAxios('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo }));
+  bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo) => this.post('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo }));
 
-  saveEnvToDB = (envName) => this.postWithAxios("/api/saveEnvToDB", JSON.stringify(envName));
+  saveEnvToDB = (envName) => this.post("/api/saveEnvToDB", JSON.stringify(envName));
 
-  spinOutBuiltInEnv = () => this.postWithAxios("/api/spinOutBuiltInEnv");
+  spinOutBuiltInEnv = () => this.post("/api/spinOutBuiltInEnv");
 
-  deleteEnvFromDB = (envName) => this.postWithAxios("/api/deleteEnvFromDB", JSON.stringify(envName));
+  deleteEnvFromDB = (envName) => this.post("/api/deleteEnvFromDB", JSON.stringify(envName));
 
-  deleteAppInstance = (env, app) => this.postWithAxios(`/api/delete?env=${env}&app=${app}`,)
+  deleteAppInstance = (env, app) => this.post(`/api/delete?env=${env}&app=${app}`,)
 
   deploy = (artifactId, env, app, tenant) => this.post('/api/releases', JSON.stringify({ env, app, artifactId, tenant }));
 
@@ -87,9 +87,9 @@ export default class GimletClient {
 
   saveFavoriteServices = (favoriteServices) => this.post('/api/saveFavoriteServices', JSON.stringify({ favoriteServices }));
 
-  saveInfrastructureComponents = (env, infrastructureComponents) => this.postWithAxios('/api/environments', JSON.stringify({ env, infrastructureComponents }));
+  saveInfrastructureComponents = (env, infrastructureComponents) => this.post('/api/environments', JSON.stringify({ env, infrastructureComponents }));
 
-  getWithAxios = async (path) => {
+  get = async (path) => {
     try {
       const { data } = await axios.get(path, {
         credentials: 'include'
@@ -101,7 +101,7 @@ export default class GimletClient {
     }
   }
 
-  postWithAxios = async (path, body) => {
+  post = async (path, body) => {
     try {
       const { data } = await axios
         .post(path, body, {
@@ -117,57 +117,4 @@ export default class GimletClient {
       throw error.response;
     }
   }
-
-  get = (path) => fetch(path, {
-    credentials: 'include'
-  })
-    .then(response => {
-      if (!response.ok && window !== undefined) {
-        return Promise.reject({ status: response.status, statusText: response.statusText, path });
-      }
-      return response.json();
-    })
-    .catch((error) => {
-      this.onError(error);
-      throw error;
-    });
-
-  post = (path, body) => fetch(path, {
-    method: 'post',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body
-  })
-    .then(response => {
-      if (!response.ok && window !== undefined) {
-        return Promise.reject({ status: response.status, statusText: response.statusText, path });
-      }
-      return response.json();
-    })
-    .catch((error) => {
-      this.onError(error);
-      throw error;
-    });
-
-  postWithoutCreds = (path, body) => fetch(path, {
-    method: 'post',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body
-  })
-    .then(response => {
-      if (!response.ok && window !== undefined) {
-        return Promise.reject({ status: response.status, statusText: response.statusText, path });
-      }
-      return response.json();
-    })
-    .catch((error) => {
-      this.onError(error);
-      throw error;
-    })
 }
