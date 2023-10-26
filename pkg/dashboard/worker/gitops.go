@@ -1086,7 +1086,7 @@ func kustomizationTemplate(
 		fluxPath = "flux"
 	}
 
-	_, gitopsRepoMetaName := bootstrap.GitopsRepoFileAndMetaNameFromRepo(repoPath, fluxPath)
+	_, gitopsRepoMetaName := bootstrap.GitopsRepoFileAndMetaNameFromRepo(repoPath, fluxPath, "")
 	sourceName := gitopsRepoMetaName
 	if sourceName == "" {
 		sourceName = bootstrap.UniqueGitopsRepoName(repoPerEnv, owner, repoName, manifest.Env)

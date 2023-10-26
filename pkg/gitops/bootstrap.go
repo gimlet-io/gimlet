@@ -111,7 +111,7 @@ func GenerateManifests(opts ManifestOpts) (string, string, string, error) {
 		if opts.SingleEnv {
 			fluxPath = "flux"
 		}
-		existingGitopsRepoFileName, existingGitopsRepoMetaName := GitopsRepoFileAndMetaNameFromRepo(opts.GitopsRepoPath, fluxPath)
+		existingGitopsRepoFileName, existingGitopsRepoMetaName := GitopsRepoFileAndMetaNameFromRepo(opts.GitopsRepoPath, fluxPath, opts.Branch)
 		if existingGitopsRepoFileName != "" {
 			gitopsRepoName = existingGitopsRepoMetaName
 			gitopsRepoFileName = existingGitopsRepoFileName
@@ -331,14 +331,16 @@ func generateBasicAuthSecret(name, user, password string) ([]byte, error) {
 	return yamlString, err
 }
 
-func GitopsRepoFileAndMetaNameFromRepo(repoPath string, contentPath string) (string, string) {
+func GitopsRepoFileAndMetaNameFromRepo(repoPath string, contentPath string, branch string) (string, string) {
 	var gitRepo sourcev1.GitRepository
 	var gitopsRepoFileName string
 	repo, err := git.PlainOpen(repoPath)
 	if err == git.ErrRepositoryNotExists {
 		return "", ""
 	}
-	branch, _ := helper.HeadBranch(repo)
+	if branch == "" {
+		branch, _ = helper.HeadBranch(repo)
+	}
 
 	files, _ := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, contentPath)
 	for fileName, fileContent := range files {
