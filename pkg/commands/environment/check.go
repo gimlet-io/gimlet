@@ -21,13 +21,13 @@ import (
 
 var gitRepositoryResource = schema.GroupVersionResource{
 	Group:    "source.toolkit.fluxcd.io",
-	Version:  "v1beta1",
+	Version:  "v1",
 	Resource: "gitrepositories",
 }
 
 var kustomizationResource = schema.GroupVersionResource{
 	Group:    "kustomize.toolkit.fluxcd.io",
-	Version:  "v1beta1",
+	Version:  "v1",
 	Resource: "kustomizations",
 }
 

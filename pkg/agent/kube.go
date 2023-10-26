@@ -21,15 +21,18 @@ import (
 	"net/http"
 	"time"
 
+	helmv2 "github.com/fluxcd/helm-controller/api/v2beta1"
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	"github.com/fluxcd/pkg/apis/meta"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -95,13 +98,13 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 
 var gitRepositoryResource = schema.GroupVersionResource{
 	Group:    "source.toolkit.fluxcd.io",
-	Version:  "v1beta1",
+	Version:  "v1",
 	Resource: "gitrepositories",
 }
 
 var kustomizationResource = schema.GroupVersionResource{
 	Group:    "kustomize.toolkit.fluxcd.io",
-	Version:  "v1beta1",
+	Version:  "v1",
 	Resource: "kustomizations",
 }
 
@@ -115,7 +118,7 @@ func (e *KubeEnv) GitRepositories() ([]*api.GitRepository, error) {
 	gitRepositories, err := e.DynamicClient.
 		Resource(gitRepositoryResource).
 		Namespace("").
-		List(context.TODO(), meta_v1.ListOptions{})
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +139,7 @@ func (e *KubeEnv) Kustomizations() ([]*api.Kustomization, error) {
 	kustomizations, err := e.DynamicClient.
 		Resource(kustomizationResource).
 		Namespace("").
-		List(context.TODO(), meta_v1.ListOptions{})
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +160,7 @@ func (e *KubeEnv) HelmReleases() ([]*api.HelmRelease, error) {
 	helmReleases, err := e.DynamicClient.
 		Resource(helmReleaseResource).
 		Namespace("").
-		List(context.TODO(), meta_v1.ListOptions{})
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -174,20 +177,18 @@ func (e *KubeEnv) HelmReleases() ([]*api.HelmRelease, error) {
 	return result, nil
 }
 
-func statusAndMessage(conditions []interface{}) (string, string, int64) {
+func statusAndMessage(conditions []metav1.Condition) (string, string, int64) {
 	if c := findStatusCondition(conditions, meta.ReadyCondition); c != nil {
-		transitionTime, _ := time.Parse(time.RFC3339, c["lastTransitionTime"].(string))
-		return c["reason"].(string), c["message"].(string), transitionTime.Unix()
+		return c.Reason, c.Message, c.LastTransitionTime.Unix()
 	}
 	return string(metav1.ConditionFalse), "waiting to be reconciled", time.Now().Unix()
 }
 
 // findStatusCondition finds the conditionType in conditions.
-func findStatusCondition(conditions []interface{}, conditionType string) map[string]interface{} {
+func findStatusCondition(conditions []metav1.Condition, conditionType string) *metav1.Condition {
 	for _, c := range conditions {
-		cMap := c.(map[string]interface{})
-		if cMap["type"] == conditionType {
-			return cMap
+		if c.Type == conditionType {
+			return &c
 		}
 	}
 
@@ -195,29 +196,19 @@ func findStatusCondition(conditions []interface{}, conditionType string) map[str
 }
 
 func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
-	statusMap := g.Object["status"].(map[string]interface{})
-
-	artifact, ok := statusMap["artifact"].(map[string]interface{})
-	if !ok {
-		// TODO handle case
+	unstructured := g.UnstructuredContent()
+	var gitRepository sourcev1.GitRepository
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &gitRepository)
+	if err != nil {
+		return nil, err
 	}
 
-	revision := ""
-	if val, ok := artifact["revision"]; ok {
-		revision = val.(string)
-	}
-
-	conditions, ok := statusMap["conditions"].([]interface{})
-	if !ok {
-		// TODO handle case
-	}
-
-	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+	status, statusDesc, lastTransitionTime := statusAndMessage(gitRepository.GetConditions())
 
 	return &api.GitRepository{
-		Name:               g.GetName(),
-		Namespace:          g.GetNamespace(),
-		Revision:           revision,
+		Name:               gitRepository.GetName(),
+		Namespace:          gitRepository.GetNamespace(),
+		Revision:           gitRepository.GetArtifact().Revision,
 		LastTransitionTime: lastTransitionTime,
 		Status:             status,
 		StatusDesc:         statusDesc,
@@ -225,30 +216,21 @@ func asGitRepository(g unstructured.Unstructured) (*api.GitRepository, error) {
 }
 
 func asKustomization(g unstructured.Unstructured) (*api.Kustomization, error) {
-	statusMap := g.Object["status"].(map[string]interface{})
-
-	spec, ok := g.Object["spec"].(map[string]interface{})
-	if !ok {
-		// TODO handle case
-	}
-	path := spec["path"].(string)
-	prune := spec["prune"].(bool)
-	sourceRef := spec["sourceRef"].(map[string]interface{})
-	gitRepository := sourceRef["name"].(string)
-
-	conditions, ok := statusMap["conditions"].([]interface{})
-	if !ok {
-		// TODO handle case
+	unstructured := g.UnstructuredContent()
+	var kustomization kustomizev1.Kustomization
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &kustomization)
+	if err != nil {
+		return nil, err
 	}
 
-	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+	status, statusDesc, lastTransitionTime := statusAndMessage(kustomization.GetConditions())
 
 	return &api.Kustomization{
-		Name:               g.GetName(),
-		Namespace:          g.GetNamespace(),
-		GitRepository:      gitRepository,
-		Path:               path,
-		Prune:              prune,
+		Name:               kustomization.GetName(),
+		Namespace:          kustomization.GetNamespace(),
+		GitRepository:      kustomization.Spec.SourceRef.Name,
+		Path:               kustomization.Spec.Path,
+		Prune:              kustomization.Spec.Prune,
 		LastTransitionTime: lastTransitionTime,
 		Status:             status,
 		StatusDesc:         statusDesc,
@@ -256,18 +238,18 @@ func asKustomization(g unstructured.Unstructured) (*api.Kustomization, error) {
 }
 
 func asHelmRelease(g unstructured.Unstructured) (*api.HelmRelease, error) {
-	statusMap := g.Object["status"].(map[string]interface{})
-
-	conditions, ok := statusMap["conditions"].([]interface{})
-	if !ok {
-		// TODO handle case
+	unstructured := g.UnstructuredContent()
+	var helmRelease helmv2.HelmRelease
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &helmRelease)
+	if err != nil {
+		return nil, err
 	}
 
-	status, statusDesc, lastTransitionTime := statusAndMessage(conditions)
+	status, statusDesc, lastTransitionTime := statusAndMessage(helmRelease.GetConditions())
 
 	return &api.HelmRelease{
-		Name:               g.GetName(),
-		Namespace:          g.GetNamespace(),
+		Name:               helmRelease.GetName(),
+		Namespace:          helmRelease.GetNamespace(),
 		LastTransitionTime: lastTransitionTime,
 		Status:             status,
 		StatusDesc:         statusDesc,
