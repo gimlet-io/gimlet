@@ -263,11 +263,14 @@ func GenerateKustomizationForApp(
 }
 
 func GenerateConfigMap(
-	owner string,
-	repository string,
+	configMapName string,
 	namespace string,
 	data map[string]string,
 ) (*manifestgen.Manifest, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
 	immutable := false
 	configMap := corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -275,7 +278,7 @@ func GenerateConfigMap(
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", owner, repository),
+			Name:      configMapName,
 			Namespace: namespace,
 		},
 		Data:      data,
@@ -288,7 +291,7 @@ func GenerateConfigMap(
 	}
 
 	return &manifestgen.Manifest{
-		Path:    path.Join(".", fmt.Sprintf("configmap-%s-%s-%s.yaml", owner, repository, namespace)),
+		Path:    path.Join(".", fmt.Sprintf("configmap-%s-%s.yaml", configMapName, namespace)),
 		Content: fmt.Sprintf("---\n%s", resourceToString(yamlString)),
 	}, nil
 }

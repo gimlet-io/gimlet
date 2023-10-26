@@ -338,6 +338,11 @@ func processReleaseEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
+	repoVars, _ := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
+	if err != nil {
+		return deployResults, err
+	}
+
 	for _, manifest := range artifact.Environments {
 		if manifest.Env != releaseRequest.Env {
 			continue
@@ -375,18 +380,6 @@ func processReleaseEvent(
 			vars[k] = v
 		}
 
-		repoVars, err := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
-		if err != nil {
-			deployResult.Status = model.Failure
-			deployResult.StatusDesc = err.Error()
-			deployResults = append(deployResults, deployResult)
-			continue
-		}
-
-		for k, v := range repoVars {
-			envVars[k] = v
-		}
-
 		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -417,6 +410,7 @@ func processReleaseEvent(
 			releaseMeta,
 			perf,
 			store,
+			repoVars,
 			envVars,
 			gitUser,
 			gitHost,
@@ -564,6 +558,11 @@ func processArtifactEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
+	repoVars, _ := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
+	if err != nil {
+		return deployResults, err
+	}
+
 	for _, manifest := range artifact.Environments {
 		if !deployTrigger(artifact, manifest.Deploy) {
 			continue
@@ -595,18 +594,6 @@ func processArtifactEvent(
 			vars[k] = v
 		}
 
-		repoVars, err := loadRepoVars(gitopsRepoCache, event.Repository, ".gimlet/vars")
-		if err != nil {
-			deployResult.Status = model.Failure
-			deployResult.StatusDesc = err.Error()
-			deployResults = append(deployResults, deployResult)
-			continue
-		}
-
-		for k, v := range repoVars {
-			envVars[k] = v
-		}
-
 		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -632,6 +619,7 @@ func processArtifactEvent(
 			releaseMeta,
 			perf,
 			dao,
+			repoVars,
 			envVars,
 			gitUser,
 			gitHost,
@@ -701,6 +689,7 @@ func cloneTemplateWriteAndPush(
 	releaseMeta *dx.Release,
 	perf *prometheus.HistogramVec,
 	store *store.Store,
+	repoVars map[string]string,
 	envVars map[string]string,
 	gitUser *model.User,
 	gitHost string,
@@ -732,7 +721,14 @@ func cloneTemplateWriteAndPush(
 	}
 
 	owner, repository := server.ParseRepo(releaseMeta.Version.RepositoryName)
-	configMapManifest, err := sync.GenerateConfigMap(owner, repository, manifest.Namespace, envVars)
+	perRepoConfigMapName := uniqueConfigMapName(owner, repository, "per-repo")
+	perRepoConfigMapManifest, err := sync.GenerateConfigMap(perRepoConfigMapName, manifest.Namespace, repoVars)
+	if err != nil {
+		return "", err
+	}
+
+	perEnvConfigMapName := uniqueConfigMapName(owner, repository, "per-env")
+	perEnvConfigMapManifest, err := sync.GenerateConfigMap(perEnvConfigMapName, manifest.Namespace, envVars)
 	if err != nil {
 		return "", err
 	}
@@ -744,7 +740,8 @@ func cloneTemplateWriteAndPush(
 		nonImpersonatedToken,
 		envFromStore.RepoPerEnv,
 		kustomizationManifest,
-		configMapManifest,
+		perRepoConfigMapManifest,
+		perEnvConfigMapManifest,
 	)
 	if err != nil {
 		return "", err
@@ -912,7 +909,8 @@ func gitopsTemplateAndWrite(
 	tokenForChartClone string,
 	repoPerEnv bool,
 	kustomizationManifest *manifestgen.Manifest,
-	configMapManifest *manifestgen.Manifest,
+	perRepoConfigMapManifest *manifestgen.Manifest,
+	perEnvConfigMapManifest *manifestgen.Manifest,
 ) (string, error) {
 	if strings.HasPrefix(manifest.Chart.Name, "git@") {
 		return "", fmt.Errorf("only HTTPS git repo urls supported in GimletD for git based charts")
@@ -941,8 +939,12 @@ func gitopsTemplateAndWrite(
 		files[kustomizationManifest.Path] = kustomizationManifest.Content
 	}
 
-	if configMapManifest != nil {
-		files[configMapManifest.Path] = configMapManifest.Content
+	if perRepoConfigMapManifest != nil {
+		files[perRepoConfigMapManifest.Path] = perRepoConfigMapManifest.Content
+	}
+
+	if perEnvConfigMapManifest != nil {
+		files[perEnvConfigMapManifest.Path] = perEnvConfigMapManifest.Content
 	}
 
 	releaseString, err := json.Marshal(release)
@@ -1152,4 +1154,12 @@ func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env 
 		)
 	}
 	return uniqueName
+}
+
+func uniqueConfigMapName(owner string, repoName string, varsType string) string {
+	return fmt.Sprintf("%s-%s-%s",
+		strings.ToLower(owner),
+		strings.ToLower(repoName),
+		strings.ToLower(varsType),
+	)
 }
