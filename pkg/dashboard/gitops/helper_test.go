@@ -93,69 +93,72 @@ func initHistory() *git.Repository {
 	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `1`,
+			"staging/my-app2/file":         `1`,
+			"staging/my-app2/release.json": "{}",
+			"staging/release.json":         "{}",
 		},
-		"staging",
-		"my-app2",
-		false,
+		[]string{"staging/my-app2"},
 		"First commit is not read - it's a bug",
-		"{}",
 	)
 
+	releaseJson := `{"app":"xxx","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test2","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
 	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `2`,
+			"staging/my-app2/file":         `2`,
+			"staging/my-app2/release.json": releaseJson,
+			"staging/release.json":         releaseJson,
 		},
-		"staging",
-		"my-app2",
-		false,
+		[]string{"staging/my-app2"},
 		"1st commit",
-		`{"app":"xxx","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test2","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
+
+	releaseJson = `{"app":"fosdem-2021","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
 	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `3`,
+			"staging/my-app/file":         `3`,
+			"staging/my-app/release.json": releaseJson,
+			"staging/release.json":        releaseJson,
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"1st commit",
-		`{"app":"fosdem-2021","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
+
+	releaseJson = `{"app":"fosdem-2022","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
 	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `4`,
+			"staging/my-app/file":         `4`,
+			"staging/my-app/release.json": releaseJson,
+			"staging/release.json":        releaseJson,
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"2nd commit",
-		`{"app":"fosdem-2022","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
+
+	releaseJson = `{"app":"fosdem-2023","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
 	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `5`,
+			"staging/my-app/file":         `5`,
+			"staging/my-app/release.json": releaseJson,
+			"staging/release.json":        releaseJson,
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"3rd commit",
-		`{"app":"fosdem-2023","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
+
+	releaseJson = `{"app":"fosdem-2024","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test3","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
 	nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `5`,
+			"my-app3/file":         `5`,
+			"my-app3/release.json": releaseJson,
+			"release.json":         releaseJson,
 		},
-		"staging",
-		"my-app3",
-		true,
+		[]string{"my-app3"},
 		"4th commit",
-		`{"app":"fosdem-2024","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test3","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`,
 	)
 
 	return repo

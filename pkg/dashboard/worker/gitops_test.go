@@ -475,49 +475,45 @@ func initHistory(repo *git.Repository) {
 	sha, _ := nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `0`,
+			"staging/my-app/file":         `0`,
+			"staging/my-app/release.json": "",
+			"staging/release.json":        "",
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"0st commit",
-		"",
 	)
 	fmt.Printf("%s - %s\n", sha, "0")
 	sha, _ = nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `1`,
+			"staging/my-app/file":         `1`,
+			"staging/my-app/release.json": "",
+			"staging/release.json":        "",
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"1st commit",
-		"",
 	)
 	fmt.Printf("%s - %s\n", sha, "1")
 	sha, _ = nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `2`,
+			"staging/my-app/file":         `2`,
+			"staging/my-app/release.json": "",
+			"staging/release.json":        "",
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"2nd commit",
-		"",
 	)
 	fmt.Printf("%s - %s\n", sha, "2")
 	sha, _ = nativeGit.CommitFilesToGit(
 		repo,
 		map[string]string{
-			"file": `3`,
+			"staging/my-app/file":         `3`,
+			"staging/my-app/release.json": "",
+			"staging/release.json":        "",
 		},
-		"staging",
-		"my-app",
-		false,
+		[]string{"staging/my-app"},
 		"3rd commit",
-		"",
 	)
 	fmt.Printf("%s - %s\n", sha, "3")
 }

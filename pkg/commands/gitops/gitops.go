@@ -8,8 +8,6 @@ var Command = cli.Command{
 	Name:  "gitops",
 	Usage: "Manages the gitops repo",
 	Subcommands: []*cli.Command{
-		&gitopsWriteCmd,
-		&gitopsDeleteCmd,
 		&gitopsBootstrapCmd,
 		&gitopsUpgradeCmd,
 	},

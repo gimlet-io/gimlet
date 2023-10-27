@@ -486,11 +486,8 @@ func Folder(repo *git.Repository, path string) (map[string]string, error) {
 func CommitFilesToGit(
 	repo *git.Repository,
 	files map[string]string,
-	env string,
-	app string,
-	repoPerEnv bool,
+	resetPaths []string,
 	message string,
-	releaseString string,
 ) (string, error) {
 	empty, err := NothingToCommit(repo)
 	if err != nil {
@@ -505,63 +502,25 @@ func CommitFilesToGit(
 		return "", fmt.Errorf("cannot get worktree %s", err)
 	}
 
-	rootPath := filepath.Join(env, app)
-	if repoPerEnv {
-		rootPath = app
-	}
-
-	// first delete, then recreate app dir
-	// to remove stale template files
-	err = DelDir(repo, rootPath)
-	if err != nil {
-		return "", fmt.Errorf("cannot del dir: %s", err)
-	}
-	err = w.Filesystem.MkdirAll(rootPath, Dir_RWX_RX_R)
-	if err != nil {
-		return "", fmt.Errorf("cannot create dir %s", err)
+	// first delete, then recreate paths
+	// to remove stale files
+	for _, p := range resetPaths {
+		err = DelDir(repo, p)
+		if err != nil {
+			return "", fmt.Errorf("cannot del dir: %s", err)
+		}
+		err = w.Filesystem.MkdirAll(p, Dir_RWX_RX_R)
+		if err != nil {
+			return "", fmt.Errorf("cannot create dir %s", err)
+		}
 	}
 
 	for path, content := range files {
 		if !strings.HasSuffix(content, "\n") {
 			content = content + "\n"
 		}
-		if strings.Contains(path, fmt.Sprintf("kustomization-%s.yaml", app)) {
-			err = StageFile(w, content, path)
-			if err != nil {
-				return "", fmt.Errorf("cannot stage file %s", err)
-			}
-			continue
-		}
 
-		if strings.HasPrefix(path, "configmap") {
-			err = StageFile(w, content, path)
-			if err != nil {
-				return "", fmt.Errorf("cannot stage file %s", err)
-			}
-			continue
-		}
-
-		err = StageFile(w, content, filepath.Join(rootPath, filepath.Base(path)))
-		if err != nil {
-			return "", fmt.Errorf("cannot stage file %s", err)
-		}
-	}
-
-	if releaseString != "" {
-		if !strings.HasSuffix(releaseString, "\n") {
-			releaseString = releaseString + "\n"
-		}
-
-		envReleaseJsonPath := env
-		if repoPerEnv {
-			envReleaseJsonPath = ""
-		}
-
-		err = StageFile(w, releaseString, filepath.Join(envReleaseJsonPath, "release.json"))
-		if err != nil {
-			return "", fmt.Errorf("cannot stage file %s", err)
-		}
-		err = StageFile(w, releaseString, filepath.Join(rootPath, "release.json"))
+		err = StageFile(w, content, path)
 		if err != nil {
 			return "", fmt.Errorf("cannot stage file %s", err)
 		}
@@ -575,8 +534,7 @@ func CommitFilesToGit(
 		return "", nil
 	}
 
-	gitMessage := fmt.Sprintf("[Gimlet] %s/%s %s", env, app, message)
-	return Commit(repo, gitMessage)
+	return Commit(repo, message)
 }
 
 func StageFile(worktree *git.Worktree, content string, path string) error {
