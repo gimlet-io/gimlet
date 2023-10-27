@@ -21,7 +21,7 @@ k3d cluster create gimlet-cluster --k3s-arg "--disable=traefik@server:0"`}
         <CopiableCodeSnippet
           copiable
           color="blue"
-          code={`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.24.1/gimlet-$(uname)-$(uname -m)" -o gimlet
+          code={`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.25.0/gimlet-$(uname)-$(uname -m)" -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet`}
         />

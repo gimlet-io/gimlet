@@ -44,28 +44,16 @@ func SendFluxState(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	for _, g := range gitRepositories {
-		logrus.Info(g)
-	}
-
 	kustomizations, err := kubeEnv.Kustomizations()
 	if err != nil {
 		logrus.Errorf("could not get gitrepositories: %s", err)
 		return
 	}
 
-	for _, k := range kustomizations {
-		logrus.Info(k)
-	}
-
 	helmReleases, err := kubeEnv.HelmReleases()
 	if err != nil {
 		logrus.Errorf("could not get gitrepositories: %s", err)
 		return
-	}
-
-	for _, h := range helmReleases {
-		logrus.Info(h)
 	}
 
 	fluxStateString, err := json.Marshal(api.FluxState{
