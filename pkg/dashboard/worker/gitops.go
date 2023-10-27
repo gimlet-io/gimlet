@@ -920,7 +920,19 @@ func gitopsTemplateAndWrite(
 	}
 	logrus.Infof("Helm template took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
-	files := dx.SplitHelmOutput(map[string]string{"manifest.yaml": templatedManifests})
+	helmGeneratedFiles := dx.SplitHelmOutput(map[string]string{"manifest.yaml": templatedManifests})
+
+	envReleaseJsonPath := manifest.Env
+	appFolderPath := filepath.Join(manifest.Env, manifest.App)
+	if repoPerEnv {
+		appFolderPath = manifest.App
+		envReleaseJsonPath = ""
+	}
+
+	files := map[string]string{}
+	for fileName, content := range helmGeneratedFiles {
+		files[filepath.Join(appFolderPath, fileName)] = content
+	}
 
 	if kustomizationManifest != nil {
 		files[kustomizationManifest.Path] = kustomizationManifest.Content
@@ -938,15 +950,15 @@ func gitopsTemplateAndWrite(
 	if err != nil {
 		return "", fmt.Errorf("cannot marshal release meta data %s", err.Error())
 	}
+	files[filepath.Join(appFolderPath, "release.json")] = string(releaseString)
+	files[filepath.Join(envReleaseJsonPath, "release.json")] = string(releaseString)
 
 	sha, err := nativeGit.CommitFilesToGit(
 		repo,
 		files,
-		manifest.Env,
-		manifest.App,
-		repoPerEnv,
-		"automated deploy",
-		string(releaseString))
+		[]string{appFolderPath},
+		fmt.Sprintf("[Gimlet] %s/%s automatee deploy", manifest.Env, manifest.App),
+	)
 	if err != nil {
 		return "", fmt.Errorf("cannot write to git: %s", err.Error())
 	}
