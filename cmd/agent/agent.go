@@ -508,6 +508,7 @@ func streamPodLogs(
 	sc := bufio.NewScanner(podLogs)
 	for sc.Scan() {
 		text := sc.Text()
+		logrus.Infof(text)
 		chunks := chunks(text, 1000)
 		for _, chunk := range chunks {
 			timestamp, message := parseMessage(chunk)

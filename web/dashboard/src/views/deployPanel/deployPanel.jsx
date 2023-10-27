@@ -195,7 +195,7 @@ export default class DeployPanel extends Component {
 
   extendedEnvState(env, state) {
     const gitrepositoryWidgets = state.fluxState.gitRepositories.map(repository => {
-      let color = "text-yellow-400";
+      let color = "bg-yellow-400";
 
       if (repository.status.includes("Succeeded")) {
           color = "text-green-400";
