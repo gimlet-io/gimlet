@@ -70,7 +70,7 @@ func (u *GitopsUpdater) Run() {
 				token,
 				shouldGenerateController,
 				shouldGenerateDependencies,
-				env.KustomizationPerApp,
+				false,
 				scmUrl,
 			)
 			if err != nil {
