@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
@@ -258,6 +259,40 @@ func GenerateKustomizationForApp(
 	return &manifestgen.Manifest{
 		Path:    path.Join(filePath, fmt.Sprintf("kustomization-%s.yaml", app)),
 		Content: fmt.Sprintf("---\n%s", resourceToString(ksData)),
+	}, nil
+}
+
+func GenerateConfigMap(
+	configMapName string,
+	namespace string,
+	data map[string]string,
+) (*manifestgen.Manifest, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	immutable := false
+	configMap := corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: namespace,
+		},
+		Data:      data,
+		Immutable: &immutable,
+	}
+
+	yamlString, err := yaml.Marshal(configMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manifestgen.Manifest{
+		Path:    path.Join(".", fmt.Sprintf("configmap-%s-%s.yaml", configMapName, namespace)),
+		Content: fmt.Sprintf("---\n%s", resourceToString(yamlString)),
 	}, nil
 }
 

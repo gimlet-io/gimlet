@@ -97,7 +97,7 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 
 	repoPerEnv := false
-	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil)
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
 	assert.Nil(t, err)
 	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
@@ -107,7 +107,7 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 	assert.True(t, len(content) > 1)
 
 	repoPerEnv = true
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil)
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
 	assert.Nil(t, err)
 	content, _ = nativeGit.Content(repo, "my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
@@ -163,10 +163,10 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 	json.Unmarshal([]byte(withVolume), &a)
 
 	repoPerEnv := true
-	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil)
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
 	assert.Nil(t, err)
 
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil)
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
 	assert.Nil(t, err)
 
 	content, _ := nativeGit.Content(repo, "my-app/deployment.yaml")
@@ -204,7 +204,7 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 
 	var b dx.Artifact
 	json.Unmarshal([]byte(withoutVolume), &b)
-	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false, nil)
+	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false, nil, nil, nil)
 	assert.Nil(t, err)
 
 	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
