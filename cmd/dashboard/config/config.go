@@ -53,6 +53,9 @@ func defaults(c *Config) {
 	if c.ApiHost == "" {
 		c.ApiHost = c.Host
 	}
+	if c.GitopsUpdaterFeatureFlagString == "" {
+		c.BuiltinEnvFeatureFlagString = "true"
+	}
 	if c.BuiltinEnvFeatureFlagString == "" {
 		c.BuiltinEnvFeatureFlagString = "true"
 	}
@@ -97,7 +100,7 @@ type Config struct {
 
 	TermsOfServiceFeatureFlag      bool   `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool   `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
-	GitopsUpdaterFeatreFlag        bool   `envconfig:"FEATURE_GITOPS_UPDATER"`
+	GitopsUpdaterFeatureFlagString string `envconfig:"FEATURE_GITOPS_UPDATER"`
 	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
 
 	AlertEvaluationFrequencySeconds int `envconfig:"ALERT_EVALUATION_FREQUENCY_SECONDS"`
@@ -172,6 +175,15 @@ func (m *Multiline) Decode(value string) error {
 
 func (m *Multiline) String() string {
 	return string(*m)
+}
+
+func (c *Config) GitopsUpdaterFeatureFlag() bool {
+	flag, err := strconv.ParseBool(c.GitopsUpdaterFeatureFlagString)
+	if err != nil {
+		logrus.Warnf("could not parse FEATURE_GITOPS_UPDATER: %s", err)
+		return true
+	}
+	return flag
 }
 
 func (c *Config) BuiltinEnvFeatureFlag() bool {

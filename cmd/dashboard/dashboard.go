@@ -160,7 +160,7 @@ func main() {
 	}
 
 	gitopsUpdatePullRequests := map[string]interface{}{}
-	if config.GitopsUpdaterFeatreFlag {
+	if config.GitopsUpdaterFeatureFlag() {
 		gitopsUpdater := worker.NewGitopsUpdater(
 			store,
 			dynamicConfig,
