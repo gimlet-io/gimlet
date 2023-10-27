@@ -111,15 +111,12 @@ func processEvent(
 		token, _, _ = tokenManager.Token()
 	}
 
-	eventRepo, _ := repoCache.InstanceForRead(event.Repository)
-
 	// process event based on type
 	var err error
 	var results []model.Result
 	switch event.Type {
 	case model.ArtifactCreatedEvent:
 		results, err = processArtifactEvent(
-			eventRepo,
 			repoCache,
 			token,
 			event,
@@ -130,7 +127,6 @@ func processEvent(
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
-			eventRepo,
 			store,
 			repoCache,
 			token,
@@ -288,7 +284,6 @@ func processBranchDeletedEvent(
 }
 
 func processReleaseEvent(
-	eventRepo *git.Repository,
 	store *store.Store,
 	gitopsRepoCache *nativeGit.RepoCache,
 	nonImpersonatedToken string,
@@ -319,9 +314,14 @@ func processReleaseEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
-	repoVars, err := loadVars(eventRepo, ".gimlet/vars")
+	repo, err := gitopsRepoCache.InstanceForRead(artifact.Version.RepositoryName)
 	if err != nil {
-		return deployResults, err
+		return deployResults, fmt.Errorf("cannot load repo %s", err.Error())
+	}
+
+	repoVars, err := loadVars(repo, ".gimlet/vars")
+	if err != nil {
+		return deployResults, fmt.Errorf("cannot load vars %s", err.Error())
 	}
 
 	for _, manifest := range artifact.Environments {
@@ -525,7 +525,6 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 }
 
 func processArtifactEvent(
-	eventRepo *git.Repository,
 	gitopsRepoCache *nativeGit.RepoCache,
 	githubChartAccessToken string,
 	event *model.Event,
@@ -550,9 +549,14 @@ func processArtifactEvent(
 	}
 	artifact.Environments = append(artifact.Environments, manifests...)
 
-	repoVars, err := loadVars(eventRepo, ".gimlet/vars")
+	repo, err := gitopsRepoCache.InstanceForRead(artifact.Version.RepositoryName)
 	if err != nil {
-		return deployResults, err
+		return deployResults, fmt.Errorf("cannot load repo %s", err.Error())
+	}
+
+	repoVars, err := loadVars(repo, ".gimlet/vars")
+	if err != nil {
+		return deployResults, fmt.Errorf("cannot load vars %s", err.Error())
 	}
 
 	for _, manifest := range artifact.Environments {
