@@ -148,7 +148,7 @@ func main() {
 	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
-	if config.ChartVersionUpdaterFeatureFlag {
+	if config.ChartVersionUpdaterFeatureFlag() {
 		chartVersionUpdater := worker.NewChartVersionUpdater(
 			config,
 			dynamicConfig,
@@ -160,7 +160,7 @@ func main() {
 	}
 
 	gitopsUpdatePullRequests := map[string]interface{}{}
-	if config.GitopsUpdaterFeatreFlag {
+	if config.GitopsUpdaterFeatureFlag() {
 		gitopsUpdater := worker.NewGitopsUpdater(
 			store,
 			dynamicConfig,
