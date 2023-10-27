@@ -171,6 +171,16 @@ func main() {
 		go gitopsUpdater.Run()
 	}
 
+	if config.StackUpdaterFeatureFlag() {
+		stackUpdater := worker.NewStackUpdater(
+			store,
+			dynamicConfig,
+			tokenManager,
+			repoCache,
+		)
+		go stackUpdater.Run()
+	}
+
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
 		tokenManager,
