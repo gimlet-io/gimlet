@@ -129,7 +129,7 @@ func updateGitopsManifests(
 	}
 
 	for _, pullRequest := range prList {
-		if strings.HasPrefix(pullRequest.Source, "gimlet-gitops-update") {
+		if strings.HasPrefix(pullRequest.Source, fmt.Sprintf("gimlet-gitops-update-%s", envName)) {
 			return &api.PR{
 				Sha:    pullRequest.Sha,
 				Link:   pullRequest.Link,
@@ -150,7 +150,7 @@ func updateGitopsManifests(
 		return nil, fmt.Errorf("cannot get head branch: %s", err)
 	}
 
-	sourceBranch, err := server.GenerateBranchNameWithUniqueHash("gimlet-gitops-update", 4)
+	sourceBranch, err := server.GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-gitops-update-%s", envName), 4)
 	if err != nil {
 		return nil, fmt.Errorf("cannot generate branch name: %s", err)
 	}
