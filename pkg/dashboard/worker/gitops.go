@@ -711,14 +711,13 @@ func cloneTemplateWriteAndPush(
 	}
 
 	owner, repository := server.ParseRepo(releaseMeta.Version.RepositoryName)
-	perRepoConfigMapName := uniqueConfigMapName(owner, repository, "per-repo")
+	perRepoConfigMapName := fmt.Sprintf("%s-%s", strings.ToLower(owner), strings.ToLower(repository))
 	perRepoConfigMapManifest, err := sync.GenerateConfigMap(perRepoConfigMapName, manifest.Namespace, repoVars)
 	if err != nil {
 		return "", err
 	}
 
-	perEnvConfigMapName := uniqueConfigMapName(owner, repository, "per-env")
-	perEnvConfigMapManifest, err := sync.GenerateConfigMap(perEnvConfigMapName, manifest.Namespace, envVars)
+	perEnvConfigMapManifest, err := sync.GenerateConfigMap(strings.ToLower(envFromStore.Name), manifest.Namespace, envVars)
 	if err != nil {
 		return "", err
 	}
@@ -1142,12 +1141,4 @@ func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env 
 		)
 	}
 	return uniqueName
-}
-
-func uniqueConfigMapName(owner string, repoName string, varsType string) string {
-	return fmt.Sprintf("%s-%s-%s",
-		strings.ToLower(owner),
-		strings.ToLower(repoName),
-		strings.ToLower(varsType),
-	)
 }
