@@ -54,7 +54,7 @@ func defaults(c *Config) {
 		c.ApiHost = c.Host
 	}
 	if c.GitopsUpdaterFeatureFlagString == "" {
-		c.BuiltinEnvFeatureFlagString = "true"
+		c.GitopsUpdaterFeatureFlagString = "true"
 	}
 	if c.BuiltinEnvFeatureFlagString == "" {
 		c.BuiltinEnvFeatureFlagString = "true"
