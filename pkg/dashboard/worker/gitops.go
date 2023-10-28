@@ -957,7 +957,7 @@ func gitopsTemplateAndWrite(
 		repo,
 		files,
 		[]string{appFolderPath},
-		fmt.Sprintf("[Gimlet] %s/%s automatee deploy", manifest.Env, manifest.App),
+		fmt.Sprintf("[Gimlet] %s/%s automated deploy", manifest.Env, manifest.App),
 	)
 	if err != nil {
 		return "", fmt.Errorf("cannot write to git: %s", err.Error())
