@@ -39,6 +39,7 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 							Event:   EventDeploymentCreated,
 							Env:     kubeEnv.Name,
 							Repo:    svc.GetAnnotations()[AnnotationGitRepository],
+							Osca:    getOpenServiceCatalogAnnotations(svc),
 							Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 							Svc:     svc.Namespace + "/" + svc.Name,
 
@@ -65,6 +66,7 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 							Event:   EventDeploymentUpdated,
 							Env:     kubeEnv.Name,
 							Repo:    svc.GetAnnotations()[AnnotationGitRepository],
+							Osca:    getOpenServiceCatalogAnnotations(svc),
 							Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 							Svc:     svc.Namespace + "/" + svc.Name,
 

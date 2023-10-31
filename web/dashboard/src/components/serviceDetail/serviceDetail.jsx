@@ -244,7 +244,7 @@ function ServiceDetail(props) {
                 <div>
                   <p className="text-base text-gray-600">Links</p>
                   <div className="text-gray-700 text-sm mt-2">
-                  <a href="">
+                  <a href={stack.osca.docsLink}>
                   Docs
                     <svg xmlns="http://www.w3.org/2000/svg"
                       className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
@@ -255,7 +255,7 @@ function ServiceDetail(props) {
                     </svg>
                   </a>
                   <span className="px-2">|</span>
-                  <a href="">
+                  <a href={stack.osca.logsLink}>
                     Logs
                     <svg xmlns="http://www.w3.org/2000/svg"
                       className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
@@ -266,7 +266,7 @@ function ServiceDetail(props) {
                     </svg>
                   </a>
                   <span className="px-2">|</span>
-                  <a href="">
+                  <a href={stack.osca.metricsLink}>
                     Metrics
                     <svg xmlns="http://www.w3.org/2000/svg"
                       className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
@@ -277,7 +277,7 @@ function ServiceDetail(props) {
                     </svg>
                   </a>
                   <span className="px-2">|</span>
-                  <a href="">
+                  <a href={stack.osca.tracesLink}>
                     Traces
                     <svg xmlns="http://www.w3.org/2000/svg"
                       className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
@@ -288,7 +288,7 @@ function ServiceDetail(props) {
                     </svg>
                   </a>
                   <span className="px-2">|</span>
-                  <a href="">
+                  <a href={stack.osca.issuesLink}>
                     Issues
                     <svg xmlns="http://www.w3.org/2000/svg"
                       className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
