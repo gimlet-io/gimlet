@@ -132,11 +132,6 @@ func updateGimletStack(
 		return nil
 	}
 
-	changeLog, err := changeLog(stackConfig, versionsSince)
-	if err != nil {
-		return err
-	}
-
 	sourceBranch, err := server.GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-stack-update-%s", envName), 4)
 	if err != nil {
 		return fmt.Errorf("cannot generate branch name: %s", err)
@@ -174,6 +169,11 @@ func updateGimletStack(
 	err = server.StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Gimlet stack update")
 	if err != nil {
 		return fmt.Errorf("cannot stage, commit and push: %s", err)
+	}
+
+	changeLog, err := changeLog(stackConfig, versionsSince)
+	if err != nil {
+		return err
 	}
 
 	_, _, err = goScmHelper.CreatePR(token, repoName, sourceBranch, headBranch,
