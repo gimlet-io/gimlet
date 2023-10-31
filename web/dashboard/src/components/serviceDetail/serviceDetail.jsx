@@ -241,6 +241,65 @@ function ServiceDetail(props) {
                   </p>
                 </div>
                 }
+                <div>
+                  <p className="text-base text-gray-600">Links</p>
+                  <div className="text-gray-700 text-sm mt-2">
+                  <a href="">
+                  Docs
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
+                      viewBox="0 0 24 24">
+                      <path d="M0 0h24v24H0z" fill="none" />
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                    </svg>
+                  </a>
+                  <span className="px-2">|</span>
+                  <a href="">
+                    Logs
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
+                      viewBox="0 0 24 24">
+                      <path d="M0 0h24v24H0z" fill="none" />
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                    </svg>
+                  </a>
+                  <span className="px-2">|</span>
+                  <a href="">
+                    Metrics
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
+                      viewBox="0 0 24 24">
+                      <path d="M0 0h24v24H0z" fill="none" />
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                    </svg>
+                  </a>
+                  <span className="px-2">|</span>
+                  <a href="">
+                    Traces
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
+                      viewBox="0 0 24 24">
+                      <path d="M0 0h24v24H0z" fill="none" />
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                    </svg>
+                  </a>
+                  <span className="px-2">|</span>
+                  <a href="">
+                    Issues
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                      className="inline fill-current text-gray-500 hover:text-gray-700 h-4 w-4"
+                      viewBox="0 0 24 24">
+                      <path d="M0 0h24v24H0z" fill="none" />
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                    </svg>
+                  </a>
+                  </div>
+                </div>
               </div>
               <div className="col-span-7 space-y-4 pl-2">
                 { deployment &&
@@ -267,7 +326,7 @@ function ServiceDetail(props) {
                     </div>
                     {stack.ingresses ? stack.ingresses.map((ingress) =>
                       <p key={`${ingress.namespace}/${ingress.name}`}>
-                        <a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">{ingress.url}
+                        <a href={'https://' + ingress.url} target="_blank" rel="noopener noreferrer">https://{ingress.url}
                         <svg xmlns="http://www.w3.org/2000/svg"
                           className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
                           viewBox="0 0 24 24">
