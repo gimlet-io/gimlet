@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import { useState } from 'react';
+import React, { Component, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
 import {
@@ -39,14 +39,6 @@ export default class Repositories extends Component {
           property: "Owner",
           value: "backend-team"
         },
-        {
-          property: "Service",
-          value: "cart"
-        },
-        {
-          property: "Repository",
-          value: "blabla"
-        }
       ],
     }
 
@@ -73,6 +65,7 @@ export default class Repositories extends Component {
     this.navigateToRepo = this.navigateToRepo.bind(this);
     this.favoriteHandler = this.favoriteHandler.bind(this);
     this.deleteFilter = this.deleteFilter.bind(this);
+    this.addFilter = this.addFilter.bind(this);
   }
 
   componentDidMount() {
@@ -168,13 +161,21 @@ export default class Repositories extends Component {
     this.setState(prevState => {
       const deleted = []
       for(const f of prevState.filters){
-        if (f.property !== filter.property && f.value != filter.value){
+        if (f.property !== filter.property || f.value !== filter.value){
           deleted.push(f)
         }
       }
 
       return {
         filters: deleted
+      }
+    });
+  }
+
+  addFilter(filter) {
+    this.setState(prevState => {
+      return {
+        filters: [...prevState.filters, filter]
       }
     });
   }
@@ -273,7 +274,11 @@ export default class Repositories extends Component {
               </div>
             }
 
-            <FilterBar filters={this.state.filters} deleteFilter={this.deleteFilter}/>
+            <FilterBar
+              filters={this.state.filters}
+              addFilter={this.addFilter}
+              deleteFilter={this.deleteFilter}
+            />
             {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
           </div>
         </header>
@@ -340,9 +345,9 @@ const FilterBar = (props) => {
         <div className="absolute inset-y-0 left-0 flex items-center pl-3">
           <FilterIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
           {props.filters.map(filter => (
-            <Filter filter={filter} deleteFilter={props.deleteFilter} />
+            <Filter key={filter.property+filter.value} filter={filter} deleteFilter={props.deleteFilter} />
           ))}
-          <FilterInput />
+          <FilterInput addFilter={props.addFilter} />
         </div>
         <div className="block w-full rounded-md border-0 bg-white py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
           &nbsp;
@@ -366,25 +371,77 @@ const Filter = (props) => {
 
 const FilterInput = (props) => {
   const [active, setActive] = useState(false)
+  const [property, setProperty] = useState("")
+  const [value, setValue] = useState("")
+  const properties=["Repository", "Service", "Namespace", "Owner", "Starred", "Domain"]
+  const { addFilter } = props;
+	const inputRef = useRef(null);
+
+  const reset = () => {
+    console.log("reset")
+    setActive(false)
+    setProperty("")
+    setValue("")
+  }
+
+  useEffect(() => {
+    if (property !== "") {
+      inputRef.current.focus();
+    }  
+  });
+
+  console.log(value)
 
   return (
     <span className="relative w-48 ml-2">
-      <input
-        className="block border-0 border-t border-b border-gray-300 pt-1.5 pb-1 px-1 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-        placeholder='Enter Filter'
-        onFocus={() => setActive(true)}
-        onBlur={() => setActive(false)}
-        type="search"
-      />
-      {active &&
+      <span className="items-center flex">
+        {property !== "" &&
+          <span>{property}: </span>
+        }
+        <input
+          ref={inputRef}
+          key={property}
+          className={`${property ? "ml-10" : "" }block border-0 border-t border-b border-gray-300 pt-1.5 pb-1 px-1 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+          placeholder='Enter Filter'
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => {setActive(true)}}
+          onBlur={() => {
+            setTimeout(() => {
+              setActive(false);
+              if (property !== "") {
+                reset()
+              }
+            }, 200);}
+          }
+          onKeyUp={(e) => {
+            if (e.keyCode === 13){
+              setActive(false)
+              if (property === "") {
+                addFilter({property: "Repository", value: value})
+              } else {
+                addFilter({property, value})
+              }
+              reset()
+            }
+            if (e.keyCode === 27){
+              inputRef.current.blur();
+            }
+          }}
+          type="search"
+        />
+      </span>
+      {active && property === "" &&
       <div className="z-10 absolute bg-blue-100 w-48 p-2 text-blue-800">
         <ul className="">
-          <li className="cursor-pointer hover:bg-blue-200">Repository</li>
-          <li className="cursor-pointer hover:bg-blue-200">Service</li>
-          <li className="cursor-pointer hover:bg-blue-200">Namespace</li>
-          <li className="cursor-pointer hover:bg-blue-200">Owner</li>
-          <li className="cursor-pointer hover:bg-blue-200">Starred</li>
-          <li className="cursor-pointer hover:bg-blue-200">Ingress Domain</li>
+          {properties.map(p => (
+            <li
+              key={p}
+              className="cursor-pointer hover:bg-blue-200"
+              onClick={() => {setProperty(p); setActive(false); }}>
+              {p}
+            </li>
+          ))}
         </ul>
       </div>
       }
