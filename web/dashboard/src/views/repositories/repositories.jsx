@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { useState } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
 import {
@@ -7,7 +8,7 @@ import {
 } from "../../redux/redux";
 import RefreshRepos from './refreshRepos';
 import { renderChartUpdatePullRequests } from '../pulse/pulse';
-import { InformationCircleIcon } from '@heroicons/react/solid'
+import { InformationCircleIcon, FilterIcon, XIcon } from '@heroicons/react/solid'
 import RefreshButton from '../../components/refreshButton/refreshButton';
 
 export default class Repositories extends Component {
@@ -34,6 +35,19 @@ export default class Repositories extends Component {
       added: null,
       deleted: null,
       settings: reduxState.settings,
+      filters: [{
+          property: "Owner",
+          value: "backend-team"
+        },
+        {
+          property: "Service",
+          value: "cart"
+        },
+        {
+          property: "Repository",
+          value: "blabla"
+        }
+      ],
     }
 
     // handling API and streaming state changes
@@ -58,6 +72,7 @@ export default class Repositories extends Component {
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
     this.favoriteHandler = this.favoriteHandler.bind(this);
+    this.deleteFilter = this.deleteFilter.bind(this);
   }
 
   componentDidMount() {
@@ -147,6 +162,21 @@ export default class Repositories extends Component {
       }, () => {
         /* Generic error handler deals with it */
       });
+  }
+
+  deleteFilter(filter) {
+    this.setState(prevState => {
+      const deleted = []
+      for(const f of prevState.filters){
+        if (f.property !== filter.property && f.value != filter.value){
+          deleted.push(f)
+        }
+      }
+
+      return {
+        filters: deleted
+      }
+    });
   }
 
   render() {
@@ -242,6 +272,8 @@ export default class Repositories extends Component {
                 />
               </div>
             }
+
+            <FilterBar filters={this.state.filters} deleteFilter={this.deleteFilter}/>
             {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
           </div>
         </header>
@@ -299,6 +331,65 @@ const setupGithubCard = (history) => {
     </div>
     </div>
   );
+}
+
+const FilterBar = (props) => {
+  return (
+    <div className="w-full pt-8">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+          <FilterIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          {props.filters.map(filter => (
+            <Filter filter={filter} deleteFilter={props.deleteFilter} />
+          ))}
+          <FilterInput />
+        </div>
+        <div className="block w-full rounded-md border-0 bg-white py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+          &nbsp;
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const Filter = (props) => {
+  const { filter } = props;
+  return (
+    <span className="ml-1 text-blue-50 bg-blue-600 rounded-full pl-3 pr-1" aria-hidden="true">
+      <span>{filter.property}</span>: <span>{filter.value}</span>
+      <span className="ml-1 px-1 bg-blue-400 rounded-full ">
+        <XIcon className="cursor-pointer inline h-3 w-3" aria-hidden="true" onClick={() => props.deleteFilter(filter)}/>
+      </span>
+    </span>
+  )
+}
+
+const FilterInput = (props) => {
+  const [active, setActive] = useState(false)
+
+  return (
+    <span className="relative w-48 ml-2">
+      <input
+        className="block border-0 border-t border-b border-gray-300 pt-1.5 pb-1 px-1 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+        placeholder='Enter Filter'
+        onFocus={() => setActive(true)}
+        onBlur={() => setActive(false)}
+        type="search"
+      />
+      {active &&
+      <div className="z-10 absolute bg-blue-100 w-48 p-2 text-blue-800">
+        <ul className="">
+          <li className="cursor-pointer hover:bg-blue-200">Repository</li>
+          <li className="cursor-pointer hover:bg-blue-200">Service</li>
+          <li className="cursor-pointer hover:bg-blue-200">Namespace</li>
+          <li className="cursor-pointer hover:bg-blue-200">Owner</li>
+          <li className="cursor-pointer hover:bg-blue-200">Starred</li>
+          <li className="cursor-pointer hover:bg-blue-200">Ingress Domain</li>
+        </ul>
+      </div>
+      }
+    </span>
+  )
 }
 
 export const Spinner = () => {
