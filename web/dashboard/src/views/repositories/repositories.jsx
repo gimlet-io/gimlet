@@ -378,7 +378,6 @@ const FilterInput = (props) => {
 	const inputRef = useRef(null);
 
   const reset = () => {
-    console.log("reset")
     setActive(false)
     setProperty("")
     setValue("")
@@ -389,8 +388,6 @@ const FilterInput = (props) => {
       inputRef.current.focus();
     }  
   });
-
-  console.log(value)
 
   return (
     <span className="relative w-48 ml-2">
@@ -409,8 +406,17 @@ const FilterInput = (props) => {
           onBlur={() => {
             setTimeout(() => {
               setActive(false);
-              if (property !== "") {
+              if (value !== "") {
+                if (property === "") {
+                  addFilter({property: "Repository", value: value})
+                } else {
+                  addFilter({property, value})
+                }
                 reset()
+              } else {
+                if (property !== "") {
+                  reset()
+                }
               }
             }, 200);}
           }
@@ -425,7 +431,8 @@ const FilterInput = (props) => {
               reset()
             }
             if (e.keyCode === 27){
-              inputRef.current.blur();
+              reset()
+              // inputRef.current.blur();
             }
           }}
           type="search"
