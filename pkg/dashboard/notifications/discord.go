@@ -20,7 +20,6 @@ type discordMessage struct {
 }
 
 func (s *DiscordProvider) send(msg Message) error {
-
 	discordBot, err := discordgo.New("Bot " + s.Token)
 	if err != nil {
 		return fmt.Errorf("error creating Discord session, %s", err)

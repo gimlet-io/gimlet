@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
 
 type AlertMessage struct {
-	Alert model.Alert
+	Alert api.Alert
 }
 
 func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
@@ -17,7 +18,12 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.ObjectName)
+	msg.Text = fmt.Sprintf("%s %s %s", am.Alert.ObjectName, am.Alert.Type, am.Alert.Status)
+	desc := fmt.Sprintf(":exclamation: %s", am.Alert.Text)
+	if am.Alert.Status == model.RESOLVED {
+		desc = ":white_check_mark: Running"
+	}
+
 	msg.Blocks = append(msg.Blocks,
 		Block{
 			Type: section,
@@ -33,7 +39,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 			Elements: []Text{
 				{
 					Type: markdown,
-					Text: fmt.Sprintf(":exclamation: %s", "TODO: related object and alert type"),
+					Text: desc,
 				},
 			},
 		},
@@ -60,9 +66,16 @@ func (am *AlertMessage) AsDiscordMessage() (*discordMessage, error) {
 		},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s failed", am.Alert.Type, am.Alert.ObjectName)
-	msg.Embed.Description += fmt.Sprintf(":exclamation: %s", "TODO: related object and alert type")
-	msg.Embed.Color = 15158332
+	desc := fmt.Sprintf(":exclamation: %s", am.Alert.Text)
+	color := 15158332
+	if am.Alert.Status == model.RESOLVED {
+		desc = ":white_check_mark: Running"
+		color = 3066993
+	}
+
+	msg.Text = fmt.Sprintf("%s %s %s", am.Alert.ObjectName, am.Alert.Type, am.Alert.Status)
+	msg.Embed.Description += desc
+	msg.Embed.Color = color
 
 	return msg, nil
 }

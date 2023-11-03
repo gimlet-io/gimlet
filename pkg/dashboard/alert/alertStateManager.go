@@ -60,7 +60,12 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 		}
 		if t != nil && t.Reached(nil, alert) {
 			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert: *alert,
+				Alert: api.Alert{
+					ObjectName: alert.ObjectName,
+					Status:     model.FIRING,
+					Type:       alert.Type,
+					Text:       t.Text(),
+				},
 			})
 
 			err := a.store.UpdateAlertState(alert.ID, model.FIRING)
@@ -192,7 +197,11 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 		t := ThresholdByType(a.thresholds, nonResolvedAlert.Type)
 		if t != nil && t.Resolved(dbPod) {
 			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert: *nonResolvedAlert,
+				Alert: api.Alert{
+					ObjectName: nonResolvedAlert.ObjectName,
+					Status:     model.RESOLVED,
+					Type:       nonResolvedAlert.Type,
+				},
 			})
 
 			err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
