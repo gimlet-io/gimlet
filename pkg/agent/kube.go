@@ -41,11 +41,11 @@ import (
 
 const AnnotationGitRepository = "gimlet.io/git-repository"
 const AnnotationGitSha = "gimlet.io/git-sha"
-const AnnotationDocsLink = "opensca.dev/documentation"
-const AnnotationLogsLink = "opensca.dev/logs"
-const AnnotationMetricsLink = "opensca.dev/metrics"
-const AnnotationTracesLink = "opensca.dev/traces"
-const AnnotationIssuesLink = "opensca.dev/issues"
+const AnnotationDocsLink = "v1alpha1.opensca.dev/documentation"
+const AnnotationLogsLink = "v1alpha1.opensca.dev/logs"
+const AnnotationMetricsLink = "v1alpha1.opensca.dev/metrics"
+const AnnotationTracesLink = "v1alpha1.opensca.dev/traces"
+const AnnotationIssuesLink = "v1alpha1.opensca.dev/issues"
 
 type KubeEnv struct {
 	Name          string
