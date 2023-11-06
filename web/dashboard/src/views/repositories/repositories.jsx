@@ -66,6 +66,7 @@ export default class Repositories extends Component {
     this.favoriteHandler = this.favoriteHandler.bind(this);
     this.deleteFilter = this.deleteFilter.bind(this);
     this.addFilter = this.addFilter.bind(this);
+    this.resetFilters = this.resetFilters.bind(this);
   }
 
   componentDidMount() {
@@ -189,6 +190,15 @@ export default class Repositories extends Component {
     });
   }
 
+  resetFilters() {
+    this.setState({ filters: [{
+      property: "Owner",
+      value: "backend-team"
+    },
+  ] });
+    localStorage.removeItem("filters");
+  }
+
   render() {
     const { repositories, search, favorites, isOpen, settings } = this.state;
 
@@ -287,6 +297,7 @@ export default class Repositories extends Component {
               filters={this.state.filters}
               addFilter={this.addFilter}
               deleteFilter={this.deleteFilter}
+              resetFilters={this.resetFilters}
             />
             {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
           </div>
@@ -357,6 +368,7 @@ const FilterBar = (props) => {
             <Filter key={filter.property+filter.value} filter={filter} deleteFilter={props.deleteFilter} />
           ))}
           <FilterInput addFilter={props.addFilter} />
+          <button onClick={props.resetFilters} className="p-1 bg-gray-200 text-gray-400 rounded-xl text-sm">reset</button>
         </div>
         <div className="block w-full rounded-md border-0 bg-white py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
           &nbsp;
