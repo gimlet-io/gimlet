@@ -10,7 +10,6 @@ import (
 	markdown "github.com/MichaelMure/go-term-markdown"
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
-	update "github.com/gimlet-io/gimlet-cli/pkg/commands/stack"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
@@ -201,7 +200,7 @@ func changeLog(stackConfig dx.StackConfig, versions []string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("cannot get stack definition: %s", err.Error())
 		}
-		var stackDefinition update.StackDefinition
+		var stackDefinition dx.StackDefinition
 		err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
 		if err != nil {
 			return "", fmt.Errorf("cannot parse stack definition: %s", err.Error())
