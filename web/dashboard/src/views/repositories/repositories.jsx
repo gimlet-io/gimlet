@@ -69,6 +69,11 @@ export default class Repositories extends Component {
   }
 
   componentDidMount() {
+    if (JSON.parse(localStorage.getItem("filters"))) {
+      const storedFilters = JSON.parse(localStorage.getItem("filters"));
+      this.setState({ filters: storedFilters });
+    }
+
     this.props.gimletClient.getGitRepos()
       .then(data => {
         this.props.store.dispatch({
@@ -166,6 +171,8 @@ export default class Repositories extends Component {
         }
       }
 
+      localStorage.setItem("filters", JSON.stringify(deleted))
+
       return {
         filters: deleted
       }
@@ -174,6 +181,8 @@ export default class Repositories extends Component {
 
   addFilter(filter) {
     this.setState(prevState => {
+      localStorage.setItem("filters", JSON.stringify([...prevState.filters, filter]));
+
       return {
         filters: [...prevState.filters, filter]
       }
