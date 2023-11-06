@@ -125,7 +125,7 @@ func updateGimletStack(
 	currentTagString := stack.CurrentVersion(stackConfig.Stack.Repository)
 	versionsSince, err := stack.VersionsSince(stackConfig.Stack.Repository, currentTagString)
 	if err != nil {
-		return err
+		logrus.Infof("Cannot check for updates: %s", err.Error())
 	}
 
 	if len(versionsSince) == 0 {
@@ -177,7 +177,7 @@ func updateGimletStack(
 	}
 
 	_, _, err = goScmHelper.CreatePR(token, repoName, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet] Stack update for %s", envName),
+		fmt.Sprintf("[Gimlet] Stack update ➡️ `%s` from %s to %s", envName, currentTagString, latestTag),
 		changeLog)
 	if err != nil {
 		return fmt.Errorf("cannot create pull request: %s", err)
