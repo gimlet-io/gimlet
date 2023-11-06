@@ -17,7 +17,6 @@
 package store
 
 import (
-	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -100,7 +99,7 @@ func TestReEncryption(t *testing.T) {
 	quoted := strconv.Quote(string(encrypted))
 
 	// we're assuming that there is a data encrypted with the original key
-	_, err = s.ExecContext(context.Background(), "INSERT INTO `dummy` (`id`, `secret`) VALUES (1, ?)", quoted)
+	_, err = s.Exec("INSERT INTO `dummy` (`id`, `secret`) VALUES (1, ?)", quoted)
 	assert.Nil(t, err)
 
 	// read encrypted data with the original key
