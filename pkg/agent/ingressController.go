@@ -37,7 +37,6 @@ func IngressController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Co
 									Event:   EventIngressCreated,
 									Env:     kubeEnv.Name,
 									Repo:    svc.GetAnnotations()[AnnotationGitRepository],
-									Osca:    getOpenServiceCatalogAnnotations(svc),
 									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 									Svc:     svc.Namespace + "/" + svc.Name,
 
@@ -63,7 +62,6 @@ func IngressController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Co
 									Event:   EventIngressUpdated,
 									Env:     kubeEnv.Name,
 									Repo:    svc.GetAnnotations()[AnnotationGitRepository],
-									Osca:    getOpenServiceCatalogAnnotations(svc),
 									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 									Svc:     svc.Namespace + "/" + svc.Name,
 

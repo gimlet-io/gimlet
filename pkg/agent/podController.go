@@ -43,7 +43,6 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 									Event:   EventPodCreated,
 									Env:     kubeEnv.Name,
 									Repo:    svc.GetAnnotations()[AnnotationGitRepository],
-									Osca:    getOpenServiceCatalogAnnotations(svc),
 									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 									Svc:     svc.Namespace + "/" + svc.Name,
 
@@ -86,7 +85,6 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 									Event:   EventPodUpdated,
 									Env:     kubeEnv.Name,
 									Repo:    svc.GetAnnotations()[AnnotationGitRepository],
-									Osca:    getOpenServiceCatalogAnnotations(svc),
 									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 									Svc:     svc.Namespace + "/" + svc.Name,
 

@@ -172,8 +172,6 @@ type StackUpdate struct {
 	Subject string `json:"subject"`
 	Svc     string `json:"svc"`
 
-	Osca *Osca `json:"osca"`
-
 	// Pod
 	Status     string `json:"status"`
 	Deployment string `json:"deployment"`
