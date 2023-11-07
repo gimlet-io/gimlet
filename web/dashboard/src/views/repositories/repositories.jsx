@@ -66,6 +66,7 @@ export default class Repositories extends Component {
     this.favoriteHandler = this.favoriteHandler.bind(this);
     this.deleteFilter = this.deleteFilter.bind(this);
     this.addFilter = this.addFilter.bind(this);
+    this.filterValueByProperty = this.filterValueByProperty.bind(this);
     this.resetFilters = this.resetFilters.bind(this);
   }
 
@@ -190,12 +191,23 @@ export default class Repositories extends Component {
     });
   }
 
+  filterValueByProperty(property) {
+    const filter = this.state.filters.find(f => f.property === property)
+    if (!filter) {
+      return ""
+    }
+
+    return filter.value
+  }
+
   resetFilters() {
-    this.setState({ filters: [{
-      property: "Owner",
-      value: "backend-team"
-    },
-  ] });
+    this.setState({
+      filters: [{
+        property: "Owner",
+        value: "backend-team"
+      },
+      ]
+    });
     localStorage.removeItem("filters");
   }
 
@@ -222,15 +234,20 @@ export default class Repositories extends Component {
     let filteredRepositories = {};
     for (const repoName of Object.keys(repositories)) {
       filteredRepositories[repoName] = repositories[repoName];
-      if (search.filter !== '') {
-        filteredRepositories[repoName] = filteredRepositories[repoName].filter((service) => {
-          return service.service.name.includes(search.filter) ||
-            (service.deployment !== undefined && service.deployment.name.includes(search.filter)) ||
-            (service.ingresses !== undefined && service.ingresses.filter((ingress) => ingress.url.includes(search.filter)).length > 0)
-        })
-        if (filteredRepositories[repoName].length === 0 && !repoName.includes(search.filter)) {
-          delete filteredRepositories[repoName];
-        }
+      filteredRepositories[repoName] = filteredRepositories[repoName].filter((service) => {
+        // TODO -> Open Service Catalog Annotations
+
+        // return service.repo.includes(this.filterValueByProperty("Repository")) &&
+        // service.deployment.name.includes(this.filterValueByProperty("Service")) &&
+        // service.deployment.namespace.includes(this.filterValueByProperty("Namespace")) &&
+        // service.osca.owner.includes(this.filterValueByProperty("Owner"))
+
+        return service.service.name.includes(search.filter) ||
+          (service.deployment !== undefined && service.deployment.name.includes(search.filter)) ||
+          (service.ingresses !== undefined && service.ingresses.filter((ingress) => ingress.url.includes(search.filter)).length > 0)
+      })
+      if (filteredRepositories[repoName].length === 0 && !repoName.includes(this.filterValueByProperty("Repository"))) {
+        delete filteredRepositories[repoName];
       }
     }
 
@@ -296,6 +313,7 @@ export default class Repositories extends Component {
             <FilterBar
               filters={this.state.filters}
               addFilter={this.addFilter}
+              filterValueByProperty={this.filterValueByProperty}
               deleteFilter={this.deleteFilter}
               resetFilters={this.resetFilters}
             />
@@ -367,11 +385,13 @@ const FilterBar = (props) => {
           {props.filters.map(filter => (
             <Filter key={filter.property+filter.value} filter={filter} deleteFilter={props.deleteFilter} />
           ))}
-          <FilterInput addFilter={props.addFilter} />
-          <button onClick={props.resetFilters} className="p-1 bg-gray-200 text-gray-400 rounded-xl text-sm">reset</button>
+          <FilterInput addFilter={props.addFilter} filterValueByProperty={props.filterValueByProperty} />
         </div>
         <div className="block w-full rounded-md border-0 bg-white py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
           &nbsp;
+        </div>
+        <div className="absolute inset-y-0 right-0 flex items-center p-1">
+          <button onClick={props.resetFilters} className="py-1 px-2 bg-gray-200 text-gray-400 rounded-full text-sm">reset</button>
         </div>
       </div>
     </div>
@@ -395,7 +415,7 @@ const FilterInput = (props) => {
   const [property, setProperty] = useState("")
   const [value, setValue] = useState("")
   const properties=["Repository", "Service", "Namespace", "Owner", "Starred", "Domain"]
-  const { addFilter } = props;
+  const { addFilter, filterValueByProperty } = props;
 	const inputRef = useRef(null);
 
   const reset = () => {
@@ -462,14 +482,19 @@ const FilterInput = (props) => {
       {active && property === "" &&
       <div className="z-10 absolute bg-blue-100 w-48 p-2 text-blue-800">
         <ul className="">
-          {properties.map(p => (
-            <li
-              key={p}
-              className="cursor-pointer hover:bg-blue-200"
-              onClick={() => {setProperty(p); setActive(false); }}>
-              {p}
-            </li>
-          ))}
+          {properties.map(p => {
+            if (filterValueByProperty(p) !== "") {
+              return null;
+            }
+
+            return (
+              <li
+                key={p}
+                className="cursor-pointer hover:bg-blue-200"
+                onClick={() => {setProperty(p); setActive(false); }}>
+                {p}
+              </li>
+          )})}
         </ul>
       </div>
       }
