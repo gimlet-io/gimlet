@@ -126,7 +126,7 @@ FROM alerts
 WHERE fired_at > $1 OR pending_at > $1;
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
+SELECT id, type, name, deployment_name, status, im_channel_id, pending_at, fired_at, resolved_at
 FROM alerts
 WHERE status = $1;
 `,
@@ -233,7 +233,7 @@ FROM alerts
 WHERE fired_at > $1 OR pending_at > $1;
 `,
 		SelectAlertsByState: `
-SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
+SELECT id, type, name, deployment_name, status, im_channel_id, pending_at, fired_at, resolved_at
 FROM alerts
 WHERE status = $1;
 `,

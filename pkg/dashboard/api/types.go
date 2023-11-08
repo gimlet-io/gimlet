@@ -32,6 +32,7 @@ type Pod struct {
 	Status            string `json:"status"`
 	StatusDescription string `json:"statusDescription"`
 	Logs              string `json:"logs"`
+	ImChannelId       string `json:"imChannelId"`
 }
 
 func (p *Pod) FQN() string {

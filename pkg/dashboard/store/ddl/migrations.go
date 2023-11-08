@@ -48,6 +48,7 @@ const addPendingAtToAlertsTable = "add-pending-at-to-alerts-table"
 const addFiredAtToAlertsTable = "add-fired-at-to-alerts-table"
 const addResolvedAtToAlertsTable = "add-resolved-at-to-alerts-table"
 const defaultTimestampsInAlertsTable = "defaultTimestampsInAlertsTable"
+const addImChannelIdToAlertsTable = "add-im-channel-id-to-alerts-table"
 
 type migration struct {
 	name string
@@ -286,6 +287,10 @@ UNIQUE(id)
 			name: defaultTimestampsInAlertsTable,
 			stmt: `update alerts set pending_at=0, fired_at=0, resolved_at=0 where pending_at is null;`,
 		},
+		{
+			name: addImChannelIdToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN im_channel_id TEXT;`,
+		},
 	},
 	"postgres": {
 		{
@@ -516,6 +521,10 @@ UNIQUE(id)
 		{
 			name: defaultTimestampsInAlertsTable,
 			stmt: `update alerts set pending_at=0, fired_at=0, resolved_at=0 where pending_at is null;`,
+		},
+		{
+			name: addImChannelIdToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN im_channel_id TEXT;`,
 		},
 	},
 }

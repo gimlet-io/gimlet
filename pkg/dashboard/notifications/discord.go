@@ -27,7 +27,7 @@ func (s *DiscordProvider) send(msg Message) error {
 
 	discordMessage, err := msg.AsDiscordMessage()
 	if err != nil {
-		return fmt.Errorf("cannot create slack message: %s", err)
+		return fmt.Errorf("cannot create discord message: %s", err)
 	}
 
 	channel := s.ChannelID

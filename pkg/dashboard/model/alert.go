@@ -12,6 +12,7 @@ type Alert struct {
 	ObjectName     string `json:"objectName,omitempty"  meddler:"name"` // TODO rename this to object_name in db
 	DeploymentName string `json:"deploymentName,omitempty"  meddler:"deployment_name"`
 	Status         string `json:"status,omitempty"  meddler:"status"`
+	ImChannelId    string `json:"imChannelId,omitempty"  meddler:"im_channel_id"`
 	PendingAt      int64  `json:"pendingAt,omitempty"  meddler:"pending_at"`
 	FiredAt        int64  `json:"firedAt,omitempty"  meddler:"fired_at"`
 	ResolvedAt     int64  `json:"resolvedAt,omitempty"  meddler:"resolved_at"`

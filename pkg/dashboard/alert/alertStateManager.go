@@ -15,11 +15,12 @@ import (
 )
 
 type AlertStateManager struct {
-	notifManager notifications.Manager
-	clientHub    *streaming.ClientHub
-	store        store.Store
-	waitTime     time.Duration
-	thresholds   map[string]threshold
+	notifManager       notifications.Manager
+	clientHub          *streaming.ClientHub
+	store              store.Store
+	waitTime           time.Duration
+	thresholds         map[string]threshold
+	notificationsToken string
 }
 
 func NewAlertStateManager(
@@ -28,13 +29,15 @@ func NewAlertStateManager(
 	store store.Store,
 	alertEvaluationFrequencySeconds int,
 	thresholds map[string]threshold,
+	notificationsToken string,
 ) *AlertStateManager {
 	return &AlertStateManager{
-		notifManager: notifManager,
-		clientHub:    clientHub,
-		store:        store,
-		waitTime:     time.Duration(alertEvaluationFrequencySeconds) * time.Second,
-		thresholds:   thresholds,
+		notifManager:       notifManager,
+		clientHub:          clientHub,
+		store:              store,
+		waitTime:           time.Duration(alertEvaluationFrequencySeconds) * time.Second,
+		thresholds:         thresholds,
+		notificationsToken: notificationsToken,
 	}
 }
 
@@ -59,14 +62,20 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 			}
 		}
 		if t != nil && t.Reached(nil, alert) {
-			a.notifManager.Broadcast(&notifications.AlertMessage{
+			msg := &notifications.AlertMessage{
 				Alert: api.Alert{
 					ObjectName: alert.ObjectName,
 					Status:     model.FIRING,
 					Type:       alert.Type,
 					Text:       t.Text(),
 				},
-			})
+			}
+
+			if a.notificationsToken != "" && alert.ImChannelId != "" {
+				notifications.AlertSlack(a.notificationsToken, alert.ImChannelId, msg)
+			} else {
+				a.notifManager.Broadcast(msg)
+			}
 
 			err := a.store.UpdateAlertState(alert.ID, model.FIRING)
 			if err != nil {
@@ -174,6 +183,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 			Type:           thresholdType(t),
 			DeploymentName: deploymentName,
 			Status:         model.PENDING,
+			ImChannelId:    pod.ImChannelId,
 			PendingAt:      currentTime,
 		}
 		if !alertExists(nonResolvedAlerts, alertToCreate) {
@@ -196,13 +206,19 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 	for _, nonResolvedAlert := range nonResolvedAlerts {
 		t := ThresholdByType(a.thresholds, nonResolvedAlert.Type)
 		if t != nil && t.Resolved(dbPod) {
-			a.notifManager.Broadcast(&notifications.AlertMessage{
+			msg := &notifications.AlertMessage{
 				Alert: api.Alert{
 					ObjectName: nonResolvedAlert.ObjectName,
 					Status:     model.RESOLVED,
 					Type:       nonResolvedAlert.Type,
 				},
-			})
+			}
+
+			if a.notificationsToken != "" && pod.ImChannelId != "" {
+				notifications.AlertSlack(a.notificationsToken, pod.ImChannelId, msg)
+			} else {
+				a.notifManager.Broadcast(msg)
+			}
 
 			err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
 			if err != nil {

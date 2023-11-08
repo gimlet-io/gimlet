@@ -41,6 +41,19 @@ type Text struct {
 	Text string `json:"text"`
 }
 
+func AlertSlack(
+	token string,
+	channel string,
+	msg Message,
+) error {
+	s := SlackProvider{
+		Token:          token,
+		DefaultChannel: channel,
+	}
+
+	return s.send(msg)
+}
+
 func (s *SlackProvider) send(msg Message) error {
 	slackMessage, err := msg.AsSlackMessage()
 	if err != nil {
