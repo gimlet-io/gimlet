@@ -56,6 +56,9 @@ func defaults(c *Config) {
 	if c.GitopsUpdaterFeatureFlagString == "" {
 		c.GitopsUpdaterFeatureFlagString = "true"
 	}
+	if c.StackUpdaterFeatureFlagString == "" {
+		c.StackUpdaterFeatureFlagString = "true"
+	}
 	if c.BuiltinEnvFeatureFlagString == "" {
 		c.BuiltinEnvFeatureFlagString = "true"
 	}
@@ -101,6 +104,7 @@ type Config struct {
 	TermsOfServiceFeatureFlag      bool   `envconfig:"FEATURE_TERMS_OF_SERVICE"`
 	ChartVersionUpdaterFeatureFlag bool   `envconfig:"FEATURE_CHART_VERSION_UPDATER"`
 	GitopsUpdaterFeatureFlagString string `envconfig:"FEATURE_GITOPS_UPDATER"`
+	StackUpdaterFeatureFlagString  string `envconfig:"FEATURE_STACK_UPDATER"`
 	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
 
 	AlertEvaluationFrequencySeconds int `envconfig:"ALERT_EVALUATION_FREQUENCY_SECONDS"`
@@ -181,6 +185,15 @@ func (c *Config) GitopsUpdaterFeatureFlag() bool {
 	flag, err := strconv.ParseBool(c.GitopsUpdaterFeatureFlagString)
 	if err != nil {
 		logrus.Warnf("could not parse FEATURE_GITOPS_UPDATER: %s", err)
+		return true
+	}
+	return flag
+}
+
+func (c *Config) StackUpdaterFeatureFlag() bool {
+	flag, err := strconv.ParseBool(c.StackUpdaterFeatureFlagString)
+	if err != nil {
+		logrus.Warnf("could not parse FEATURE_STACK_UPDATER: %s", err)
 		return true
 	}
 	return flag

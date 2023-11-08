@@ -7,6 +7,7 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVUPDATED,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
+  ACTION_TYPE_ENV_PULLREQUESTS,
   ACTION_TYPE_RELEASE_STATUSES,
   ACTION_TYPE_ENVSPINNEDOUT,
   ACTION_TYPE_ENVS
@@ -32,7 +33,7 @@ export default class EnvironmentView extends Component {
       user: reduxState.user,
       popupWindow: reduxState.popupWindow,
       releaseStatuses: reduxState.releaseStatuses[env],
-      pullRequests: reduxState.pullRequests.gitopsUpdates[env],
+      gitopsUpdatePullRequests: reduxState.pullRequests.gitopsUpdates[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
       errors: {},
@@ -50,7 +51,7 @@ export default class EnvironmentView extends Component {
         user: reduxState.user,
         popupWindow: reduxState.popupWindow,
         releaseStatuses: reduxState.releaseStatuses[env],
-        pullRequests: reduxState.pullRequests.gitopsUpdates[env],
+        gitopsUpdatePullRequests: reduxState.pullRequests.gitopsUpdates[env],
         scmUrl: reduxState.settings.scmUrl,
         settings: reduxState.settings
       });
@@ -81,6 +82,15 @@ export default class EnvironmentView extends Component {
             envName: env,
             data: data,
           }
+        });
+      }, () => {/* Generic error handler deals with it */
+      })
+
+    gimletClient.getPullRequestsFromInfraRepo()
+      .then(data => {
+        store.dispatch({
+          type: ACTION_TYPE_ENV_PULLREQUESTS,
+          payload: data
         });
       }, () => {/* Generic error handler deals with it */
       })
@@ -525,7 +535,7 @@ export default class EnvironmentView extends Component {
   }
 
   render() {
-    let { environment, connectedAgents, user, pullRequests } = this.state;
+    let { environment, connectedAgents, user, gitopsUpdatePullRequests } = this.state;
     const isOnline = this.isOnline(connectedAgents, environment)
 
     if (!environment) {
@@ -573,7 +583,16 @@ export default class EnvironmentView extends Component {
                 </button>
               </div>
             </div>
-            {renderGitopsUpdatePullRequests(pullRequests)}
+            <div className="space-y-4">
+              <PullRequests
+                title="Gitops manifest updates"
+                items={gitopsUpdatePullRequests}
+              />
+              <PullRequests
+                title="Gimlet stack"
+                items={environment.pullRequests}
+                />
+            </div>
           </div>
         </header>
         <main>
@@ -644,17 +663,17 @@ export default class EnvironmentView extends Component {
   }
 }
 
-const renderGitopsUpdatePullRequests = (pullRequests) => {
-  if (!pullRequests) {
+const PullRequests = ({title, items}) => {
+  if (!items) {
     return null
   }
 
-  if (pullRequests.length === 0) {
+  if (items.length === 0) {
     return null
   }
 
   const prList = [];
-  pullRequests.forEach(p => {
+  items.forEach(p => {
     prList.push(
       <li key={p.sha}>
         <a href={p.link} target="_blank" rel="noopener noreferrer">
@@ -671,7 +690,7 @@ const renderGitopsUpdatePullRequests = (pullRequests) => {
         </div>
         <div className="ml-3 flex-1 text-blue-700 md:flex md:justify-between">
           <div className="text-xs flex flex-col">
-            <span className="font-semibold text-sm">Gitops manifest updates:</span>
+            <span className="font-semibold text-sm">{title}:</span>
             <ul className="list-disc list-inside text-xs ml-2">
               {prList}
             </ul>

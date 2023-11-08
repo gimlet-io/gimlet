@@ -109,7 +109,7 @@ func configure(c *cli.Context) error {
 		}
 	}
 
-	var stackDefinition StackDefinition
+	var stackDefinition dx.StackDefinition
 	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
 	if err != nil {
 		return fmt.Errorf("cannot parse stack definition: %s", err.Error())
@@ -142,31 +142,10 @@ func configure(c *cli.Context) error {
 	return nil
 }
 
-type Component struct {
-	Name        string `json:"name,omitempty" yaml:"name"`
-	Description string `json:"description,omitempty" yaml:"description"`
-	Category    string `json:"category,omitempty" yaml:"category"`
-	Variable    string `json:"variable,omitempty" yaml:"variable"`
-	Logo        string `json:"logo,omitempty" yaml:"logo"`
-	OnePager    string `json:"onePager,omitempty" yaml:"onePager"`
-	Schema      string `json:"schema,omitempty" yaml:"schema"`
-	UISchema    string `json:"uiSchema,omitempty" yaml:"uiSchema"`
-}
-
-type StackDefinition struct {
-	Name        string        `json:"name,omitempty" yaml:"name"`
-	Description string        `json:"description,omitempty" yaml:"description"`
-	Intro       string        `json:"intro,omitempty" yaml:"intro"`
-	Categories  []interface{} `json:"categories" yaml:"categories"`
-	Components  []*Component  `json:"components,omitempty" yaml:"components"`
-	ChangLog    string        `json:"changeLog,omitempty" yaml:"changeLog"`
-	Message     string        `json:"message,omitempty" yaml:"message"`
-}
-
 var values map[string]interface{}
 var written bool
 
-func Configure(stackDefinition StackDefinition, existingStackConfig dx.StackConfig) (dx.StackConfig, bool, error) {
+func Configure(stackDefinition dx.StackDefinition, existingStackConfig dx.StackConfig) (dx.StackConfig, bool, error) {
 	stackDefinitionJson, err := json.Marshal(stackDefinition)
 	if err != nil {
 		panic(err)

@@ -273,7 +273,7 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 
 		var prListCreatedByGimlet []*api.PR
 		for _, pullRequest := range prList {
-			if strings.HasPrefix(pullRequest.Source, "gimlet-stack-change") && strings.Contains(pullRequest.Source, env.Name) {
+			if strings.HasPrefix(pullRequest.Source, "gimlet-stack") && strings.Contains(pullRequest.Source, env.Name) {
 				prListCreatedByGimlet = append(prListCreatedByGimlet, &api.PR{
 					Sha:     pullRequest.Sha,
 					Link:    pullRequest.Link,
