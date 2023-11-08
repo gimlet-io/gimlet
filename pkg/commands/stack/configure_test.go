@@ -74,7 +74,7 @@ components:
 	err := yaml.Unmarshal([]byte(stackConfigYaml), &stackConfig)
 	assert.Nil(t, err)
 
-	var stackDefinition StackDefinition
+	var stackDefinition dx.StackDefinition
 	err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
 	assert.Nil(t, err)
 

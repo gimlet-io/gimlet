@@ -96,10 +96,10 @@ func TestReEncryption(t *testing.T) {
 	}
 
 	encrypted := gcm.Seal(nonce, nonce, []byte(superSecretValue), nil)
-	quoted := strconv.QuoteToASCII(string(encrypted))
+	quoted := strconv.Quote(string(encrypted))
 
 	// we're assuming that there is a data encrypted with the original key
-	_, err = s.Exec(fmt.Sprintf("INSERT INTO dummy(id, secret) VALUES(1, '%s');", quoted))
+	_, err = s.Exec("INSERT INTO `dummy` (`id`, `secret`) VALUES (1, ?)", quoted)
 	assert.Nil(t, err)
 
 	// read encrypted data with the original key
