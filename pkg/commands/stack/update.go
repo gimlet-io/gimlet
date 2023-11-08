@@ -137,7 +137,7 @@ func printChangeLog(stackConfig dx.StackConfig, versions []string) error {
 		if err != nil {
 			return fmt.Errorf("cannot get stack definition: %s", err.Error())
 		}
-		var stackDefinition StackDefinition
+		var stackDefinition dx.StackDefinition
 		err = yaml.Unmarshal([]byte(stackDefinitionYaml), &stackDefinition)
 		if err != nil {
 			return fmt.Errorf("cannot parse stack definition: %s", err.Error())
