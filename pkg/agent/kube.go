@@ -41,6 +41,11 @@ import (
 
 const AnnotationGitRepository = "gimlet.io/git-repository"
 const AnnotationGitSha = "gimlet.io/git-sha"
+const AnnotationDocsLink = "v1alpha1.opensca.dev/documentation"
+const AnnotationLogsLink = "v1alpha1.opensca.dev/logs"
+const AnnotationMetricsLink = "v1alpha1.opensca.dev/metrics"
+const AnnotationTracesLink = "v1alpha1.opensca.dev/traces"
+const AnnotationIssuesLink = "v1alpha1.opensca.dev/issues"
 
 type KubeEnv struct {
 	Name          string
@@ -87,6 +92,7 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 
 		stacks = append(stacks, &api.Stack{
 			Repo:       service.ObjectMeta.GetAnnotations()[AnnotationGitRepository],
+			Osca:       getOpenServiceCatalogAnnotations(service),
 			Service:    &api.Service{Name: service.Name, Namespace: service.Namespace},
 			Deployment: deployment,
 			Ingresses:  ingresses,
@@ -94,6 +100,16 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	}
 
 	return stacks, nil
+}
+
+func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
+	return &api.Osca{
+		DocsLink:    svc.ObjectMeta.GetAnnotations()[AnnotationDocsLink],
+		LogsLink:    svc.ObjectMeta.GetAnnotations()[AnnotationLogsLink],
+		MetricsLink: svc.ObjectMeta.GetAnnotations()[AnnotationMetricsLink],
+		TracesLink:  svc.ObjectMeta.GetAnnotations()[AnnotationTracesLink],
+		IssuesLink:  svc.ObjectMeta.GetAnnotations()[AnnotationIssuesLink],
+	}
 }
 
 var gitRepositoryResource = schema.GroupVersionResource{

@@ -159,6 +159,7 @@ type FluxStateUpdate struct {
 type Stack struct {
 	Repo       string      `json:"repo"`
 	Env        string      `json:"env"`
+	Osca       *Osca       `json:"osca"`
 	Service    *Service    `json:"service"`
 	Deployment *Deployment `json:"deployment,omitempty"`
 	Ingresses  []*Ingress  `json:"ingresses,omitempty"`
@@ -186,6 +187,15 @@ type StackUpdate struct {
 
 	// Service
 	Stacks []*Stack `json:"stacks"`
+}
+
+// Open Service Catalog Annotations
+type Osca struct {
+	DocsLink    string `json:"docsLink"`
+	LogsLink    string `json:"logsLink"`
+	MetricsLink string `json:"metricsLink"`
+	TracesLink  string `json:"tracesLink"`
+	IssuesLink  string `json:"issuesLink"`
 }
 
 type Tag struct {
