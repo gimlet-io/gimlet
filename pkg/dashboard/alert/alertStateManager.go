@@ -260,6 +260,19 @@ func (a AlertStateManager) DeletePod(podName string) error {
 		if err != nil {
 			logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 		}
+		msg := &notifications.AlertMessage{
+			Alert: api.Alert{
+				ObjectName: nonResolvedAlert.ObjectName,
+				Status:     model.RESOLVED,
+				Type:       nonResolvedAlert.Type,
+			},
+		}
+
+		if a.notificationsToken != "" && nonResolvedAlert.ImChannelId != "" {
+			notifications.AlertSlack(a.notificationsToken, nonResolvedAlert.ImChannelId, msg)
+		} else {
+			a.notifManager.Broadcast(msg)
+		}
 
 		a.broadcast(&api.Alert{
 			ObjectName:     nonResolvedAlert.ObjectName,

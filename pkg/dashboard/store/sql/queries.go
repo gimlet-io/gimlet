@@ -131,7 +131,7 @@ FROM alerts
 WHERE status = $1;
 `,
 		SelectAlertsByName: `
-SELECT id, type, name, deployment_name, status
+SELECT id, type, name, deployment_name, status, im_channel_id
 FROM alerts
 WHERE name = $1;
 `,
@@ -238,7 +238,7 @@ FROM alerts
 WHERE status = $1;
 `,
 		SelectAlertsByName: `
-SELECT id, type, name, deployment_name, status
+SELECT id, type, name, deployment_name, status, im_channel_id
 FROM alerts
 WHERE name = $1;
 `,

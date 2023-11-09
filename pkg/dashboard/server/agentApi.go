@@ -364,6 +364,7 @@ func notifyAlertManager(alertStateManager *alert.AlertStateManager, db *store.St
 			DeploymentName:    deployment,
 			Status:            update.Status,
 			StatusDescription: update.ErrorCause,
+			ImChannelId:       update.ImChannelId,
 		},
 	)
 }

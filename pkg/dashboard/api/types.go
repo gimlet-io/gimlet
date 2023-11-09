@@ -174,10 +174,11 @@ type StackUpdate struct {
 	Svc     string `json:"svc"`
 
 	// Pod
-	Status     string `json:"status"`
-	Deployment string `json:"deployment"`
-	ErrorCause string `json:"errorCause"`
-	Logs       string `json:"logs"`
+	Status      string `json:"status"`
+	Deployment  string `json:"deployment"`
+	ErrorCause  string `json:"errorCause"`
+	Logs        string `json:"logs"`
+	ImChannelId string `json:"imChannelId"`
 
 	// Deployment
 	SHA           string `json:"sha"`
