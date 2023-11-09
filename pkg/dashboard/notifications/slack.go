@@ -14,6 +14,7 @@ import (
 const markdown = "mrkdwn"
 const section = "section"
 const contextString = "context"
+const button = "button"
 
 const githubCommitLinkFormat = "<https://github.com/%s/commit/%s|%s>"
 const bitbucketServerLinkFormat = "<http://%s/projects/%s/repos/%s/commits/%s|%s>"
@@ -25,15 +26,28 @@ type SlackProvider struct {
 }
 
 type slackMessage struct {
-	Channel string  `json:"channel"`
-	Text    string  `json:"text"`
-	Blocks  []Block `json:"blocks,omitempty"`
+	Channel     string       `json:"channel"`
+	Text        string       `json:"text"`
+	Blocks      []Block      `json:"blocks,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
 }
 
 type Block struct {
-	Type     string `json:"type"`
-	Text     *Text  `json:"text,omitempty"`
-	Elements []Text `json:"elements,omitempty"`
+	Type      string     `json:"type"`
+	Text      *Text      `json:"text,omitempty"`
+	Accessory *Accessory `json:"accessory,omitempty"`
+	Elements  []Text     `json:"elements,omitempty"`
+}
+
+type Attachment struct {
+	Color  string  `json:"color"`
+	Blocks []Block `json:"blocks,omitempty"`
+}
+
+type Accessory struct {
+	Text *Text  `json:"text"`
+	Type string `json:"type"`
+	Url  string `json:"url"`
 }
 
 type Text struct {

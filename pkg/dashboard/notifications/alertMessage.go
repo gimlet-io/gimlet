@@ -14,36 +14,56 @@ type AlertMessage struct {
 
 func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 	msg := &slackMessage{
-		Text:   "",
-		Blocks: []Block{},
+		Text:        "",
+		Attachments: []Attachment{},
 	}
 
-	msg.Text = fmt.Sprintf("%s %s %s", am.Alert.ObjectName, am.Alert.Type, am.Alert.Status)
-	desc := fmt.Sprintf(":exclamation: %s", am.Alert.Text)
+	msg.Text = fmt.Sprintf("Pod %s %s", am.Alert.ObjectName, am.Alert.Status)
 	if am.Alert.Status == model.RESOLVED {
-		desc = ":white_check_mark: Running"
-	}
-
-	msg.Blocks = append(msg.Blocks,
-		Block{
-			Type: section,
-			Text: &Text{
-				Type: markdown,
-				Text: msg.Text,
-			},
-		},
-	)
-	msg.Blocks = append(msg.Blocks,
-		Block{
-			Type: contextString,
-			Elements: []Text{
-				{
-					Type: markdown,
-					Text: desc,
+		msg.Attachments = append(msg.Attachments,
+			Attachment{
+				Color: "#36a64f",
+				Blocks: []Block{
+					{
+						Type: section,
+						Text: &Text{
+							Type: markdown,
+							Text: fmt.Sprintf(":white_check_mark: %s alert resolved", am.Alert.Type),
+						},
+						Accessory: &Accessory{
+							Type: button,
+							Text: &Text{
+								Type: "plain_text",
+								Text: "Dismiss",
+							},
+							Url: "https://todo.mycompany.com",
+						},
+					},
 				},
-			},
-		},
-	)
+			})
+	} else {
+		msg.Attachments = append(msg.Attachments,
+			Attachment{
+				Color: "#FF0000",
+				Blocks: []Block{
+					{
+						Type: section,
+						Text: &Text{
+							Type: markdown,
+							Text: fmt.Sprintf(":exclamation: %s alert firing %s", am.Alert.Type, am.Alert.Text),
+						},
+						Accessory: &Accessory{
+							Type: button,
+							Text: &Text{
+								Type: "plain_text",
+								Text: "Resolve",
+							},
+							Url: "https://todo.mycompany.com",
+						},
+					},
+				},
+			})
+	}
 
 	return msg, nil
 }
