@@ -88,12 +88,14 @@ export default class Repositories extends Component {
   }
 
   mapToRepositories(connectedAgents, gitRepos) {
-    const repositories = {}
+    const repositories = []
 
     for (const r of gitRepos) {
-      if (repositories[r] === undefined) {
-        repositories[r] = [];
+      const repo = {
+        name: r,
+        services: [],
       }
+      repositories.push(repo)
     }
 
     if (!connectedAgents) {
@@ -104,11 +106,15 @@ export default class Repositories extends Component {
       const env = connectedAgents[envName];
 
       for (const service of env.stacks) {
-        if (repositories[service.repo] === undefined) {
-          repositories[service.repo] = [];
-        }
-
-        repositories[service.repo].push(service);
+        repositories.forEach(repo => {
+          if (repo.name === service.repo) {
+            if (repo.services === undefined) {
+              repo.services = [];
+            }
+  
+            repo.services.push(service)
+          }
+        })
       }
     }
 
@@ -231,58 +237,21 @@ export default class Repositories extends Component {
       )
     }
 
-    let filteredRepositories = {};
-    for (const repoName of Object.keys(repositories)) {
-      filteredRepositories[repoName] = repositories[repoName];
-      filteredRepositories[repoName] = filteredRepositories[repoName].filter((service) => {
-        // TODO -> Open Service Catalog Annotations
-
-        // return service.repo.includes(this.filterValueByProperty("Repository")) &&
-        // service.deployment.name.includes(this.filterValueByProperty("Service")) &&
-        // service.deployment.namespace.includes(this.filterValueByProperty("Namespace")) &&
-        // service.osca.owner.includes(this.filterValueByProperty("Owner"))
-
-        return service.service.name.includes(search.filter) ||
-          (service.deployment !== undefined && service.deployment.name.includes(search.filter)) ||
-          (service.ingresses !== undefined && service.ingresses.filter((ingress) => ingress.url.includes(search.filter)).length > 0)
-      })
-      if (filteredRepositories[repoName].length === 0 && !repoName.includes(this.filterValueByProperty("Repository"))) {
-        delete filteredRepositories[repoName];
-      }
-    }
-
-    const filteredRepoNames = Object.keys(filteredRepositories);
-    filteredRepoNames.sort();
-    const repoCards = filteredRepoNames.map(repoName => {
+    const filteredRepositories = filterRepos(repositories, favorites, this.state.filters)
+    filteredRepositories.sort((a,b) => a.name - b.name);
+    const repoCards = filteredRepositories.map(repo => {
       return (
-        <li key={repoName} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">
+        <li key={repo.name} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">
           <RepoCard
-            name={repoName}
-            services={filteredRepositories[repoName]}
+            name={repo.name}
+            services={repo.services}
             navigateToRepo={this.navigateToRepo}
-            favorite={favorites.includes(repoName)}
+            favorite={favorites.includes(repo.name)}
             favoriteHandler={this.favoriteHandler}
           />
         </li>
       )
     });
-
-    const filteredFavorites = filteredRepoNames.filter(repo => favorites.includes(repo))
-    const favoriteRepoCards = filteredFavorites.map(repoName => {
-      return (
-        <li key={repoName} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">
-          <RepoCard
-            name={repoName}
-            services={filteredRepositories[repoName]}
-            navigateToRepo={this.navigateToRepo}
-            favorite={favorites.includes(repoName)}
-            favoriteHandler={this.favoriteHandler}
-          />
-        </li>
-      )
-    });
-
-    const emptyState = search.filter !== '' ? emptyStateNoMatchingService() : null;
 
     return (
       <div>
@@ -325,24 +294,13 @@ export default class Repositories extends Component {
             <Spinner />
             :
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-              {favorites.length > 0 &&
-                <div className="px-4 pt-8 sm:px-0">
-                  <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Favorites</h4>
-                  <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {favoriteRepoCards}
-                  </ul>
-                </div>
-              }
               <div className="px-4 pt-8 sm:px-0">
                 <div>
-                  {favorites.length > 0 &&
-                    <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
-                  }
+                  <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
                   <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {repoCards.length > 0 ? repoCards : emptyState}
+                    {repoCards.length > 0 ? repoCards : emptyStateNoMatchingService()}
                   </ul>
                 </div>
-
               </div>
             </div>}
         </main>
@@ -350,6 +308,44 @@ export default class Repositories extends Component {
     )
   }
 
+}
+
+const filterRepos = (repos, favorites, filters) => {
+  let filteredRepositories = repos;
+  filters.forEach(filter => {
+    switch (filter.property) {
+      case 'Repository':
+        filteredRepositories = filteredRepositories.filter(repo => repo.name.includes(filter.value))
+        break;
+      case 'Service':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => service.service.name.includes(filter.value));
+        })
+        break;
+      case 'Namespace':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => service.service.namespace.includes(filter.value));
+        })
+        break;
+      case 'Owner':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => {
+            return service.osca && service.osca.owner.includes(filter.value)
+          });
+        })
+        break;
+      case 'Starred':
+        filteredRepositories = filteredRepositories.filter(repo => favorites.includes(repo.name))
+        break;
+      case 'Domain':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => service.ingresses.some(ingress => ingress.url.includes(filter.value)));
+        })
+        break;
+      default:
+    }
+  })
+  return filteredRepositories;
 }
 
 const setupGithubCard = (history) => {
@@ -402,7 +398,7 @@ const Filter = (props) => {
   const { filter } = props;
   return (
     <span className="ml-1 text-blue-50 bg-blue-600 rounded-full pl-3 pr-1" aria-hidden="true">
-      <span>{filter.property}</span>: <span>{filter.value}</span>
+      <span>{filter.property}</span>{filter.property !== "Starred" && <span>: {filter.value}</span>}
       <span className="ml-1 px-1 bg-blue-400 rounded-full ">
         <XIcon className="cursor-pointer inline h-3 w-3" aria-hidden="true" onClick={() => props.deleteFilter(filter)}/>
       </span>
@@ -491,7 +487,15 @@ const FilterInput = (props) => {
               <li
                 key={p}
                 className="cursor-pointer hover:bg-blue-200"
-                onClick={() => {setProperty(p); setActive(false); }}>
+                onClick={() => {
+                  if (p === "Starred") {
+                    addFilter({property: p, value: "true"})
+                    return
+                  }
+
+                  setProperty(p);
+                  setActive(false);
+                  }}>
                 {p}
               </li>
           )})}
