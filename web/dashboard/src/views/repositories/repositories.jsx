@@ -203,13 +203,7 @@ export default class Repositories extends Component {
   }
 
   resetFilters() {
-    this.setState({
-      filters: [{
-        property: "Owner",
-        value: "backend-team"
-      },
-      ]
-    });
+    this.setState({filters: []});
     localStorage.removeItem("filters");
   }
 
