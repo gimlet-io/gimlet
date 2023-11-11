@@ -35,11 +35,7 @@ export default class Repositories extends Component {
       added: null,
       deleted: null,
       settings: reduxState.settings,
-      filters: [{
-          property: "Owner",
-          value: "backend-team"
-        },
-      ],
+      filters: [],
     }
 
     // handling API and streaming state changes
@@ -218,7 +214,7 @@ export default class Repositories extends Component {
   }
 
   render() {
-    const { repositories, search, favorites, isOpen, settings } = this.state;
+    const { repositories, favorites, isOpen, settings } = this.state;
 
     if (!settings.provider || settings.provider === "") {
       return (
