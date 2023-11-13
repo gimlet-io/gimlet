@@ -30,14 +30,6 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 							Type: markdown,
 							Text: fmt.Sprintf(":white_check_mark: %s alert resolved", am.Alert.Type),
 						},
-						Accessory: &Accessory{
-							Type: button,
-							Text: &Text{
-								Type: "plain_text",
-								Text: "Dismiss",
-							},
-							Url: "https://todo.mycompany.com",
-						},
 					},
 				},
 			})
@@ -58,7 +50,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 								Type: "plain_text",
 								Text: "Resolve",
 							},
-							Url: "https://todo.mycompany.com",
+							Url: "https://todo.mycompany.com", // TODO
 						},
 					},
 				},
