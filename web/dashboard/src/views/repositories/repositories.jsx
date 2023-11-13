@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import RepoCard from "../../components/repoCard/repoCard";
 import { emptyStateNoMatchingService } from "../pulse/pulse";
 import {
@@ -7,7 +8,7 @@ import {
 } from "../../redux/redux";
 import RefreshRepos from './refreshRepos';
 import { renderChartUpdatePullRequests } from '../pulse/pulse';
-import { InformationCircleIcon } from '@heroicons/react/solid'
+import { InformationCircleIcon, FilterIcon, XIcon } from '@heroicons/react/solid'
 import RefreshButton from '../../components/refreshButton/refreshButton';
 
 export default class Repositories extends Component {
@@ -34,6 +35,7 @@ export default class Repositories extends Component {
       added: null,
       deleted: null,
       settings: reduxState.settings,
+      filters: [],
     }
 
     // handling API and streaming state changes
@@ -58,9 +60,18 @@ export default class Repositories extends Component {
 
     this.navigateToRepo = this.navigateToRepo.bind(this);
     this.favoriteHandler = this.favoriteHandler.bind(this);
+    this.deleteFilter = this.deleteFilter.bind(this);
+    this.addFilter = this.addFilter.bind(this);
+    this.filterValueByProperty = this.filterValueByProperty.bind(this);
+    this.resetFilters = this.resetFilters.bind(this);
   }
 
   componentDidMount() {
+    if (JSON.parse(localStorage.getItem("filters"))) {
+      const storedFilters = JSON.parse(localStorage.getItem("filters"));
+      this.setState({ filters: storedFilters });
+    }
+
     this.props.gimletClient.getGitRepos()
       .then(data => {
         this.props.store.dispatch({
@@ -73,12 +84,14 @@ export default class Repositories extends Component {
   }
 
   mapToRepositories(connectedAgents, gitRepos) {
-    const repositories = {}
+    const repositories = []
 
     for (const r of gitRepos) {
-      if (repositories[r] === undefined) {
-        repositories[r] = [];
+      const repo = {
+        name: r,
+        services: [],
       }
+      repositories.push(repo)
     }
 
     if (!connectedAgents) {
@@ -89,11 +102,15 @@ export default class Repositories extends Component {
       const env = connectedAgents[envName];
 
       for (const service of env.stacks) {
-        if (repositories[service.repo] === undefined) {
-          repositories[service.repo] = [];
-        }
-
-        repositories[service.repo].push(service);
+        repositories.forEach(repo => {
+          if (repo.name === service.repo) {
+            if (repo.services === undefined) {
+              repo.services = [];
+            }
+  
+            repo.services.push(service)
+          }
+        })
       }
     }
 
@@ -149,8 +166,49 @@ export default class Repositories extends Component {
       });
   }
 
+  deleteFilter(filter) {
+    this.setState(prevState => {
+      const deleted = []
+      for(const f of prevState.filters){
+        if (f.property !== filter.property || f.value !== filter.value){
+          deleted.push(f)
+        }
+      }
+
+      localStorage.setItem("filters", JSON.stringify(deleted))
+
+      return {
+        filters: deleted
+      }
+    });
+  }
+
+  addFilter(filter) {
+    this.setState(prevState => {
+      localStorage.setItem("filters", JSON.stringify([...prevState.filters, filter]));
+
+      return {
+        filters: [...prevState.filters, filter]
+      }
+    });
+  }
+
+  filterValueByProperty(property) {
+    const filter = this.state.filters.find(f => f.property === property)
+    if (!filter) {
+      return ""
+    }
+
+    return filter.value
+  }
+
+  resetFilters() {
+    this.setState({filters: []});
+    localStorage.removeItem("filters");
+  }
+
   render() {
-    const { repositories, search, favorites, isOpen, settings } = this.state;
+    const { repositories, favorites, isOpen, settings } = this.state;
 
     if (!settings.provider || settings.provider === "") {
       return (
@@ -169,53 +227,21 @@ export default class Repositories extends Component {
       )
     }
 
-    let filteredRepositories = {};
-    for (const repoName of Object.keys(repositories)) {
-      filteredRepositories[repoName] = repositories[repoName];
-      if (search.filter !== '') {
-        filteredRepositories[repoName] = filteredRepositories[repoName].filter((service) => {
-          return service.service.name.includes(search.filter) ||
-            (service.deployment !== undefined && service.deployment.name.includes(search.filter)) ||
-            (service.ingresses !== undefined && service.ingresses.filter((ingress) => ingress.url.includes(search.filter)).length > 0)
-        })
-        if (filteredRepositories[repoName].length === 0 && !repoName.includes(search.filter)) {
-          delete filteredRepositories[repoName];
-        }
-      }
-    }
-
-    const filteredRepoNames = Object.keys(filteredRepositories);
-    filteredRepoNames.sort();
-    const repoCards = filteredRepoNames.map(repoName => {
+    const filteredRepositories = filterRepos(repositories, favorites, this.state.filters)
+    filteredRepositories.sort((a,b) => a.name - b.name);
+    const repoCards = filteredRepositories.map(repo => {
       return (
-        <li key={repoName} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">
+        <li key={repo.name} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">
           <RepoCard
-            name={repoName}
-            services={filteredRepositories[repoName]}
+            name={repo.name}
+            services={repo.services}
             navigateToRepo={this.navigateToRepo}
-            favorite={favorites.includes(repoName)}
+            favorite={favorites.includes(repo.name)}
             favoriteHandler={this.favoriteHandler}
           />
         </li>
       )
     });
-
-    const filteredFavorites = filteredRepoNames.filter(repo => favorites.includes(repo))
-    const favoriteRepoCards = filteredFavorites.map(repoName => {
-      return (
-        <li key={repoName} className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200">
-          <RepoCard
-            name={repoName}
-            services={filteredRepositories[repoName]}
-            navigateToRepo={this.navigateToRepo}
-            favorite={favorites.includes(repoName)}
-            favoriteHandler={this.favoriteHandler}
-          />
-        </li>
-      )
-    });
-
-    const emptyState = search.filter !== '' ? emptyStateNoMatchingService() : null;
 
     return (
       <div>
@@ -242,6 +268,14 @@ export default class Repositories extends Component {
                 />
               </div>
             }
+
+            <FilterBar
+              filters={this.state.filters}
+              addFilter={this.addFilter}
+              filterValueByProperty={this.filterValueByProperty}
+              deleteFilter={this.deleteFilter}
+              resetFilters={this.resetFilters}
+            />
             {renderChartUpdatePullRequests(this.state.chartUpdatePullRequests)}
           </div>
         </header>
@@ -250,24 +284,13 @@ export default class Repositories extends Component {
             <Spinner />
             :
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-              {favorites.length > 0 &&
-                <div className="px-4 pt-8 sm:px-0">
-                  <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Favorites</h4>
-                  <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {favoriteRepoCards}
-                  </ul>
-                </div>
-              }
               <div className="px-4 pt-8 sm:px-0">
                 <div>
-                  {favorites.length > 0 &&
-                    <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
-                  }
+                  <h4 className="text-xl font-medium capitalize leading-tight text-gray-900 my-4">Repositories</h4>
                   <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {repoCards.length > 0 ? repoCards : emptyState}
+                    {repoCards.length > 0 ? repoCards : emptyStateNoMatchingService()}
                   </ul>
                 </div>
-
               </div>
             </div>}
         </main>
@@ -275,6 +298,44 @@ export default class Repositories extends Component {
     )
   }
 
+}
+
+const filterRepos = (repos, favorites, filters) => {
+  let filteredRepositories = repos;
+  filters.forEach(filter => {
+    switch (filter.property) {
+      case 'Repository':
+        filteredRepositories = filteredRepositories.filter(repo => repo.name.includes(filter.value))
+        break;
+      case 'Service':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => service.service.name.includes(filter.value));
+        })
+        break;
+      case 'Namespace':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => service.service.namespace.includes(filter.value));
+        })
+        break;
+      case 'Owner':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => {
+            return service.osca && service.osca.owner.includes(filter.value)
+          });
+        })
+        break;
+      case 'Starred':
+        filteredRepositories = filteredRepositories.filter(repo => favorites.includes(repo.name))
+        break;
+      case 'Domain':
+        filteredRepositories = filteredRepositories.filter(repo => {
+          return repo.services.length !== 0 && repo.services.some(service => service.ingresses.some(ingress => ingress.url.includes(filter.value)));
+        })
+        break;
+      default:
+    }
+  })
+  return filteredRepositories;
 }
 
 const setupGithubCard = (history) => {
@@ -299,6 +360,140 @@ const setupGithubCard = (history) => {
     </div>
     </div>
   );
+}
+
+const FilterBar = (props) => {
+  return (
+    <div className="w-full pt-8">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+          <FilterIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          {props.filters.map(filter => (
+            <Filter key={filter.property+filter.value} filter={filter} deleteFilter={props.deleteFilter} />
+          ))}
+          <FilterInput addFilter={props.addFilter} filterValueByProperty={props.filterValueByProperty} />
+        </div>
+        <div className="block w-full rounded-md border-0 bg-white py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+          &nbsp;
+        </div>
+        <div className="absolute inset-y-0 right-0 flex items-center p-1">
+          <button onClick={props.resetFilters} className="py-1 px-2 bg-gray-200 text-gray-400 rounded-full text-sm">reset</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const Filter = (props) => {
+  const { filter } = props;
+  return (
+    <span className="ml-1 text-blue-50 bg-blue-600 rounded-full pl-3 pr-1" aria-hidden="true">
+      <span>{filter.property}</span>{filter.property !== "Starred" && <span>: {filter.value}</span>}
+      <span className="ml-1 px-1 bg-blue-400 rounded-full ">
+        <XIcon className="cursor-pointer inline h-3 w-3" aria-hidden="true" onClick={() => props.deleteFilter(filter)}/>
+      </span>
+    </span>
+  )
+}
+
+const FilterInput = (props) => {
+  const [active, setActive] = useState(false)
+  const [property, setProperty] = useState("")
+  const [value, setValue] = useState("")
+  const properties=["Repository", "Service", "Namespace", "Owner", "Starred", "Domain"]
+  const { addFilter, filterValueByProperty } = props;
+	const inputRef = useRef(null);
+
+  const reset = () => {
+    setActive(false)
+    setProperty("")
+    setValue("")
+  }
+
+  useEffect(() => {
+    if (property !== "") {
+      inputRef.current.focus();
+    }  
+  });
+
+  return (
+    <span className="relative w-48 ml-2">
+      <span className="items-center flex">
+        {property !== "" &&
+          <span>{property}: </span>
+        }
+        <input
+          ref={inputRef}
+          key={property}
+          className={`${property ? "ml-10" : "" }block border-0 border-t border-b border-gray-300 pt-1.5 pb-1 px-1 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+          placeholder='Enter Filter'
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => {setActive(true)}}
+          onBlur={() => {
+            setTimeout(() => {
+              setActive(false);
+              if (value !== "") {
+                if (property === "") {
+                  addFilter({property: "Repository", value: value})
+                } else {
+                  addFilter({property, value})
+                }
+                reset()
+              } else {
+                if (property !== "") {
+                  reset()
+                }
+              }
+            }, 200);}
+          }
+          onKeyUp={(e) => {
+            if (e.keyCode === 13){
+              setActive(false)
+              if (property === "") {
+                addFilter({property: "Repository", value: value})
+              } else {
+                addFilter({property, value})
+              }
+              reset()
+            }
+            if (e.keyCode === 27){
+              reset()
+              // inputRef.current.blur();
+            }
+          }}
+          type="search"
+        />
+      </span>
+      {active && property === "" &&
+      <div className="z-10 absolute bg-blue-100 w-48 p-2 text-blue-800">
+        <ul className="">
+          {properties.map(p => {
+            if (filterValueByProperty(p) !== "") {
+              return null;
+            }
+
+            return (
+              <li
+                key={p}
+                className="cursor-pointer hover:bg-blue-200"
+                onClick={() => {
+                  if (p === "Starred") {
+                    addFilter({property: p, value: "true"})
+                    return
+                  }
+
+                  setProperty(p);
+                  setActive(false);
+                  }}>
+                {p}
+              </li>
+          )})}
+        </ul>
+      </div>
+      }
+    </span>
+  )
 }
 
 export const Spinner = () => {

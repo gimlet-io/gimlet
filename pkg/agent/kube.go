@@ -46,6 +46,7 @@ const AnnotationLogsLink = "v1alpha1.opensca.dev/logs"
 const AnnotationMetricsLink = "v1alpha1.opensca.dev/metrics"
 const AnnotationTracesLink = "v1alpha1.opensca.dev/traces"
 const AnnotationIssuesLink = "v1alpha1.opensca.dev/issues"
+const AnnotationOwnerName = "v1alpha1.opensca.dev/owner.name"
 const AnnotationOwnerIm = "v1alpha1.opensca.dev/owner.im"
 
 type KubeEnv struct {
@@ -110,6 +111,7 @@ func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
 		MetricsLink: svc.ObjectMeta.GetAnnotations()[AnnotationMetricsLink],
 		TracesLink:  svc.ObjectMeta.GetAnnotations()[AnnotationTracesLink],
 		IssuesLink:  svc.ObjectMeta.GetAnnotations()[AnnotationIssuesLink],
+		Owner:       svc.ObjectMeta.GetAnnotations()[AnnotationOwnerName],
 	}
 }
 

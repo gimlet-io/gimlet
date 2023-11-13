@@ -198,6 +198,7 @@ type Osca struct {
 	MetricsLink string `json:"metricsLink"`
 	TracesLink  string `json:"tracesLink"`
 	IssuesLink  string `json:"issuesLink"`
+	Owner       string `json:"owner"`
 }
 
 type Tag struct {
