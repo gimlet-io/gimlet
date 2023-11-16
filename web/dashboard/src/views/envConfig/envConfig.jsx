@@ -86,7 +86,7 @@ class EnvConfig extends Component {
         });
       }, () => {/* Generic error handler deals with it */ });
     } else {
-      gimletClient.getDeploymentTemplates(owner, repo, env, config)
+      gimletClient.getDeploymentTemplates(owner, repo, env, encodeURIComponent(config))
       .then(data => {
         this.setState({
           templates: data,

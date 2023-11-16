@@ -365,7 +365,7 @@ export default class Repo extends Component {
 
   navigateToConfigEdit(env, config) {
     const { owner, repo } = this.props.match.params;
-    this.props.history.push(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}`));
+    window.location.replace(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}`));
   }
 
   linkToDeployment(env, deployment) {
