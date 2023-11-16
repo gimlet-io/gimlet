@@ -97,6 +97,7 @@ func main() {
 		config.AlertEvaluationFrequencySeconds,
 		alert.Thresholds(),
 		config.Notifications.Token,
+		config.Host,
 	)
 	go alertStateManager.Run()
 

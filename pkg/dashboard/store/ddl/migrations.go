@@ -49,6 +49,7 @@ const addFiredAtToAlertsTable = "add-fired-at-to-alerts-table"
 const addResolvedAtToAlertsTable = "add-resolved-at-to-alerts-table"
 const defaultTimestampsInAlertsTable = "defaultTimestampsInAlertsTable"
 const addImChannelIdToAlertsTable = "add-im-channel-id-to-alerts-table"
+const addDeploymentUrlToAlertsTable = "add-deployment-url-to-alerts-table"
 
 type migration struct {
 	name string
@@ -291,6 +292,10 @@ UNIQUE(id)
 			name: addImChannelIdToAlertsTable,
 			stmt: `ALTER TABLE alerts ADD COLUMN im_channel_id TEXT;`,
 		},
+		{
+			name: addDeploymentUrlToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN deployment_url TEXT;`,
+		},
 	},
 	"postgres": {
 		{
@@ -525,6 +530,10 @@ UNIQUE(id)
 		{
 			name: addImChannelIdToAlertsTable,
 			stmt: `ALTER TABLE alerts ADD COLUMN im_channel_id TEXT;`,
+		},
+		{
+			name: addDeploymentUrlToAlertsTable,
+			stmt: `ALTER TABLE alerts ADD COLUMN deployment_url TEXT;`,
 		},
 	},
 }

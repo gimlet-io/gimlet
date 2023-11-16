@@ -21,6 +21,7 @@ type AlertStateManager struct {
 	waitTime           time.Duration
 	thresholds         map[string]threshold
 	notificationsToken string
+	host               string
 }
 
 func NewAlertStateManager(
@@ -30,6 +31,7 @@ func NewAlertStateManager(
 	alertEvaluationFrequencySeconds int,
 	thresholds map[string]threshold,
 	notificationsToken string,
+	host string,
 ) *AlertStateManager {
 	return &AlertStateManager{
 		notifManager:       notifManager,
@@ -38,6 +40,7 @@ func NewAlertStateManager(
 		waitTime:           time.Duration(alertEvaluationFrequencySeconds) * time.Second,
 		thresholds:         thresholds,
 		notificationsToken: notificationsToken,
+		host:               host,
 	}
 }
 
@@ -64,15 +67,19 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 		if t != nil && t.Reached(nil, alert) {
 			msg := &notifications.AlertMessage{
 				Alert: api.Alert{
-					ObjectName: alert.ObjectName,
-					Status:     model.FIRING,
-					Type:       alert.Type,
-					Text:       t.Text(),
+					ObjectName:    alert.ObjectName,
+					Status:        model.FIRING,
+					Type:          alert.Type,
+					Text:          t.Text(),
+					DeploymentUrl: alert.DeploymentUrl,
 				},
 			}
 
 			if a.notificationsToken != "" && alert.ImChannelId != "" {
-				notifications.AlertSlack(a.notificationsToken, alert.ImChannelId, msg)
+				err := notifications.AlertSlack(a.notificationsToken, alert.ImChannelId, msg)
+				if err != nil {
+					logrus.Errorf("couldn't send alert to slack: %s", err)
+				}
 			} else {
 				a.notifManager.Broadcast(msg)
 			}
@@ -98,9 +105,9 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 
 // TrackDeploymentPods tracks all pods state and related alerts for a deployment
 // This is authoritive tracking, so call it with all the pods related to a deployment
-func (a AlertStateManager) TrackDeploymentPods(pods []*api.Pod) error {
+func (a AlertStateManager) TrackDeploymentPods(pods []*api.Pod, repoName, envName string) error {
 	for _, pod := range pods {
-		err := a.TrackPod(pod)
+		err := a.TrackPod(pod, repoName, envName)
 		if err != nil {
 			return err
 		}
@@ -146,7 +153,7 @@ func podExists(pods []*api.Pod, pod string) bool {
 }
 
 // TrackPod tracks a pod state and related alerts
-func (a AlertStateManager) TrackPod(pod *api.Pod) error {
+func (a AlertStateManager) TrackPod(pod *api.Pod, repoName, envName string) error {
 	podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 	deploymentName := fmt.Sprintf("%s/%s", pod.Namespace, pod.DeploymentName)
 	currentTime := time.Now().Unix()
@@ -184,6 +191,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 			DeploymentName: deploymentName,
 			Status:         model.PENDING,
 			ImChannelId:    pod.ImChannelId,
+			DeploymentUrl:  fmt.Sprintf("%s/repo/%s/%s/%s", a.host, repoName, envName, pod.DeploymentName),
 			PendingAt:      currentTime,
 		}
 		if !alertExists(nonResolvedAlerts, alertToCreate) {
@@ -215,7 +223,10 @@ func (a AlertStateManager) TrackPod(pod *api.Pod) error {
 			}
 
 			if a.notificationsToken != "" && pod.ImChannelId != "" {
-				notifications.AlertSlack(a.notificationsToken, pod.ImChannelId, msg)
+				err := notifications.AlertSlack(a.notificationsToken, pod.ImChannelId, msg)
+				if err != nil {
+					logrus.Errorf("couldn't send alert to slack: %s", err)
+				}
 			} else {
 				a.notifManager.Broadcast(msg)
 			}
@@ -269,7 +280,10 @@ func (a AlertStateManager) DeletePod(podName string) error {
 		}
 
 		if a.notificationsToken != "" && nonResolvedAlert.ImChannelId != "" {
-			notifications.AlertSlack(a.notificationsToken, nonResolvedAlert.ImChannelId, msg)
+			err := notifications.AlertSlack(a.notificationsToken, nonResolvedAlert.ImChannelId, msg)
+			if err != nil {
+				logrus.Errorf("couldn't send alert to slack: %s", err)
+			}
 		} else {
 			a.notifManager.Broadcast(msg)
 		}

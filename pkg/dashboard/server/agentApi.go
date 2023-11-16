@@ -161,7 +161,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 		if stack.Deployment == nil {
 			continue
 		}
-		err := alertStateManager.TrackDeploymentPods(stack.Deployment.Pods)
+		err := alertStateManager.TrackDeploymentPods(stack.Deployment.Pods, stack.Repo, stack.Env)
 		if err != nil {
 			logrus.Errorf("cannot track pods: %s", err)
 			http.Error(w, http.StatusText(500), 500)
@@ -366,5 +366,7 @@ func notifyAlertManager(alertStateManager *alert.AlertStateManager, db *store.St
 			StatusDescription: update.ErrorCause,
 			ImChannelId:       update.ImChannelId,
 		},
+		update.Repo,
+		update.Env,
 	)
 }

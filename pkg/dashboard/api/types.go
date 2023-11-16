@@ -121,6 +121,7 @@ type Alert struct {
 	Type           string `json:"type"`
 	Name           string `json:"name"`
 	Text           string `json:"text"`
+	DeploymentUrl  string `json:"deploymentUrl"`
 	PendingAt      int64  `json:"pendingAt"`
 	FiredAt        int64  `json:"firedAt"`
 	ResolvedAt     int64  `json:"resolvedAt"`

@@ -48,9 +48,9 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 							Type: button,
 							Text: &Text{
 								Type: "plain_text",
-								Text: "Resolve",
+								Text: "View",
 							},
-							Url: "https://todo.mycompany.com", // TODO
+							Url: am.Alert.DeploymentUrl,
 						},
 					},
 				},
