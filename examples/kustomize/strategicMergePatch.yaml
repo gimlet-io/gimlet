@@ -4,7 +4,7 @@ namespace: default
 chart:
   repository: https://chart.onechart.dev
   name: onechart
-  version: 0.32.0
+  version: 0.60.0
 values:
   replicas: 1
   image:
