@@ -1,6 +1,6 @@
 app: myapp
 env: staging
-namespace: my-team
+namespace: default
 chart:
   repository: https://chart.onechart.dev
   name: onechart
@@ -16,7 +16,7 @@ strategicMergePatches: |
   kind: Deployment
   metadata:
     name: myapp
-    namespace: my-team
+    namespace: default
   spec:
     template:
       spec:
@@ -25,9 +25,9 @@ strategicMergePatches: |
           volumeMounts:
             - name: azure-file
               mountPath: /azure-bucket
-      volumes:
-        - name: azure-file
-          azureFile:
-            secretName: my-azure-secret
-            shareName: my-azure-share
-            readOnly: false
+        volumes:
+          - name: azure-file
+            azureFile:
+              secretName: my-azure-secret
+              shareName: my-azure-share
+              readOnly: false
