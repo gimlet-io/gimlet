@@ -30,6 +30,7 @@ export default class App extends Component {
       (response) => {
         if (response.status === 401) {
           if (!window.location.pathname.includes("/login")) {
+            localStorage.setItem('redirect', window.location.pathname);
             window.location.replace("/login");
           }
         } else {

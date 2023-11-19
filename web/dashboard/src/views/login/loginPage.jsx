@@ -7,6 +7,7 @@ const LoginPage = () => {
   const [token, setToken] = useState("");
   const [provider, setProvider] = useState("");
   const [termsOfServiceFeatureFlag, setTermsOfServiceFeatureFlag] = useState(false);
+  const redirect = localStorage.getItem('redirect');
 
   useEffect(() => {
     getFlags().then(data => {
@@ -28,7 +29,7 @@ const LoginPage = () => {
                 <div className="my-8">
                   <img className="h-16 mx-auto" src={gimletHeader} alt="gimlet-logo" />
                   <div className="my-16 text-base font-medium text-gray-700">
-                    {loginButton(provider)}
+                    {loginButton(provider, redirect)}
                     {provider === "" &&
                       <form action="/admin-key-auth" method="post">
                         <div className="space-y-8">
@@ -80,12 +81,12 @@ const getFlags = async () => {
   }
 };
 
-const loginButton = (provider) => {
+const loginButton = (provider, redirect) => {
   if (provider === "GitHub") {
     return (
       <button
         onClick={() => {
-          window.location.replace(`/auth?appState=https://${window.location.hostname}/auth`);
+          window.location.replace(`/auth?appState=https://${window.location.hostname}/auth?redirect=${redirect}`);
         }}
         className="inline-flex items-center justify-center w-full font-medium px-20 py-3 rounded border border-gray-300 hover:bg-gray-50 shadow-sm"
       >

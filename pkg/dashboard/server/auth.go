@@ -5,6 +5,8 @@ import (
 	"encoding/base32"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
@@ -66,7 +68,37 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.RedirectHandler("/", http.StatusSeeOther).ServeHTTP(w, r)
+	redirect, err := redirectPath(r)
+	if err != nil {
+		log.Errorf("cannot get redirect path: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	http.RedirectHandler(redirect, http.StatusSeeOther).ServeHTTP(w, r)
+}
+
+func redirectPath(r *http.Request) (string, error) {
+	redirect := "/"
+	err := r.ParseForm()
+	if err != nil {
+		return "", fmt.Errorf("cannot parse form: %s", err)
+	}
+
+	state := r.Form.Get("state")
+	split := strings.Split(state, "&")
+	parsedUrl, err := url.Parse(split[1])
+	if err != nil {
+		return "", fmt.Errorf("cannot parse url: %s", err)
+	}
+
+	params, _ := url.ParseQuery(parsedUrl.RawQuery)
+	if v, found := params["redirect"]; found {
+		if v[0] != "null" {
+			redirect = v[0]
+		}
+	}
+	return redirect, nil
 }
 
 func adminKeyAuth(w http.ResponseWriter, r *http.Request) {
