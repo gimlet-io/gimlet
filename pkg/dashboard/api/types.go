@@ -17,6 +17,7 @@ package api
 import (
 	"fmt"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 )
 
@@ -119,12 +120,24 @@ type Alert struct {
 	DeploymentName string `json:"deploymentName"`
 	Status         string `json:"status"`
 	Type           string `json:"type"`
-	Name           string `json:"name"`
 	Text           string `json:"text"`
-	DeploymentUrl  string `json:"deploymentUrl"`
+	Name           string `json:"name"`
 	PendingAt      int64  `json:"pendingAt"`
 	FiredAt        int64  `json:"firedAt"`
 	ResolvedAt     int64  `json:"resolvedAt"`
+}
+
+func NewAlert(alert *model.Alert, text string) *Alert {
+	return &Alert{
+		ObjectName:     alert.ObjectName,
+		DeploymentName: alert.DeploymentName,
+		Type:           alert.Type,
+		Status:         alert.Status,
+		Name:           text,
+		PendingAt:      alert.PendingAt,
+		FiredAt:        alert.FiredAt,
+		ResolvedAt:     alert.ResolvedAt,
+	}
 }
 
 type GitopsEnv struct {

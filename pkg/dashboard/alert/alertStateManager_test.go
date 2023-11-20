@@ -33,7 +33,6 @@ func TestTrackPod_imagePullBackOff(t *testing.T) {
 				waitTime: 0,
 			}},
 		"",
-		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
@@ -79,7 +78,6 @@ func TestTrackPod_crashLoopBackOff(t *testing.T) {
 			"CrashLoopBackOff": crashLoopBackOffThreshold{
 				waitTime: 0,
 			}},
-		"",
 		"",
 	)
 
@@ -127,7 +125,6 @@ func TestTrackPod_createContainerConfigError(t *testing.T) {
 				waitTime: 0,
 			}},
 		"",
-		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
@@ -174,7 +171,6 @@ func TestTrackPod_deleted(t *testing.T) {
 				waitTime: 0,
 			}},
 		"",
-		"",
 	)
 
 	pod := &api.Pod{
@@ -212,7 +208,6 @@ func TestTrackPod_from_pending_to_imagePullBackoff(t *testing.T) {
 			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
-		"",
 		"",
 	)
 
@@ -253,7 +248,6 @@ func TestPodsTrack(t *testing.T) {
 			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
-		"",
 		"",
 	)
 

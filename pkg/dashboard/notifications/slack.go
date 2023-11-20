@@ -55,19 +55,6 @@ type Text struct {
 	Text string `json:"text"`
 }
 
-func AlertSlack(
-	token string,
-	channel string,
-	msg Message,
-) error {
-	s := SlackProvider{
-		Token:          token,
-		DefaultChannel: channel,
-	}
-
-	return s.send(msg)
-}
-
 func (s *SlackProvider) send(msg Message) error {
 	slackMessage, err := msg.AsSlackMessage()
 	if err != nil {
@@ -78,13 +65,21 @@ func (s *SlackProvider) send(msg Message) error {
 		return nil
 	}
 
-	channel := s.DefaultChannel
-	if ch, ok := s.ChannelMapping[msg.Env()]; ok {
-		channel = ch
-	}
-	slackMessage.Channel = channel
+	slackMessage.Channel = s.channel(msg)
 
 	return s.post(slackMessage)
+}
+
+func (s *SlackProvider) channel(msg Message) string {
+	if msg.CustomChannel() != "" {
+		return msg.CustomChannel()
+	}
+
+	if ch, ok := s.ChannelMapping[msg.Env()]; ok {
+		return ch
+	}
+
+	return s.DefaultChannel
 }
 
 func (s *SlackProvider) post(msg *slackMessage) error {

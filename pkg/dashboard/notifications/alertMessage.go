@@ -9,7 +9,9 @@ import (
 )
 
 type AlertMessage struct {
-	Alert api.Alert
+	Alert         api.Alert
+	ImChannelId   string
+	DeploymentUrl string
 }
 
 func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
@@ -50,7 +52,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 								Type: "plain_text",
 								Text: "View",
 							},
-							Url: am.Alert.DeploymentUrl,
+							Url: am.DeploymentUrl,
 						},
 					},
 				},
@@ -98,4 +100,8 @@ func (am *AlertMessage) RepositoryName() string {
 
 func (am *AlertMessage) SHA() string {
 	return ""
+}
+
+func (am *AlertMessage) CustomChannel() string {
+	return am.ImChannelId
 }

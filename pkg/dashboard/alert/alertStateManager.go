@@ -15,13 +15,12 @@ import (
 )
 
 type AlertStateManager struct {
-	notifManager       notifications.Manager
-	clientHub          *streaming.ClientHub
-	store              store.Store
-	waitTime           time.Duration
-	thresholds         map[string]threshold
-	notificationsToken string
-	host               string
+	notifManager notifications.Manager
+	clientHub    *streaming.ClientHub
+	store        store.Store
+	waitTime     time.Duration
+	thresholds   map[string]threshold
+	host         string
 }
 
 func NewAlertStateManager(
@@ -30,17 +29,15 @@ func NewAlertStateManager(
 	store store.Store,
 	alertEvaluationFrequencySeconds int,
 	thresholds map[string]threshold,
-	notificationsToken string,
 	host string,
 ) *AlertStateManager {
 	return &AlertStateManager{
-		notifManager:       notifManager,
-		clientHub:          clientHub,
-		store:              store,
-		waitTime:           time.Duration(alertEvaluationFrequencySeconds) * time.Second,
-		thresholds:         thresholds,
-		notificationsToken: notificationsToken,
-		host:               host,
+		notifManager: notifManager,
+		clientHub:    clientHub,
+		store:        store,
+		waitTime:     time.Duration(alertEvaluationFrequencySeconds) * time.Second,
+		thresholds:   thresholds,
+		host:         host,
 	}
 }
 
@@ -59,53 +56,31 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 	for _, alert := range alerts {
 		t := ThresholdByType(a.thresholds, alert.Type)
 		if t == nil { // resolving unknown pending alerts (sometimes we deprecate alerts)
-			err := a.store.UpdateAlertState(alert.ID, model.RESOLVED)
+			alert.SetResolved()
+			err := a.store.UpdateAlertState(alert)
 			if err != nil {
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 		}
 		if t != nil && t.Reached(nil, alert) {
-			msg := &notifications.AlertMessage{
-				Alert: api.Alert{
-					ObjectName:    alert.ObjectName,
-					Status:        model.FIRING,
-					Type:          alert.Type,
-					Text:          t.Text(),
-					DeploymentUrl: alert.DeploymentUrl,
-				},
-			}
-
-			if a.notificationsToken != "" && alert.ImChannelId != "" {
-				err := notifications.AlertSlack(a.notificationsToken, alert.ImChannelId, msg)
-				if err != nil {
-					logrus.Errorf("couldn't send alert to slack: %s", err)
-				}
-			} else {
-				a.notifManager.Broadcast(msg)
-			}
-
-			err := a.store.UpdateAlertState(alert.ID, model.FIRING)
+			alert.SetFiring()
+			err := a.store.UpdateAlertState(alert)
 			if err != nil {
 				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
 
-			a.broadcast(&api.Alert{
-				ObjectName:     alert.ObjectName,
-				DeploymentName: alert.DeploymentName,
-				Status:         model.FIRING,
-				Text:           t.Text(),
-				PendingAt:      alert.PendingAt,
-				FiredAt:        time.Now().Unix(),
-			},
-				streaming.AlertFiredEventString,
-			)
+			apiAlert := api.NewAlert(alert, t.Text())
+			a.notifManager.Broadcast(&notifications.AlertMessage{
+				Alert: *apiAlert,
+			})
+			a.broadcast(apiAlert, streaming.AlertFiredEventString)
 		}
 	}
 }
 
 // TrackDeploymentPods tracks all pods state and related alerts for a deployment
 // This is authoritive tracking, so call it with all the pods related to a deployment
-func (a AlertStateManager) TrackDeploymentPods(pods []*api.Pod, repoName, envName string) error {
+func (a AlertStateManager) TrackDeploymentPods(pods []*api.Pod, repoName string, envName string) error {
 	for _, pod := range pods {
 		err := a.TrackPod(pod, repoName, envName)
 		if err != nil {
@@ -153,7 +128,7 @@ func podExists(pods []*api.Pod, pod string) bool {
 }
 
 // TrackPod tracks a pod state and related alerts
-func (a AlertStateManager) TrackPod(pod *api.Pod, repoName, envName string) error {
+func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName string) error {
 	podName := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 	deploymentName := fmt.Sprintf("%s/%s", pod.Namespace, pod.DeploymentName)
 	currentTime := time.Now().Unix()
@@ -190,62 +165,34 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName, envName string) erro
 			Type:           thresholdType(t),
 			DeploymentName: deploymentName,
 			Status:         model.PENDING,
+			PendingAt:      currentTime,
 			ImChannelId:    pod.ImChannelId,
 			DeploymentUrl:  fmt.Sprintf("%s/repo/%s/%s/%s", a.host, repoName, envName, pod.DeploymentName),
-			PendingAt:      currentTime,
 		}
 		if !alertExists(nonResolvedAlerts, alertToCreate) {
 			_, err := a.store.CreateAlert(alertToCreate)
 			if err != nil {
 				return err
 			}
-
-			a.broadcast(&api.Alert{
-				ObjectName:     podName,
-				DeploymentName: deploymentName,
-				Status:         model.PENDING,
-				Text:           t.Text(),
-				PendingAt:      currentTime,
-			},
-				streaming.AlertPendingEventString)
+			apiAlert := api.NewAlert(alertToCreate, t.Text())
+			a.broadcast(apiAlert, streaming.AlertPendingEventString)
 		}
 	}
 
 	for _, nonResolvedAlert := range nonResolvedAlerts {
 		t := ThresholdByType(a.thresholds, nonResolvedAlert.Type)
 		if t != nil && t.Resolved(dbPod) {
-			msg := &notifications.AlertMessage{
-				Alert: api.Alert{
-					ObjectName: nonResolvedAlert.ObjectName,
-					Status:     model.RESOLVED,
-					Type:       nonResolvedAlert.Type,
-				},
-			}
-
-			if a.notificationsToken != "" && pod.ImChannelId != "" {
-				err := notifications.AlertSlack(a.notificationsToken, pod.ImChannelId, msg)
-				if err != nil {
-					logrus.Errorf("couldn't send alert to slack: %s", err)
-				}
-			} else {
-				a.notifManager.Broadcast(msg)
-			}
-
-			err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
+			nonResolvedAlert.SetResolved()
+			err := a.store.UpdateAlertState(nonResolvedAlert)
 			if err != nil {
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 
-			a.broadcast(&api.Alert{
-				ObjectName:     nonResolvedAlert.ObjectName,
-				DeploymentName: nonResolvedAlert.DeploymentName,
-				Status:         model.RESOLVED,
-				PendingAt:      nonResolvedAlert.PendingAt,
-				FiredAt:        nonResolvedAlert.FiredAt,
-				ResolvedAt:     time.Now().Unix(),
-			},
-				streaming.AlertResolvedEventString,
-			)
+			apiAlert := api.NewAlert(nonResolvedAlert, t.Text())
+			a.notifManager.Broadcast(&notifications.AlertMessage{
+				Alert: *apiAlert,
+			})
+			a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 		}
 	}
 
@@ -267,37 +214,17 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	}
 
 	for _, nonResolvedAlert := range nonResolvedAlerts {
-		err := a.store.UpdateAlertState(nonResolvedAlert.ID, model.RESOLVED)
+		nonResolvedAlert.SetResolved()
+		err := a.store.UpdateAlertState(nonResolvedAlert)
 		if err != nil {
 			logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 		}
-		msg := &notifications.AlertMessage{
-			Alert: api.Alert{
-				ObjectName: nonResolvedAlert.ObjectName,
-				Status:     model.RESOLVED,
-				Type:       nonResolvedAlert.Type,
-			},
-		}
 
-		if a.notificationsToken != "" && nonResolvedAlert.ImChannelId != "" {
-			err := notifications.AlertSlack(a.notificationsToken, nonResolvedAlert.ImChannelId, msg)
-			if err != nil {
-				logrus.Errorf("couldn't send alert to slack: %s", err)
-			}
-		} else {
-			a.notifManager.Broadcast(msg)
-		}
-
-		a.broadcast(&api.Alert{
-			ObjectName:     nonResolvedAlert.ObjectName,
-			DeploymentName: nonResolvedAlert.DeploymentName,
-			Status:         model.RESOLVED,
-			PendingAt:      nonResolvedAlert.PendingAt,
-			FiredAt:        nonResolvedAlert.FiredAt,
-			ResolvedAt:     time.Now().Unix(),
-		},
-			streaming.AlertResolvedEventString,
-		)
+		apiAlert := api.NewAlert(nonResolvedAlert, "")
+		a.notifManager.Broadcast(&notifications.AlertMessage{
+			Alert: *apiAlert,
+		})
+		a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 	}
 
 	return a.store.DeletePod(podName)

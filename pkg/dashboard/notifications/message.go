@@ -7,6 +7,7 @@ type Message interface {
 	Env() string
 	RepositoryName() string
 	SHA() string
+	CustomChannel() string
 }
 
 type status struct {

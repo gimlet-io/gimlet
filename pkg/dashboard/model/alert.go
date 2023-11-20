@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 const POD_ALERT = "pod"
 
 const PENDING = "Pending"
@@ -17,4 +19,14 @@ type Alert struct {
 	PendingAt      int64  `json:"pendingAt,omitempty"  meddler:"pending_at"`
 	FiredAt        int64  `json:"firedAt,omitempty"  meddler:"fired_at"`
 	ResolvedAt     int64  `json:"resolvedAt,omitempty"  meddler:"resolved_at"`
+}
+
+func (a *Alert) SetFiring() {
+	a.Status = FIRING
+	a.FiredAt = time.Now().Unix()
+}
+
+func (a *Alert) SetResolved() {
+	a.Status = RESOLVED
+	a.ResolvedAt = time.Now().Unix()
 }
