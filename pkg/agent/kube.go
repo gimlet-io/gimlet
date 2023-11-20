@@ -106,12 +106,14 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 
 func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
 	return &api.Osca{
-		DocsLink:    svc.ObjectMeta.GetAnnotations()[AnnotationDocsLink],
-		LogsLink:    svc.ObjectMeta.GetAnnotations()[AnnotationLogsLink],
-		MetricsLink: svc.ObjectMeta.GetAnnotations()[AnnotationMetricsLink],
-		TracesLink:  svc.ObjectMeta.GetAnnotations()[AnnotationTracesLink],
-		IssuesLink:  svc.ObjectMeta.GetAnnotations()[AnnotationIssuesLink],
-		Owner:       svc.ObjectMeta.GetAnnotations()[AnnotationOwnerName],
+		Links: api.Links{
+			Docs:    svc.ObjectMeta.GetAnnotations()[AnnotationDocsLink],
+			Logs:    svc.ObjectMeta.GetAnnotations()[AnnotationLogsLink],
+			Metrics: svc.ObjectMeta.GetAnnotations()[AnnotationMetricsLink],
+			Traces:  svc.ObjectMeta.GetAnnotations()[AnnotationTracesLink],
+			Issues:  svc.ObjectMeta.GetAnnotations()[AnnotationIssuesLink],
+		},
+		Owner: svc.ObjectMeta.GetAnnotations()[AnnotationOwnerName],
 	}
 }
 

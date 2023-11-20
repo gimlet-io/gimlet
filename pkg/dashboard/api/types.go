@@ -194,12 +194,16 @@ type StackUpdate struct {
 
 // Open Service Catalog Annotations
 type Osca struct {
-	DocsLink    string `json:"docsLink"`
-	LogsLink    string `json:"logsLink"`
-	MetricsLink string `json:"metricsLink"`
-	TracesLink  string `json:"tracesLink"`
-	IssuesLink  string `json:"issuesLink"`
-	Owner       string `json:"owner"`
+	Links Links  `json:"links"`
+	Owner string `json:"owner"`
+}
+
+type Links struct {
+	Docs    string `json:"docs,omitempty"`
+	Logs    string `json:"logs,omitempty"`
+	Metrics string `json:"metrics,omitempty"`
+	Traces  string `json:"traces,omitempty"`
+	Issues  string `json:"issues,omitempty"`
 }
 
 type Tag struct {
