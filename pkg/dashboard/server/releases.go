@@ -567,14 +567,14 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	store := r.Context().Value("store").(*store.Store)
-	repoName, repoPerEnv, err := gitopsRepoForEnv(store, env)
+	envFromStore, err := store.GetEnvironment(env)
 	if err != nil {
 		logrus.Error(err)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWriteWithHistory(repoName)
+	repo, pathToCleanUp, err := gitopsRepoCache.InstanceForWriteWithHistory(envFromStore.AppsRepo)
 	defer gitopsRepoCache.CleanupWrittenRepo(pathToCleanUp)
 	if err != nil {
 		logrus.Errorf("cannot get gitops repo for write: %s", err)
@@ -583,8 +583,27 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	path := filepath.Join(env, app)
-	if repoPerEnv {
+	if envFromStore.RepoPerEnv {
 		path = app
+	}
+
+	if envFromStore.KustomizationPerApp {
+		kustomizationFilePath := filepath.Join(env, "flux", fmt.Sprintf("kustomization-%s.yaml", app))
+		if envFromStore.RepoPerEnv {
+			kustomizationFilePath = filepath.Join("flux", fmt.Sprintf("kustomization-%s.yaml", app))
+		}
+		worktree, err := repo.Worktree()
+		if err != nil {
+			logrus.Errorf("cannot get worktree: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		_, err = worktree.Remove(kustomizationFilePath)
+		if err != nil {
+			logrus.Errorf("cannot remove files from the working tree: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	err = nativeGit.DelDir(repo, path)
@@ -620,12 +639,12 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	head, _ := repo.Head()
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	owner, _ := scm.Split(repoName)
+	owner, _ := scm.Split(envFromStore.AppsRepo)
 	gitUser := ctx.Value("gitUser").(*model.User)
 
-	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, repoName)
+	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, envFromStore.AppsRepo)
 	if owner == "builtin" {
-		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, config.GitHost, repoName)
+		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, config.GitHost, envFromStore.AppsRepo)
 	}
 	err = nativeGit.NativePushWithToken(
 		url,
@@ -639,7 +658,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
-	gitopsRepoCache.Invalidate(repoName)
+	gitopsRepoCache.Invalidate(envFromStore.AppsRepo)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
