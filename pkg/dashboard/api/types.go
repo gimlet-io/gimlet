@@ -133,7 +133,7 @@ func NewAlert(alert *model.Alert, text string) *Alert {
 		DeploymentName: alert.DeploymentName,
 		Type:           alert.Type,
 		Status:         alert.Status,
-		Name:           text,
+		Text:           text,
 		PendingAt:      alert.PendingAt,
 		FiredAt:        alert.FiredAt,
 		ResolvedAt:     alert.ResolvedAt,

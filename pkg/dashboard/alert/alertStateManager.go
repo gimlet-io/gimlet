@@ -71,7 +71,9 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 
 			apiAlert := api.NewAlert(alert, t.Text())
 			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert: *apiAlert,
+				Alert:         *apiAlert,
+				ImChannelId:   alert.ImChannelId,
+				DeploymentUrl: alert.DeploymentUrl,
 			})
 			a.broadcast(apiAlert, streaming.AlertFiredEventString)
 		}
@@ -190,7 +192,8 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 
 			apiAlert := api.NewAlert(nonResolvedAlert, t.Text())
 			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert: *apiAlert,
+				Alert:       *apiAlert,
+				ImChannelId: pod.ImChannelId,
 			})
 			a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 		}
@@ -222,7 +225,8 @@ func (a AlertStateManager) DeletePod(podName string) error {
 
 		apiAlert := api.NewAlert(nonResolvedAlert, "")
 		a.notifManager.Broadcast(&notifications.AlertMessage{
-			Alert: *apiAlert,
+			Alert:       *apiAlert,
+			ImChannelId: nonResolvedAlert.ImChannelId,
 		})
 		a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 	}
