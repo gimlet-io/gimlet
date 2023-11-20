@@ -68,37 +68,21 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redirect, err := redirectPath(r)
-	if err != nil {
-		log.Errorf("cannot get redirect path: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	http.RedirectHandler(redirect, http.StatusSeeOther).ServeHTTP(w, r)
+	http.RedirectHandler(redirectPath(r.FormValue("state")), http.StatusSeeOther).ServeHTTP(w, r)
 }
 
-func redirectPath(r *http.Request) (string, error) {
+func redirectPath(value string) string {
 	redirect := "/"
-	err := r.ParseForm()
-	if err != nil {
-		return "", fmt.Errorf("cannot parse form: %s", err)
+	parts := strings.Split(value, "&")
+	if len(parts) != 3 {
+		return redirect
 	}
 
-	state := r.Form.Get("state")
-	split := strings.Split(state, "&")
-	parsedUrl, err := url.Parse(split[1])
-	if err != nil {
-		return "", fmt.Errorf("cannot parse url: %s", err)
-	}
-
-	params, _ := url.ParseQuery(parsedUrl.RawQuery)
+	params, _ := url.ParseQuery(parts[2])
 	if v, found := params["redirect"]; found {
-		if v[0] != "null" {
-			redirect = v[0]
-		}
+		redirect = v[0]
 	}
-	return redirect, nil
+	return redirect
 }
 
 func adminKeyAuth(w http.ResponseWriter, r *http.Request) {

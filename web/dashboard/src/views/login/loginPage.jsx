@@ -7,7 +7,10 @@ const LoginPage = () => {
   const [token, setToken] = useState("");
   const [provider, setProvider] = useState("");
   const [termsOfServiceFeatureFlag, setTermsOfServiceFeatureFlag] = useState(false);
-  const redirect = localStorage.getItem('redirect');
+  let redirect = localStorage.getItem('redirect');
+  if (!redirect) {
+    redirect = "/"
+  }
 
   useEffect(() => {
     getFlags().then(data => {
@@ -86,7 +89,7 @@ const loginButton = (provider, redirect) => {
     return (
       <button
         onClick={() => {
-          window.location.replace(`/auth?appState=https://${window.location.hostname}/auth?redirect=${redirect}`);
+          window.location.replace(`/auth?appState=https://${window.location.hostname}/auth%26redirect=${redirect}`);
         }}
         className="inline-flex items-center justify-center w-full font-medium px-20 py-3 rounded border border-gray-300 hover:bg-gray-50 shadow-sm"
       >
@@ -100,7 +103,7 @@ const loginButton = (provider, redirect) => {
     return (
       <button
         onClick={() => {
-          window.location.replace(`/auth?appState=https://${window.location.hostname}/auth`);
+          window.location.replace(`/auth?appState=https://${window.location.hostname}/auth%26redirect=${redirect}`);
         }}
         className="inline-flex items-center justify-center w-full font-medium px-20 py-3 rounded border border-gray-300 hover:bg-gray-50 shadow-sm"
       >
