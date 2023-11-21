@@ -5,6 +5,8 @@ import (
 	"encoding/base32"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
@@ -66,7 +68,21 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.RedirectHandler("/", http.StatusSeeOther).ServeHTTP(w, r)
+	http.RedirectHandler(redirectPath(r.FormValue("state")), http.StatusSeeOther).ServeHTTP(w, r)
+}
+
+func redirectPath(value string) string {
+	redirect := "/"
+	parts := strings.Split(value, "&")
+	if len(parts) != 3 {
+		return redirect
+	}
+
+	params, _ := url.ParseQuery(parts[2])
+	if v, found := params["redirect"]; found {
+		redirect = v[0]
+	}
+	return redirect
 }
 
 func adminKeyAuth(w http.ResponseWriter, r *http.Request) {
