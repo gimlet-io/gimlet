@@ -158,7 +158,7 @@ function ServiceDetail(props) {
             <span className="cursor-pointer" onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
             {configExists ?
               <>
-              <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${fileName}`} target="_blank" rel="noopener noreferrer">
+              <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
               <svg xmlns="http://www.w3.org/2000/svg"
                 className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
                 viewBox="0 0 24 24">
