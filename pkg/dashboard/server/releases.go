@@ -592,15 +592,9 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		if envFromStore.RepoPerEnv {
 			kustomizationFilePath = filepath.Join("flux", fmt.Sprintf("kustomization-%s.yaml", app))
 		}
-		worktree, err := repo.Worktree()
+		err := nativeGit.DelFile(repo, kustomizationFilePath)
 		if err != nil {
-			logrus.Errorf("cannot get worktree: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		_, err = worktree.Remove(kustomizationFilePath)
-		if err != nil {
-			logrus.Errorf("cannot remove files from the working tree: %s", err)
+			logrus.Errorf("cannot delete kustomization file: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
