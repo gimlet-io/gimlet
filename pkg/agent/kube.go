@@ -47,6 +47,7 @@ const AnnotationMetricsLink = "v1alpha1.opensca.dev/metrics"
 const AnnotationTracesLink = "v1alpha1.opensca.dev/traces"
 const AnnotationIssuesLink = "v1alpha1.opensca.dev/issues"
 const AnnotationOwnerName = "v1alpha1.opensca.dev/owner.name"
+const AnnotationOwnerIm = "v1alpha1.opensca.dev/owner.im"
 
 type KubeEnv struct {
 	Name          string
@@ -368,7 +369,7 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 				if "CrashLoopBackOff" == podStatus || "Error" == podStatus {
 					podLogs = logs(e, pod)
 				}
-				pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs})
+				pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
 			}
 
 			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Pods: pods, SHA: sha}

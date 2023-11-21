@@ -107,3 +107,7 @@ func (gm *gitopsRollbackMessage) RepositoryName() string {
 func (gm *gitopsRollbackMessage) SHA() string {
 	return ""
 }
+
+func (gm *gitopsRollbackMessage) CustomChannel() string {
+	return ""
+}

@@ -159,3 +159,7 @@ func (gm *gitopsDeployMessage) RepositoryName() string {
 func (gm *gitopsDeployMessage) SHA() string {
 	return gm.event.Artifact.Version.SHA
 }
+
+func (gm *gitopsDeployMessage) CustomChannel() string {
+	return ""
+}

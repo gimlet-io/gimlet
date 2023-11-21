@@ -46,8 +46,9 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 									Svc:     svc.Namespace + "/" + svc.Name,
 
-									Status:     string(createdPod.Status.Phase),
-									Deployment: deployment.Namespace + "/" + deployment.Name,
+									Status:      string(createdPod.Status.Phase),
+									Deployment:  deployment.Namespace + "/" + deployment.Name,
+									ImChannelId: svc.GetAnnotations()[AnnotationOwnerIm],
 								}
 								sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
 							}
@@ -88,10 +89,11 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 									Svc:     svc.Namespace + "/" + svc.Name,
 
-									Status:     podStatus,
-									Deployment: deployment.Namespace + "/" + deployment.Name,
-									ErrorCause: podErrorCause(*updatedPod),
-									Logs:       podLogs,
+									Status:      podStatus,
+									Deployment:  deployment.Namespace + "/" + deployment.Name,
+									ErrorCause:  podErrorCause(*updatedPod),
+									Logs:        podLogs,
+									ImChannelId: svc.GetAnnotations()[AnnotationOwnerIm],
 								}
 								sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
 							}

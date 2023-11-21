@@ -20,7 +20,6 @@ type discordMessage struct {
 }
 
 func (s *DiscordProvider) send(msg Message) error {
-
 	discordBot, err := discordgo.New("Bot " + s.Token)
 	if err != nil {
 		return fmt.Errorf("error creating Discord session, %s", err)
@@ -28,7 +27,7 @@ func (s *DiscordProvider) send(msg Message) error {
 
 	discordMessage, err := msg.AsDiscordMessage()
 	if err != nil {
-		return fmt.Errorf("cannot create slack message: %s", err)
+		return fmt.Errorf("cannot create discord message: %s", err)
 	}
 
 	channel := s.ChannelID

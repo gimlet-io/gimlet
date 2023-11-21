@@ -134,3 +134,7 @@ func (fm *fluxMessage) RepositoryName() string {
 func (fm *fluxMessage) SHA() string {
 	return ""
 }
+
+func (fm *fluxMessage) CustomChannel() string {
+	return ""
+}

@@ -33,7 +33,8 @@ func Test_SetFiringAlertState(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	err = s.UpdateAlertState(alert.ID, model.FIRING)
+	alert.SetFiring()
+	err = s.UpdateAlertState(alert)
 	assert.Nil(t, err)
 
 	alerts, err := s.AlertsByState(model.FIRING)

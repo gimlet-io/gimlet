@@ -17,6 +17,7 @@ package api
 import (
 	"fmt"
 
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 )
 
@@ -32,6 +33,7 @@ type Pod struct {
 	Status            string `json:"status"`
 	StatusDescription string `json:"statusDescription"`
 	Logs              string `json:"logs"`
+	ImChannelId       string `json:"imChannelId"`
 }
 
 func (p *Pod) FQN() string {
@@ -118,11 +120,24 @@ type Alert struct {
 	DeploymentName string `json:"deploymentName"`
 	Status         string `json:"status"`
 	Type           string `json:"type"`
-	Name           string `json:"name"`
 	Text           string `json:"text"`
+	Name           string `json:"name"`
 	PendingAt      int64  `json:"pendingAt"`
 	FiredAt        int64  `json:"firedAt"`
 	ResolvedAt     int64  `json:"resolvedAt"`
+}
+
+func NewAlert(alert *model.Alert, text string) *Alert {
+	return &Alert{
+		ObjectName:     alert.ObjectName,
+		DeploymentName: alert.DeploymentName,
+		Type:           alert.Type,
+		Status:         alert.Status,
+		Text:           text,
+		PendingAt:      alert.PendingAt,
+		FiredAt:        alert.FiredAt,
+		ResolvedAt:     alert.ResolvedAt,
+	}
 }
 
 type GitopsEnv struct {
@@ -173,10 +188,11 @@ type StackUpdate struct {
 	Svc     string `json:"svc"`
 
 	// Pod
-	Status     string `json:"status"`
-	Deployment string `json:"deployment"`
-	ErrorCause string `json:"errorCause"`
-	Logs       string `json:"logs"`
+	Status      string `json:"status"`
+	Deployment  string `json:"deployment"`
+	ErrorCause  string `json:"errorCause"`
+	Logs        string `json:"logs"`
+	ImChannelId string `json:"imChannelId"`
 
 	// Deployment
 	SHA           string `json:"sha"`

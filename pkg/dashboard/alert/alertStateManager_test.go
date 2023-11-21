@@ -32,13 +32,14 @@ func TestTrackPod_imagePullBackOff(t *testing.T) {
 			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
+		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	})
+	}, "", "")
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -53,7 +54,7 @@ func TestTrackPod_imagePullBackOff(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_RUNNING,
-	})
+	}, "", "")
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -77,13 +78,14 @@ func TestTrackPod_crashLoopBackOff(t *testing.T) {
 			"CrashLoopBackOff": crashLoopBackOffThreshold{
 				waitTime: 0,
 			}},
+		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "CrashLoopBackOff",
-	})
+	}, "", "")
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -98,7 +100,7 @@ func TestTrackPod_crashLoopBackOff(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_RUNNING,
-	})
+	}, "", "")
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -122,13 +124,14 @@ func TestTrackPod_createContainerConfigError(t *testing.T) {
 			"CreateContainerConfigError": createContainerConfigErrorThreshold{
 				waitTime: 0,
 			}},
+		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "CreateContainerConfigError",
-	})
+	}, "", "")
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -143,7 +146,7 @@ func TestTrackPod_createContainerConfigError(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    model.POD_RUNNING,
-	})
+	}, "", "")
 
 	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))
@@ -167,6 +170,7 @@ func TestTrackPod_deleted(t *testing.T) {
 			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
+		"",
 	)
 
 	pod := &api.Pod{
@@ -175,7 +179,7 @@ func TestTrackPod_deleted(t *testing.T) {
 		Status:    "ImagePullBackOff",
 	}
 
-	alertStateManager.TrackPod(pod)
+	alertStateManager.TrackPod(pod, "", "")
 
 	alertStateManager.DeletePod(pod.FQN())
 
@@ -204,19 +208,20 @@ func TestTrackPod_from_pending_to_imagePullBackoff(t *testing.T) {
 			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
+		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "Pending",
-	})
+	}, "", "")
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	})
+	}, "", "")
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 2, len(relatedAlerts))
@@ -243,25 +248,26 @@ func TestPodsTrack(t *testing.T) {
 			"ImagePullBackOff": imagePullBackOffThreshold{
 				waitTime: 0,
 			}},
+		"",
 	)
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	})
+	}, "", "")
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ErrImagePull",
-	})
+	}, "", "")
 
 	alertStateManager.TrackPod(&api.Pod{
 		Namespace: "ns1",
 		Name:      "pod1",
 		Status:    "ImagePullBackOff",
-	})
+	}, "", "")
 
 	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
 	assert.Equal(t, 1, len(relatedAlerts))

@@ -112,3 +112,7 @@ func (gm *gitopsDeleteMessage) RepositoryName() string {
 func (gm *gitopsDeleteMessage) SHA() string {
 	return ""
 }
+
+func (gm *gitopsDeleteMessage) CustomChannel() string {
+	return ""
+}

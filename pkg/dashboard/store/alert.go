@@ -33,19 +33,22 @@ func (db *Store) AlertsByState(status string) ([]*model.Alert, error) {
 	return data, err
 }
 
-func (db *Store) UpdateAlertState(id int64, status string) error {
+func (db *Store) UpdateAlertState(alert *model.Alert) error {
 	var query string
 
-	if status == model.FIRING {
+	var stamp int64
+	if alert.Status == model.FIRING {
 		query = sql.UpdateAlertStatusFired
-	} else if status == model.RESOLVED {
+		stamp = alert.FiredAt
+	} else if alert.Status == model.RESOLVED {
 		query = sql.UpdateAlertStatusResolved
+		stamp = alert.ResolvedAt
 	} else {
 		return fmt.Errorf("invalid status provided")
 	}
 
 	stmt := sql.Stmt(db.driver, query)
-	_, err := db.Exec(stmt, status, time.Now().Unix(), id)
+	_, err := db.Exec(stmt, alert.Status, stamp, alert.ID)
 	return err
 }
 
