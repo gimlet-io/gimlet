@@ -172,12 +172,13 @@ type FluxStateUpdate struct {
 }
 
 type Stack struct {
-	Repo       string      `json:"repo"`
-	Env        string      `json:"env"`
-	Osca       *Osca       `json:"osca"`
-	Service    *Service    `json:"service"`
-	Deployment *Deployment `json:"deployment,omitempty"`
-	Ingresses  []*Ingress  `json:"ingresses,omitempty"`
+	Repo        string      `json:"repo"`
+	Env         string      `json:"env"`
+	Certificate []byte      `json:"certificate,omitempty"`
+	Osca        *Osca       `json:"osca"`
+	Service     *Service    `json:"service"`
+	Deployment  *Deployment `json:"deployment,omitempty"`
+	Ingresses   []*Ingress  `json:"ingresses,omitempty"`
 }
 
 type StackUpdate struct {

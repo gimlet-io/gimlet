@@ -243,8 +243,6 @@ class EnvConfig extends Component {
       }
     }
 
-    console.log(chart)
-
     chart.uiSchema[4].uiSchema = {
       ...chart.uiSchema[4].uiSchema,
       "#/properties/sealedSecrets": {
@@ -254,9 +252,6 @@ class EnvConfig extends Component {
       },
     }
     
-
-    console.log(chart)
-   
     return chart
   }
 
@@ -488,7 +483,7 @@ class EnvConfig extends Component {
 
     const customFields = {
       imageWidget: ImageWidget,
-      sealedSecretWidget: SealedSecretWidget,
+      sealedSecretWidget: (props) => <SealedSecretWidget {...props} gimletClient={this.props.gimletClient} store={this.props.store} env={env} />,
     }
 
     if (!this.state.configFile) {

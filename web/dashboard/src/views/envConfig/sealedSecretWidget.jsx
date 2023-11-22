@@ -1,4 +1,8 @@
 import { Component } from "react";
+import {
+  ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWRESET
+} from "../../redux/redux";
 
 class SealedSecretWidget extends Component {
   constructor(props) {
@@ -27,9 +31,30 @@ class SealedSecretWidget extends Component {
     };
   }
 
+  resetPopupWindowAfterThreeSeconds() {
+    const { store } = this.props;
+    setTimeout(() => {
+      store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
+    }, 3000);
+  };
+
   seal() {
+    const { gimletClient, store, env } = this.props;
     return () => {
-      this.props.onChange("toSeal: " + this.state.value)
+      gimletClient.seal(env, this.state.value)
+        .then(data => {
+          this.props.onChange(data)
+        }, () => {
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+              header: "Error",
+              message: "Failed to seal."
+            }
+          });
+          this.resetPopupWindowAfterThreeSeconds()
+        });
     };
   }
 
@@ -45,7 +70,7 @@ class SealedSecretWidget extends Component {
           { !this.state.sealed &&
           <>
           <textarea rows="5" className="form-control" id="root_repository" required="" placeholder="" type="text" list="examples_root_repository" value={this.state.value} onChange={this.onChange()} />
-          <button className="m-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-12"
+          <button disabled={this.state.value === ""} className={(this.state.value === "" ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-700") + " m-2 text-white font-bold py-2 px-4 rounded h-12"}
             onClick={this.seal()}
           >
             Seal
