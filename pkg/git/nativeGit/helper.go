@@ -417,6 +417,17 @@ func DelDir(repo *git.Repository, path string) error {
 	return err
 }
 
+func DelFile(repo *git.Repository, filePath string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	_, err = worktree.Remove(filePath)
+
+	return err
+}
+
 func StageFolder(repo *git.Repository, folder string) error {
 	worktree, err := repo.Worktree()
 	if err != nil {
