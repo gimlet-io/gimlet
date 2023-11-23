@@ -121,13 +121,13 @@ func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
 func fetchCertificate(kubeEnv *KubeEnv) []byte {
 	service, err := kubeEnv.Client.CoreV1().Services("infrastructure").Get(context.Background(), "sealed-secrets-controller", metav1.GetOptions{})
 	if err != nil {
-		logrus.Errorf("could not get sealed secret service: %s", err)
+		logrus.Debugf("could not get sealed secret service: %s", err)
 		return nil
 	}
 
 	cert, err := kubeEnv.Client.CoreV1().Services("infrastructure").ProxyGet("http", "sealed-secrets-controller", service.Spec.Ports[0].Name, "/v1/cert.pem", nil).DoRaw(context.Background())
 	if err != nil {
-		logrus.Errorf("could not get cert: %s", err)
+		logrus.Debugf("could not get cert: %s", err)
 		return nil
 	}
 
