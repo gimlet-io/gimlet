@@ -2,6 +2,10 @@ package server
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitnami-labs/sealed-secrets/pkg/crypto"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
@@ -27,6 +32,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
+	"k8s.io/client-go/util/cert"
 	"sigs.k8s.io/yaml"
 )
 
@@ -487,6 +493,81 @@ func application(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(appinfosString))
+}
+
+func seal(w http.ResponseWriter, r *http.Request) {
+	var secret string
+	err := json.NewDecoder(r.Body).Decode(&secret)
+	if err != nil {
+		logrus.Errorf("cannot decode secret: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	env := chi.URLParam(r, "env")
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	cert, err := extractCert(agentHub, env)
+	if err != nil {
+		logrus.Errorf("cannot extract certificate from agenthub: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	key, err := parseKey(cert)
+	if err != nil {
+		logrus.Errorf("cannot parse public key: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	sealedValue, err := sealValue(key, secret)
+	if err != nil {
+		logrus.Errorf("cannot seal item: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(sealedValue))
+}
+
+func extractCert(agentHub *streaming.AgentHub, env string) ([]byte, error) {
+	for _, a := range agentHub.Agents {
+		for _, stack := range a.Stacks {
+			if stack.Env != env {
+				continue
+			}
+
+			if stack.Certificate != nil {
+				return stack.Certificate, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("not found")
+}
+
+func parseKey(data []byte) (*rsa.PublicKey, error) {
+	certs, err := cert.ParseCertsPEM(data)
+	if err != nil {
+		return nil, err
+	}
+
+	cert, ok := certs[0].PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("expected RSA public key but found %v", certs[0].PublicKey)
+	}
+
+	return cert, nil
+}
+
+func sealValue(pubKey *rsa.PublicKey, data string) (string, error) {
+	if data == "" {
+		return "", fmt.Errorf("empty secret")
+	}
+
+	clusterWide := []byte("")
+	result, err := crypto.HybridEncrypt(rand.Reader, pubKey, []byte(data), clusterWide)
+	return base64.StdEncoding.EncodeToString(result), err
 }
 
 func saveEnvToDB(w http.ResponseWriter, r *http.Request) {

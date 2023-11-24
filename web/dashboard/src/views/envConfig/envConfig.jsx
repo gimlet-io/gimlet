@@ -17,6 +17,7 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import { Switch } from '@headlessui/react'
 import posthog from "posthog-js"
 import ImageWidget from "./imageWidget";
+import SealedSecretWidget from "./sealedSecretWidget";
 
 class EnvConfig extends Component {
   constructor(props) {
@@ -61,7 +62,7 @@ class EnvConfig extends Component {
     if (action === "new") {
       gimletClient.getDefaultDeploymentTemplates()
       .then(data => {
-        const selectedTemplate = this.patchImageWidget(data[0])
+        const selectedTemplate = this.patchUIWidgets(data[0])
         this.setState({
           templates: data,
           selectedTemplate: selectedTemplate,
@@ -90,7 +91,7 @@ class EnvConfig extends Component {
       .then(data => {
         this.setState({
           templates: data,
-          selectedTemplate: this.patchImageWidget(data[0])
+          selectedTemplate: this.patchUIWidgets(data[0])
         });
       }, () => {/* Generic error handler deals with it */ });
 
@@ -228,7 +229,7 @@ class EnvConfig extends Component {
     }
   }
 
-  patchImageWidget(chart) {
+  patchUIWidgets(chart) {
     if (chart.reference.name !== "onechart") {
       return chart  
     }
@@ -241,7 +242,16 @@ class EnvConfig extends Component {
         },
       }
     }
-   
+
+    chart.uiSchema[4].uiSchema = {
+      ...chart.uiSchema[4].uiSchema,
+      "#/properties/sealedSecrets": {
+        "additionalProperties": {
+          "ui:field": "sealedSecretWidget"
+        }
+      },
+    }
+    
     return chart
   }
 
@@ -426,7 +436,7 @@ class EnvConfig extends Component {
   }
 
   setDeploymentTemplate(template) {
-    const selectedTemplate = this.patchImageWidget(template)
+    const selectedTemplate = this.patchUIWidgets(template)
     this.setState(prevState => {
       let copiedConfigFile = Object.assign({}, prevState.configFile)
       delete copiedConfigFile.deploy
@@ -473,6 +483,7 @@ class EnvConfig extends Component {
 
     const customFields = {
       imageWidget: ImageWidget,
+      sealedSecretWidget: (props) => <SealedSecretWidget {...props} gimletClient={this.props.gimletClient} store={this.props.store} env={env} />,
     }
 
     if (!this.state.configFile) {
@@ -719,7 +730,7 @@ class EnvConfig extends Component {
                 let deepCopied = JSON.parse(JSON.stringify(this.state.defaultConfigFile))
                 this.setState({ configFile: deepCopied });
                 this.setState({
-                  selectedTemplate: this.patchImageWidget(this.state.templates[0])
+                  selectedTemplate: this.patchUIWidgets(this.state.templates[0])
                 });
               }}
             >

@@ -89,6 +89,8 @@ export default class GimletClient {
 
   saveInfrastructureComponents = (env, infrastructureComponents) => this.post('/api/environments', JSON.stringify({ env, infrastructureComponents }));
 
+  seal = (env, secret) => this.post(`/api/env/${env}/seal`, JSON.stringify(secret));
+
   get = async (path) => {
     try {
       const { data } = await axios.get(path, {
