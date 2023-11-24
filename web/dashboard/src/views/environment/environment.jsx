@@ -543,8 +543,8 @@ export default class EnvironmentView extends Component {
     }
 
     const navigation = [
-      { name: 'Configuration', href: `/env/${environment.name}` },
-      { name: 'Infrastructure components', href: `/env/${environment.name}/components` },
+      { name: 'Details', href: `/env/${environment.name}` },
+      { name: 'Components', href: `/env/${environment.name}/components` },
       { name: 'Gitops commits', href: `/env/${environment.name}/gitops-commits` },
     ]
 
