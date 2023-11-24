@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -20,7 +21,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 		Attachments: []Attachment{},
 	}
 
-	msg.Text = fmt.Sprintf("Pod %s %s", am.Alert.ObjectName, am.Alert.Status)
+	msg.Text = fmt.Sprintf("%s ALERT %s for pod %s", strings.Title(am.Alert.Type), strings.ToUpper(am.Alert.Status), am.Alert.ObjectName)
 	if am.Alert.Status == model.RESOLVED {
 		msg.Attachments = append(msg.Attachments,
 			Attachment{

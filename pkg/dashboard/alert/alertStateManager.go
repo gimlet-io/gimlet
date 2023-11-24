@@ -184,6 +184,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 	for _, nonResolvedAlert := range nonResolvedAlerts {
 		t := ThresholdByType(a.thresholds, nonResolvedAlert.Type)
 		if t != nil && t.Resolved(dbPod) {
+			previousState := nonResolvedAlert.Status
 			nonResolvedAlert.SetResolved()
 			err := a.store.UpdateAlertState(nonResolvedAlert)
 			if err != nil {
@@ -191,10 +192,12 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 			}
 
 			apiAlert := api.NewAlert(nonResolvedAlert, t.Text())
-			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert:       *apiAlert,
-				ImChannelId: pod.ImChannelId,
-			})
+			if previousState == model.FIRING { // don't notify people about pending then resolved alerts
+				a.notifManager.Broadcast(&notifications.AlertMessage{
+					Alert:       *apiAlert,
+					ImChannelId: pod.ImChannelId,
+				})
+			}
 			a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 		}
 	}
@@ -217,6 +220,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	}
 
 	for _, nonResolvedAlert := range nonResolvedAlerts {
+		previousState := nonResolvedAlert.Status
 		nonResolvedAlert.SetResolved()
 		err := a.store.UpdateAlertState(nonResolvedAlert)
 		if err != nil {
@@ -224,10 +228,12 @@ func (a AlertStateManager) DeletePod(podName string) error {
 		}
 
 		apiAlert := api.NewAlert(nonResolvedAlert, "")
-		a.notifManager.Broadcast(&notifications.AlertMessage{
-			Alert:       *apiAlert,
-			ImChannelId: nonResolvedAlert.ImChannelId,
-		})
+		if previousState == model.FIRING { // don't notify people about pending then resolved alerts
+			a.notifManager.Broadcast(&notifications.AlertMessage{
+				Alert:       *apiAlert,
+				ImChannelId: nonResolvedAlert.ImChannelId,
+			})
+		}
 		a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 	}
 

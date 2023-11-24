@@ -56,7 +56,7 @@ func (gm *gitopsDeployMessage) AsSlackMessage() (*slackMessage, error) {
 		if gm.event.TriggeredBy == "policy" {
 			msg.Text = fmt.Sprintf("Policy based rollout of %s on %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 		} else {
-			msg.Text = fmt.Sprintf("%s is rolling out %s on %s", gm.event.TriggeredBy, gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
+			msg.Text = fmt.Sprintf("%s is rolling out %s on %s", gm.event.TriggeredBy, gm.event.Manifest.App, gm.event.Manifest.Env)
 		}
 		msg.Blocks = append(msg.Blocks,
 			Block{
