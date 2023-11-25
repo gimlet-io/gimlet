@@ -21,7 +21,7 @@ func (gm *gitopsRollbackMessage) AsSlackMessage() (*slackMessage, error) {
 		Blocks: []Block{},
 	}
 
-	msg.Text = fmt.Sprintf("🔙 %s is rolling back %s on %s", gm.rollbackRequest.TriggeredBy, gm.rollbackRequest.App, gm.rollbackRequest.Env)
+	msg.Text = fmt.Sprintf("ROLLBACK: *%s* is rolling back *%s* on %s", gm.rollbackRequest.TriggeredBy, gm.rollbackRequest.App, gm.rollbackRequest.Env)
 	msg.Blocks = append(msg.Blocks,
 		Block{
 			Type: section,

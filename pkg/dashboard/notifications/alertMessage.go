@@ -21,7 +21,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 		Attachments: []Attachment{},
 	}
 
-	msg.Text = fmt.Sprintf("%s ALERT %s for pod %s", strings.Title(am.Alert.Type), strings.ToUpper(am.Alert.Status), am.Alert.ObjectName)
+	msg.Text = fmt.Sprintf("ALERT: *%s %s* for pod *%s*", strings.Title(am.Alert.Type), strings.ToUpper(am.Alert.Status), am.Alert.ObjectName)
 	if am.Alert.Status == model.RESOLVED {
 		msg.Attachments = append(msg.Attachments,
 			Attachment{
@@ -45,7 +45,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 						Type: section,
 						Text: &Text{
 							Type: markdown,
-							Text: fmt.Sprintf(":exclamation: %s alert firing %s", am.Alert.Type, am.Alert.Text),
+							Text: am.Alert.Text,
 						},
 						Accessory: &Accessory{
 							Type: button,

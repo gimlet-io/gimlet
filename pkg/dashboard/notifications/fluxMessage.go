@@ -23,18 +23,18 @@ func (fm *fluxMessage) AsSlackMessage() (*slackMessage, error) {
 	switch fm.gitopsCommit.Status {
 	case model.Progressing:
 		if strings.Contains(fm.gitopsCommit.StatusDesc, "Health check passed") {
-			msg.Text = fmt.Sprintf(":heavy_check_mark: Applied resources from %s are up and healthy", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
+			msg.Text = fmt.Sprintf("GITOPS: Applied resources from %s are up and healthy", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
 		} else {
-			msg.Text = fmt.Sprintf(":hourglass_flowing_sand: Applying gitops changes from %s", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
+			msg.Text = fmt.Sprintf("GITOPS: Applying changes - %s", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
 		}
 	case model.ValidationFailed:
 		fallthrough
 	case model.ReconciliationFailed:
-		msg.Text = fmt.Sprintf(":exclamation: Gitops changes from %s failed to apply", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
+		msg.Text = fmt.Sprintf("GITOPS: :exclamation: %s Failed to apply", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
 	case model.HealthCheckFailed:
-		msg.Text = fmt.Sprintf(":ambulance: Gitops changes from %s have health issues", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
+		msg.Text = fmt.Sprintf("GITOPS: :ambulance: %s have health issues", commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
 	default:
-		msg.Text = fmt.Sprintf("%s: %s", fm.gitopsCommit.Status, commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
+		msg.Text = fmt.Sprintf("GITOPS: %s - %s", fm.gitopsCommit.Status, commitLink(fm.gitopsRepo, fm.gitopsCommit.Sha))
 	}
 
 	msg.Blocks = append(msg.Blocks,

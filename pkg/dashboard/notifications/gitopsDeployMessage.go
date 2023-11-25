@@ -22,7 +22,7 @@ func (gm *gitopsDeployMessage) AsSlackMessage() (*slackMessage, error) {
 	}
 
 	if gm.event.Status == model.Failure {
-		msg.Text = fmt.Sprintf("Failed to roll out %s of %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
+		msg.Text = fmt.Sprintf("ROLLOUT: Failed to roll out *%s* of %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 		msg.Blocks = append(msg.Blocks,
 			Block{
 				Type: section,
@@ -54,9 +54,9 @@ func (gm *gitopsDeployMessage) AsSlackMessage() (*slackMessage, error) {
 		)
 	} else {
 		if gm.event.TriggeredBy == "policy" {
-			msg.Text = fmt.Sprintf("Policy based rollout of %s on %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
+			msg.Text = fmt.Sprintf("ROLLOUT: Policy based rollout of *%s* on %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 		} else {
-			msg.Text = fmt.Sprintf("%s is rolling out %s on %s", gm.event.TriggeredBy, gm.event.Manifest.App, gm.event.Manifest.Env)
+			msg.Text = fmt.Sprintf("ROLLOUT: *%s* is rolling out *%s* on %s", gm.event.TriggeredBy, gm.event.Manifest.App, gm.event.Manifest.Env)
 		}
 		msg.Blocks = append(msg.Blocks,
 			Block{
@@ -119,7 +119,7 @@ func (gm *gitopsDeployMessage) AsDiscordMessage() (*discordMessage, error) {
 	}
 
 	if gm.event.Status == model.Failure {
-		msg.Text = fmt.Sprintf("Failed to roll out %s of %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
+		msg.Text = fmt.Sprintf("ROLLOUT: Failed to roll out %s of %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 
 		msg.Embed.Description += fmt.Sprintf(":exclamation: *Error* :exclamation: \n%s\n", gm.event.StatusDesc)
 		msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.event.Manifest.Env))
@@ -129,9 +129,9 @@ func (gm *gitopsDeployMessage) AsDiscordMessage() (*discordMessage, error) {
 
 	} else {
 		if gm.event.TriggeredBy == "policy" {
-			msg.Text = fmt.Sprintf("Policy based rollout of %s on %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
+			msg.Text = fmt.Sprintf("ROLLOUT: Policy based rollout of %s on %s", gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 		} else {
-			msg.Text = fmt.Sprintf("%s is rolling out %s on %s", gm.event.TriggeredBy, gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
+			msg.Text = fmt.Sprintf("ROLLOUT: %s is rolling out %s on %s", gm.event.TriggeredBy, gm.event.Manifest.App, gm.event.Artifact.Version.RepositoryName)
 		}
 
 		msg.Embed.Description += fmt.Sprintf(":dart: %s\n", strings.Title(gm.event.Manifest.Env))
