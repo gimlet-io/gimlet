@@ -223,15 +223,16 @@ function ServiceDetail(props) {
           <div>
             <div className="grid grid-cols-12 mt-4 px-4">
               <div className="col-span-5 border-r space-y-4">
+                { deployment &&
+                <>
                 <div>
                   <p className="text-base text-gray-600">Status</p>
                   {
-                    deployment && deployment.pods && deployment.pods.map((pod) => (
+                    deployment.pods && deployment.pods.map((pod) => (
                       <Pod key={pod.name} pod={pod} />
                     ))
                   }
                 </div>
-                { deployment &&
                 <div>
                   <p className="text-base text-gray-600">Version</p>
                   <p className="text-gray-900">
@@ -240,6 +241,7 @@ function ServiceDetail(props) {
                     <span className="pl-2 text-sm font-normal">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</span>
                   </p>
                 </div>
+                </>
                 }
                 {stack.osca && Object.keys(stack.osca.links).length !== 0 &&
                   <div>
@@ -331,7 +333,7 @@ function ServiceDetail(props) {
                 </div>
                 }
                 <div>
-                  <p className="text-base text-gray-600">Deployed</p>
+                  <p className="text-base text-gray-600">Deploy History</p>
                   <div className="text-gray-900 text-sm pt-2">
                     <RolloutHistory
                       env={envName}
