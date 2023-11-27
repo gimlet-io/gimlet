@@ -205,12 +205,22 @@ func (r *RepoCache) cleanRepo(repoName string) {
 	r.lock.Unlock()
 }
 
-func (r *RepoCache) InstanceForRead(repoName string) (instance *git.Repository, err error) {
-	return r.instanceForRead(repoName, false)
+func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository)) error {
+	repo, err := r.instanceForRead(repoName, false)
+	r.lock.Lock()
+	fn(repo)
+	r.lock.Unlock()
+
+	return err
 }
 
-func (r *RepoCache) InstanceForReadWithHistory(repoName string) (instance *git.Repository, err error) {
-	return r.instanceForRead(repoName, true)
+func (r *RepoCache) PerformActionWithHistory(repoName string, fn func(repo *git.Repository)) error {
+	repo, err := r.instanceForRead(repoName, true)
+	r.lock.Lock()
+	fn(repo)
+	r.lock.Unlock()
+
+	return err
 }
 
 func (r *RepoCache) instanceForRead(repoName string, withHistory bool) (instance *git.Repository, err error) {
