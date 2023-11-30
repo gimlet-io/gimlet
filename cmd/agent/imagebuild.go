@@ -197,11 +197,12 @@ func streamImageBuildEvent(messages chan *streaming.WSMessage, userLogin string,
 
 func dockerfileImageBuild(
 	kubeEnv *agent.KubeEnv,
-	buildId string,
+	gimletHost, buildId string,
 	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
 ) {
-	job := generateJob(trigger)
+	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
+	job := generateJob(trigger, reqUrl)
 	_, err := kubeEnv.Client.BatchV1().Jobs("default").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
@@ -259,7 +260,7 @@ func dockerfileImageBuild(
 	})
 }
 
-func generateJob(trigger dx.ImageBuildRequest) *batchv1.Job {
+func generateJob(trigger dx.ImageBuildRequest, sourceUrl string) *batchv1.Job {
 	var backOffLimit int32 = 0
 	return &batchv1.Job{
 		TypeMeta: meta_v1.TypeMeta{
@@ -281,7 +282,7 @@ func generateJob(trigger dx.ImageBuildRequest) *batchv1.Job {
 							},
 							Args: []string{
 								"-c",
-								fmt.Sprintf("mkdir /source && curl -L %s -o /source/source.zip && unzip /source/source.zip -d /workspace", trigger.AppSource),
+								fmt.Sprintf("mkdir /source && curl -L %s -o /source/source.zip && unzip /source/source.zip -d /workspace", sourceUrl),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
