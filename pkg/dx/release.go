@@ -50,6 +50,8 @@ type ImageBuildRequest struct {
 	Image       string `json:"image"`
 	Tag         string `json:"tag"`
 	SourcePath  string `json:"sourcePath"`
+	AppSource   string `json:"source"`
+	Dockerfile  string `json:"dockerfile"`
 }
 
 // RollbackRequest contains all metadata about the rollback intent

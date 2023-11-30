@@ -281,6 +281,8 @@ func release(w http.ResponseWriter, r *http.Request) {
 				TriggeredBy: user.Login,
 				Image:       imageRepository,
 				Tag:         imageTag,
+				Dockerfile:  "Dockerfile", // TODO
+				AppSource:   "https://github.com/dzsak/getting-started-app/archive/refs/tags/latest.zip",
 			}
 			break
 		}
