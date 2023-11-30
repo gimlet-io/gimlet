@@ -252,9 +252,9 @@ func fluxState(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 	agent := agentHub.Agents[name]
 	if agent == nil {
-		time.Sleep(1 * time.Second) // Agenthub has a race condition. Registration is not done when the client sends the state
-		agent = agentHub.Agents[name]
+		return
 	}
+
 	agent.FluxState = &fluxState
 
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
