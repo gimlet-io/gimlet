@@ -249,10 +249,10 @@ func serverCommunication(
 
 						if imageBuildRequest.Dockerfile != "" {
 							go dockerfileImageBuild(kubeEnv, buildId, imageBuildRequest, messages)
-							return
+						} else {
+							go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
 						}
 
-						go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
 					}
 				} else {
 					logrus.Info("event stream closed")
