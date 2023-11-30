@@ -197,12 +197,13 @@ func streamImageBuildEvent(messages chan *streaming.WSMessage, userLogin string,
 
 func dockerfileImageBuild(
 	kubeEnv *agent.KubeEnv,
-	gimletHost, buildId string,
+	gimletHost, agentKey, buildId string,
 	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
 ) {
+	backgroundDeletion := meta_v1.DeletePropagationBackground
 	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
-	job := generateJob(trigger, reqUrl)
+	job := generateJob(trigger, agentKey, reqUrl)
 	_, err := kubeEnv.Client.BatchV1().Jobs("default").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
@@ -253,14 +254,13 @@ func dockerfileImageBuild(
 		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "notBuilt", "")
 	}
 
-	// TODO cleanup kaniko on error
-	backgroundDeletion := meta_v1.DeletePropagationBackground
+	// TODO cleanup kaniko on errors
 	kubeEnv.Client.BatchV1().Jobs("default").Delete(context.TODO(), fmt.Sprintf("kaniko-%s", trigger.App), meta_v1.DeleteOptions{
 		PropagationPolicy: &backgroundDeletion,
 	})
 }
 
-func generateJob(trigger dx.ImageBuildRequest, sourceUrl string) *batchv1.Job {
+func generateJob(trigger dx.ImageBuildRequest, agentKey, sourceUrl string) *batchv1.Job {
 	var backOffLimit int32 = 0
 	return &batchv1.Job{
 		TypeMeta: meta_v1.TypeMeta{
@@ -276,13 +276,13 @@ func generateJob(trigger dx.ImageBuildRequest, sourceUrl string) *batchv1.Job {
 					InitContainers: []corev1.Container{
 						{
 							Name:  "download-source",
-							Image: "nixery.dev/shell/curl/unzip",
+							Image: "alpine",
 							Command: []string{
 								"/bin/sh",
 							},
 							Args: []string{
 								"-c",
-								fmt.Sprintf("mkdir /source && curl -L %s -o /source/source.zip && unzip /source/source.zip -d /workspace", sourceUrl),
+								fmt.Sprintf(`apk update; apk add curl; apk add tar && mkdir /source && curl -X GET -H "Authorization: BEARER %s" -H "Content-Type: application/json" %s -o /source/source.tar.gz && tar xvf source/source.tar.gz -C /workspace`, agentKey, sourceUrl),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -297,8 +297,8 @@ func generateJob(trigger dx.ImageBuildRequest, sourceUrl string) *batchv1.Job {
 							Name:  "kaniko",
 							Image: "gcr.io/kaniko-project/executor:latest",
 							Args: []string{
-								fmt.Sprintf("--dockerfile=%s-%s/%s", trigger.App, trigger.Tag, trigger.Dockerfile),
-								fmt.Sprintf("--context=dir:///workspace/%s-%s", trigger.App, trigger.Tag),
+								fmt.Sprintf("--dockerfile=/workspace/%s", trigger.Dockerfile),
+								"--context=dir:///workspace",
 								fmt.Sprintf("--destination=%s:%s", trigger.Image, trigger.Tag),
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -369,6 +369,11 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 		sb.Reset()
 		// first = false
 		// }
+
+		if strings.Contains(sb.String(), "error") {
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", sb.String())
+			return false
+		}
 
 		if strings.Contains(sb.String(), "pushed") {
 			streamImageBuildEvent(messages, userLogin, imageBuildId, "success", sb.String())
