@@ -287,7 +287,7 @@ export default class DeployPanel extends Component {
   }
 
   gitopsStatus(envs, connectedAgents, compact) {
-    const envWidgets = envs.map(env => this.renderEnvState(env, connectedAgents[env.name], compact));
+    const envWidgets = envs.slice(0, 3).map(env => this.renderEnvState(env, connectedAgents[env.name], compact));
 
     return (
       <div className={compact ? "grid grid-cols-3 cursor-pointer" : "space-y-8"}
