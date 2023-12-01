@@ -73,7 +73,7 @@ class ImageWidget extends Component {
         {
           [name]: event.target.value,
         },
-        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag})
+        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile})
       );
     };
   }
