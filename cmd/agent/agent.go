@@ -206,7 +206,7 @@ func serverCommunication(
 
 		logrus.Info("Connected to Gimlet")
 		go sendState(kubeEnv, config.Host, config.AgentKey)
-		go sendEvents(kubeEnv, config.Host, config.AgentKey)
+		// go sendEvents(kubeEnv, config.Host, config.AgentKey)
 		go sendFluxState(kubeEnv, config.Host, config.AgentKey)
 
 		runningLogStreams := NewRunningLogStreams()
@@ -219,7 +219,7 @@ func serverCommunication(
 					switch e["action"] {
 					case "refetch":
 						go sendState(kubeEnv, config.Host, config.AgentKey)
-						go sendEvents(kubeEnv, config.Host, config.AgentKey)
+						// go sendEvents(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
 						go podLogs(
 							kubeEnv,
