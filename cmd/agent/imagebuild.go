@@ -203,8 +203,8 @@ func dockerfileImageBuild(
 	messages chan *streaming.WSMessage,
 ) {
 	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
-	randomName := fmt.Sprintf("kaniko-%d", rand.Uint32())
-	job := generateJob(trigger, randomName, agentKey, reqUrl)
+	jobName := fmt.Sprintf("kaniko-%d", rand.Uint32())
+	job := generateJob(trigger, jobName, agentKey, reqUrl)
 	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
@@ -215,7 +215,7 @@ func dockerfileImageBuild(
 	var pods *corev1.PodList
 	err = wait.PollImmediate(100*time.Millisecond, 20*time.Second, func() (done bool, err error) {
 		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), meta_v1.ListOptions{
-			LabelSelector: fmt.Sprintf("job-name=%s", randomName),
+			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
 		})
 		if err != nil {
 			return false, err
