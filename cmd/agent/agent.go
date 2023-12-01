@@ -247,7 +247,12 @@ func serverCommunication(
 						var imageBuildRequest dx.ImageBuildRequest
 						_ = json.Unmarshal(requestString, &imageBuildRequest)
 
-						go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
+						if imageBuildRequest.Dockerfile != "" {
+							go dockerfileImageBuild(kubeEnv, gimletHost, agentKey, buildId, imageBuildRequest, messages)
+						} else {
+							go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
+						}
+
 					}
 				} else {
 					logrus.Info("event stream closed")

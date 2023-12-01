@@ -387,16 +387,20 @@ func ExtractImageStrategy(envConfig *dx.Manifest) string {
 	image := envConfig.Values["image"]
 	hasVariable := false
 	pointsToBuiltInRegistry := false
+	hasDockerfile := false
 
 	if image != nil {
 		imageMap := image.(map[string]interface{})
 
-		var repository, tag string
+		var repository, tag, dockerfile string
 		if val, ok := imageMap["repository"]; ok {
 			repository = val.(string)
 		}
 		if val, ok := imageMap["tag"]; ok {
 			tag = val.(string)
+		}
+		if val, ok := imageMap["dockerfile"]; ok {
+			dockerfile = val.(string)
 		}
 
 		if strings.Contains(repository, "{{") ||
@@ -406,12 +410,19 @@ func ExtractImageStrategy(envConfig *dx.Manifest) string {
 		if strings.Contains(repository, "127.0.0.1:32447") {
 			pointsToBuiltInRegistry = true
 		}
+		if dockerfile != "" {
+			hasDockerfile = true
+		}
 	}
 
 	strategy := "static"
 	if hasVariable {
 		if pointsToBuiltInRegistry {
-			strategy = "buildpacks"
+			if hasDockerfile {
+				strategy = "dockerfile"
+			} else {
+				strategy = "buildpacks"
+			}
 		} else {
 			strategy = "dynamic"
 		}
@@ -420,11 +431,11 @@ func ExtractImageStrategy(envConfig *dx.Manifest) string {
 	return strategy
 }
 
-func ExtractImageRepoAndTag(envConfig *dx.Manifest, vars map[string]string) (string, string) {
+func ExtractImageRepoTagAndDockerfile(envConfig *dx.Manifest, vars map[string]string) (string, string, string) {
 	envConfig.ResolveVars(vars)
 	image := envConfig.Values["image"]
 
-	var repository, tag string
+	var repository, tag, dockerfile string
 	if image != nil {
 		imageMap := image.(map[string]interface{})
 
@@ -434,7 +445,10 @@ func ExtractImageRepoAndTag(envConfig *dx.Manifest, vars map[string]string) (str
 		if val, ok := imageMap["tag"]; ok {
 			tag = val.(string)
 		}
+		if val, ok := imageMap["dockerfile"]; ok {
+			dockerfile = val.(string)
+		}
 	}
 
-	return repository, tag
+	return repository, tag, dockerfile
 }

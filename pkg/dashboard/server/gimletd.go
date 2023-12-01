@@ -245,7 +245,8 @@ func generateFakeArtifact(hash string, store *store.Store, repo *git.Repository,
 
 		if strategy == "static" ||
 			strategy == "static-site" ||
-			strategy == "buildpacks" {
+			strategy == "buildpacks" ||
+			strategy == "dockerfile" {
 			manifestsThatNeedFakeArtifact = append(manifestsThatNeedFakeArtifact, m)
 		}
 	}
