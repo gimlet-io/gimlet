@@ -225,11 +225,7 @@ func dockerfileImageBuild(
 			return false, nil
 		}
 
-		if pods.Items[0].Status.Phase == corev1.PodFailed {
-			return false, fmt.Errorf("pod failed")
-		}
-
-		if pods.Items[0].Status.Phase != corev1.PodRunning {
+		if pods.Items[0].Status.Phase == corev1.PodPending {
 			return false, nil
 		}
 		return true, nil
@@ -241,19 +237,8 @@ func dockerfileImageBuild(
 	}
 
 	pod := pods.Items[0]
-	done := streamLogs(kubeEnv, messages, pod.Name, pod.Spec.InitContainers[0].Name, trigger.TriggeredBy, buildId)
-	if !done {
-		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "notBuilt", "")
-		return
-	}
-
-	done = streamLogs(kubeEnv, messages, pod.Name, pod.Spec.Containers[0].Name, trigger.TriggeredBy, buildId)
-
-	if done {
-		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "success", "")
-	} else {
-		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "notBuilt", "")
-	}
+	streamLogs(kubeEnv, messages, pod.Name, pod.Spec.InitContainers[0].Name, trigger.TriggeredBy, buildId)
+	streamLogs(kubeEnv, messages, pod.Name, pod.Spec.Containers[0].Name, trigger.TriggeredBy, buildId)
 }
 
 func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.Job {
@@ -331,7 +316,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 	messages chan *streaming.WSMessage,
 	pod, container string,
 	userLogin, imageBuildId string,
-) bool {
+) {
 	count := int64(100)
 	logsReq := kubeEnv.Client.CoreV1().Pods("infrastructure").GetLogs(pod, &corev1.PodLogOptions{
 		Container: container,
@@ -343,7 +328,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 	if err != nil {
 		logrus.Errorf("could not stream pod logs: %v", err)
 		streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
-		return false
+		return
 	}
 	defer podLogs.Close()
 
@@ -354,30 +339,26 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 		sb.WriteString(string(line))
 		if err != nil {
 			if err == io.EOF {
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", "")
 				break
 			}
 
 			logrus.Errorf("cannot stream build logs: %s", err)
 			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", sb.String())
-			return false
+			break
 		}
 
-		// if first || sb.Len() > 300 {
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
-		sb.Reset()
-		// first = false
-		// }
-
-		if strings.Contains(sb.String(), "error") {
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", sb.String())
-			return false
+		if strings.Contains(sb.String(), "Error") {
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", sb.String())
+			break
 		}
 
-		if strings.Contains(sb.String(), "pushed") {
+		if strings.Contains(sb.String(), "Pushed") {
 			streamImageBuildEvent(messages, userLogin, imageBuildId, "success", sb.String())
 			break
 		}
-	}
 
-	return true
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+		sb.Reset()
+	}
 }
