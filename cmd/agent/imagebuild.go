@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -201,10 +202,10 @@ func dockerfileImageBuild(
 	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
 ) {
-	backgroundDeletion := meta_v1.DeletePropagationBackground
 	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
-	job := generateJob(trigger, agentKey, reqUrl)
-	_, err := kubeEnv.Client.BatchV1().Jobs("default").Create(context.TODO(), job, meta_v1.CreateOptions{})
+	jobName := fmt.Sprintf("kaniko-%d", rand.Uint32())
+	job := generateJob(trigger, jobName, agentKey, reqUrl)
+	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
 		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
@@ -213,8 +214,8 @@ func dockerfileImageBuild(
 
 	var pods *corev1.PodList
 	err = wait.PollImmediate(100*time.Millisecond, 20*time.Second, func() (done bool, err error) {
-		pods, err = kubeEnv.Client.CoreV1().Pods("default").List(context.TODO(), meta_v1.ListOptions{
-			LabelSelector: fmt.Sprintf("job-name=kaniko-%s", trigger.App),
+		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), meta_v1.ListOptions{
+			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
 		})
 		if err != nil {
 			return false, err
@@ -253,14 +254,10 @@ func dockerfileImageBuild(
 	} else {
 		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "notBuilt", "")
 	}
-
-	// TODO cleanup kaniko on errors
-	kubeEnv.Client.BatchV1().Jobs("default").Delete(context.TODO(), fmt.Sprintf("kaniko-%s", trigger.App), meta_v1.DeleteOptions{
-		PropagationPolicy: &backgroundDeletion,
-	})
 }
 
-func generateJob(trigger dx.ImageBuildRequest, agentKey, sourceUrl string) *batchv1.Job {
+func generateJob(trigger dx.ImageBuildRequest, name, agentKey, sourceUrl string) *batchv1.Job {
+	var ttlSecondsAfterFinished int32 = 60
 	var backOffLimit int32 = 0
 	return &batchv1.Job{
 		TypeMeta: meta_v1.TypeMeta{
@@ -268,9 +265,10 @@ func generateJob(trigger dx.ImageBuildRequest, agentKey, sourceUrl string) *batc
 			APIVersion: "batch/v1",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: fmt.Sprintf("kaniko-%s", trigger.App),
+			Name: name,
 		},
 		Spec: batchv1.JobSpec{
+			TTLSecondsAfterFinished: &ttlSecondsAfterFinished,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -335,7 +333,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 	userLogin, imageBuildId string,
 ) bool {
 	count := int64(100)
-	logsReq := kubeEnv.Client.CoreV1().Pods("default").GetLogs(pod, &corev1.PodLogOptions{
+	logsReq := kubeEnv.Client.CoreV1().Pods("infrastructure").GetLogs(pod, &corev1.PodLogOptions{
 		Container: container,
 		TailLines: &count,
 		Follow:    true,
