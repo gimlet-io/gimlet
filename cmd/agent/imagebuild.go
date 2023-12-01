@@ -198,13 +198,13 @@ func streamImageBuildEvent(messages chan *streaming.WSMessage, userLogin string,
 
 func dockerfileImageBuild(
 	kubeEnv *agent.KubeEnv,
-	gimletHost, agentKey, buildId string,
+	gimletHost, buildId string,
 	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
 ) {
 	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
 	jobName := fmt.Sprintf("kaniko-%d", rand.Uint32())
-	job := generateJob(trigger, jobName, agentKey, reqUrl)
+	job := generateJob(trigger, jobName, reqUrl)
 	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
@@ -256,7 +256,7 @@ func dockerfileImageBuild(
 	}
 }
 
-func generateJob(trigger dx.ImageBuildRequest, name, agentKey, sourceUrl string) *batchv1.Job {
+func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.Job {
 	var ttlSecondsAfterFinished int32 = 60
 	var backOffLimit int32 = 0
 	return &batchv1.Job{
@@ -280,7 +280,7 @@ func generateJob(trigger dx.ImageBuildRequest, name, agentKey, sourceUrl string)
 							},
 							Args: []string{
 								"-c",
-								fmt.Sprintf(`apk update; apk add curl; apk add tar && mkdir /source && curl -X GET -H "Authorization: BEARER %s" -H "Content-Type: application/json" %s -o /source/source.tar.gz && tar xvf source/source.tar.gz -C /workspace`, agentKey, sourceUrl),
+								fmt.Sprintf(`apk update; apk add curl; apk add tar && mkdir /source && curl -X GET -H "Content-Type: application/json" %s -o /source/source.tar.gz && tar xvf source/source.tar.gz -C /workspace`, sourceUrl),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
