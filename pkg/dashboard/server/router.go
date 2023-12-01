@@ -200,12 +200,12 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 		r.Post("/agent/events", events)
 		r.Post("/agent/fluxState", fluxState)
 		r.Post("/agent/deploymentDetails", deploymentDetails)
-		r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeAgentWs(agentWSHub, w, r)
 		})
 	})
+	r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)
 }
 
 func githubOAuthRoutes(config *config.Config, dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux) {
