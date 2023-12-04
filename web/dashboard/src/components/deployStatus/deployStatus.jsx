@@ -88,7 +88,7 @@ export function ImageBuild(build, logsEndRef) {
   let statusIcon = '⏳';
   let statusText = (
     <div className="w-4/5 font-mono text-xs">
-      {build.logLines.join()}
+      {build.logLines.join("")}
     </div>
   )
   let instructionsText = null;

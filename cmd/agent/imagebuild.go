@@ -213,7 +213,7 @@ func dockerfileImageBuild(
 	}
 
 	var pods *corev1.PodList
-	err = wait.PollImmediate(100*time.Millisecond, 20*time.Second, func() (done bool, err error) {
+	err = wait.PollImmediate(1*time.Second, 20*time.Second, func() (done bool, err error) {
 		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), meta_v1.ListOptions{
 			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
 		})
@@ -225,14 +225,20 @@ func dockerfileImageBuild(
 			return false, nil
 		}
 
+		for _, containerStatus := range pods.Items[0].Status.ContainerStatuses {
+			if containerStatus.State.Waiting != nil {
+				streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "running", fmt.Sprintf("%s: %s\n", pods.Items[0].Name, containerStatus.State.Waiting.Reason))
+			}
+		}
+
 		if pods.Items[0].Status.Phase == corev1.PodPending {
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		logrus.Errorf("poll: %s", err)
-		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", err.Error())
+		logrus.Errorf("cannot get pods: %s", err)
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
 		return
 	}
 
@@ -339,12 +345,11 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 		sb.WriteString(string(line))
 		if err != nil {
 			if err == io.EOF {
-				streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", "")
 				break
 			}
 
 			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", sb.String())
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
 			break
 		}
 
