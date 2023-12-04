@@ -31,7 +31,7 @@ var FetchRefSpec = []config.RefSpec{
 
 type RepoCache struct {
 	tokenManager customScm.NonImpersonatedTokenManager
-	repos        map[string]repoData
+	repos        map[string]*repoData
 	stopCh       chan struct{}
 	invalidateCh chan string
 
@@ -49,6 +49,7 @@ type RepoCache struct {
 type repoData struct {
 	repo        *git.Repository
 	withHistory bool
+	lock        sync.Mutex
 }
 
 func NewRepoCache(
@@ -61,7 +62,7 @@ func NewRepoCache(
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
 		tokenManager:  tokenManager,
-		repos:         map[string]repoData{},
+		repos:         map[string]*repoData{},
 		stopCh:        stopCh,
 		invalidateCh:  make(chan string),
 		config:        config,
@@ -92,7 +93,7 @@ func NewRepoCache(
 			continue
 		}
 
-		repoCache.repos[strings.ReplaceAll(fileInfo.Name(), "%", "/")] = repoData{repo, false}
+		repoCache.repos[strings.ReplaceAll(fileInfo.Name(), "%", "/")] = &repoData{repo: repo, withHistory: false}
 	}
 
 	return repoCache, nil
@@ -207,40 +208,41 @@ func (r *RepoCache) cleanRepo(repoName string) {
 
 func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository)) error {
 	repo, err := r.instanceForRead(repoName, false)
-	r.lock.Lock()
-	fn(repo)
-	r.lock.Unlock()
+	repo.lock.Lock()
+	fn(repo.repo)
+	repo.lock.Unlock()
 
 	return err
 }
 
 func (r *RepoCache) PerformActionWithHistory(repoName string, fn func(repo *git.Repository)) error {
 	repo, err := r.instanceForRead(repoName, true)
-	r.lock.Lock()
-	fn(repo)
-	r.lock.Unlock()
+	repo.lock.Lock()
+	fn(repo.repo)
+	repo.lock.Unlock()
 
 	return err
 }
 
-func (r *RepoCache) instanceForRead(repoName string, withHistory bool) (instance *git.Repository, err error) {
+func (r *RepoCache) instanceForRead(repoName string, withHistory bool) (repo *repoData, err error) {
 	r.lock.Lock()
-	if repoData, ok := r.repos[repoName]; ok {
-		if withHistory && !repoData.withHistory {
+	var repoData repoData
+	if existingRepoData, ok := r.repos[repoName]; ok {
+		if withHistory && !existingRepoData.withHistory {
 			repoData, err = r.clone(repoName, withHistory)
-			instance = repoData.repo
+			repo = &repoData
 			go r.registerWebhook(repoName)
 		} else {
-			instance = repoData.repo
+			repo = existingRepoData
 		}
 	} else {
 		repoData, err = r.clone(repoName, withHistory)
-		instance = repoData.repo
+		repo = &repoData
 		go r.registerWebhook(repoName)
 	}
 	r.lock.Unlock()
 
-	return instance, err
+	return repo, err
 }
 
 func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, error) {
@@ -361,8 +363,8 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		return repoData{}, errors.WithMessage(err, "couldn't fetch")
 	}
 
-	r.repos[repoName] = repoData{repo, withHistory}
-	return r.repos[repoName], nil
+	r.repos[repoName] = &repoData{repo: repo, withHistory: withHistory}
+	return repoData{repo: repo, withHistory: withHistory}, nil
 }
 
 func (r *RepoCache) registerWebhook(repoName string) {
