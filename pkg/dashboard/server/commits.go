@@ -31,15 +31,11 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	repo, err := gitRepoCache.InstanceForRead(repoName)
-	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
+	var err error
 	if branch == "" {
-		branch, err = helper.HeadBranch(repo)
+		gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+			branch, err = helper.HeadBranch(repo)
+		})
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			logrus.Errorf("cannot get head branch: %s", err)
@@ -47,14 +43,20 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	hash := helper.BranchHeadHash(repo, branch)
+	var hash plumbing.Hash
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		hash = helper.BranchHeadHash(repo, branch)
+	})
 
 	if hashString != "head" {
 		hash = plumbing.NewHash(hashString)
 	}
 
-	commitWalker, err := repo.Log(&git.LogOptions{
-		From: hash,
+	var commitWalker object.CommitIter
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		commitWalker, err = repo.Log(&git.LogOptions{
+			From: hash,
+		})
 	})
 	if err != nil {
 		logrus.Errorf("cannot walk commits: %s", err)
@@ -98,7 +100,9 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commits, err = decorateCommitsWithGimletArtifacts(commits, dao, repo, owner, repoName)
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		commits, err = decorateCommitsWithGimletArtifacts(commits, dao, repo, owner, repoName)
+	})
 	if err != nil {
 		logrus.Warnf("cannot get deplyotargets: %s", err)
 	}

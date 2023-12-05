@@ -197,6 +197,13 @@ func execCommand(rootPath string, cmdName string, args ...string) error {
 
 func RemoteFolderOnBranchWithoutCheckout(repo *git.Repository, branch string, path string) (map[string]string, error) {
 	files := map[string]string{}
+	var err error
+	if branch == "" {
+		branch, err = HeadBranch(repo)
+		if err != nil {
+			return files, fmt.Errorf("cannot get head branch: %s", err)
+		}
+	}
 
 	head := BranchHeadHash(repo, branch)
 	headCommit, err := repo.CommitObject(head)

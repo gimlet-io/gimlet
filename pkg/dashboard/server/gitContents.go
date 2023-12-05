@@ -26,6 +26,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -38,15 +39,11 @@ func branches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	repo, err := gitRepoCache.InstanceForRead(repoName)
-	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
+	var refIter storer.ReferenceIter
 	branches := []string{}
-	refIter, _ := repo.References()
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		refIter, _ = repo.References()
+	})
 	refIter.ForEach(func(r *plumbing.Reference) error {
 		if r.Name().IsRemote() {
 			branch := r.Name().Short()
@@ -68,44 +65,43 @@ func branches(w http.ResponseWriter, r *http.Request) {
 
 func getMetas(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
-	repoName := chi.URLParam(r, "name")
+	repo := chi.URLParam(r, "name")
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	repoName := fmt.Sprintf("%s/%s", owner, repo)
 
-	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
-	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
+	var hasGithubActionsConfig bool
+	var githubActionsShipper *string
+	var err error
 	githubActionsConfigPath := filepath.Join(".github", "workflows")
 	githubActionsShipperCommand := "gimlet-io/gimlet-artifact-shipper-action"
-	hasGithubActionsConfig, githubActionsShipper, err := hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		hasGithubActionsConfig, githubActionsShipper, err = hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
+	})
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
+	var hasCircleCiConfig bool
+	var circleCiShipper *string
 	circleCiConfigPath := ".circleci"
 	circleCiShipperCommand := "gimlet/gimlet-artifact-create"
-	hasCircleCiConfig, circleCiShipper, err := hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		hasCircleCiConfig, circleCiShipper, err = hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
+	})
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	branch, err := helper.HeadBranch(repo)
-	if err != nil {
-		logrus.Errorf("cannot get head branch: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	var files map[string]string
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		files, err = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
 			logrus.Errorf("cannot list files in .gimlet/: %s", err)
@@ -319,26 +315,17 @@ type gitRepoMetas struct {
 // envConfig fetches all environment configs from source control for a repo
 func envConfigs(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
-	repoName := chi.URLParam(r, "name")
+	repo := chi.URLParam(r, "name")
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	repoName := fmt.Sprintf("%s/%s", owner, repo)
 
-	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
-	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	branch, err := helper.HeadBranch(repo)
-	if err != nil {
-		logrus.Errorf("cannot get head branch: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	var files map[string]string
+	var err error
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		files, err = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+	})
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
 			w.WriteHeader(http.StatusOK)

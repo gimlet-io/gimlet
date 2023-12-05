@@ -9,6 +9,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -61,17 +62,16 @@ func processRepo(
 	scmUrl string,
 ) error {
 	t0 := time.Now()
-	repo, err := repoCache.InstanceForRead(processEnv.AppsRepo)
-	if err != nil {
-		return err
-	}
 	perf.WithLabelValues("releaseState_clone").Observe(time.Since(t0).Seconds())
 
 	var envs []string
+	var err error
 	if processEnv.RepoPerEnv {
 		envs = []string{processEnv.Name}
 	} else {
-		envs, err = gitops.Envs(repo)
+		repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) {
+			envs, err = gitops.Envs(repo)
+		})
 		if err != nil {
 			return fmt.Errorf("cannot get envs: %s", err)
 		}
@@ -80,7 +80,11 @@ func processRepo(
 	releases.Reset()
 	for _, env := range envs {
 		t1 := time.Now()
-		appReleases, err := gitops.Status(repo, "", env, processEnv.RepoPerEnv, perf)
+		var appReleases map[string]*dx.Release
+		var err error
+		repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) {
+			appReleases, err = gitops.Status(repo, "", env, processEnv.RepoPerEnv, perf)
+		})
 		if err != nil {
 			logrus.Errorf("cannot get status: %s", err)
 			time.Sleep(30 * time.Second)
@@ -95,7 +99,11 @@ func processRepo(
 
 		for app, release := range appReleases {
 			t2 := time.Now()
-			commit, err := lastCommitThatTouchedAFile(repo, filepath.Join(envPath, app))
+			var commit *object.Commit
+			var err error
+			repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) {
+				commit, err = lastCommitThatTouchedAFile(repo, filepath.Join(envPath, app))
+			})
 			if err != nil {
 				logrus.Errorf("cannot find last commit: %s", err)
 				time.Sleep(30 * time.Second)
