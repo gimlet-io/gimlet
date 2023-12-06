@@ -106,6 +106,7 @@ type Config struct {
 	GitopsUpdaterFeatureFlagString string `envconfig:"FEATURE_GITOPS_UPDATER"`
 	StackUpdaterFeatureFlagString  string `envconfig:"FEATURE_STACK_UPDATER"`
 	BuiltinEnvFeatureFlagString    string `envconfig:"FEATURE_BUILT_IN_ENV"`
+	WeeklySummaryFeatureFlag       bool   `envconfig:"FEATURE_WEEKLY_SUMMARY"`
 
 	AlertEvaluationFrequencySeconds int `envconfig:"ALERT_EVALUATION_FREQUENCY_SECONDS"`
 

@@ -19,6 +19,14 @@ func (db *Store) Alerts() ([]*model.Alert, error) {
 	return data, err
 }
 
+func (db *Store) AlertsWithinAWeek() ([]*model.Alert, error) {
+	query := sql.Stmt(db.driver, sql.SelectAlerts)
+	data := []*model.Alert{}
+	oneWeekAgo := time.Now().Add(-7 * time.Hour * 24).Unix()
+	err := meddler.QueryAll(db, &data, query, oneWeekAgo)
+	return data, err
+}
+
 func (db *Store) AlertsByState(status string) ([]*model.Alert, error) {
 	stmt := sql.Stmt(db.driver, sql.SelectAlertsByState)
 	data := []*model.Alert{}
