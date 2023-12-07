@@ -177,13 +177,10 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, err := gitopsRepoCache.InstanceForReadWithHistory(repoName)
-	if err != nil {
-		logrus.Errorf("cannot get repocache: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	appReleases, err := gitops.Status(repo, app, env, repoPerEnv, perf)
+	var appReleases map[string]*dx.Release
+	gitopsRepoCache.PerformActionWithHistory(repoName, func(repo *git.Repository) {
+		appReleases, err = gitops.Status(repo, app, env, repoPerEnv, perf)
+	})
 	if err != nil {
 		logrus.Errorf("cannot get status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

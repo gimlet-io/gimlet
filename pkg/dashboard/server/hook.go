@@ -17,6 +17,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
+	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -142,12 +143,11 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	r, err := repoCache.InstanceForRead(repo)
-	if err != nil {
-		logrus.Errorf("Could get repo, %v", err)
-		return
-	}
-	decoratedCommits, err := decorateCommitsWithGimletArtifacts([]*Commit{{SHA: sha}}, dao, r, owner, name)
+	var decoratedCommits []*Commit
+	repoCache.PerformAction(repo, func(repo *git.Repository) {
+		decoratedCommits, err = decorateCommitsWithGimletArtifacts([]*Commit{{SHA: sha}}, dao, repo, owner, name)
+
+	})
 	if err != nil {
 		logrus.Warnf("cannot get deplyotargets: %s", err)
 	}

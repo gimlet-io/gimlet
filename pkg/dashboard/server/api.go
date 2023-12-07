@@ -97,35 +97,48 @@ func envs(w http.ResponseWriter, r *http.Request) {
 
 	envs := []*api.GitopsEnv{}
 	for _, env := range envsFromDB {
-		repo, err := gitRepoCache.InstanceForRead(env.InfraRepo)
-		if err != nil {
-			if strings.Contains(err.Error(), "repository not found") ||
-				strings.Contains(err.Error(), "repo name is mandatory") {
-				envs = append(envs, &api.GitopsEnv{
-					Name: env.Name,
-				})
-				continue
-			} else {
-				logrus.Errorf("cannot get repo: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-		}
-
 		var stackConfig *dx.StackConfig
 		if env.RepoPerEnv {
-			stackConfig, err = stackYaml(repo, "stack.yaml")
-			if err != nil && !strings.Contains(err.Error(), "file not found") {
-				logrus.Errorf("cannot get stack yaml from repo: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
+			gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
+				stackConfig, err = stackYaml(repo, "stack.yaml")
+			})
+			if err != nil {
+				if strings.Contains(err.Error(), "repository not found") ||
+					strings.Contains(err.Error(), "repo name is mandatory") {
+					envs = append(envs, &api.GitopsEnv{
+						Name: env.Name,
+					})
+					continue
+				} else if !strings.Contains(err.Error(), "file not found") {
+					logrus.Errorf("cannot get stack yaml from repo: %s", err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return
+				} else {
+					logrus.Errorf("cannot get repo: %s", err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return
+				}
 			}
 		} else {
-			stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
-			if err != nil && !strings.Contains(err.Error(), "file not found") {
-				logrus.Errorf("cannot get stack yaml from %s repo for env %s: %s", env.InfraRepo, env.Name, err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
+			gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
+				stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
+			})
+			if err != nil {
+				if strings.Contains(err.Error(), "repository not found") ||
+					strings.Contains(err.Error(), "repo name is mandatory") {
+					envs = append(envs, &api.GitopsEnv{
+						Name: env.Name,
+					})
+					continue
+				} else if !strings.Contains(err.Error(), "file not found") {
+					logrus.Errorf("cannot get stack yaml from %s repo for env %s: %s", env.InfraRepo, env.Name, err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return
+				} else {
+					logrus.Errorf("cannot get repo: %s", err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 
@@ -362,14 +375,11 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	installationToken, _, _ := tokenManager.Token()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	repo, err := gitRepoCache.InstanceForRead(fmt.Sprintf("%s/%s", owner, repoName))
-	if err != nil {
-		logrus.Errorf("cannot get repo: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	appChart, err := getChartForApp(repo, env, configName)
+	var appChart *dx.Chart
+	var err error
+	gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName), func(repo *git.Repository) {
+		appChart, err = getChartForApp(repo, env, configName)
+	})
 	if err != nil {
 		logrus.Errorf("cannot get manifest chart: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
