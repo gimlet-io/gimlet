@@ -208,11 +208,15 @@ func (r *RepoCache) cleanRepo(repoName string) {
 
 func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository)) error {
 	repo, err := r.instanceForRead(repoName, false)
+	if err != nil {
+		return err
+	}
+
 	repo.lock.Lock()
 	fn(repo.repo)
 	repo.lock.Unlock()
 
-	return err
+	return nil
 }
 
 func (r *RepoCache) PerformActionWithHistory(repoName string, fn func(repo *git.Repository)) error {
