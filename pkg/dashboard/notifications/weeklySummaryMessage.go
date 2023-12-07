@@ -13,7 +13,7 @@ type weeklySummaryOpts struct {
 	mostTriggeredBy string
 	alertSeconds    int
 	alertChange     float64
-	lagSeconds      int64
+	lagSeconds      map[string]int64
 	repos           []string
 }
 
@@ -93,25 +93,13 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 			{
 				Type: divider,
 			},
-			{
-				Type: section,
-				Text: &Text{
-					Type: markdown,
-					Text: ":hourglass_flowing_sand: *MEAN LAG* :hourglass_flowing_sand:",
-				},
-			},
-			{
-				Type: section,
-				Text: &Text{
-					Type: markdown,
-					Text: fmt.Sprintf("Production is lagging behind staging with *%d* seconds.", ws.opts.lagSeconds),
-				},
-			},
-			{
-				Type: divider,
-			},
 		},
 	}
+
+	msg.Blocks = append(msg.Blocks, lag(ws.opts.lagSeconds)...)
+	msg.Blocks = append(msg.Blocks, Block{
+		Type: divider,
+	})
 
 	msg.Blocks = append(msg.Blocks, repos(ws.opts.repos)...)
 	msg.Blocks = append(msg.Blocks, Block{
@@ -131,6 +119,39 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 	return msg, nil
 }
 
+func lag(lagSeconds map[string]int64) (b []Block) {
+	b = append(b, Block{
+		Type: section,
+		Text: &Text{
+			Type: markdown,
+			Text: ":hourglass_flowing_sand: *MEAN LAG* :hourglass_flowing_sand:",
+		},
+	})
+
+	if len(lagSeconds) == 0 {
+		b = append(b, Block{
+			Type: section,
+			Text: &Text{
+				Type: markdown,
+				Text: "No lag. TODO",
+			},
+		})
+
+		return
+	}
+
+	for app, seconds := range lagSeconds {
+		b = append(b, Block{
+			Type: section,
+			Text: &Text{
+				Type: markdown,
+				Text: fmt.Sprintf("Production is lagging behind staging with *%d* seconds in %s.", seconds, app),
+			},
+		})
+	}
+	return
+}
+
 func repos(repos []string) (b []Block) {
 	b = append(b, Block{
 		Type: section,
@@ -145,7 +166,7 @@ func repos(repos []string) (b []Block) {
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: "There are no repos where staging if behind production.",
+				Text: "There are no repos where staging is behind production.",
 			},
 		})
 	}
@@ -160,7 +181,7 @@ func repos(repos []string) (b []Block) {
 		})
 	}
 
-	return b
+	return
 }
 
 func WeeklySummary(
@@ -168,7 +189,7 @@ func WeeklySummary(
 	mostTriggeredBy string,
 	alertSeconds int,
 	alertChange float64,
-	lagSeconds int64,
+	lagSeconds map[string]int64,
 	repos []string,
 ) Message {
 	return &weeklySummaryMessage{

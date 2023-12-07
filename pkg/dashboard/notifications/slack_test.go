@@ -21,8 +21,11 @@ func Test_Slack(t *testing.T) {
 			mostTriggeredBy: "policy",
 			alertSeconds:    370,
 			alertChange:     -17,
-			lagSeconds:      4300,
-			repos:           []string{"gimlet/getting-started-app", "gimlet/onechart"},
+			lagSeconds: map[string]int64{
+				"getting-started-app": 2600,
+				"remix-test-app ":     110,
+			},
+			repos: []string{"gimlet-io/expressjs-test-app", "gimlet-io/reactjs-test-app"},
 		},
 	}
 	manager.Broadcast(wsMessage)

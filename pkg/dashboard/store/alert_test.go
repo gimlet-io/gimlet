@@ -63,3 +63,34 @@ func Test_GetAlerts(t *testing.T) {
 	assert.Equal(t, 1, len(alerts))
 	assert.Equal(t, "pod-new", alerts[0].ObjectName)
 }
+
+func Test_AlertsInterval(t *testing.T) {
+	s := NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		s.Close()
+	}()
+
+	s.CreateAlert(&model.Alert{
+		ObjectName: "pod-1",
+		FiredAt:    time.Now().Add(-4 * time.Hour * 24).Unix(),
+	})
+	s.CreateAlert(&model.Alert{
+		ObjectName: "pod-2",
+		FiredAt:    time.Now().Add(-11 * time.Hour * 24).Unix(),
+	})
+	s.CreateAlert(&model.Alert{
+		ObjectName: "pod-3",
+		FiredAt:    time.Now().Add(-8 * time.Hour * 24).Unix(),
+	})
+	s.CreateAlert(&model.Alert{
+		ObjectName: "pod-4",
+		FiredAt:    time.Now().Add(-15 * time.Hour * 24).Unix(),
+	})
+
+	alerts, _ := s.AlertsInWeek()
+	assert.Equal(t, 1, len(alerts))
+
+	alerts, err := s.AlertsBetweenPreviousTwoWeeks()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(alerts))
+}

@@ -33,6 +33,7 @@ const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
 const DeleteKubeEventByName = "delete-kube-event-by-name"
 const SelectAlerts = "select-alerts"
+const SelectAlertsInterval = "select-alerts-interval"
 const SelectAlertsByState = "select-alerts-by-state"
 const SelectAlertsByName = "select-alerts-by-name"
 const SelectAlertsByDeploymentName = "select-alerts-by-deployment-name"
@@ -124,6 +125,11 @@ DELETE FROM kube_events where name = $1;
 SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
 WHERE fired_at > $1 OR pending_at > $1;
+`,
+		SelectAlertsInterval: `
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
+FROM alerts
+WHERE fired_at < $1 AND fired_at > $2;
 `,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, im_channel_id, deployment_url, pending_at, fired_at, resolved_at
@@ -231,6 +237,11 @@ DELETE FROM kube_events where name = $1;
 SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
 FROM alerts
 WHERE fired_at > $1 OR pending_at > $1;
+`,
+		SelectAlertsInterval: `
+SELECT id, type, name, deployment_name, status, pending_at, fired_at, resolved_at
+FROM alerts
+WHERE fired_at < $1 AND fired_at > $2;
 `,
 		SelectAlertsByState: `
 SELECT id, type, name, deployment_name, status, im_channel_id, deployment_url, pending_at, fired_at, resolved_at
