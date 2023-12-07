@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -23,6 +24,11 @@ type weeklySummaryMessage struct {
 
 func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 	t := time.Now()
+
+	change := "more"
+	if math.Signbit(ws.opts.alertChange) {
+		change = "less"
+	}
 
 	msg := &slackMessage{
 		Blocks: []Block{
@@ -87,7 +93,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 				Type: section,
 				Text: &Text{
 					Type: markdown,
-					Text: fmt.Sprintf("This is *%.2f%%* more/less than the previous week.", ws.opts.alertChange),
+					Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", math.Abs(ws.opts.alertChange), change),
 				},
 			},
 			{
