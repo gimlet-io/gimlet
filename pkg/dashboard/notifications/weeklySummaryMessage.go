@@ -9,13 +9,13 @@ import (
 )
 
 type weeklySummaryOpts struct {
-	deploys         int
-	rollbacks       int
-	mostTriggeredBy string
-	alertSeconds    int
-	alertChange     float64
-	lagSeconds      map[string]int64
-	repos           []string
+	deploys                int
+	rollbacks              int
+	mostTriggeredBy        string
+	alertSeconds           int
+	alertsPercentageChange float64
+	serviceLag             map[string]int64
+	repos                  []string
 }
 
 type weeklySummaryMessage struct {
@@ -26,7 +26,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 	t := time.Now()
 
 	change := "more"
-	if math.Signbit(ws.opts.alertChange) {
+	if math.Signbit(ws.opts.alertsPercentageChange) {
 		change = "less"
 	}
 
@@ -93,7 +93,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 				Type: section,
 				Text: &Text{
 					Type: markdown,
-					Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", math.Abs(ws.opts.alertChange), change),
+					Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", math.Abs(ws.opts.alertsPercentageChange), change),
 				},
 			},
 			{
@@ -102,7 +102,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 		},
 	}
 
-	msg.Blocks = append(msg.Blocks, lag(ws.opts.lagSeconds)...)
+	msg.Blocks = append(msg.Blocks, lag(ws.opts.serviceLag)...)
 	msg.Blocks = append(msg.Blocks, Block{
 		Type: divider,
 	})
@@ -139,7 +139,7 @@ func lag(lagSeconds map[string]int64) (b []Block) {
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: "No lag. TODO",
+				Text: "There are no lag between services.",
 			},
 		})
 
@@ -194,19 +194,19 @@ func WeeklySummary(
 	deploys, rollbacks int,
 	mostTriggeredBy string,
 	alertSeconds int,
-	alertChange float64,
-	lagSeconds map[string]int64,
+	alertsPercentageChange float64,
+	serviceLag map[string]int64,
 	repos []string,
 ) Message {
 	return &weeklySummaryMessage{
 		opts: weeklySummaryOpts{
-			deploys:         deploys,
-			rollbacks:       rollbacks,
-			mostTriggeredBy: mostTriggeredBy,
-			alertSeconds:    alertSeconds,
-			alertChange:     alertChange,
-			lagSeconds:      lagSeconds,
-			repos:           repos,
+			deploys:                deploys,
+			rollbacks:              rollbacks,
+			mostTriggeredBy:        mostTriggeredBy,
+			alertSeconds:           alertSeconds,
+			alertsPercentageChange: alertsPercentageChange,
+			serviceLag:             serviceLag,
+			repos:                  repos,
 		},
 	}
 }

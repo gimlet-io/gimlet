@@ -16,12 +16,12 @@ func Test_Slack(t *testing.T) {
 	go manager.Run()
 	wsMessage := &weeklySummaryMessage{
 		opts: weeklySummaryOpts{
-			deploys:         45,
-			rollbacks:       8,
-			mostTriggeredBy: "policy",
-			alertSeconds:    370,
-			alertChange:     -17,
-			lagSeconds: map[string]int64{
+			deploys:                45,
+			rollbacks:              8,
+			mostTriggeredBy:        "policy",
+			alertSeconds:           370,
+			alertsPercentageChange: -17,
+			serviceLag: map[string]int64{
 				"getting-started-app": 2600,
 				"remix-test-app ":     110,
 			},

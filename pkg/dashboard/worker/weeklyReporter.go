@@ -10,6 +10,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
@@ -30,6 +31,7 @@ type weeklyReporter struct {
 	notificationsManager *notifications.ManagerImpl
 	dynamicConfig        *dynamicconfig.DynamicConfig
 	tokenManager         customScm.NonImpersonatedTokenManager
+	agentHub             *streaming.AgentHub
 }
 
 func NewWeeklyReporter(
@@ -38,6 +40,7 @@ func NewWeeklyReporter(
 	notificationsManager *notifications.ManagerImpl,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 	tokenManager customScm.NonImpersonatedTokenManager,
+	agentHub *streaming.AgentHub,
 ) weeklyReporter {
 	return weeklyReporter{
 		store:                store,
@@ -45,6 +48,7 @@ func NewWeeklyReporter(
 		notificationsManager: notificationsManager,
 		dynamicConfig:        dynamicConfig,
 		tokenManager:         tokenManager,
+		agentHub:             agentHub,
 	}
 }
 
@@ -54,12 +58,14 @@ func (w *weeklyReporter) Run() {
 		yearAndWeek := fmt.Sprintf("%d-%d", year, week)
 		_, err := w.store.KeyValue(yearAndWeek)
 		if err == sql.ErrNoRows {
-			deploys, rollbacks, mostTriggeredBy := w.deployments()
-			seconds, change := w.alerts()
-			lagSeconds := w.lag()
-			repos := w.stagingBehindProdRepos()
-			msg := notifications.WeeklySummary(deploys, rollbacks, mostTriggeredBy, seconds, change, lagSeconds, repos)
+			deploys, rollbacks, mostTriggeredBy := w.deploymentActivity()
+			alertSeconds, alertsPercentageChange := w.alertMetrics()
+			serviceLag := w.serviceLag()
+			repos := w.detectStagingBehindProdRepos()
+
+			msg := notifications.WeeklySummary(deploys, rollbacks, mostTriggeredBy, alertSeconds, alertsPercentageChange, serviceLag, repos)
 			w.notificationsManager.Broadcast(msg)
+
 			w.store.SaveKeyValue(&model.KeyValue{Key: yearAndWeek})
 			logrus.Info("newsletter notification sent")
 		} else if err != nil {
@@ -70,7 +76,7 @@ func (w *weeklyReporter) Run() {
 	}
 }
 
-func (w *weeklyReporter) deployments() (deploys int, rollbacks int, overallMostTriggeredBy string) {
+func (w *weeklyReporter) deploymentActivity() (deploys int, rollbacks int, overallMostTriggeredBy string) {
 	envs, _ := w.store.GetEnvironments()
 	oneWeekAgo := time.Now().Add(-7 * time.Hour * 24)
 
@@ -108,7 +114,7 @@ func (w *weeklyReporter) deployments() (deploys int, rollbacks int, overallMostT
 	return deploys, rollbacks, overallMostTriggeredBy
 }
 
-func (w *weeklyReporter) alerts() (alertSeconds int, change float64) {
+func (w *weeklyReporter) alertMetrics() (alertSeconds int, change float64) {
 	alerts, err := w.store.AlertsInWeek()
 	if err != nil {
 		logrus.Errorf("cannot get alerts: %s", err)
@@ -129,32 +135,35 @@ func (w *weeklyReporter) alerts() (alertSeconds int, change float64) {
 	return alertSeconds, change
 }
 
-func (w *weeklyReporter) lag() (lagSeconds map[string]int64) {
-	apps := []string{"getting-started-app"}
+func (w *weeklyReporter) serviceLag() map[string]int64 {
+	serviceLag := map[string]int64{}
 
-	for _, app := range apps {
-		prod, err := w.latestRelease(app, "production", "")
-		if err != nil {
-			logrus.Errorf("cannot get latest release: %s", err)
-			continue
+	for _, a := range w.agentHub.Agents {
+		for _, stack := range a.Stacks {
+			prod, err := w.latestRelease(stack.Service.Name, "production", "")
+			if err != nil {
+				logrus.Errorf("cannot get latest release: %s", err)
+				continue
+			}
+
+			staging, err := w.latestRelease(stack.Service.Name, "staging", "")
+			if err != nil {
+				logrus.Errorf("cannot get latest release: %s", err)
+				continue
+			}
+
+			if prod == nil || staging == nil {
+				continue
+			}
+
+			serviceLag[stack.Service.Name] = staging.Created - prod.Created
 		}
-
-		staging, err := w.latestRelease(app, "staging", "")
-		if err != nil {
-			logrus.Errorf("cannot get latest release: %s", err)
-			continue
-		}
-
-		if prod == nil || staging == nil {
-			continue
-		}
-
-		lagSeconds[app] = staging.Created - prod.Created
 	}
-	return
+
+	return serviceLag
 }
 
-func (w *weeklyReporter) stagingBehindProdRepos() (filtered []string) {
+func (w *weeklyReporter) detectStagingBehindProdRepos() (filtered []string) {
 	token, _, _ := w.tokenManager.Token()
 	gitSvc := customScm.NewGitService(w.dynamicConfig)
 	repos, err := gitSvc.OrgRepos(token)
