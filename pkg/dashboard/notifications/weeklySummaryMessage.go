@@ -156,7 +156,7 @@ func lag(lagSeconds map[string]float64) (b []Block) {
 		}
 
 		services := "_Staging_ is lagging behind _production_"
-		if math.Signbit(float64(seconds)) {
+		if math.Signbit(seconds) {
 			services = "_Production_ is lagging behind _staging_"
 		}
 
@@ -164,7 +164,7 @@ func lag(lagSeconds map[string]float64) (b []Block) {
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: fmt.Sprintf("%s with *%v* seconds on app *%s*.", services, seconds, app),
+				Text: fmt.Sprintf("%s with *%v* seconds on *%s* app.", services, math.Abs(seconds), app),
 			},
 		})
 	}
