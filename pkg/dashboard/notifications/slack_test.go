@@ -1,3 +1,5 @@
+//go:build slack
+
 package notifications
 
 import (
@@ -21,9 +23,9 @@ func Test_Slack(t *testing.T) {
 			mostTriggeredBy:        "policy",
 			alertSeconds:           370,
 			alertsPercentageChange: -17,
-			serviceLag: map[string]int64{
+			serviceLag: map[string]float64{
 				"getting-started-app": 2600,
-				"remix-test-app ":     110,
+				"remix-test-app ":     -110,
 			},
 			repos: []string{"gimlet-io/expressjs-test-app", "gimlet-io/reactjs-test-app"},
 		},
