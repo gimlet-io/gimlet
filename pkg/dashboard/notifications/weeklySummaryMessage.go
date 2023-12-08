@@ -14,7 +14,7 @@ type weeklySummaryOpts struct {
 	mostTriggeredBy        string
 	alertSeconds           int
 	alertsPercentageChange float64
-	serviceLag             map[string]int64
+	serviceLag             map[string]float64
 	repos                  []string
 }
 
@@ -24,11 +24,6 @@ type weeklySummaryMessage struct {
 
 func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 	t := time.Now()
-
-	change := "more"
-	if math.Signbit(ws.opts.alertsPercentageChange) {
-		change = "less"
-	}
 
 	msg := &slackMessage{
 		Blocks: []Block{
@@ -89,18 +84,27 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 					Text: fmt.Sprintf("There were *%d* seconds of alerts total.", ws.opts.alertSeconds),
 				},
 			},
-			{
-				Type: section,
-				Text: &Text{
-					Type: markdown,
-					Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", math.Abs(ws.opts.alertsPercentageChange), change),
-				},
-			},
-			{
-				Type: divider,
-			},
 		},
 	}
+
+	if !math.IsNaN(ws.opts.alertsPercentageChange) && !math.IsInf(ws.opts.alertsPercentageChange, 1) {
+		change := "more"
+		if math.Signbit(ws.opts.alertsPercentageChange) {
+			change = "less"
+		}
+
+		msg.Blocks = append(msg.Blocks, Block{
+			Type: section,
+			Text: &Text{
+				Type: markdown,
+				Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", math.Abs(ws.opts.alertsPercentageChange), change),
+			},
+		})
+	}
+
+	msg.Blocks = append(msg.Blocks, Block{
+		Type: divider,
+	})
 
 	msg.Blocks = append(msg.Blocks, lag(ws.opts.serviceLag)...)
 	msg.Blocks = append(msg.Blocks, Block{
@@ -125,7 +129,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 	return msg, nil
 }
 
-func lag(lagSeconds map[string]int64) (b []Block) {
+func lag(lagSeconds map[string]float64) (b []Block) {
 	b = append(b, Block{
 		Type: section,
 		Text: &Text{
@@ -139,7 +143,7 @@ func lag(lagSeconds map[string]int64) (b []Block) {
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: "There are no lag between services.",
+				Text: "No mean lag between staging and production.",
 			},
 		})
 
@@ -147,11 +151,20 @@ func lag(lagSeconds map[string]int64) (b []Block) {
 	}
 
 	for app, seconds := range lagSeconds {
+		if seconds == 0 {
+			continue
+		}
+
+		services := "_Staging_ is lagging behind _production_"
+		if math.Signbit(float64(seconds)) {
+			services = "_Production_ is lagging behind _staging_"
+		}
+
 		b = append(b, Block{
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: fmt.Sprintf("Production is lagging behind staging with *%d* seconds in %s.", seconds, app),
+				Text: fmt.Sprintf("%s with *%v* seconds on app *%s*.", services, seconds, app),
 			},
 		})
 	}
@@ -195,7 +208,7 @@ func WeeklySummary(
 	mostTriggeredBy string,
 	alertSeconds int,
 	alertsPercentageChange float64,
-	serviceLag map[string]int64,
+	serviceLag map[string]float64,
 	repos []string,
 ) Message {
 	return &weeklySummaryMessage{

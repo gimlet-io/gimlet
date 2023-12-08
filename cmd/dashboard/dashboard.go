@@ -146,7 +146,7 @@ func main() {
 	log.Info("Repo cache initialized")
 
 	if config.WeeklySummaryFeatureFlag {
-		weeklyReporter := worker.NewWeeklyReporter(store, repoCache, notificationsManager, dynamicConfig, tokenManager, agentHub)
+		weeklyReporter := worker.NewWeeklyReporter(store, repoCache, notificationsManager)
 		go weeklyReporter.Run()
 	}
 

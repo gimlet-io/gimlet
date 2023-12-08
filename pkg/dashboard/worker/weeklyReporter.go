@@ -6,14 +6,11 @@ import (
 	"math"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -29,26 +26,17 @@ type weeklyReporter struct {
 	store                *store.Store
 	repoCache            *nativeGit.RepoCache
 	notificationsManager *notifications.ManagerImpl
-	dynamicConfig        *dynamicconfig.DynamicConfig
-	tokenManager         customScm.NonImpersonatedTokenManager
-	agentHub             *streaming.AgentHub
 }
 
 func NewWeeklyReporter(
 	store *store.Store,
 	repoCache *nativeGit.RepoCache,
 	notificationsManager *notifications.ManagerImpl,
-	dynamicConfig *dynamicconfig.DynamicConfig,
-	tokenManager customScm.NonImpersonatedTokenManager,
-	agentHub *streaming.AgentHub,
 ) weeklyReporter {
 	return weeklyReporter{
 		store:                store,
 		repoCache:            repoCache,
 		notificationsManager: notificationsManager,
-		dynamicConfig:        dynamicConfig,
-		tokenManager:         tokenManager,
-		agentHub:             agentHub,
 	}
 }
 
@@ -60,13 +48,12 @@ func (w *weeklyReporter) Run() {
 		if err == sql.ErrNoRows {
 			deploys, rollbacks, mostTriggeredBy := w.deploymentActivity()
 			alertSeconds, alertsPercentageChange := w.alertMetrics()
-			serviceLag := w.serviceLag()
-			repos := w.detectStagingBehindProdRepos()
+			serviceLag, repos := w.serviceInformations()
 
 			msg := notifications.WeeklySummary(deploys, rollbacks, mostTriggeredBy, alertSeconds, alertsPercentageChange, serviceLag, repos)
 			w.notificationsManager.Broadcast(msg)
 
-			w.store.SaveKeyValue(&model.KeyValue{Key: yearAndWeek})
+			// w.store.SaveKeyValue(&model.KeyValue{Key: yearAndWeek})
 			logrus.Info("newsletter notification sent")
 		} else if err != nil {
 			logrus.Errorf("cannot get key value")
@@ -127,92 +114,75 @@ func (w *weeklyReporter) alertMetrics() (alertSeconds int, change float64) {
 
 	alertSeconds = calcDuration(alerts)
 	alertsBetweenPreviousTwoWeeksSeconds := calcDuration(alertsBetweenPreviousTwoWeeks)
-	change = percentageChange(alertsBetweenPreviousTwoWeeksSeconds, alertSeconds)
-	if math.IsNaN(change) || math.IsInf(change, 1) {
-		change = 0
-	}
 
-	return alertSeconds, change
+	return alertSeconds, percentageChange(alertsBetweenPreviousTwoWeeksSeconds, alertSeconds)
 }
 
-func (w *weeklyReporter) serviceLag() map[string]int64 {
-	serviceLag := map[string]int64{}
+func (w *weeklyReporter) serviceInformations() (map[string]float64, []string) {
+	serviceLag := map[string]float64{}
+	stagingBehindProdRepos := []string{}
 
-	for _, a := range w.agentHub.Agents {
-		for _, stack := range a.Stacks {
-			prod, err := w.latestRelease(stack.Service.Name, "production", "")
-			if err != nil {
-				logrus.Errorf("cannot get latest release: %s", err)
+	stagingReleases, err := appReleases(w.store, w.repoCache, "staging")
+	if err != nil {
+		logrus.Errorf("cannot get releases: %s", err)
+		return serviceLag, stagingBehindProdRepos
+	}
+
+	prodReleases, err := appReleases(w.store, w.repoCache, "preview") // production
+	if err != nil {
+		logrus.Errorf("cannot get releases: %s", err)
+		return serviceLag, stagingBehindProdRepos
+	}
+
+	for stagingApp, stagingRelease := range stagingReleases {
+		for prodApp, prodRelease := range prodReleases {
+			if stagingApp != prodApp {
 				continue
 			}
 
-			staging, err := w.latestRelease(stack.Service.Name, "staging", "")
-			if err != nil {
-				logrus.Errorf("cannot get latest release: %s", err)
-				continue
-			}
+			serviceLag[stagingApp] = math.Abs(float64(stagingRelease.Version.Created - prodRelease.Version.Created))
 
-			if prod == nil || staging == nil {
-				continue
+			if stagingRelease.Version.Created < prodRelease.Version.Created {
+				stagingBehindProdRepos = append(stagingBehindProdRepos, stagingRelease.Version.RepositoryName)
 			}
-
-			serviceLag[stack.Service.Name] = staging.Created - prod.Created
 		}
 	}
 
-	return serviceLag
+	return serviceLag, stagingBehindProdRepos
 }
 
-func (w *weeklyReporter) detectStagingBehindProdRepos() (filtered []string) {
-	token, _, _ := w.tokenManager.Token()
-	gitSvc := customScm.NewGitService(w.dynamicConfig)
-	repos, err := gitSvc.OrgRepos(token)
+func appReleases(store *store.Store, repoCache *nativeGit.RepoCache, envName string) (map[string]*dx.Release, error) {
+	env, err := store.GetEnvironment(envName)
 	if err != nil {
-		logrus.Errorf("cannot get repos: %s", err)
-		return
+		return nil, err
 	}
 
-	for _, repo := range repos {
-		prod, err := w.latestRelease("", "production", repo)
+	repo, pathToCleanUp, err := repoCache.InstanceForWriteWithHistory(env.AppsRepo) // using a copy of the repo to avoid concurrent map writes error
+	defer repoCache.CleanupWrittenRepo(pathToCleanUp)
+	if err != nil {
+		return nil, err
+	}
+
+	appReleases, err := gitops.Status(repo, "", envName, env.RepoPerEnv, perf)
+	if err != nil {
+		return nil, err
+	}
+
+	for app, release := range appReleases { // decorate release with created time
+		r, err := gitops.Releases(repo, app, envName, env.RepoPerEnv, nil, nil, 1, release.Version.RepositoryName, perf)
 		if err != nil {
-			logrus.Errorf("cannot get latest release: %s", err)
+			logrus.Errorf("cannot get releases")
 			continue
 		}
 
-		staging, err := w.latestRelease("", "staging", repo)
-		if err != nil {
-			logrus.Errorf("cannot get latest release: %s", err)
+		if len(r) == 0 {
 			continue
 		}
 
-		if prod == nil || staging == nil {
-			continue
-		}
-
-		if staging.Created < prod.Created {
-			filtered = append(filtered, repo)
-		}
-	}
-	return
-}
-
-func (w *weeklyReporter) latestRelease(app, envName, gitRepo string) (*dx.Release, error) {
-	env, err := w.store.GetEnvironment(envName)
-	if err != nil {
-		return nil, err
+		release.Created = r[0].Created
 	}
 
-	repo, pathToCleanUp, err := w.repoCache.InstanceForWriteWithHistory(env.AppsRepo) // using a copy of the repo to avoid concurrent map writes error
-	defer w.repoCache.CleanupWrittenRepo(pathToCleanUp)
-	if err != nil {
-		return nil, err
-	}
-
-	releases, err := gitops.Releases(repo, app, env.Name, env.RepoPerEnv, nil, nil, 1, gitRepo, perf)
-	if err != nil {
-		return nil, err
-	}
-	return releases[0], nil
+	return appReleases, nil
 }
 
 func calcDuration(alerts []*model.Alert) (seconds int) {
@@ -228,6 +198,7 @@ func calcDuration(alerts []*model.Alert) (seconds int) {
 
 		seconds += (int(resolved) - int(a.FiredAt))
 	}
+
 	return seconds
 }
 
