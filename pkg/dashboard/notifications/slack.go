@@ -32,6 +32,7 @@ type slackMessage struct {
 	Text        string       `json:"text"`
 	Blocks      []Block      `json:"blocks,omitempty"`
 	Attachments []Attachment `json:"attachments,omitempty"`
+	Unfurl      bool         `json:"is_app_unfurl"`
 }
 
 type Block struct {
