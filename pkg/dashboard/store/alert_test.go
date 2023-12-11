@@ -72,25 +72,21 @@ func Test_AlertsInterval(t *testing.T) {
 
 	s.CreateAlert(&model.Alert{
 		ObjectName: "pod-1",
-		FiredAt:    time.Now().Add(-4 * time.Hour * 24).Unix(),
+		FiredAt:    time.Date(2023, 12, 7, 0, 0, 0, 0, time.UTC).Unix(),
 	})
 	s.CreateAlert(&model.Alert{
 		ObjectName: "pod-2",
-		FiredAt:    time.Now().Add(-11 * time.Hour * 24).Unix(),
+		FiredAt:    time.Date(2023, 12, 1, 0, 0, 0, 0, time.UTC).Unix(),
 	})
 	s.CreateAlert(&model.Alert{
 		ObjectName: "pod-3",
-		FiredAt:    time.Now().Add(-8 * time.Hour * 24).Unix(),
-	})
-	s.CreateAlert(&model.Alert{
-		ObjectName: "pod-4",
-		FiredAt:    time.Now().Add(-15 * time.Hour * 24).Unix(),
+		FiredAt:    time.Date(2023, 11, 26, 0, 0, 0, 0, time.UTC).Unix(),
 	})
 
-	alerts, _ := s.AlertsInWeek()
+	alerts, err := s.AlertsInterval(time.Date(2023, 12, 4, 0, 0, 0, 0, time.UTC), time.Date(2023, 12, 11, 0, 0, 0, 0, time.UTC))
+	assert.Nil(t, err)
 	assert.Equal(t, 1, len(alerts))
 
-	alerts, err := s.AlertsBetweenPreviousTwoWeeks()
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(alerts))
+	alerts, _ = s.AlertsInterval(time.Date(2023, 11, 27, 0, 0, 0, 0, time.UTC), time.Date(2023, 12, 4, 0, 0, 0, 0, time.UTC))
+	assert.Equal(t, 1, len(alerts))
 }

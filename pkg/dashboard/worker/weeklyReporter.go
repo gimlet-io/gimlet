@@ -49,14 +49,15 @@ func (w *weeklyReporter) Run() {
 		yearAndWeek := fmt.Sprintf("%d-%d", year, week)
 		_, err := w.store.KeyValue(yearAndWeek)
 		if err == sql.ErrNoRows {
-			deploys, rollbacks, mostTriggeredBy := w.deploymentActivity()
-			alertSeconds, alertsPercentageChange := w.alertMetrics()
+			since, until := weekRange(year, week-1)
+			deploys, rollbacks, mostTriggeredBy := w.deploymentActivity(since, until)
+			alertSeconds, alertsPercentageChange := w.alertMetrics(since, until)
 			serviceLag, repos := w.serviceInformations()
 
 			msg := notifications.WeeklySummary(deploys, rollbacks, mostTriggeredBy, alertSeconds, alertsPercentageChange, serviceLag, repos, w.dynamicConfig.ScmURL())
 			w.notificationsManager.Broadcast(msg)
 
-			// w.store.SaveKeyValue(&model.KeyValue{Key: yearAndWeek})
+			w.store.SaveKeyValue(&model.KeyValue{Key: yearAndWeek})
 			logrus.Info("newsletter notification sent")
 		} else if err != nil {
 			logrus.Errorf("cannot get key value")
@@ -66,10 +67,8 @@ func (w *weeklyReporter) Run() {
 	}
 }
 
-func (w *weeklyReporter) deploymentActivity() (deploys int, rollbacks int, overallMostTriggeredBy string) {
+func (w *weeklyReporter) deploymentActivity(since, until time.Time) (deploys int, rollbacks int, overallMostTriggeredBy string) {
 	envs, _ := w.store.GetEnvironments()
-	oneWeekAgo := time.Now().Add(-7 * time.Hour * 24)
-
 	maxCount := 0
 	for _, env := range envs {
 		repo, pathToCleanUp, err := w.repoCache.InstanceForWriteWithHistory(env.AppsRepo) // using a copy of the repo to avoid concurrent map writes error
@@ -79,7 +78,7 @@ func (w *weeklyReporter) deploymentActivity() (deploys int, rollbacks int, overa
 			continue
 		}
 
-		releases, err := gitops.Releases(repo, "", env.Name, env.RepoPerEnv, &oneWeekAgo, nil, -1, "", perf)
+		releases, err := gitops.Releases(repo, "", env.Name, env.RepoPerEnv, &since, &until, -1, "", perf)
 		if err != nil {
 			logrus.Errorf("cannot get releases: %s", err)
 			continue
@@ -104,16 +103,14 @@ func (w *weeklyReporter) deploymentActivity() (deploys int, rollbacks int, overa
 	return deploys, rollbacks, overallMostTriggeredBy
 }
 
-func (w *weeklyReporter) alertMetrics(year, week int) (alertSeconds int, change float64) {
-
-	since, until := weekStartUntil(year, week)
-
-	alerts, err := w.store.AlertsInWeek(since, until)
+func (w *weeklyReporter) alertMetrics(since, until time.Time) (alertSeconds int, change float64) {
+	alerts, err := w.store.AlertsInterval(since, until)
 	if err != nil {
 		logrus.Errorf("cannot get alerts: %s", err)
 	}
 
-	alertsBetweenPreviousTwoWeeks, err := w.store.AlertsBetweenPreviousTwoWeeks()
+	minusOneWeek := -7 * time.Hour * 24
+	alertsBetweenPreviousTwoWeeks, err := w.store.AlertsInterval(since.Add(minusOneWeek), until.Add(minusOneWeek))
 	if err != nil {
 		logrus.Errorf("cannot get alerts: %s", err)
 	}
@@ -134,7 +131,7 @@ func (w *weeklyReporter) serviceInformations() (map[string]float64, []string) {
 		return serviceLag, stagingBehindProdRepos
 	}
 
-	prodReleases, err := appReleases(w.store, w.repoCache, "preview") // production
+	prodReleases, err := appReleases(w.store, w.repoCache, "production")
 	if err != nil {
 		logrus.Errorf("cannot get releases: %s", err)
 		return serviceLag, stagingBehindProdRepos
@@ -191,6 +188,21 @@ func appReleases(store *store.Store, repoCache *nativeGit.RepoCache, envName str
 	}
 
 	return appReleases, nil
+}
+
+func weekRange(year, week int) (time.Time, time.Time) {
+	t := time.Date(year, 7, 1, 0, 0, 0, 0, time.UTC)
+
+	if wd := t.Weekday(); wd == time.Sunday {
+		t = t.AddDate(0, 0, -6)
+	} else {
+		t = t.AddDate(0, 0, -int(wd)+1)
+	}
+
+	_, w := t.ISOWeek()
+	t = t.AddDate(0, 0, (week-w)*7)
+
+	return t, t.AddDate(0, 0, 7)
 }
 
 func calcDuration(alerts []*model.Alert) (seconds int) {
