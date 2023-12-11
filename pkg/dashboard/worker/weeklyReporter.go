@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
@@ -25,17 +26,20 @@ type weeklyReporter struct {
 	store                *store.Store
 	repoCache            *nativeGit.RepoCache
 	notificationsManager *notifications.ManagerImpl
+	dynamicConfig        *dynamicconfig.DynamicConfig
 }
 
 func NewWeeklyReporter(
 	store *store.Store,
 	repoCache *nativeGit.RepoCache,
 	notificationsManager *notifications.ManagerImpl,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 ) weeklyReporter {
 	return weeklyReporter{
 		store:                store,
 		repoCache:            repoCache,
 		notificationsManager: notificationsManager,
+		dynamicConfig:        dynamicConfig,
 	}
 }
 
@@ -49,7 +53,7 @@ func (w *weeklyReporter) Run() {
 			alertSeconds, alertsPercentageChange := w.alertMetrics()
 			serviceLag, repos := w.serviceInformations()
 
-			msg := notifications.WeeklySummary(deploys, rollbacks, mostTriggeredBy, alertSeconds, alertsPercentageChange, serviceLag, repos)
+			msg := notifications.WeeklySummary(deploys, rollbacks, mostTriggeredBy, alertSeconds, alertsPercentageChange, serviceLag, repos, w.dynamicConfig.ScmURL())
 			w.notificationsManager.Broadcast(msg)
 
 			// w.store.SaveKeyValue(&model.KeyValue{Key: yearAndWeek})

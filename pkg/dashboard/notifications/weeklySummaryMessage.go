@@ -16,6 +16,7 @@ type weeklySummaryOpts struct {
 	alertsPercentageChange float64
 	serviceLag             map[string]float64
 	repos                  []string
+	scmUrl                 string
 }
 
 type weeklySummaryMessage struct {
@@ -111,7 +112,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 		Type: divider,
 	})
 
-	msg.Blocks = append(msg.Blocks, repos(ws.opts.repos)...)
+	msg.Blocks = append(msg.Blocks, repos(ws.opts.repos, ws.opts.scmUrl)...)
 	msg.Blocks = append(msg.Blocks, Block{
 		Type: divider,
 	})
@@ -191,7 +192,7 @@ func repos(repos []string, scmUrl string) (b []Block) {
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: fmt.Sprintf("*<https://github.com/%s|%s>*", repo, repo),
+				Text: fmt.Sprintf("*<%s/%s|%s>*", scmUrl, repo, repo),
 			},
 		})
 	}
@@ -206,6 +207,7 @@ func WeeklySummary(
 	alertsPercentageChange float64,
 	serviceLag map[string]float64,
 	repos []string,
+	scmUrl string,
 ) Message {
 	return &weeklySummaryMessage{
 		opts: weeklySummaryOpts{
@@ -216,6 +218,7 @@ func WeeklySummary(
 			alertsPercentageChange: alertsPercentageChange,
 			serviceLag:             serviceLag,
 			repos:                  repos,
+			scmUrl:                 scmUrl,
 		},
 	}
 }
