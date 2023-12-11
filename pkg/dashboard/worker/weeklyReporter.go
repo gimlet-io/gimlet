@@ -127,29 +127,28 @@ func (w *weeklyReporter) serviceInformations() (map[string]float64, []string) {
 
 	stagingReleases, err := appReleases(w.store, w.repoCache, "staging")
 	if err != nil {
-		logrus.Errorf("cannot get releases: %s", err)
+		logrus.Errorf("cannot get releases for staging: %s", err)
 		return serviceLag, stagingBehindProdRepos
 	}
 
 	prodReleases, err := appReleases(w.store, w.repoCache, "production")
 	if err != nil {
-		logrus.Errorf("cannot get releases: %s", err)
+		logrus.Errorf("cannot get releases for production: %s", err)
 		return serviceLag, stagingBehindProdRepos
 	}
 
 	for stagingApp, stagingRelease := range stagingReleases {
-		for prodApp, prodRelease := range prodReleases {
-			if stagingApp != prodApp {
-				continue
-			}
+		prodRelease, exists := prodReleases[stagingApp]
+		if !exists {
+			continue
+		}
 
-			if stagingRelease.Version.Created > prodRelease.Version.Created {
-				serviceLag[stagingApp] = float64(stagingRelease.Version.Created - prodRelease.Version.Created)
-			}
+		if stagingRelease.Version.Created > prodRelease.Version.Created {
+			serviceLag[stagingApp] = float64(stagingRelease.Version.Created - prodRelease.Version.Created)
+		}
 
-			if stagingRelease.Version.Created < prodRelease.Version.Created {
-				stagingBehindProdRepos = append(stagingBehindProdRepos, stagingRelease.Version.RepositoryName)
-			}
+		if stagingRelease.Version.Created < prodRelease.Version.Created {
+			stagingBehindProdRepos = append(stagingBehindProdRepos, stagingRelease.Version.RepositoryName)
 		}
 	}
 
