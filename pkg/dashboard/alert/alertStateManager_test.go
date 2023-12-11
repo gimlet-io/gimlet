@@ -107,6 +107,62 @@ func TestTrackPod_crashLoopBackOff(t *testing.T) {
 	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
 }
 
+func TestTrackPod_OOMilled(t *testing.T) {
+	store := store.NewTest(encryptionKey, encryptionKeyNew)
+	defer func() {
+		store.Close()
+	}()
+
+	dummyNotificationsManager := notifications.NewDummyManager()
+
+	alertStateManager := NewAlertStateManager(
+		dummyNotificationsManager,
+		nil,
+		*store,
+		0,
+		map[string]threshold{
+			"OOMKilled":        oomKilledThreshold{},
+			"CrashLoopBackOff": crashLoopBackOffThreshold{},
+		},
+		"",
+	)
+
+	alertStateManager.TrackPod(&api.Pod{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "OOMKilled",
+	}, "", "")
+
+	relatedAlerts, _ := store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.PENDING, relatedAlerts[0].Status)
+
+	alertStateManager.TrackPod(&api.Pod{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    "CrashLoopBackOff",
+	}, "", "")
+
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, "oomKilledThreshold", relatedAlerts[0].Type)
+
+	alertStateManager.evaluatePendingAlerts()
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.FIRING, relatedAlerts[0].Status)
+
+	alertStateManager.TrackPod(&api.Pod{
+		Namespace: "ns1",
+		Name:      "pod1",
+		Status:    model.POD_RUNNING,
+	}, "", "")
+
+	relatedAlerts, _ = store.RelatedAlerts("ns1/pod1")
+	assert.Equal(t, 1, len(relatedAlerts))
+	assert.Equal(t, model.RESOLVED, relatedAlerts[0].Status)
+}
+
 func TestTrackPod_createContainerConfigError(t *testing.T) {
 	store := store.NewTest(encryptionKey, encryptionKeyNew)
 	defer func() {
