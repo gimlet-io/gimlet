@@ -139,7 +139,9 @@ func (w *weeklyReporter) serviceInformations() (map[string]float64, []string) {
 				continue
 			}
 
-			serviceLag[stagingApp] = float64(stagingRelease.Version.Created - prodRelease.Version.Created)
+			if stagingRelease.Version.Created > prodRelease.Version.Created {
+				serviceLag[stagingApp] = float64(stagingRelease.Version.Created - prodRelease.Version.Created)
+			}
 
 			if stagingRelease.Version.Created < prodRelease.Version.Created {
 				stagingBehindProdRepos = append(stagingBehindProdRepos, stagingRelease.Version.RepositoryName)

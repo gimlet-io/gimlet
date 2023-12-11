@@ -97,7 +97,7 @@ func (ws *weeklySummaryMessage) AsSlackMessage() (*slackMessage, error) {
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", math.Abs(ws.opts.alertsPercentageChange), change),
+				Text: fmt.Sprintf("This is *%.2f%%* %s than the previous week.", ws.opts.alertsPercentageChange, change),
 			},
 		})
 	}
@@ -155,23 +155,19 @@ func lag(lagSeconds map[string]float64) (b []Block) {
 			continue
 		}
 
-		services := "_Staging_ is lagging behind _production_"
-		if math.Signbit(seconds) {
-			services = "_Production_ is lagging behind _staging_"
-		}
-
 		b = append(b, Block{
 			Type: section,
 			Text: &Text{
 				Type: markdown,
-				Text: fmt.Sprintf("%s with *%v* seconds on *%s* app.", services, math.Abs(seconds), app),
+				Text: fmt.Sprintf("_Production_ is lagging behind _staging_ with *%v* seconds on *%s* app.", math.Abs(seconds), app),
 			},
 		})
 	}
+
 	return
 }
 
-func repos(repos []string) (b []Block) {
+func repos(repos []string, scmUrl string) (b []Block) {
 	b = append(b, Block{
 		Type: section,
 		Text: &Text{
