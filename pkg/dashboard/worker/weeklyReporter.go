@@ -104,8 +104,11 @@ func (w *weeklyReporter) deploymentActivity() (deploys int, rollbacks int, overa
 	return deploys, rollbacks, overallMostTriggeredBy
 }
 
-func (w *weeklyReporter) alertMetrics() (alertSeconds int, change float64) {
-	alerts, err := w.store.AlertsInWeek()
+func (w *weeklyReporter) alertMetrics(year, week int) (alertSeconds int, change float64) {
+
+	since, until := weekStartUntil(year, week)
+
+	alerts, err := w.store.AlertsInWeek(since, until)
 	if err != nil {
 		logrus.Errorf("cannot get alerts: %s", err)
 	}
