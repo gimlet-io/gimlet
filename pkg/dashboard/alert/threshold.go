@@ -32,6 +32,7 @@ func Thresholds() map[string]threshold {
 			minimumCount:          6,
 			minimumCountPerMinute: 1,
 		},
+		"OOMKilled": oomKilledThreshold{},
 	}
 }
 
@@ -71,6 +72,9 @@ type createContainerConfigErrorThreshold struct {
 
 type pendingThreshold struct {
 	waitTime time.Duration
+}
+
+type oomKilledThreshold struct {
 }
 
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -128,6 +132,15 @@ func (s pendingThreshold) Reached(relatedObject interface{}, alert *model.Alert)
 func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	return pod.Status != model.POD_PENDING
+}
+
+func (s oomKilledThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+	return true
+}
+
+func (s oomKilledThreshold) Resolved(relatedObject interface{}) bool {
+	pod := relatedObject.(*model.Pod)
+	return pod.Status == model.POD_RUNNING
 }
 
 func (t imagePullBackOffThreshold) Text() string {
@@ -191,6 +204,22 @@ func (t failedEventThreshold) Text() string {
 	return "TODO"
 }
 
+func (t oomKilledThreshold) Text() string {
+	return `
+### When It Happens
+
+Running out of memory can lead to your pod's restart. Sadly the OOMKilled error is not easy to spot.
+	
+### How to Fix It
+	
+You need a monitoring solution to chart your pod's memory usage over time. If your pod is reaching the resource limits in your pod specification, Kubernetes will restart your pod.
+	
+Correlate your restart times with your pod memory usage to confirm the out of memory situation and adjust your pod resource limits accordingly.
+
+You can also use the ` + "`" + `kubectl describe pod <pod-name>` + "`" + ` command and look for the ` + "`" + `Last State` + "`" + ` section to confirm that indeed it is the lack of memory that restarted the pod.
+`
+}
+
 func (t imagePullBackOffThreshold) Name() string {
 	return "ImagePullBackOff"
 }
@@ -209,4 +238,8 @@ func (t pendingThreshold) Name() string {
 
 func (t failedEventThreshold) Name() string {
 	return "TODO"
+}
+
+func (t oomKilledThreshold) Name() string {
+	return "OOMKilledError"
 }
