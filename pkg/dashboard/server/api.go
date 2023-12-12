@@ -220,7 +220,7 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	decoratedAlerts := []*api.Alert{}
 	for _, dbAlert := range dbAlerts {
 		t := alert.ThresholdByType(thresholds, dbAlert.Type)
-		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Name()))
+		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Text(), t.Name()))
 	}
 
 	alertsString, err := json.Marshal(decoratedAlerts)

@@ -12,6 +12,7 @@ type threshold interface {
 	Resolved(relatedObject interface{}) bool
 	Text() string
 	Name() string
+	Type() string
 }
 
 func Thresholds() map[string]threshold {
@@ -32,7 +33,7 @@ func Thresholds() map[string]threshold {
 			minimumCount:          6,
 			minimumCountPerMinute: 1,
 		},
-		"OOMKilled": oomKilledcrashLoopBackOffThreshold{},
+		"OOMKilled": oomKilledThreshold{},
 	}
 }
 
@@ -74,7 +75,7 @@ type pendingThreshold struct {
 	waitTime time.Duration
 }
 
-type oomKilledcrashLoopBackOffThreshold struct {
+type oomKilledThreshold struct {
 }
 
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -134,11 +135,11 @@ func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
 	return pod.Status != model.POD_PENDING
 }
 
-func (s oomKilledcrashLoopBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+func (s oomKilledThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
 	return true
 }
 
-func (s oomKilledcrashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
+func (s oomKilledThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	return pod.Status == model.POD_RUNNING
 }
@@ -204,7 +205,7 @@ func (t failedEventThreshold) Text() string {
 	return "TODO"
 }
 
-func (t oomKilledcrashLoopBackOffThreshold) Text() string {
+func (t oomKilledThreshold) Text() string {
 	return `
 ### When It Happens
 
@@ -240,6 +241,30 @@ func (t failedEventThreshold) Name() string {
 	return "TODO"
 }
 
-func (t oomKilledcrashLoopBackOffThreshold) Name() string {
+func (t oomKilledThreshold) Name() string {
 	return "OOMKilled"
+}
+
+func (t imagePullBackOffThreshold) Type() string {
+	return "ImagePullBackOff"
+}
+
+func (t crashLoopBackOffThreshold) Type() string {
+	return "crashLoopBackOff"
+}
+
+func (t createContainerConfigErrorThreshold) Type() string {
+	return "CreateContainerConfigError"
+}
+
+func (t pendingThreshold) Type() string {
+	return "Pending"
+}
+
+func (t failedEventThreshold) Type() string {
+	return "TODO"
+}
+
+func (t oomKilledThreshold) Type() string {
+	return "crashLoopBackOff"
 }

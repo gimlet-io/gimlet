@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -70,7 +69,7 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(alert, t.Text())
+			apiAlert := api.NewAlert(alert, t.Text(), t.Name())
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert:         *apiAlert,
 				ImChannelId:   alert.ImChannelId,
@@ -172,12 +171,12 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 			ImChannelId:    pod.ImChannelId,
 			DeploymentUrl:  fmt.Sprintf("%s/repo/%s/%s/%s", a.host, repoName, envName, pod.DeploymentName),
 		}
-		if !alertExists(nonResolvedAlerts, alertToCreate) {
+		if !alertExists(a.thresholds, nonResolvedAlerts, alertToCreate) {
 			_, err := a.store.CreateAlert(alertToCreate)
 			if err != nil {
 				return err
 			}
-			apiAlert := api.NewAlert(alertToCreate, t.Text())
+			apiAlert := api.NewAlert(alertToCreate, t.Text(), t.Name())
 			a.broadcast(apiAlert, streaming.AlertPendingEventString)
 		}
 	}
@@ -192,7 +191,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(nonResolvedAlert, t.Text())
+			apiAlert := api.NewAlert(nonResolvedAlert, t.Text(), t.Name())
 			if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 				a.notifManager.Broadcast(&notifications.AlertMessage{
 					Alert:       *apiAlert,
@@ -228,7 +227,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 			logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 		}
 
-		apiAlert := api.NewAlert(nonResolvedAlert, "")
+		apiAlert := api.NewAlert(nonResolvedAlert, "", "")
 		if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert:       *apiAlert,
@@ -241,9 +240,11 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	return a.store.DeletePod(podName)
 }
 
-func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
+func alertExists(thresholds map[string]threshold, nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
+	alertThreshold := ThresholdByType(thresholds, alert.Type)
 	for _, nonResolvedAlert := range nonResolvedAlerts {
-		if nonResolvedAlert.ObjectName == alert.ObjectName && strings.Contains(nonResolvedAlert.Type, alert.Type) {
+		nonResolvedAlertThreshold := ThresholdByType(thresholds, nonResolvedAlert.Type)
+		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlertThreshold.Type() == alertThreshold.Type() {
 			return true
 		}
 	}
