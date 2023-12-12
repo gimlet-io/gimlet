@@ -230,7 +230,7 @@ class EnvConfig extends Component {
   }
 
   patchUIWidgets(chart) {
-    if (chart.reference.name !== "onechart") {
+    if (!chart.reference.name.includes("onechart")) {
       return chart  
     }
 
