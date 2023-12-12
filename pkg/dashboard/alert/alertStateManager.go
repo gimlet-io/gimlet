@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -242,7 +243,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 
 func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
 	for _, nonResolvedAlert := range nonResolvedAlerts {
-		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlert.Type == alert.Type {
+		if nonResolvedAlert.ObjectName == alert.ObjectName && strings.Contains(nonResolvedAlert.Type, alert.Type) {
 			return true
 		}
 	}

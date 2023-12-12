@@ -32,7 +32,7 @@ func Thresholds() map[string]threshold {
 			minimumCount:          6,
 			minimumCountPerMinute: 1,
 		},
-		"OOMKilled": oomKilledThreshold{},
+		"OOMKilled": oomKilledcrashLoopBackOffThreshold{},
 	}
 }
 
@@ -74,7 +74,7 @@ type pendingThreshold struct {
 	waitTime time.Duration
 }
 
-type oomKilledThreshold struct {
+type oomKilledcrashLoopBackOffThreshold struct {
 }
 
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -134,11 +134,11 @@ func (s pendingThreshold) Resolved(relatedObject interface{}) bool {
 	return pod.Status != model.POD_PENDING
 }
 
-func (s oomKilledThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
+func (s oomKilledcrashLoopBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
 	return true
 }
 
-func (s oomKilledThreshold) Resolved(relatedObject interface{}) bool {
+func (s oomKilledcrashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	return pod.Status == model.POD_RUNNING
 }
@@ -204,7 +204,7 @@ func (t failedEventThreshold) Text() string {
 	return "TODO"
 }
 
-func (t oomKilledThreshold) Text() string {
+func (t oomKilledcrashLoopBackOffThreshold) Text() string {
 	return `
 ### When It Happens
 
@@ -240,6 +240,6 @@ func (t failedEventThreshold) Name() string {
 	return "TODO"
 }
 
-func (t oomKilledThreshold) Name() string {
-	return "OOMKilledError"
+func (t oomKilledcrashLoopBackOffThreshold) Name() string {
+	return "OOMKilled"
 }
