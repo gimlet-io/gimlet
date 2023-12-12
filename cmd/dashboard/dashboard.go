@@ -145,6 +145,17 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
+	if config.WeeklySummaryFeatureFlag {
+		weeklyReporter := worker.NewWeeklyReporter(
+			store,
+			repoCache,
+			notificationsManager,
+			dynamicConfig,
+			perf,
+		)
+		go weeklyReporter.Run()
+	}
+
 	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
 	go imageBuildWorker.Run()
 

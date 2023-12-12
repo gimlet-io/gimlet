@@ -19,6 +19,13 @@ func (db *Store) Alerts() ([]*model.Alert, error) {
 	return data, err
 }
 
+func (db *Store) AlertsInterval(since time.Time, until time.Time) ([]*model.Alert, error) {
+	query := sql.Stmt(db.driver, sql.SelectAlertsInterval)
+	data := []*model.Alert{}
+	err := meddler.QueryAll(db, &data, query, since.Unix(), until.Unix())
+	return data, err
+}
+
 func (db *Store) AlertsByState(status string) ([]*model.Alert, error) {
 	stmt := sql.Stmt(db.driver, sql.SelectAlertsByState)
 	data := []*model.Alert{}

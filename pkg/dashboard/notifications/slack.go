@@ -15,6 +15,8 @@ const markdown = "mrkdwn"
 const section = "section"
 const contextString = "context"
 const button = "button"
+const divider = "divider"
+const header = "header"
 
 const githubCommitLinkFormat = "<https://github.com/%s/commit/%s|%s>"
 const bitbucketServerLinkFormat = "<http://%s/projects/%s/repos/%s/commits/%s|%s>"
@@ -30,6 +32,7 @@ type slackMessage struct {
 	Text        string       `json:"text"`
 	Blocks      []Block      `json:"blocks,omitempty"`
 	Attachments []Attachment `json:"attachments,omitempty"`
+	UnfurlLinks bool         `json:"unfurl_links"`
 }
 
 type Block struct {
