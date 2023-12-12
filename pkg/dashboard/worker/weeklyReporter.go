@@ -13,20 +13,15 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 )
-
-var perf = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "a",
-	Help: "a",
-}, []string{"function"})
 
 type weeklyReporter struct {
 	store                *store.Store
 	repoCache            *nativeGit.RepoCache
 	notificationsManager *notifications.ManagerImpl
 	dynamicConfig        *dynamicconfig.DynamicConfig
+	perf                 *prometheus.HistogramVec
 }
 
 func NewWeeklyReporter(
@@ -34,12 +29,14 @@ func NewWeeklyReporter(
 	repoCache *nativeGit.RepoCache,
 	notificationsManager *notifications.ManagerImpl,
 	dynamicConfig *dynamicconfig.DynamicConfig,
+	perf *prometheus.HistogramVec,
 ) weeklyReporter {
 	return weeklyReporter{
 		store:                store,
 		repoCache:            repoCache,
 		notificationsManager: notificationsManager,
 		dynamicConfig:        dynamicConfig,
+		perf:                 perf,
 	}
 }
 
@@ -78,7 +75,7 @@ func (w *weeklyReporter) deploymentActivity(since, until time.Time) (deploys int
 			continue
 		}
 
-		releases, err := gitops.Releases(repo, "", env.Name, env.RepoPerEnv, &since, &until, -1, "", perf)
+		releases, err := gitops.Releases(repo, "", env.Name, env.RepoPerEnv, &since, &until, -1, "", w.perf)
 		if err != nil {
 			logrus.Errorf("cannot get releases: %s", err)
 			continue
@@ -125,13 +122,13 @@ func (w *weeklyReporter) serviceInformations() (map[string]float64, []string) {
 	serviceLag := map[string]float64{}
 	stagingBehindProdRepos := []string{}
 
-	stagingReleases, err := appReleases(w.store, w.repoCache, "staging")
+	stagingReleases, err := appReleases(w.store, w.repoCache, w.perf, "staging")
 	if err != nil {
 		logrus.Errorf("cannot get releases for staging: %s", err)
 		return serviceLag, stagingBehindProdRepos
 	}
 
-	prodReleases, err := appReleases(w.store, w.repoCache, "production")
+	prodReleases, err := appReleases(w.store, w.repoCache, w.perf, "production")
 	if err != nil {
 		logrus.Errorf("cannot get releases for production: %s", err)
 		return serviceLag, stagingBehindProdRepos
@@ -155,7 +152,7 @@ func (w *weeklyReporter) serviceInformations() (map[string]float64, []string) {
 	return serviceLag, stagingBehindProdRepos
 }
 
-func appReleases(store *store.Store, repoCache *nativeGit.RepoCache, envName string) (map[string]*dx.Release, error) {
+func appReleases(store *store.Store, repoCache *nativeGit.RepoCache, perf *prometheus.HistogramVec, envName string) (map[string]*dx.Release, error) {
 	env, err := store.GetEnvironment(envName)
 	if err != nil {
 		return nil, err
