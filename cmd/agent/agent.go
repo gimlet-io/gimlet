@@ -296,7 +296,8 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not send k8s state: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 
@@ -339,7 +340,8 @@ func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not send k8s events: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 
@@ -450,7 +452,8 @@ func deploymentDetails(
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not send deployment details: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 
