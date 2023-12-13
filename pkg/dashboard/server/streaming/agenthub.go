@@ -12,6 +12,7 @@ import (
 type ConnectedAgent struct {
 	Name         string         `json:"name"`
 	Namespace    string         `json:"namespace"`
+	Certificate  []byte         `json:"-"`
 	EventChannel chan []byte    `json:"-"`
 	Stacks       []*api.Stack   `json:"-"`
 	FluxState    *api.FluxState `json:"-"`
