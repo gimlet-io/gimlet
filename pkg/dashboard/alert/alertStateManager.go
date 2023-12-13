@@ -240,10 +240,12 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	return a.store.DeletePod(podName)
 }
 
-func alertExists(alerts []*model.Alert, alert *model.Alert) bool {
-	for _, a := range alerts {
-		if objectsMatch(a, alert) {
-			if typesMatch(a, alert) || (isOOMKilledType(a) && isCrashLoopBackOffType(alert)) {
+func alertExists(existingAlerts []*model.Alert, alert *model.Alert) bool {
+	for _, existingAlert := range existingAlerts {
+		if objectsMatch(existingAlert, alert) {
+			if typesMatch(existingAlert, alert) {
+				return true
+			} else if isCrashLoopBackOffSpecialCase(existingAlert, alert) {
 				return true
 			}
 		}
@@ -260,12 +262,10 @@ func typesMatch(first *model.Alert, second *model.Alert) bool {
 	return first.Type == second.Type
 }
 
-func isCrashLoopBackOffType(a *model.Alert) bool {
-	return a.Type == "crashLoopBackOffThreshold"
-}
-
-func isOOMKilledType(a *model.Alert) bool {
-	return a.Type == "oomKilledThreshold"
+// isCrashLoopBackOffSpecialCase returns true if the examined alert is a crashLoopBackOff
+// and an OOMKilledAlert already exists. OOMKilled is a special kind of CrashloopBackOff
+func isCrashLoopBackOffSpecialCase(existingAlert, a *model.Alert) bool {
+	return a.Type == "crashLoopBackOffThreshold" && existingAlert.Type == "oomKilledThreshold"
 }
 
 func (a AlertStateManager) broadcast(alert *api.Alert, event string) {
