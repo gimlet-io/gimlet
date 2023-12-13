@@ -240,16 +240,28 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	return a.store.DeletePod(podName)
 }
 
-func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
-	for _, nonResolvedAlert := range nonResolvedAlerts {
-		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlert.Type == alert.Type {
-			return true
-		} else if nonResolvedAlert.ObjectName == alert.ObjectName && alert.Type == "crashLoopBackOffThreshold" {
-			return true
+func alertExists(alerts []*model.Alert, alert *model.Alert) bool {
+	for _, a := range alerts {
+		if objectsMatch(a, alert) {
+			if isCrashLoopBackOffType(alert) || typesMatch(a, alert) {
+				return true
+			}
 		}
 	}
 
 	return false
+}
+
+func objectsMatch(first *model.Alert, second *model.Alert) bool {
+	return first.ObjectName == second.ObjectName
+}
+
+func typesMatch(first *model.Alert, second *model.Alert) bool {
+	return first.Type == second.Type
+}
+
+func isCrashLoopBackOffType(a *model.Alert) bool {
+	return a.Type == "crashLoopBackOffThreshold"
 }
 
 func (a AlertStateManager) broadcast(alert *api.Alert, event string) {
