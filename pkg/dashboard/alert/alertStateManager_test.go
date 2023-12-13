@@ -108,7 +108,7 @@ func TestTrackPod_crashLoopBackOff(t *testing.T) {
 }
 
 func Test_ExistingOOMKilledAlert(t *testing.T) {
-	alerts := []*model.Alert{
+	existingAlerts := []*model.Alert{
 		{
 			Type:       "oomKilledThreshold",
 			ObjectName: "ns1/pod1",
@@ -120,7 +120,7 @@ func Test_ExistingOOMKilledAlert(t *testing.T) {
 		ObjectName: "ns1/pod1",
 	}
 
-	assert.True(t, alertExists(alerts, alert))
+	assert.True(t, alertExists(existingAlerts, alert))
 }
 
 func TestTrackPod_createContainerConfigError(t *testing.T) {
