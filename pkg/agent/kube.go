@@ -31,7 +31,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -74,9 +73,14 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		return nil, fmt.Errorf("could not get ingresses: %s", err)
 	}
 
+	pods, err := e.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not get pods: %s", err)
+	}
+
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
-		deployment, err := e.deploymentForService(service, d.Items)
+		deployment, err := e.deploymentForService(service, d.Items, pods)
 		if err != nil {
 			return nil, fmt.Errorf("could not get deployment for service: %s", err)
 		}
@@ -364,7 +368,7 @@ func (e *KubeEnv) annotatedServices(repo string) ([]v1.Service, error) {
 	return services, nil
 }
 
-func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment) (*api.Deployment, error) {
+func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment, p *v1.PodList) (*api.Deployment, error) {
 	var deployment *api.Deployment
 
 	for _, d := range deployments {
@@ -375,18 +379,15 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 			}
 
 			var pods []*api.Pod
-			set := labels.Set(service.Spec.Selector)
-			p, err := e.Client.CoreV1().Pods(e.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: set.AsSelector().String()})
-			if err != nil {
-				return nil, err
-			}
 			for _, pod := range p.Items {
-				podStatus := podStatus(pod)
-				podLogs := ""
-				if "CrashLoopBackOff" == podStatus || "Error" == podStatus {
-					podLogs = logs(e, pod)
+				if labelsMatchSelectors(pod.ObjectMeta.Labels, service.Spec.Selector) {
+					podStatus := podStatus(pod)
+					podLogs := ""
+					if podStatus == "CrashLoopBackOff" || podStatus == "Error" {
+						podLogs = logs(e, pod)
+					}
+					pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
 				}
-				pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
 			}
 
 			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Pods: pods, SHA: sha}
@@ -394,6 +395,20 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 	}
 
 	return deployment, nil
+}
+
+func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
+	for k2, v2 := range selectors {
+		if v, ok := labels[k2]; ok {
+			if v2 != v {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	return true
 }
 
 func logs(e *KubeEnv, pod v1.Pod) string {
