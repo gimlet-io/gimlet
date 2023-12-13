@@ -80,7 +80,8 @@ func SendFluxState(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("could not send flux state: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 

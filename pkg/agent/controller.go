@@ -294,7 +294,8 @@ func sendUpdate(host string, agentKey string, env string, update interface{}) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Errorf("could not send state update: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 
@@ -324,7 +325,8 @@ func sendEvents(host string, agentKey string, events []api.Event) {
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Errorf("could not send k8s events: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 
