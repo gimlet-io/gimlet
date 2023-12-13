@@ -243,7 +243,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 func alertExists(alerts []*model.Alert, alert *model.Alert) bool {
 	for _, a := range alerts {
 		if objectsMatch(a, alert) {
-			if isCrashLoopBackOffType(alert) || typesMatch(a, alert) {
+			if typesMatch(a, alert) || (isOOMKilledType(a) && isCrashLoopBackOffType(alert)) {
 				return true
 			}
 		}
@@ -262,6 +262,10 @@ func typesMatch(first *model.Alert, second *model.Alert) bool {
 
 func isCrashLoopBackOffType(a *model.Alert) bool {
 	return a.Type == "crashLoopBackOffThreshold"
+}
+
+func isOOMKilledType(a *model.Alert) bool {
+	return a.Type == "oomKilledThreshold"
 }
 
 func (a AlertStateManager) broadcast(alert *api.Alert, event string) {
