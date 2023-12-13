@@ -89,9 +89,21 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
-		deployment, err := e.deploymentForService(service, d.Items, pods)
+		deployment, err := e.deploymentForService(service, d.Items)
 		if err != nil {
 			return nil, fmt.Errorf("could not get deployment for service: %s", err)
+		}
+
+		deployment.Pods = []*api.Pod{}
+		for _, pod := range pods.Items {
+			if labelsMatchSelectors(pod.ObjectMeta.Labels, service.Spec.Selector) {
+				podStatus := podStatus(pod)
+				podLogs := ""
+				if podStatus == "CrashLoopBackOff" || podStatus == "Error" {
+					podLogs = logs(e, pod)
+				}
+				deployment.Pods = append(deployment.Pods, &api.Pod{Name: pod.Name, DeploymentName: deployment.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
+			}
 		}
 
 		var ingresses []*api.Ingress
@@ -117,6 +129,20 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	e.Perf.WithLabelValues("gimlet_agent_stacks").Observe(float64(time.Since(t0).Seconds()))
 
 	return stacks, nil
+}
+
+func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
+	for k2, v2 := range selectors {
+		if v, ok := labels[k2]; ok {
+			if v2 != v {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	return true
 }
 
 func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
@@ -378,7 +404,7 @@ func (e *KubeEnv) annotatedServices(repo string) ([]v1.Service, error) {
 	return services, nil
 }
 
-func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment, p *v1.PodList) (*api.Deployment, error) {
+func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment) (*api.Deployment, error) {
 	var deployment *api.Deployment
 
 	for _, d := range deployments {
@@ -388,37 +414,11 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 				sha = hash
 			}
 
-			var pods []*api.Pod
-			for _, pod := range p.Items {
-				if labelsMatchSelectors(pod.ObjectMeta.Labels, service.Spec.Selector) {
-					podStatus := podStatus(pod)
-					podLogs := ""
-					if podStatus == "CrashLoopBackOff" || podStatus == "Error" {
-						podLogs = logs(e, pod)
-					}
-					pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
-				}
-			}
-
-			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Pods: pods, SHA: sha}
+			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, SHA: sha}
 		}
 	}
 
 	return deployment, nil
-}
-
-func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
-	for k2, v2 := range selectors {
-		if v, ok := labels[k2]; ok {
-			if v2 != v {
-				return false
-			}
-		} else {
-			return false
-		}
-	}
-
-	return true
 }
 
 func logs(e *KubeEnv, pod v1.Pod) string {
