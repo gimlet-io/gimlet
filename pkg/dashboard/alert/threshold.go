@@ -12,7 +12,6 @@ type threshold interface {
 	Resolved(relatedObject interface{}) bool
 	Text() string
 	Name() string
-	Type() string
 }
 
 func Thresholds() map[string]threshold {
@@ -243,28 +242,4 @@ func (t failedEventThreshold) Name() string {
 
 func (t oomKilledThreshold) Name() string {
 	return "OOMKilled"
-}
-
-func (t imagePullBackOffThreshold) Type() string {
-	return "ImagePullBackOff"
-}
-
-func (t crashLoopBackOffThreshold) Type() string {
-	return "crashLoopBackOff"
-}
-
-func (t createContainerConfigErrorThreshold) Type() string {
-	return "CreateContainerConfigError"
-}
-
-func (t pendingThreshold) Type() string {
-	return "Pending"
-}
-
-func (t failedEventThreshold) Type() string {
-	return "TODO"
-}
-
-func (t oomKilledThreshold) Type() string {
-	return "crashLoopBackOff"
 }

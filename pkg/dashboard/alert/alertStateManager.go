@@ -171,7 +171,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 			ImChannelId:    pod.ImChannelId,
 			DeploymentUrl:  fmt.Sprintf("%s/repo/%s/%s/%s", a.host, repoName, envName, pod.DeploymentName),
 		}
-		if !alertExists(a.thresholds, nonResolvedAlerts, alertToCreate) {
+		if !alertExists(nonResolvedAlerts, alertToCreate) {
 			_, err := a.store.CreateAlert(alertToCreate)
 			if err != nil {
 				return err
@@ -240,11 +240,11 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	return a.store.DeletePod(podName)
 }
 
-func alertExists(thresholds map[string]threshold, nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
-	alertThreshold := ThresholdByType(thresholds, alert.Type)
+func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
 	for _, nonResolvedAlert := range nonResolvedAlerts {
-		nonResolvedAlertThreshold := ThresholdByType(thresholds, nonResolvedAlert.Type)
-		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlertThreshold.Type() == alertThreshold.Type() {
+		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlert.Type == alert.Type {
+			return true
+		} else if nonResolvedAlert.ObjectName == alert.ObjectName && alert.Type == "crashLoopBackOffThreshold" {
 			return true
 		}
 	}
