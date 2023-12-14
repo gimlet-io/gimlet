@@ -439,6 +439,9 @@ func podStatus(pod v1.Pod) string {
 	if v1.PodPending == pod.Status.Phase ||
 		v1.PodRunning == pod.Status.Phase {
 		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if containerStatus.State.Terminated != nil {
+				return fmt.Sprint(containerStatus.State.Terminated.Reason)
+			}
 			if containerStatus.State.Waiting != nil {
 				return fmt.Sprint(containerStatus.State.Waiting.Reason)
 			}

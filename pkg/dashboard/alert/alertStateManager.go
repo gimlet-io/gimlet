@@ -69,7 +69,7 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(alert, t.Text())
+			apiAlert := api.NewAlert(alert, t.Text(), t.Name())
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert:         *apiAlert,
 				ImChannelId:   alert.ImChannelId,
@@ -176,7 +176,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 			if err != nil {
 				return err
 			}
-			apiAlert := api.NewAlert(alertToCreate, t.Text())
+			apiAlert := api.NewAlert(alertToCreate, t.Text(), t.Name())
 			a.broadcast(apiAlert, streaming.AlertPendingEventString)
 		}
 	}
@@ -191,7 +191,7 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(nonResolvedAlert, t.Text())
+			apiAlert := api.NewAlert(nonResolvedAlert, t.Text(), t.Name())
 			if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 				a.notifManager.Broadcast(&notifications.AlertMessage{
 					Alert:       *apiAlert,
@@ -227,7 +227,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 			logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 		}
 
-		apiAlert := api.NewAlert(nonResolvedAlert, "")
+		apiAlert := api.NewAlert(nonResolvedAlert, "", "")
 		if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert:       *apiAlert,
@@ -240,14 +240,32 @@ func (a AlertStateManager) DeletePod(podName string) error {
 	return a.store.DeletePod(podName)
 }
 
-func alertExists(nonResolvedAlerts []*model.Alert, alert *model.Alert) bool {
-	for _, nonResolvedAlert := range nonResolvedAlerts {
-		if nonResolvedAlert.ObjectName == alert.ObjectName && nonResolvedAlert.Type == alert.Type {
-			return true
+func alertExists(existingAlerts []*model.Alert, alert *model.Alert) bool {
+	for _, existingAlert := range existingAlerts {
+		if objectsMatch(existingAlert, alert) {
+			if typesMatch(existingAlert, alert) {
+				return true
+			} else if isCrashLoopBackOffSpecialCase(existingAlert, alert) {
+				return true
+			}
 		}
 	}
 
 	return false
+}
+
+func objectsMatch(first *model.Alert, second *model.Alert) bool {
+	return first.ObjectName == second.ObjectName
+}
+
+func typesMatch(first *model.Alert, second *model.Alert) bool {
+	return first.Type == second.Type
+}
+
+// isCrashLoopBackOffSpecialCase returns true if the examined alert is a crashLoopBackOff
+// and an OOMKilledAlert already exists. OOMKilled is a special kind of CrashloopBackOff
+func isCrashLoopBackOffSpecialCase(existingAlert, a *model.Alert) bool {
+	return a.Type == "crashLoopBackOffThreshold" && existingAlert.Type == "oomKilledThreshold"
 }
 
 func (a AlertStateManager) broadcast(alert *api.Alert, event string) {

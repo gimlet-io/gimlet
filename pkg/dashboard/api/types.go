@@ -127,13 +127,14 @@ type Alert struct {
 	ResolvedAt     int64  `json:"resolvedAt"`
 }
 
-func NewAlert(alert *model.Alert, text string) *Alert {
+func NewAlert(alert *model.Alert, text string, name string) *Alert {
 	return &Alert{
 		ObjectName:     alert.ObjectName,
 		DeploymentName: alert.DeploymentName,
 		Type:           alert.Type,
 		Status:         alert.Status,
 		Text:           text,
+		Name:           name,
 		PendingAt:      alert.PendingAt,
 		FiredAt:        alert.FiredAt,
 		ResolvedAt:     alert.ResolvedAt,
