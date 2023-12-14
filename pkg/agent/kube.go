@@ -104,6 +104,22 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	return stacks, nil
 }
 
+func (e *KubeEnv) FetchCertificate() []byte {
+	service, err := e.Client.CoreV1().Services("infrastructure").Get(context.Background(), "sealed-secrets-controller", metav1.GetOptions{})
+	if err != nil {
+		logrus.Debugf("could not get sealed secret service: %s", err)
+		return nil
+	}
+
+	cert, err := e.Client.CoreV1().Services("infrastructure").ProxyGet("http", "sealed-secrets-controller", service.Spec.Ports[0].Name, "/v1/cert.pem", nil).DoRaw(context.Background())
+	if err != nil {
+		logrus.Debugf("could not get cert: %s", err)
+		return nil
+	}
+
+	return cert
+}
+
 func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
 	return &api.Osca{
 		Links: api.Links{

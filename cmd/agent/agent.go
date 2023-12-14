@@ -278,7 +278,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 
 	agentState := api.AgentState{
 		Stacks:      stacks,
-		Certificate: fetchCertificate(kubeEnv),
+		Certificate: kubeEnv.FetchCertificate(),
 	}
 
 	agentStateString, err := json.Marshal(agentState)
@@ -313,22 +313,6 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	}
 
 	logrus.Info("init state sent")
-}
-
-func fetchCertificate(kubeEnv *agent.KubeEnv) []byte {
-	service, err := kubeEnv.Client.CoreV1().Services("infrastructure").Get(context.Background(), "sealed-secrets-controller", meta_v1.GetOptions{})
-	if err != nil {
-		logrus.Debugf("could not get sealed secret service: %s", err)
-		return nil
-	}
-
-	cert, err := kubeEnv.Client.CoreV1().Services("infrastructure").ProxyGet("http", "sealed-secrets-controller", service.Spec.Ports[0].Name, "/v1/cert.pem", nil).DoRaw(context.Background())
-	if err != nil {
-		logrus.Debugf("could not get cert: %s", err)
-		return nil
-	}
-
-	return cert
 }
 
 func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
