@@ -276,7 +276,12 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 		return
 	}
 
-	stacksString, err := json.Marshal(stacks)
+	agentState := api.AgentState{
+		Stacks:      stacks,
+		Certificate: kubeEnv.FetchCertificate(),
+	}
+
+	agentStateString, err := json.Marshal(agentState)
 	if err != nil {
 		logrus.Errorf("could not serialize k8s state: %v", err)
 		return
@@ -285,7 +290,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	params := url.Values{}
 	params.Add("name", kubeEnv.Name)
 	reqUrl := fmt.Sprintf("%s/agent/state?%s", gimletHost, params.Encode())
-	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(stacksString))
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(agentStateString))
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
 		return

@@ -146,8 +146,8 @@ func events(w http.ResponseWriter, r *http.Request) {
 func state(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 
-	var stacks []api.Stack
-	err := json.NewDecoder(r.Body).Decode(&stacks)
+	var agentState api.AgentState
+	err := json.NewDecoder(r.Body).Decode(&agentState)
 	if err != nil {
 		logrus.Errorf("cannot decode stacks: %s", err)
 		http.Error(w, http.StatusText(400), 400)
@@ -156,6 +156,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
+	stacks := agentState.Stacks
 	alertStateManager, _ := r.Context().Value("alertStateManager").(*alert.AlertStateManager)
 	for _, stack := range stacks {
 		if stack.Deployment == nil {
@@ -180,9 +181,10 @@ func state(w http.ResponseWriter, r *http.Request) {
 	for _, s := range stacks {
 		copy := s       // needed as the address of s is constant in the for loop
 		copy.Env = name // making the service aware of its env
-		stackPointers = append(stackPointers, &copy)
+		stackPointers = append(stackPointers, copy)
 	}
 	agent.Stacks = stackPointers
+	agent.Certificate = agentState.Certificate
 
 	envs := []*api.ConnectedAgent{{
 		Name:      name,

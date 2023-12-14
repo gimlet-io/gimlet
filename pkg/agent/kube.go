@@ -93,12 +93,11 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		}
 
 		stacks = append(stacks, &api.Stack{
-			Repo:        service.ObjectMeta.GetAnnotations()[AnnotationGitRepository],
-			Certificate: fetchCertificate(e),
-			Osca:        getOpenServiceCatalogAnnotations(service),
-			Service:     &api.Service{Name: service.Name, Namespace: service.Namespace},
-			Deployment:  deployment,
-			Ingresses:   ingresses,
+			Repo:       service.ObjectMeta.GetAnnotations()[AnnotationGitRepository],
+			Osca:       getOpenServiceCatalogAnnotations(service),
+			Service:    &api.Service{Name: service.Name, Namespace: service.Namespace},
+			Deployment: deployment,
+			Ingresses:  ingresses,
 		})
 	}
 
@@ -118,14 +117,14 @@ func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
 	}
 }
 
-func fetchCertificate(kubeEnv *KubeEnv) []byte {
-	service, err := kubeEnv.Client.CoreV1().Services("infrastructure").Get(context.Background(), "sealed-secrets-controller", metav1.GetOptions{})
+func (e *KubeEnv) FetchCertificate() []byte {
+	service, err := e.Client.CoreV1().Services("infrastructure").Get(context.Background(), "sealed-secrets-controller", metav1.GetOptions{})
 	if err != nil {
 		logrus.Debugf("could not get sealed secret service: %s", err)
 		return nil
 	}
 
-	cert, err := kubeEnv.Client.CoreV1().Services("infrastructure").ProxyGet("http", "sealed-secrets-controller", service.Spec.Ports[0].Name, "/v1/cert.pem", nil).DoRaw(context.Background())
+	cert, err := e.Client.CoreV1().Services("infrastructure").ProxyGet("http", "sealed-secrets-controller", service.Spec.Ports[0].Name, "/v1/cert.pem", nil).DoRaw(context.Background())
 	if err != nil {
 		logrus.Debugf("could not get cert: %s", err)
 		return nil
