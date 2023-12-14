@@ -542,15 +542,12 @@ func seal(w http.ResponseWriter, r *http.Request) {
 }
 
 func extractCert(agents map[string]*streaming.ConnectedAgent, env string) ([]byte, error) {
-	for _, a := range agents {
-		if a.Name != env {
-			continue
-		}
-
-		if len(a.Certificate) != 0 {
-			return a.Certificate, nil
+	if agent, ok := agents[env]; ok {
+		if len(agent.Certificate) != 0 {
+			return agent.Certificate, nil
 		}
 	}
+
 	return nil, fmt.Errorf("not found")
 }
 
