@@ -104,6 +104,19 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	return stacks, nil
 }
 
+func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
+	return &api.Osca{
+		Links: api.Links{
+			Docs:    svc.ObjectMeta.GetAnnotations()[AnnotationDocsLink],
+			Logs:    svc.ObjectMeta.GetAnnotations()[AnnotationLogsLink],
+			Metrics: svc.ObjectMeta.GetAnnotations()[AnnotationMetricsLink],
+			Traces:  svc.ObjectMeta.GetAnnotations()[AnnotationTracesLink],
+			Issues:  svc.ObjectMeta.GetAnnotations()[AnnotationIssuesLink],
+		},
+		Owner: svc.ObjectMeta.GetAnnotations()[AnnotationOwnerName],
+	}
+}
+
 func (e *KubeEnv) FetchCertificate() []byte {
 	service, err := e.Client.CoreV1().Services("infrastructure").Get(context.Background(), "sealed-secrets-controller", metav1.GetOptions{})
 	if err != nil {
@@ -118,19 +131,6 @@ func (e *KubeEnv) FetchCertificate() []byte {
 	}
 
 	return cert
-}
-
-func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
-	return &api.Osca{
-		Links: api.Links{
-			Docs:    svc.ObjectMeta.GetAnnotations()[AnnotationDocsLink],
-			Logs:    svc.ObjectMeta.GetAnnotations()[AnnotationLogsLink],
-			Metrics: svc.ObjectMeta.GetAnnotations()[AnnotationMetricsLink],
-			Traces:  svc.ObjectMeta.GetAnnotations()[AnnotationTracesLink],
-			Issues:  svc.ObjectMeta.GetAnnotations()[AnnotationIssuesLink],
-		},
-		Owner: svc.ObjectMeta.GetAnnotations()[AnnotationOwnerName],
-	}
 }
 
 var gitRepositoryResource = schema.GroupVersionResource{
