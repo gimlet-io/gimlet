@@ -23,8 +23,12 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -93,12 +97,18 @@ func main() {
 		panic(err.Error())
 	}
 
+	perf := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "gimlet_agent_perf",
+		Help: "Performance of functions",
+	}, []string{"function"})
+
 	kubeEnv := &agent.KubeEnv{
 		Name:          envName,
 		Namespace:     namespace,
 		Config:        k8sConfig,
 		Client:        clientset,
 		DynamicClient: dynamicClient,
+		Perf:          perf,
 	}
 
 	stopCh := make(chan struct{})
@@ -107,14 +117,14 @@ func main() {
 	podController := agent.PodController(kubeEnv, config.Host, config.AgentKey)
 	deploymentController := agent.DeploymentController(kubeEnv, config.Host, config.AgentKey)
 	ingressController := agent.IngressController(kubeEnv, config.Host, config.AgentKey)
-	eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
+	// eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
 	gitRepositoryController := agent.GitRepositoryController(kubeEnv, config.Host, config.AgentKey)
 	kustomizationController := agent.KustomizationController(kubeEnv, config.Host, config.AgentKey)
 	helmReleaseController := agent.HelmReleaseController(kubeEnv, config.Host, config.AgentKey)
 	go podController.Run(1, stopCh)
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
-	go eventController.Run(1, stopCh)
+	// go eventController.Run(1, stopCh)
 	go gitRepositoryController.Run(1, stopCh)
 	go kustomizationController.Run(1, stopCh)
 	go helmReleaseController.Run(1, stopCh)
@@ -123,6 +133,10 @@ func main() {
 
 	go serverCommunication(kubeEnv, config, messages, config.Host, config.AgentKey)
 	go serverWSCommunication(config, messages)
+
+	metricsRouter := chi.NewRouter()
+	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
+	go http.ListenAndServe(":9002", metricsRouter)
 
 	signals := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
