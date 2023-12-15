@@ -138,3 +138,7 @@ func (fm *fluxMessage) SHA() string {
 func (fm *fluxMessage) CustomChannel() string {
 	return ""
 }
+
+func (fm *fluxMessage) Silenced() bool {
+	return false
+}

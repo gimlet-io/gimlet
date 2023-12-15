@@ -216,6 +216,7 @@ export const parseDeploymentName = deployment => {
 };
 
 const AlertSilenceDropdown = ({ alert, silenceAlerts }) => {
+  const object =`${alert.deploymentName}-${alert.type}`
   const silenceOptions = [
     { title: 'for 2 hours', hours: 2 },
     { title: 'for 24 hours', hours: 24 },
@@ -243,7 +244,7 @@ const AlertSilenceDropdown = ({ alert, silenceAlerts }) => {
                 onClick={() => {
                   // eslint-disable-next-line no-restricted-globals
                   confirm(`Are you sure you want to silence ${alert.deploymentName} ${alert.type} alerts ${option.title}?`) &&
-                  silenceAlerts(alert.deploymentName, alert.type, option.hours);
+                  silenceAlerts(object, option.hours);
                 }}
                 className={(
                   active ? 'bg-red-500 text-slate-100' : 'text-slate-100') +

@@ -8,6 +8,7 @@ type Message interface {
 	RepositoryName() string
 	SHA() string
 	CustomChannel() string
+	Silenced() bool
 }
 
 type status struct {

@@ -121,21 +121,21 @@ function ServiceDetail(props) {
       });
   }
 
-  const silenceAlerts = (deployment, alertType, hours) => {
+  const silenceAlerts = (object, hours) => {
     var date = new Date();
     date.setHours(date.getHours() + hours);
 
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Silencing deployment alerts..."
+        header: "Silence deployment alerts..."
       }
     });
 
-    gimletClient.silenceAlerts(deployment, alertType, date.toISOString())
+    gimletClient.silenceAlerts(object, date.toISOString())
       .then(() => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Alerts silence set",
+            header: "Success",
           }
         });
         setTimeout(() => {

@@ -71,9 +71,10 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 
 			apiAlert := api.NewAlert(alert, t.Text(), t.Name())
 			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert:         *apiAlert,
-				ImChannelId:   alert.ImChannelId,
-				DeploymentUrl: alert.DeploymentUrl,
+				Alert:          *apiAlert,
+				ImChannelId:    alert.ImChannelId,
+				DeploymentUrl:  alert.DeploymentUrl,
+				AlertsSilenced: a.alertsSilenced(alert.DeploymentName, alert.Type),
 			})
 			a.broadcast(apiAlert, streaming.AlertFiredEventString)
 		}
@@ -194,8 +195,9 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 			apiAlert := api.NewAlert(nonResolvedAlert, t.Text(), t.Name())
 			if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 				a.notifManager.Broadcast(&notifications.AlertMessage{
-					Alert:       *apiAlert,
-					ImChannelId: pod.ImChannelId,
+					Alert:          *apiAlert,
+					ImChannelId:    pod.ImChannelId,
+					AlertsSilenced: a.alertsSilenced(nonResolvedAlert.DeploymentName, nonResolvedAlert.Type),
 				})
 			}
 			a.broadcast(apiAlert, streaming.AlertResolvedEventString)
@@ -230,8 +232,9 @@ func (a AlertStateManager) DeletePod(podName string) error {
 		apiAlert := api.NewAlert(nonResolvedAlert, "", "")
 		if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert:       *apiAlert,
-				ImChannelId: nonResolvedAlert.ImChannelId,
+				Alert:          *apiAlert,
+				ImChannelId:    nonResolvedAlert.ImChannelId,
+				AlertsSilenced: a.alertsSilenced(nonResolvedAlert.DeploymentName, nonResolvedAlert.Type),
 			})
 		}
 		a.broadcast(apiAlert, streaming.AlertResolvedEventString)
@@ -277,6 +280,27 @@ func (a AlertStateManager) broadcast(alert *api.Alert, event string) {
 		StreamingEvent: streaming.StreamingEvent{Event: event},
 	})
 	a.clientHub.Broadcast <- jsonString
+}
+
+func (a AlertStateManager) alertsSilenced(deploymentName string, alertType string) bool {
+	object := fmt.Sprintf("%s-%s", deploymentName, alertType)
+	storedObject, err := a.store.KeyValue(object)
+	if err == sql.ErrNoRows {
+		return false
+	} else if err != nil {
+		logrus.Errorf("cannot get key value")
+		return false
+	}
+
+	var silencedUntil *time.Time
+	t, err := time.Parse(time.RFC3339, storedObject.Value)
+	if err != nil {
+		logrus.Errorf("cannot parse until date %s", err)
+		return false
+	}
+	silencedUntil = &t
+
+	return time.Now().Before(*silencedUntil)
 }
 
 func (a AlertStateManager) TrackEvents(events []api.Event) error {

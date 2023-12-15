@@ -91,7 +91,7 @@ export default class GimletClient {
 
   seal = (env, secret) => this.post(`/api/env/${env}/seal`, JSON.stringify(secret));
 
-  silenceAlerts = (deployment, alertType, until) => this.post(`/api/silenceAlerts?deployment=${deployment}&alertType=${alertType}&until=${until}`);
+  silenceAlerts = (object, until) => this.post(`/api/silenceAlerts?object=${object}&&until=${until}`);
 
   get = async (path) => {
     try {

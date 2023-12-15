@@ -258,3 +258,7 @@ func (ws *weeklySummaryMessage) SHA() string {
 func (ws *weeklySummaryMessage) CustomChannel() string {
 	return ""
 }
+
+func (ws *weeklySummaryMessage) Silenced() bool {
+	return false
+}

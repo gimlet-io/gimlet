@@ -575,6 +575,26 @@ func sealValue(pubKey *rsa.PublicKey, data string) (string, error) {
 	return base64.StdEncoding.EncodeToString(result), err
 }
 
+func silenceAlerts(w http.ResponseWriter, r *http.Request) {
+	object := r.URL.Query().Get("object")
+	until := r.URL.Query().Get("until")
+
+	db := r.Context().Value("store").(*store.Store)
+	err := db.SaveKeyValue(&model.KeyValue{
+		Key:   object,
+		Value: until,
+	})
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}
+
 func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 	var envNameToSave string
 	err := json.NewDecoder(r.Body).Decode(&envNameToSave)
