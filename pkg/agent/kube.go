@@ -32,7 +32,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -84,11 +83,32 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	e.Perf.WithLabelValues("gimlet_agent_ingresses").Observe(float64(time.Since(t0).Seconds()))
 
 	t0 = time.Now()
+	pods, err := e.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not get pods: %s", err)
+	}
+	e.Perf.WithLabelValues("gimlet_agent_pods").Observe(float64(time.Since(t0).Seconds()))
+
+	t0 = time.Now()
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
 		deployment, err := e.deploymentForService(service, d.Items)
 		if err != nil {
 			return nil, fmt.Errorf("could not get deployment for service: %s", err)
+		}
+
+		if deployment != nil {
+			deployment.Pods = []*api.Pod{}
+			for _, pod := range pods.Items {
+				if labelsMatchSelectors(pod.ObjectMeta.Labels, service.Spec.Selector) {
+					podStatus := podStatus(pod)
+					podLogs := ""
+					if podStatus == "CrashLoopBackOff" || podStatus == "Error" {
+						podLogs = logs(e, pod)
+					}
+					deployment.Pods = append(deployment.Pods, &api.Pod{Name: pod.Name, DeploymentName: deployment.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
+				}
+			}
 		}
 
 		var ingresses []*api.Ingress
@@ -113,6 +133,20 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	e.Perf.WithLabelValues("gimlet_agent_stacks").Observe(float64(time.Since(t0).Seconds()))
 
 	return stacks, nil
+}
+
+func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
+	for k2, v2 := range selectors {
+		if v, ok := labels[k2]; ok {
+			if v2 != v {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	return true
 }
 
 func getOpenServiceCatalogAnnotations(svc v1.Service) *api.Osca {
@@ -384,22 +418,7 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 				sha = hash
 			}
 
-			var pods []*api.Pod
-			set := labels.Set(service.Spec.Selector)
-			p, err := e.Client.CoreV1().Pods(e.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: set.AsSelector().String()})
-			if err != nil {
-				return nil, err
-			}
-			for _, pod := range p.Items {
-				podStatus := podStatus(pod)
-				podLogs := ""
-				if "CrashLoopBackOff" == podStatus || "Error" == podStatus {
-					podLogs = logs(e, pod)
-				}
-				pods = append(pods, &api.Pod{Name: pod.Name, DeploymentName: d.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
-			}
-
-			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Pods: pods, SHA: sha}
+			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, SHA: sha}
 		}
 	}
 
