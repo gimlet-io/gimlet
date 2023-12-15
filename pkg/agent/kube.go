@@ -26,6 +26,7 @@ import (
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -55,25 +56,34 @@ type KubeEnv struct {
 	Config        *rest.Config
 	Client        kubernetes.Interface
 	DynamicClient dynamic.Interface
+	Perf          *prometheus.HistogramVec
 }
 
 func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
+
+	t0 := time.Now()
 	annotatedServices, err := e.annotatedServices(repo)
 	if err != nil {
 		logrus.Errorf("could not get 1 %v", err)
 		return nil, err
 	}
+	e.Perf.WithLabelValues("gimlet_agent_services").Observe(float64(time.Since(t0).Seconds()))
 
+	t0 = time.Now()
 	d, err := e.Client.AppsV1().Deployments(e.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not get deployments: %s", err)
 	}
+	e.Perf.WithLabelValues("gimlet_agent_deployments").Observe(float64(time.Since(t0).Seconds()))
 
+	t0 = time.Now()
 	i, err := e.Client.NetworkingV1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not get ingresses: %s", err)
 	}
+	e.Perf.WithLabelValues("gimlet_agent_ingresses").Observe(float64(time.Since(t0).Seconds()))
 
+	t0 = time.Now()
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
 		deployment, err := e.deploymentForService(service, d.Items)
@@ -100,6 +110,7 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 			Ingresses:  ingresses,
 		})
 	}
+	e.Perf.WithLabelValues("gimlet_agent_stacks").Observe(float64(time.Since(t0).Seconds()))
 
 	return stacks, nil
 }
