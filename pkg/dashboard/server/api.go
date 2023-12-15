@@ -220,7 +220,7 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	decoratedAlerts := []*api.Alert{}
 	for _, dbAlert := range dbAlerts {
 		t := alert.ThresholdByType(thresholds, dbAlert.Type)
-		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Name()))
+		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Text(), t.Name()))
 	}
 
 	alertsString, err := json.Marshal(decoratedAlerts)
@@ -516,7 +516,7 @@ func seal(w http.ResponseWriter, r *http.Request) {
 
 	env := chi.URLParam(r, "env")
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	cert, err := extractCert(agentHub, env)
+	cert, err := extractCert(agentHub.Agents, env)
 	if err != nil {
 		logrus.Errorf("cannot extract certificate from agenthub: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -541,18 +541,13 @@ func seal(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(sealedValue))
 }
 
-func extractCert(agentHub *streaming.AgentHub, env string) ([]byte, error) {
-	for _, a := range agentHub.Agents {
-		for _, stack := range a.Stacks {
-			if stack.Env != env {
-				continue
-			}
-
-			if stack.Certificate != nil {
-				return stack.Certificate, nil
-			}
+func extractCert(agents map[string]*streaming.ConnectedAgent, env string) ([]byte, error) {
+	if agent, ok := agents[env]; ok {
+		if len(agent.Certificate) != 0 {
+			return agent.Certificate, nil
 		}
 	}
+
 	return nil, fmt.Errorf("not found")
 }
 

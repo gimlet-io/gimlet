@@ -26,6 +26,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/MichaelMure/go-term-markdown v0.1.4
 	github.com/alecthomas/assert v1.0.0
+	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
 	github.com/bwmarrin/discordgo v0.27.1
@@ -94,7 +95,6 @@ require (
 	github.com/alecthomas/colour v0.1.0 // indirect
 	github.com/alecthomas/repr v0.0.0-20210801044451-80ca428c5142 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
-	github.com/bitnami-labs/sealed-secrets v0.13.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
@@ -102,7 +102,6 @@ require (
 	github.com/gliderlabs/ssh v0.3.5 // indirect
 	github.com/go-git/go-git-fixtures/v4 v4.3.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/gookit/color v1.5.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -121,8 +120,6 @@ require (
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
-	k8s.io/code-generator v0.27.4 // indirect
-	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect
 	modernc.org/cc/v3 v3.40.0 // indirect
 	modernc.org/ccgo/v3 v3.16.13 // indirect

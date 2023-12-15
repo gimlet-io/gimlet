@@ -156,68 +156,68 @@ function ServiceDetail(props) {
         <div className="flex-1">
           <h3 ref={ref} className="flex text-lg font-bold rounded p-4">
             <span className="cursor-pointer" onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
-            {configExists ?
-              <>
+            {configExists &&
               <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
-                viewBox="0 0 24 24">
-                <path d="M0 0h24v24H0z" fill="none" />
-                <path
-                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-              </svg>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
+                  viewBox="0 0 24 24">
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path
+                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                </svg>
               </a>
-              <div className="flex items-center ml-auto space-x-2">
-                <button 
+            }
+            <div className="flex items-center ml-auto space-x-2">
+              {configExists &&
+                <button
                   className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   onClick={() => {
                     posthog?.capture('Env config edit pushed')
                     navigateToConfigEdit(envName, stack.service.name)
-                    }}
-                  >
+                  }}
+                >
                   Edit
                 </button>
-                { deployment &&
+              }
+              {deployment &&
                 <>
-                <button
-                  onClick={() => {
-                    setLogsOverlayVisible(true)
-                    setLogsOverlayNamespace(deployment.namespace);
-                    setLogsOverlayService(stack.service.name);
-                    gimletClient.podLogsRequest(deployment.namespace, stack.service.name);
-                  }}
-                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
+                  <button
+                    onClick={() => {
+                      setLogsOverlayVisible(true)
+                      setLogsOverlayNamespace(deployment.namespace);
+                      setLogsOverlayService(stack.service.name);
+                      gimletClient.podLogsRequest(deployment.namespace, stack.service.name);
+                    }}
+                    className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   >
-                  Logs
-                </button>
-                <button
-                  onClick={() => {
-                    setLogsOverlayVisible(true);
-                    setLogsOverlayNamespace(deployment.namespace);
-                    setLogsOverlayService(stack.service.name);
-                    gimletClient.deploymentDetailsRequest(deployment.namespace, stack.service.name);
-                  }}
-                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
-                  Describe
-                </button>
+                    Logs
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLogsOverlayVisible(true);
+                      setLogsOverlayNamespace(deployment.namespace);
+                      setLogsOverlayService(stack.service.name);
+                      gimletClient.deploymentDetailsRequest(deployment.namespace, stack.service.name);
+                    }}
+                    className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                    Describe
+                  </button>
+                  {!configExists &&
+                    <div className="flex items-center ml-auto">
+                      <svg xmlns="http://www.w3.org/2000/svg"
+                        onClick={() => {
+                          // eslint-disable-next-line no-restricted-globals
+                          confirm(`Are you sure you want to delete the ${stack.service.name} application instance?`) &&
+                            deleteAppInstance()
+                        }}
+                        className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </div>
+                  }
                 </>
-                }
-              </div>
-              </>
-              :
-              <div className="flex items-center ml-auto">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  onClick={() => {
-                    // eslint-disable-next-line no-restricted-globals
-                    confirm(`Are you sure you want to delete the ${stack.service.name} application instance?`) &&
-                    deleteAppInstance()
-                  }}
-                  className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </div>
-              
-            }
+              }
+            </div>
           </h3>
           <AlertPanel alerts={serviceAlerts?.filter(alert => alert.status === "Firing")} hideButton />
           <div>

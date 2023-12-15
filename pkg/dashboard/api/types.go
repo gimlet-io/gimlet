@@ -127,13 +127,14 @@ type Alert struct {
 	ResolvedAt     int64  `json:"resolvedAt"`
 }
 
-func NewAlert(alert *model.Alert, text string) *Alert {
+func NewAlert(alert *model.Alert, text string, name string) *Alert {
 	return &Alert{
 		ObjectName:     alert.ObjectName,
 		DeploymentName: alert.DeploymentName,
 		Type:           alert.Type,
 		Status:         alert.Status,
 		Text:           text,
+		Name:           name,
 		PendingAt:      alert.PendingAt,
 		FiredAt:        alert.FiredAt,
 		ResolvedAt:     alert.ResolvedAt,
@@ -171,14 +172,18 @@ type FluxStateUpdate struct {
 	FluxState FluxState `json:"fluxState"`
 }
 
+type AgentState struct {
+	Stacks      []*Stack `json:"stacks"`
+	Certificate []byte   `json:"certificate"`
+}
+
 type Stack struct {
-	Repo        string      `json:"repo"`
-	Env         string      `json:"env"`
-	Certificate []byte      `json:"certificate,omitempty"`
-	Osca        *Osca       `json:"osca"`
-	Service     *Service    `json:"service"`
-	Deployment  *Deployment `json:"deployment,omitempty"`
-	Ingresses   []*Ingress  `json:"ingresses,omitempty"`
+	Repo       string      `json:"repo"`
+	Env        string      `json:"env"`
+	Osca       *Osca       `json:"osca"`
+	Service    *Service    `json:"service"`
+	Deployment *Deployment `json:"deployment,omitempty"`
+	Ingresses  []*Ingress  `json:"ingresses,omitempty"`
 }
 
 type StackUpdate struct {
