@@ -29,10 +29,6 @@ func NewDummyManager() *DummyManagerImpl {
 }
 
 func (m *ManagerImpl) Broadcast(msg Message) {
-	if msg.Silenced() {
-		return
-	}
-
 	m.broadcast <- msg
 }
 

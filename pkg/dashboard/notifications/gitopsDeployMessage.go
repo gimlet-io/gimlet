@@ -163,7 +163,3 @@ func (gm *gitopsDeployMessage) SHA() string {
 func (gm *gitopsDeployMessage) CustomChannel() string {
 	return ""
 }
-
-func (gm *gitopsDeployMessage) Silenced() bool {
-	return false
-}

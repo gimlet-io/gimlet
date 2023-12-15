@@ -116,7 +116,3 @@ func (gm *gitopsDeleteMessage) SHA() string {
 func (gm *gitopsDeleteMessage) CustomChannel() string {
 	return ""
 }
-
-func (gm *gitopsDeleteMessage) Silenced() bool {
-	return false
-}

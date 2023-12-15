@@ -111,7 +111,3 @@ func (gm *gitopsRollbackMessage) SHA() string {
 func (gm *gitopsRollbackMessage) CustomChannel() string {
 	return ""
 }
-
-func (gm *gitopsRollbackMessage) Silenced() bool {
-	return false
-}

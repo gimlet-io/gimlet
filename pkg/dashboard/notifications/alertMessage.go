@@ -10,10 +10,9 @@ import (
 )
 
 type AlertMessage struct {
-	Alert          api.Alert
-	ImChannelId    string
-	DeploymentUrl  string
-	AlertsSilenced bool
+	Alert         api.Alert
+	ImChannelId   string
+	DeploymentUrl string
 }
 
 func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
@@ -106,8 +105,4 @@ func (am *AlertMessage) SHA() string {
 
 func (am *AlertMessage) CustomChannel() string {
 	return am.ImChannelId
-}
-
-func (am *AlertMessage) Silenced() bool {
-	return am.AlertsSilenced
 }
