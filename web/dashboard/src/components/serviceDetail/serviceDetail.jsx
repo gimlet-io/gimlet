@@ -121,6 +121,43 @@ function ServiceDetail(props) {
       });
   }
 
+  const silenceAlerts = (deployment, alertType, hours) => {
+    var date = new Date();
+    date.setHours(date.getHours() + hours);
+
+    store.dispatch({
+      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
+        header: "Silencing deployment alerts..."
+      }
+    });
+
+    gimletClient.silenceAlerts(deployment, alertType, date.toISOString())
+      .then(() => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
+            header: "Alerts silence set",
+          }
+        });
+        setTimeout(() => {
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWRESET
+          });
+        }, 3000);
+      }, (err) => {
+        store.dispatch({
+          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
+            header: "Error",
+            message: err.statusText
+          }
+        });
+        setTimeout(() => {
+          store.dispatch({
+            type: ACTION_TYPE_POPUPWINDOWRESET
+          });
+        }, 3000);
+      });
+  }
+
   const deployment = stack.deployment;
   const repo = stack.repo;
 
@@ -219,7 +256,11 @@ function ServiceDetail(props) {
               }
             </div>
           </h3>
-          <AlertPanel alerts={serviceAlerts?.filter(alert => alert.status === "Firing")} hideButton />
+          <AlertPanel
+            alerts={serviceAlerts?.filter(alert => alert.status === "Firing")}
+            silenceAlerts={silenceAlerts}
+            hideButton
+          />
           <div>
             <div className="grid grid-cols-12 mt-4 px-4">
               <div className="col-span-5 border-r space-y-4">

@@ -3,6 +3,8 @@ import { format, formatDistance } from "date-fns";
 import Releases from './releases';
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import { Remarkable } from "remarkable";
+import { Menu } from '@headlessui/react';
+import { ChevronDownIcon } from '@heroicons/react/solid';
 
 export default class Pulse extends Component {
   constructor(props) {
@@ -117,7 +119,7 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
   )
 }
 
-export function AlertPanel({ alerts, history, hideButton }) {
+export function AlertPanel({ alerts, history, hideButton, silenceAlerts }) {
   if (!alerts) {
     return null;
   }
@@ -158,6 +160,12 @@ export function AlertPanel({ alerts, history, hideButton }) {
                   </button>
                 </div>}
               </>}
+            <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
+              <AlertSilenceDropdown
+               alert={alert}
+               silenceAlerts={silenceAlerts}
+               />
+            </div>
             {dateLabel(alert.firedAt)}
             {dateLabel(alert.firedAt)}
           </div>
@@ -206,3 +214,48 @@ function dateLabel(lastSeen) {
 export const parseDeploymentName = deployment => {
   return deployment.split("/")[1];
 };
+
+const AlertSilenceDropdown = ({ alert, silenceAlerts }) => {
+  const silenceOptions = [
+    { title: 'for 2 hours', hours: 2 },
+    { title: 'for 24 hours', hours: 24 },
+    { title: 'for 1 week', hours: 24 * 7 },
+  ]
+
+  return (
+    <Menu as="span" className="relative">
+      <div className="inline-flex rounded-md shadow-sm">
+        <Menu.Button className="inline-flex items-center rounded-l-md rounded-r-md bg-red-400 p-2 hover:bg-red-500 text-white space-x-1">
+          <p className="text-sm font-semibold">Silence</p>
+          <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+        </Menu.Button>
+      </div>
+
+      <Menu.Items className="absolute right-0 z-10 mt-2 w-72 origin-top-right divide-y divide-gray-200 overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+        {silenceOptions.map((option) => (
+          <Menu.Item
+            key={option.title}
+            className={'bg-red-400 text-white select-none text-sm'}
+            value={option}
+          >
+            {({ active }) => (
+              <button
+                onClick={() => {
+                  // eslint-disable-next-line no-restricted-globals
+                  confirm(`Are you sure you want to silence ${alert.deploymentName} ${alert.type} alerts ${option.title}?`) &&
+                  silenceAlerts(alert.deploymentName, alert.type, option.hours);
+                }}
+                className={(
+                  active ? 'bg-red-500 text-slate-100' : 'text-slate-100') +
+                  ' block px-4 py-2 text-sm w-full text-left'
+                }
+              >
+                {option.title}
+              </button>
+            )}
+          </Menu.Item>
+        ))}
+      </Menu.Items>
+    </Menu>
+  )
+}
