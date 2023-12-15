@@ -123,12 +123,12 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		}
 
 		stacks = append(stacks, &api.Stack{
-			Repo:        service.ObjectMeta.GetAnnotations()[AnnotationGitRepository],
-			Certificate: fetchCertificate(e),
-			Osca:        getOpenServiceCatalogAnnotations(service),
-			Service:     &api.Service{Name: service.Name, Namespace: service.Namespace},
-			Deployment:  deployment,
-			Ingresses:   ingresses,
+			Repo: service.ObjectMeta.GetAnnotations()[AnnotationGitRepository],
+			// Certificate: fetchCertificate(e),
+			Osca:       getOpenServiceCatalogAnnotations(service),
+			Service:    &api.Service{Name: service.Name, Namespace: service.Namespace},
+			Deployment: deployment,
+			Ingresses:  ingresses,
 		})
 	}
 	e.Perf.WithLabelValues("gimlet_agent_stacks").Observe(float64(time.Since(t0).Seconds()))
