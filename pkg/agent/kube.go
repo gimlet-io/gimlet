@@ -82,11 +82,14 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	}
 	e.Perf.WithLabelValues("gimlet_agent_ingresses").Observe(float64(time.Since(t0).Seconds()))
 
+	t0 = time.Now()
 	pods, err := e.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not get pods: %s", err)
 	}
+	e.Perf.WithLabelValues("gimlet_agent_pods").Observe(float64(time.Since(t0).Seconds()))
 
+	t0 = time.Now()
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
 		deployment, err := e.deploymentForService(service, d.Items)
