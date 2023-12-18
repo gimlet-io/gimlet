@@ -69,7 +69,12 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 				logrus.Errorf("couldn't set firing state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(alert, t.Text(), t.Name(), "")
+			silencedUntil, err := a.store.DeploymentSilencedUntil(alert.DeploymentName, alert.Type)
+			if err != nil {
+				logrus.Errorf("couldn't get deployment silenced until: %s", err)
+			}
+
+			apiAlert := api.NewAlert(alert, t.Text(), t.Name(), silencedUntil)
 			if a.alertsSilenced(alert.DeploymentName, alert.Type) {
 				if a.alertsSilenced(alert.DeploymentName, alert.Type) {
 					a.notifManager.Broadcast(&notifications.AlertMessage{
@@ -180,7 +185,11 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 			if err != nil {
 				return err
 			}
-			apiAlert := api.NewAlert(alertToCreate, t.Text(), t.Name(), "")
+			silencedUntil, err := a.store.DeploymentSilencedUntil(alertToCreate.DeploymentName, alertToCreate.Type)
+			if err != nil {
+				logrus.Errorf("couldn't get deployment silenced until: %s", err)
+			}
+			apiAlert := api.NewAlert(alertToCreate, t.Text(), t.Name(), silencedUntil)
 			a.broadcast(apiAlert, streaming.AlertPendingEventString)
 		}
 	}
@@ -195,7 +204,12 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(nonResolvedAlert, t.Text(), t.Name(), "")
+			silencedUntil, err := a.store.DeploymentSilencedUntil(nonResolvedAlert.DeploymentName, nonResolvedAlert.Type)
+			if err != nil {
+				logrus.Errorf("couldn't get deployment silenced until: %s", err)
+			}
+
+			apiAlert := api.NewAlert(nonResolvedAlert, t.Text(), t.Name(), silencedUntil)
 			if a.alertsSilenced(nonResolvedAlert.DeploymentName, nonResolvedAlert.Type) {
 				if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 					a.notifManager.Broadcast(&notifications.AlertMessage{
@@ -233,7 +247,7 @@ func (a AlertStateManager) DeletePod(podName string) error {
 			logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 		}
 
-		apiAlert := api.NewAlert(nonResolvedAlert, "", "", "")
+		apiAlert := api.NewAlert(nonResolvedAlert, "", "", 0)
 		if a.alertsSilenced(nonResolvedAlert.DeploymentName, nonResolvedAlert.Type) {
 			if previousState == model.FIRING { // don't notify people about pending then resolved alerts
 				a.notifManager.Broadcast(&notifications.AlertMessage{

@@ -3,6 +3,8 @@ package store
 import (
 	database_sql "database/sql"
 	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
@@ -60,4 +62,21 @@ func (db *Store) SaveReposWithCleanupPolicy(reposWithCleanupPolicy []string) err
 	}
 
 	return db.SaveKeyValue(reposWithCleanupPolicyKeyValue)
+}
+
+func (db *Store) DeploymentSilencedUntil(deployment string, alertType string) (int64, error) {
+	object := fmt.Sprintf("%s-%s", deployment, alertType)
+	silencedUntil, err := db.KeyValue(object)
+	if err != nil {
+		return 0, err
+	}
+
+	var until *time.Time
+	t, err := time.Parse(time.RFC3339, silencedUntil.Value)
+	if err != nil {
+		return 0, fmt.Errorf("cannot parse until date: %s", err)
+	}
+	until = &t
+
+	return until.Unix(), nil
 }

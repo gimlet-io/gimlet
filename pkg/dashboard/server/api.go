@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"database/sql"
 
 	"encoding/base64"
 	"encoding/json"
@@ -220,13 +219,13 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	thresholds := alert.Thresholds()
 	decoratedAlerts := []*api.Alert{}
 	for _, dbAlert := range dbAlerts {
-		object := fmt.Sprintf("%s-%s", dbAlert.DeploymentName, dbAlert.Type)
-		storedObject, err := db.KeyValue(object)
-		if err != nil && err != sql.ErrNoRows {
-			logrus.Errorf("cannot get key value")
+		silencedUntil, err := db.DeploymentSilencedUntil(dbAlert.DeploymentName, dbAlert.Type)
+		if err != nil {
+			logrus.Errorf("couldn't get deployment silenced until: %s", err)
 		}
+
 		t := alert.ThresholdByType(thresholds, dbAlert.Type)
-		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Text(), t.Name(), storedObject.Value))
+		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Text(), t.Name(), silencedUntil))
 	}
 
 	alertsString, err := json.Marshal(decoratedAlerts)

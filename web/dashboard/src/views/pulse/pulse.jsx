@@ -161,10 +161,10 @@ export function AlertPanel({ alerts, history, hideButton, silenceAlerts }) {
                 </div>}
               </>}
             <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
-              <AlertSilenceDropdown
-               alert={alert}
-               silenceAlerts={silenceAlerts}
-               />
+              <SilenceWidget
+                alert={alert} 
+                silenceAlerts={silenceAlerts}
+              />
             </div>
             {dateLabel(alert.firedAt)}
             {dateLabel(alert.firedAt)}
@@ -215,7 +215,12 @@ export const parseDeploymentName = deployment => {
   return deployment.split("/")[1];
 };
 
-const AlertSilenceDropdown = ({ alert, silenceAlerts }) => {
+const SilenceWidget = ({ alert, silenceAlerts }) => {
+  const currentUnix = (new Date().getTime() / 1000).toFixed(0)
+  if (alert.silencedUntil && alert.silencedUntil > currentUnix) {
+    return silenceUntilDateLabel(alert.silencedUntil)
+  }
+
   const object =`${alert.deploymentName}-${alert.type}`
   const silenceOptions = [
     { title: 'for 2 hours', hours: 2 },
@@ -259,4 +264,17 @@ const AlertSilenceDropdown = ({ alert, silenceAlerts }) => {
       </Menu.Items>
     </Menu>
   )
+}
+
+function silenceUntilDateLabel(silenceUntil) {
+  const exactDate = format(silenceUntil * 1000, 'h:mm:ss a, MMMM do yyyy')
+
+  return (
+    <div
+      className="text-xs text-red-700 p-3"
+      target="_blank"
+      rel="noopener noreferrer">
+      Silenced until: {exactDate}
+    </div>
+  );
 }
