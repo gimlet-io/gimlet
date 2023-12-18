@@ -51,9 +51,26 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 							Type: button,
 							Text: &Text{
 								Type: "plain_text",
-								Text: "View", // TODO with another button Silence
+								Text: "View",
 							},
-							Url: am.DeploymentUrl,
+							Url:   am.DeploymentUrl,
+							Style: "primary",
+						},
+					},
+					{
+						Type: section,
+						Text: &Text{
+							Type: markdown,
+							Text: " ",
+						},
+						Accessory: &Accessory{
+							Type: button,
+							Text: &Text{
+								Type: "plain_text",
+								Text: "Silence",
+							},
+							Url:   am.DeploymentUrl,
+							Style: "danger",
 						},
 					},
 				},

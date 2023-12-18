@@ -48,9 +48,10 @@ type Attachment struct {
 }
 
 type Accessory struct {
-	Text *Text  `json:"text"`
-	Type string `json:"type"`
-	Url  string `json:"url"`
+	Text  *Text  `json:"text"`
+	Type  string `json:"type"`
+	Url   string `json:"url"`
+	Style string `json:"style"`
 }
 
 type Text struct {
