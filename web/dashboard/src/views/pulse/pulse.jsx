@@ -119,7 +119,7 @@ export function renderChartUpdatePullRequests(chartUpdatePullRequests) {
   )
 }
 
-export function AlertPanel({ alerts, history, hideButton, silenceAlerts }) {
+export function AlertPanel({ alerts, history, hideButton, silenceAlert }) {
   if (!alerts) {
     return null;
   }
@@ -163,7 +163,7 @@ export function AlertPanel({ alerts, history, hideButton, silenceAlerts }) {
             <div className="absolute top-0 right-0 p-2 space-x-2 mb-6">
               <SilenceWidget
                 alert={alert} 
-                silenceAlerts={silenceAlerts}
+                silenceAlert={silenceAlert}
               />
             </div>
             {dateLabel(alert.firedAt)}
@@ -215,7 +215,7 @@ export const parseDeploymentName = deployment => {
   return deployment.split("/")[1];
 };
 
-const SilenceWidget = ({ alert, silenceAlerts }) => {
+const SilenceWidget = ({ alert, silenceAlert }) => {
   const currentUnix = (new Date().getTime() / 1000).toFixed(0)
   if (alert.silencedUntil && alert.silencedUntil > currentUnix) {
     return silenceUntilDateLabel(alert.silencedUntil)
@@ -249,7 +249,7 @@ const SilenceWidget = ({ alert, silenceAlerts }) => {
                 onClick={() => {
                   // eslint-disable-next-line no-restricted-globals
                   confirm(`Are you sure you want to silence ${alert.deploymentName} ${alert.type} alerts ${option.title}?`) &&
-                  silenceAlerts(object, option.hours);
+                  silenceAlert(object, option.hours);
                 }}
                 className={(
                   active ? 'bg-red-500 text-slate-100' : 'text-slate-100') +

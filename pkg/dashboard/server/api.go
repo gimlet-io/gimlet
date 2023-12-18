@@ -580,7 +580,7 @@ func sealValue(pubKey *rsa.PublicKey, data string) (string, error) {
 	return base64.StdEncoding.EncodeToString(result), err
 }
 
-func silenceAlerts(w http.ResponseWriter, r *http.Request) {
+func silenceAlert(w http.ResponseWriter, r *http.Request) {
 	object := r.URL.Query().Get("object")
 	until := r.URL.Query().Get("until")
 

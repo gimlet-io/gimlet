@@ -121,7 +121,7 @@ function ServiceDetail(props) {
       });
   }
 
-  const silenceAlerts = (object, hours) => {
+  const silenceAlert = (object, hours) => {
     var date = new Date();
     date.setHours(date.getHours() + hours);
 
@@ -131,7 +131,7 @@ function ServiceDetail(props) {
       }
     });
 
-    gimletClient.silenceAlerts(object, date.toISOString())
+    gimletClient.silenceAlert(object, date.toISOString())
       .then(() => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
@@ -258,7 +258,7 @@ function ServiceDetail(props) {
           </h3>
           <AlertPanel
             alerts={serviceAlerts?.filter(alert => alert.status === "Firing")}
-            silenceAlerts={silenceAlerts}
+            silenceAlert={silenceAlert}
             hideButton
           />
           <div>
