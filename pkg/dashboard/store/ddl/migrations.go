@@ -40,6 +40,7 @@ const defaultValueForKustomizationPerApp = "default-value-for-kustomization-per-
 const addBuiltInToEnvironmentsTable = "add-built-in-to-environments-table"
 const defaultValueForBuiltInToEnvironmentsTable = "default-value-for-built-in-to-environments-table"
 const createTablePods = "create-table-pods"
+const addRunningSinceToPodsTable = "add-running-since-to-pods-table"
 const createTableEvents = "create-table-events"
 const createTableGitopsCommits = "create-table-gitopsCommits"
 const createTableKubeEvents = "create-table-kube-events"
@@ -206,6 +207,10 @@ status_desc 		  TEXT,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addRunningSinceToPodsTable,
+			stmt: `ALTER TABLE pods ADD COLUMN running_since INTEGER;`,
 		},
 		{
 			name: createTableEvents,
@@ -449,6 +454,10 @@ status_desc 		  TEXT,
 UNIQUE(id)
 );
 `,
+		},
+		{
+			name: addRunningSinceToPodsTable,
+			stmt: `ALTER TABLE pods ADD COLUMN running_since INTEGER;`,
 		},
 		{
 			name: createTableEvents,
