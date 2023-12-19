@@ -125,9 +125,10 @@ type Alert struct {
 	PendingAt      int64  `json:"pendingAt"`
 	FiredAt        int64  `json:"firedAt"`
 	ResolvedAt     int64  `json:"resolvedAt"`
+	SilencedUntil  int64  `json:"silencedUntil"`
 }
 
-func NewAlert(alert *model.Alert, text string, name string) *Alert {
+func NewAlert(alert *model.Alert, text string, name string, silencedUntil int64) *Alert {
 	return &Alert{
 		ObjectName:     alert.ObjectName,
 		DeploymentName: alert.DeploymentName,
@@ -138,6 +139,7 @@ func NewAlert(alert *model.Alert, text string, name string) *Alert {
 		PendingAt:      alert.PendingAt,
 		FiredAt:        alert.FiredAt,
 		ResolvedAt:     alert.ResolvedAt,
+		SilencedUntil:  silencedUntil,
 	}
 }
 

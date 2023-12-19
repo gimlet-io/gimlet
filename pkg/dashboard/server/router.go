@@ -182,6 +182,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Post(("/api/environments"), saveInfrastructureComponents)
 		r.Post(("/api/bootstrapGitops"), bootstrapGitops)
 		r.Post(("/api/env/{env}/seal"), seal)
+		r.Post("/api/silenceAlert", silenceAlert)
 
 		r.Get("/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeWs(clientHub, w, r)

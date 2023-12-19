@@ -26,7 +26,7 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 		msg.Attachments = append(msg.Attachments,
 			Attachment{
 				Color: "#36a64f",
-				Blocks: []Block{
+				Blocks: []AttachmentBlock{
 					{
 						Type: section,
 						Text: &Text{
@@ -40,20 +40,35 @@ func (am *AlertMessage) AsSlackMessage() (*slackMessage, error) {
 		msg.Attachments = append(msg.Attachments,
 			Attachment{
 				Color: "#FF0000",
-				Blocks: []Block{
+				Blocks: []AttachmentBlock{
 					{
 						Type: section,
 						Text: &Text{
 							Type: markdown,
 							Text: am.Alert.Text,
 						},
-						Accessory: &Accessory{
-							Type: button,
-							Text: &Text{
-								Type: "plain_text",
-								Text: "View",
+					},
+					{
+						Type: "actions",
+						Elements: []Accessory{
+							{
+								Type: button,
+								Text: &Text{
+									Type: "plain_text",
+									Text: "View",
+								},
+								Url:   am.DeploymentUrl,
+								Style: "primary",
 							},
-							Url: am.DeploymentUrl,
+							{
+								Type: button,
+								Text: &Text{
+									Type: "plain_text",
+									Text: "Silence",
+								},
+								Url:   am.DeploymentUrl,
+								Style: "danger",
+							},
 						},
 					},
 				},

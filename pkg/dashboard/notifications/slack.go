@@ -36,21 +36,27 @@ type slackMessage struct {
 }
 
 type Block struct {
-	Type      string     `json:"type"`
-	Text      *Text      `json:"text,omitempty"`
-	Accessory *Accessory `json:"accessory,omitempty"`
-	Elements  []Text     `json:"elements,omitempty"`
+	Type     string `json:"type"`
+	Text     *Text  `json:"text,omitempty"`
+	Elements []Text `json:"elements,omitempty"`
 }
 
 type Attachment struct {
-	Color  string  `json:"color"`
-	Blocks []Block `json:"blocks,omitempty"`
+	Color  string            `json:"color"`
+	Blocks []AttachmentBlock `json:"blocks,omitempty"`
+}
+
+type AttachmentBlock struct {
+	Type     string      `json:"type"`
+	Text     *Text       `json:"text,omitempty"`
+	Elements []Accessory `json:"elements,omitempty"`
 }
 
 type Accessory struct {
-	Text *Text  `json:"text"`
-	Type string `json:"type"`
-	Url  string `json:"url"`
+	Text  *Text  `json:"text"`
+	Type  string `json:"type"`
+	Url   string `json:"url"`
+	Style string `json:"style"`
 }
 
 type Text struct {

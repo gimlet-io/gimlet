@@ -91,6 +91,8 @@ export default class GimletClient {
 
   seal = (env, secret) => this.post(`/api/env/${env}/seal`, JSON.stringify(secret));
 
+  silenceAlert = (object, until) => this.post(`/api/silenceAlert?object=${object}&&until=${until}`);
+
   get = async (path) => {
     try {
       const { data } = await axios.get(path, {

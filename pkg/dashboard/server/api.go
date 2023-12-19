@@ -219,8 +219,13 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	thresholds := alert.Thresholds()
 	decoratedAlerts := []*api.Alert{}
 	for _, dbAlert := range dbAlerts {
+		silencedUntil, err := db.DeploymentSilencedUntil(dbAlert.DeploymentName, dbAlert.Type)
+		if err != nil {
+			logrus.Errorf("couldn't get deployment silenced until: %s", err)
+		}
+
 		t := alert.ThresholdByType(thresholds, dbAlert.Type)
-		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Text(), t.Name()))
+		decoratedAlerts = append(decoratedAlerts, api.NewAlert(dbAlert, t.Text(), t.Name(), silencedUntil))
 	}
 
 	alertsString, err := json.Marshal(decoratedAlerts)
@@ -573,6 +578,26 @@ func sealValue(pubKey *rsa.PublicKey, data string) (string, error) {
 	clusterWide := []byte("")
 	result, err := crypto.HybridEncrypt(rand.Reader, pubKey, []byte(data), clusterWide)
 	return base64.StdEncoding.EncodeToString(result), err
+}
+
+func silenceAlert(w http.ResponseWriter, r *http.Request) {
+	object := r.URL.Query().Get("object")
+	until := r.URL.Query().Get("until")
+
+	db := r.Context().Value("store").(*store.Store)
+	err := db.SaveKeyValue(&model.KeyValue{
+		Key:   object,
+		Value: until,
+	})
+	if err != nil {
+		logrus.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
