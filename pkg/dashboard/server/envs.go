@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
@@ -30,6 +31,7 @@ import (
 	gitConfig "github.com/go-git/go-git/v5/config"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/gorilla/securecookie"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -201,6 +203,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	perf := ctx.Value("perf").(*prometheus.HistogramVec)
 	config := ctx.Value("config").(*config.Config)
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
@@ -236,6 +239,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	user := ctx.Value("user").(*model.User)
 
+	t0 := time.Now()
 	_, err = AssureRepoExists(
 		environment.InfraRepo,
 		user.AccessToken,
@@ -243,12 +247,16 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		user.Login,
 		gitServiceImpl,
 	)
+	perf.WithLabelValues("gimlet_bootstrap_gitops_infra_repo_exists").Observe(float64(time.Since(t0).Seconds()))
+
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	t0 = time.Now()
 	_, err = AssureRepoExists(
 		environment.AppsRepo,
 		user.AccessToken,
@@ -256,6 +264,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		user.Login,
 		gitServiceImpl,
 	)
+	perf.WithLabelValues("gimlet_bootstrap_gitops_apps_repo_exists").Observe(float64(time.Since(t0).Seconds()))
+
 	if err != nil {
 		logrus.Errorf("cannot assure repo exists: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -267,6 +277,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	scmURL := dynamicConfig.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+
+	t0 = time.Now()
 	_, _, err = BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
@@ -280,12 +292,16 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		false,
 		scmURL,
 	)
+	perf.WithLabelValues("gimlet_bootstrap_gitops_bootstrap_infra_repo").Observe(float64(time.Since(t0).Seconds()))
+
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	t0 = time.Now()
 	_, _, err = BootstrapEnv(
 		gitRepoCache,
 		gitServiceImpl,
@@ -299,6 +315,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		true,
 		scmURL,
 	)
+	perf.WithLabelValues("gimlet_bootstrap_gitops_bootstrap_apps_repo").Observe(float64(time.Since(t0).Seconds()))
+
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -313,6 +331,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	t0 = time.Now()
 	_, err = BootstrapNotifications(
 		gitRepoCache,
 		config.Host,
@@ -321,6 +340,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		gitToken,
 		gitUser,
 	)
+	perf.WithLabelValues("gimlet_bootstrap_gitops_bootstrap_notifications").Observe(float64(time.Since(t0).Seconds()))
+
 	if err != nil {
 		logrus.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -328,12 +349,16 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	t0 = time.Now()
 	err = installAgent(environment, gitRepoCache, config, dynamicConfig, gitToken)
+	perf.WithLabelValues("gimlet_bootstrap_gitops_install_agent").Observe(float64(time.Since(t0).Seconds()))
+
 	if err != nil {
 		logrus.Errorf("cannot install agent: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
