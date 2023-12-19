@@ -119,9 +119,8 @@ func (s crashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	}
 
 	runningSince := time.Unix(pod.RunningSince, 0)
-	waitTime := time.Now().Add(-time.Second * s.waitToResolve)
-	test := runningSince.Before(waitTime)
-	return test
+	waitToResolveTime := time.Now().Add(-time.Second * s.waitToResolve)
+	return pod.Status == model.POD_RUNNING && runningSince.Before(waitToResolveTime)
 }
 
 func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -157,9 +156,8 @@ func (s oomKilledThreshold) Resolved(relatedObject interface{}) bool {
 	}
 
 	runningSince := time.Unix(pod.RunningSince, 0)
-	waitTime := time.Now().Add(-time.Second * s.waitToResolve)
-	test := runningSince.Before(waitTime)
-	return test
+	waitToResolveTime := time.Now().Add(-time.Second * s.waitToResolve)
+	return pod.Status == model.POD_RUNNING && runningSince.Before(waitToResolveTime)
 }
 
 func (t imagePullBackOffThreshold) Text() string {

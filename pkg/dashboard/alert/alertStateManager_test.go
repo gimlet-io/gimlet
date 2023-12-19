@@ -2,6 +2,7 @@ package alert
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
@@ -121,6 +122,31 @@ func Test_ExistingOOMKilledAlert(t *testing.T) {
 	}
 
 	assert.True(t, alertExists(existingAlerts, alert))
+}
+
+func Test_crashLoopBackOffThresholdReached(t *testing.T) {
+	podModel1 := &model.Pod{
+		Status:       model.POD_RUNNING,
+		RunningSince: time.Now().Add(-301 * time.Second).Unix(),
+	}
+
+	podModel2 := &model.Pod{
+		Status:       model.POD_PENDING,
+		RunningSince: time.Now().Add(-301 * time.Second).Unix(),
+	}
+
+	podModel3 := &model.Pod{
+		Status:       model.POD_RUNNING,
+		RunningSince: 0,
+	}
+
+	threshold := crashLoopBackOffThreshold{
+		waitToResolve: 300,
+	}
+
+	assert.True(t, threshold.Resolved(podModel1))
+	assert.False(t, threshold.Resolved(podModel2))
+	assert.False(t, threshold.Resolved(podModel3))
 }
 
 func TestTrackPod_createContainerConfigError(t *testing.T) {

@@ -107,7 +107,12 @@ func (a AlertStateManager) evaluateFiringAlerts() {
 				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
 			}
 
-			apiAlert := api.NewAlert(alert, t.Text(), t.Name())
+			silencedUntil, err := a.store.DeploymentSilencedUntil(alert.DeploymentName, alert.Type)
+			if err != nil {
+				logrus.Errorf("couldn't get deployment silenced until: %s", err)
+			}
+
+			apiAlert := api.NewAlert(alert, t.Text(), t.Name(), silencedUntil)
 			a.notifManager.Broadcast(&notifications.AlertMessage{
 				Alert:       *apiAlert,
 				ImChannelId: alert.ImChannelId,
