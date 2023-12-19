@@ -113,10 +113,12 @@ func (a AlertStateManager) evaluateFiringAlerts() {
 			}
 
 			apiAlert := api.NewAlert(alert, t.Text(), t.Name(), silencedUntil)
-			a.notifManager.Broadcast(&notifications.AlertMessage{
-				Alert:       *apiAlert,
-				ImChannelId: alert.ImChannelId,
-			})
+			if !a.alertsSilenced(alert.DeploymentName, alert.Type) {
+				a.notifManager.Broadcast(&notifications.AlertMessage{
+					Alert:       *apiAlert,
+					ImChannelId: alert.ImChannelId,
+				})
+			}
 			a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 		}
 	}
