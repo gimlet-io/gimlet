@@ -117,6 +117,9 @@ func (s crashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	if pod.RunningSince == 0 {
 		return false
 	}
+	if pod.Status != model.POD_RUNNING {
+		return false
+	}
 
 	runningSince := time.Unix(pod.RunningSince, 0)
 	waitToResolveTime := time.Now().Add(-time.Second * s.waitToResolve)
@@ -152,6 +155,9 @@ func (s oomKilledThreshold) Reached(relatedObject interface{}, alert *model.Aler
 func (s oomKilledThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
 	if pod.RunningSince == 0 {
+		return false
+	}
+	if pod.Status != model.POD_RUNNING {
 		return false
 	}
 
