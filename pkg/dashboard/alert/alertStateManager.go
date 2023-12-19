@@ -44,6 +44,7 @@ func NewAlertStateManager(
 func (a AlertStateManager) Run() {
 	for {
 		a.evaluatePendingAlerts()
+		a.evaluateFiringAlerts()
 		time.Sleep(a.waitTime)
 	}
 }
@@ -83,6 +84,42 @@ func (a AlertStateManager) evaluatePendingAlerts() {
 				})
 			}
 			a.broadcast(apiAlert, streaming.AlertFiredEventString)
+		}
+	}
+}
+
+func (a AlertStateManager) evaluateFiringAlerts() {
+	alerts, err := a.store.AlertsByState(model.FIRING)
+	if err != nil {
+		logrus.Errorf("couldn't get firing alerts: %s", err)
+	}
+	for _, alert := range alerts {
+		pod, err := a.store.Pod(alert.ObjectName)
+		if err != nil {
+			logrus.Errorf("couldn't get pod from store: %s", err)
+		}
+
+		t := ThresholdByType(a.thresholds, alert.Type)
+		if t != nil && t.Resolved(pod) {
+			alert.SetResolved()
+			err := a.store.UpdateAlertState(alert)
+			if err != nil {
+				logrus.Errorf("couldn't set resolved state for alerts: %s", err)
+			}
+
+			silencedUntil, err := a.store.DeploymentSilencedUntil(alert.DeploymentName, alert.Type)
+			if err != nil {
+				logrus.Errorf("couldn't get deployment silenced until: %s", err)
+			}
+
+			apiAlert := api.NewAlert(alert, t.Text(), t.Name(), silencedUntil)
+			if !a.alertsSilenced(alert.DeploymentName, alert.Type) {
+				a.notifManager.Broadcast(&notifications.AlertMessage{
+					Alert:       *apiAlert,
+					ImChannelId: alert.ImChannelId,
+				})
+			}
+			a.broadcast(apiAlert, streaming.AlertResolvedEventString)
 		}
 	}
 }
@@ -147,10 +184,15 @@ func (a AlertStateManager) TrackPod(pod *api.Pod, repoName string, envName strin
 	}
 
 	dbPod := &model.Pod{
-		Name:       podName,
-		Status:     pod.Status,
-		StatusDesc: pod.StatusDescription,
+		Name:         podName,
+		Status:       pod.Status,
+		StatusDesc:   pod.StatusDescription,
+		RunningSince: 0,
 	}
+	if pod.Status == model.POD_RUNNING {
+		dbPod.RunningSince = currentTime
+	}
+
 	err := a.store.SaveOrUpdatePod(dbPod)
 	if err != nil {
 		return err

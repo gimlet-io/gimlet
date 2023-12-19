@@ -20,7 +20,8 @@ func Thresholds() map[string]threshold {
 			waitTime: 120,
 		},
 		"CrashLoopBackOff": crashLoopBackOffThreshold{
-			waitTime: 120,
+			waitTime:      120,
+			waitToResolve: 300,
 		},
 		"CreateContainerConfigError": createContainerConfigErrorThreshold{
 			waitTime: 60,
@@ -32,7 +33,9 @@ func Thresholds() map[string]threshold {
 			minimumCount:          6,
 			minimumCountPerMinute: 1,
 		},
-		"OOMKilled": oomKilledThreshold{},
+		"OOMKilled": oomKilledThreshold{
+			waitToResolve: 300,
+		},
 	}
 }
 
@@ -63,7 +66,8 @@ type failedEventThreshold struct {
 }
 
 type crashLoopBackOffThreshold struct {
-	waitTime time.Duration
+	waitTime      time.Duration
+	waitToResolve time.Duration
 }
 
 type createContainerConfigErrorThreshold struct {
@@ -75,6 +79,7 @@ type pendingThreshold struct {
 }
 
 type oomKilledThreshold struct {
+	waitToResolve time.Duration
 }
 
 func (s imagePullBackOffThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -109,7 +114,16 @@ func (s crashLoopBackOffThreshold) Reached(relatedObject interface{}, alert *mod
 
 func (s crashLoopBackOffThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
-	return pod.Status == model.POD_RUNNING
+	if pod.RunningSince == 0 {
+		return false
+	}
+	if pod.Status != model.POD_RUNNING {
+		return false
+	}
+
+	runningSince := time.Unix(pod.RunningSince, 0)
+	waitToResolveTime := time.Now().Add(-time.Second * s.waitToResolve)
+	return pod.Status == model.POD_RUNNING && runningSince.Before(waitToResolveTime)
 }
 
 func (s createContainerConfigErrorThreshold) Reached(relatedObject interface{}, alert *model.Alert) bool {
@@ -140,7 +154,16 @@ func (s oomKilledThreshold) Reached(relatedObject interface{}, alert *model.Aler
 
 func (s oomKilledThreshold) Resolved(relatedObject interface{}) bool {
 	pod := relatedObject.(*model.Pod)
-	return pod.Status == model.POD_RUNNING
+	if pod.RunningSince == 0 {
+		return false
+	}
+	if pod.Status != model.POD_RUNNING {
+		return false
+	}
+
+	runningSince := time.Unix(pod.RunningSince, 0)
+	waitToResolveTime := time.Now().Add(-time.Second * s.waitToResolve)
+	return pod.Status == model.POD_RUNNING && runningSince.Before(waitToResolveTime)
 }
 
 func (t imagePullBackOffThreshold) Text() string {
