@@ -772,8 +772,9 @@ func installAgent(
 }
 
 type ComponentOpts struct {
-	ImageBuilder bool
-	Registry     bool
+	ImageBuilder  bool
+	Registry      bool
+	SealedSecrets bool
 }
 
 func PrepInfraComponentManifests(
@@ -826,6 +827,11 @@ func PrepInfraComponentManifests(
 	}
 	if opts.Registry {
 		stackConfig.Config["dockerRegistry"] = map[string]interface{}{
+			"enabled": true,
+		}
+	}
+	if opts.SealedSecrets {
+		stackConfig.Config["sealedSecrets"] = map[string]interface{}{
 			"enabled": true,
 		}
 	}
