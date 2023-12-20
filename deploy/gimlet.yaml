@@ -6,7 +6,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.61.0
+    helm.sh/chart: onechart-0.63.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -34,7 +34,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.61.0
+    helm.sh/chart: onechart-0.63.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -56,7 +56,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.61.0
+    helm.sh/chart: onechart-0.63.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -73,45 +73,44 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 003a9652f992f543488cb557eb978e8aa42805af43b3a1394ba6fbef930e0758
+        checksum/config: 89b4f41228155ddecfd01d56e514cf9ea21a8876c6216f9e6adc266d1fa9ec8a
       labels:
         app.kubernetes.io/name: onechart
         app.kubernetes.io/instance: gimlet
     spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: gimlet
+        image: ghcr.io/gimlet-io/gimlet:v0.24.0
+        imagePullPolicy: IfNotPresent
+        name: gimlet
+        ports:
+        - containerPort: 9000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 9000
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /var/lib/gimlet-dashboard
+          name: data
+      initContainers: null
       securityContext:
         fsGroup: 999
-      initContainers:      
-      containers:
-        - name: gimlet
-          securityContext: &securityContext
-            {}
-          image: "ghcr.io/gimlet-io/gimlet:v0.23.0"
-          imagePullPolicy: IfNotPresent
-          envFrom: &envFrom
-            - configMapRef:
-                name: gimlet
-          ports:
-            - name: http
-              containerPort: 9000
-              protocol: TCP
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 9000
-              scheme: HTTP
-            failureThreshold: 3
-            initialDelaySeconds: 0
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
-          volumeMounts: &volumeMounts
-            - name: data
-              mountPath: /var/lib/gimlet-dashboard
-          resources:
-            requests:
-              cpu: 200m
-              memory: 200Mi
       volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: gimlet-data
+      - name: data
+        persistentVolumeClaim:
+          claimName: gimlet-data
