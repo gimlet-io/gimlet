@@ -329,7 +329,7 @@ const filterRepos = (repos, favorites, filters) => {
         break;
       case 'Domain':
         filteredRepositories = filteredRepositories.filter(repo => {
-          return repo.services.length !== 0 && repo.services.some(service => service.ingresses.some(ingress => ingress.url.includes(filter.value)));
+          return repo.services.length !== 0 && repo.services.some(service => service.ingresses !== undefined && service.ingresses.some(ingress => ingress.url.includes(filter.value)));
         })
         break;
       default:
