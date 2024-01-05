@@ -13,7 +13,7 @@
     "@types/node": "^12.20.55",
     "@types/react": "^17.0.71",
     "@types/react-dom": "^17.0.23",
-    "axios": "^1.6.3",
+    "axios": "^1.6.4",
     "date-fns": "^2.30.0",
     "helm-react-ui": "github:gimlet-io/helm-react-ui#master",
     "js-yaml": "^4.1.0",
