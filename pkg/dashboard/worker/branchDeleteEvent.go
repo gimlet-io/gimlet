@@ -16,7 +16,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	commonGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
@@ -26,25 +25,24 @@ import (
 
 const Dir_RWX_RX_R = 0754
 
-var fetchRefSpec = []config.RefSpec{
-	"refs/heads/*:refs/heads/*",
-}
-
 type BranchDeleteEventWorker struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 	cachePath    string
 	dao          *store.Store
+	stopCh       chan struct{}
 }
 
 func NewBranchDeleteEventWorker(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	cachePath string,
 	dao *store.Store,
+	stopCh chan struct{},
 ) *BranchDeleteEventWorker {
 	branchDeleteEventWorker := &BranchDeleteEventWorker{
 		tokenManager: tokenManager,
 		cachePath:    cachePath,
 		dao:          dao,
+		stopCh:       stopCh,
 	}
 
 	return branchDeleteEventWorker
@@ -52,80 +50,87 @@ func NewBranchDeleteEventWorker(
 
 func (r *BranchDeleteEventWorker) Run() {
 	for {
-		time.Sleep(5 * time.Minute)
-		reposWithCleanupPolicy, err := r.dao.ReposWithCleanupPolicy()
-		if err != nil && err != sql.ErrNoRows {
-			logrus.Warnf("could not load repos with cleanup policy: %s", err)
+		select {
+		case <-r.stopCh:
+			return
+		case <-time.After(5 * time.Minute):
 		}
-		for _, repoName := range reposWithCleanupPolicy {
-			repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
-			if _, err := os.Stat(repoPath); err == nil { // repo exist
-				repo, err := git.PlainOpen(repoPath)
-				if err != nil {
-					logrus.Warnf("could not open %s: %s", repoPath, err)
-					os.RemoveAll(repoPath)
-					continue
-				}
 
-				branchesWithManifests := map[string][]*dx.Manifest{}
-				branches := commonGit.BranchList(repo)
-				for _, branch := range branches {
-					manifests, err := r.extractManifestsFromBranch(repo, branch)
-					if err != nil {
-						logrus.Warnf("could not extract manifests: %s", err)
-						continue
-					}
+		r.cleanup()
+	}
+}
 
-					if branchesWithManifests[branch] == nil {
-						branchesWithManifests[branch] = []*dx.Manifest{}
-					}
-
-					branchesWithManifests[branch] = manifests
-				}
-
-				deletedBranches, err := r.detectDeletedBranches(repo)
-				if err != nil {
-					logrus.Warnf("could not detect deleted branches in %s: %s", repoPath, err)
-					os.RemoveAll(repoPath)
-					continue
-				}
-				for _, deletedBranch := range deletedBranches {
-					manifests := branchesWithManifests[deletedBranch]
-
-					logrus.Infof("cleaning up %s", deletedBranch)
-
-					branchDeletedEventStr, err := json.Marshal(dx.BranchDeletedEvent{
-						Repo:      repoName,
-						Branch:    deletedBranch,
-						Manifests: manifests,
-					})
-					if err != nil {
-						logrus.Warnf("could not serialize branch deleted event: %s", err)
-						continue
-					}
-
-					// store branch deleted event
-					_, err = r.dao.CreateEvent(&model.Event{
-						Type:       model.BranchDeletedEvent,
-						Blob:       string(branchDeletedEventStr),
-						Repository: repoName,
-					})
-					if err != nil {
-						logrus.Warnf("could not store branch deleted event: %s", err)
-						continue
-					}
-				}
-			} else if os.IsNotExist(err) {
-				err := r.clone(repoName)
-				if err != nil {
-					logrus.Warnf("could not clone: %s", err)
-				}
-			} else {
-				logrus.Warn(err)
+func (r *BranchDeleteEventWorker) cleanup() {
+	reposWithCleanupPolicy, err := r.dao.ReposWithCleanupPolicy()
+	if err != nil && err != sql.ErrNoRows {
+		logrus.Warnf("could not load repos with cleanup policy: %s", err)
+	}
+	for _, repoName := range reposWithCleanupPolicy {
+		repoPath := filepath.Join(r.cachePath, commonGit.BRANCH_DELETED_WORKER_SUBPATH, strings.ReplaceAll(repoName, "/", "%"))
+		if _, err := os.Stat(repoPath); err == nil { // repo exist
+			repo, err := git.PlainOpen(repoPath)
+			if err != nil {
+				logrus.Warnf("could not open %s: %s", repoPath, err)
+				os.RemoveAll(repoPath)
+				continue
 			}
-		}
 
-		logrus.Info("Cleanup process finished succesfully")
+			branchesWithManifests := map[string][]*dx.Manifest{}
+			branches := commonGit.BranchList(repo)
+			for _, branch := range branches {
+				manifests, err := r.extractManifestsFromBranch(repo, branch)
+				if err != nil {
+					logrus.Warnf("could not extract manifests: %s", err)
+					continue
+				}
+
+				if branchesWithManifests[branch] == nil {
+					branchesWithManifests[branch] = []*dx.Manifest{}
+				}
+
+				branchesWithManifests[branch] = manifests
+			}
+
+			deletedBranches, err := r.detectDeletedBranches(repo)
+			if err != nil {
+				logrus.Warnf("could not detect deleted branches in %s: %s", repoPath, err)
+				os.RemoveAll(repoPath)
+				continue
+			}
+			for _, deletedBranch := range deletedBranches {
+				manifests := branchesWithManifests[deletedBranch]
+
+				logrus.Infof("cleaning up %s", deletedBranch)
+
+				branchDeletedEventStr, err := json.Marshal(dx.BranchDeletedEvent{
+					Repo:      repoName,
+					Branch:    deletedBranch,
+					Manifests: manifests,
+				})
+				if err != nil {
+					logrus.Warnf("could not serialize branch deleted event: %s", err)
+					continue
+				}
+
+				// store branch deleted event
+				_, err = r.dao.CreateEvent(&model.Event{
+					Type:       model.BranchDeletedEvent,
+					Blob:       string(branchDeletedEventStr),
+					Repository: repoName,
+				})
+				if err != nil {
+					logrus.Warnf("could not store branch deleted event: %s", err)
+					continue
+				}
+			}
+		} else if os.IsNotExist(err) {
+			err := r.clone(repoName)
+			if err != nil {
+				logrus.Warnf("could not clone: %s", err)
+			}
+		} else {
+			logrus.Warn(err)
+		}
 	}
 }
 
@@ -192,7 +197,7 @@ func difference(a, b []string) []string {
 }
 
 func (r *BranchDeleteEventWorker) clone(repoName string) error {
-	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
+	repoPath := filepath.Join(r.cachePath, commonGit.BRANCH_DELETED_WORKER_SUBPATH, strings.ReplaceAll(repoName, "/", "%"))
 
 	err := os.MkdirAll(repoPath, Dir_RWX_RX_R)
 	if err != nil {

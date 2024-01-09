@@ -52,6 +52,8 @@ type repoData struct {
 	lock        sync.Mutex
 }
 
+const BRANCH_DELETED_WORKER_SUBPATH = "branch-deleted-worker"
+
 func NewRepoCache(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
@@ -85,6 +87,12 @@ func NewRepoCache(
 		if !fileInfo.IsDir() {
 			continue
 		}
+		if fileInfo.Name() == BRANCH_DELETED_WORKER_SUBPATH {
+			continue
+		}
+		if fileInfo.Name() == "lost+found" {
+			continue
+		}
 
 		path := filepath.Join(cachePath, fileInfo.Name())
 		repo, err := git.PlainOpen(path)
@@ -101,9 +109,11 @@ func NewRepoCache(
 
 func (r *RepoCache) Run() {
 	for {
+		t0 := time.Now()
 		for repoName, _ := range r.repos {
 			r.syncGitRepo(repoName)
 		}
+		logrus.Debugf("Synching repos took %f seconds", time.Since(t0).Seconds())
 
 		select {
 		case <-r.stopCh:
