@@ -222,6 +222,7 @@ func main() {
 		tokenManager,
 		config.RepoCachePath,
 		store,
+		stopCh,
 	)
 	go branchDeleteEventWorker.Run()
 
