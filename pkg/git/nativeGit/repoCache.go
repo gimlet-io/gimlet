@@ -52,6 +52,8 @@ type repoData struct {
 	lock        sync.Mutex
 }
 
+const BRANCH_DELETED_WORKER_SUBPATH = "branch-deleted-worker"
+
 func NewRepoCache(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	stopCh chan struct{},
@@ -83,6 +85,12 @@ func NewRepoCache(
 
 	for _, fileInfo := range paths {
 		if !fileInfo.IsDir() {
+			continue
+		}
+		if fileInfo.Name() == BRANCH_DELETED_WORKER_SUBPATH {
+			continue
+		}
+		if fileInfo.Name() == "lost+found" {
 			continue
 		}
 

@@ -16,7 +16,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	commonGit "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
@@ -25,10 +24,6 @@ import (
 )
 
 const Dir_RWX_RX_R = 0754
-
-var fetchRefSpec = []config.RefSpec{
-	"refs/heads/*:refs/heads/*",
-}
 
 type BranchDeleteEventWorker struct {
 	tokenManager customScm.NonImpersonatedTokenManager
@@ -58,7 +53,7 @@ func (r *BranchDeleteEventWorker) Run() {
 			logrus.Warnf("could not load repos with cleanup policy: %s", err)
 		}
 		for _, repoName := range reposWithCleanupPolicy {
-			repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
+			repoPath := filepath.Join(r.cachePath, commonGit.BRANCH_DELETED_WORKER_SUBPATH, strings.ReplaceAll(repoName, "/", "%"))
 			if _, err := os.Stat(repoPath); err == nil { // repo exist
 				repo, err := git.PlainOpen(repoPath)
 				if err != nil {
@@ -192,7 +187,7 @@ func difference(a, b []string) []string {
 }
 
 func (r *BranchDeleteEventWorker) clone(repoName string) error {
-	repoPath := filepath.Join(r.cachePath, strings.ReplaceAll(repoName, "/", "%"))
+	repoPath := filepath.Join(r.cachePath, commonGit.BRANCH_DELETED_WORKER_SUBPATH, strings.ReplaceAll(repoName, "/", "%"))
 
 	err := os.MkdirAll(repoPath, Dir_RWX_RX_R)
 	if err != nil {
