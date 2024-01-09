@@ -109,9 +109,11 @@ func NewRepoCache(
 
 func (r *RepoCache) Run() {
 	for {
+		t0 := time.Now()
 		for repoName, _ := range r.repos {
 			r.syncGitRepo(repoName)
 		}
+		logrus.Debugf("Synching repos took %f seconds", time.Since(t0).Seconds())
 
 		select {
 		case <-r.stopCh:
