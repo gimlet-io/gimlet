@@ -33,7 +33,6 @@ type RepoCache struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 	repos        map[string]*repoData
 	stopCh       chan struct{}
-	invalidateCh chan string
 
 	// For webhook registration
 	config        *dashboardConfig.Config
@@ -66,7 +65,6 @@ func NewRepoCache(
 		tokenManager:  tokenManager,
 		repos:         map[string]*repoData{},
 		stopCh:        stopCh,
-		invalidateCh:  make(chan string),
 		config:        config,
 		dynamicConfig: dynamicConfig,
 		clientHub:     clientHub,
@@ -119,9 +117,6 @@ func (r *RepoCache) Run() {
 		case <-r.stopCh:
 			logrus.Info("stopping")
 			return
-		case repoName := <-r.invalidateCh:
-			logrus.Infof("received cache invalidate message for %s", repoName)
-			r.syncGitRepo(repoName)
 		case <-time.After(30 * time.Second):
 		}
 	}
@@ -307,11 +302,7 @@ func (r *RepoCache) CleanupWrittenRepo(path string) error {
 }
 
 func (r *RepoCache) Invalidate(repoName string) {
-	r.invalidateCh <- repoName
-}
-
-func (r *RepoCache) InvalidateNow(repoName string) {
-	logrus.Infof("invalidating repocace now for %s", repoName)
+	logrus.Infof("invalidating repocache for %s", repoName)
 	r.syncGitRepo(repoName)
 }
 
