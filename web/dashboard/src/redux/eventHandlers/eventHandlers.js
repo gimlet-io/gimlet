@@ -283,8 +283,11 @@ export function commits(state, payload) {
 
 export function updateCommits(state, payload) {
   const repo = `${payload.owner}/${payload.repo}`;
-  payload.commits.shift() // The commits list already includes the first element of the payload, so we have to drop it.
-  state.commits[repo] = state.commits[repo].concat(payload.commits);
+  const uniqueCommits = payload.commits.filter(commit => (
+    !state.commits[repo].some(existingCommit => existingCommit.sha === commit.sha)
+  ));
+
+  state.commits[repo] = state.commits[repo].concat(uniqueCommits);
   return state;
 }
 
