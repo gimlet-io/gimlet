@@ -67,7 +67,9 @@ func (db *Store) SaveReposWithCleanupPolicy(reposWithCleanupPolicy []string) err
 func (db *Store) DeploymentSilencedUntil(deployment string, alertType string) (int64, error) {
 	object := fmt.Sprintf("%s-%s", deployment, alertType)
 	silencedUntil, err := db.KeyValue(object)
-	if err != nil {
+	if err == database_sql.ErrNoRows {
+		return 0, nil
+	} else if err != nil {
 		return 0, err
 	}
 
