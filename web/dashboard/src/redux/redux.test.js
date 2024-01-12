@@ -6,6 +6,7 @@ import {
   ACTION_TYPE_SAVE_REPO_PULLREQUEST,
   ACTION_TYPE_ENV_PULLREQUESTS,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
+  ACTION_TYPE_UPDATE_COMMITS,
   initialState,
   rootReducer
 } from './redux';
@@ -157,3 +158,28 @@ test('should save single infra PR', () => {
   expect(reduced.envs[0].pullRequests[1].link).toEqual("http://alsodoesnotexist");
 });
 
+test('should not duplicate commit', () => {
+  const commitsUpdate = {
+    type: ACTION_TYPE_UPDATE_COMMITS,
+    payload: {
+      owner: "gimlet-io",
+      repo: "gimlet",
+      commits: [
+        { sha: "123abc" },
+        { sha: "789def" },
+      ],
+    }
+  };
+
+  const state = deepCopy(initialState)
+  state.commits = {
+    "gimlet-io/gimlet": [
+      { sha: "123abc" },
+      { sha: "456xyz" },
+    ]
+  }
+
+  let reduced = rootReducer(state, commitsUpdate);
+
+  expect(reduced.commits["gimlet-io/gimlet"].length).toEqual(3);
+});
