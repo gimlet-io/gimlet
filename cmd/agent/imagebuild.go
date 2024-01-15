@@ -353,7 +353,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 			break
 		}
 
-		if strings.Contains(sb.String(), "Error") {
+		if strings.Contains(strings.ToLower(sb.String()), "error") {
 			streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", sb.String())
 			break
 		}
