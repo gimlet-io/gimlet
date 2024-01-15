@@ -8,13 +8,10 @@ import {
   ACTION_TYPE_ENVUPDATED,
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
   ACTION_TYPE_ENV_PULLREQUESTS,
-  ACTION_TYPE_RELEASE_STATUSES,
   ACTION_TYPE_ENVSPINNEDOUT,
   ACTION_TYPE_ENVS
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/solid'
-import { rolloutWidget } from '../../components/rolloutHistory/rolloutHistory';
-import { format, formatDistance } from "date-fns";
 import SeparateEnvironments from './separateEnvironments';
 import KustomizationPerApp from './kustomizationPerApp';
 import BootstrapGuide from './bootstrapGuide';
@@ -32,7 +29,6 @@ export default class EnvironmentView extends Component {
       environment: findEnv(reduxState.envs, env),
       user: reduxState.user,
       popupWindow: reduxState.popupWindow,
-      releaseStatuses: reduxState.releaseStatuses[env],
       gitopsUpdatePullRequests: reduxState.pullRequests.gitopsUpdates[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
@@ -50,7 +46,6 @@ export default class EnvironmentView extends Component {
         environment: findEnv(reduxState.envs, env),
         user: reduxState.user,
         popupWindow: reduxState.popupWindow,
-        releaseStatuses: reduxState.releaseStatuses[env],
         gitopsUpdatePullRequests: reduxState.pullRequests.gitopsUpdates[env],
         scmUrl: reduxState.settings.scmUrl,
         settings: reduxState.settings
@@ -71,20 +66,7 @@ export default class EnvironmentView extends Component {
   }
 
   componentDidMount() {
-    const { env } = this.props.match.params;
     const { gimletClient, store } = this.props;
-
-    gimletClient.getReleases(env, 10)
-      .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_RELEASE_STATUSES,
-          payload: {
-            envName: env,
-            data: data,
-          }
-        });
-      }, () => {/* Generic error handler deals with it */
-      })
 
     gimletClient.getPullRequestsFromInfraRepo()
       .then(data => {
@@ -290,21 +272,6 @@ export default class EnvironmentView extends Component {
     }, 3000);
   };
 
-  refreshReleaseStatuses() {
-    const { environment, gimletClient, store } = this.state;
-    gimletClient.getReleases(environment.name, 10)
-      .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_RELEASE_STATUSES,
-          payload: {
-            envName: environment.name,
-            data: data,
-          }
-        });
-      }, () => {/* Generic error handler deals with it */
-      })
-  }
-
   builtInEnvInfo() {
     return (
       <div className="rounded-md bg-blue-50 p-4 my-4">
@@ -400,39 +367,6 @@ export default class EnvironmentView extends Component {
           setValues={this.setValues}
           validationCallback={this.validationCallback}
         />
-      </div>
-    )
-  }
-
-  gitopsCommitsTab() {
-    const { environment, scmUrl, releaseStatuses } = this.state;
-    if (!releaseStatuses) {
-      return null
-    }
-
-    let renderReleaseStatuses = [];
-
-    releaseStatuses.forEach((rollout, idx, arr) => {
-      const exactDate = format(rollout.created * 1000, 'h:mm:ss a, MMMM do yyyy');
-      const dateLabel = formatDistance(rollout.created * 1000, new Date());
-
-      renderReleaseStatuses.unshift(rolloutWidget(idx, arr, exactDate, dateLabel, undefined, undefined, undefined, undefined, rollout, scmUrl, environment.builtIn))
-    })
-
-    return (
-      <div className="flow-root">
-        <ul className="mt-4">
-          <div className="flow-root">
-            <svg onClick={() => this.refreshReleaseStatuses()} xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-4 text-gray-500 hover:text-gray-600 cursor-pointer float-right" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </div>
-          <div className="flow-root">
-            <ul>
-              {renderReleaseStatuses}
-            </ul>
-          </div>
-        </ul>
       </div>
     )
   }
@@ -545,7 +479,6 @@ export default class EnvironmentView extends Component {
     const navigation = [
       { name: 'Details', href: `/env/${environment.name}` },
       { name: 'Components', href: `/env/${environment.name}/components` },
-      { name: 'Gitops commits', href: `/env/${environment.name}/gitops-commits` },
     ]
 
     return (
@@ -615,7 +548,7 @@ export default class EnvironmentView extends Component {
                                     selected
                                       ? 'border-indigo-500 text-indigo-600'
                                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700') +
-                                    ' w-1/4 border-b-2 py-4 px-1 text-center text-sm font-medium'
+                                    ' w-1/2 border-b-2 py-4 px-1 text-center text-sm font-medium'
                                   }
                                   aria-current={selected ? 'page' : undefined}
                                   onClick={() => {
@@ -632,13 +565,13 @@ export default class EnvironmentView extends Component {
                         </div>
                       </div>
                       <div className="my-8">
-                        {navigation[0].href === this.props.location.pathname ?
+                        {
+                          navigation[0].href === this.props.location.pathname &&
                           this.configurationTab()
-                          :
-                          navigation[1].href === this.props.location.pathname ?
-                            this.infrastructureComponentsTab()
-                            :
-                            this.gitopsCommitsTab()
+                        }
+                        {
+                          navigation[1].href === this.props.location.pathname &&
+                          this.infrastructureComponentsTab()
                         }
                       </div>
                     </div>
