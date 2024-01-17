@@ -42,7 +42,8 @@ type RepoCache struct {
 	// for builtin env
 	gitUser *model.User
 
-	lock sync.Mutex
+	lock         sync.Mutex
+	repoSyncLock sync.Mutex
 }
 
 type repoData struct {
@@ -123,6 +124,9 @@ func (r *RepoCache) Run() {
 }
 
 func (r *RepoCache) syncGitRepo(repoName string) {
+	r.repoSyncLock.Lock()
+	defer r.repoSyncLock.Unlock()
+
 	var auth *http.BasicAuth
 	owner, _ := scm.Split(repoName)
 	if owner == "builtin" {
