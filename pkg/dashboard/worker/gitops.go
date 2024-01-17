@@ -556,7 +556,7 @@ func processArtifactEvent(
 	}
 
 	for _, manifest := range artifact.Environments {
-		if !deployTrigger(artifact, manifest.Deploy) {
+		if !deployTrigger(artifact, manifest.Deploy, manifest.App) {
 			continue
 		}
 
@@ -958,7 +958,7 @@ func gitopsTemplateAndWrite(
 	return sha, nil
 }
 
-func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy) bool {
+func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy, app string) bool {
 	if deployPolicy == nil {
 		return false
 	}
@@ -1029,7 +1029,34 @@ func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy) bool {
 		}
 	}
 
+	if len(deployPolicy.CommitMessagePatterns) != 0 {
+		if !commitMessagePatternMatch(deployPolicy.CommitMessagePatterns, artifactToCheck.Version.Message, app) {
+			return false
+		}
+	}
+
 	return true
+}
+
+func commitMessagePatternMatch(patterns []string, commitMessage, appName string) bool {
+	for _, pattern := range patterns {
+		g := glob.MustCompile(escapeSquareBracketChars(pattern))
+		if g.Match("[DEPLOY: ALL]") {
+			return true
+		}
+
+		if g.Match(commitMessage) {
+			return glob.MustCompile(`\[DEPLOY: ` + appName + `\]*`).Match(commitMessage)
+		}
+	}
+
+	return false
+}
+
+func escapeSquareBracketChars(pattern string) string {
+	pattern = strings.ReplaceAll(pattern, "[", "\\[")
+	pattern = strings.ReplaceAll(pattern, "]", "\\]")
+	return pattern
 }
 
 func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {

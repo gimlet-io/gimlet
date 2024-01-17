@@ -54,9 +54,10 @@ type Chart struct {
 }
 
 type Deploy struct {
-	Tag    string    `yaml:"tag,omitempty" json:"tag,omitempty"`
-	Branch string    `yaml:"branch,omitempty" json:"branch,omitempty"`
-	Event  *GitEvent `yaml:"event,omitempty" json:"event,omitempty"`
+	Tag                   string    `yaml:"tag,omitempty" json:"tag,omitempty"`
+	Branch                string    `yaml:"branch,omitempty" json:"branch,omitempty"`
+	Event                 *GitEvent `yaml:"event,omitempty" json:"event,omitempty"`
+	CommitMessagePatterns []string  `yaml:"commitMessagePatterns,omitempty" json:"commitMessagePatterns,omitempty"`
 }
 
 type Cleanup struct {
