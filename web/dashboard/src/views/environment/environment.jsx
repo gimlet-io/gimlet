@@ -28,7 +28,7 @@ export default class EnvironmentView extends Component {
       connectedAgents: reduxState.connectedAgents,
       environment: findEnv(reduxState.envs, env),
       user: reduxState.user,
-      popupWindow: reduxState.popupWindow,
+      disabled: false,
       gitopsUpdatePullRequests: reduxState.pullRequests.gitopsUpdates[env],
       scmUrl: reduxState.settings.scmUrl,
       settings: reduxState.settings,
@@ -390,6 +390,11 @@ export default class EnvironmentView extends Component {
   bootstrapGitops() {
     const { environment, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo } = this.state;
     const { gimletClient, store } = this.props;
+
+    if (this.state.disabled) {
+      return
+    }
+    this.setState({ disabled: true });
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Bootstrapping..."
@@ -405,6 +410,7 @@ export default class EnvironmentView extends Component {
           }
         });
         this.refreshEnvs();
+        this.setState({ disabled: false });
         this.resetPopupWindowAfterThreeSeconds()
       }, (err) => {
         store.dispatch({
@@ -413,12 +419,13 @@ export default class EnvironmentView extends Component {
             message: err.statusText
           }
         });
+        this.setState({ disabled: false });
         this.resetPopupWindowAfterThreeSeconds()
       })
   }
 
   gitopsBootstrapWizard() {
-    const { environment, popupWindow, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo } = this.state;
+    const { environment, disabled, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo } = this.state;
     if (repoPerEnv && infraRepo === "gitops-infra") {
       this.setInfraRepo(`gitops-${environment.name}-infra`);
     }
@@ -457,8 +464,8 @@ export default class EnvironmentView extends Component {
           <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
             <button
               onClick={() => this.bootstrapGitops(environment.name, repoPerEnv, kustomizationPerApp)}
-              disabled={popupWindow.visible}
-              className={(popupWindow.visible ? 'bg-gray-600 cursor-default' : 'bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700') + ` inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150`}
+              disabled={disabled}
+              className="bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-indigo active:bg-green-700 inline-flex items-center px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white transition ease-in-out duration-150"
             >
               Bootstrap gitops repository
             </button>
