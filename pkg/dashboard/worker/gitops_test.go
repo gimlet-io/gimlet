@@ -213,11 +213,11 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 
 func Test_emptyTrigger(t *testing.T) {
 	triggered := deployTrigger(
-		&dx.Artifact{}, nil, "")
+		&dx.Artifact{}, nil)
 	assert.False(t, triggered, "Empty deploy policy should not trigger a deploy")
 
 	triggered = deployTrigger(
-		&dx.Artifact{}, &dx.Deploy{}, "")
+		&dx.Artifact{}, &dx.Deploy{})
 	assert.False(t, triggered, "Empty deploy policy should not trigger a deploy")
 }
 
@@ -231,7 +231,7 @@ func Test_branchTrigger(t *testing.T) {
 		&dx.Deploy{
 			Branch: "notMaster",
 			Event:  dx.PushPtr(),
-		}, "")
+		})
 	assert.False(t, triggered, "Branch mismatch should not trigger a deploy")
 
 	triggered = deployTrigger(
@@ -243,7 +243,7 @@ func Test_branchTrigger(t *testing.T) {
 		&dx.Deploy{
 			Branch: "master",
 			Event:  dx.PushPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Matching branch should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -256,7 +256,7 @@ func Test_branchTrigger(t *testing.T) {
 		&dx.Deploy{
 			Branch: "master",
 			Event:  dx.PRPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Matching branch should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -267,7 +267,7 @@ func Test_branchTrigger(t *testing.T) {
 		},
 		&dx.Deploy{
 			Branch: "master",
-		}, "")
+		})
 	assert.False(t, triggered, "Branch triggers need an event always to trigger a deploy")
 }
 
@@ -276,20 +276,19 @@ func Test_eventTrigger(t *testing.T) {
 		&dx.Artifact{},
 		&dx.Deploy{
 			Event: dx.PushPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Default Push event should trigger a deploy")
 
 	triggered = deployTrigger(
 		&dx.Artifact{},
-		&dx.Deploy{},
-		"")
+		&dx.Deploy{})
 	assert.False(t, triggered, "Non matching event should not trigger a deploy, default is Push in the Artifact")
 
 	triggered = deployTrigger(
 		&dx.Artifact{},
 		&dx.Deploy{
 			Event: dx.PRPtr(),
-		}, "")
+		})
 	assert.False(t, triggered, "Non matching event should not trigger a deploy")
 
 	triggered = deployTrigger(
@@ -298,7 +297,7 @@ func Test_eventTrigger(t *testing.T) {
 		}},
 		&dx.Deploy{
 			Event: dx.PRPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Should trigger a PR deploy")
 
 	triggered = deployTrigger(
@@ -307,7 +306,7 @@ func Test_eventTrigger(t *testing.T) {
 		}},
 		&dx.Deploy{
 			Event: dx.TagPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Should trigger a tag deploy")
 }
 
@@ -322,7 +321,7 @@ func Test_tag_and_branch_pattern_triggers(t *testing.T) {
 		&dx.Deploy{
 			Branch: "feature/*",
 			Event:  dx.PRPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Matching branch pattern should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -335,7 +334,7 @@ func Test_tag_and_branch_pattern_triggers(t *testing.T) {
 		&dx.Deploy{
 			Tag:   "v*",
 			Event: dx.TagPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Matching tag pattern should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -347,7 +346,7 @@ func Test_tag_and_branch_pattern_triggers(t *testing.T) {
 		&dx.Deploy{
 			Tag:   "v*",
 			Event: dx.TagPtr(),
-		}, "")
+		})
 	assert.False(t, triggered, "Non matching tag pattern should not trigger a deploy")
 }
 
@@ -362,7 +361,7 @@ func Test_negative_tag_and_branch_triggers(t *testing.T) {
 		&dx.Deploy{
 			Branch: "!main",
 			Event:  dx.PushPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Matching branch pattern should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -375,7 +374,7 @@ func Test_negative_tag_and_branch_triggers(t *testing.T) {
 		&dx.Deploy{
 			Tag:   "!v1",
 			Event: dx.TagPtr(),
-		}, "")
+		})
 	assert.True(t, triggered, "Matching tag pattern should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -387,7 +386,7 @@ func Test_negative_tag_and_branch_triggers(t *testing.T) {
 		&dx.Deploy{
 			Branch: "!main",
 			Event:  dx.TagPtr(),
-		}, "")
+		})
 	assert.False(t, triggered, "Non matching branch pattern should not trigger a deploy")
 }
 
@@ -607,23 +606,33 @@ func Test_uniqueKustomizationName(t *testing.T) {
 	assert.Equal(t, "gimlet-io-staging-infra-my-team-myapp", uniqueName)
 }
 
+func Test_empty_deploy_trigger(t *testing.T) {
+	triggered := deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "xxx",
+			},
+		},
+		&dx.Deploy{})
+	assert.False(t, triggered, "Empty trigger should not trigger")
+}
+
 func Test_commit_message_pattern_triggers(t *testing.T) {
 	triggered := deployTrigger(
 		&dx.Artifact{
 			Version: dx.Version{
 				Branch:  "main",
 				Event:   *dx.PushPtr(),
-				Message: "[DEPLOY: myapp-2] Bugfix 123",
+				Message: "[DEPLOY: ALL] Fixing something major",
 			},
 		},
 		&dx.Deploy{
-			Branch: "main",
-			Event:  dx.PushPtr(),
 			CommitMessagePatterns: []string{
-				"[DEPLOY: ALL]*",
+				"[DEPLOY: myapp-1]*",
 			},
-		},
-		"myapp-1")
+		})
 	assert.True(t, triggered, "Deploy all commit message pattern should trigger a deploy")
 
 	triggered = deployTrigger(
@@ -631,18 +640,25 @@ func Test_commit_message_pattern_triggers(t *testing.T) {
 			Version: dx.Version{
 				Branch:  "main",
 				Event:   *dx.PushPtr(),
-				Message: "[DEPLOY: myapp-1] Bugfix 123",
+				Message: "[DEPLOY: ALL] Fixing something major",
+			},
+		},
+		nil)
+	assert.False(t, triggered, "Deploy all should only trigger if manifest has some deploy policy. No deploy policy means no automatic deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "feature-branch",
+				Event:   *dx.PushPtr(),
+				Message: "[DEPLOY: ALL] Fixing something major",
 			},
 		},
 		&dx.Deploy{
 			Branch: "main",
 			Event:  dx.PushPtr(),
-			CommitMessagePatterns: []string{
-				"[DEPLOY: myapp-1]*",
-			},
-		},
-		"myapp-1")
-	assert.True(t, triggered, "Matching commit message pattern should trigger a deploy")
+		})
+	assert.False(t, triggered, "Mismatched branch should not trigger even with deploy all. Most likely a user error")
 
 	triggered = deployTrigger(
 		&dx.Artifact{
@@ -653,13 +669,27 @@ func Test_commit_message_pattern_triggers(t *testing.T) {
 			},
 		},
 		&dx.Deploy{
+			CommitMessagePatterns: []string{
+				"[DEPLOY: myapp-1]*",
+			},
+		})
+	assert.True(t, triggered, "Matching commit message pattern should trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "Bugfix 123",
+			},
+		},
+		&dx.Deploy{
 			Branch: "main",
 			Event:  dx.PushPtr(),
 			CommitMessagePatterns: []string{
 				"[DEPLOY: myapp-1]*",
 			},
-		},
-		"myapp-2")
+		})
 	assert.False(t, triggered, "Non matching commit message pattern should not trigger a deploy")
 
 	triggered = deployTrigger(
@@ -676,7 +706,6 @@ func Test_commit_message_pattern_triggers(t *testing.T) {
 			CommitMessagePatterns: []string{
 				"[DEPLOY: myapp-2]*",
 			},
-		},
-		"myapp-3")
+		})
 	assert.False(t, triggered, "Non matching commit message pattern should not trigger a deploy")
 }

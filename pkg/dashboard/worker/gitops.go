@@ -556,7 +556,7 @@ func processArtifactEvent(
 	}
 
 	for _, manifest := range artifact.Environments {
-		if !deployTrigger(artifact, manifest.Deploy, manifest.App) {
+		if !deployTrigger(artifact, manifest.Deploy) {
 			continue
 		}
 
@@ -958,14 +958,15 @@ func gitopsTemplateAndWrite(
 	return sha, nil
 }
 
-func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy, app string) bool {
+func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy) bool {
 	if deployPolicy == nil {
 		return false
 	}
 
 	if deployPolicy.Branch == "" &&
 		deployPolicy.Event == nil &&
-		deployPolicy.Tag == "" {
+		deployPolicy.Tag == "" &&
+		len(deployPolicy.CommitMessagePatterns) == 0 {
 		return false
 	}
 
@@ -1030,7 +1031,7 @@ func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy, app st
 	}
 
 	if len(deployPolicy.CommitMessagePatterns) != 0 {
-		if !commitMessagePatternMatch(deployPolicy.CommitMessagePatterns, artifactToCheck.Version.Message, app) {
+		if !commitMessagePatternMatch(deployPolicy.CommitMessagePatterns, artifactToCheck.Version.Message) {
 			return false
 		}
 	}
@@ -1038,15 +1039,16 @@ func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy, app st
 	return true
 }
 
-func commitMessagePatternMatch(patterns []string, commitMessage, appName string) bool {
+func commitMessagePatternMatch(patterns []string, commitMessage string) bool {
+	deployAllPattern := glob.MustCompile(escapeSquareBracketChars("*[DEPLOY: ALL]*"))
+	if deployAllPattern.Match(commitMessage) {
+		return true
+	}
+
 	for _, pattern := range patterns {
 		g := glob.MustCompile(escapeSquareBracketChars(pattern))
-		if g.Match("[DEPLOY: ALL]") {
-			return true
-		}
-
 		if g.Match(commitMessage) {
-			return glob.MustCompile(`\[DEPLOY: ` + appName + `\]*`).Match(commitMessage)
+			return true
 		}
 	}
 
