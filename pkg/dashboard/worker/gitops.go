@@ -965,7 +965,8 @@ func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy) bool {
 
 	if deployPolicy.Branch == "" &&
 		deployPolicy.Event == nil &&
-		deployPolicy.Tag == "" {
+		deployPolicy.Tag == "" &&
+		len(deployPolicy.CommitMessagePatterns) == 0 {
 		return false
 	}
 
@@ -1029,7 +1030,35 @@ func deployTrigger(artifactToCheck *dx.Artifact, deployPolicy *dx.Deploy) bool {
 		}
 	}
 
+	if len(deployPolicy.CommitMessagePatterns) != 0 {
+		if !commitMessagePatternMatch(deployPolicy.CommitMessagePatterns, artifactToCheck.Version.Message) {
+			return false
+		}
+	}
+
 	return true
+}
+
+func commitMessagePatternMatch(patterns []string, commitMessage string) bool {
+	deployAllPattern := glob.MustCompile(escapeSquareBracketChars("*[DEPLOY: ALL]*"))
+	if deployAllPattern.Match(commitMessage) {
+		return true
+	}
+
+	for _, pattern := range patterns {
+		g := glob.MustCompile(escapeSquareBracketChars(pattern))
+		if g.Match(commitMessage) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func escapeSquareBracketChars(pattern string) string {
+	pattern = strings.ReplaceAll(pattern, "[", "\\[")
+	pattern = strings.ReplaceAll(pattern, "]", "\\]")
+	return pattern
 }
 
 func cleanupTrigger(branch string, cleanupPolicy *dx.Cleanup) bool {

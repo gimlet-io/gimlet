@@ -281,8 +281,7 @@ func Test_eventTrigger(t *testing.T) {
 
 	triggered = deployTrigger(
 		&dx.Artifact{},
-		&dx.Deploy{},
-	)
+		&dx.Deploy{})
 	assert.False(t, triggered, "Non matching event should not trigger a deploy, default is Push in the Artifact")
 
 	triggered = deployTrigger(
@@ -605,4 +604,108 @@ func Test_uniqueKustomizationName(t *testing.T) {
 	singleEnv = true
 	uniqueName = uniqueKustomizationName(singleEnv, owner, repoName, env, namespace, appName)
 	assert.Equal(t, "gimlet-io-staging-infra-my-team-myapp", uniqueName)
+}
+
+func Test_empty_deploy_trigger(t *testing.T) {
+	triggered := deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "xxx",
+			},
+		},
+		&dx.Deploy{})
+	assert.False(t, triggered, "Empty trigger should not trigger")
+}
+
+func Test_commit_message_pattern_triggers(t *testing.T) {
+	triggered := deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "[DEPLOY: ALL] Fixing something major",
+			},
+		},
+		&dx.Deploy{
+			CommitMessagePatterns: []string{
+				"[DEPLOY: myapp-1]*",
+			},
+		})
+	assert.True(t, triggered, "Deploy all commit message pattern should trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "[DEPLOY: ALL] Fixing something major",
+			},
+		},
+		nil)
+	assert.False(t, triggered, "Deploy all should only trigger if manifest has some deploy policy. No deploy policy means no automatic deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "feature-branch",
+				Event:   *dx.PushPtr(),
+				Message: "[DEPLOY: ALL] Fixing something major",
+			},
+		},
+		&dx.Deploy{
+			Branch: "main",
+			Event:  dx.PushPtr(),
+		})
+	assert.False(t, triggered, "Mismatched branch should not trigger even with deploy all. Most likely a user error")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "[DEPLOY: myapp-1] Bugfix 123",
+			},
+		},
+		&dx.Deploy{
+			CommitMessagePatterns: []string{
+				"[DEPLOY: myapp-1]*",
+			},
+		})
+	assert.True(t, triggered, "Matching commit message pattern should trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "Bugfix 123",
+			},
+		},
+		&dx.Deploy{
+			Branch: "main",
+			Event:  dx.PushPtr(),
+			CommitMessagePatterns: []string{
+				"[DEPLOY: myapp-1]*",
+			},
+		})
+	assert.False(t, triggered, "Non matching commit message pattern should not trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch:  "main",
+				Event:   *dx.PushPtr(),
+				Message: "[DEPLOY: myapp-1] Bugfix 123",
+			},
+		},
+		&dx.Deploy{
+			Branch: "main",
+			Event:  dx.PushPtr(),
+			CommitMessagePatterns: []string{
+				"[DEPLOY: myapp-2]*",
+			},
+		})
+	assert.False(t, triggered, "Non matching commit message pattern should not trigger a deploy")
 }
