@@ -81,7 +81,6 @@ export default class EnvironmentView extends Component {
 
       gimletClient.getStackConfig(env)
       .then(data => {
-        console.log("setting stack config")
         store.dispatch({
           type: ACTION_TYPE_STACK_CONFIG,
           payload: data
@@ -100,7 +99,6 @@ export default class EnvironmentView extends Component {
   }
 
   isOnline(onlineEnvs, singleEnv) {
-    console.log(onlineEnvs, singleEnv)
     return Object.keys(onlineEnvs)
       .map(env => onlineEnvs[env])
       .some(onlineEnv => {
