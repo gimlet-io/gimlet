@@ -4,12 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"path/filepath"
 
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -79,12 +79,14 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	t0 := time.Now().UnixMilli()
 	err := decorateDeployments(r.Context(), connectedAgents)
 	if err != nil {
 		logrus.Errorf("cannot decorate deployments: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
+	fmt.Printf("decoratedDeploys: %d\n", time.Now().UnixMilli()-t0)
 
 	db := r.Context().Value("store").(*store.Store)
 	envsFromDB, err := db.GetEnvironments()
@@ -96,58 +98,43 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	envs := []*api.GitopsEnv{}
+	t0 = time.Now().UnixMilli()
 	for _, env := range envsFromDB {
 		var stackConfig *dx.StackConfig
-		if env.RepoPerEnv {
-			gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
-				stackConfig, err = stackYaml(repo, "stack.yaml")
-			})
-			if err != nil {
-				if strings.Contains(err.Error(), "repository not found") ||
-					strings.Contains(err.Error(), "repo name is mandatory") {
-					envs = append(envs, &api.GitopsEnv{
-						Name: env.Name,
-					})
-					continue
-				} else if !strings.Contains(err.Error(), "file not found") {
-					logrus.Errorf("cannot get stack yaml from repo: %s", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				} else {
-					logrus.Errorf("cannot get repo: %s", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				}
-			}
-		} else {
-			gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
-				stackConfig, err = stackYaml(repo, filepath.Join(env.Name, "stack.yaml"))
-			})
-			if err != nil {
-				if strings.Contains(err.Error(), "repository not found") ||
-					strings.Contains(err.Error(), "repo name is mandatory") {
-					envs = append(envs, &api.GitopsEnv{
-						Name: env.Name,
-					})
-					continue
-				} else if !strings.Contains(err.Error(), "file not found") {
-					logrus.Errorf("cannot get stack yaml from %s repo for env %s: %s", env.InfraRepo, env.Name, err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				} else {
-					logrus.Errorf("cannot get repo: %s", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				}
+		stackYamlPath := "stack.yaml"
+		if !env.RepoPerEnv {
+			stackYamlPath = filepath.Join(env.Name, "stack.yaml")
+		}
+
+		gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
+			stackConfig, err = stackYaml(repo, stackYamlPath)
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "repository not found") ||
+				strings.Contains(err.Error(), "repo name is mandatory") {
+				envs = append(envs, &api.GitopsEnv{
+					Name: env.Name,
+				})
+				continue
+			} else if !strings.Contains(err.Error(), "file not found") {
+				logrus.Errorf("cannot get stack yaml from repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			} else {
+				logrus.Errorf("cannot get repo: %s", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 		}
 
+		t1 := time.Now().UnixMilli()
 		stackDefinition, err := loadStackDefinition(stackConfig)
 		if err != nil && !strings.Contains(err.Error(), "file not found") {
 			logrus.Errorf("cannot get stack definition: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+		fmt.Printf("loadStackDefinition: %d\n", time.Now().UnixMilli()-t1)
 
 		envs = append(envs, &api.GitopsEnv{
 			Name:                        env.Name,
@@ -161,10 +148,13 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			DeploymentAutomationEnabled: false,
 		})
 	}
+	fmt.Printf("stackYamls: %d\n", time.Now().UnixMilli()-t0)
 
+	t0 = time.Now().UnixMilli()
 	for _, env := range envs {
 		env.DeploymentAutomationEnabled = deploymentAutomationEnabled(env.Name, envs)
 	}
+	fmt.Printf("deploymentAutomationEnabled: %d", time.Now().UnixMilli()-t0)
 
 	allEnvs := map[string]interface{}{}
 	allEnvs["connectedAgents"] = connectedAgents
@@ -180,7 +170,6 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write(allEnvsString)
 
-	time.Sleep(50 * time.Millisecond) // there is a race condition in local dev: the refetch arrives sooner
 	go agentHub.ForceStateSend()
 }
 

@@ -88,9 +88,13 @@ export default class EnvironmentView extends Component {
   }
 
   isOnline(onlineEnvs, singleEnv) {
+    console.log(onlineEnvs, singleEnv)
     return Object.keys(onlineEnvs)
       .map(env => onlineEnvs[env])
       .some(onlineEnv => {
+        if (!onlineEnv || !singleEnv) { // newly created envs are not part of the data model
+          return false
+        }
         return onlineEnv.name === singleEnv.name
       })
   };
