@@ -482,7 +482,7 @@ func processRollbackEvent(
 		logrus.Errorf("could not push to git with native command: %s", err)
 		return nil, fmt.Errorf("could not push to git. Check server logs")
 	}
-	gitopsRepoCache.InvalidateNow(envFromStore.AppsRepo)
+	gitopsRepoCache.Invalidate(envFromStore.AppsRepo)
 
 	rollbackResults := []model.Result{}
 
@@ -752,7 +752,7 @@ func cloneTemplateWriteAndPush(
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.InvalidateNow(envFromStore.AppsRepo)
+		gitopsRepoCache.Invalidate(envFromStore.AppsRepo)
 	}
 
 	perf.WithLabelValues("gitops_cloneTemplateWriteAndPush").Observe(float64(time.Since(t0).Seconds()))
@@ -820,7 +820,7 @@ func cloneTemplateDeleteAndPush(
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.InvalidateNow(envFromStore.AppsRepo)
+		gitopsRepoCache.Invalidate(envFromStore.AppsRepo)
 	}
 
 	return sha, nil
