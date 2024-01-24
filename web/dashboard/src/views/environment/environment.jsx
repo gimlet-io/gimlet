@@ -9,7 +9,8 @@ import {
   ACTION_TYPE_SAVE_ENV_PULLREQUEST,
   ACTION_TYPE_ENV_PULLREQUESTS,
   ACTION_TYPE_ENVSPINNEDOUT,
-  ACTION_TYPE_ENVS
+  ACTION_TYPE_ENVS,
+  ACTION_TYPE_STACK_CONFIG
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/solid'
 import SeparateEnvironments from './separateEnvironments';
@@ -67,11 +68,22 @@ export default class EnvironmentView extends Component {
 
   componentDidMount() {
     const { gimletClient, store } = this.props;
+    const { env } = this.props.match.params;
 
     gimletClient.getPullRequestsFromInfraRepo()
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_ENV_PULLREQUESTS,
+          payload: data
+        });
+      }, () => {/* Generic error handler deals with it */
+      })
+
+      gimletClient.getStackConfig(env)
+      .then(data => {
+        console.log("setting stack config")
+        store.dispatch({
+          type: ACTION_TYPE_STACK_CONFIG,
           payload: data
         });
       }, () => {/* Generic error handler deals with it */
@@ -88,9 +100,13 @@ export default class EnvironmentView extends Component {
   }
 
   isOnline(onlineEnvs, singleEnv) {
+    console.log(onlineEnvs, singleEnv)
     return Object.keys(onlineEnvs)
       .map(env => onlineEnvs[env])
       .some(onlineEnv => {
+        if (!onlineEnv || !singleEnv) { // newly created envs are not part of the data model
+          return false
+        }
         return onlineEnv.name === singleEnv.name
       })
   };
@@ -322,6 +338,10 @@ export default class EnvironmentView extends Component {
 
   infrastructureComponentsTab() {
     const { environment, settings, stack } = this.state;
+
+    if (!environment.stackConfig || !environment.stackDefinition) {
+      return null
+    }
 
     if (!settings.provider || settings.provider === "") {
       return (

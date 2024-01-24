@@ -5,6 +5,7 @@ import * as ingressEventHandlers from './eventHandlers/ingressEventHandlers';
 
 export const ACTION_TYPE_STREAMING = 'streaming';
 export const ACTION_TYPE_ENVS = 'envs';
+export const ACTION_TYPE_STACK_CONFIG = 'stackConfig';
 export const ACTION_TYPE_USER = 'user';
 export const ACTION_TYPE_USERS = 'users';
 export const ACTION_TYPE_APPLICATION = 'application';
@@ -139,6 +140,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
+      case ACTION_TYPE_STACK_CONFIG:
+      return eventHandlers.stackConfig(state, action.payload)
     case ACTION_TYPE_GITOPS_COMMITS:
       return eventHandlers.gitopsCommits(state, action.payload)
     case ACTION_TYPE_USER:
