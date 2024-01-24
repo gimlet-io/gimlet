@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/bitnami-labs/sealed-secrets/pkg/crypto"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
@@ -64,7 +63,6 @@ func user(w http.ResponseWriter, r *http.Request) {
 }
 
 func envs(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
 	connectedAgents := []*api.ConnectedAgent{}
@@ -79,14 +77,12 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	t0 := time.Now().UnixMilli()
 	err := decorateDeployments(r.Context(), connectedAgents)
 	if err != nil {
 		logrus.Errorf("cannot decorate deployments: %s", err)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	fmt.Printf("decoratedDeploys: %d\n", time.Now().UnixMilli()-t0)
 
 	db := r.Context().Value("store").(*store.Store)
 	envsFromDB, err := db.GetEnvironments()
@@ -95,47 +91,8 @@ func envs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-
 	envs := []*api.GitopsEnv{}
-	t0 = time.Now().UnixMilli()
 	for _, env := range envsFromDB {
-		var stackConfig *dx.StackConfig
-		stackYamlPath := "stack.yaml"
-		if !env.RepoPerEnv {
-			stackYamlPath = filepath.Join(env.Name, "stack.yaml")
-		}
-
-		gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
-			stackConfig, err = stackYaml(repo, stackYamlPath)
-		})
-		if err != nil {
-			if strings.Contains(err.Error(), "repository not found") ||
-				strings.Contains(err.Error(), "repo name is mandatory") {
-				envs = append(envs, &api.GitopsEnv{
-					Name: env.Name,
-				})
-				continue
-			} else if !strings.Contains(err.Error(), "file not found") {
-				logrus.Errorf("cannot get stack yaml from repo: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			} else {
-				logrus.Errorf("cannot get repo: %s", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-		}
-
-		t1 := time.Now().UnixMilli()
-		stackDefinition, err := loadStackDefinition(stackConfig)
-		if err != nil && !strings.Contains(err.Error(), "file not found") {
-			logrus.Errorf("cannot get stack definition: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		fmt.Printf("loadStackDefinition: %d\n", time.Now().UnixMilli()-t1)
-
 		envs = append(envs, &api.GitopsEnv{
 			Name:                        env.Name,
 			InfraRepo:                   env.InfraRepo,
@@ -143,18 +100,13 @@ func envs(w http.ResponseWriter, r *http.Request) {
 			RepoPerEnv:                  env.RepoPerEnv,
 			KustomizationPerApp:         env.KustomizationPerApp,
 			BuiltIn:                     env.BuiltIn,
-			StackConfig:                 stackConfig,
-			StackDefinition:             stackDefinition,
 			DeploymentAutomationEnabled: false,
 		})
 	}
-	fmt.Printf("stackYamls: %d\n", time.Now().UnixMilli()-t0)
 
-	t0 = time.Now().UnixMilli()
 	for _, env := range envs {
 		env.DeploymentAutomationEnabled = deploymentAutomationEnabled(env.Name, envs)
 	}
-	fmt.Printf("deploymentAutomationEnabled: %d", time.Now().UnixMilli()-t0)
 
 	allEnvs := map[string]interface{}{}
 	allEnvs["connectedAgents"] = connectedAgents
@@ -250,6 +202,64 @@ func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {
 	}
 
 	return false
+}
+
+func stackConfig(w http.ResponseWriter, r *http.Request) {
+	envName := chi.URLParam(r, "env")
+	db := r.Context().Value("store").(*store.Store)
+
+	env, err := db.GetEnvironment(envName)
+	if err != nil {
+		logrus.Errorf("cannot get env: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var stackConfig *dx.StackConfig
+	stackYamlPath := "stack.yaml"
+	if !env.RepoPerEnv {
+		stackYamlPath = filepath.Join(env.Name, "stack.yaml")
+	}
+
+	gitRepoCache, _ := r.Context().Value("gitRepoCache").(*nativeGit.RepoCache)
+	gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
+		stackConfig, err = stackYaml(repo, stackYamlPath)
+	})
+	if err != nil {
+		if !strings.Contains(err.Error(), "file not found") {
+			logrus.Errorf("cannot get stack yaml from repo: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else {
+			logrus.Errorf("cannot get repo: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	stackDefinition, err := loadStackDefinition(stackConfig)
+	if err != nil && !strings.Contains(err.Error(), "file not found") {
+		logrus.Errorf("cannot get stack definition: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	gitopsEnv := &api.GitopsEnv{
+		Name:            env.Name,
+		StackConfig:     stackConfig,
+		StackDefinition: stackDefinition,
+	}
+
+	gitopsEnvString, err := json.Marshal(gitopsEnv)
+	if err != nil {
+		logrus.Errorf("cannot serialize envs: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(gitopsEnvString)
 }
 
 func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {

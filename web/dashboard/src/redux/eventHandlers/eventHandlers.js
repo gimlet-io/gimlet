@@ -80,6 +80,17 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function stackConfig(state, env) {
+  state.envs.forEach(stateEnv => {
+    if (env.name === stateEnv.name) {
+      stateEnv.stackConfig = env.stackConfig;
+      stateEnv.stackDefinition = env.stackDefinition;
+    }
+  });
+
+  return state;
+}
+
 export function envSpinnedOut(state, env) {
   for (let e of state.envs) {
     if (e.name === env.name) {
