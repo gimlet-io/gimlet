@@ -475,6 +475,53 @@ class EnvConfig extends Component {
     )
   }
 
+  // handlePatternNameChange = idx => e => {
+  //   const newCommitMessagePatterns = this.state.configFile.deploy.commitMessagePatterns.map((pattern, pidx) => {
+  //     if (idx !== pidx) return pattern;
+  //     return e.target.value;
+  //   });
+
+  //   this.setState(prevState => {
+  //     return {
+  //       configFile: {
+  //         ...prevState.configFile,
+  //         deploy: {
+  //           ...prevState.configFile.deploy,
+  //           commitMessagePatterns: newCommitMessagePatterns
+  //         },
+  //       },
+  //     }
+  //   });
+  // };
+
+  // handleRemovePattern = idx => () => {
+  //   this.setState(prevState => {
+  //     return {
+  //       configFile: {
+  //         ...prevState.configFile,
+  //         deploy: {
+  //           ...prevState.configFile.deploy,
+  //           commitMessagePatterns: this.state.configFile.deploy.commitMessagePatterns.filter((s, sidx) => idx !== sidx)
+  //         },
+  //       },
+  //     }
+  //   });
+  // };
+
+  // handleAddPattern = () => {
+  //   this.setState(prevState => {
+  //     return {
+  //       configFile: {
+  //         ...prevState.configFile,
+  //         deploy: {
+  //           ...prevState.configFile.deploy,
+  //           commitMessagePatterns: this.state.configFile.deploy.commitMessagePatterns.concat([""])
+  //         },
+  //       },
+  //     }
+  //   });
+  // };
+
   render() {
     const { owner, repo, env, config, action } = this.props.match.params;
     const repoName = `${owner}/${repo}`
@@ -675,6 +722,52 @@ class EnvConfig extends Component {
                   </>}
               </ul>
             </div>
+            {/* {this.state.configFile.deploy.event === "push" &&
+              <div className="mb-4 items-center">
+                <label htmlFor="deployFilterInput" className="text-gray-700 mr-4 block text-sm font-medium">
+                  Commit message patterns
+                </label>
+                {this.state.configFile.deploy.commitMessagePatterns.map((pattern, idx) => (
+                  <div key={idx} className="space-x-2">
+                    <input
+                      type="text"
+                      name="commitMessagePatternInput"
+                      id="commitMessagePatternInput"
+                      value={pattern}
+                      onChange={this.handlePatternNameChange(idx)}
+                      className="mt-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md w-4/12"
+                    />
+                    <button
+                      type="button"
+                      onClick={this.handleRemovePattern(idx)}
+                      className="rounded-sm bg-red-100 p-2.5 text-red-800 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3.5" stroke="currentColor" className="w-2.5 h-2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={this.handleAddPattern}
+                  className="mt-2 rounded-sm bg-indigo-100 p-2.5 text-indigo-800 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3.5" stroke="currentColor" className="w-2.5 h-2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                </button>
+
+                <ul className="list-none text-sm text-gray-500 mt-2">
+                  <li>
+                    Filter commit message based deployment trigger.
+                  </li>
+                  <li>
+                    Use glob patterns like [DEPLOY: myapp-1]*"` or `[DEPLOY: ALL]*`.
+                  </li>
+                </ul>
+              </div>
+            } */}
           </div>
         }
         </div>

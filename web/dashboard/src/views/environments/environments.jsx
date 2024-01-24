@@ -4,6 +4,7 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWERROR,
+  ACTION_TYPE_POPUPWINDOWRESET,
 } from "../../redux/redux";
 import EnvironmentCard from '../../components/environmentCard/environmentCard';
 
@@ -52,6 +53,14 @@ class Environments extends Component {
         });
       }, () => {/* Generic error handler deals with it */
       });
+  }
+
+  setTimeOutForButtonTriggeredAndPopupWindow() {
+    setTimeout(() => {
+      this.props.store.dispatch({
+        type: ACTION_TYPE_POPUPWINDOWRESET
+      });
+    }, 3000);
   }
 
   save() {
