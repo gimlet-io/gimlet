@@ -1,12 +1,15 @@
-import {Menu} from '@headlessui/react'
+import {Menu, Transition} from '@headlessui/react'
 import {ChevronDownIcon} from '@heroicons/react/solid'
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import logo from "!file-loader!./logo.svg";
 import { usePostHog } from 'posthog-js/react'
+import { useState, Fragment } from 'react';
+import { FilterIcon } from '@heroicons/react/solid'
 
 export default function DeployWidget(props) {
   const {deployTargets, deployHandler, sha, repo } = props;
   const posthog = usePostHog()
+  const [filter, setFilter] = useState("")
 
   if (!deployTargets) {
     return null;
@@ -41,11 +44,26 @@ export default function DeployWidget(props) {
             <span className="sr-only">Open options</span>
             <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
           </Menu.Button>
+          <Transition as={Fragment} afterLeave={() => setFilter('')}>
           <Menu.Items
               className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-slate-800 text-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <div className="py-1">
+              <div className="pb-1">
+              {deployTargets.length > 10 &&
+                <div class="relative">
+                  <input
+                    className="block border-0 rounded-t-md border-t border-b pl-8 border-gray-300 w-full pt-1.5 pb-1 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder="Enter Filter"
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    type="search"
+                  />
+                  <div className="absolute left-0 inset-y-0 flex items-center">
+                    <FilterIcon className="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
+                  </div>
+                </div>
+              }
               {Object.keys(deployTargetsByEnv).map((env) => {
-                if (deployTargetsByEnv[env].length > 1) {
+                if (deployTargetsByEnv[env].length > 1 && filter === "") {
                   return (
                     <Menu.Item key={`${env}`}>
                       {({ active }) => (
@@ -73,7 +91,7 @@ export default function DeployWidget(props) {
                   return null;
                 }
               })}
-              {deployTargets.map((target) => (
+              {filterTargets(deployTargets, filter).map((target) => (
                 <Menu.Item key={`${target.app}-${target.env}`}>
                   {({ active }) => (
                     <button
@@ -90,8 +108,13 @@ export default function DeployWidget(props) {
               ))}
             </div>
           </Menu.Items>
+          </Transition>
         </span>
       </Menu>
     </span>
   )
+}
+
+function filterTargets(targets, filter) {
+  return [...targets].filter(target => target.app.includes(filter) || target.env.includes(filter))
 }
