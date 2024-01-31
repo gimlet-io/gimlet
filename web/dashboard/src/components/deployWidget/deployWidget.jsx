@@ -49,9 +49,9 @@ export default function DeployWidget(props) {
           <Transition as={Fragment} afterLeave={() => setFilter('')}>
           <Menu.Items
               className="origin-top-right absolute z-50 right-0 mt-2 -mr-1 w-56 rounded-md shadow-lg bg-slate-800 text-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <div className="pb-1">
+              <div className="py-1">
               {deployTargets.length > 10 &&
-                <div className="relative">
+                <div className="relative -mt-1">
                   <input
                     className="block border-0 rounded-t-md border-t border-b pl-8 border-gray-300 w-full pt-1.5 pb-1 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     placeholder="Enter Filter"
