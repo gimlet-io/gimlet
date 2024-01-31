@@ -131,7 +131,7 @@ const Commits = ({ commits, envs, envConfigs, connectedAgents, deployHandler, ow
       <InfiniteScroll
         dataLength={commitWidgets.length}
         next={fetchNextCommitsWidgets}
-        style={{ overflowY: 'hidden' }}
+        style={{ overflow: 'visible' }}
         hasMore={true}
       >
         <ul className="-mb-4">
