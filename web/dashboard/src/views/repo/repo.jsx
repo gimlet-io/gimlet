@@ -543,7 +543,7 @@ export default class Repo extends Component {
                 }
 
                 {Object.keys(branches).length !== 0 &&
-                  <div className="bg-gray-50 shadow p-4 sm:p-6 lg:p-8 mt-8 relative">
+                  <div className="bg-gray-50 rounded-lg p-4 sm:p-6 lg:p-8 mt-8 relative">
                     <div className="w-64 mb-4 lg:mb-8">
                       <Dropdown
                         items={branches[repoName]}
@@ -564,7 +564,6 @@ export default class Repo extends Component {
                         branch={this.state.selectedBranch}
                         scmUrl={scmUrl}
                         tenant={this.state.selectedTenant}
-                        envConfigs={envConfigs}
                       />
                     }
                   </div>}
