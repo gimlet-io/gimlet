@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const DEFAULT_CHARTS = "name=onechart,repo=https://chart.onechart.dev,version=0.63.0;name=static-site,repo=https://chart.onechart.dev,version=0.63.0"
+const DEFAULT_CHARTS = "name=onechart,repo=https://chart.onechart.dev,version=0.64.0;name=static-site,repo=https://chart.onechart.dev,version=0.64.0"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
