@@ -17,6 +17,7 @@
     "date-fns": "^2.30.0",
     "helm-react-ui": "github:gimlet-io/helm-react-ui#master",
     "js-yaml": "^4.1.0",
+    "jsonpath": "^1.1.1",
     "nanoid": "^3.3.7",
     "posthog-js": "^1.96.1",
     "react": "^16.5.2",

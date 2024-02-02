@@ -80,6 +80,11 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function fluxStateReceived(state, payload) {
+  state.fluxState = payload
+  return state
+}
+
 export function stackConfig(state, env) {
   state.envs.forEach(stateEnv => {
     if (env.name === stateEnv.name) {

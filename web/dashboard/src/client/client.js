@@ -21,6 +21,8 @@ export default class GimletClient {
 
   getEnvs = () => this.get('/api/envs');
 
+  getFluxState = () => this.get('/api/fluxState');
+
   getGitRepos = () => this.get('/api/gitRepos');
 
   refreshRepos = () => this.get('/api/refreshRepos');
