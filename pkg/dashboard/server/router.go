@@ -152,6 +152,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Get("/api/user", user)
 		r.Post("/api/saveUser", saveUser)
 		r.Get("/api/envs", envs)
+		r.Get("/api/fluxState", fluxStateHandler)
 		r.Get("/api/podLogs", getPodLogs)
 		r.Get("/api/stopPodLogs", stopPodLogs)
 		r.Get("/api/deploymentDetails", getDeploymentDetails)
@@ -201,6 +202,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 		r.Post("/agent/fluxState", fluxState)
+		r.Post("/agent/v2/fluxState", fluxStatev2)
 		r.Post("/agent/deploymentDetails", deploymentDetails)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {

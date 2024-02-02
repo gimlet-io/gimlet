@@ -125,6 +125,28 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
+func fluxStateHandler(w http.ResponseWriter, r *http.Request) {
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+
+	fluxStates := []*api.Flux{}
+	for _, a := range agentHub.Agents {
+		fluxStates = append(fluxStates, &api.Flux{
+			Environment: a.Name,
+			State:       a.FluxStatev2,
+		})
+	}
+
+	fluxStatesString, err := json.Marshal(fluxStates)
+	if err != nil {
+		logrus.Errorf("cannot serialize envs: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(fluxStatesString)
+}
+
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	serviceName := r.URL.Query().Get("serviceName")

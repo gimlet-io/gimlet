@@ -268,6 +268,36 @@ func fluxState(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
+func fluxStatev2(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+
+	var fluxState api.FluxStatev2
+	err := json.NewDecoder(r.Body).Decode(&fluxState)
+	if err != nil {
+		logrus.Errorf("cannot decode flux state: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agent := agentHub.Agents[name]
+	if agent == nil {
+		return
+	}
+
+	agent.FluxStatev2 = &fluxState
+
+	// clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	// jsonString, _ := json.Marshal(streaming.FluxStateUpdatedEvent{
+	// 	StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStateUpdatedEventString},
+	// 	EnvName:        name,
+	// 	FluxState:      &fluxState,
+	// })
+	// clientHub.Broadcast <- jsonString
+}
+
 func deploymentDetails(w http.ResponseWriter, r *http.Request) {
 	var deployment api.Deployment
 	err := json.NewDecoder(r.Body).Decode(&deployment)

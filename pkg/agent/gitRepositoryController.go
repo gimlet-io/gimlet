@@ -32,6 +32,7 @@ func GitRepositoryController(kubeEnv *KubeEnv, gimletHost string, agentKey strin
 				fallthrough
 			case "delete":
 				SendFluxState(kubeEnv, gimletHost, agentKey)
+				SendFluxStatev2(kubeEnv, gimletHost, agentKey)
 			}
 			return nil
 		})
@@ -69,6 +70,45 @@ func SendFluxState(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 	params := url.Values{}
 	params.Add("name", kubeEnv.Name)
 	reqUrl := fmt.Sprintf("%s/agent/fluxState?%s", gimletHost, params.Encode())
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(fluxStateString))
+	if err != nil {
+		logrus.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Errorf("could not send flux state: %s", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		logrus.Errorf("could not send flux state: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+}
+
+func SendFluxStatev2(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
+	fluxState, err := kubeEnv.FluxState()
+	if err != nil {
+		logrus.Errorf("could not get flux state: %s", err)
+		return
+	}
+
+	fluxStateString, err := json.Marshal(fluxState)
+	if err != nil {
+		logrus.Errorf("could not serialize flux state: %v", err)
+		return
+	}
+
+	params := url.Values{}
+	params.Add("name", kubeEnv.Name)
+	reqUrl := fmt.Sprintf("%s/agent/v2/fluxState?%s", gimletHost, params.Encode())
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(fluxStateString))
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)

@@ -23,6 +23,7 @@ func KustomizationController(kubeEnv *KubeEnv, gimletHost string, agentKey strin
 				fallthrough
 			case "delete":
 				SendFluxState(kubeEnv, gimletHost, agentKey)
+				SendFluxStatev2(kubeEnv, gimletHost, agentKey)
 			}
 			return nil
 		})

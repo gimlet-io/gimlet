@@ -331,6 +331,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 
 func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	agent.SendFluxState(kubeEnv, gimletHost, agentKey)
+	agent.SendFluxStatev2(kubeEnv, gimletHost, agentKey)
 	logrus.Info("init flux states sent")
 }
 
