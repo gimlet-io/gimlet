@@ -316,7 +316,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 		agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
 		agentHub.TriggerImageBuild(imageBuildEvent.ID, imageBuildRequest)
 	} else {
-		event, err = releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
+		event, err = releaseRequestEvent(releaseRequest, artifactEvent, user.Login)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -337,7 +337,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 	w.Write(eventIDBytes)
 }
 
-func releaseRequestEvent(releaseRequest dx.ReleaseRequest, repository string, login string) (*model.Event, error) {
+func releaseRequestEvent(releaseRequest dx.ReleaseRequest, artifactEvent *model.Event, login string) (*model.Event, error) {
 	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
 		Env:         releaseRequest.Env,
 		App:         releaseRequest.App,
@@ -352,7 +352,8 @@ func releaseRequestEvent(releaseRequest dx.ReleaseRequest, repository string, lo
 	event := &model.Event{
 		Type:       model.ReleaseRequestedEvent,
 		Blob:       string(releaseRequestStr),
-		Repository: repository,
+		Repository: artifactEvent.Repository,
+		SHA:        artifactEvent.SHA,
 	}
 
 	return event, nil
@@ -368,6 +369,7 @@ func imageBuildRequestEvent(imageBuildRequest *dx.ImageBuildRequest, repository 
 		Type:       model.ImageBuildRequestedEvent,
 		Blob:       string(requestStr),
 		Repository: repository,
+		SHA:        imageBuildRequest.Sha,
 	}
 
 	return event, nil

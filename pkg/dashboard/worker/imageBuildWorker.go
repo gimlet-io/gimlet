@@ -95,6 +95,7 @@ func createDeployRequest(buildId string, store *store.Store) {
 		Type:       model.ReleaseRequestedEvent,
 		Blob:       string(releaseRequestStr),
 		Repository: event.Repository,
+		SHA:        event.SHA,
 	})
 	if err != nil {
 		logrus.Error(err)
