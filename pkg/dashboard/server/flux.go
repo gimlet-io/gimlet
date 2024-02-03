@@ -131,10 +131,12 @@ func updateGitopsCommitStatuses(
 
 	var commitWalker object.CommitIter
 	hash := plumbing.NewHash(eventHash)
-	gitopsRepoCache.PerformAction(repoName, func(repo *git.Repository) {
-		commitWalker, err = repo.Log(&git.LogOptions{
+	err = gitopsRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var innerErr error
+		commitWalker, innerErr = repo.Log(&git.LogOptions{
 			From: hash,
 		})
+		return innerErr
 	})
 	if err != nil {
 		return err

@@ -42,6 +42,9 @@ type RepoCache struct {
 
 	// for builtin env
 	gitUser *model.User
+
+	// to hydrate commits
+	triggerArtifactGeneration chan string
 }
 
 type repoData struct {
@@ -59,15 +62,17 @@ func NewRepoCache(
 	dynamicConfig *dynamicconfig.DynamicConfig,
 	clientHub *streaming.ClientHub,
 	gitUser *model.User,
+	triggerArtifactGeneration chan string,
 ) (*RepoCache, error) {
 	repoCache := &RepoCache{
-		tokenManager:  tokenManager,
-		repos:         map[string]*repoData{},
-		stopCh:        stopCh,
-		config:        config,
-		dynamicConfig: dynamicConfig,
-		clientHub:     clientHub,
-		gitUser:       gitUser,
+		tokenManager:              tokenManager,
+		repos:                     map[string]*repoData{},
+		stopCh:                    stopCh,
+		config:                    config,
+		dynamicConfig:             dynamicConfig,
+		clientHub:                 clientHub,
+		gitUser:                   gitUser,
+		triggerArtifactGeneration: triggerArtifactGeneration,
 	}
 
 	const DirRwxRxR = 0754
@@ -197,6 +202,8 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 
+	r.triggerArtifactGeneration <- repoName
+
 	if r.clientHub == nil {
 		return
 	}
@@ -213,17 +220,17 @@ func (r *RepoCache) cleanRepo(repoName string) {
 	r.reposMapLock.Unlock()
 }
 
-func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository)) error {
+func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository) error) error {
 	repo, err := r.instanceForRead(repoName, false)
 	if err != nil {
 		return err
 	}
 
 	repo.lock.Lock()
-	fn(repo.repo)
+	err = fn(repo.repo)
 	repo.lock.Unlock()
 
-	return nil
+	return err
 }
 
 func (r *RepoCache) PerformActionWithHistory(repoName string, fn func(repo *git.Repository)) error {

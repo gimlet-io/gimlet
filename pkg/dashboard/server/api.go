@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"path/filepath"
 
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	commitHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -29,6 +31,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
+	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/cert"
@@ -59,6 +62,51 @@ func user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
+	w.Write(userString)
+}
+
+func saveUser(w http.ResponseWriter, r *http.Request) {
+	var usernameToSave string
+	err := json.NewDecoder(r.Body).Decode(&usernameToSave)
+	if err != nil {
+		logrus.Errorf("cannot decode user name to save: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	ctx := r.Context()
+	store := ctx.Value("store").(*store.Store)
+
+	user := &model.User{
+		Login:  usernameToSave,
+		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
+	}
+
+	err = store.CreateUser(user)
+	if err != nil {
+		logrus.Errorf("cannot creat user %s: %s", user.Login, err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	token := token.New(token.UserToken, user.Login)
+	tokenStr, err := token.Sign(user.Secret)
+	if err != nil {
+		logrus.Errorf("couldn't create user token %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	// token is not saved as it is JWT
+	user.Token = tokenStr
+
+	userString, err := json.Marshal(user)
+	if err != nil {
+		logrus.Errorf("cannot serialize user %s: %s", user.Login, err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 	w.Write(userString)
 }
 
@@ -223,8 +271,10 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := r.Context().Value("gitRepoCache").(*nativeGit.RepoCache)
-	gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
-		stackConfig, err = stackYaml(repo, stackYamlPath)
+	err = gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) error {
+		var inerErr error
+		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
+		return inerErr
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "file not found") {
@@ -336,9 +386,25 @@ func decorateDeployments(ctx context.Context, envs []*api.ConnectedAgent) error 
 			if stack.Deployment == nil {
 				continue
 			}
-			_, err := decorateDeploymentWithSCMData(stack.Repo, stack.Deployment, dao, gitServiceImpl, token)
+
+			err := commitHelper.AssureSCMData(
+				stack.Repo,
+				[]string{stack.Deployment.SHA},
+				dao,
+				gitServiceImpl,
+				token,
+			)
 			if err != nil {
-				return fmt.Errorf("cannot decorate commits: %s", err)
+				return fmt.Errorf("cannot assure commit data: %s", err)
+			}
+
+			dbCommits, err := dao.CommitsByRepoAndSHA(stack.Repo, []string{stack.Deployment.SHA})
+			if err != nil {
+				return fmt.Errorf("cannot get commits from db: %s", err)
+			}
+
+			if len(dbCommits) > 0 {
+				stack.Deployment.CommitMessage = dbCommits[0].Message
 			}
 		}
 	}
@@ -381,9 +447,12 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 
 	var appChart *dx.Chart
 	var err error
-	gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName), func(repo *git.Repository) {
-		appChart, err = getChartForApp(repo, env, configName)
-	})
+	gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
+		func(repo *git.Repository) error {
+			var innerErr error
+			appChart, innerErr = getChartForApp(repo, env, configName)
+			return innerErr
+		})
 	if err != nil {
 		logrus.Errorf("cannot get manifest chart: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

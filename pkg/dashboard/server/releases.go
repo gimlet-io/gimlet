@@ -32,6 +32,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ByCreated []*dx.Release
+
+func (a ByCreated) Len() int           { return len(a) }
+func (a ByCreated) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByCreated) Less(i, j int) bool { return a[i].Created < a[j].Created }
+
 func getReleases(w http.ResponseWriter, r *http.Request) {
 	var since, until *time.Time
 	var app, env, gitRepo string
@@ -657,8 +663,6 @@ func delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
-	logrus.Info("tracking start", "")
-
 	var id string
 
 	params := r.URL.Query()
@@ -719,8 +723,6 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 		StatusDesc: event.StatusDesc,
 		Results:    results,
 	})
-
-	logrus.Info("tracking end", "")
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(statusBytes)
