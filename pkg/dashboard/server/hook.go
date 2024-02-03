@@ -10,7 +10,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	commitHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -152,19 +151,7 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	err = commitHelper.AssureGimletArtifacts(repo, "TODO", []string{sha}, repoCache, dao)
-	if err != nil {
-		logrus.Warnf("cannot assure deploytargets: %s", err)
-	}
-
-	commitDAOs, err := decorateWithDeployTargets([]*Commit{{
-		SHA: sha,
-	}}, dao)
-	if err != nil {
-		logrus.Warnf("cannot get deploytargets: %s", err)
-	}
-
-	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], commitDAOs[0].DeployTargets)
+	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], nil)
 
 	if len(statusOnCommits) != 0 {
 		err = dao.SaveStatusesOnCommits(repo, statusOnCommits)

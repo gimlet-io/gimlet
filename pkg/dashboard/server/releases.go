@@ -663,8 +663,6 @@ func delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
-	logrus.Info("tracking start", "")
-
 	var id string
 
 	params := r.URL.Query()
@@ -725,8 +723,6 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 		StatusDesc: event.StatusDesc,
 		Results:    results,
 	})
-
-	logrus.Info("tracking end", "")
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(statusBytes)

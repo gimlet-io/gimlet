@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	commitHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
@@ -29,6 +26,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	hashString := r.URL.Query().Get("fromHash")
 
 	ctx := r.Context()
+	dao := ctx.Value("store").(*store.Store)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	var err error
@@ -90,26 +88,6 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dao := ctx.Value("store").(*store.Store)
-	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
-	gitServiceImpl := customScm.NewGitService(dynamicConfig)
-	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
-	token, _, _ := tokenManager.Token()
-
-	err = commitHelper.AssureSCMData(repoName, hashes, dao, gitServiceImpl, token)
-	if err != nil {
-		logrus.Errorf("cannot assure commit data: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	err = commitHelper.AssureGimletArtifacts(repoName, branch, hashes, gitRepoCache, dao)
-	if err != nil {
-		logrus.Errorf("cannot assure commit data: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	commits, err = decorateWithSCMData(repoName, commits, dao)
 	if err != nil {
 		logrus.Errorf("cannot decorate commits: %s", err)
@@ -137,8 +115,8 @@ func commits(w http.ResponseWriter, r *http.Request) {
 
 func decorateWithSCMData(repoName string, commits []*Commit, dao *store.Store) ([]*Commit, error) {
 	hashes := []string{}
-	for _, hash := range hashes {
-		hashes = append(hashes, hash)
+	for _, c := range commits {
+		hashes = append(hashes, c.SHA)
 	}
 
 	dbCommits, err := dao.CommitsByRepoAndSHA(repoName, hashes)

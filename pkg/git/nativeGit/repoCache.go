@@ -12,13 +12,17 @@ import (
 
 	dashboardConfig "github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
@@ -42,6 +46,10 @@ type RepoCache struct {
 
 	// for builtin env
 	gitUser *model.User
+
+	// to hydrate commits
+	dao            *store.Store
+	gitServiceImpl customScm.CustomGitService
 }
 
 type repoData struct {
@@ -197,6 +205,14 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 
+	hashes, err := lastTenCommits(repo, branchHeadHash)
+	if err != nil {
+		logrus.Errorf("could walk: %s", err)
+		r.cleanRepo(repoName)
+		return
+	}
+	r.assureCommitData(repoName, headBranch, hashes)
+
 	if r.clientHub == nil {
 		return
 	}
@@ -207,10 +223,54 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 	r.clientHub.Broadcast <- jsonString
 }
 
+func lastTenCommits(repo *git.Repository, branchHeadHash plumbing.Hash) ([]string, error) {
+	commitWalker, err := repo.Log(&git.LogOptions{
+		From: branchHeadHash,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	limit := 10
+	hashes := []string{}
+	err = commitWalker.ForEach(func(c *object.Commit) error {
+		if limit != 0 && len(hashes) >= limit {
+			return fmt.Errorf("%s", "LIMIT")
+		}
+
+		hashes = append(hashes, c.Hash.String())
+
+		return nil
+	})
+	if err != nil &&
+		err.Error() != "EOF" &&
+		err.Error() != "LIMIT" {
+		return nil, err
+	}
+
+	return hashes, nil
+}
+
 func (r *RepoCache) cleanRepo(repoName string) {
 	r.reposMapLock.Lock()
 	delete(r.repos, repoName)
 	r.reposMapLock.Unlock()
+}
+
+func (r *RepoCache) assureCommitData(repoName string, branch string, hashes []string) error {
+	token, _, _ := r.tokenManager.Token()
+
+	err := commits.AssureSCMData(repoName, hashes, r.dao, r.gitServiceImpl, token)
+	if err != nil {
+		return fmt.Errorf("cannot assure commit data: %s", err)
+	}
+
+	// err = commits.AssureGimletArtifacts(repoName, branch, hashes, r.dao, nil)
+	// if err != nil {
+	// 	return fmt.Errorf("cannot assure commit data: %s", err)
+	// }
+
+	return nil
 }
 
 func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository)) error {
