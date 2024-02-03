@@ -306,6 +306,7 @@ func Version(
 	owner, name string,
 	repo *git.Repository,
 	sha string,
+	branch string,
 ) (*dx.Version, error) {
 	c, err := repo.CommitObject(plumbing.NewHash(sha))
 	if err != nil {
@@ -315,7 +316,7 @@ func Version(
 		RepositoryName: owner + "/" + name,
 		SHA:            sha,
 		Created:        time.Now().Unix(),
-		Branch:         "TODO",
+		Branch:         branch,
 		AuthorName:     c.Author.Name,
 		AuthorEmail:    c.Author.Email,
 		CommitterName:  c.Committer.Name,

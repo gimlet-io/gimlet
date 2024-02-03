@@ -10,6 +10,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	commitHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
@@ -17,7 +18,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
-	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -72,7 +72,16 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 				}
 
 				gitService := customScm.NewGitService(dynamicConfig)
-				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
+				processStatusHook(
+					dst.Repository.Owner.Login,
+					dst.Repository.Name,
+					dst.CheckRun.HeadSHA,
+					gitRepoCache,
+					gitService,
+					token,
+					dao,
+					clientHub,
+				)
 
 				writer.WriteHeader(http.StatusOK)
 				return
@@ -143,16 +152,19 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	var decoratedCommits []*Commit
-	repoCache.PerformAction(repo, func(repo *git.Repository) {
-		decoratedCommits, err = decorateCommitsWithGimletArtifacts([]*Commit{{SHA: sha}}, dao, repo, owner, name)
-
-	})
+	err = commitHelper.AssureGimletArtifacts(repo, "TODO", []string{sha}, repoCache, dao)
 	if err != nil {
-		logrus.Warnf("cannot get deplyotargets: %s", err)
+		logrus.Warnf("cannot assure deploytargets: %s", err)
 	}
 
-	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], decoratedCommits[0].DeployTargets)
+	commitDAOs, err := decorateWithDeployTargets([]*Commit{{
+		SHA: sha,
+	}}, dao)
+	if err != nil {
+		logrus.Warnf("cannot get deploytargets: %s", err)
+	}
+
+	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], commitDAOs[0].DeployTargets)
 
 	if len(statusOnCommits) != 0 {
 		err = dao.SaveStatusesOnCommits(repo, statusOnCommits)
