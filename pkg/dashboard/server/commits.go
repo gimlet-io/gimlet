@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	commitsHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi"
@@ -29,10 +32,11 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	dao := ctx.Value("store").(*store.Store)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	var err error
 	if branch == "" {
-		gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		err := gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+			var err error
 			branch, err = helper.HeadBranch(repo)
+			return err
 		})
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -42,8 +46,9 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var hash plumbing.Hash
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		hash = helper.BranchHeadHash(repo, branch)
+		return nil
 	})
 
 	if hashString != "head" {
@@ -51,10 +56,13 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var commitWalker object.CommitIter
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+	var err error
+	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var err error
 		commitWalker, err = repo.Log(&git.LogOptions{
 			From: hash,
 		})
+		return err
 	})
 	if err != nil {
 		logrus.Errorf("cannot walk commits: %s", err)
@@ -86,6 +94,15 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		logrus.Errorf("cannot walk commits: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	}
+
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	gitServiceImpl := customScm.NewGitService(dynamicConfig)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+	err = commitsHelper.AssureSCMData(repoName, hashes, dao, gitServiceImpl, token)
+	if err != nil {
+		logrus.Warnf("cannot decorate commits: %s", err)
 	}
 
 	commits, err = decorateWithSCMData(repoName, commits, dao)

@@ -315,8 +315,10 @@ func processReleaseEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	var repoVars map[string]string
-	gitopsRepoCache.PerformAction(artifact.Version.RepositoryName, func(repo *git.Repository) {
-		repoVars, err = loadVars(repo, ".gimlet/vars")
+	err = gitopsRepoCache.PerformAction(artifact.Version.RepositoryName, func(repo *git.Repository) error {
+		var innerErr error
+		repoVars, innerErr = loadVars(repo, ".gimlet/vars")
+		return innerErr
 	})
 	if err != nil {
 		return deployResults, fmt.Errorf("cannot load vars %s", err.Error())
@@ -548,8 +550,10 @@ func processArtifactEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	var repoVars map[string]string
-	gitopsRepoCache.PerformAction(artifact.Version.RepositoryName, func(repo *git.Repository) {
-		repoVars, err = loadVars(repo, ".gimlet/vars")
+	err = gitopsRepoCache.PerformAction(artifact.Version.RepositoryName, func(repo *git.Repository) error {
+		var innerErr error
+		repoVars, innerErr = loadVars(repo, ".gimlet/vars")
+		return innerErr
 	})
 	if err != nil {
 		return deployResults, fmt.Errorf("cannot load vars %s", err.Error())
@@ -596,6 +600,7 @@ func processArtifactEvent(
 		}
 
 		vars := artifact.CollectVariables()
+		vars["APP"] = manifest.App
 		for k, v := range envVars {
 			vars[k] = v
 		}

@@ -271,8 +271,10 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := r.Context().Value("gitRepoCache").(*nativeGit.RepoCache)
-	gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) {
-		stackConfig, err = stackYaml(repo, stackYamlPath)
+	err = gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) error {
+		var inerErr error
+		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
+		return inerErr
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "file not found") {
@@ -445,9 +447,12 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 
 	var appChart *dx.Chart
 	var err error
-	gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName), func(repo *git.Repository) {
-		appChart, err = getChartForApp(repo, env, configName)
-	})
+	gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
+		func(repo *git.Repository) error {
+			var innerErr error
+			appChart, innerErr = getChartForApp(repo, env, configName)
+			return innerErr
+		})
 	if err != nil {
 		logrus.Errorf("cannot get manifest chart: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

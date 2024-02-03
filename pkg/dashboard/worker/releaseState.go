@@ -69,8 +69,10 @@ func processRepo(
 	if processEnv.RepoPerEnv {
 		envs = []string{processEnv.Name}
 	} else {
-		repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) {
-			envs, err = gitops.Envs(repo)
+		err = repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) error {
+			var innerErr error
+			envs, innerErr = gitops.Envs(repo)
+			return innerErr
 		})
 		if err != nil {
 			return fmt.Errorf("cannot get envs: %s", err)
@@ -82,8 +84,10 @@ func processRepo(
 		t1 := time.Now()
 		var appReleases map[string]*dx.Release
 		var err error
-		repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) {
-			appReleases, err = gitops.Status(repo, "", env, processEnv.RepoPerEnv, perf)
+		err = repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) error {
+			var innerErr error
+			appReleases, innerErr = gitops.Status(repo, "", env, processEnv.RepoPerEnv, perf)
+			return innerErr
 		})
 		if err != nil {
 			logrus.Errorf("cannot get status: %s", err)
@@ -100,9 +104,10 @@ func processRepo(
 		for app, release := range appReleases {
 			t2 := time.Now()
 			var commit *object.Commit
-			var err error
-			repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) {
-				commit, err = lastCommitThatTouchedAFile(repo, filepath.Join(envPath, app))
+			err = repoCache.PerformAction(processEnv.AppsRepo, func(repo *git.Repository) error {
+				var innerErr error
+				commit, innerErr = lastCommitThatTouchedAFile(repo, filepath.Join(envPath, app))
+				return innerErr
 			})
 			if err != nil {
 				logrus.Errorf("cannot find last commit: %s", err)

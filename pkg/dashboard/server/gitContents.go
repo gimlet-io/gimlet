@@ -41,8 +41,9 @@ func branches(w http.ResponseWriter, r *http.Request) {
 
 	var refIter storer.ReferenceIter
 	branches := []string{}
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		refIter, _ = repo.References()
+		return nil
 	})
 	refIter.ForEach(func(r *plumbing.Reference) error {
 		if r.Name().IsRemote() {
@@ -76,8 +77,10 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	var err error
 	githubActionsConfigPath := filepath.Join(".github", "workflows")
 	githubActionsShipperCommand := "gimlet-io/gimlet-artifact-shipper-action"
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
-		hasGithubActionsConfig, githubActionsShipper, err = hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
+	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var innerErr error
+		hasGithubActionsConfig, githubActionsShipper, innerErr = hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
+		return innerErr
 	})
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
@@ -89,8 +92,10 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	var circleCiShipper *string
 	circleCiConfigPath := ".circleci"
 	circleCiShipperCommand := "gimlet/gimlet-artifact-create"
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
-		hasCircleCiConfig, circleCiShipper, err = hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
+	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var innerErr error
+		hasCircleCiConfig, circleCiShipper, innerErr = hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
+		return innerErr
 	})
 	if err != nil {
 		logrus.Errorf("cannot determine ci status: %s", err)
@@ -99,8 +104,10 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var files map[string]string
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
-		files, err = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var innerErr error
+		files, innerErr = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+		return innerErr
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
@@ -323,8 +330,10 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 
 	var files map[string]string
 	var err error
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
-		files, err = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var innerErr error
+		files, innerErr = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+		return innerErr
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
