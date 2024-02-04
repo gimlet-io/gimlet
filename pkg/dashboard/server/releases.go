@@ -271,6 +271,20 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" || strategy == "dockerfile" {
+			events, err := store.EventsForRepoAndSha(artifact.Version.RepositoryName, artifact.Version.SHA)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if imageHasBeenBuilt(events) {
+				break
+			}
+
+			// show per commit all the imagebuilder, release and artifact events
+			// but only those artifact events that triggered a policy and has results
+			// show results => this could be the image build log UX
+
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
 			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
@@ -335,6 +349,17 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(eventIDBytes)
+}
+
+func imageHasBeenBuilt(events []*model.Event) bool {
+	for _, e := range events {
+		if e.Type == model.ImageBuildRequestedEvent &&
+			e.Status == model.Success.String() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func releaseRequestEvent(releaseRequest dx.ReleaseRequest, artifactEvent *model.Event, login string) (*model.Event, error) {
