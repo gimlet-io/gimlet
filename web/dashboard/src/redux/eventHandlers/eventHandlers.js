@@ -317,6 +317,16 @@ export function fluxStateUpdated(state, event) {
   return state
 }
 
+export function fluxStatev2Updated(state, event) {
+  if (state.fluxState[event.envName] === undefined) {
+    return state;
+  }
+
+  state.fluxState[event.envName] = event.fluxState;
+
+  return state
+}
+
 export function deploymentDetails(state, event) {
   if (!state.deploymentDetails[event.deployment]) {
     state.deploymentDetails[event.deploymentName] = [];

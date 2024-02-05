@@ -289,13 +289,13 @@ func fluxStatev2(w http.ResponseWriter, r *http.Request) {
 
 	agent.FluxStatev2 = &fluxState
 
-	// clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	// jsonString, _ := json.Marshal(streaming.FluxStateUpdatedEvent{
-	// 	StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStateUpdatedEventString},
-	// 	EnvName:        name,
-	// 	FluxState:      &fluxState,
-	// })
-	// clientHub.Broadcast <- jsonString
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.FluxStatev2UpdatedEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStatev2UpdatedEventString},
+		EnvName:        name,
+		FluxState:      &fluxState,
+	})
+	clientHub.Broadcast <- jsonString
 }
 
 func deploymentDetails(w http.ResponseWriter, r *http.Request) {
