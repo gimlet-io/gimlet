@@ -4,6 +4,7 @@ import { Transition } from '@headlessui/react'
 import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
+import {Modal, SkeletonLoader } from "./modal";
 
 const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
@@ -43,16 +44,26 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
     return null;
   }
 
-  const commitWidgets = [];
-
   const envNames = envs.map(env => env["name"]);
   for (let env of envs) {
     env.isOnline = connectedAgents[env.name].isOnline 
   }
 
-  commits.forEach((commit, idx, ar) => {
-    commitWidgets.push(CommitWidget(repoName, commit, idx == ar.length-1, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler))
-  })
+  const commitWidgets = commits.map((commit, idx, ar) =>
+      <CommitWidget
+        key={idx}
+        repoName={repoName}
+        commit={commit}
+        last={idx == ar.length-1}
+        idx={idx}
+        commitsRef={commitsRef}
+        envNames={envNames}
+        scmUrl={scmUrl}
+        tenant={tenant}
+        connectedAgents={connectedAgents}
+        deployHandler={deployHandler}
+      />
+  )
 
   return (
     <div className="flow-root">
@@ -88,12 +99,22 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
   )
 }
 
-const CommitWidget = (repoName, commit, last, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler) => {
+const CommitWidget = ({repoName, commit, last, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler}) => {
+  const [showModal, setShowModal] = useState(false)
+
   const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
   const dateLabel = formatDistance(commit.created_at * 1000, new Date());
   let ringColor = 'ring-gray-100';
 
   return (
+    <>
+    {showModal &&
+      <Modal
+        closeHandler={() => setShowModal(false)}
+      >
+        <SkeletonLoader />
+      </Modal>
+    }
     <li key={commit.sha}>
       {idx === 10 &&
         <div ref={commitsRef} />
@@ -146,18 +167,13 @@ const CommitWidget = (repoName, commit, last, idx, commitsRef, envNames, scmUrl,
             </p>
             <p className="mt-0.5 text-xs text-gray-800">
               <span className="">Image built</span><span> {dateLabel} ago</span>
-              <a
-                className="ml-1"
-                title={exactDate}
-                href={commit.url}
-                target="_blank"
-                rel="noopener noreferrer">
-                <span className="rounded bg-gray-200 hover:bg-gray-300 ml-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 inline">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-                  </svg>
-                </span>
-              </a>
+              <span
+                className="rounded bg-gray-200 hover:bg-gray-300 ml-1 cursor-pointer"
+                onClick={() => setShowModal(true)}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 inline">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                </svg>
+              </span>
             </p>
           </div>
         </div>
@@ -176,6 +192,7 @@ const CommitWidget = (repoName, commit, last, idx, commitsRef, envNames, scmUrl,
       </div>
     </div>
     </li>
+    </>
   )
 }
 
