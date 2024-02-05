@@ -70,11 +70,6 @@ type ConnectedAgent struct {
 	FluxState *FluxState `json:"fluxState"`
 }
 
-type Flux struct {
-	Environment string       `json:"environment"`
-	State       *FluxStatev2 `json:"fluxState"`
-}
-
 type GitRepository struct {
 	Name               string `json:"name"`
 	Namespace          string `json:"namespace"`

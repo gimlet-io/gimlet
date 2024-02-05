@@ -128,12 +128,9 @@ func envs(w http.ResponseWriter, r *http.Request) {
 func fluxStateHandler(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
-	fluxStates := []*api.Flux{}
+	fluxStates := map[string]*api.FluxStatev2{}
 	for _, a := range agentHub.Agents {
-		fluxStates = append(fluxStates, &api.Flux{
-			Environment: a.Name,
-			State:       a.FluxStatev2,
-		})
+		fluxStates[a.Name] = a.FluxStatev2
 	}
 
 	fluxStatesString, err := json.Marshal(fluxStates)
