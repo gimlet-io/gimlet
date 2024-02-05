@@ -51,94 +51,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
   }
 
   commits.forEach((commit, idx, ar) => {
-    const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
-    const dateLabel = formatDistance(commit.created_at * 1000, new Date());
-    let ringColor = 'ring-gray-100';
-
-    commitWidgets.push(
-      <li key={idx}>
-        {idx === 10 &&
-          <div ref={commitsRef} />
-        }
-        <div className="relative pl-2 py-4 hover:bg-gray-100 rounded">
-          {idx !== ar.length - 1 &&
-            <span className="absolute top-4 left-6 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-          }
-          <div className="relative flex items-start space-x-3">
-            <div className="relative">
-              <img
-                className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 ${ringColor}`}
-                src={`${commit.author_pic}&s=60`}
-                alt={commit.author} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div>
-                <div className="text-sm">
-                  <p href="#" className="font-semibold text-gray-800">{commit.message}
-                    <span className="commitStatus">
-                      {
-                        commit.status && commit.status.statuses &&
-                        commit.status.statuses.map(status => (
-                          <a key={status.context} href={status.targetURL} target="_blank" rel="noopener noreferrer"
-                            title={status.context}>
-                            <StatusIcon status={status} />
-                          </a>
-                        ))
-                      }
-                    </span>
-                  </p>
-                </div>
-                <p className="mt-0.5 text-xs text-gray-800">
-                  <a
-                    className="font-semibold"
-                    href={`${scmUrl}/${commit.author}`}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    {commit.authorName}
-                  </a>
-                  <span className="ml-1">committed</span>
-                  <a
-                    className="ml-1"
-                    title={exactDate}
-                    href={commit.url}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    {dateLabel} ago
-                  </a>
-                </p>
-                <p className="mt-0.5 text-xs text-gray-800">
-                  <span className="">Image built {dateLabel} ago</span>
-                  <a
-                    className="ml-1"
-                    title={exactDate}
-                    href={commit.url}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    <span className="rounded bg-gray-200 hover:bg-gray-300 ml-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 inline">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-                      </svg>
-                    </span>
-                  </a>
-                </p>
-              </div>
-            </div>
-            <div>
-              <ReleaseBadges
-                sha={commit.sha}
-                connectedAgents={connectedAgents}
-              />
-              <DeployWidget
-                deployTargets={filterDeployTargets(commit.deployTargets, envNames, tenant)}
-                deployHandler={deployHandler}
-                sha={commit.sha}
-                repo={repoName}
-              />
-            </div>
-          </div>
-        </div>
-      </li>
-    )
+    commitWidgets.push(CommitWidget(repoName, commit, idx == ar.length-1, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler))
   })
 
   return (
@@ -172,6 +85,97 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
         </div>
       </Transition>
     </div>
+  )
+}
+
+const CommitWidget = (repoName, commit, last, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler) => {
+  const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(commit.created_at * 1000, new Date());
+  let ringColor = 'ring-gray-100';
+
+  return (
+    <li key={commit.sha}>
+      {idx === 10 &&
+        <div ref={commitsRef} />
+      }
+      <div className="relative pl-2 py-4 hover:bg-gray-100 rounded">
+      {!last &&
+        <span className="absolute top-4 left-6 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+      }
+      <div className="relative flex items-start space-x-3">
+        <div className="relative">
+          <img
+            className={`h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-4 ${ringColor}`}
+            src={`${commit.author_pic}&s=60`}
+            alt={commit.author} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div>
+            <div className="text-sm">
+              <p href="#" className="font-semibold text-gray-800">{commit.message}
+                <span className="commitStatus">
+                  {
+                    commit.status && commit.status.statuses &&
+                    commit.status.statuses.map(status => (
+                      <a key={status.context} href={status.targetURL} target="_blank" rel="noopener noreferrer"
+                        title={status.context}>
+                        <StatusIcon status={status} />
+                      </a>
+                    ))
+                  }
+                </span>
+              </p>
+            </div>
+            <p className="mt-0.5 text-xs text-gray-800">
+              <a
+                className="font-semibold"
+                href={`${scmUrl}/${commit.author}`}
+                target="_blank"
+                rel="noopener noreferrer">
+                {commit.authorName}
+              </a>
+              <span className="ml-1">committed</span>
+              <a
+                className="ml-1"
+                title={exactDate}
+                href={commit.url}
+                target="_blank"
+                rel="noopener noreferrer">
+                {dateLabel} ago
+              </a>
+            </p>
+            <p className="mt-0.5 text-xs text-gray-800">
+              <span className="">Image built</span><span> {dateLabel} ago</span>
+              <a
+                className="ml-1"
+                title={exactDate}
+                href={commit.url}
+                target="_blank"
+                rel="noopener noreferrer">
+                <span className="rounded bg-gray-200 hover:bg-gray-300 ml-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 inline">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                  </svg>
+                </span>
+              </a>
+            </p>
+          </div>
+        </div>
+        <div>
+          <ReleaseBadges
+            sha={commit.sha}
+            connectedAgents={connectedAgents}
+          />
+          <DeployWidget
+            deployTargets={filterDeployTargets(commit.deployTargets, envNames, tenant)}
+            deployHandler={deployHandler}
+            sha={commit.sha}
+            repo={repoName}
+          />
+        </div>
+      </div>
+    </div>
+    </li>
   )
 }
 
