@@ -106,6 +106,21 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                     {dateLabel} ago
                   </a>
                 </p>
+                <p className="mt-0.5 text-xs text-gray-800">
+                  <span className="">Image built {dateLabel} ago</span>
+                  <a
+                    className="ml-1"
+                    title={exactDate}
+                    href={commit.url}
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    <span className="rounded bg-gray-200 hover:bg-gray-300 ml-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 inline">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                      </svg>
+                    </span>
+                  </a>
+                </p>
               </div>
             </div>
             <div>
@@ -120,9 +135,6 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                 repo={repoName}
               />
             </div>
-          </div>
-          <div className="pl-11">
-            alma
           </div>
         </div>
       </li>
