@@ -285,6 +285,15 @@ func release(w http.ResponseWriter, r *http.Request) {
 			// but only those artifact events that triggered a policy and has results
 			// show results => this could be the image build log UX
 
+			// there are deploy targets - deploy button
+			// there are triggered policies with gitops commits / errors - history panel
+			// there are adhoc releases with gitops commits / errors - history panel
+			// there are image build results - history panel / separate button
+			// there is ongoing deploy
+			// there is ongoing image build
+
+			// Next steps: create history panel, including image build
+
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
 			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
