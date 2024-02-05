@@ -293,6 +293,9 @@ func release(w http.ResponseWriter, r *http.Request) {
 			// there is ongoing image build
 
 			// Next steps: create history panel, including image build
+			// let's try an overlay, like with github statuses
+
+			// conversatinal, and like audit log on deployment, this is a feed, with buttons for log overlay, etc
 
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App

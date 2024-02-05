@@ -111,6 +111,12 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	commits, err = decorateWithEventData(repoName, commits, dao)
+	if err != nil {
+		logrus.Errorf("cannot decorate commits: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	commits, err = decorateWithDeployTargets(commits, dao)
 	if err != nil {
 		logrus.Errorf("cannot decorate commits: %s", err)
@@ -128,6 +134,37 @@ func commits(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(commitsString)
+}
+
+func commitEvents(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	name := chi.URLParam(r, "name")
+	sha := chi.URLParam(r, "sha")
+	repoName := fmt.Sprintf("%s/%s", owner, name)
+
+	ctx := r.Context()
+	dao := ctx.Value("store").(*store.Store)
+
+	events, err := dao.EventsForRepoAndSha(repoName, sha)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	commitEvents := []*CommitEvent{}
+	for _, event := range events {
+		commitEvents = append(commitEvents, asCommitEvent(event))
+	}
+
+	eventsString, err := json.Marshal(commitEvents)
+	if err != nil {
+		logrus.Errorf("cannot serialize commits: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(eventsString)
 }
 
 func decorateWithSCMData(repoName string, commits []*Commit, dao *store.Store) ([]*Commit, error) {
@@ -153,6 +190,30 @@ func decorateWithSCMData(repoName string, commits []*Commit, dao *store.Store) (
 		commit.AuthorPic = dbCommit.AuthorPic
 		commit.Tags = dbCommit.Tags
 		commit.Status = dbCommit.Status
+	}
+
+	return commits, nil
+}
+
+func decorateWithEventData(repoName string, commits []*Commit, dao *store.Store) ([]*Commit, error) {
+	hashes := []string{}
+	for _, c := range commits {
+		hashes = append(hashes, c.SHA)
+	}
+
+	events, err := dao.LatestEventByRepoAndSha(repoName, hashes)
+	if err != nil {
+		return nil, err
+	}
+
+	eventsByHash := map[string]*model.Event{}
+	for _, e := range events {
+		eventsByHash[e.SHA] = e
+	}
+
+	for _, commit := range commits {
+		event := eventsByHash[commit.SHA]
+		commit.LastEvent = asCommitEvent(event)
 	}
 
 	return commits, nil
@@ -240,6 +301,58 @@ type Commit struct {
 	Tags          []string             `json:"tags,omitempty"`
 	Status        model.CombinedStatus `json:"status,omitempty"`
 	DeployTargets []*api.DeployTarget  `json:"deployTargets,omitempty"`
+	LastEvent     *CommitEvent         `json:"lastEvent,omitempty"`
+}
+
+type CommitEvent struct {
+	ID         string              `json:"id,omitempty"`
+	Created    int64               `json:"created,omitempty"`
+	Type       string              `json:"type,omitempty"`
+	Status     string              `json:"status"`
+	StatusDesc string              `json:"statusDesc"`
+	Results    []CommitEventResult `json:"results,omitempty"`
+}
+
+type CommitEventResult struct {
+	App string `json:"app,omitempty"`
+	Env string `json:"env,omitempty"`
+
+	Status     string `json:"status"`
+	StatusDesc string `json:"statusDesc"`
+
+	GitopsRef  string `json:"gitopsRef"`
+	GitopsRepo string `json:"gitopsRepo"`
+}
+
+func asCommitEvent(event *model.Event) *CommitEvent {
+	results := []CommitEventResult{}
+
+	for _, r := range event.Results {
+		var app string
+		var env string
+		if r.Manifest != nil {
+			app = r.Manifest.App
+			env = r.Manifest.Env
+		}
+
+		results = append(results, CommitEventResult{
+			App:        app,
+			Env:        env,
+			Status:     r.Status.String(),
+			StatusDesc: r.StatusDesc,
+			GitopsRef:  r.GitopsRef,
+			GitopsRepo: r.GitopsRepo,
+		})
+	}
+
+	return &CommitEvent{
+		ID:         event.ID,
+		Created:    event.Created,
+		Type:       event.Type,
+		Status:     event.Status,
+		StatusDesc: event.StatusDesc,
+		Results:    results,
+	}
 }
 
 func squashCommitStatuses(commits []*Commit) []*Commit {

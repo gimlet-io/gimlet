@@ -27,7 +27,7 @@ export function Modal(props) {
         >
           <div className="absolute top-0 right-0 p-1.5">
             <button
-              className="rounded-md inline-flex text-gray-800 hover:bg-stone-300 focus:outline-none"
+              className="rounded-md inline-flex text-gray-800 hover:bg-gray-300 focus:outline-none"
               onClick={closeHandler}
             >
               <span className="sr-only">Close</span>
