@@ -238,14 +238,14 @@ func serverCommunication(
 						go podLogs(
 							kubeEnv,
 							e["namespace"].(string),
-							e["serviceName"].(string),
+							e["deploymentName"].(string),
 							messages,
 							runningLogStreams,
 						)
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
-						svc := e["serviceName"].(string)
-						go runningLogStreams.Stop(namespace, svc)
+						deployment := e["deploymentName"].(string)
+						go runningLogStreams.Stop(namespace, deployment)
 					case "deploymentDetails":
 						go deploymentDetails(
 							kubeEnv,
@@ -377,51 +377,27 @@ func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 func podLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
-	serviceName string,
+	deploymentName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
-
-	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		logrus.Errorf("could not get services: %v", err)
-		return
-	}
-
-	var integratedServices []v1.Service
-	for _, s := range svc.Items {
-		if _, ok := s.ObjectMeta.GetAnnotations()[agent.AnnotationGitRepository]; ok {
-			integratedServices = append(integratedServices, s)
-		}
-	}
-
-	allDeployments, err := kubeEnv.Client.AppsV1().Deployments(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("could not get deployments: %v", err)
 		return
 	}
 
-	allPods, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("could not get pods: %v", err)
 		return
 	}
 
-	for _, svc := range integratedServices {
-		for _, deployment := range allDeployments.Items {
-			if deployment.Name == serviceName {
-				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-					for _, pod := range allPods.Items {
-						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
-							pod.Namespace == deployment.Namespace {
-							containers := podContainers(pod.Spec)
-							for _, container := range containers {
-								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, runningLogStreams)
-							}
-						}
-					}
-					return
-				}
+	for _, pod := range podsInNamespace.Items {
+		if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
+			containers := podContainers(pod.Spec)
+			for _, container := range containers {
+				go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
 			}
 		}
 	}
@@ -429,10 +405,24 @@ func podLogs(
 	logrus.Debug("pod logs sent")
 }
 
+func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
+	for k2, v2 := range selectors {
+		if v, ok := labels[k2]; ok {
+			if v2 != v {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	return true
+}
+
 func deploymentDetails(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
-	serviceName string,
+	name string,
 	gimletHost string,
 	agentKey string,
 ) {
@@ -505,7 +495,7 @@ func streamPodLogs(
 	namespace string,
 	pod string,
 	containerName string,
-	serviceName string,
+	deploymentName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
@@ -526,7 +516,7 @@ func streamPodLogs(
 	defer podLogs.Close()
 
 	stopCh := make(chan int)
-	runningLogStreams.Regsiter(stopCh, namespace, serviceName)
+	runningLogStreams.Regsiter(stopCh, namespace, deploymentName)
 
 	go func() {
 		<-stopCh
@@ -540,11 +530,11 @@ func streamPodLogs(
 		for _, chunk := range chunks {
 			timestamp, message := parseMessage(chunk)
 			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
-				Timestamp: timestamp,
-				Container: containerName,
-				Pod:       pod,
-				Svc:       namespace + "/" + serviceName,
-				Message:   message,
+				Timestamp:  timestamp,
+				Container:  containerName,
+				Pod:        pod,
+				Deployment: namespace + "/" + deploymentName,
+				Message:    message,
 			})
 			if err != nil {
 				logrus.Error("cannot serialize payload", err)

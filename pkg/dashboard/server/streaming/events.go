@@ -84,11 +84,11 @@ type CommitStatusUpdatedEvent struct {
 }
 
 type PodLogsEvent struct {
-	Timestamp string `json:"timestamp"`
-	Container string `json:"container"`
-	Message   string `json:"message"`
-	Pod       string `json:"pod"`
-	Svc       string `json:"svc"`
+	Timestamp  string `json:"timestamp"`
+	Container  string `json:"container"`
+	Message    string `json:"message"`
+	Pod        string `json:"pod"`
+	Deployment string `json:"deployment"`
 	StreamingEvent
 }
 

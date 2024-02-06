@@ -77,11 +77,11 @@ func (h *AgentHub) TriggerImageBuild(imageBuildId string, imageBuildRequest *dx.
 	}
 }
 
-func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
+func (h *AgentHub) StreamPodLogsSend(namespace string, deployment string) {
 	podlogsRequest := map[string]interface{}{
-		"action":      "podLogs",
-		"namespace":   namespace,
-		"serviceName": serviceName,
+		"action":         "podLogs",
+		"namespace":      namespace,
+		"deploymentName": deployment,
 	}
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
@@ -113,11 +113,11 @@ func (h *AgentHub) DeploymentDetails(namespace string, serviceName string) {
 	}
 }
 
-func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
+func (h *AgentHub) StopPodLogs(namespace string, deployment string) {
 	podlogsRequest := map[string]interface{}{
-		"action":      "stopPodLogs",
-		"namespace":   namespace,
-		"serviceName": serviceName,
+		"action":         "stopPodLogs",
+		"namespace":      namespace,
+		"deploymentName": deployment,
 	}
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)

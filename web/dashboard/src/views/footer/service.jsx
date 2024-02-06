@@ -30,7 +30,7 @@ export function CompactService(props) {
             {deployment &&
               <>
                 <Logs
-                  capacitorClient={capacitorClient}
+                  gimletClient={gimletClient}
                   store={store}
                   deployment={deployment}
                   containers={podContainers(service.pods)}

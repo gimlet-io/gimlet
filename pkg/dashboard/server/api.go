@@ -146,18 +146,18 @@ func fluxStateHandler(w http.ResponseWriter, r *http.Request) {
 
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
-	serviceName := r.URL.Query().Get("serviceName")
+	deployment := r.URL.Query().Get("deploymentName")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.StreamPodLogsSend(namespace, serviceName)
+	agentHub.StreamPodLogsSend(namespace, deployment)
 }
 
 func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
-	serviceName := r.URL.Query().Get("serviceName")
+	deployment := r.URL.Query().Get("deploymentName")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.StopPodLogs(namespace, serviceName)
+	agentHub.StopPodLogs(namespace, deployment)
 }
 
 func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {

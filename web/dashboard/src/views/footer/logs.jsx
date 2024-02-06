@@ -19,21 +19,20 @@ import { Modal } from './modal'
 import { SkeletonLoader } from './skeletonLoader'
 
 export function Logs(props) {
-  const { capacitorClient, store, deployment, containers } = props;
-  let reduxState = store.getState();
+  const { gimletClient, store, deployment, containers } = props;
   const [showModal, setShowModal] = useState(false)
   const deploymentName = deployment.metadata.namespace + "/" + deployment.metadata.name
-  const [logs, setLogs] = useState(reduxState.podLogs[deploymentName]);
-  store.subscribe(() => setLogs([...reduxState.podLogs[deploymentName] ?? []]));
+  const [logs, setLogs] = useState(store.getState().podLogs[deploymentName])
+  store.subscribe(() => setLogs(store.getState().podLogs[deploymentName]));
   const [selected, setSelected] = useState("")
 
   const streamPodLogs = () => {
-    capacitorClient.podLogsRequest(deployment.metadata.namespace, deployment.metadata.name)
+    gimletClient.podLogsRequest(deployment.metadata.namespace, deployment.metadata.name)
   }
 
   const stopLogsHandler = () => {
     setShowModal(false);
-    capacitorClient.stopPodLogsRequest(deployment.metadata.namespace, deployment.metadata.name);
+    gimletClient.stopPodlogsRequest(deployment.metadata.namespace, deployment.metadata.name);
     store.dispatch({
       type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
         pod: deployment.metadata.namespace + "/" + deployment.metadata.name
@@ -41,6 +40,7 @@ export function Logs(props) {
     });
   }
 
+  // TODO rendering bug
   return (
     <>
       {showModal &&
