@@ -162,10 +162,10 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 
 func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
-	serviceName := r.URL.Query().Get("serviceName")
+	deployment := r.URL.Query().Get("name")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.DeploymentDetails(namespace, serviceName)
+	agentHub.DeploymentDetails(namespace, deployment)
 }
 
 func getAlerts(w http.ResponseWriter, r *http.Request) {

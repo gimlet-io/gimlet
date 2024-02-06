@@ -95,11 +95,11 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, deployment string) {
 	}
 }
 
-func (h *AgentHub) DeploymentDetails(namespace string, serviceName string) {
+func (h *AgentHub) DeploymentDetails(namespace string, deployment string) {
 	deploymentDetailsRequest := map[string]interface{}{
-		"action":      "deploymentDetails",
-		"namespace":   namespace,
-		"serviceName": serviceName,
+		"action":         "deploymentDetails",
+		"namespace":      namespace,
+		"deploymentName": deployment,
 	}
 
 	deploymentDetailsRequestString, err := json.Marshal(deploymentDetailsRequest)

@@ -250,7 +250,7 @@ func serverCommunication(
 						go deploymentDetails(
 							kubeEnv,
 							e["namespace"].(string),
-							e["serviceName"].(string),
+							e["deploymentName"].(string),
 							config.Host,
 							config.AgentKey,
 						)
@@ -432,7 +432,7 @@ func deploymentDetails(
 		return
 	}
 
-	output, err := describer.Describe(namespace, serviceName, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
+	output, err := describer.Describe(namespace, name, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
 	if err != nil {
 		logrus.Errorf("could not get output of describer: %s", err)
 		return
@@ -440,7 +440,7 @@ func deploymentDetails(
 
 	deployment := api.Deployment{
 		Namespace: namespace,
-		Name:      serviceName,
+		Name:      name,
 		Details:   output,
 	}
 

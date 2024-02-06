@@ -25,9 +25,6 @@ export function Describe(props) {
   const [details, setDetails] = useState(store.getState().deploymentDetails[dep]);
   store.subscribe(() => setDetails(store.getState().deploymentDetails[dep]));
 
-  console.log(deployment.metadata.name)
-  console.log(store.getState().deploymentDetails)
-
   const describeDeployment = () => {
     gimletClient.deploymentDetailsRequest(deployment.metadata.namespace, deployment.metadata.name)
   }

@@ -47,23 +47,23 @@ function ServiceDetail(props) {
 
   const [logsOverlayVisible, setLogsOverlayVisible] = useState(false)
   const [logsOverlayNamespace, setLogsOverlayNamespace] = useState("")
-  const [logsOverlayService, setLogsOverlayService] = useState("")
+  const [logsOverlayDeployment, setLogsOverlayDeployment] = useState("")
 
-  const closeLogsOverlayHandler = (namespace, serviceName) => {
+  const closeLogsOverlayHandler = (namespace, deploymentName) => {
     setLogsOverlayVisible(false)
-    gimletClient.stopPodlogsRequest(namespace, serviceName);
+    gimletClient.stopPodlogsRequest(namespace, deploymentName);
     store.dispatch({
       type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
-        pod: namespace + "/" + serviceName
+        pod: namespace + "/" + deploymentName
       }
     });
   }
 
-  const closeDetailsHandler = (namespace, serviceName) => {
+  const closeDetailsHandler = (namespace, deploymentName) => {
     setLogsOverlayVisible(false)
     store.dispatch({
       type: ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS, payload: {
-        deployment: namespace + "/" + serviceName
+        deployment: namespace + "/" + deploymentName
       }
     });
   }
@@ -185,7 +185,7 @@ function ServiceDetail(props) {
         closeLogsOverlayHandler={closeLogsOverlayHandler}
         closeDetailsHandler={closeDetailsHandler}
         namespace={logsOverlayNamespace}
-        svc={logsOverlayService}
+        deployment={logsOverlayDeployment}
         visible={logsOverlayVisible}
         store={store}
       />
@@ -222,8 +222,8 @@ function ServiceDetail(props) {
                     onClick={() => {
                       setLogsOverlayVisible(true)
                       setLogsOverlayNamespace(deployment.namespace);
-                      setLogsOverlayService(stack.service.name);
-                      gimletClient.podLogsRequest(deployment.namespace, stack.service.name);
+                      setLogsOverlayDeployment(deployment.name);
+                      gimletClient.podLogsRequest(deployment.namespace, deployment.name);
                     }}
                     className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   >
@@ -233,8 +233,8 @@ function ServiceDetail(props) {
                     onClick={() => {
                       setLogsOverlayVisible(true);
                       setLogsOverlayNamespace(deployment.namespace);
-                      setLogsOverlayService(stack.service.name);
-                      gimletClient.deploymentDetailsRequest(deployment.namespace, stack.service.name);
+                      setLogsOverlayDeployment(deployment.name);
+                      gimletClient.deploymentDetailsRequest(deployment.namespace, deployment.name);
                     }}
                     className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
                     Describe
@@ -398,16 +398,16 @@ function ServiceDetail(props) {
 
 export default ServiceDetail;
 
-const LogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, closeDetailsHandler, store }) => {
+const LogsOverlay = ({ visible, namespace, deployment, closeLogsOverlayHandler, closeDetailsHandler, store }) => {
   let reduxState = store.getState();
-  const service = namespace + "/" + svc;
+  const deploymentName = namespace + "/" + deployment;
 
-  const [logs, setLogs] = useState(reduxState.podLogs[service])
-  const [details, setDetails] = useState(reduxState.deploymentDetails[service])
+  const [logs, setLogs] = useState(reduxState.podLogs[deploymentName])
+  const [details, setDetails] = useState(reduxState.deploymentDetails[deploymentName])
 
   store.subscribe(() => {
-    setLogs(reduxState.podLogs[service])
-    setDetails(reduxState.deploymentDetails[service])
+    setLogs(reduxState.podLogs[deploymentName])
+    setDetails(reduxState.deploymentDetails[deploymentName])
   });
 
   const logsEndRef = useRef(null);
@@ -418,9 +418,9 @@ const LogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, closeDe
 
   const handleClose = () => {
     if (details) {
-      closeDetailsHandler(namespace, svc);
+      closeDetailsHandler(namespace, deployment);
     } else {
-      closeLogsOverlayHandler(namespace, svc);
+      closeLogsOverlayHandler(namespace, deployment);
     }
   };
 
