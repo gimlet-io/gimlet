@@ -67,6 +67,8 @@ export default class GimletClient {
 
   deploymentDetailsRequest = (namespace, name) => this.get(`/api/deploymentDetails?namespace=${namespace}&name=${name}`);
 
+  podDetailsRequest = (namespace, name) => this.get(`/api/podDetails?namespace=${namespace}&name=${name}`);
+
   getAlerts = () => this.get("/api/alerts");
   
   bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo) => this.post('/api/bootstrapGitops', JSON.stringify({ envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo }));

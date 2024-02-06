@@ -26,19 +26,22 @@ export function CompactService(props) {
       <div className="flex-1">
         <h3 className="flex text-lg font-bold rounded p-4">
           <span className="cursor-pointer">{deployment.metadata.name}</span>
-          <div className="flex items-center ml-auto space-x-2">
+          <div className="flex items-center ml-auto">
             {deployment &&
               <>
                 <Logs
                   gimletClient={gimletClient}
                   store={store}
-                  deployment={deployment}
+                  namespace={deployment.metadata.namespace}
+                  deployment={deployment.metadata.name}
                   containers={podContainers(service.pods)}
                 />
                 <Describe
                   gimletClient={gimletClient}
                   store={store}
-                  deployment={deployment}
+                  namespace={deployment.metadata.namespace}
+                  deployment={deployment.metadata.name}
+                  pods={service.pods}
                 />
               </>
             }
@@ -96,7 +99,7 @@ function Pod(props) {
   );
 }
 
-function podContainers(pods) {
+export function podContainers(pods) {
   const containers = [];
 
   pods.forEach((pod) => {

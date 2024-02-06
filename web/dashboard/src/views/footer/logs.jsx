@@ -19,23 +19,23 @@ import { Modal } from './modal'
 import { SkeletonLoader } from './skeletonLoader'
 
 export function Logs(props) {
-  const { gimletClient, store, deployment, containers } = props;
+  const { gimletClient, store, namespace, deployment, containers } = props;
   const [showModal, setShowModal] = useState(false)
-  const deploymentName = deployment.metadata.namespace + "/" + deployment.metadata.name
+  const deploymentName = namespace + "/" + deployment
   const [logs, setLogs] = useState(store.getState().podLogs[deploymentName])
   store.subscribe(() => setLogs(store.getState().podLogs[deploymentName]));
   const [selected, setSelected] = useState("")
 
   const streamPodLogs = () => {
-    gimletClient.podLogsRequest(deployment.metadata.namespace, deployment.metadata.name)
+    gimletClient.podLogsRequest(namespace, deployment)
   }
 
   const stopLogsHandler = () => {
     setShowModal(false);
-    gimletClient.stopPodlogsRequest(deployment.metadata.namespace, deployment.metadata.name);
+    gimletClient.stopPodlogsRequest(namespace, deployment);
     store.dispatch({
       type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
-        pod: deployment.metadata.namespace + "/" + deployment.metadata.name
+        pod: namespace + "/" + deployment
       }
     });
   }

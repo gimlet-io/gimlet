@@ -79,6 +79,7 @@ export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
 export const EVENT_FLUX_STATE_V2_UPDATED_EVENT = 'fluxStatev2UpdatedEvent';
 
 export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
+export const EVENT_POD_DETAILS_EVENT = 'podDetailsEvent';
 
 export const initialState = {
   settings: {
@@ -115,7 +116,7 @@ export const initialState = {
     errorList: null
   },
   podLogs: {},
-  deploymentDetails: {},
+  details: {},
   textColors: {},
   imageBuildLogs: {},
   users: [],
@@ -262,6 +263,8 @@ function processStreamingEvent(state, event) {
         return eventHandlers.fluxStatev2Updated(state, event);
     case EVENT_DEPLOYMENT_DETAILS_EVENT:
       return eventHandlers.deploymentDetails(state, event);
+      case EVENT_POD_DETAILS_EVENT:
+        return eventHandlers.podDetails(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;

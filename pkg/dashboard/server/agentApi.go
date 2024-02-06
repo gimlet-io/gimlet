@@ -318,6 +318,26 @@ func deploymentDetails(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
+func podDetails(w http.ResponseWriter, r *http.Request) {
+	var pod api.Pod
+	err := json.NewDecoder(r.Body).Decode(&pod)
+	if err != nil {
+		logrus.Errorf("cannot decode pod: %s", err)
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
+	jsonString, _ := json.Marshal(streaming.PodDetailsEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.PodDetailsEventString},
+		Pod:            pod.FQN(),
+		Details:        pod.Details,
+	})
+	clientHub.Broadcast <- jsonString
+}
+
 func update(w http.ResponseWriter, r *http.Request) {
 	var update api.StackUpdate
 	err := json.NewDecoder(r.Body).Decode(&update)

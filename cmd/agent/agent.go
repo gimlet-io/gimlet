@@ -254,6 +254,14 @@ func serverCommunication(
 							config.Host,
 							config.AgentKey,
 						)
+					case "podDetails":
+						go podDetails(
+							kubeEnv,
+							e["namespace"].(string),
+							e["podName"].(string),
+							config.Host,
+							config.AgentKey,
+						)
 					case "imageBuildTrigger":
 						requestString, _ := json.Marshal(e["request"])
 						buildId := e["buildId"].(string)
@@ -452,6 +460,63 @@ func deploymentDetails(
 
 	reqUrl := fmt.Sprintf("%s/agent/deploymentDetails", gimletHost)
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(deploymentString))
+	if err != nil {
+		logrus.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Errorf("could not send deployment details: %s", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		logrus.Errorf("could not send deployment details: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	logrus.Debug("deployment details sent")
+}
+
+func podDetails(
+	kubeEnv *agent.KubeEnv,
+	namespace string,
+	name string,
+	gimletHost string,
+	agentKey string,
+) {
+	describer, ok := describe.DescriberFor(schema.GroupKind{Group: v1.GroupName, Kind: "Pod"}, kubeEnv.Config)
+	if !ok {
+		logrus.Errorf("could not get describer for pod")
+		return
+	}
+
+	output, err := describer.Describe(namespace, name, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
+	if err != nil {
+		logrus.Errorf("could not get output of describer: %s", err)
+		return
+	}
+
+	pod := api.Pod{
+		Namespace: namespace,
+		Name:      name,
+		Details:   output,
+	}
+
+	podString, err := json.Marshal(pod)
+	if err != nil {
+		logrus.Errorf("could not serialize pod: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/podDetails", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(podString))
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
 		return

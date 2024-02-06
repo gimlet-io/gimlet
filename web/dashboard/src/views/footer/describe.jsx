@@ -19,25 +19,26 @@ import { Modal } from './modal'
 import { ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS } from '../../redux/redux';
 
 export function Describe(props) {
-  const { gimletClient, store, deployment, pods } = props;
+  const { gimletClient, store, namespace, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
-  const dep = deployment.metadata.namespace + "/" + deployment.metadata.name;
-  const [details, setDetails] = useState(store.getState().deploymentDetails[dep]);
-  store.subscribe(() => setDetails(store.getState().deploymentDetails[dep]));
+  const dep = namespace + "/" + deployment;
+  const [details, setDetails] = useState(store.getState().details[dep]);
+  store.subscribe(() => setDetails(store.getState().details[dep]));
 
   const describeDeployment = () => {
-    gimletClient.deploymentDetailsRequest(deployment.metadata.namespace, deployment.metadata.name)
+    gimletClient.deploymentDetailsRequest(namespace, deployment)
   }
 
+  // TODO handle show pod describe
   const describePod = (podNamespace, podName) => {
-    gimletClient.describePod(podNamespace, podName)
+    gimletClient.podDetailsRequest(podNamespace, podName)
   }
 
-  const closeDetailsHandler = (namespace, deploymentName) => {
+  const closeDetailsHandler = () => {
     setShowModal(false)
     store.dispatch({
       type: ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS, payload: {
-        deployment: namespace + "/" + deploymentName
+        deployment: namespace + "/" + deployment
       }
     });
   }
@@ -55,13 +56,8 @@ export function Describe(props) {
               describePod={describePod}
             />}
         >
-          <code className='whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
-            {
-              details ?
-                details.map((line, idx) => <p key={idx}>{line}</p>)
-                :
-                <SkeletonLoader />
-            }
+          <code className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
+            {details ?? <SkeletonLoader />}
           </code>
         </Modal>
       }
@@ -78,34 +74,51 @@ export function Describe(props) {
 
 function DescribeNav(props) {
   const { deployment, pods, describeDeployment, describePod } = props;
-  const [selected, setSelected] = useState(deployment.metadata.name)
+  const [selected, setSelected] = useState(deployment)
 
   return (
     <div className="flex flex-wrap items-center overflow-auto mx-4 space-x-1">
       <button
-        title={deployment.metadata.name}
-        className={`${deployment.metadata.name === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
+        title={deployment}
+        className={`${deployment === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
         onClick={() => {
           describeDeployment();
-          setSelected(deployment.metadata.name)
+          setSelected(deployment)
         }}
       >
         Deployment
       </button>
       {
-        pods?.map((pod) => (
-          <button
-            key={pod.metadata.name}
-            title={pod.metadata.name}
-            className={`${pod.metadata.name === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
-            onClick={() => {
-              describePod(pod.metadata.namespace, pod.metadata.name);
-              setSelected(pod.metadata.name)
-            }}
-          >
-            {pod.metadata.name}
-          </button>
-        ))
+        pods?.map((pod) => {
+          // TODO
+          if (!pod.metadata) {
+            return (
+              <button
+                key={pod.name}
+                title={pod.name}
+                className={`${pod.name === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
+                onClick={() => {
+                  describePod(pod.namespace, pod.name);
+                  setSelected(pod.name)
+                }}
+              >
+                {pod.name}
+              </button>)
+          }
+
+          return (
+            <button
+              key={pod.metadata.name}
+              title={pod.metadata.name}
+              className={`${pod.metadata.name === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
+              onClick={() => {
+                describePod(pod.metadata.namespace, pod.metadata.name);
+                setSelected(pod.metadata.name)
+              }}
+            >
+              {pod.metadata.name}
+            </button>)
+        })
       }
     </div>
   )
