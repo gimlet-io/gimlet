@@ -192,7 +192,7 @@ function GitRepository(props) {
 }
 
 export const CompactServices = memo(function CompactServices(props) {
-  const { capacitorClient, store, services } = props
+  const { gimletClient, store, services } = props
 
   return (
     <div className="grid gap-y-4 grid-cols-1">
@@ -202,7 +202,7 @@ export const CompactServices = memo(function CompactServices(props) {
             <CompactService
               key={`${service.deployment.metadata.namespace}/${service.deployment.metadata.name}`}
               service={service}
-              capacitorClient={capacitorClient}
+              gimletClient={gimletClient}
               store={store}
             />
           )

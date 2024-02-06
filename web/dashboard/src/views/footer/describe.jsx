@@ -16,27 +16,40 @@ limitations under the License.
 import React, { useState } from 'react';
 import { SkeletonLoader } from './skeletonLoader'
 import { Modal } from './modal'
+import { ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS } from '../../redux/redux';
 
 export function Describe(props) {
-  const { capacitorClient, deployment, pods } = props;
-  const [details, setDetails] = useState(null)
+  const { gimletClient, store, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
+  const dep = deployment.metadata.namespace + "/" + deployment.metadata.name;
+  const [details, setDetails] = useState(store.getState().deploymentDetails[dep]);
+  store.subscribe(() => setDetails(store.getState().deploymentDetails[dep]));
+
+  console.log(deployment.metadata.name)
+  console.log(store.getState().deploymentDetails)
 
   const describeDeployment = () => {
-    capacitorClient.describeDeployment(deployment.metadata.namespace, deployment.metadata.name)
-      .then(data => setDetails(data))
+    gimletClient.deploymentDetailsRequest(deployment.metadata.namespace, deployment.metadata.name)
   }
 
   const describePod = (podNamespace, podName) => {
-    capacitorClient.describePod(podNamespace, podName)
-      .then(data => setDetails(data))
+    gimletClient.describePod(podNamespace, podName)
+  }
+
+  const closeDetailsHandler = (namespace, deploymentName) => {
+    setShowModal(false)
+    store.dispatch({
+      type: ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS, payload: {
+        deployment: namespace + "/" + deploymentName
+      }
+    });
   }
 
   return (
     <>
       {showModal &&
         <Modal
-          stopHandler={() => setShowModal(false)}
+          stopHandler={closeDetailsHandler}
           navBar={
             <DescribeNav
               deployment={deployment}
@@ -45,8 +58,13 @@ export function Describe(props) {
               describePod={describePod}
             />}
         >
-          <code className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
-            {details ?? <SkeletonLoader />}
+          <code className='whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
+            {
+              details ?
+                details.map((line, idx) => <p key={idx}>{line}</p>)
+                :
+                <SkeletonLoader />
+            }
           </code>
         </Modal>
       }

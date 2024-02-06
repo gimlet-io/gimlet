@@ -18,7 +18,7 @@ import { Logs } from './logs'
 import { Describe } from './describe'
 
 export function CompactService(props) {
-  const { service, capacitorClient, store } = props;
+  const { service, gimletClient, store } = props;
   const deployment = service.deployment;
 
   return (
@@ -36,7 +36,8 @@ export function CompactService(props) {
                   containers={podContainers(service.pods)}
                 />
                 <Describe
-                  capacitorClient={capacitorClient}
+                  gimletClient={gimletClient}
+                  store={store}
                   deployment={deployment}
                 />
               </>
