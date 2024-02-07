@@ -131,6 +131,25 @@ func (h *AgentHub) PodDetails(namespace string, podName string) {
 	}
 }
 
+func (h *AgentHub) ReconcileResource(resource, namespace, name string) {
+	resourceRequest := map[string]interface{}{
+		"action":    "reconcile",
+		"resource":  resource,
+		"namespace": namespace,
+		"name":      name,
+	}
+
+	resourceRequestString, err := json.Marshal(resourceRequest)
+	if err != nil {
+		logrus.Errorf("could not serialize request: %s", err)
+		return
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(resourceRequestString)
+	}
+}
+
 func (h *AgentHub) StopPodLogs(namespace string, deployment string) {
 	podlogsRequest := map[string]interface{}{
 		"action":         "stopPodLogs",

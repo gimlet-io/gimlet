@@ -23,6 +23,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet-cli/pkg/flux"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -262,6 +263,13 @@ func serverCommunication(
 							config.Host,
 							config.AgentKey,
 						)
+					case "reconcile":
+						go reconcile(
+							kubeEnv,
+							e["resource"].(string),
+							e["namespace"].(string),
+							e["name"].(string),
+						)
 					case "imageBuildTrigger":
 						requestString, _ := json.Marshal(e["request"])
 						buildId := e["buildId"].(string)
@@ -482,6 +490,16 @@ func deploymentDetails(
 	}
 
 	logrus.Debug("deployment details sent")
+}
+
+func reconcile(
+	kubeEnv *agent.KubeEnv,
+	resource string,
+	namespace string,
+	name string,
+) {
+	reconcileCommand := flux.NewReconcileCommand(resource)
+	reconcileCommand.Run(kubeEnv.Config, namespace, name)
 }
 
 func podDetails(

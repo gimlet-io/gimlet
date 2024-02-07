@@ -19,7 +19,7 @@ import jp from 'jsonpath'
 import { NavigationButton } from './navigationButton'
 
 export function Kustomization(props) {
-  const { capacitorClient, item, gitRepositories, targetReference, handleNavigationSelect } = props;
+  const { gimletClient, item, gitRepositories, targetReference, handleNavigationSelect } = props;
   const ref = useRef(null);
   const [highlight, setHighlight] = useState(false)
 
@@ -61,7 +61,7 @@ export function Kustomization(props) {
       </div>
       <div className="grid-cols-2">
         <button className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-4 mr-2 border border-neutral-300 rounded"
-          onClick={() => capacitorClient.reconcile("kustomization", item.metadata.namespace, item.metadata.name)}
+          onClick={() => gimletClient.reconcileRequest("kustomization", item.metadata.namespace, item.metadata.name)}
         >
           Reconcile
         </button>

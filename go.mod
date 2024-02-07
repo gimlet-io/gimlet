@@ -99,6 +99,7 @@ require (
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fluxcd/pkg/tar v0.4.0 // indirect
@@ -290,6 +291,7 @@ require (
 	k8s.io/kubectl v0.28.4
 	k8s.io/utils v0.0.0-20231127182322-b307cd553661 // indirect
 	oras.land/oras-go v1.2.2 // indirect
+	sigs.k8s.io/cli-utils v0.35.0
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/kyaml v0.16.0 // indirect

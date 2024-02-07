@@ -176,6 +176,15 @@ func getPodDetails(w http.ResponseWriter, r *http.Request) {
 	agentHub.PodDetails(namespace, name)
 }
 
+func reconcile(w http.ResponseWriter, r *http.Request) {
+	resource := r.URL.Query().Get("resource")
+	namespace := r.URL.Query().Get("namespace")
+	name := r.URL.Query().Get("name")
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.ReconcileResource(resource, namespace, name)
+}
+
 func getAlerts(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value("store").(*store.Store)
 	dbAlerts, err := db.Alerts()

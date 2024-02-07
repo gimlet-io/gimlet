@@ -22,7 +22,7 @@ import { TimeLabel } from './timeLabel';
 import { CompactService } from './service';
 
 export function Kustomizations(props){
-  const { capacitorClient, fluxState, targetReference, handleNavigationSelect } = props
+  const { gimletClient, fluxState, targetReference, handleNavigationSelect } = props
   const kustomizations = fluxState.kustomizations;
   const gitRepositories = fluxState.gitRepositories
 
@@ -40,7 +40,7 @@ export function Kustomizations(props){
         sortedKustomizations?.map(kustomization =>
           <Kustomization
             key={kustomization.metadata.namespace + kustomization.metadata.name}
-            capacitorClient={capacitorClient}
+            gimletClient={gimletClient}
             item={kustomization}
             gitRepositories={gitRepositories}
             handleNavigationSelect={handleNavigationSelect}
@@ -53,7 +53,7 @@ export function Kustomizations(props){
 }
 
 export function HelmReleases(props) {
-  const { capacitorClient, helmReleases, targetReference, handleNavigationSelect } = props
+  const { gimletClient, helmReleases, targetReference, handleNavigationSelect } = props
 
   const sortedHelmReleases = useMemo(() => {
     if (!helmReleases) {
@@ -69,7 +69,7 @@ export function HelmReleases(props) {
         sortedHelmReleases?.map(helmRelease =>
           <HelmRelease
             key={"hr-"+ helmRelease.metadata.namespace + helmRelease.metadata.name}
-            capacitorClient={capacitorClient}
+            gimletClient={gimletClient}
             item={helmRelease}
             handleNavigationSelect={handleNavigationSelect}
             targetReference={targetReference}
@@ -80,7 +80,7 @@ export function HelmReleases(props) {
 }
 
 function HelmRelease(props) {
-  const { capacitorClient, item, targetReference, handleNavigationSelect } = props;
+  const { gimletClient, item, targetReference, handleNavigationSelect } = props;
   const ref = useRef(null);
   const [highlight, setHighlight] = useState(false)
 
@@ -113,7 +113,7 @@ function HelmRelease(props) {
       </div>
       <div className="grid-cols-2">
         <button className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-4 mr-2 border border-neutral-300 rounded"
-          onClick={() => capacitorClient.reconcile("helmrelease", item.metadata.namespace, item.metadata.name)}
+          onClick={() => gimletClient.reconcileRequest("helmrelease", item.metadata.namespace, item.metadata.name)}
         >
           Reconcile
         </button>
@@ -122,7 +122,7 @@ function HelmRelease(props) {
 }
 
 export function GitRepositories(props){
-  const { capacitorClient, gitRepositories, targetReference } = props
+  const { gimletClient, gitRepositories, targetReference } = props
 
   const sortedGitRepositories = useMemo(() => {
     if (!gitRepositories) {
@@ -138,7 +138,7 @@ export function GitRepositories(props){
         sortedGitRepositories?.map(gitRepository =>
           <GitRepository
             key={"source-"+ gitRepository.metadata.namespace + gitRepository.metadata.name}  
-            capacitorClient={capacitorClient}
+            gimletClient={gimletClient}
             item={gitRepository}
             targetReference={targetReference}
           />
@@ -149,7 +149,7 @@ export function GitRepositories(props){
 }
 
 function GitRepository(props) {
-  const { capacitorClient, item, targetReference } = props;
+  const { gimletClient, item, targetReference } = props;
   const ref = useRef(null);
   const [highlight, setHighlight] = useState(false)
 
@@ -182,7 +182,7 @@ function GitRepository(props) {
       </div>
       <div className="grid-cols-2">
         <button className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-4 mr-2 border border-neutral-300 rounded"
-          onClick={() => capacitorClient.reconcile("source", item.metadata.namespace, item.metadata.name)}
+          onClick={() => gimletClient.reconcileRequest("source", item.metadata.namespace, item.metadata.name)}
         >
           Reconcile
         </button>
