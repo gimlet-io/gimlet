@@ -38,7 +38,7 @@ export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
 export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
-export const ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS = 'clearDeploymentDetails'
+export const ACTION_TYPE_CLEAR_DETAILS = 'clearDetails'
 export const ACTION_TYPE_ALERTS = 'alerts'
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
@@ -197,8 +197,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.clearDeployStatus(state)
     case ACTION_TYPE_CLEAR_PODLOGS:
        return podEventHandlers.clearPodLogs(state, action.payload)
-    case ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS:
-      return eventHandlers.clearDeploymentDetails(state, action.payload)
+    case ACTION_TYPE_CLEAR_DETAILS:
+      return eventHandlers.clearDetails(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
     case ACTION_TYPE_OPEN_DEPLOY_PANEL:

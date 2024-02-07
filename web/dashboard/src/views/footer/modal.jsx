@@ -12,7 +12,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Modal.jsx
 */
+
 import React, { useEffect, useRef } from 'react';
 import { XIcon } from '@heroicons/react/outline';
 
@@ -33,7 +36,7 @@ export function Modal(props) {
 
   return (
     <div
-      className="fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"
+      className="fixed flex inset-0 z-40 bg-gray-500 bg-opacity-75"
       onClick={stopHandler}
     >
       <div className="flex self-center items-center justify-center w-full p-8 h-4/5">

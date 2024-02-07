@@ -328,25 +328,17 @@ export function fluxStatev2Updated(state, event) {
 }
 
 export function deploymentDetails(state, event) {
-  if (!state.details[event.deployment]) {
-    state.details[event.deploymentName] = [];
-  }
-
   state.details[event.deployment] = event.details;
   return state;
 }
 
 export function podDetails(state, event) {
-  if (!state.details[event.pod]) {
-    state.details[event.pod] = [];
-  }
-
   state.details[event.pod] = event.details;
   return state;
 }
 
-export function clearDeploymentDetails(state, payload) {
-  state.details[payload.deployment] = undefined;
+export function clearDetails(state) {
+  state.details = {};
   return state;
 }
 

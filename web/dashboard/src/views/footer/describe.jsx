@@ -12,34 +12,36 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Describe.jsx
 */
+
 import React, { useState } from 'react';
 import { SkeletonLoader } from './skeletonLoader'
 import { Modal } from './modal'
-import { ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS } from '../../redux/redux';
+import { ACTION_TYPE_CLEAR_DETAILS } from '../../redux/redux';
 
 export function Describe(props) {
   const { gimletClient, store, namespace, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
-  const dep = namespace + "/" + deployment;
-  const [details, setDetails] = useState(store.getState().details[dep]);
-  store.subscribe(() => setDetails(store.getState().details[dep]));
+  const [selected, setSelected] = useState(namespace + "/" + deployment)
+  const [details, setDetails] = useState(store.getState().details);
+  store.subscribe(() => setDetails(store.getState().details));
 
   const describeDeployment = () => {
     gimletClient.deploymentDetailsRequest(namespace, deployment)
+    setSelected(namespace + "/" + deployment)
   }
 
-  // TODO handle show pod describe
   const describePod = (podNamespace, podName) => {
     gimletClient.podDetailsRequest(podNamespace, podName)
+    setSelected(podNamespace + "/" + podName)
   }
 
   const closeDetailsHandler = () => {
     setShowModal(false)
     store.dispatch({
-      type: ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS, payload: {
-        deployment: namespace + "/" + deployment
-      }
+      type: ACTION_TYPE_CLEAR_DETAILS
     });
   }
 
@@ -57,7 +59,7 @@ export function Describe(props) {
             />}
         >
           <code className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
-            {details ?? <SkeletonLoader />}
+            {details[selected] ?? <SkeletonLoader />}
           </code>
         </Modal>
       }
