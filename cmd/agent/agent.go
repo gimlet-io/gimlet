@@ -735,6 +735,10 @@ func podContainers(podSpec v1.PodSpec) (containers []v1.Container) {
 func parseMessage(chunk string) (string, string) {
 	parts := strings.SplitN(chunk, " ", 2)
 
+	if len(parts) != 2 {
+		return "", parts[0]
+	}
+
 	return parts[0], parts[1]
 }
 
