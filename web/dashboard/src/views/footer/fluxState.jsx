@@ -194,7 +194,7 @@ function GitRepository(props) {
   )
 }
 
-export const CompactServices = memo(function CompactServices(props) {
+export function CompactServices(props) {
   const { gimletClient, store, services } = props
 
   return (
@@ -213,7 +213,7 @@ export const CompactServices = memo(function CompactServices(props) {
       }
     </div>
   )
-})
+}
 
 export function ArtifactWidget(props) {
   const { gitRepository } = props

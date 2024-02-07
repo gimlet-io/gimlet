@@ -43,7 +43,6 @@ export function Logs(props) {
     });
   }
 
-  // TODO rendering bug
   return (
     <>
       {showModal &&
