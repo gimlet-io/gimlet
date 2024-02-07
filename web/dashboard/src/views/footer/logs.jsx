@@ -12,7 +12,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Logs.jsx
 */
+
 import React, { useState } from 'react';
 import { ACTION_TYPE_CLEAR_PODLOGS } from '../../redux/redux';
 import { Modal } from './modal'
