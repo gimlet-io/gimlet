@@ -29,11 +29,12 @@ const Footer = memo(class DeployPanel extends Component {
       fluxStates: reduxState.fluxState,
       expanded: false,
       selectedTab: "Kustomizations",
+      targetReference: "",
     };
     this.props.store.subscribe(() => this.setState({ fluxStates: reduxState.fluxState }));
 
     this.handleToggle = this.handleToggle.bind(this)
-    this.handlerSelect = this.handlerSelect.bind(this)
+    this.handleNavigationSelect = this.handleNavigationSelect.bind(this)
   }
 
   handleToggle() {
@@ -42,13 +43,16 @@ const Footer = memo(class DeployPanel extends Component {
     }));
   }
 
-  handlerSelect(selectedNav) {
-    this.setState({ selectedTab: selectedNav })
+  handleNavigationSelect(selectedNav, ref) {
+    this.setState({
+      selectedTab: selectedNav,
+      targetReference: ref
+    })
   }
 
   render() {
     const { gimletClient, store } = this.props;
-    const { fluxStates, expanded, selectedTab } = this.state;
+    const { fluxStates, expanded, selectedTab, targetReference } = this.state;
 
     if (!fluxStates || Object.keys(fluxStates).length === 0) {
       return null
@@ -65,41 +69,22 @@ const Footer = memo(class DeployPanel extends Component {
             className='h-auto w-full cursor-pointer px-16 py-4 flex gap-x-12'
             onClick={this.handleToggle} >
             {!expanded &&
-              <>
-                <div className="grid grid-cols-3">
-                  {Object.keys(fluxStates).slice(0, 3).map(env => {
-                    const fluxState = fluxStates[env];
+              <div className="grid grid-cols-3">
+                {Object.keys(fluxStates).slice(0, 3).map(env => {
+                  const fluxState = fluxStates[env];
 
-                    if (!fluxState) {
-                      return (
-                        <div className="w-full truncate" key={env}>
-                          <p className="font-semibold">
-                            {env.toUpperCase()}
-                            <span title="Disconnected">
-                              <svg className="text-red-400 inline fill-current ml-1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20">
-                                <path
-                                  d="M0 14v1.498c0 .277.225.502.502.502h.997A.502.502 0 0 0 2 15.498V14c0-.959.801-2.273 2-2.779V9.116C1.684 9.652 0 11.97 0 14zm12.065-9.299l-2.53 1.898c-.347.26-.769.401-1.203.401H6.005C5.45 7 5 7.45 5 8.005v3.991C5 12.55 5.45 13 6.005 13h2.327c.434 0 .856.141 1.203.401l2.531 1.898a3.502 3.502 0 0 0 2.102.701H16V4h-1.832c-.758 0-1.496.246-2.103.701zM17 6v2h3V6h-3zm0 8h3v-2h-3v2z"
-                                />
-                              </svg>
-                            </span>
-                          </p>
-                        </div>
-                      )
-                    }
-
-                    return (
-                      <div className="w-full truncate" key={env}>
-                        <p className="font-semibold text-neutral-700">{`${env.toUpperCase()}`}</p>
-                        <div className="ml-2">
-                          <Summary resources={fluxState.gitRepositories} label="SOURCES" />
-                          <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" />
-                          <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" />
-                        </div>
+                  return (
+                    <div className="w-full truncate" key={env}>
+                      <p className="font-semibold text-neutral-700">{`${env.toUpperCase()}`}</p>
+                      <div className="ml-2">
+                        <Summary resources={fluxState.gitRepositories} label="SOURCES" />
+                        <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" />
+                        <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" />
                       </div>
-                    )
-                  })}
-                </div>
-              </>
+                    </div>
+                  )
+                })}
+              </div>
             }
           </div>
           <div className='px-4 py-2'>
@@ -113,7 +98,6 @@ const Footer = memo(class DeployPanel extends Component {
         </div>
         {expanded &&
           <div>
-            {/* TODO navbar with perfect implementation */}
             {/* <nav className="flex space-x-8 px-6 pt-4" aria-label="Tabs">
               {Object.keys(fluxStates).map((env) => (
                 <span
@@ -141,7 +125,7 @@ const Footer = memo(class DeployPanel extends Component {
                       { name: 'Helm Releases', href: '#', count: fluxState.helmReleases.length },
                       { name: 'Flux Runtime', href: '#', count: fluxState.fluxServices.length },
                     ]}
-                    selectedMenu={this.handlerSelect}
+                    selectedMenu={this.handleNavigationSelect}
                     selected={selectedTab}
                   />
                 </div>
@@ -151,13 +135,13 @@ const Footer = memo(class DeployPanel extends Component {
                 <div className="w-full max-w-7xl mx-auto flex-col h-full">
                   <div className="pb-24 pt-2">
                     {selectedTab === "Kustomizations" &&
-                      <Kustomizations gimletClient={gimletClient} fluxState={fluxState} />
+                      <Kustomizations gimletClient={gimletClient} fluxState={fluxState} handleNavigationSelect={this.handleNavigationSelect} />
                     }
                     {selectedTab === "Helm Releases" &&
                       <HelmReleases gimletClient={gimletClient} helmReleases={fluxState.helmReleases} />
                     }
                     {selectedTab === "Sources" &&
-                      <GitRepositories gimletClient={gimletClient} gitRepositories={fluxState.gitRepositories} />
+                      <GitRepositories gimletClient={gimletClient} gitRepositories={fluxState.gitRepositories} targetReference={targetReference} />
                     }
                     {selectedTab === "Flux Runtime" &&
                       <CompactServices gimletClient={gimletClient} store={store} services={fluxState.fluxServices} />

@@ -16,7 +16,7 @@ limitations under the License.
 Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/FluxState.js
 */
 
-import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import jp from 'jsonpath'
 import { format } from "date-fns";
 import { Kustomization } from './kustomization';
