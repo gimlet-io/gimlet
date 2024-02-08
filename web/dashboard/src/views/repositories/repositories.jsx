@@ -281,7 +281,7 @@ export default class Repositories extends Component {
         </header>
         <main>
           {this.state.repositoriesLoading ?
-            <Spinner />
+            <div className='pt-8'><Spinner /></div>
             :
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
               <div className="px-4 pt-8 sm:px-0">
