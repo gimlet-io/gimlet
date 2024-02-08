@@ -64,9 +64,10 @@ export class Env extends Component {
         {this.state.isClosed ? null : (
           <>
             {renderPullRequests(pullRequests)}
+            {!env.isOnline && connectEnvCard(history, env.name)}
+            { env.isOnline &&
             <div className="bg-stone-900 rounded-lg px-4 pb-4 pt-1">
               <div className="space-y-4">
-              {!env.isOnline && connectEnvCard(history, env.name)}
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
               }
@@ -90,6 +91,7 @@ export class Env extends Component {
               { env.isOnline && renderedServices.length === 0 && emptyStateDeployThisRepo(newConfig, env.name, repoName) }
               </div>
             </div>
+            }
           </>
         )}
       </div>
@@ -208,17 +210,16 @@ function fileName(fileInfos, appName) {
 
 function connectEnvCard(history, envName) {
   return (
-    <div className="rounded-md bg-blue-50 p-4">
+    <div className="rounded-md bg-red-200 p-4">
     <div className="flex">
       <div className="flex-shrink-0">
-        <InformationCircleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+        <InformationCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
       </div>
       <div className="ml-3">
-        <h3 className="text-sm font-medium text-blue-800">Environment disconnected</h3>
-        <div className="mt-2 text-sm text-blue-700">
+        <h3 className="text-sm font-bold text-red-800">Environment disconnected</h3>
+        <div className="mt-2 text-sm text-red-800">
           This environment is disconnected.<br />
-          <button
-            className="font-medium"
+          <button className='font-bold cursor-pointer'
             onClick={() => {history.push(`/env/${envName}`);return true}}
           >
             Click to connect this environment to a cluster on the Environments page.
@@ -236,7 +237,7 @@ export function renderPullRequests(pullRequests) {
   }
 
   return (
-    <div className="bg-indigo-600 rounded-t-lg">
+    <div className="bg-indigo-600 rounded-lg mb-2">
       <div className="text-white inline-grid items-center mx-auto py-3 px-3 sm:px-6 lg:px-8">
         <span className="font-bold text-sm">Pull Requests:</span>
         <ul className="list-disc list-inside text-xs ml-2">
@@ -259,7 +260,7 @@ function emptyStateDeployThisRepo(newConfig, envName, repoName) {
     onClick={() => {
       newConfig(envName, repoName)
     }}
-    className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-pink-400 cursor-pointer text-gray-500 hover:text-pink-500"
+    className="relative block w-full border-2 border-zinc-500 border-dashed rounded-lg p-6 text-center hover:border-green-500 cursor-pointer text-zinc-500 hover:text-green-500"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
