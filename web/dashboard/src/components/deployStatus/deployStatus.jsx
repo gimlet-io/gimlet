@@ -1,3 +1,43 @@
+export function DeployStatusTab({runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, logsEndRef}) {
+  if (runningDeploys.length === 0) {
+    return null;
+  }
+
+  const runningDeploy = runningDeploys[0];
+
+  const loading = (
+    <div className="p-2">
+      <Loading />
+    </div>
+  )
+
+  let imageBuildWidget = null
+  let deployStatusWidget = null
+
+  if (runningDeploy.trackingId) {
+    deployStatusWidget = DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
+  }
+  if (runningDeploy.type === "imageBuild") {
+    let trackingId = runningDeploy.trackingId
+    if (runningDeploy.imageBuildTrackingId) {
+      trackingId = runningDeploy.imageBuildTrackingId
+    }
+
+    imageBuildWidget = ImageBuild(imageBuildLogs[trackingId], logsEndRef);
+  }
+
+  const deployHeaderWidget = deployHeader(scmUrl, runningDeploy)
+
+  return (
+    <div className="bg-gray-800 text-gray-300 pt-4 pb-24 px-6 overflow-y-scroll h-full w-full">
+      {deployHeaderWidget}
+      {imageBuildWidget}
+      {deployStatusWidget}
+      {deployStatusWidget == null && imageBuildWidget == null ? loading : null}
+    </div>
+  );
+}
+
 export function DeployStatus(
   deploy,
   scmUrl,
