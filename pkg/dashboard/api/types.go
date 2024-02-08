@@ -32,14 +32,15 @@ type Service struct {
 }
 
 type Pod struct {
-	Name              string `json:"name"`
-	DeploymentName    string `json:"deploymentName"`
-	Namespace         string `json:"namespace"`
-	Status            string `json:"status"`
-	StatusDescription string `json:"statusDescription"`
-	Logs              string `json:"logs"`
-	ImChannelId       string `json:"imChannelId"`
-	Details           string `json:"details,omitempty"`
+	Name              string         `json:"name"`
+	DeploymentName    string         `json:"deploymentName"`
+	Namespace         string         `json:"namespace"`
+	Status            string         `json:"status"`
+	StatusDescription string         `json:"statusDescription"`
+	Logs              string         `json:"logs"`
+	ImChannelId       string         `json:"imChannelId"`
+	Details           string         `json:"details,omitempty"`
+	Containers        []v1.Container `json:"containers,omitempty"`
 }
 
 func (p *Pod) FQN() string {

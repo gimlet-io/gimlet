@@ -12,7 +12,6 @@ import { copyToClipboard } from '../../views/settings/settings';
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
 import { AlertPanel } from '../../views/pulse/pulse';
-import { podContainers } from '../../views/footer/service';
 import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/describe';
 
@@ -375,4 +374,15 @@ function Pod(props) {
       {pod.status}
     </span>
   );
+}
+
+function podContainers(pods) {
+  const containers = [];
+  pods.forEach((pod) => {
+    pod.containers.forEach(container => {
+      containers.push(`${pod.name}/${container.name}`);
+    })
+  });
+
+  return containers;
 }

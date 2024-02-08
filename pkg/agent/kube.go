@@ -106,7 +106,7 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 					if podStatus == "CrashLoopBackOff" || podStatus == "Error" {
 						podLogs = logs(e, pod)
 					}
-					deployment.Pods = append(deployment.Pods, &api.Pod{Name: pod.Name, DeploymentName: deployment.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm]})
+					deployment.Pods = append(deployment.Pods, &api.Pod{Name: pod.Name, DeploymentName: deployment.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm], Containers: PodContainers(pod.Spec)})
 				}
 			}
 		}
@@ -133,6 +133,13 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	e.Perf.WithLabelValues("gimlet_agent_stacks").Observe(float64(time.Since(t0).Seconds()))
 
 	return stacks, nil
+}
+
+func PodContainers(podSpec v1.PodSpec) (containers []v1.Container) {
+	containers = append(containers, podSpec.InitContainers...)
+	containers = append(containers, podSpec.Containers...)
+
+	return containers
 }
 
 func (e *KubeEnv) FluxState() (*api.FluxStatev2, error) {

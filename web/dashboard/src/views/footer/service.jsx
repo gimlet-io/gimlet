@@ -102,7 +102,7 @@ function Pod(props) {
   );
 }
 
-export function podContainers(pods) {
+function podContainers(pods) {
   const containers = [];
 
   pods.forEach((pod) => {

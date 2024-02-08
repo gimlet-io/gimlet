@@ -411,7 +411,7 @@ func podLogs(
 
 	for _, pod := range podsInNamespace.Items {
 		if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
-			containers := podContainers(pod.Spec)
+			containers := agent.PodContainers(pod.Spec)
 			for _, container := range containers {
 				go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
 			}
@@ -723,13 +723,6 @@ func chunks(str string, size int) []string {
 		return []string{str}
 	}
 	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
-}
-
-func podContainers(podSpec v1.PodSpec) (containers []v1.Container) {
-	containers = append(containers, podSpec.InitContainers...)
-	containers = append(containers, podSpec.Containers...)
-
-	return containers
 }
 
 func parseMessage(chunk string) (string, string) {
