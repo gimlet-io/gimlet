@@ -67,7 +67,7 @@ export function Describe(props) {
         setShowModal(true);
         describeDeployment()
       }}
-        className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-4 border border-neutral-300 rounded">
+        className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-4 mr-2 border border-neutral-300 rounded">
         Describe
       </button>
     </>
@@ -92,33 +92,20 @@ function DescribeNav(props) {
       </button>
       {
         pods?.map((pod) => {
-          // TODO
-          if (!pod.metadata) {
-            return (
-              <button
-                key={pod.name}
-                title={pod.name}
-                className={`${pod.name === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
-                onClick={() => {
-                  describePod(pod.namespace, pod.name);
-                  setSelected(pod.name)
-                }}
-              >
-                {pod.name}
-              </button>)
-          }
+          const podNamespace = pod.metadata ? pod.metadata.namespace : pod.namespace;
+          const podName = pod.metadata ? pod.metadata.name : pod.name;
 
           return (
             <button
-              key={pod.metadata.name}
-              title={pod.metadata.name}
-              className={`${pod.metadata.name === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
+              key={podName}
+              title={podName}
+              className={`${podName === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
               onClick={() => {
-                describePod(pod.metadata.namespace, pod.metadata.name);
-                setSelected(pod.metadata.name)
+                describePod(podNamespace, podName);
+                setSelected(podName)
               }}
             >
-              {pod.metadata.name}
+              {podName}
             </button>)
         })
       }

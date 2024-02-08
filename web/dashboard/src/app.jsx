@@ -17,7 +17,6 @@ import EnvConfig from './views/envConfig/envConfig'
 import Environments from './views/environments/environments'
 import Environment from './views/environment/environment';
 import PopUpWindow from './popUpWindow';
-import DeployPanel from './views/deployPanel/deployPanel';
 import Footer from './views/footer/footer';
 import { ACTION_TYPE_USER } from "./redux/redux";
 import Posthog from './posthog';
@@ -72,7 +71,6 @@ export default class App extends Component {
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
     const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
-    const DeployPanelWithRouting = withRouter(props => <DeployPanel {...props} store={store} />);
     const FooterWithRouting = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />)
 
     if (!this.state.authenticated) {
