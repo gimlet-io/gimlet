@@ -243,7 +243,7 @@ func dockerfileImageBuild(
 	}
 
 	pod := pods.Items[0]
-	streamLogs(kubeEnv, messages, pod.Name, pod.Spec.InitContainers[0].Name, trigger.TriggeredBy, buildId)
+	streamInitContainerLogs(kubeEnv, messages, pod.Name, pod.Spec.InitContainers[0].Name, trigger.TriggeredBy, buildId)
 	streamLogs(kubeEnv, messages, pod.Name, pod.Spec.Containers[0].Name, trigger.TriggeredBy, buildId)
 }
 
@@ -318,7 +318,7 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 	}
 }
 
-func streamLogs(kubeEnv *agent.KubeEnv,
+func streamInitContainerLogs(kubeEnv *agent.KubeEnv,
 	messages chan *streaming.WSMessage,
 	pod, container string,
 	userLogin, imageBuildId string,
@@ -358,12 +358,57 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 			break
 		}
 
-		if strings.Contains(sb.String(), "Pushed") {
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "success", sb.String())
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+		sb.Reset()
+	}
+}
+
+func streamLogs(kubeEnv *agent.KubeEnv,
+	messages chan *streaming.WSMessage,
+	pod, container string,
+	userLogin, imageBuildId string,
+) {
+	count := int64(100)
+	logsReq := kubeEnv.Client.CoreV1().Pods("infrastructure").GetLogs(pod, &corev1.PodLogOptions{
+		Container: container,
+		TailLines: &count,
+		Follow:    true,
+	})
+
+	podLogs, err := logsReq.Stream(context.Background())
+	if err != nil {
+		logrus.Errorf("could not stream pod logs: %v", err)
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
+		return
+	}
+	defer podLogs.Close()
+
+	var sb strings.Builder
+	var lastLine string
+	reader := bufio.NewReader(podLogs)
+	for {
+		line, err := reader.ReadBytes('\n')
+		sb.WriteString(string(line))
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			logrus.Errorf("cannot stream build logs: %s", err)
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
 			break
 		}
 
+		lastLine = string(line)
 		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
 		sb.Reset()
+	}
+
+	if strings.Contains(lastLine, "Pushed") {
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "success", "")
+		return
+	} else {
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", "")
+		return
 	}
 }
