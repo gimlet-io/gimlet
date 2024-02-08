@@ -64,7 +64,8 @@ export class Env extends Component {
         {this.state.isClosed ? null : (
           <>
             {renderPullRequests(pullRequests)}
-            <div className="bg-white shadow p-4 space-y-4">
+            <div className="bg-stone-900 rounded-lg px-4 pb-4 pt-1">
+              <div className="space-y-4">
               {!env.isOnline && connectEnvCard(history, env.name)}
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
@@ -79,7 +80,7 @@ export class Env extends Component {
                       newConfig(env.name, newAppName)
                     }}
                     type="button"
-                    className="inline-block rounded-full p-2 mx-2 uppercase leading-normal text-white bg-gray-500 hover:bg-gray-400 transition duration-150 ease-in-out">
+                    className="inline-block rounded-full p-2 uppercase leading-normal text-white bg-gray-500 hover:bg-gray-400 transition duration-150 ease-in-out">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
@@ -87,6 +88,7 @@ export class Env extends Component {
                 </>
               }
               { env.isOnline && renderedServices.length === 0 && emptyStateDeployThisRepo(newConfig, env.name, repoName) }
+              </div>
             </div>
           </>
         )}

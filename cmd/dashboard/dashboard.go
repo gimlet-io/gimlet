@@ -131,6 +131,8 @@ func main() {
 		panic(err)
 	}
 
+	triggerArtifactGeneration := make(chan string)
+
 	repoCache, err := nativeGit.NewRepoCache(
 		tokenManager,
 		stopCh,
@@ -138,12 +140,20 @@ func main() {
 		dynamicConfig,
 		clientHub,
 		gitUser,
+		triggerArtifactGeneration,
 	)
 	if err != nil {
 		panic(err)
 	}
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
+
+	artifactsWorker := worker.NewArtifactsWorker(
+		repoCache,
+		store,
+		triggerArtifactGeneration,
+	)
+	go artifactsWorker.Run()
 
 	if config.WeeklySummaryFeatureFlag {
 		weeklyReporter := worker.NewWeeklyReporter(

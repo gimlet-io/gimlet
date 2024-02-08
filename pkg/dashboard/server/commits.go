@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	commitsHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
-	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -29,12 +29,14 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	hashString := r.URL.Query().Get("fromHash")
 
 	ctx := r.Context()
+	dao := ctx.Value("store").(*store.Store)
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	var err error
 	if branch == "" {
-		gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+		err := gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+			var err error
 			branch, err = helper.HeadBranch(repo)
+			return err
 		})
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -44,8 +46,9 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var hash plumbing.Hash
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		hash = helper.BranchHeadHash(repo, branch)
+		return nil
 	})
 
 	if hashString != "head" {
@@ -53,10 +56,13 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var commitWalker object.CommitIter
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
+	var err error
+	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		var err error
 		commitWalker, err = repo.Log(&git.LogOptions{
 			From: hash,
 		})
+		return err
 	})
 	if err != nil {
 		logrus.Errorf("cannot walk commits: %s", err)
@@ -66,6 +72,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 
 	limit := 10
 	commits := []*Commit{}
+	hashes := []string{}
 	err = commitWalker.ForEach(func(c *object.Commit) error {
 		if limit != 0 && len(commits) >= limit {
 			return fmt.Errorf("%s", "LIMIT")
@@ -77,6 +84,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 			Message:    c.Message,
 			CreatedAt:  c.Author.When.Unix(),
 		})
+		hashes = append(hashes, c.Hash.String())
 
 		return nil
 	})
@@ -88,25 +96,27 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dao := ctx.Value("store").(*store.Store)
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	gitServiceImpl := customScm.NewGitService(dynamicConfig)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
-	commits, err = decorateCommitsWithSCMData(repoName, commits, dao, gitServiceImpl, token)
+	err = commitsHelper.AssureSCMData(repoName, hashes, dao, gitServiceImpl, token)
+	if err != nil {
+		logrus.Warnf("cannot decorate commits: %s", err)
+	}
+
+	commits, err = decorateWithSCMData(repoName, commits, dao)
 	if err != nil {
 		logrus.Errorf("cannot decorate commits: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) {
-		commits, err = decorateCommitsWithGimletArtifacts(commits, dao, repo, owner, repoName)
-	})
+	commits, err = decorateWithDeployTargets(commits, dao)
 	if err != nil {
-		logrus.Warnf("cannot get deplyotargets: %s", err)
+		logrus.Errorf("cannot decorate commits: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
-
 	commits = squashCommitStatuses(commits)
 
 	commitsString, err := json.Marshal(commits)
@@ -120,17 +130,102 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	w.Write(commitsString)
 }
 
-func triggerCommitSync(w http.ResponseWriter, r *http.Request) {
-	owner := chi.URLParam(r, "owner")
-	name := chi.URLParam(r, "name")
-	repoName := fmt.Sprintf("%s/%s", owner, name)
+func decorateWithSCMData(repoName string, commits []*Commit, dao *store.Store) ([]*Commit, error) {
+	hashes := []string{}
+	for _, c := range commits {
+		hashes = append(hashes, c.SHA)
+	}
 
-	ctx := r.Context()
-	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	gitRepoCache.Invalidate(repoName)
+	dbCommits, err := dao.CommitsByRepoAndSHA(repoName, hashes)
+	if err != nil {
+		return nil, err
+	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	dbCommitsByHash := map[string]*model.Commit{}
+	for _, dbCommit := range dbCommits {
+		dbCommitsByHash[dbCommit.SHA] = dbCommit
+	}
+
+	for _, commit := range commits {
+		dbCommit := dbCommitsByHash[commit.SHA]
+		commit.URL = dbCommit.URL
+		commit.Author = dbCommit.Author
+		commit.AuthorPic = dbCommit.AuthorPic
+		commit.Tags = dbCommit.Tags
+		commit.Status = dbCommit.Status
+	}
+
+	return commits, nil
+}
+
+func decorateWithDeployTargets(commits []*Commit, store *store.Store) ([]*Commit, error) {
+	hashes := []string{}
+	for _, c := range commits {
+		hashes = append(hashes, c.SHA)
+	}
+
+	events, err := store.Artifacts(
+		"", "",
+		nil,
+		"",
+		hashes,
+		500, 0, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get artifacts: %s", err)
+	}
+
+	artifacts := []*dx.Artifact{}
+	for _, a := range events {
+		artifact, err := model.ToArtifact(a)
+		if err != nil {
+			return nil, fmt.Errorf("cannot deserialize artifact: %s", err)
+		}
+		artifacts = append(artifacts, artifact)
+	}
+
+	artifactsBySha := map[string][]*dx.Artifact{}
+	for _, a := range artifacts {
+		if artifactsBySha[a.Version.SHA] == nil {
+			artifactsBySha[a.Version.SHA] = []*dx.Artifact{}
+		}
+		artifactsBySha[a.Version.SHA] = append(artifactsBySha[a.Version.SHA], a)
+	}
+
+	var decoratedCommits []*Commit
+	for _, c := range commits {
+		if as, ok := artifactsBySha[c.SHA]; ok {
+			for _, artifact := range as {
+				for _, targetEnv := range artifact.Environments {
+					targetEnv.ResolveVars(artifact.CollectVariables())
+					if c.DeployTargets == nil {
+						c.DeployTargets = []*api.DeployTarget{}
+					}
+					if deployTargetExists(c.DeployTargets, targetEnv.App, targetEnv.Env) {
+						continue
+					}
+					c.DeployTargets = append(c.DeployTargets, &api.DeployTarget{
+						App:        targetEnv.App,
+						Env:        targetEnv.Env,
+						Tenant:     targetEnv.Tenant.Name,
+						ArtifactId: artifact.ID,
+					})
+				}
+			}
+		}
+		decoratedCommits = append(decoratedCommits, c)
+	}
+
+	return decoratedCommits, nil
+}
+
+func deployTargetExists(targets []*api.DeployTarget, app string, env string) bool {
+	for _, t := range targets {
+		if t.App == app && t.Env == env {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Commit represents a Github commit
@@ -145,175 +240,6 @@ type Commit struct {
 	Tags          []string             `json:"tags,omitempty"`
 	Status        model.CombinedStatus `json:"status,omitempty"`
 	DeployTargets []*api.DeployTarget  `json:"deployTargets,omitempty"`
-}
-
-func decorateCommitsWithSCMData(
-	repo string,
-	commits []*Commit,
-	dao *store.Store,
-	gitServiceImpl customScm.CustomGitService,
-	token string,
-) ([]*Commit, error) {
-	return decorateCommitsWithSCMDataWithRetry(
-		repo,
-		commits,
-		dao,
-		gitServiceImpl,
-		token,
-		false,
-	)
-}
-
-func decorateCommitsWithSCMDataWithRetry(
-	repo string,
-	commits []*Commit,
-	dao *store.Store,
-	gitServiceImpl customScm.CustomGitService,
-	token string,
-	isRetry bool,
-) ([]*Commit, error) {
-	var hashes []string
-	for _, commit := range commits {
-		hashes = append(hashes, commit.SHA)
-	}
-
-	dbCommits, err := dao.CommitsByRepoAndSHA(repo, hashes)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get commits from db %s", err)
-	}
-
-	dbCommitsByHash := map[string]*model.Commit{}
-	for _, dbCommit := range dbCommits {
-		dbCommitsByHash[dbCommit.SHA] = dbCommit
-	}
-
-	var decoratedCommits []*Commit
-	var hashesToFetch []string
-	for _, commit := range commits {
-		if dbCommit, ok := dbCommitsByHash[commit.SHA]; ok {
-			commit.URL = dbCommit.URL
-			commit.Author = dbCommit.Author
-			commit.AuthorPic = dbCommit.AuthorPic
-			commit.Tags = dbCommit.Tags
-			commit.Status = dbCommit.Status
-		} else {
-			hashesToFetch = append(hashesToFetch, commit.SHA)
-		}
-
-		decoratedCommits = append(decoratedCommits, commit)
-	}
-
-	// if not all commit was decorated, fetch them and try decorating again
-	if len(hashesToFetch) > 0 && !isRetry {
-		logrus.Infof("Fetching scm data for %s", strings.Join(hashesToFetch, ","))
-		// fetch remote commit info, then try to decorate again
-		owner, name := scm.Split(repo)
-		fetchCommits(owner, name, gitServiceImpl, token, dao, hashesToFetch)
-		return decorateCommitsWithSCMDataWithRetry(
-			repo,
-			commits,
-			dao,
-			gitServiceImpl,
-			token,
-			true,
-		)
-	}
-
-	return decoratedCommits, nil
-}
-
-func decorateDeploymentWithSCMData(
-	repo string,
-	deployment *api.Deployment,
-	dao *store.Store,
-	gitServiceImpl customScm.CustomGitService,
-	token string,
-) (*api.Deployment, error) {
-	return decorateDeploymentWithSCMDataWithRetry(
-		repo,
-		deployment,
-		dao,
-		gitServiceImpl,
-		token,
-		false,
-	)
-}
-
-func decorateDeploymentWithSCMDataWithRetry(
-	repo string,
-	deployment *api.Deployment,
-	dao *store.Store,
-	gitServiceImpl customScm.CustomGitService,
-	token string,
-	isRetry bool,
-) (*api.Deployment, error) {
-	dbCommits, err := dao.CommitsByRepoAndSHA(repo, []string{deployment.SHA})
-	if err != nil {
-		return nil, fmt.Errorf("cannot get commits from db %s", err)
-	}
-
-	if len(dbCommits) > 0 {
-		deployment.CommitMessage = dbCommits[0].Message
-	} else {
-		if isRetry { // we only retry once
-			return deployment, nil
-		}
-		owner, name := scm.Split(repo)
-
-		// fetch remote commit info, then try to decorate again
-		fetchCommits(owner, name, gitServiceImpl, token, dao, []string{deployment.SHA})
-		return decorateDeploymentWithSCMDataWithRetry(
-			repo,
-			deployment,
-			dao,
-			gitServiceImpl,
-			token,
-			true,
-		)
-	}
-
-	return deployment, nil
-}
-
-// commits come from go-scm based live git traversal
-// we decorate that commit data with data from SCMs with the
-// following fields: url, author, author_pic, message, created, tags, status
-// URL, Author, AuthorPic, Tags, Status
-func fetchCommits(
-	owner string,
-	repo string,
-	gitService customScm.CustomGitService,
-	token string,
-	store *store.Store,
-	hashesToFetch []string,
-) {
-	if len(hashesToFetch) == 0 {
-		return
-	}
-
-	commits, err := gitService.FetchCommits(owner, repo, token, hashesToFetch)
-	if err != nil {
-		logrus.Errorf("Could not fetch commits for %v, %v", repo, err)
-		return
-	}
-
-	err = store.SaveCommits(scm.Join(owner, repo), commits)
-	if err != nil {
-		logrus.Errorf("Could not store commits for %v, %v", repo, err)
-		return
-	}
-	statusOnCommits := map[string]*model.CombinedStatus{}
-	for _, c := range commits {
-		statusOnCommits[c.SHA] = &c.Status
-	}
-
-	if len(statusOnCommits) != 0 {
-		err = store.SaveStatusesOnCommits(scm.Join(owner, repo), statusOnCommits)
-		if err != nil {
-			logrus.Errorf("Could not store status for %v, %v", repo, err)
-			return
-		}
-	}
 }
 
 func squashCommitStatuses(commits []*Commit) []*Commit {
@@ -340,4 +266,17 @@ func squashCommitStatuses(commits []*Commit) []*Commit {
 	}
 
 	return commitsWithSquashedStatuses
+}
+
+func triggerCommitSync(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	name := chi.URLParam(r, "name")
+	repoName := fmt.Sprintf("%s/%s", owner, name)
+
+	ctx := r.Context()
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+	gitRepoCache.Invalidate(repoName)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }

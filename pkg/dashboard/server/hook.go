@@ -17,7 +17,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
-	"github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -72,7 +71,16 @@ func hook(writer http.ResponseWriter, r *http.Request) {
 				}
 
 				gitService := customScm.NewGitService(dynamicConfig)
-				processStatusHook(dst.Repository.Owner.Login, dst.Repository.Name, dst.CheckRun.HeadSHA, gitRepoCache, gitService, token, dao, clientHub)
+				processStatusHook(
+					dst.Repository.Owner.Login,
+					dst.Repository.Name,
+					dst.CheckRun.HeadSHA,
+					gitRepoCache,
+					gitService,
+					token,
+					dao,
+					clientHub,
+				)
 
 				writer.WriteHeader(http.StatusOK)
 				return
@@ -143,16 +151,7 @@ func processStatusHook(
 		statusOnCommits[sha] = &c.Status
 	}
 
-	var decoratedCommits []*Commit
-	repoCache.PerformAction(repo, func(repo *git.Repository) {
-		decoratedCommits, err = decorateCommitsWithGimletArtifacts([]*Commit{{SHA: sha}}, dao, repo, owner, name)
-
-	})
-	if err != nil {
-		logrus.Warnf("cannot get deplyotargets: %s", err)
-	}
-
-	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], decoratedCommits[0].DeployTargets)
+	broadcastUpdateCommitStatusEvent(clientHub, owner, name, sha, statusOnCommits[sha], nil)
 
 	if len(statusOnCommits) != 0 {
 		err = dao.SaveStatusesOnCommits(repo, statusOnCommits)

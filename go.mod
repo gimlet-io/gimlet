@@ -1,6 +1,6 @@
 module github.com/gimlet-io/gimlet-cli
 
-go 1.20
+go 1.21
 
 // Replace digest lib to master to gather access to BLAKE3.
 // xref: https://github.com/opencontainers/go-digest/pull/66
