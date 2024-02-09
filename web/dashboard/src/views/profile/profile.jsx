@@ -70,7 +70,7 @@ export default class Profile extends Component {
                   </h3>
                   <code
                     className="block whitespace-pre overflow-x-scroll font-mono text-sm p-2 my-4 bg-gray-800 text-yellow-100 rounded">
-                    {`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.26.0/gimlet-$(uname)-$(uname -m)" -o gimlet
+                    {`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.27.0/gimlet-$(uname)-$(uname -m)" -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet
 gimlet --version`}
