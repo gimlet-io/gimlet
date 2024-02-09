@@ -318,14 +318,21 @@ function ServiceDetail(props) {
                   <div className="text-gray-900 text-sm">
                     <div className="relative">
                     {stack.service.name}.{stack.service.namespace}.svc.cluster.local
-                    <button
-                      onClick={() => {
-                        copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${hostPort}:${appPort}`);
-                        handleCopyClick();
-                      }}
-                      className="absolute right-0 bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
-                      Port-forward command
-                    </button>
+                    <div className="absolute -top-6 right-0 grid space-y-2">
+                      <button
+                        onClick={() => {
+                          copyToClipboard(`kubectl port-forward deploy/${deployment.name} -n ${deployment.namespace} ${hostPort}:${appPort}`);
+                          handleCopyClick();
+                        }}
+                        className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                        Port-forward command
+                      </button>
+                      <button
+                        onClick={() => gimletClient.restartDeploymentRequest(deployment.namespace, deployment.name)}
+                        className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                        Restart Deployment
+                      </button>
+                    </div>
                     {isCopied && (
                       <div className="absolute -right-12 -top-10">
                         <div className="p-2 bg-indigo-600 select-none text-white inline-block rounded">

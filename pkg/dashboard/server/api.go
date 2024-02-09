@@ -668,6 +668,14 @@ func silenceAlert(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
+func restartDeployment(w http.ResponseWriter, r *http.Request) {
+	namespace := r.URL.Query().Get("namespace")
+	name := r.URL.Query().Get("name")
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.RestartDeployment(namespace, name)
+}
+
 func saveEnvToDB(w http.ResponseWriter, r *http.Request) {
 	var envNameToSave string
 	err := json.NewDecoder(r.Body).Decode(&envNameToSave)

@@ -130,6 +130,24 @@ func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
 	}
 }
 
+func (h *AgentHub) RestartDeployment(namespace string, name string) {
+	restartDeploymentRequest := map[string]interface{}{
+		"action":    "restartDeployment",
+		"namespace": namespace,
+		"name":      name,
+	}
+
+	restartDeploymentRequestString, err := json.Marshal(restartDeploymentRequest)
+	if err != nil {
+		logrus.Errorf("could not serialize request: %s", err)
+		return
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(restartDeploymentRequestString)
+	}
+}
+
 func (a *ConnectedAgent) RepoStacks(repo string) []*api.Stack {
 	stacks := []*api.Stack{}
 
