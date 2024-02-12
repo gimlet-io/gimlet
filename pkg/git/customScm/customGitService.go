@@ -15,6 +15,8 @@ type CustomGitService interface {
 	GetAppNameAndAppSettingsURLs(installationToken string, ctx context.Context) (string, string, string, error)
 	CreateRepository(owner string, name string, loggedInUser string, orgToken string, token string) error
 	AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error
+	CreateComment(token, owner, repo string, pullNumber int, body *string) (int64, error)
+	UpdateComment(token, owner, repo string, commentId int64, body *string) error
 }
 
 func NewGitService(dynamicConfig *dynamicconfig.DynamicConfig) CustomGitService {
@@ -52,5 +54,13 @@ func (d *DummyGitService) CreateRepository(owner string, name string, loggedInUs
 }
 
 func (d *DummyGitService) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue string, canWrite bool) error {
+	return nil
+}
+
+func (d *DummyGitService) CreateComment(token, owner, repo string, pullNumber int, body *string) (int64, error) {
+	return 0, nil
+}
+
+func (d *DummyGitService) UpdateComment(token, owner, repo string, commentId int64, body *string) error {
 	return nil
 }

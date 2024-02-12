@@ -191,6 +191,14 @@ func (c *GitlabClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 	return err
 }
 
+func (c *GitlabClient) CreateComment(token, owner, repo string, pullNumber int, body *string) (int64, error) {
+	return 0, nil
+}
+
+func (c *GitlabClient) UpdateComment(token, owner, repo string, commentId int64, body *string) error {
+	return nil
+}
+
 func fromGitlabStatus(gitlabStatus string) string {
 	// https://docs.gitlab.com/ee/api/commits.html#set-the-pipeline-status-of-a-commit
 	// https://github.com/gimlet-io/gimlet/blob/1997f9f8f08ccff96828b239b5126632b47dee77/web/dashboard/src/components/commits/commits.js#L183

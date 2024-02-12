@@ -435,3 +435,27 @@ func (c *GithubClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 	})
 	return err
 }
+
+func (c *GithubClient) CreateComment(token, owner, repo string, pullNumber int, body *string) (int64, error) {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	comment, _, err := client.Issues.CreateComment(context.Background(), owner, repo, pullNumber, &github.IssueComment{
+		Body: body,
+	})
+
+	return *comment.ID, err
+}
+
+func (c *GithubClient) UpdateComment(token, owner, repo string, commentId int64, body *string) error {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	_, _, err := client.Issues.EditComment(context.Background(), owner, repo, commentId, &github.IssueComment{
+		Body: body,
+	})
+
+	return err
+}
