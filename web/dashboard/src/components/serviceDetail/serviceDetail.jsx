@@ -220,6 +220,15 @@ function ServiceDetail(props) {
                 <>
                   <button
                     onClick={() => {
+                      // eslint-disable-next-line no-restricted-globals
+                      confirm(`Are you sure you want to restart deployment ${deployment.name}?`) &&
+                        gimletClient.restartDeploymentRequest(deployment.namespace, deployment.name)
+                    }}
+                    className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
+                    Restart
+                  </button>
+                  <button
+                    onClick={() => {
                       setLogsOverlayVisible(true)
                       setLogsOverlayNamespace(deployment.namespace);
                       setLogsOverlayService(stack.service.name);
