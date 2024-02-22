@@ -35,6 +35,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -270,6 +271,10 @@ func serverCommunication(
 							e["namespace"].(string),
 							e["name"].(string),
 						)
+					case "restartDeployment":
+						namespace := e["namespace"].(string)
+						name := e["name"].(string)
+						go restartDeployment(kubeEnv, namespace, name)
 					case "imageBuildTrigger":
 						requestString, _ := json.Marshal(e["request"])
 						buildId := e["buildId"].(string)
@@ -557,6 +562,15 @@ func podDetails(
 	}
 
 	logrus.Debug("deployment details sent")
+}
+
+func restartDeployment(kubeEnv *agent.KubeEnv, namespace, name string) {
+	data := fmt.Sprintf(`{"spec": {"template": {"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`, time.Now().Format(time.RFC3339))
+	_, err := kubeEnv.Client.AppsV1().Deployments(namespace).Patch(context.TODO(), name, types.StrategicMergePatchType, []byte(data), meta_v1.PatchOptions{})
+	if err != nil {
+		logrus.Errorf("could not patch deployment %s in %s: %s", name, namespace, err)
+		return
+	}
 }
 
 func httpClient() *http.Client {

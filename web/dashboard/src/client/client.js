@@ -101,6 +101,8 @@ export default class GimletClient {
 
   silenceAlert = (object, until) => this.post(`/api/silenceAlert?object=${object}&&until=${until}`);
 
+  restartDeploymentRequest = (namespace, name) =>this.post(`/api/restartDeployment?namespace=${namespace}&name=${name}`);
+
   get = async (path) => {
     try {
       const { data } = await axios.get(path, {
