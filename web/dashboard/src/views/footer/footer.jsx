@@ -121,6 +121,10 @@ const Footer = memo(class Footer extends Component {
                 {Object.keys(fluxStates).slice(0, 3).map(env => {
                   const fluxState = fluxStates[env];
 
+                  if (!fluxState) {
+                    return null
+                  }
+
                   return (
                     <div className="w-full truncate" key={env}>
                       <p className="font-semibold text-neutral-700">{`${env.toUpperCase()}`}</p>

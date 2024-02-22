@@ -6,6 +6,10 @@ const GitopsStatus = memo(function GitopsStatus({fluxStates, handleNavigationSel
   const [selectedEnv, setSelectedEnv] = useState(Object.keys(fluxStates)[0])
   const fluxState = fluxStates[selectedEnv];
 
+  if (!fluxState) {
+    return null
+  }
+
   return (
     <>
       <nav className="flex space-x-8 px-6 pt-4" aria-label="Tabs">
