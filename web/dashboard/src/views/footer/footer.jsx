@@ -153,7 +153,7 @@ const Footer = memo(class Footer extends Component {
           </div>
         </div>
         {deployPanelOpen &&
-          <div>
+          <div className='no-doc-scroll h-full overscroll-contain'>
             <div className="px-6">
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>

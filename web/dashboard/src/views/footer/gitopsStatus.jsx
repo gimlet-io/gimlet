@@ -37,7 +37,7 @@ const GitopsStatus = memo(function GitopsStatus({fluxStates, handleNavigationSel
           </span>
         ))}
       </nav>
-      <div className="flex w-full h-full">
+      <div className="w-full h-full overscroll-contain">
         <ExpandedFooter
           client={gimletClient}
           handleNavigationSelect={handleNavigationSelect}
