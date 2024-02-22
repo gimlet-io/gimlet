@@ -1,8 +1,8 @@
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/solid';
 import React, { memo, Component } from 'react';
-import { Summary } from './fluxState';
-import DeployPanelTabs from '../deployPanel/deployPanelTabs';
+import { Summary } from "./fluxState"
 import GitopsStatus from './gitopsStatus';
+import DeployPanelTabs from '../deployPanel/deployPanelTabs';
 import { DeployStatusTab } from '../../components/deployStatus/deployStatus';
 import {
   ACTION_TYPE_OPEN_DEPLOY_PANEL,
@@ -27,7 +27,11 @@ const Footer = memo(class Footer extends Component {
     this.state = {
       fluxStates: reduxState.fluxState,
       selectedTab: "Kustomizations",
-      targetReference: "",
+      targetReference: {
+        objectNs: "",
+        objectName: "",
+        objectKind: "",
+      },
       tabs: defaultTabs,
       runningDeploys: reduxState.runningDeploys,
       scmUrl: reduxState.settings.scmUrl,
@@ -78,10 +82,10 @@ const Footer = memo(class Footer extends Component {
     }
   }
 
-  handleNavigationSelect(selectedNav, ref) {
+  handleNavigationSelect(selectedNav, objectNs, objectName, objectKind) {
     this.setState({
       selectedTab: selectedNav,
-      targetReference: ref
+      targetReference: {objectNs, objectName, objectKind}
     })
   }
 
@@ -153,8 +157,8 @@ const Footer = memo(class Footer extends Component {
             <div className="px-6">
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>
-            {tabs[0].current ? <GitopsStatus fluxStates={fluxStates} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference}/> : null}
-            {tabs[1].current ?  <DeployStatusTab runningDeploys={runningDeploys} scmUrl={scmUrl} gitopsCommits={gitopsCommits} envs={envs} imageBuildLogs={imageBuildLogs} logsEndRef={this.logsEndRef} /> : null}
+            {tabs[0].current ? <GitopsStatus fluxStates={fluxStates} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} /> : null}
+            {tabs[1].current ? <DeployStatusTab runningDeploys={runningDeploys} scmUrl={scmUrl} gitopsCommits={gitopsCommits} envs={envs} imageBuildLogs={imageBuildLogs} logsEndRef={this.logsEndRef} /> : null}
           </div>
         }
       </div>

@@ -17,12 +17,8 @@ package api
 import (
 	"fmt"
 
-	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
-	kustomizationv1 "github.com/fluxcd/kustomize-controller/api/v1"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	apps_v1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -174,20 +170,6 @@ type FluxState struct {
 	GitReppsitories []*GitRepository `json:"gitRepositories"`
 	Kustomizations  []*Kustomization `json:"kustomizations"`
 	HelmReleases    []*HelmRelease   `json:"helmReleases"`
-}
-
-type FluxStatev2 struct {
-	GitRepositories []sourcev1.GitRepository        `json:"gitRepositories"`
-	Kustomizations  []kustomizationv1.Kustomization `json:"kustomizations"`
-	HelmReleases    []helmv2beta1.HelmRelease       `json:"helmReleases"`
-	FluxServices    []FluxService                   `json:"fluxServices"`
-}
-
-type FluxService struct {
-	Deployment  *apps_v1.Deployment `json:"deployment"`
-	Svc         v1.Service          `json:"svc"`
-	Pods        []v1.Pod            `json:"pods"`
-	HelmRelease string              `json:"helmRelease,omitempty"`
 }
 
 type FluxStateUpdate struct {

@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
@@ -47,8 +48,8 @@ type FluxStateUpdatedEvent struct {
 }
 
 type FluxStatev2UpdatedEvent struct {
-	EnvName   string           `json:"envName"`
-	FluxState *api.FluxStatev2 `json:"fluxState"`
+	EnvName   string          `json:"envName"`
+	FluxState *flux.FluxState `json:"fluxState"`
 	StreamingEvent
 }
 

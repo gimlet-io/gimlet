@@ -19,10 +19,10 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/FluxS
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import jp from 'jsonpath'
 import { format } from "date-fns";
-import { Kustomization } from './kustomization';
-import { ReadyWidget } from './readyWidget';
-import { TimeLabel } from './timeLabel';
-import { CompactService } from './service';
+import { Kustomization } from './Kustomization';
+import { ReadyWidget } from './ReadyWidget';
+import { TimeLabel } from './TimeLabel';
+import { CompactService } from './Service';
 
 export function Kustomizations(props){
   const { gimletClient, fluxState, targetReference, handleNavigationSelect } = props

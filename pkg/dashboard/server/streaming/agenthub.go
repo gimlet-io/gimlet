@@ -3,6 +3,7 @@ package streaming
 import (
 	"encoding/json"
 
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/sirupsen/logrus"
@@ -10,13 +11,13 @@ import (
 
 // ConnectedAgent represents a connected k8s cluster
 type ConnectedAgent struct {
-	Name         string           `json:"name"`
-	Namespace    string           `json:"namespace"`
-	Certificate  []byte           `json:"-"`
-	EventChannel chan []byte      `json:"-"`
-	Stacks       []*api.Stack     `json:"-"`
-	FluxState    *api.FluxState   `json:"-"`
-	FluxStatev2  *api.FluxStatev2 `json:"-"`
+	Name         string          `json:"name"`
+	Namespace    string          `json:"namespace"`
+	Certificate  []byte          `json:"-"`
+	EventChannel chan []byte     `json:"-"`
+	Stacks       []*api.Stack    `json:"-"`
+	FluxState    *api.FluxState  `json:"-"`
+	FluxStatev2  *flux.FluxState `json:"-"`
 }
 
 // AgentHub is the central registry of all connected agents

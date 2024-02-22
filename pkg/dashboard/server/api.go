@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/bitnami-labs/sealed-secrets/pkg/crypto"
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
@@ -176,7 +177,7 @@ func envs(w http.ResponseWriter, r *http.Request) {
 func fluxStateHandler(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 
-	fluxStates := map[string]*api.FluxStatev2{}
+	fluxStates := map[string]*flux.FluxState{}
 	for _, a := range agentHub.Agents {
 		fluxStates[a.Name] = a.FluxStatev2
 	}

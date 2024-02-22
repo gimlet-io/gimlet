@@ -20,7 +20,7 @@ import React, { useState, useEffect } from 'react';
 import { formatDistance } from "date-fns";
 
 export function TimeLabel(props) {
-  const { title, date, className } = props;
+  const { title, date } = props;
   const [label, setLabel] = useState(formatDistance(date, new Date()));
 
   useEffect(() => {
@@ -36,6 +36,6 @@ export function TimeLabel(props) {
   }, [date]);
 
   return (
-    <span className={className} title={title}> {label} ago</span>
+    <span title={title}>{label}</span>
   )
 }

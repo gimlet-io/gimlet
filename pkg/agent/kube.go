@@ -25,6 +25,7 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -142,113 +143,8 @@ func PodContainers(podSpec v1.PodSpec) (containers []v1.Container) {
 	return containers
 }
 
-func (e *KubeEnv) FluxState() (*api.FluxStatev2, error) {
-	fluxState := &api.FluxStatev2{
-		GitRepositories: []sourcev1.GitRepository{},
-		Kustomizations:  []kustomizev1.Kustomization{},
-		HelmReleases:    []helmv2.HelmRelease{},
-		FluxServices:    []api.FluxService{},
-	}
-
-	gitRepositories, err := e.DynamicClient.Resource(gitRepositoryResource).
-		Namespace("").
-		List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, repo := range gitRepositories.Items {
-		unstructured := repo.UnstructuredContent()
-		var gitRepository sourcev1.GitRepository
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &gitRepository)
-		if err != nil {
-			return nil, err
-		}
-		fluxState.GitRepositories = append(fluxState.GitRepositories, gitRepository)
-	}
-
-	kustomizations, err := e.DynamicClient.Resource(kustomizationResource).
-		Namespace("").
-		List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, k := range kustomizations.Items {
-		unstructured := k.UnstructuredContent()
-		var kustomization kustomizev1.Kustomization
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &kustomization)
-		if err != nil {
-			return nil, err
-		}
-		fluxState.Kustomizations = append(fluxState.Kustomizations, kustomization)
-	}
-
-	helmReleases, err := e.DynamicClient.Resource(helmReleaseResource).
-		Namespace("").
-		List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, h := range helmReleases.Items {
-		unstructured := h.UnstructuredContent()
-		var helmRelease helmv2.HelmRelease
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &helmRelease)
-		if err != nil {
-			return nil, err
-		}
-		fluxState.HelmReleases = append(fluxState.HelmReleases, helmRelease)
-	}
-
-	fluxServices, err := e.fluxServicesWithDetails()
-	if err != nil {
-		return nil, err
-	}
-	fluxState.FluxServices = fluxServices
-
-	return fluxState, nil
-}
-
-func (e *KubeEnv) fluxServicesWithDetails() ([]api.FluxService, error) {
-	services := []api.FluxService{}
-	deployments, err := e.Client.AppsV1().Deployments("flux-system").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, d := range deployments.Items {
-		deployment := d
-		services = append(services, api.FluxService{
-			Deployment: &deployment,
-		})
-	}
-
-	svc, err := e.Client.CoreV1().Services("flux-system").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, service := range services {
-		for _, s := range svc.Items {
-			if SelectorsMatch(service.Deployment.Spec.Selector.MatchLabels, s.Spec.Selector) {
-				services[idx].Svc = s
-			}
-		}
-	}
-
-	pods, err := e.Client.CoreV1().Pods("flux-system").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for idx, service := range services {
-		services[idx].Pods = []v1.Pod{}
-		for _, pod := range pods.Items {
-			if labelsMatchSelectors(pod.ObjectMeta.Labels, service.Deployment.Spec.Selector.MatchLabels) {
-				services[idx].Pods = append(services[idx].Pods, pod)
-			}
-		}
-	}
-
-	return services, nil
+func (e *KubeEnv) FluxState() (*flux.FluxState, error) {
+	return flux.State(e.Client.(*kubernetes.Clientset), e.DynamicClient.(*dynamic.DynamicClient))
 }
 
 func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {

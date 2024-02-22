@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -271,7 +272,7 @@ func fluxState(w http.ResponseWriter, r *http.Request) {
 func fluxStatev2(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 
-	var fluxState api.FluxStatev2
+	var fluxState flux.FluxState
 	err := json.NewDecoder(r.Body).Decode(&fluxState)
 	if err != nil {
 		logrus.Errorf("cannot decode flux state: %s", err)

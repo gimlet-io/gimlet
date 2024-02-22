@@ -18,7 +18,7 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Ready
 
 import jp from 'jsonpath'
 import { format } from "date-fns";
-import { TimeLabel } from './timeLabel';
+import { TimeLabel } from './TimeLabel'
 
 export function ReadyWidget(props) {
   const { resource, displayMessage, label } = props
@@ -38,11 +38,24 @@ export function ReadyWidget(props) {
 
   const reconcilingConditions = jp.query(resource.status, '$..conditions[?(@.type=="Reconciling")]');
   const reconcilingCondition = reconcilingConditions.length === 1 ? reconcilingConditions[0] : undefined
-  const reconciling = reconcilingCondition && reconcilingConditions[0].status === "True"    
+  const reconciling = reconcilingCondition && reconcilingCondition.status === "True"    
 
-  const color = ready ? "bg-teal-400" : (reconciling || dependencyNotReady) && !stalled ? "bg-blue-400 animate-pulse" : "bg-orange-400 animate-pulse"
-  const statusLabel = ready ? label ? label : "Ready" : (reconciling || dependencyNotReady) && !stalled ? "Reconciling" : "Error"
-  const messageColor = ready ? "text-neutral-600 field" : (reconciling || dependencyNotReady) && !stalled ? "text-neutral-600" : "bg-orange-400"
+  const fetchFailedConditions = jp.query(resource.status, '$..conditions[?(@.type=="FetchFailed")]');
+  const fetchFailedCondition = fetchFailedConditions.length === 1 ? fetchFailedConditions[0] : undefined
+  const fetchFailed = fetchFailedCondition && fetchFailedCondition.status === "True"  
+
+
+  var [color,statusLabel,messageColor] = ['','','']
+  const readyLabel = label ? label : "Ready"
+  if (resource.kind === 'GitRepository' || resource.kind === "OCIRepository" || resource.kind === "Bucket") {
+    color = fetchFailed ? "bg-orange-400 animate-pulse" : reconciling ? "bg-blue-400 animate-pulse" : ready ? "bg-teal-400" : "bg-orange-400 animate-pulse"
+    statusLabel = fetchFailed ? "Error" : reconciling ?  "Reconciling" : ready ? readyLabel : "Error"
+    messageColor = fetchFailed ? "bg-orange-400" : reconciling ?  "text-neutral-600" : ready ? "text-neutral-600 field" : "bg-orange-400"
+  } else {
+    color = ready ? "bg-teal-400" : (reconciling || dependencyNotReady) && !stalled ? "bg-blue-400 animate-pulse" : "bg-orange-400 animate-pulse"
+    statusLabel = ready ? readyLabel : (reconciling || dependencyNotReady) && !stalled ? "Reconciling" : "Error"
+    messageColor = ready ? "text-neutral-600 field" : (reconciling || dependencyNotReady) && !stalled ? "text-neutral-600" : "bg-orange-400"
+  }
 
   return (
     <div className="relative">
@@ -50,18 +63,18 @@ export function ReadyWidget(props) {
         <span className={`absolute -left-4 top-1 rounded-full h-3 w-3 ${color} inline-block`}></span>
         <span>{statusLabel}</span>
         {readyCondition &&
-          <TimeLabel title={exactDate} date={parsed} />
+          <span className='ml-1'><TimeLabel title={exactDate} date={parsed} /> ago</span>
         }
       </div>
       {displayMessage && readyCondition &&
-        <div className={`block ${messageColor}`}>
+        <div className={`${messageColor}`}>
           {reconciling &&
-            <p>{reconcilingCondition.message}</p>
+            <span title={reconcilingCondition.message}>{reconcilingCondition.message}</span>
           }
           {dependencyNotReady &&
-            <p>Dependency not ready</p>
+            <span>Dependency not ready</span>
           }
-          <p>{readyCondition.message}</p>
+          <span title={readyCondition.message}>{readyCondition.message}</span>
         </div>
       }
     </div>
