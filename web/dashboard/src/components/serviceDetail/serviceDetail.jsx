@@ -12,7 +12,7 @@ import { copyToClipboard } from '../../views/settings/settings';
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
 import { AlertPanel } from '../../views/pulse/pulse';
-import { Logs } from '../../views/footer/Logs';
+import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/Describe';
 
 function ServiceDetail(props) {

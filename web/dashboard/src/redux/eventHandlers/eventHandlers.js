@@ -85,6 +85,11 @@ export function fluxStateReceived(state, payload) {
   return state
 }
 
+export function fluxEventsReceived(state, payload) {
+  state.fluxEvents = payload
+  return state
+}
+
 export function stackConfig(state, env) {
   state.envs.forEach(stateEnv => {
     if (env.name === stateEnv.name) {
@@ -323,6 +328,17 @@ export function fluxStatev2Updated(state, event) {
   }
 
   state.fluxState[event.envName] = event.fluxState;
+
+  return state
+}
+
+export function fluxEventsUpdated(state, event) {
+  console.log(event)
+  if (state.fluxState[event.envName] === undefined) {
+    return state;
+  }
+
+  //state.fluxState[event.envName] = event.fluxState;
 
   return state
 }

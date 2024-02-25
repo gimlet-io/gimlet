@@ -120,6 +120,7 @@ func main() {
 	deploymentController := agent.DeploymentController(kubeEnv, config.Host, config.AgentKey)
 	ingressController := agent.IngressController(kubeEnv, config.Host, config.AgentKey)
 	// eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
+	fluxEventController := agent.FluxEventController(kubeEnv, config.Host, config.AgentKey)
 	gitRepositoryController := agent.GitRepositoryController(kubeEnv, config.Host, config.AgentKey)
 	kustomizationController := agent.KustomizationController(kubeEnv, config.Host, config.AgentKey)
 	helmReleaseController := agent.HelmReleaseController(kubeEnv, config.Host, config.AgentKey)
@@ -127,6 +128,7 @@ func main() {
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 	// go eventController.Run(1, stopCh)
+	go fluxEventController.Run(1, stopCh)
 	go gitRepositoryController.Run(1, stopCh)
 	go kustomizationController.Run(1, stopCh)
 	go helmReleaseController.Run(1, stopCh)
@@ -353,6 +355,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	agent.SendFluxState(kubeEnv, gimletHost, agentKey)
 	agent.SendFluxStatev2(kubeEnv, gimletHost, agentKey)
+	agent.SendFluxK8sEvents(kubeEnv, gimletHost, agentKey)
 	logrus.Info("init flux states sent")
 }
 

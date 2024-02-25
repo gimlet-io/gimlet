@@ -24,10 +24,7 @@ import { Sources } from './Sources';
 import { CompactServices } from './CompactServices';
 
 export function ExpandedFooter(props) {
-  const { client, fluxState, sources, handleNavigationSelect, targetReference, selected, store } = props;
-
-  const [fluxEvents, setFluxEvents] = useState(store.getState().fluxEvents);
-  store.subscribe(() => setFluxEvents(store.getState().fluxEvents))
+  const { client, fluxState, fluxEvents, sources, handleNavigationSelect, targetReference, selected, store } = props;
 
   return (
     <div className="flex w-full h-full overscroll-contain">

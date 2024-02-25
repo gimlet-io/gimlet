@@ -193,6 +193,25 @@ func fluxStateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(fluxStatesString)
 }
 
+func fluxK8sEvents(w http.ResponseWriter, r *http.Request) {
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+
+	fluxEvents := map[string][]*flux.Event{}
+	for _, a := range agentHub.Agents {
+		fluxEvents[a.Name] = a.FluxEvents
+	}
+
+	fluxEventsString, err := json.Marshal(fluxEvents)
+	if err != nil {
+		logrus.Errorf("cannot serialize envs: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(fluxEventsString)
+}
+
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	deployment := r.URL.Query().Get("deploymentName")

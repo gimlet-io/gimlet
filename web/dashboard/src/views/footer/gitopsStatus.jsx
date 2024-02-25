@@ -2,9 +2,10 @@
 import React, { memo, useState } from 'react';
 import { ExpandedFooter } from "./ExpandedFooter"
 
-const GitopsStatus = memo(function GitopsStatus({fluxStates, handleNavigationSelect, selectedTab, gimletClient, store, targetReference}) {
+const GitopsStatus = memo(function GitopsStatus({fluxStates, fluxEvents, handleNavigationSelect, selectedTab, gimletClient, store, targetReference}) {
   const [selectedEnv, setSelectedEnv] = useState(Object.keys(fluxStates)[0])
   const fluxState = fluxStates[selectedEnv];
+  const fluxK8sEvents = fluxEvents[selectedEnv];
 
   if (!fluxState) {
     return null
@@ -43,6 +44,7 @@ const GitopsStatus = memo(function GitopsStatus({fluxStates, handleNavigationSel
           handleNavigationSelect={handleNavigationSelect}
           targetReference={targetReference}
           fluxState={fluxState}
+          fluxEvents={fluxK8sEvents}
           sources={sources}
           selected={selectedTab}
           store={store}

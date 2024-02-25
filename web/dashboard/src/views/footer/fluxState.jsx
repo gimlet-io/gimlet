@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { Kustomization } from './Kustomization';
 import { ReadyWidget } from './ReadyWidget';
 import { TimeLabel } from './TimeLabel';
-import { CompactService } from './Service';
+import { CompactService } from './service';
 
 export function Kustomizations(props){
   const { gimletClient, fluxState, targetReference, handleNavigationSelect } = props

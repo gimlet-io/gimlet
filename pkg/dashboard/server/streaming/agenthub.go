@@ -18,6 +18,7 @@ type ConnectedAgent struct {
 	Stacks       []*api.Stack    `json:"-"`
 	FluxState    *api.FluxState  `json:"-"`
 	FluxStatev2  *flux.FluxState `json:"-"`
+	FluxEvents   []*flux.Event   `json:"-"`
 }
 
 // AgentHub is the central registry of all connected agents

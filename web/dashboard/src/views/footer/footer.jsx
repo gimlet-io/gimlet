@@ -26,6 +26,7 @@ const Footer = memo(class Footer extends Component {
 
     this.state = {
       fluxStates: reduxState.fluxState,
+      fluxEvents: reduxState.fluxEvents,
       selectedTab: "Kustomizations",
       targetReference: {
         objectNs: "",
@@ -52,6 +53,7 @@ const Footer = memo(class Footer extends Component {
 
         return {
           fluxStates: reduxState.fluxState,
+          fluxEvents: reduxState.fluxEvents,
           runningDeploys: reduxState.runningDeploys,
           scmUrl: reduxState.settings.scmUrl,
           envs: reduxState.envs,
@@ -108,7 +110,7 @@ const Footer = memo(class Footer extends Component {
 
   render() {
     const { gimletClient, store } = this.props;
-    const { fluxStates, selectedTab, targetReference, tabs, runningDeploys, envs, scmUrl, gitopsCommits, imageBuildLogs, deployPanelOpen } = this.state;
+    const { fluxStates, fluxEvents, selectedTab, targetReference, tabs, runningDeploys, envs, scmUrl, gitopsCommits, imageBuildLogs, deployPanelOpen } = this.state;
 
     if (!fluxStates || Object.keys(fluxStates).length === 0) {
       return null
@@ -157,7 +159,7 @@ const Footer = memo(class Footer extends Component {
             <div className="px-6">
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>
-            {tabs[0].current ? <GitopsStatus fluxStates={fluxStates} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} /> : null}
+            {tabs[0].current ? <GitopsStatus fluxStates={fluxStates} fluxEvents={fluxEvents} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} /> : null}
             {tabs[1].current ? <DeployStatusTab runningDeploys={runningDeploys} scmUrl={scmUrl} gitopsCommits={gitopsCommits} envs={envs} imageBuildLogs={imageBuildLogs} logsEndRef={this.logsEndRef} /> : null}
           </div>
         }

@@ -6,6 +6,7 @@ import * as ingressEventHandlers from './eventHandlers/ingressEventHandlers';
 export const ACTION_TYPE_STREAMING = 'streaming';
 export const ACTION_TYPE_ENVS = 'envs';
 export const ACTION_FLUX_STATE_RECEIVED = 'fluxStateReceived';
+export const ACTION_FLUX_EVENTS_RECEIVED = 'fluxEventsReceived';
 export const ACTION_TYPE_STACK_CONFIG = 'stackConfig';
 export const ACTION_TYPE_USER = 'user';
 export const ACTION_TYPE_USERS = 'users';
@@ -77,6 +78,7 @@ export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
 export const EVENT_FLUX_STATE_V2_UPDATED_EVENT = 'fluxStatev2UpdatedEvent';
+export const EVENT_FLUX_EVENTS_UPDATED_EVENT = 'fluxEventsUpdatedEvent';
 
 export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
 export const EVENT_POD_DETAILS_EVENT = 'podDetailsEvent';
@@ -120,7 +122,7 @@ export const initialState = {
   textColors: {},
   imageBuildLogs: {},
   users: [],
-  deployPanelOpen: false
+  deployPanelOpen: false,
 };
 
 export function rootReducer(state = initialState, action) {
@@ -145,6 +147,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.envsUpdated(state, action.payload)
     case ACTION_FLUX_STATE_RECEIVED:
       return eventHandlers.fluxStateReceived(state, action.payload)
+    case ACTION_FLUX_EVENTS_RECEIVED:
+        return eventHandlers.fluxEventsReceived(state, action.payload)
     case ACTION_TYPE_STACK_CONFIG:
       return eventHandlers.stackConfig(state, action.payload)
     case ACTION_TYPE_GITOPS_COMMITS:
@@ -259,8 +263,10 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateCommitStatus(state, event);
     case EVENT_FLUX_STATE_UPDATED_EVENT:
       return eventHandlers.fluxStateUpdated(state, event);
-      case EVENT_FLUX_STATE_V2_UPDATED_EVENT:
-        return eventHandlers.fluxStatev2Updated(state, event);
+    case EVENT_FLUX_STATE_V2_UPDATED_EVENT:
+      return eventHandlers.fluxStatev2Updated(state, event);
+    case EVENT_FLUX_EVENTS_UPDATED_EVENT:
+      return eventHandlers.fluxEventsUpdated(state, event);
     case EVENT_DEPLOYMENT_DETAILS_EVENT:
       return eventHandlers.deploymentDetails(state, event);
       case EVENT_POD_DETAILS_EVENT:

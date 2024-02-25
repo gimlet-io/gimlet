@@ -17,7 +17,7 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Compa
 */
 
 import React, { memo } from 'react';
-import { CompactService } from "./Service"
+import { CompactService } from "./service"
 
 export const CompactServices = memo(function CompactServices(props) {
   const { capacitorClient, store, services } = props

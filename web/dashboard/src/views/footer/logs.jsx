@@ -22,7 +22,7 @@ import { Modal } from './Modal'
 import { SkeletonLoader } from './SkeletonLoader'
 
 export function Logs(props) {
-  const { gimletClient, store, namespace, deployment, containers } = props;
+  const { capacitorClient, store, namespace, deployment, containers } = props;
   const [showModal, setShowModal] = useState(false)
   const deploymentName = namespace + "/" + deployment
   const [logs, setLogs] = useState(store.getState().podLogs[deploymentName])
@@ -30,12 +30,12 @@ export function Logs(props) {
   const [selected, setSelected] = useState("")
 
   const streamPodLogs = () => {
-    gimletClient.podLogsRequest(namespace, deployment)
+    capacitorClient.podLogsRequest(namespace, deployment)
   }
 
   const stopLogsHandler = () => {
     setShowModal(false);
-    gimletClient.stopPodlogsRequest(namespace, deployment);
+    capacitorClient.stopPodlogsRequest(namespace, deployment);
     store.dispatch({
       type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
         pod: namespace + "/" + deployment

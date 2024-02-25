@@ -22,19 +22,19 @@ import { Modal } from './Modal'
 import { ACTION_TYPE_CLEAR_DETAILS } from '../../redux/redux';
 
 export function Describe(props) {
-  const { gimletClient, store, namespace, deployment, pods } = props;
+  const { capacitorClient, store, namespace, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
   const [selected, setSelected] = useState(namespace + "/" + deployment)
   const [details, setDetails] = useState(store.getState().details);
   store.subscribe(() => setDetails(store.getState().details));
 
   const describeDeployment = () => {
-    gimletClient.deploymentDetailsRequest(namespace, deployment)
+    capacitorClient.deploymentDetailsRequest(namespace, deployment)
     setSelected(namespace + "/" + deployment)
   }
 
   const describePod = (podNamespace, podName) => {
-    gimletClient.podDetailsRequest(podNamespace, podName)
+    capacitorClient.podDetailsRequest(podNamespace, podName)
     setSelected(podNamespace + "/" + podName)
   }
 

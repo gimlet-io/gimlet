@@ -21,7 +21,7 @@ import { HelmRevisionWidget } from './HelmRevisionWidget';
 import { ReadyWidget } from './ReadyWidget';
 import { RevisionWidget } from './Kustomization'
 import jp from 'jsonpath';
-import { Logs } from './Logs'
+import { Logs } from './logs'
 import { Describe } from './Describe'
 import { SkeletonLoader } from './SkeletonLoader'
 import { Modal } from './Modal'
