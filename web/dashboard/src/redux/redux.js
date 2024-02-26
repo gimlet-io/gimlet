@@ -77,7 +77,7 @@ export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
-export const EVENT_FLUX_EVENTS_UPDATED_EVENT = 'fluxEventsUpdatedEvent';
+export const EVENT_FLUX_EVENTS_UPDATED_EVENT = 'fluxK8sEventsUpdatedEvent';
 
 export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
 export const EVENT_POD_DETAILS_EVENT = 'podDetailsEvent';

@@ -17,14 +17,14 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Servi
 */
 
 import React, { useState } from 'react';
-import { HelmRevisionWidget } from './HelmRevisionWidget';
-import { ReadyWidget } from './ReadyWidget';
-import { RevisionWidget } from './Kustomization'
+import { HelmRevisionWidget } from './capacitor/HelmRevisionWidget';
+import { ReadyWidget } from './capacitor/ReadyWidget';
+import { RevisionWidget } from './capacitor/Kustomization'
 import jp from 'jsonpath';
 import { Logs } from './logs'
 import { Describe } from './Describe'
-import { SkeletonLoader } from './SkeletonLoader'
-import { Modal } from './Modal'
+import { SkeletonLoader } from './capacitor/SkeletonLoader'
+import { Modal } from './capacitor/Modal'
 
 const documentIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">

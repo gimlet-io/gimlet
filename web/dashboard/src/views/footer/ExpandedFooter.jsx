@@ -17,10 +17,10 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Expan
 */
 
 import React, { useState } from 'react';
-import { Kustomizations } from './Kustomizations';
-import { HelmReleases } from './HelmReleases';
-import FluxEvents from './FluxEvents';
-import { Sources } from './Sources';
+import { Kustomizations } from './capacitor/Kustomizations';
+import { HelmReleases } from './capacitor/HelmReleases';
+import FluxEvents from './capacitor/FluxEvents';
+import { Sources } from './capacitor/Sources';
 import { CompactServices } from './CompactServices';
 
 export function ExpandedFooter(props) {

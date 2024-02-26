@@ -18,7 +18,7 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Sourc
 
 import React, { useState, useMemo } from 'react';
 import { filterResources } from './utils.js';
-import { Source } from "./Source"
+import { Source } from "./Source.jsx"
 
 export function Sources(props) {
   const { capacitorClient, fluxState, targetReference } = props

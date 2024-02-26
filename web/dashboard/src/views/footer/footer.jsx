@@ -1,6 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/solid';
 import React, { memo, Component } from 'react';
-import { Summary } from "./fluxState"
+import { Summary } from "./capacitor/Summary"
 import GitopsStatus from './gitopsStatus';
 import DeployPanelTabs from '../deployPanel/deployPanelTabs';
 import { DeployStatusTab } from '../../components/deployStatus/deployStatus';
@@ -164,12 +164,14 @@ function CollapsedFooter(props) {
 
         return (
           <div className="w-full truncate" key={envName}>
-            <p className="font-semibold text-neutral-700">{`${envName.toUpperCase()}`}</p>
-            <div className="ml-2">
-              <Summary resources={fluxState.gitRepositories} label="SOURCES" />
-              <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" />
-              <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" />
-            </div>
+            <p className="font-semibold text-neutral-700">
+              {`${envName.toUpperCase()}`}:
+              <span className='ml-2'>
+                <Summary resources={fluxState.gitRepositories} label="SOURCES" simple={true} />
+                <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" simple={true}  />
+                <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" simple={true}  />
+              </span>
+            </p>
           </div>
         )
       })}

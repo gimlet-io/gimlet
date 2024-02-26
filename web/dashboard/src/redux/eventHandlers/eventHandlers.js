@@ -323,12 +323,11 @@ export function fluxStateUpdated(state, event) {
 }
 
 export function fluxEventsUpdated(state, event) {
-  console.log(event)
-  if (state.fluxState[event.envName] === undefined) {
+  if (state.fluxEvents[event.envName] === undefined) {
     return state;
   }
 
-  //state.fluxState[event.envName] = event.fluxState;
+  state.fluxEvents[event.envName] = event.fluxEvents;
 
   return state
 }

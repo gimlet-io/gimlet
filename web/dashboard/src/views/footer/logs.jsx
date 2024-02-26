@@ -18,8 +18,8 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Logs.
 
 import React, { useState } from 'react';
 import { ACTION_TYPE_CLEAR_PODLOGS } from '../../redux/redux';
-import { Modal } from './Modal'
-import { SkeletonLoader } from './SkeletonLoader'
+import { Modal } from './capacitor/Modal'
+import { SkeletonLoader } from './capacitor/SkeletonLoader'
 
 export function Logs(props) {
   const { capacitorClient, store, namespace, deployment, containers } = props;
