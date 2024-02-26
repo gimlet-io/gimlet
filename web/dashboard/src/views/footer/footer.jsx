@@ -2,22 +2,10 @@ import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/solid';
 import React, { memo, Component } from 'react';
 import { Summary } from "./capacitor/Summary"
 import GitopsStatus from './gitopsStatus';
-import DeployPanelTabs from '../deployPanel/deployPanelTabs';
-import { DeployStatusTab } from '../../components/deployStatus/deployStatus';
 import {
   ACTION_TYPE_OPEN_DEPLOY_PANEL,
   ACTION_TYPE_CLOSE_DEPLOY_PANEL
 } from '../../redux/redux';
-
-const defaultTabs = [
-  { name: 'Gitops Status', current: true },
-  { name: 'Deploy Status', current: false },
-]
-
-const deployTabOpen = [
-  { name: 'Gitops Status', current: false },
-  { name: 'Deploy Status', current: true },
-]
 
 const Footer = memo(class Footer extends Component {
   constructor(props) {
@@ -25,56 +13,26 @@ const Footer = memo(class Footer extends Component {
     let reduxState = this.props.store.getState();
 
     this.state = {
-      fluxStates: reduxState.fluxState,
       fluxEvents: reduxState.fluxEvents,
       selectedTab: "Kustomizations",
-      targetReference: {
-        objectNs: "",
-        objectName: "",
-        objectKind: "",
-      },
-      tabs: defaultTabs,
-      runningDeploys: reduxState.runningDeploys,
-      scmUrl: reduxState.settings.scmUrl,
-      envs: reduxState.envs,
+      targetReference: {objectNs: "", objectName: "", objectKind: ""},
       connectedAgents: reduxState.connectedAgents,
       gitopsCommits: reduxState.gitopsCommits,
       deployPanelOpen: reduxState.deployPanelOpen,
-      imageBuildLogs: reduxState.imageBuildLogs,
-      runningDeployId: "",
     };
 
     this.props.store.subscribe(() => {
       let reduxState = this.props.store.getState();
-      this.setState((prevState) => {
-        let runningDeployId = "";
-        if (reduxState.runningDeploys.length !== 0) {
-          runningDeployId = reduxState.runningDeploys[0].trackingId
-        }
-
-        return {
+      this.setState({
           fluxEvents: reduxState.fluxEvents,
-          runningDeploys: reduxState.runningDeploys,
-          scmUrl: reduxState.settings.scmUrl,
-          envs: reduxState.envs,
           connectedAgents: reduxState.connectedAgents,
-          tabs: prevState.runningDeployId !== runningDeployId ? deployTabOpen : prevState.tabs,
-          imageBuildLogs: reduxState.imageBuildLogs,
-          runningDeployId: runningDeployId,
           gitopsCommits: reduxState.gitopsCommits,
           deployPanelOpen: reduxState.deployPanelOpen,
-        }
-      })
-
-      if (this.logsEndRef.current) {
-        this.logsEndRef.current.scrollIntoView();
-      }
+        })
     });
 
     this.handleToggle = this.handleToggle.bind(this)
     this.handleNavigationSelect = this.handleNavigationSelect.bind(this)
-    this.switchTab = this.switchTab.bind(this)
-    this.logsEndRef = React.createRef();
   }
 
   handleToggle() {
@@ -92,28 +50,11 @@ const Footer = memo(class Footer extends Component {
     })
   }
 
-  switchTab(tab) {
-    let gitopsStatus = true;
-    let deployStatus = false;
-
-    if (tab === "Deploy Status") {
-      gitopsStatus = false;
-      deployStatus = true;
-    }
-
-    this.setState({
-      tabs: [
-        { name: 'Gitops Status', current: gitopsStatus },
-        { name: 'Deploy Status', current: deployStatus },
-      ]
-    });
-  }
-
   render() {
     const { gimletClient, store } = this.props;
-    const { connectedAgents, fluxEvents, selectedTab, targetReference, tabs, runningDeploys, envs, scmUrl, gitopsCommits, imageBuildLogs, deployPanelOpen } = this.state;
+    const { connectedAgents, fluxEvents, selectedTab, targetReference, deployPanelOpen } = this.state;
 
-    if (!envs || Object.keys(envs).length === 0) {
+    if (!connectedAgents || Object.keys(connectedAgents).length === 0) {
       return null
     }
 
@@ -138,11 +79,8 @@ const Footer = memo(class Footer extends Component {
         </div>
         {deployPanelOpen &&
           <div className='no-doc-scroll h-full overscroll-contain'>
-            <div className="px-6">
-              {DeployPanelTabs(tabs, this.switchTab)}
-            </div>
-            {tabs[0].current ? <GitopsStatus connectedAgents={connectedAgents} fluxEvents={fluxEvents} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} /> : null}
-            {tabs[1].current ? <DeployStatusTab runningDeploys={runningDeploys} scmUrl={scmUrl} gitopsCommits={gitopsCommits} envs={envs} imageBuildLogs={imageBuildLogs} logsEndRef={this.logsEndRef} /> : null}
+            <GitopsStatus connectedAgents={connectedAgents} fluxEvents={fluxEvents} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} />
+            {/* {tabs[1].current ? <DeployStatusTab runningDeploys={runningDeploys} scmUrl={scmUrl} gitopsCommits={gitopsCommits} envs={envs} imageBuildLogs={imageBuildLogs} logsEndRef={this.logsEndRef} /> : null} */}
           </div>
         }
       </div>
