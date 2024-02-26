@@ -242,7 +242,7 @@ func imageBuild(w http.ResponseWriter, r *http.Request) {
 func fluxState(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 
-	var fluxState api.FluxState
+	var fluxState flux.FluxState
 	err := json.NewDecoder(r.Body).Decode(&fluxState)
 	if err != nil {
 		logrus.Errorf("cannot decode flux state: %s", err)
@@ -263,36 +263,6 @@ func fluxState(w http.ResponseWriter, r *http.Request) {
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
 	jsonString, _ := json.Marshal(streaming.FluxStateUpdatedEvent{
 		StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStateUpdatedEventString},
-		EnvName:        name,
-		FluxState:      &fluxState,
-	})
-	clientHub.Broadcast <- jsonString
-}
-
-func fluxStatev2(w http.ResponseWriter, r *http.Request) {
-	name := r.URL.Query().Get("name")
-
-	var fluxState flux.FluxState
-	err := json.NewDecoder(r.Body).Decode(&fluxState)
-	if err != nil {
-		logrus.Errorf("cannot decode flux state: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agent := agentHub.Agents[name]
-	if agent == nil {
-		return
-	}
-
-	agent.FluxStatev2 = &fluxState
-
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.FluxStatev2UpdatedEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStatev2UpdatedEventString},
 		EnvName:        name,
 		FluxState:      &fluxState,
 	})
@@ -322,7 +292,7 @@ func sendFluxEvents(w http.ResponseWriter, r *http.Request) {
 
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
 	jsonString, _ := json.Marshal(streaming.FluxK8sEventsUpdatedEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxStatev2UpdatedEventString},
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.FluxK8sEventsUpdatedEventString},
 		EnvName:        name,
 		FluxEvents:     fluxEvents,
 	})

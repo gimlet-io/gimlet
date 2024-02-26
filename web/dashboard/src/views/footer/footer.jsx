@@ -37,6 +37,7 @@ const Footer = memo(class Footer extends Component {
       runningDeploys: reduxState.runningDeploys,
       scmUrl: reduxState.settings.scmUrl,
       envs: reduxState.envs,
+      connectedAgents: reduxState.connectedAgents,
       gitopsCommits: reduxState.gitopsCommits,
       deployPanelOpen: reduxState.deployPanelOpen,
       imageBuildLogs: reduxState.imageBuildLogs,
@@ -52,11 +53,11 @@ const Footer = memo(class Footer extends Component {
         }
 
         return {
-          fluxStates: reduxState.fluxState,
           fluxEvents: reduxState.fluxEvents,
           runningDeploys: reduxState.runningDeploys,
           scmUrl: reduxState.settings.scmUrl,
           envs: reduxState.envs,
+          connectedAgents: reduxState.connectedAgents,
           tabs: prevState.runningDeployId !== runningDeployId ? deployTabOpen : prevState.tabs,
           imageBuildLogs: reduxState.imageBuildLogs,
           runningDeployId: runningDeployId,
@@ -110,9 +111,9 @@ const Footer = memo(class Footer extends Component {
 
   render() {
     const { gimletClient, store } = this.props;
-    const { fluxStates, fluxEvents, selectedTab, targetReference, tabs, runningDeploys, envs, scmUrl, gitopsCommits, imageBuildLogs, deployPanelOpen } = this.state;
+    const { connectedAgents, fluxEvents, selectedTab, targetReference, tabs, runningDeploys, envs, scmUrl, gitopsCommits, imageBuildLogs, deployPanelOpen } = this.state;
 
-    if (!fluxStates || Object.keys(fluxStates).length === 0) {
+    if (!envs || Object.keys(envs).length === 0) {
       return null
     }
 
@@ -123,26 +124,7 @@ const Footer = memo(class Footer extends Component {
             className='h-auto w-full cursor-pointer px-16 py-4 flex gap-x-12'
             onClick={this.handleToggle} >
             {!deployPanelOpen &&
-              <div className="grid grid-cols-3">
-                {Object.keys(fluxStates).slice(0, 3).map(env => {
-                  const fluxState = fluxStates[env];
-
-                  if (!fluxState) {
-                    return null
-                  }
-
-                  return (
-                    <div className="w-full truncate" key={env}>
-                      <p className="font-semibold text-neutral-700">{`${env.toUpperCase()}`}</p>
-                      <div className="ml-2">
-                        <Summary resources={fluxState.gitRepositories} label="SOURCES" />
-                        <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" />
-                        <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <CollapsedFooter connectedAgents={connectedAgents} />
             }
           </div>
           <div className='px-4 py-2'>
@@ -159,7 +141,7 @@ const Footer = memo(class Footer extends Component {
             <div className="px-6">
               {DeployPanelTabs(tabs, this.switchTab)}
             </div>
-            {tabs[0].current ? <GitopsStatus fluxStates={fluxStates} fluxEvents={fluxEvents} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} /> : null}
+            {tabs[0].current ? <GitopsStatus connectedAgents={connectedAgents} fluxEvents={fluxEvents} handleNavigationSelect={this.handleNavigationSelect} selectedTab={selectedTab} gimletClient={gimletClient} store={store} targetReference={targetReference} /> : null}
             {tabs[1].current ? <DeployStatusTab runningDeploys={runningDeploys} scmUrl={scmUrl} gitopsCommits={gitopsCommits} envs={envs} imageBuildLogs={imageBuildLogs} logsEndRef={this.logsEndRef} /> : null}
           </div>
         }
@@ -167,5 +149,32 @@ const Footer = memo(class Footer extends Component {
     )
   }
 })
+
+function CollapsedFooter(props) {
+  const { connectedAgents } = props
+
+  return (
+    <div className="grid grid-cols-3">
+      {Object.keys(connectedAgents).slice(0,3).map(envName => {
+        const fluxState = connectedAgents[envName].fluxState;
+
+        if (!fluxState) {
+          return null
+        }
+
+        return (
+          <div className="w-full truncate" key={envName}>
+            <p className="font-semibold text-neutral-700">{`${envName.toUpperCase()}`}</p>
+            <div className="ml-2">
+              <Summary resources={fluxState.gitRepositories} label="SOURCES" />
+              <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" />
+              <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default Footer;

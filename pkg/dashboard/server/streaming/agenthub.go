@@ -16,8 +16,7 @@ type ConnectedAgent struct {
 	Certificate  []byte          `json:"-"`
 	EventChannel chan []byte     `json:"-"`
 	Stacks       []*api.Stack    `json:"-"`
-	FluxState    *api.FluxState  `json:"-"`
-	FluxStatev2  *flux.FluxState `json:"-"`
+	FluxState    *flux.FluxState `json:"-"`
 	FluxEvents   []*flux.Event   `json:"-"`
 }
 

@@ -174,25 +174,6 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
-func fluxStateHandler(w http.ResponseWriter, r *http.Request) {
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-
-	fluxStates := map[string]*flux.FluxState{}
-	for _, a := range agentHub.Agents {
-		fluxStates[a.Name] = a.FluxStatev2
-	}
-
-	fluxStatesString, err := json.Marshal(fluxStates)
-	if err != nil {
-		logrus.Errorf("cannot serialize envs: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	w.WriteHeader(200)
-	w.Write(fluxStatesString)
-}
-
 func fluxK8sEvents(w http.ResponseWriter, r *http.Request) {
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 

@@ -17,6 +17,7 @@ package api
 import (
 	"fmt"
 
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	v1 "k8s.io/api/core/v1"
@@ -63,9 +64,9 @@ type Ingress struct {
 }
 
 type ConnectedAgent struct {
-	Name      string     `json:"name"`
-	Stacks    []*Stack   `json:"stacks"`
-	FluxState *FluxState `json:"fluxState"`
+	Name      string          `json:"name"`
+	Stacks    []*Stack        `json:"stacks"`
+	FluxState *flux.FluxState `json:"fluxState"`
 }
 
 type GitRepository struct {

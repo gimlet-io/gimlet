@@ -2,7 +2,6 @@ import { Component } from 'react';
 import {
   ACTION_TYPE_AGENTS,
   ACTION_TYPE_ENVS,
-  ACTION_FLUX_STATE_RECEIVED,
   ACTION_FLUX_EVENTS_RECEIVED,
   ACTION_TYPE_GIT_REPOS,
   ACTION_TYPE_GITOPS_COMMITS,
@@ -32,9 +31,6 @@ export default class APIBackend extends Component {
       });
     this.props.gimletClient.getEnvs()
       .then(data => this.props.store.dispatch({ type: ACTION_TYPE_ENVS, payload: data }), () => {/* Generic error handler deals with it */
-      });
-    this.props.gimletClient.getFluxState()
-      .then(data => this.props.store.dispatch({ type: ACTION_FLUX_STATE_RECEIVED, payload: data }), () => {/* Generic error handler deals with it */
       });
     this.props.gimletClient.getFluxEvents()
       .then(data => this.props.store.dispatch({ type: ACTION_FLUX_EVENTS_RECEIVED, payload: data }), () => {/* Generic error handler deals with it */

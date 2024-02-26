@@ -77,7 +77,6 @@ export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
-export const EVENT_FLUX_STATE_V2_UPDATED_EVENT = 'fluxStatev2UpdatedEvent';
 export const EVENT_FLUX_EVENTS_UPDATED_EVENT = 'fluxEventsUpdatedEvent';
 
 export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
@@ -263,8 +262,6 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateCommitStatus(state, event);
     case EVENT_FLUX_STATE_UPDATED_EVENT:
       return eventHandlers.fluxStateUpdated(state, event);
-    case EVENT_FLUX_STATE_V2_UPDATED_EVENT:
-      return eventHandlers.fluxStatev2Updated(state, event);
     case EVENT_FLUX_EVENTS_UPDATED_EVENT:
       return eventHandlers.fluxEventsUpdated(state, event);
     case EVENT_DEPLOYMENT_DETAILS_EVENT:

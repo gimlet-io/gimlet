@@ -15,7 +15,6 @@ const CommitStatusUpdatedEventString = "commitStatusUpdated"
 const PodLogsEventString = "podLogs"
 const ImageBuildLogEventString = "imageBuildLogEvent"
 const FluxStateUpdatedEventString = "fluxStateUpdatedEvent"
-const FluxStatev2UpdatedEventString = "fluxStatev2UpdatedEvent"
 const FluxK8sEventsUpdatedEventString = "fluxK8sEventsUpdatedEvent"
 const DeploymentDetailsEventString = "deploymentDetailsEvent"
 const PodDetailsEventString = "podDetailsEvent"
@@ -43,12 +42,6 @@ type EnvsUpdatedEvent struct {
 }
 
 type FluxStateUpdatedEvent struct {
-	EnvName   string         `json:"envName"`
-	FluxState *api.FluxState `json:"fluxState"`
-	StreamingEvent
-}
-
-type FluxStatev2UpdatedEvent struct {
 	EnvName   string          `json:"envName"`
 	FluxState *flux.FluxState `json:"fluxState"`
 	StreamingEvent

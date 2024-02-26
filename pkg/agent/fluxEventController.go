@@ -56,7 +56,7 @@ func SendFluxK8sEvents(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
 
 	params := url.Values{}
 	params.Add("name", kubeEnv.Name)
-	reqUrl := fmt.Sprintf("%s/agent/v2/fluxEvents?%s", gimletHost, params.Encode())
+	reqUrl := fmt.Sprintf("%s/agent/fluxEvents?%s", gimletHost, params.Encode())
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(fluxEventsString))
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
