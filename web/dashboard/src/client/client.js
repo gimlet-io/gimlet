@@ -69,7 +69,7 @@ export default class GimletClient {
 
   podDetailsRequest = (namespace, name) => this.get(`/api/podDetails?namespace=${namespace}&name=${name}`);
 
-  reconcileRequest = (resource, namespace, name) => this.post(`/api/reconcile?resource=${resource}&namespace=${namespace}&name=${name}`);
+  reconcile = (resource, namespace, name) => this.post(`/api/reconcile?resource=${resource}&namespace=${namespace}&name=${name}`);
 
   getAlerts = () => this.get("/api/alerts");
   

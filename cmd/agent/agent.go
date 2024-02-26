@@ -18,12 +18,12 @@ import (
 	"syscall"
 	"time"
 
+	capacitorFlux "github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/flux"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -505,7 +505,7 @@ func reconcile(
 	namespace string,
 	name string,
 ) {
-	reconcileCommand := flux.NewReconcileCommand(resource)
+	reconcileCommand := capacitorFlux.NewReconcileCommand(resource)
 	reconcileCommand.Run(kubeEnv.Config, namespace, name)
 }
 

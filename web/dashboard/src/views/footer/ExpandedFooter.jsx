@@ -16,12 +16,11 @@ limitations under the License.
 Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/ExpandedFooter.jsx
 */
 
-import React, { useState } from 'react';
 import { Kustomizations } from './capacitor/Kustomizations';
 import { HelmReleases } from './capacitor/HelmReleases';
 import FluxEvents from './capacitor/FluxEvents';
 import { Sources } from './capacitor/Sources';
-import { CompactServices } from './CompactServices';
+import { CompactServices } from './capacitor/CompactServices';
 
 export function ExpandedFooter(props) {
   const { client, fluxState, fluxEvents, sources, handleNavigationSelect, targetReference, selected, store } = props;
