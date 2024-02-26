@@ -40,6 +40,7 @@ func TestComment(t *testing.T) {
 	repo := "getting-started-app"
 	appName := "preview-app"
 	hash := "abc123"
+	pullNumber := 0
 	logUrl := "https://gimlet.io"
 	previewUrl := "https://gimlet.io"
 	processing := fmt.Sprintf(bodyProcessing, appName, hash, logUrl)
@@ -57,7 +58,7 @@ func TestComment(t *testing.T) {
 	token, _, _ := tokenManager.Token()
 	gitSvc := NewGitService(config)
 
-	commentId, err := gitSvc.CreateComment(token, owner, repo, 67, &processing)
+	commentId, err := gitSvc.CreateComment(token, owner, repo, pullNumber, &processing)
 	if err != nil {
 		panic(err)
 	}
