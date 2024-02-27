@@ -95,3 +95,23 @@ func TestGenerateKustomizationForApp(t *testing.T) {
 
 	fmt.Println(output.Content)
 }
+
+func TestGenerateIngress(t *testing.T) {
+	app := "gimlet"
+	var port int32 = 9000
+	namespace := "default"
+	host := "demo.localdev.me"
+	targetPath := ""
+	httpPath := "/"
+
+	output, err := GenerateIngress(app, port, namespace, host, targetPath, httpPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(output.Content, "networking.k8s.io/v1") {
+		t.Errorf("apiVersion 'networking.k8s.io/v1' not found")
+	}
+
+	fmt.Println(output.Content)
+}

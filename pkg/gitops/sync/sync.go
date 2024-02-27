@@ -31,6 +31,7 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	notifv1 "github.com/fluxcd/notification-controller/api/v1"
 	notifv1beta3 "github.com/fluxcd/notification-controller/api/v1beta3"
+	networkingv1 "k8s.io/api/networking/v1"
 
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
@@ -259,6 +260,84 @@ func GenerateKustomizationForApp(
 	return &manifestgen.Manifest{
 		Path:    path.Join(filePath, fmt.Sprintf("kustomization-%s.yaml", app)),
 		Content: fmt.Sprintf("---\n%s", resourceToString(ksData)),
+	}, nil
+}
+
+func GenerateIngress(
+	app string,
+	port int32,
+	namespace string,
+	host string,
+	targetPath string,
+	httpPath string,
+) (*manifestgen.Manifest, error) {
+	nginx := "nginx"
+	var pathType networkingv1.PathType
+	pathType = "Prefix"
+
+	ingress := networkingv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "networking.k8s.io/v1",
+			Kind:       "Ingress",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-ingress", app),
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "nginx",
+				"nginx.ingress.kubernetes.io/configuration-snippet": `sub_filter '</body>' '
+	<div class="bg-transparent bottom-0 md:px-0 fixed z-[2147483647] left-0 md:left-[calc(50%-390px)]">
+		<iframe class="h-48 min-h-[initial] max-h-[initial] translate-[initial] bg-transparent border-0 block w-screen md:w-[780px]"
+			id="github-iframe"
+			title="Gimlet Drawer"
+			src=""
+		>
+		</iframe>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+		fetch("https://api.github.com/repos/dzsak/deploying-a-static-site-with-netlify-sample/contents/gimlet-preview.html?ref=v0.0.1-rc.19").then(function(t){return t.json()})
+			.then(function(t){(iframe=document.getElementById("github-iframe")).src="data:text/html;base64,"+encodeURIComponent(t.content)});
+	</script>
+</body>';
+proxy_set_header Accept-Encoding "";`,
+			},
+		},
+		Spec: networkingv1.IngressSpec{
+			IngressClassName: &nginx,
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: host,
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: app,
+											Port: networkingv1.ServiceBackendPort{
+												Number: port,
+											},
+										},
+									},
+									Path:     httpPath,
+									PathType: &pathType,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ingressData, err := yaml.Marshal(ingress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manifestgen.Manifest{
+		Path:    path.Join(targetPath, namespace, fmt.Sprintf("ingress-%s.yaml", app)),
+		Content: fmt.Sprintf("---\n%s", resourceToString(ingressData)),
 	}, nil
 }
 
