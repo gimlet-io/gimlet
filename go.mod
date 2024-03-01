@@ -33,13 +33,13 @@ require (
 	github.com/enescakir/emoji v1.0.0
 	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
 	github.com/fatih/color v1.16.0
-	github.com/fluxcd/flux2/v2 v2.2.2
+	github.com/fluxcd/flux2/v2 v2.2.3
 	github.com/fluxcd/kustomize-controller/api v1.2.2
 	github.com/fluxcd/notification-controller/api v1.2.4
-	github.com/fluxcd/pkg/apis/event v0.6.0
+	github.com/fluxcd/pkg/apis/event v0.7.0
 	github.com/fluxcd/pkg/apis/meta v1.3.0
-	github.com/fluxcd/pkg/sourceignore v0.4.0
-	github.com/fluxcd/pkg/ssh v0.10.0
+	github.com/fluxcd/pkg/sourceignore v0.5.0
+	github.com/fluxcd/pkg/ssh v0.11.0
 	github.com/fluxcd/source-controller/api v1.2.4
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.5
@@ -151,7 +151,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/MichaelMure/go-term-text v0.3.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20231012073058-a7379d079e0e // indirect
+	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/alecthomas/chroma v0.7.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
@@ -185,7 +185,7 @@ require (
 	github.com/fluxcd/helm-controller/api v0.37.4 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
 	github.com/fluxcd/pkg/apis/kustomize v1.3.0 // indirect
-	github.com/fluxcd/pkg/kustomize v1.5.0 // indirect
+	github.com/fluxcd/pkg/kustomize v1.6.0 // indirect
 	github.com/gimlet-io/capacitor v0.0.0-20240301134213-73b7bb5f846e
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
@@ -266,7 +266,7 @@ require (
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/weaveworks/tf-controller/api v0.0.0-20230601175619-7e9ed0753431
-	github.com/xanzy/go-gitlab v0.95.1
+	github.com/xanzy/go-gitlab v0.96.0
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
