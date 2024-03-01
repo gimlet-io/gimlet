@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/alecthomas/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_redirectPath(t *testing.T) {

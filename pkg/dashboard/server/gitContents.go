@@ -23,7 +23,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/storer"
