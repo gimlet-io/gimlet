@@ -1,11 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
-import { XIcon } from '@heroicons/react/solid'
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
-  ACTION_TYPE_CLEAR_PODLOGS,
-  ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWSUCCESS,
@@ -15,12 +12,13 @@ import { copyToClipboard } from '../../views/settings/settings';
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
 import { AlertPanel } from '../../views/pulse/pulse';
+import { Logs } from '../../views/footer/logs';
+import { Describe } from '../../views/footer/capacitor/Describe';
 
 function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
-
 
   useEffect(() => {
     if (deploymentFromParams === stack.service.name) {
@@ -44,42 +42,6 @@ function ServiceDetail(props) {
       }, () => {/* Generic error handler deals with it */ });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const [logsOverlayVisible, setLogsOverlayVisible] = useState(false)
-  const [logsOverlayNamespace, setLogsOverlayNamespace] = useState("")
-  const [logsOverlayService, setLogsOverlayService] = useState("")
-
-  const closeLogsOverlayHandler = (namespace, serviceName) => {
-    setLogsOverlayVisible(false)
-    gimletClient.stopPodlogsRequest(namespace, serviceName);
-    store.dispatch({
-      type: ACTION_TYPE_CLEAR_PODLOGS, payload: {
-        pod: namespace + "/" + serviceName
-      }
-    });
-  }
-
-  const closeDetailsHandler = (namespace, serviceName) => {
-    setLogsOverlayVisible(false)
-    store.dispatch({
-      type: ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS, payload: {
-        deployment: namespace + "/" + serviceName
-      }
-    });
-  }
-
-  useEffect(() => {
-    if (typeof window != 'undefined' && window.document) {
-      if (logsOverlayVisible) {
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight = '15px';
-      }
-      return () => {
-        document.body.style.overflow = 'unset';
-        document.body.style.paddingRight = '0px';
-      }
-    }
-  }, [logsOverlayVisible]);
 
   const [isCopied, setCopied] = useState(false)
 
@@ -181,14 +143,6 @@ function ServiceDetail(props) {
 
   return (
     <>
-      <LogsOverlay
-        closeLogsOverlayHandler={closeLogsOverlayHandler}
-        closeDetailsHandler={closeDetailsHandler}
-        namespace={logsOverlayNamespace}
-        svc={logsOverlayService}
-        visible={logsOverlayVisible}
-        store={store}
-      />
       <div className="w-full flex items-center justify-between space-x-6 bg-stone-100 pb-8 rounded-lg">
         <div className="flex-1">
           <h3 ref={ref} className="flex text-lg font-bold rounded p-4">
@@ -204,10 +158,10 @@ function ServiceDetail(props) {
                 </svg>
               </a>
             }
-            <div className="flex items-center ml-auto space-x-2">
+            <div className="flex items-center ml-auto">
               {configExists &&
                 <button
-                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
+                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 mr-2 border border-gray-300 rounded"
                   onClick={() => {
                     posthog?.capture('Env config edit pushed')
                     navigateToConfigEdit(envName, stack.service.name)
@@ -227,27 +181,20 @@ function ServiceDetail(props) {
                     className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
                     Restart
                   </button>
-                  <button
-                    onClick={() => {
-                      setLogsOverlayVisible(true)
-                      setLogsOverlayNamespace(deployment.namespace);
-                      setLogsOverlayService(stack.service.name);
-                      gimletClient.podLogsRequest(deployment.namespace, stack.service.name);
-                    }}
-                    className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
-                  >
-                    Logs
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLogsOverlayVisible(true);
-                      setLogsOverlayNamespace(deployment.namespace);
-                      setLogsOverlayService(stack.service.name);
-                      gimletClient.deploymentDetailsRequest(deployment.namespace, stack.service.name);
-                    }}
-                    className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
-                    Describe
-                  </button>
+                  <Logs
+                    gimletClient={gimletClient}
+                    store={store}
+                    namespace={deployment.namespace}
+                    deployment={deployment.name}
+                    containers={podContainers(deployment.pods)}
+                  />
+                  <Describe
+                    gimletClient={gimletClient}
+                    store={store}
+                    namespace={deployment.namespace}
+                    deployment={deployment.name}
+                    pods={deployment.pods}
+                  />
                   {!configExists &&
                     <div className="flex items-center ml-auto">
                       <svg xmlns="http://www.w3.org/2000/svg"
@@ -407,61 +354,6 @@ function ServiceDetail(props) {
 
 export default ServiceDetail;
 
-const LogsOverlay = ({ visible, namespace, svc, closeLogsOverlayHandler, closeDetailsHandler, store }) => {
-  let reduxState = store.getState();
-  const service = namespace + "/" + svc;
-
-  const [logs, setLogs] = useState(reduxState.podLogs[service])
-  const [details, setDetails] = useState(reduxState.deploymentDetails[service])
-
-  store.subscribe(() => {
-    setLogs(reduxState.podLogs[service])
-    setDetails(reduxState.deploymentDetails[service])
-  });
-
-  const logsEndRef = useRef(null);
-
-  useEffect(() => {
-    logsEndRef.current.scrollIntoView();
-  }, [logs, details]);
-
-  const handleClose = () => {
-    if (details) {
-      closeDetailsHandler(namespace, svc);
-    } else {
-      closeLogsOverlayHandler(namespace, svc);
-    }
-  };
-
-  return (
-    <div
-      className={(visible ? "visible" : "invisible") + " fixed flex inset-0 z-10 bg-gray-500 bg-opacity-75"}
-      onClick={handleClose}
-    >
-      <div className="flex self-center items-center justify-center w-full p-8 h-4/5">
-        <div className="transform flex flex-col overflow-hidden bg-white rounded-xl h-4/5 max-h-full w-4/5 p-6"
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="absolute top-0 right-0 p-1.5">
-            <button
-              className="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
-              onClick={handleClose}
-            >
-              <span className="sr-only">Close</span>
-              <XIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </div>
-          <div className="h-full relative overflow-y-auto p-4 bg-slate-800 rounded-lg">
-            {logs?.map((line, idx) => <p key={idx} className={`font-mono text-xs ${line.color}`}>{line.content}</p>)}
-            {details?.map((line, idx) => <p key={idx} className="font-mono text-xs text-yellow-200 whitespace-pre">{line}</p>)}
-            <p ref={logsEndRef} />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function Pod(props) {
   const {pod} = props;
 
@@ -493,4 +385,15 @@ function Pod(props) {
       {pod.status}
     </span>
   );
+}
+
+function podContainers(pods) {
+  const containers = [];
+  pods?.forEach((pod) => {
+    pod.containers?.forEach(container => {
+      containers.push(`${pod.name}/${container.name}`);
+    })
+  });
+
+  return containers;
 }

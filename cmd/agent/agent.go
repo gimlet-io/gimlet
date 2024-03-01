@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	capacitorFlux "github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/cmd/agent/config"
 	"github.com/gimlet-io/gimlet-cli/pkg/agent"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
@@ -119,6 +120,7 @@ func main() {
 	deploymentController := agent.DeploymentController(kubeEnv, config.Host, config.AgentKey)
 	ingressController := agent.IngressController(kubeEnv, config.Host, config.AgentKey)
 	// eventController := agent.EventController(kubeEnv, config.Host, config.AgentKey)
+	fluxEventController := agent.FluxEventController(kubeEnv, config.Host, config.AgentKey)
 	gitRepositoryController := agent.GitRepositoryController(kubeEnv, config.Host, config.AgentKey)
 	kustomizationController := agent.KustomizationController(kubeEnv, config.Host, config.AgentKey)
 	helmReleaseController := agent.HelmReleaseController(kubeEnv, config.Host, config.AgentKey)
@@ -126,6 +128,7 @@ func main() {
 	go deploymentController.Run(1, stopCh)
 	go ingressController.Run(1, stopCh)
 	// go eventController.Run(1, stopCh)
+	go fluxEventController.Run(1, stopCh)
 	go gitRepositoryController.Run(1, stopCh)
 	go kustomizationController.Run(1, stopCh)
 	go helmReleaseController.Run(1, stopCh)
@@ -239,21 +242,36 @@ func serverCommunication(
 						go podLogs(
 							kubeEnv,
 							e["namespace"].(string),
-							e["serviceName"].(string),
+							e["deploymentName"].(string),
 							messages,
 							runningLogStreams,
 						)
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
-						svc := e["serviceName"].(string)
-						go runningLogStreams.Stop(namespace, svc)
+						deployment := e["deploymentName"].(string)
+						go runningLogStreams.Stop(namespace, deployment)
 					case "deploymentDetails":
 						go deploymentDetails(
 							kubeEnv,
 							e["namespace"].(string),
-							e["serviceName"].(string),
+							e["deploymentName"].(string),
 							config.Host,
 							config.AgentKey,
+						)
+					case "podDetails":
+						go podDetails(
+							kubeEnv,
+							e["namespace"].(string),
+							e["podName"].(string),
+							config.Host,
+							config.AgentKey,
+						)
+					case "reconcile":
+						go reconcile(
+							kubeEnv,
+							e["resource"].(string),
+							e["namespace"].(string),
+							e["name"].(string),
 						)
 					case "restartDeployment":
 						namespace := e["namespace"].(string)
@@ -336,6 +354,7 @@ func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 
 func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 	agent.SendFluxState(kubeEnv, gimletHost, agentKey)
+	agent.SendFluxK8sEvents(kubeEnv, gimletHost, agentKey)
 	logrus.Info("init flux states sent")
 }
 
@@ -381,51 +400,27 @@ func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 func podLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
-	serviceName string,
+	deploymentName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
-
-	svc, err := kubeEnv.Client.CoreV1().Services(namespace).List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		logrus.Errorf("could not get services: %v", err)
-		return
-	}
-
-	var integratedServices []v1.Service
-	for _, s := range svc.Items {
-		if _, ok := s.ObjectMeta.GetAnnotations()[agent.AnnotationGitRepository]; ok {
-			integratedServices = append(integratedServices, s)
-		}
-	}
-
-	allDeployments, err := kubeEnv.Client.AppsV1().Deployments(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("could not get deployments: %v", err)
 		return
 	}
 
-	allPods, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+	podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("could not get pods: %v", err)
 		return
 	}
 
-	for _, svc := range integratedServices {
-		for _, deployment := range allDeployments.Items {
-			if deployment.Name == serviceName {
-				if agent.SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-					for _, pod := range allPods.Items {
-						if agent.HasLabels(deployment.Spec.Selector.MatchLabels, pod.GetObjectMeta().GetLabels()) &&
-							pod.Namespace == deployment.Namespace {
-							containers := podContainers(pod.Spec)
-							for _, container := range containers {
-								go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, serviceName, messages, runningLogStreams)
-							}
-						}
-					}
-					return
-				}
+	for _, pod := range podsInNamespace.Items {
+		if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
+			containers := agent.PodContainers(pod.Spec)
+			for _, container := range containers {
+				go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
 			}
 		}
 	}
@@ -433,10 +428,24 @@ func podLogs(
 	logrus.Debug("pod logs sent")
 }
 
+func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
+	for k2, v2 := range selectors {
+		if v, ok := labels[k2]; ok {
+			if v2 != v {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	return true
+}
+
 func deploymentDetails(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
-	serviceName string,
+	name string,
 	gimletHost string,
 	agentKey string,
 ) {
@@ -446,7 +455,7 @@ func deploymentDetails(
 		return
 	}
 
-	output, err := describer.Describe(namespace, serviceName, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
+	output, err := describer.Describe(namespace, name, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
 	if err != nil {
 		logrus.Errorf("could not get output of describer: %s", err)
 		return
@@ -454,7 +463,7 @@ func deploymentDetails(
 
 	deployment := api.Deployment{
 		Namespace: namespace,
-		Name:      serviceName,
+		Name:      name,
 		Details:   output,
 	}
 
@@ -466,6 +475,73 @@ func deploymentDetails(
 
 	reqUrl := fmt.Sprintf("%s/agent/deploymentDetails", gimletHost)
 	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(deploymentString))
+	if err != nil {
+		logrus.Errorf("could not create http request: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "BEARER "+agentKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := httpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Errorf("could not send deployment details: %s", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		logrus.Errorf("could not send deployment details: %d - %v", resp.StatusCode, string(body))
+		return
+	}
+
+	logrus.Debug("deployment details sent")
+}
+
+func reconcile(
+	kubeEnv *agent.KubeEnv,
+	resource string,
+	namespace string,
+	name string,
+) {
+	reconcileCommand := capacitorFlux.NewReconcileCommand(resource)
+	reconcileCommand.Run(kubeEnv.Config, namespace, name)
+}
+
+func podDetails(
+	kubeEnv *agent.KubeEnv,
+	namespace string,
+	name string,
+	gimletHost string,
+	agentKey string,
+) {
+	describer, ok := describe.DescriberFor(schema.GroupKind{Group: v1.GroupName, Kind: "Pod"}, kubeEnv.Config)
+	if !ok {
+		logrus.Errorf("could not get describer for pod")
+		return
+	}
+
+	output, err := describer.Describe(namespace, name, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
+	if err != nil {
+		logrus.Errorf("could not get output of describer: %s", err)
+		return
+	}
+
+	pod := api.Pod{
+		Namespace: namespace,
+		Name:      name,
+		Details:   output,
+	}
+
+	podString, err := json.Marshal(pod)
+	if err != nil {
+		logrus.Errorf("could not serialize pod: %v", err)
+		return
+	}
+
+	reqUrl := fmt.Sprintf("%s/agent/podDetails", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(podString))
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
 		return
@@ -518,7 +594,7 @@ func streamPodLogs(
 	namespace string,
 	pod string,
 	containerName string,
-	serviceName string,
+	deploymentName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
@@ -539,7 +615,7 @@ func streamPodLogs(
 	defer podLogs.Close()
 
 	stopCh := make(chan int)
-	runningLogStreams.Regsiter(stopCh, namespace, serviceName)
+	runningLogStreams.Regsiter(stopCh, namespace, deploymentName)
 
 	go func() {
 		<-stopCh
@@ -553,11 +629,11 @@ func streamPodLogs(
 		for _, chunk := range chunks {
 			timestamp, message := parseMessage(chunk)
 			serializedPayload, err := json.Marshal(streaming.PodLogWSMessage{
-				Timestamp: timestamp,
-				Container: containerName,
-				Pod:       pod,
-				Svc:       namespace + "/" + serviceName,
-				Message:   message,
+				Timestamp:  timestamp,
+				Container:  containerName,
+				Pod:        pod,
+				Deployment: namespace + "/" + deploymentName,
+				Message:    message,
 			})
 			if err != nil {
 				logrus.Error("cannot serialize payload", err)
@@ -665,15 +741,12 @@ func chunks(str string, size int) []string {
 	return append([]string{string(str[0:size])}, chunks(str[size:], size)...)
 }
 
-func podContainers(podSpec v1.PodSpec) (containers []v1.Container) {
-	containers = append(containers, podSpec.InitContainers...)
-	containers = append(containers, podSpec.Containers...)
-
-	return containers
-}
-
 func parseMessage(chunk string) (string, string) {
 	parts := strings.SplitN(chunk, " ", 2)
+
+	if len(parts) != 2 {
+		return "", parts[0]
+	}
 
 	return parts[0], parts[1]
 }

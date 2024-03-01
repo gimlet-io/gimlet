@@ -21,6 +21,8 @@ export default class GimletClient {
 
   getEnvs = () => this.get('/api/envs');
 
+  getFluxEvents = () => this.get('/api/fluxEvents');
+
   getGitRepos = () => this.get('/api/gitRepos');
 
   refreshRepos = () => this.get('/api/refreshRepos');
@@ -59,11 +61,15 @@ export default class GimletClient {
 
   getGitopsUpdatePullRequests = () => this.get("/api/gitopsUpdatePullRequests");
 
-  podLogsRequest = (namespace, serviceName) => this.get(`/api/podLogs?namespace=${namespace}&serviceName=${serviceName}`);
+  podLogsRequest = (namespace, deployment) => this.get(`/api/podLogs?namespace=${namespace}&deploymentName=${deployment}`);
 
-  stopPodlogsRequest = (namespace, serviceName) => this.get(`/api/stopPodLogs?namespace=${namespace}&serviceName=${serviceName}`);
+  stopPodlogsRequest = (namespace, deployment) => this.get(`/api/stopPodLogs?namespace=${namespace}&deploymentName=${deployment}`);
 
-  deploymentDetailsRequest = (namespace, serviceName) => this.get(`/api/deploymentDetails?namespace=${namespace}&serviceName=${serviceName}`);
+  deploymentDetailsRequest = (namespace, name) => this.get(`/api/deploymentDetails?namespace=${namespace}&name=${name}`);
+
+  podDetailsRequest = (namespace, name) => this.get(`/api/podDetails?namespace=${namespace}&name=${name}`);
+
+  reconcile = (resource, namespace, name) => this.post(`/api/reconcile?resource=${resource}&namespace=${namespace}&name=${name}`);
 
   getAlerts = () => this.get("/api/alerts");
   

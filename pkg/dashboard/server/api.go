@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/bitnami-labs/sealed-secrets/pkg/crypto"
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/alert"
@@ -173,28 +174,64 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	go agentHub.ForceStateSend()
 }
 
+func fluxK8sEvents(w http.ResponseWriter, r *http.Request) {
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+
+	fluxEvents := map[string][]*flux.Event{}
+	for _, a := range agentHub.Agents {
+		fluxEvents[a.Name] = a.FluxEvents
+	}
+
+	fluxEventsString, err := json.Marshal(fluxEvents)
+	if err != nil {
+		logrus.Errorf("cannot serialize envs: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(fluxEventsString)
+}
+
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
-	serviceName := r.URL.Query().Get("serviceName")
+	deployment := r.URL.Query().Get("deploymentName")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.StreamPodLogsSend(namespace, serviceName)
+	agentHub.StreamPodLogsSend(namespace, deployment)
 }
 
 func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
-	serviceName := r.URL.Query().Get("serviceName")
+	deployment := r.URL.Query().Get("deploymentName")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.StopPodLogs(namespace, serviceName)
+	agentHub.StopPodLogs(namespace, deployment)
 }
 
 func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
-	serviceName := r.URL.Query().Get("serviceName")
+	deployment := r.URL.Query().Get("name")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.DeploymentDetails(namespace, serviceName)
+	agentHub.DeploymentDetails(namespace, deployment)
+}
+
+func getPodDetails(w http.ResponseWriter, r *http.Request) {
+	namespace := r.URL.Query().Get("namespace")
+	name := r.URL.Query().Get("name")
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.PodDetails(namespace, name)
+}
+
+func reconcile(w http.ResponseWriter, r *http.Request) {
+	resource := r.URL.Query().Get("resource")
+	namespace := r.URL.Query().Get("namespace")
+	name := r.URL.Query().Get("name")
+
+	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
+	agentHub.ReconcileResource(resource, namespace, name)
 }
 
 func getAlerts(w http.ResponseWriter, r *http.Request) {
