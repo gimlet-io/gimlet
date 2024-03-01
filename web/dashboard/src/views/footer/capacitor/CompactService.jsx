@@ -16,7 +16,7 @@ limitations under the License.
 
 import React from 'react';
 import { Logs } from '../logs'
-import { Describe } from '../Describe'
+import { Describe } from './Describe'
 import { Pod, podContainers } from './Service'
 
 export function CompactService(props) {

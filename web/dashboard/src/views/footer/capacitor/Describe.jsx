@@ -17,9 +17,9 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Descr
 */
 
 import React, { useState } from 'react';
-import { SkeletonLoader } from './capacitor/SkeletonLoader'
-import { Modal } from './capacitor/Modal'
-import { ACTION_TYPE_CLEAR_DETAILS } from '../../redux/redux';
+import { SkeletonLoader } from './SkeletonLoader'
+import { Modal } from './Modal'
+import { ACTION_TYPE_CLEAR_DETAILS } from '../../../redux/redux';
 
 export function Describe(props) {
   const { capacitorClient, store, namespace, deployment, pods } = props;

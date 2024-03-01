@@ -13,7 +13,7 @@ import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
 import { AlertPanel } from '../../views/pulse/pulse';
 import { Logs } from '../../views/footer/logs';
-import { Describe } from '../../views/footer/Describe';
+import { Describe } from '../../views/footer/capacitor/Describe';
 
 function ServiceDetail(props) {
   const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;

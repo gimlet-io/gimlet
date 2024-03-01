@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/solid';
 import React, { memo, Component } from 'react';
 import { Summary } from "./capacitor/Summary"
-import { ExpandedFooter } from './ExpandedFooter';
+import { ExpandedFooter } from './capacitor/ExpandedFooter';
 import {
   ACTION_TYPE_OPEN_DEPLOY_PANEL,
   ACTION_TYPE_CLOSE_DEPLOY_PANEL
