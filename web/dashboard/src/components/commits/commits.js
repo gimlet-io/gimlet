@@ -56,7 +56,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
       repo={repo}
       repoName={repoName}
       commit={commit}
-      last={idx == ar.length - 1}
+      last={idx === ar.length - 1}
       idx={idx}
       commitsRef={commitsRef}
       envNames={envNames}
