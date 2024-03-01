@@ -25,7 +25,6 @@ require (
 	cuelang.org/go v0.4.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/MichaelMure/go-term-markdown v0.1.4
-	github.com/alecthomas/assert v1.0.0
 	github.com/bitnami-labs/sealed-secrets v0.13.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
@@ -93,8 +92,7 @@ require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Microsoft/hcsshim v0.11.4 // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
-	github.com/alecthomas/colour v0.1.0 // indirect
-	github.com/alecthomas/repr v0.0.0-20210801044451-80ca428c5142 // indirect
+	github.com/alecthomas/assert v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/log v0.1.0 // indirect
