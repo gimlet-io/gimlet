@@ -5,7 +5,7 @@ import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 import { Modal, SkeletonLoader } from "./modal";
-import { CheckIcon, ThumbUpIcon, UserIcon } from '@heroicons/react/solid'
+import { CheckIcon, ThumbUpIcon } from '@heroicons/react/solid'
 
 const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
@@ -275,6 +275,8 @@ function LastEventWidget(props) {
         label = 'Rollback error'
       }
       break
+    default:
+      label = ""
   }
 
   return (
@@ -290,7 +292,7 @@ function CommitEvents(props) {
   return (
     <div>
       <div className="flow-root">
-        <ul role="list" className="-mb-8">
+        <ul className="-mb-8">
           {events.map((event, eventIdx) => (
             <li key={event.created}>
               <div className="relative pb-8">
