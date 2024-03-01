@@ -43,7 +43,7 @@ require (
 	github.com/fluxcd/source-controller/api v1.2.4
 	github.com/gimlet-io/go-scm v1.7.1-0.20211007095331-cab5866f4eee
 	github.com/go-chi/chi v1.5.5
-	github.com/go-chi/chi/v5 v5.0.8
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/jwtauth/v5 v5.1.0
 	github.com/go-git/go-billy/v5 v5.5.0
@@ -52,8 +52,8 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/uuid v1.4.0
-	github.com/gorilla/securecookie v1.1.1
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/securecookie v1.1.2
+	github.com/gorilla/websocket v1.5.1
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/laszlocph/go-login v1.0.4-0.20200901120411-b6d05e420c8a
@@ -65,9 +65,9 @@ require (
 	github.com/rvflash/elapsed v0.3.0
 	github.com/shurcooL/githubv4 v0.0.0-20230424031643-6cea62ecd5a9
 	github.com/sirupsen/logrus v1.9.3
-	github.com/sosedoff/gitkit v0.3.0
-	github.com/stretchr/testify v1.8.4
-	github.com/urfave/cli/v2 v2.3.0
+	github.com/sosedoff/gitkit v0.4.0
+	github.com/stretchr/testify v1.9.0
+	github.com/urfave/cli/v2 v2.27.1
 	github.com/whilp/git-urls v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zclconf/go-cty v1.13.0
@@ -122,6 +122,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
 	go.opentelemetry.io/otel v1.19.0 // indirect
 	go.opentelemetry.io/otel/metric v1.19.0 // indirect

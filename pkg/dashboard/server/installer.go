@@ -15,7 +15,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/genericScm"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/laszlocph/go-login/login"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"

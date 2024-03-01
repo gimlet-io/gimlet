@@ -30,7 +30,7 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
 	"github.com/gimlet-io/gimlet-cli/pkg/stack"
 	"github.com/gimlet-io/gimlet-cli/pkg/version"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
