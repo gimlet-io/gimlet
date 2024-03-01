@@ -71,7 +71,7 @@ const Footer = memo(class Footer extends Component {
     const fluxK8sEvents = fluxEvents[selectedEnv];
 
     let sources = []
-    if (fluxState.ociRepositories) {
+    if (fluxState && fluxState.ociRepositories) {
       sources.push(...fluxState.ociRepositories)
       sources.push(...fluxState.gitRepositories)
       sources.push(...fluxState.buckets)

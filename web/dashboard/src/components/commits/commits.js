@@ -115,7 +115,6 @@ const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, en
     setShowModal(true)
     gimletClient.getCommitEvents(owner, repo, commit.sha)
       .then(data => {
-        console.log(data)
         setEvents(data)
       }, () => {/* Generic error handler deals with it */
       });
@@ -124,9 +123,7 @@ const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, en
   return (
     <>
       {showModal &&
-        <Modal
-          closeHandler={() => setShowModal(false)}
-        >
+        <Modal closeHandler={() => setShowModal(false)}>
           {events ?
             <CommitEvents events={events} />
             :
@@ -184,8 +181,9 @@ const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, en
                     {dateLabel} ago
                   </a>
                 </p>
+                {commit.lastEvent &&
                 <p className="mt-0.5 text-xs text-gray-800">
-                  <span className="">Image built</span><span> {dateLabel} ago</span>
+                  <LastEventWidget event={commit.lastEvent} />
                   <span
                     className="rounded bg-gray-200 hover:bg-gray-300 ml-1 cursor-pointer"
                     onClick={() => loadEvents()}>
@@ -194,6 +192,7 @@ const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, en
                     </svg>
                   </span>
                 </p>
+                }
               </div>
             </div>
             <div>
@@ -233,64 +232,60 @@ const filterDeployTargets = (deployTargets, envs, tenant) => {
   return filteredTargets;
 };
 
+function LastEventWidget(props) {
+  const { event } = props
+
+  const exactDate = format(event.created * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(event.created * 1000, new Date());
+
+  let label = ""
+  switch (event.type) {
+    case 'artifact':
+      label = event.status === 'error'
+        ? 'Build artifact failed to process'
+        : 'Build artifact received';
+      if (event.status === 'processed' && event.results) {
+        label = label + ' - ' + event.results.length + ' policy triggered'
+      }
+      break;
+    case 'release':
+      if (event.status === 'new') {
+        label = 'Release triggered'
+      } else if (event.status === 'processed') {
+        label = 'Released'
+      } else {
+        label = 'Release failure'
+      }
+      break
+    case 'imageBuild':
+      if (event.status === 'new') {
+        label = 'Image build requested'
+      } else if (event.status === 'processed') {
+        label = 'Image built'
+      } else {
+        label = 'Image build error'
+      }
+      break;
+    case 'rollback':
+      if (event.status === 'new') {
+        label = 'Rollback initiated'
+      } else if (event.status === 'processed') {
+        label = 'Rolled back'
+      } else {
+        label = 'Rollback error'
+      }
+      break
+  }
+
+  return (
+    <>
+      <span className="">{label}</span><span title={exactDate}> {dateLabel} ago</span>
+    </>
+  )
+}
+
 function CommitEvents(props) {
   const { events } = props
-
-  const timeline = [
-
-
-    {
-      id: 1,
-      content: 'Applied to',
-      target: 'Front End Developer',
-      href: '#',
-      date: 'Sep 20',
-      datetime: '2020-09-20',
-      icon: UserIcon,
-      iconBackground: 'bg-gray-400',
-    },
-    {
-      id: 2,
-      content: 'Advanced to phone screening by',
-      target: 'Bethany Blake',
-      href: '#',
-      date: 'Sep 22',
-      datetime: '2020-09-22',
-      icon: ThumbUpIcon,
-      iconBackground: 'bg-blue-500',
-    },
-    {
-      id: 3,
-      content: 'Completed phone screening with',
-      target: 'Martha Gardner',
-      href: '#',
-      date: 'Sep 28',
-      datetime: '2020-09-28',
-      icon: CheckIcon,
-      iconBackground: 'bg-green-500',
-    },
-    {
-      id: 4,
-      content: 'Advanced to interview by',
-      target: 'Bethany Blake',
-      href: '#',
-      date: 'Sep 30',
-      datetime: '2020-09-30',
-      icon: ThumbUpIcon,
-      iconBackground: 'bg-blue-500',
-    },
-    {
-      id: 5,
-      content: 'Completed interview with',
-      target: 'Katherine Snyder',
-      href: '#',
-      date: 'Oct 4',
-      datetime: '2020-10-04',
-      icon: CheckIcon,
-      iconBackground: 'bg-green-500',
-    },
-  ]
-  
 
   return (
     <div>
@@ -299,7 +294,7 @@ function CommitEvents(props) {
           {events.map((event, eventIdx) => (
             <li key={event.created}>
               <div className="relative pb-8">
-                {eventIdx !== timeline.length - 1 ? (
+                {eventIdx !== events.length - 1 ? (
                   <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
                 ) : null}
                 <div className="relative flex space-x-3">

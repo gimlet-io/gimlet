@@ -1,9 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {XIcon} from '@heroicons/react/outline'
 
 export function Modal(props) {
   const { closeHandler, navBar, children } = props;
-  const logsEndRef = useRef(null);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -11,10 +10,6 @@ export function Modal(props) {
     return () => { document.body.style.overflow = 'unset'; document.body.style.paddingRight = '0px' }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    logsEndRef.current.scrollIntoView();
-  }, [children]);
 
   return (
     <div
@@ -37,7 +32,6 @@ export function Modal(props) {
           <nav>{navBar}</nav>
           <div className="h-full relative overflow-y-auto p-4 bg-stone-100 rounded-b-lg font-normal">
             {children}
-            <p ref={logsEndRef} />
           </div>
         </div>
       </div>

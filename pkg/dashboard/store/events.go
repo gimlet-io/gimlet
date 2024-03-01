@@ -194,9 +194,14 @@ func (db *Store) LatestEventByRepoAndSha(repo string, hashes []string) (events [
 
 	stmt := fmt.Sprintf(`
 SELECT id, type, repository, branch, event, created, blob, status, status_desc, sha, artifact_id
-FROM events
-WHERE repository = $1 and sha in (%s) group by sha order by created desc
-`, strings.Join(filters, ","))
+FROM (
+	select sha as hash, max(created) as maxCreated
+	from events
+	where repository = $1 and sha in (%s) group by sha
+) max
+INNER JOIN events e
+ON e.sha = max.hash AND e.created = max.maxCreated
+	`, strings.Join(filters, ","))
 
 	data := []*model.Event{}
 	err = meddler.QueryAll(db, &data, stmt, args...)

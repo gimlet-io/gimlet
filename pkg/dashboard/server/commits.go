@@ -13,7 +13,6 @@ import (
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
-	helper "github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -35,7 +34,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	if branch == "" {
 		err := gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 			var err error
-			branch, err = helper.HeadBranch(repo)
+			branch, err = nativeGit.HeadBranch(repo)
 			return err
 		})
 		if err != nil {
@@ -47,7 +46,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 
 	var hash plumbing.Hash
 	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		hash = helper.BranchHeadHash(repo, branch)
+		hash = nativeGit.BranchHeadHash(repo, branch)
 		return nil
 	})
 
@@ -322,9 +321,15 @@ type CommitEventResult struct {
 
 	GitopsRef  string `json:"gitopsRef"`
 	GitopsRepo string `json:"gitopsRepo"`
+
+	TriggeredBy string `json:"triggeredBy"`
 }
 
 func asCommitEvent(event *model.Event) *CommitEvent {
+	if event == nil {
+		return nil
+	}
+
 	results := []CommitEventResult{}
 
 	for _, r := range event.Results {
@@ -336,12 +341,13 @@ func asCommitEvent(event *model.Event) *CommitEvent {
 		}
 
 		results = append(results, CommitEventResult{
-			App:        app,
-			Env:        env,
-			Status:     r.Status.String(),
-			StatusDesc: r.StatusDesc,
-			GitopsRef:  r.GitopsRef,
-			GitopsRepo: r.GitopsRepo,
+			App:         app,
+			Env:         env,
+			Status:      r.Status.String(),
+			StatusDesc:  r.StatusDesc,
+			GitopsRef:   r.GitopsRef,
+			GitopsRepo:  r.GitopsRepo,
+			TriggeredBy: r.TriggeredBy,
 		})
 	}
 
