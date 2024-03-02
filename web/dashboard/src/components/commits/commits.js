@@ -5,7 +5,8 @@ import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
 import { Modal, SkeletonLoader } from "./modal";
-import { CheckIcon, ThumbUpIcon } from '@heroicons/react/solid'
+import { CommitEvents } from "./commitEvents";
+import { EventWidget } from "./eventWidget"
 
 const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
@@ -183,7 +184,7 @@ const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, en
                 </p>
                 {commit.lastEvent &&
                 <p className="mt-0.5 text-xs text-gray-800">
-                  <LastEventWidget event={commit.lastEvent} />
+                  <EventWidget event={commit.lastEvent} />
                   <span
                     className="rounded bg-gray-200 hover:bg-gray-300 ml-1 cursor-pointer"
                     onClick={() => loadEvents()}>
@@ -231,113 +232,6 @@ const filterDeployTargets = (deployTargets, envs, tenant) => {
 
   return filteredTargets;
 };
-
-function LastEventWidget(props) {
-  const { event } = props
-
-  const exactDate = format(event.created * 1000, 'h:mm:ss a, MMMM do yyyy')
-  const dateLabel = formatDistance(event.created * 1000, new Date());
-
-  let label = ""
-  switch (event.type) {
-    case 'artifact':
-      label = event.status === 'error'
-        ? 'Build artifact failed to process'
-        : 'Build artifact received';
-      if (event.status === 'processed' && event.results) {
-        label = label + ' - ' + event.results.length + ' policy triggered'
-      }
-      break;
-    case 'release':
-      if (event.status === 'new') {
-        label = 'Release triggered'
-      } else if (event.status === 'processed') {
-        label = 'Released'
-      } else {
-        label = 'Release failure'
-      }
-      break
-    case 'imageBuild':
-      if (event.status === 'new') {
-        label = 'Image build requested'
-      } else if (event.status === 'processed') {
-        label = 'Image built'
-      } else {
-        label = 'Image build error'
-      }
-      break;
-    case 'rollback':
-      if (event.status === 'new') {
-        label = 'Rollback initiated'
-      } else if (event.status === 'processed') {
-        label = 'Rolled back'
-      } else {
-        label = 'Rollback error'
-      }
-      break
-    default:
-      label = ""
-  }
-
-  return (
-    <>
-      <span className="">{label}</span><span title={exactDate}> {dateLabel} ago</span>
-    </>
-  )
-}
-
-function CommitEvents(props) {
-  const { events } = props
-
-  return (
-    <div>
-      <div className="flow-root">
-        <ul className="-mb-8">
-          {events.map((event, eventIdx) => (
-            <li key={event.created}>
-              <div className="relative pb-8">
-                {eventIdx !== events.length - 1 ? (
-                  <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
-                ) : null}
-                <div className="relative flex space-x-3">
-                  <div>
-                    <span
-                      className={classNames(
-                        event.type === "release" ? 'bg-green-500' : 'bg-blue-500',
-                        'h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white'
-                      )}
-                    >
-                      {event.type === "release" &&
-                      <ThumbUpIcon className="h-5 w-5 text-white" aria-hidden="true" />
-                      }
-                      {event.type !== "release" &&
-                      <CheckIcon className="h-5 w-5 text-white" aria-hidden="true" />
-                      }
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        {event.type}{' '}{event.status}
-                      </p>
-                    </div>
-                    <div className="whitespace-nowrap text-right text-sm text-gray-500">
-                      <time dateTime={event.created}>{event.created}</time>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-}
-
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
 
 export default Commits;
 

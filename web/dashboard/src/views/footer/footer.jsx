@@ -68,10 +68,14 @@ const Footer = memo(class Footer extends Component {
     }
 
     const fluxState = connectedAgents[selectedEnv].fluxState;
-    const fluxK8sEvents = fluxEvents[selectedEnv];
+    const fluxK8sEvents = fluxEvents ? fluxEvents[selectedEnv] : [];
+
+    if (!fluxState) {
+      return null
+    }
 
     let sources = []
-    if (fluxState && fluxState.ociRepositories) {
+    if (fluxState.ociRepositories) {
       sources.push(...fluxState.ociRepositories)
       sources.push(...fluxState.gitRepositories)
       sources.push(...fluxState.buckets)
