@@ -394,6 +394,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 			logCh <- string(line)
 			if err != nil {
 				if err == io.EOF {
+					close(logCh)
 					break
 				}
 

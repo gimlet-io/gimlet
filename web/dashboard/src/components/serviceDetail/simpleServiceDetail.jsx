@@ -12,7 +12,7 @@ import { Describe } from '../../views/footer/capacitor/Describe';
 import { Pod, podContainers } from './serviceDetail'
 
 function SimpleServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
 

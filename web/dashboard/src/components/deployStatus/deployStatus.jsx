@@ -3,7 +3,7 @@ import { Modal } from "./modal";
 
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
-  const { runningDeploys, envs, envConfigs } = props
+  const { store, runningDeploys, envs, envConfigs } = props
 
   const runningDeploy = runningDeploys[0]
 
@@ -28,13 +28,11 @@ export function DeployStatusModal(props) {
         owner={owner}
         repoName={repoName}
         // fileName={fileName(fileInfos, stack.service.name)}
-        // navigateToConfigEdit={navigateToConfigEdit}
         // linkToDeployment={linkToDeployment}
         config={config}
         // releaseHistorySinceDays={releaseHistorySinceDays}
         // gimletClient={gimletClient}
-        // store={store}
-        // deploymentFromParams={deploymentFromParams}
+        store={store}
         scmUrl={scmUrl}
         builtInEnv={envs[runningDeploy.env].builtIn}
         // serviceAlerts={alerts[deployment]}

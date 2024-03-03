@@ -312,20 +312,20 @@ export default class Repo extends Component {
 
   deploy(target, sha, repo) {
     this.setState({deployStatusModal: true});
-    // this.props.gimletClient.deploy(target.artifactId, target.env, target.app, this.state.selectedTenant)
-    //   .then(data => {
-    //     target.sha = sha;
-    //     target.trackingId = data.id;
-    //     target.repo = repo;
-    //     target.type = data.type;
-    //     this.props.store.dispatch({
-    //       type: ACTION_TYPE_DEPLOY, payload: target
-    //     });
-    //     setTimeout(() => {
-    //       this.checkDeployStatus(target.trackingId);
-    //     }, 500);
-    //   }, () => {/* Generic error handler deals with it */
-    //   });
+    this.props.gimletClient.deploy(target.artifactId, target.env, target.app, this.state.selectedTenant)
+      .then(data => {
+        target.sha = sha;
+        target.trackingId = data.id;
+        target.repo = repo;
+        target.type = data.type;
+        this.props.store.dispatch({
+          type: ACTION_TYPE_DEPLOY, payload: target
+        });
+        setTimeout(() => {
+          this.checkDeployStatus(target.trackingId);
+        }, 500);
+      }, () => {/* Generic error handler deals with it */
+      });
   }
 
   triggerCommitSync(owner, repo) {
@@ -490,6 +490,7 @@ export default class Repo extends Component {
           repoName={repo}
           envConfigs={envConfigs}
           scmUrl={scmUrl}
+          store={this.props.store}
         />
         }
         <header>
