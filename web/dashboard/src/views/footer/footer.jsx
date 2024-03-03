@@ -90,8 +90,8 @@ const Footer = memo(class Footer extends Component {
             <button
               onClick={this.handleToggle}
               type="button" className="ml-1 rounded-md hover:bg-white hover:text-black text-neutral-700 p-1">
-              <span className="sr-only">{deployPanelOpen ? 'Close panel' : 'Open panel'}</span>
-              {deployPanelOpen ? <ArrowDownIcon className="h-5 w-5" aria-hidden="true" /> : <ArrowUpIcon className="h-5 w-5" aria-hidden="true" />}
+              <span className="sr-only">{open ? 'Close panel' : 'Open panel'}</span>
+              {open ? <ArrowDownIcon className="h-5 w-5" aria-hidden="true" /> : <ArrowUpIcon className="h-5 w-5" aria-hidden="true" />}
             </button>
           </div>
         </div>
