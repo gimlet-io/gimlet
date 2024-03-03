@@ -103,9 +103,7 @@ func createDeployRequest(buildId string, store *store.Store) {
 	}
 
 	event.Status = model.Success.String()
-	event.Results = append(event.Results, model.Result{
-		TriggeredDeployRequestID: triggeredDeployRequestEvent.ID,
-	})
+	event.Results[0].TriggeredDeployRequestID = triggeredDeployRequestEvent.ID
 	resultsString, err := json.Marshal(event.Results)
 	if err != nil {
 		logrus.Error(err)

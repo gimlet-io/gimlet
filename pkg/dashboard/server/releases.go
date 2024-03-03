@@ -271,31 +271,15 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" || strategy == "dockerfile" {
-			events, err := store.EventsForRepoAndSha(artifact.Version.RepositoryName, artifact.Version.SHA)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			// events, err := store.EventsForRepoAndSha(artifact.Version.RepositoryName, artifact.Version.SHA)
+			// if err != nil {
+			// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+			// 	return
+			// }
 
-			if imageHasBeenBuilt(events) {
-				break
-			}
-
-			// show per commit all the imagebuilder, release and artifact events
-			// but only those artifact events that triggered a policy and has results
-			// show results => this could be the image build log UX
-
-			// there are deploy targets - deploy button
-			// there are triggered policies with gitops commits / errors - history panel
-			// there are adhoc releases with gitops commits / errors - history panel
-			// there are image build results - history panel / separate button
-			// there is ongoing deploy
-			// there is ongoing image build
-
-			// Next steps: create history panel, including image build
-			// let's try an overlay, like with github statuses
-
-			// conversatinal, and like audit log on deployment, this is a feed, with buttons for log overlay, etc
+			// if imageHasBeenBuilt(events) {
+			// 	break
+			// }
 
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
@@ -407,6 +391,11 @@ func imageBuildRequestEvent(imageBuildRequest *dx.ImageBuildRequest, repository 
 		Blob:       string(requestStr),
 		Repository: repository,
 		SHA:        imageBuildRequest.Sha,
+		Results: []model.Result{
+			{
+				Status: model.Pending,
+			},
+		},
 	}
 
 	return event, nil

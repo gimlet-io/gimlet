@@ -85,7 +85,7 @@ func SetupRouter(
 		w.WriteHeader(http.StatusOK)
 	})
 
-	agentRoutes(r, agentWSHub, dynamicConfig.JWTSecret)
+	agentRoutes(r, store, agentWSHub, dynamicConfig.JWTSecret)
 	userRoutes(r, clientHub)
 	githubOAuthRoutes(config, dynamicConfig, r)
 	gimletdRoutes(r)
@@ -196,7 +196,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 	})
 }
 
-func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string) {
+func agentRoutes(r *chi.Mux, store *store.Store, agentWSHub *streaming.AgentWSHub, jwtSecret string) {
 	r.Group(func(r chi.Router) {
 		r.Use(session.SetUser())
 		r.Use(combinedAuthorizer)
@@ -211,7 +211,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string)
 		r.Post("/agent/podDetails", podDetails)
 
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
-			streaming.ServeAgentWs(agentWSHub, w, r)
+			streaming.ServeAgentWs(agentWSHub, store, w, r)
 		})
 	})
 	r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)

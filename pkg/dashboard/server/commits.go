@@ -323,6 +323,7 @@ type CommitEventResult struct {
 	GitopsRepo string `json:"gitopsRepo"`
 
 	TriggeredBy string `json:"triggeredBy"`
+	Log         string `json:"log"`
 }
 
 func asCommitEvent(event *model.Event) *CommitEvent {
@@ -348,6 +349,7 @@ func asCommitEvent(event *model.Event) *CommitEvent {
 			GitopsRef:   r.GitopsRef,
 			GitopsRepo:  r.GitopsRepo,
 			TriggeredBy: r.TriggeredBy,
+			Log:         r.Log,
 		})
 	}
 

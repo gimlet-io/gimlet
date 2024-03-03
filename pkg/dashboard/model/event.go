@@ -21,6 +21,7 @@ type Status int
 
 const (
 	Success Status = iota
+	Pending
 	Failure
 )
 
@@ -28,6 +29,8 @@ func (s Status) String() string {
 	switch s {
 	case Success:
 		return "success"
+	case Pending:
+		return "pending"
 	case Failure:
 		return "failure"
 	default:
@@ -48,6 +51,7 @@ type Result struct {
 	GitopsRepo string
 
 	TriggeredDeployRequestID string `json:"triggeredDeployRequestID"`
+	Log                      string `json:"log"`
 }
 
 type Event struct {

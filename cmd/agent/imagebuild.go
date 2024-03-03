@@ -386,22 +386,56 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 	var sb strings.Builder
 	var lastLine string
 	reader := bufio.NewReader(podLogs)
-	for {
-		line, err := reader.ReadBytes('\n')
-		sb.WriteString(string(line))
-		if err != nil {
-			if err == io.EOF {
+	logCh := make(chan string)
+
+	go func() {
+		for {
+			line, err := reader.ReadBytes('\n')
+			logCh <- string(line)
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+
+				logrus.Errorf("cannot stream build logs: %s", err)
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
 				break
 			}
 
-			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
-			break
+			lastLine = string(line)
+		}
+	}()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer func() {
+		ticker.Stop()
+	}()
+
+	for {
+		logEnded := false
+
+		select {
+		case logLine, ok := <-logCh:
+			if !ok {
+				logEnded = true
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+				break
+			}
+			sb.WriteString(string(logLine))
+
+			if sb.Len() > 1000 {
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+			}
+		case <-ticker.C:
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+			sb.Reset()
 		}
 
-		lastLine = string(line)
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
-		sb.Reset()
+		if logEnded {
+			break
+		}
 	}
 
 	if strings.Contains(lastLine, "Pushed") {

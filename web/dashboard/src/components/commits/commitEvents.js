@@ -100,6 +100,7 @@ function ResultsWidget(props) {
           <li key={idx}>
             <span>{result.triggeredBy}??</span>
             <span>{result.status}</span>
+            <div>{result.log}</div>
           </li>
         ))}
       </ul>
