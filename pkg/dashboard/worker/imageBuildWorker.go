@@ -2,6 +2,7 @@ package worker
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
@@ -12,17 +13,17 @@ import (
 )
 
 type ImageBuildWorker struct {
-	store                  *store.Store
-	successfullImageBuilds chan streaming.ImageBuildStatusWSMessage
+	store       *store.Store
+	imageBuilds chan streaming.ImageBuildStatusWSMessage
 }
 
 func NewImageBuildWorker(
 	store *store.Store,
-	successfullImageBuilds chan streaming.ImageBuildStatusWSMessage,
+	imageBuilds chan streaming.ImageBuildStatusWSMessage,
 ) *ImageBuildWorker {
 	imageBuildWorker := &ImageBuildWorker{
-		store:                  store,
-		successfullImageBuilds: successfullImageBuilds,
+		store:       store,
+		imageBuilds: imageBuilds,
 	}
 
 	return imageBuildWorker
@@ -30,13 +31,16 @@ func NewImageBuildWorker(
 
 func (m *ImageBuildWorker) Run() {
 	for {
-		select {
-		case imageBuildStatus := <-m.successfullImageBuilds:
-			if imageBuildStatus.Status == "success" {
-				go createDeployRequest(imageBuildStatus.BuildId, m.store)
-			} else if imageBuildStatus.Status != "running" {
-				go handleImageBuildError(imageBuildStatus.BuildId, m.store)
-			}
+		imageBuildStatus := <-m.imageBuilds
+		err := saveLogLine(imageBuildStatus, m.store)
+		if err != nil {
+			logrus.Errorf("could not save log line: %v", err)
+		}
+
+		if imageBuildStatus.Status == "success" {
+			go createDeployRequest(imageBuildStatus.BuildId, m.store)
+		} else if imageBuildStatus.Status != "running" {
+			go handleImageBuildError(imageBuildStatus.BuildId, m.store)
 		}
 	}
 }
@@ -116,4 +120,25 @@ func createDeployRequest(buildId string, store *store.Store) {
 	}
 
 	os.RemoveAll(imageBuildRequest.SourcePath)
+}
+
+func saveLogLine(imageBuildStatus streaming.ImageBuildStatusWSMessage, dao *store.Store) error {
+	event, err := dao.Event(imageBuildStatus.BuildId)
+	if err != nil {
+		return fmt.Errorf("could not find build with id %s", imageBuildStatus.BuildId)
+	}
+	if len(event.Results) == 0 {
+		return nil
+	}
+	event.Results[0].Log += imageBuildStatus.LogLine
+	resultsString, err := json.Marshal(event.Results)
+	if err != nil {
+		return err
+	}
+	err = dao.UpdateEventStatus(imageBuildStatus.BuildId, event.Status, event.StatusDesc, string(resultsString))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

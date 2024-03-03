@@ -7,11 +7,9 @@ package streaming
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,8 +37,6 @@ type ImageBuildStatusWSMessage struct {
 // Client is a middleman between the websocket connection and the hub.
 type AgentWSClient struct {
 	hub *AgentWSHub
-
-	dao *store.Store
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -108,6 +104,8 @@ func (c *AgentWSClient) readPump() {
 				log.Errorf("could not decode image build log ws message from agent")
 			}
 
+			c.hub.imageBuilds <- imageBuildStatus
+
 			jsonString, _ := json.Marshal(ImageBuildLogEvent{
 				StreamingEvent: StreamingEvent{Event: ImageBuildLogEventString},
 				BuildId:        imageBuildStatus.BuildId,
@@ -118,38 +116,8 @@ func (c *AgentWSClient) readPump() {
 				ClientId: imageBuildStatus.ClientId,
 				Message:  jsonString,
 			}
-
-			err = saveLogLine(imageBuildStatus, c.dao)
-			if err != nil {
-				log.Errorf("could not dave log line: %v", err)
-			}
-
-			if imageBuildStatus.Status != "running" {
-				c.hub.successfullImageBuilds <- imageBuildStatus
-			}
 		}
 	}
-}
-
-func saveLogLine(imageBuildStatus ImageBuildStatusWSMessage, dao *store.Store) error {
-	event, err := dao.Event(imageBuildStatus.BuildId)
-	if err != nil {
-		return fmt.Errorf("could not find build with id %s", imageBuildStatus.BuildId)
-	}
-	if len(event.Results) == 0 {
-		return nil
-	}
-	event.Results[0].Log += imageBuildStatus.LogLine
-	resultsString, err := json.Marshal(event.Results)
-	if err != nil {
-		return err
-	}
-	err = dao.UpdateEventStatus(imageBuildStatus.BuildId, event.Status, event.StatusDesc, string(resultsString))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // writePump pumps messages from the hub to the websocket connection.
@@ -199,14 +167,14 @@ func (c *AgentWSClient) writePump() {
 }
 
 // ServeWs handles websocket requests from the peer.
-func ServeAgentWs(hub *AgentWSHub, dao *store.Store, w http.ResponseWriter, r *http.Request) {
+func ServeAgentWs(hub *AgentWSHub, w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &AgentWSClient{hub: hub, dao: dao, conn: conn, send: make(chan []byte, 256)}
+	client := &AgentWSClient{hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.Register <- client
 
 	go client.writePump()
@@ -227,16 +195,16 @@ type AgentWSHub struct {
 
 	ClientHub *ClientHub
 
-	successfullImageBuilds chan ImageBuildStatusWSMessage
+	imageBuilds chan ImageBuildStatusWSMessage
 }
 
-func NewAgentWSHub(clientHub ClientHub, successfullImageBuilds chan ImageBuildStatusWSMessage) *AgentWSHub {
+func NewAgentWSHub(clientHub ClientHub, imageBuilds chan ImageBuildStatusWSMessage) *AgentWSHub {
 	return &AgentWSHub{
-		Register:               make(chan *AgentWSClient),
-		Unregister:             make(chan *AgentWSClient),
-		AgentWSClients:         make(map[*AgentWSClient]bool),
-		ClientHub:              &clientHub,
-		successfullImageBuilds: successfullImageBuilds,
+		Register:       make(chan *AgentWSClient),
+		Unregister:     make(chan *AgentWSClient),
+		AgentWSClients: make(map[*AgentWSClient]bool),
+		ClientHub:      &clientHub,
+		imageBuilds:    imageBuilds,
 	}
 }
 
