@@ -1,20 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
-import {
-  ACTION_TYPE_ROLLOUT_HISTORY,
-} from "../../redux/redux";
 import { copyToClipboard } from '../../views/settings/settings';
-import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
 import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/capacitor/Describe';
 import { Pod, podContainers } from './serviceDetail'
 
 function SimpleServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
-  const posthog = usePostHog()
+  // const posthog = usePostHog()
 
   // useEffect(() => {
   //   gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
