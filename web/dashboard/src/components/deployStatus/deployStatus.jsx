@@ -1,4 +1,51 @@
-export function DeployStatusTab({runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, logsEndRef}) {
+import SimpleServiceDetail from "../serviceDetail/simpleServiceDetail";
+import { Modal } from "./modal";
+
+export function DeployStatusModal(props) {
+  const { closeHandler, owner, repoName, scmUrl } = props
+  const { runningDeploys, envs, envConfigs } = props
+
+  const runningDeploy = runningDeploys[0]
+
+  let stack = envs[runningDeploy.env].stacks.find(s => s.service.name === runningDeploy.app)
+  const config = envConfigs[runningDeploy.env].find((config) => config.app === runningDeploy.app)
+
+  if (!stack) { // for apps we haven't deployed yet
+    stack={
+      service: {
+        name: runningDeploy.app
+      }
+    }
+  }
+
+  return (
+    <Modal closeHandler={closeHandler}>
+      <SimpleServiceDetail
+        stack={stack}
+        // rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
+        // rollback={rollback}
+        envName={runningDeploy.env}
+        owner={owner}
+        repoName={repoName}
+        // fileName={fileName(fileInfos, stack.service.name)}
+        // navigateToConfigEdit={navigateToConfigEdit}
+        // linkToDeployment={linkToDeployment}
+        config={config}
+        // releaseHistorySinceDays={releaseHistorySinceDays}
+        // gimletClient={gimletClient}
+        // store={store}
+        // deploymentFromParams={deploymentFromParams}
+        scmUrl={scmUrl}
+        builtInEnv={envs[runningDeploy.env].builtIn}
+        // serviceAlerts={alerts[deployment]}
+      />
+    </Modal>
+  )
+}
+
+export function DeployStatusTab(props) {
+  const {runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, logsEndRef} = props
+  
   if (runningDeploys.length === 0) {
     return null;
   }

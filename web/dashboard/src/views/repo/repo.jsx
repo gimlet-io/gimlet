@@ -16,6 +16,7 @@ import Dropdown from "../../components/dropdown/dropdown";
 import { Env } from '../../components/env/env';
 import TenantSelector from './tenantSelector';
 import RefreshButton from '../../components/refreshButton/refreshButton';
+import { DeployStatusModal } from '../../components/deployStatus/deployStatus';
 
 export default class Repo extends Component {
   constructor(props) {
@@ -46,6 +47,7 @@ export default class Repo extends Component {
       runningDeploys: reduxState.runningDeploys,
       trackedDeploys: [],
       alerts: reduxState.alerts,
+      deployStatusModal: true,
     }
 
     // handling API and streaming state changes
@@ -309,20 +311,21 @@ export default class Repo extends Component {
   }
 
   deploy(target, sha, repo) {
-    this.props.gimletClient.deploy(target.artifactId, target.env, target.app, this.state.selectedTenant)
-      .then(data => {
-        target.sha = sha;
-        target.trackingId = data.id;
-        target.repo = repo;
-        target.type = data.type;
-        this.props.store.dispatch({
-          type: ACTION_TYPE_DEPLOY, payload: target
-        });
-        setTimeout(() => {
-          this.checkDeployStatus(target.trackingId);
-        }, 500);
-      }, () => {/* Generic error handler deals with it */
-      });
+    this.setState({deployStatusModal: true});
+    // this.props.gimletClient.deploy(target.artifactId, target.env, target.app, this.state.selectedTenant)
+    //   .then(data => {
+    //     target.sha = sha;
+    //     target.trackingId = data.id;
+    //     target.repo = repo;
+    //     target.type = data.type;
+    //     this.props.store.dispatch({
+    //       type: ACTION_TYPE_DEPLOY, payload: target
+    //     });
+    //     setTimeout(() => {
+    //       this.checkDeployStatus(target.trackingId);
+    //     }, 500);
+    //   }, () => {/* Generic error handler deals with it */
+    //   });
   }
 
   triggerCommitSync(owner, repo) {
@@ -466,7 +469,7 @@ export default class Repo extends Component {
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings } = this.state;
+    let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings, deployStatusModal } = this.state;
     const { branches, selectedBranch, envConfigs, scmUrl, alerts } = this.state;
 
     let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
@@ -478,6 +481,17 @@ export default class Repo extends Component {
 
     return (
       <div>
+        {deployStatusModal && envConfigs !== undefined && 
+        <DeployStatusModal
+          closeHandler={()=> this.setState({deployStatusModal: false})}
+          runningDeploys={this.state.runningDeploys}
+          envs={filteredEnvs}
+          owner={owner}
+          repoName={repo}
+          envConfigs={envConfigs}
+          scmUrl={scmUrl}
+        />
+        }
         <header>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className='flex-1'>

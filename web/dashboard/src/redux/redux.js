@@ -94,7 +94,16 @@ export const initialState = {
     chartUpdates: {},
     gitopsUpdates: {}
   },
-  runningDeploys: [],
+  runningDeploys: [{
+    artifactId: 'xxx',
+    env: 'optimal-snow',
+    app: 'streamlit-app',
+    selectedTenant: '',
+    sha: 'xxx',
+    trackingId: 'zzz',
+    repo: 'streamlit-app',
+    type: '?'
+  }],
   repoRefreshQueue: [],
   gitRepos: [],
   envConfigs: {},

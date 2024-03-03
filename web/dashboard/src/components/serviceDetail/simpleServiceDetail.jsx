@@ -3,45 +3,34 @@ import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
 } from "../../redux/redux";
 import { copyToClipboard } from '../../views/settings/settings';
 import { usePostHog } from 'posthog-js/react'
 import Timeline from './timeline';
-import { AlertPanel } from '../../views/pulse/pulse';
 import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/capacitor/Describe';
+import { Pod, podContainers } from './serviceDetail'
 
-function ServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
+function SimpleServiceDetail(props) {
+  const { stack, rolloutHistory, rollback, envName, owner, repoName, navigateToConfigEdit, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
 
-  useEffect(() => {
-    if (deploymentFromParams === stack.service.name) {
-      window.scrollTo({ behavior: 'smooth', top: ref.current.offsetTop })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deploymentFromParams, stack.service.name]);
-
-  useEffect(() => {
-    gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
-      .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-            owner: owner,
-            repo: repoName,
-            env: envName,
-            app: stack.service.name,
-            releases: data,
-          }
-        });
-      }, () => {/* Generic error handler deals with it */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
+  //     .then(data => {
+  //       store.dispatch({
+  //         type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+  //           owner: owner,
+  //           repo: repoName,
+  //           env: envName,
+  //           app: stack.service.name,
+  //           releases: data,
+  //         }
+  //       });
+  //     }, () => {/* Generic error handler deals with it */ });
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   const [isCopied, setCopied] = useState(false)
 
@@ -52,73 +41,6 @@ function ServiceDetail(props) {
       setCopied(false);
     }, 2000);
   };
-
-  const deleteAppInstance = () => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Deleting application instance..."
-      }
-    });
-
-    gimletClient.deleteAppInstance(envName, stack.service.name)
-      .then(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Application instance deleted",
-          }
-        });
-      }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
-        });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
-      });
-  }
-
-  const silenceAlert = (object, hours) => {
-    var date = new Date();
-    date.setHours(date.getHours() + hours);
-
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Silence deployment alerts..."
-      }
-    });
-
-    gimletClient.silenceAlert(object, date.toISOString())
-      .then(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-          }
-        });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
-      }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
-        });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
-      });
-  }
 
   const deployment = stack.deployment;
   const repo = stack.repo;
@@ -147,40 +69,18 @@ function ServiceDetail(props) {
         <div className="flex-1">
           <h3 ref={ref} className="flex text-lg font-bold rounded p-4">
             <span className="cursor-pointer" onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
-            {configExists &&
-              <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
-                  viewBox="0 0 24 24">
-                  <path d="M0 0h24v24H0z" fill="none" />
-                  <path
-                    d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-                </svg>
-              </a>
-            }
+            <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
+                viewBox="0 0 24 24">
+                <path d="M0 0h24v24H0z" fill="none" />
+                <path
+                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+              </svg>
+            </a>
             <div className="flex items-center ml-auto">
-              {configExists &&
-                <button
-                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 mr-2 border border-gray-300 rounded"
-                  onClick={() => {
-                    posthog?.capture('Env config edit pushed')
-                    navigateToConfigEdit(envName, stack.service.name)
-                  }}
-                >
-                  Edit
-                </button>
-              }
               {deployment &&
                 <>
-                  <button
-                    onClick={() => {
-                      // eslint-disable-next-line no-restricted-globals
-                      confirm(`Are you sure you want to restart deployment ${deployment.name}?`) &&
-                        gimletClient.restartDeploymentRequest(deployment.namespace, deployment.name)
-                    }}
-                    className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded">
-                    Restart
-                  </button>
                   <Logs
                     gimletClient={gimletClient}
                     store={store}
@@ -195,28 +95,10 @@ function ServiceDetail(props) {
                     deployment={deployment.name}
                     pods={deployment.pods}
                   />
-                  {!configExists &&
-                    <div className="flex items-center ml-auto">
-                      <svg xmlns="http://www.w3.org/2000/svg"
-                        onClick={() => {
-                          // eslint-disable-next-line no-restricted-globals
-                          confirm(`Are you sure you want to delete the ${stack.service.name} application instance?`) &&
-                            deleteAppInstance()
-                        }}
-                        className="items-center cursor-pointer inline text-red-400 hover:text-red-600 opacity-70 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </div>
-                  }
                 </>
               }
             </div>
           </h3>
-          <AlertPanel
-            alerts={serviceAlerts?.filter(alert => alert.status === "Firing")}
-            silenceAlert={silenceAlert}
-            hideButton
-          />
           <div>
             <div className="grid grid-cols-12 mt-4 px-4">
               <div className="col-span-5 border-r space-y-4">
@@ -352,48 +234,4 @@ function ServiceDetail(props) {
   )
 }
 
-export default ServiceDetail;
-
-export function Pod(props) {
-  const {pod} = props;
-
-  let color;
-  let pulsar;
-  switch (pod.status) {
-    case 'Running':
-      color = 'bg-green-200';
-      pulsar = '';
-      break;
-    case 'PodInitializing':
-    case 'ContainerCreating':
-    case 'Pending':
-      color = 'bg-blue-300';
-      pulsar = 'animate-pulse';
-      break;
-    case 'Terminating':
-      color = 'bg-gray-500';
-      pulsar = 'animate-pulse';
-      break;
-    default:
-      color = 'bg-red-600';
-      pulsar = '';
-      break;
-  }
-
-  return (
-    <span className={`inline-block mr-1 mt-2 shadow-lg ${color} ${pulsar} font-bold px-2 cursor-default`} title={`${pod.name} - ${pod.status}`}>
-      {pod.status}
-    </span>
-  );
-}
-
-export function podContainers(pods) {
-  const containers = [];
-  pods?.forEach((pod) => {
-    pod.containers?.forEach(container => {
-      containers.push(`${pod.name}/${container.name}`);
-    })
-  });
-
-  return containers;
-}
+export default SimpleServiceDetail;
