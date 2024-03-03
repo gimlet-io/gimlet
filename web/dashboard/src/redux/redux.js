@@ -47,9 +47,6 @@ export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
 export const ACTION_TYPE_ENVSPINNEDOUT = 'envSpinnedOut';
 
-export const ACTION_TYPE_OPEN_DEPLOY_PANEL = 'openDeployPanel';
-export const ACTION_TYPE_CLOSE_DEPLOY_PANEL = 'closeDeployPanel';
-
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
 export const EVENT_ENVS_UPDATED = 'envsUpdated';
@@ -121,7 +118,6 @@ export const initialState = {
   textColors: {},
   imageBuildLogs: {},
   users: [],
-  deployPanelOpen: false,
 };
 
 export function rootReducer(state = initialState, action) {
@@ -204,10 +200,6 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.clearDetails(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
-    case ACTION_TYPE_OPEN_DEPLOY_PANEL:
-      return eventHandlers.openDeployPanel(state)
-    case ACTION_TYPE_CLOSE_DEPLOY_PANEL:
-      return eventHandlers.closeDeployPanel(state)
     case ACTION_TYPE_ENVSPINNEDOUT:
       return eventHandlers.envSpinnedOut(state, action.payload)
     default:

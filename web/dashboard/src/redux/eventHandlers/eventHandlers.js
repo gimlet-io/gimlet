@@ -125,16 +125,6 @@ export function envStackUpdated(state, envName, payload) {
   return state;
 }
 
-export function openDeployPanel(state) {
-  state.deployPanelOpen = true
-  return state;
-}
-
-export function closeDeployPanel(state) {
-  state.deployPanelOpen = false
-  return state;
-}
-
 export function envPullRequests(state, payload) {
   for (const [envName, pullRequests] of Object.entries(payload)) {
     if (!state.envs.some(env => env.name === envName)) {
@@ -452,7 +442,6 @@ export function settings(state, payload) {
 
 export function deploy(state, payload) {
   state.runningDeploys = [payload];
-  state = openDeployPanel(state)
   return state;
 }
 

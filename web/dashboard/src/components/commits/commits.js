@@ -8,7 +8,9 @@ import { Modal, SkeletonLoader } from "./modal";
 import { CommitEvents } from "./commitEvents";
 import { EventWidget } from "./eventWidget"
 
-const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
+export function Commits(props) {
+  const { commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant } = props
+
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
   const repoName = `${owner}/${repo}`
   const commitsRef = useRef();
