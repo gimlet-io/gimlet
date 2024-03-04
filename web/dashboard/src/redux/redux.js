@@ -5,6 +5,8 @@ import * as ingressEventHandlers from './eventHandlers/ingressEventHandlers';
 
 export const ACTION_TYPE_STREAMING = 'streaming';
 export const ACTION_TYPE_ENVS = 'envs';
+export const ACTION_FLUX_STATE_RECEIVED = 'fluxStateReceived';
+export const ACTION_FLUX_EVENTS_RECEIVED = 'fluxEventsReceived';
 export const ACTION_TYPE_STACK_CONFIG = 'stackConfig';
 export const ACTION_TYPE_USER = 'user';
 export const ACTION_TYPE_USERS = 'users';
@@ -37,7 +39,7 @@ export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
 export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
-export const ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS = 'clearDeploymentDetails'
+export const ACTION_TYPE_CLEAR_DETAILS = 'clearDetails'
 export const ACTION_TYPE_ALERTS = 'alerts'
 
 export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
@@ -75,8 +77,10 @@ export const EVENT_INGRESS_DELETED = 'ingressDeleted';
 export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
+export const EVENT_FLUX_EVENTS_UPDATED_EVENT = 'fluxK8sEventsUpdatedEvent';
 
 export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
+export const EVENT_POD_DETAILS_EVENT = 'podDetailsEvent';
 
 export const initialState = {
   settings: {
@@ -113,11 +117,11 @@ export const initialState = {
     errorList: null
   },
   podLogs: {},
-  deploymentDetails: {},
+  details: {},
   textColors: {},
   imageBuildLogs: {},
   users: [],
-  deployPanelOpen: false
+  deployPanelOpen: false,
 };
 
 export function rootReducer(state = initialState, action) {
@@ -140,7 +144,11 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envsUpdated(state, action.payload)
-      case ACTION_TYPE_STACK_CONFIG:
+    case ACTION_FLUX_STATE_RECEIVED:
+      return eventHandlers.fluxStateReceived(state, action.payload)
+    case ACTION_FLUX_EVENTS_RECEIVED:
+        return eventHandlers.fluxEventsReceived(state, action.payload)
+    case ACTION_TYPE_STACK_CONFIG:
       return eventHandlers.stackConfig(state, action.payload)
     case ACTION_TYPE_GITOPS_COMMITS:
       return eventHandlers.gitopsCommits(state, action.payload)
@@ -192,8 +200,8 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.clearDeployStatus(state)
     case ACTION_TYPE_CLEAR_PODLOGS:
        return podEventHandlers.clearPodLogs(state, action.payload)
-    case ACTION_TYPE_CLEAR_DEPLOYMENT_DETAILS:
-      return eventHandlers.clearDeploymentDetails(state, action.payload)
+    case ACTION_TYPE_CLEAR_DETAILS:
+      return eventHandlers.clearDetails(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
     case ACTION_TYPE_OPEN_DEPLOY_PANEL:
@@ -254,8 +262,12 @@ function processStreamingEvent(state, event) {
       return eventHandlers.updateCommitStatus(state, event);
     case EVENT_FLUX_STATE_UPDATED_EVENT:
       return eventHandlers.fluxStateUpdated(state, event);
+    case EVENT_FLUX_EVENTS_UPDATED_EVENT:
+      return eventHandlers.fluxEventsUpdated(state, event);
     case EVENT_DEPLOYMENT_DETAILS_EVENT:
       return eventHandlers.deploymentDetails(state, event);
+      case EVENT_POD_DETAILS_EVENT:
+        return eventHandlers.podDetails(state, event);
     default:
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;

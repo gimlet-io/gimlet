@@ -19,7 +19,7 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart/ws"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"

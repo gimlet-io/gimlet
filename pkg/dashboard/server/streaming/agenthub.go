@@ -3,6 +3,7 @@ package streaming
 import (
 	"encoding/json"
 
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
 	"github.com/sirupsen/logrus"
@@ -10,12 +11,13 @@ import (
 
 // ConnectedAgent represents a connected k8s cluster
 type ConnectedAgent struct {
-	Name         string         `json:"name"`
-	Namespace    string         `json:"namespace"`
-	Certificate  []byte         `json:"-"`
-	EventChannel chan []byte    `json:"-"`
-	Stacks       []*api.Stack   `json:"-"`
-	FluxState    *api.FluxState `json:"-"`
+	Name         string          `json:"name"`
+	Namespace    string          `json:"namespace"`
+	Certificate  []byte          `json:"-"`
+	EventChannel chan []byte     `json:"-"`
+	Stacks       []*api.Stack    `json:"-"`
+	FluxState    *flux.FluxState `json:"-"`
+	FluxEvents   []*flux.Event   `json:"-"`
 }
 
 // AgentHub is the central registry of all connected agents
@@ -76,11 +78,11 @@ func (h *AgentHub) TriggerImageBuild(imageBuildId string, imageBuildRequest *dx.
 	}
 }
 
-func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
+func (h *AgentHub) StreamPodLogsSend(namespace string, deployment string) {
 	podlogsRequest := map[string]interface{}{
-		"action":      "podLogs",
-		"namespace":   namespace,
-		"serviceName": serviceName,
+		"action":         "podLogs",
+		"namespace":      namespace,
+		"deploymentName": deployment,
 	}
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
@@ -94,11 +96,11 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, serviceName string) {
 	}
 }
 
-func (h *AgentHub) DeploymentDetails(namespace string, serviceName string) {
+func (h *AgentHub) DeploymentDetails(namespace string, deployment string) {
 	deploymentDetailsRequest := map[string]interface{}{
-		"action":      "deploymentDetails",
-		"namespace":   namespace,
-		"serviceName": serviceName,
+		"action":         "deploymentDetails",
+		"namespace":      namespace,
+		"deploymentName": deployment,
 	}
 
 	deploymentDetailsRequestString, err := json.Marshal(deploymentDetailsRequest)
@@ -112,11 +114,48 @@ func (h *AgentHub) DeploymentDetails(namespace string, serviceName string) {
 	}
 }
 
-func (h *AgentHub) StopPodLogs(namespace string, serviceName string) {
+func (h *AgentHub) PodDetails(namespace string, podName string) {
+	deploymentDetailsRequest := map[string]interface{}{
+		"action":    "podDetails",
+		"namespace": namespace,
+		"podName":   podName,
+	}
+
+	podDetailsRequestString, err := json.Marshal(deploymentDetailsRequest)
+	if err != nil {
+		logrus.Errorf("could not serialize request: %s", err)
+		return
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(podDetailsRequestString)
+	}
+}
+
+func (h *AgentHub) ReconcileResource(resource, namespace, name string) {
+	resourceRequest := map[string]interface{}{
+		"action":    "reconcile",
+		"resource":  resource,
+		"namespace": namespace,
+		"name":      name,
+	}
+
+	resourceRequestString, err := json.Marshal(resourceRequest)
+	if err != nil {
+		logrus.Errorf("could not serialize request: %s", err)
+		return
+	}
+
+	for _, a := range h.Agents {
+		a.EventChannel <- []byte(resourceRequestString)
+	}
+}
+
+func (h *AgentHub) StopPodLogs(namespace string, deployment string) {
 	podlogsRequest := map[string]interface{}{
-		"action":      "stopPodLogs",
-		"namespace":   namespace,
-		"serviceName": serviceName,
+		"action":         "stopPodLogs",
+		"namespace":      namespace,
+		"deploymentName": deployment,
 	}
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)

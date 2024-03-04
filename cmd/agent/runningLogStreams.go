@@ -13,18 +13,18 @@ func NewRunningLogStreams() *runningLogStreams {
 	}
 }
 
-func (l *runningLogStreams) Regsiter(channel chan int, namespace string, serviceName string) {
-	pod := namespace + "/" + serviceName
+func (l *runningLogStreams) Regsiter(channel chan int, namespace string, deploymentName string) {
+	pod := namespace + "/" + deploymentName
 
 	l.lock.Lock()
 	l.runningLogStreams[pod] = channel
 	l.lock.Unlock()
 }
 
-func (l *runningLogStreams) Stop(namespace string, serviceName string) {
+func (l *runningLogStreams) Stop(namespace string, deploymentName string) {
 	l.lock.Lock()
 	for svc, stopCh := range l.runningLogStreams {
-		if svc == namespace+"/"+serviceName {
+		if svc == namespace+"/"+deploymentName {
 			stopCh <- 0
 		}
 	}

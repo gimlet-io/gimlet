@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/sirupsen/logrus"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,29 +37,13 @@ func GitRepositoryController(kubeEnv *KubeEnv, gimletHost string, agentKey strin
 }
 
 func SendFluxState(kubeEnv *KubeEnv, gimletHost string, agentKey string) {
-	gitRepositories, err := kubeEnv.GitRepositories()
+	fluxState, err := kubeEnv.FluxState()
 	if err != nil {
-		logrus.Errorf("could not get gitrepositories: %s", err)
+		logrus.Errorf("could not get flux state: %s", err)
 		return
 	}
 
-	kustomizations, err := kubeEnv.Kustomizations()
-	if err != nil {
-		logrus.Errorf("could not get gitrepositories: %s", err)
-		return
-	}
-
-	helmReleases, err := kubeEnv.HelmReleases()
-	if err != nil {
-		logrus.Errorf("could not get gitrepositories: %s", err)
-		return
-	}
-
-	fluxStateString, err := json.Marshal(api.FluxState{
-		GitReppsitories: gitRepositories,
-		Kustomizations:  kustomizations,
-		HelmReleases:    helmReleases,
-	})
+	fluxStateString, err := json.Marshal(fluxState)
 	if err != nil {
 		logrus.Errorf("could not serialize flux state: %v", err)
 		return

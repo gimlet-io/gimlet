@@ -17,8 +17,10 @@ package api
 import (
 	"fmt"
 
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	v1 "k8s.io/api/core/v1"
 )
 
 type Service struct {
@@ -27,13 +29,15 @@ type Service struct {
 }
 
 type Pod struct {
-	Name              string `json:"name"`
-	DeploymentName    string `json:"deploymentName"`
-	Namespace         string `json:"namespace"`
-	Status            string `json:"status"`
-	StatusDescription string `json:"statusDescription"`
-	Logs              string `json:"logs"`
-	ImChannelId       string `json:"imChannelId"`
+	Name              string         `json:"name"`
+	DeploymentName    string         `json:"deploymentName"`
+	Namespace         string         `json:"namespace"`
+	Status            string         `json:"status"`
+	StatusDescription string         `json:"statusDescription"`
+	Logs              string         `json:"logs"`
+	ImChannelId       string         `json:"imChannelId"`
+	Details           string         `json:"details,omitempty"`
+	Containers        []v1.Container `json:"containers,omitempty"`
 }
 
 func (p *Pod) FQN() string {
@@ -60,9 +64,9 @@ type Ingress struct {
 }
 
 type ConnectedAgent struct {
-	Name      string     `json:"name"`
-	Stacks    []*Stack   `json:"stacks"`
-	FluxState *FluxState `json:"fluxState"`
+	Name      string          `json:"name"`
+	Stacks    []*Stack        `json:"stacks"`
+	FluxState *flux.FluxState `json:"fluxState"`
 }
 
 type GitRepository struct {

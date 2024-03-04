@@ -89,20 +89,21 @@ export function podDeleted(state, event) {
 }
 
 export function podLogs(state, event) {
-  const pod = event.pod + "/" + event.container;
+ const pod = event.pod + "/" + event.container;
   assignContainerTextColors(state, pod)
 
-  if (!state.podLogs[event.svc]) {
-    state.podLogs[event.svc] = [];
+  if (!state.podLogs[event.deployment]) {
+    state.podLogs[event.deployment] = [];
   }
 
   const line = {
     color: state.textColors[pod],
     timestamp: new Date(event.timestamp),
-    content: `[${pod}] ${event.message}`
+    content: `[${pod}] ${event.message}`,
+    pod: pod
   };
-  state.podLogs[event.svc].push(line);
-  state.podLogs[event.svc].sort((a, b) => a.timestamp - b.timestamp);
+  state.podLogs[event.deployment].push(line);
+  state.podLogs[event.deployment].sort((a, b) => a.timestamp - b.timestamp);
 
   return state;
 }

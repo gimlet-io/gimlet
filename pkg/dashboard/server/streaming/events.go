@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"github.com/gimlet-io/capacitor/pkg/flux"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
 )
@@ -14,7 +15,9 @@ const CommitStatusUpdatedEventString = "commitStatusUpdated"
 const PodLogsEventString = "podLogs"
 const ImageBuildLogEventString = "imageBuildLogEvent"
 const FluxStateUpdatedEventString = "fluxStateUpdatedEvent"
+const FluxK8sEventsUpdatedEventString = "fluxK8sEventsUpdatedEvent"
 const DeploymentDetailsEventString = "deploymentDetailsEvent"
+const PodDetailsEventString = "podDetailsEvent"
 const AlertPendingEventString = "alertPending"
 const AlertFiredEventString = "alertFired"
 const AlertResolvedEventString = "alertResolved"
@@ -39,14 +42,26 @@ type EnvsUpdatedEvent struct {
 }
 
 type FluxStateUpdatedEvent struct {
-	EnvName   string         `json:"envName"`
-	FluxState *api.FluxState `json:"fluxState"`
+	EnvName   string          `json:"envName"`
+	FluxState *flux.FluxState `json:"fluxState"`
+	StreamingEvent
+}
+
+type FluxK8sEventsUpdatedEvent struct {
+	EnvName    string        `json:"envName"`
+	FluxEvents []*flux.Event `json:"fluxEvents"`
 	StreamingEvent
 }
 
 type DeploymentDetailsEvent struct {
 	Deployment string `json:"deployment"`
 	Details    string `json:"details"`
+	StreamingEvent
+}
+
+type PodDetailsEvent struct {
+	Pod     string `json:"pod"`
+	Details string `json:"details"`
 	StreamingEvent
 }
 
@@ -77,11 +92,11 @@ type CommitStatusUpdatedEvent struct {
 }
 
 type PodLogsEvent struct {
-	Timestamp string `json:"timestamp"`
-	Container string `json:"container"`
-	Message   string `json:"message"`
-	Pod       string `json:"pod"`
-	Svc       string `json:"svc"`
+	Timestamp  string `json:"timestamp"`
+	Container  string `json:"container"`
+	Message    string `json:"message"`
+	Pod        string `json:"pod"`
+	Deployment string `json:"deployment"`
 	StreamingEvent
 }
 

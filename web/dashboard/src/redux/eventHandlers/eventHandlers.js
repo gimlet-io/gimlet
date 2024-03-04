@@ -80,6 +80,16 @@ export function envsUpdated(state, allEnvs) {
   return state;
 }
 
+export function fluxStateReceived(state, payload) {
+  state.fluxState = payload
+  return state
+}
+
+export function fluxEventsReceived(state, payload) {
+  state.fluxEvents = payload
+  return state
+}
+
 export function stackConfig(state, env) {
   state.envs.forEach(stateEnv => {
     if (env.name === stateEnv.name) {
@@ -312,17 +322,28 @@ export function fluxStateUpdated(state, event) {
   return state
 }
 
-export function deploymentDetails(state, event) {
-  if (!state.deploymentDetails[event.deployment]) {
-    state.deploymentDetails[event.deploymentName] = [];
+export function fluxEventsUpdated(state, event) {
+  if (state.fluxEvents[event.envName] === undefined) {
+    return state;
   }
 
-  state.deploymentDetails[event.deployment] = event.details.split("\n");
+  state.fluxEvents[event.envName] = event.fluxEvents;
+
+  return state
+}
+
+export function deploymentDetails(state, event) {
+  state.details[event.deployment] = event.details;
   return state;
 }
 
-export function clearDeploymentDetails(state, payload) {
-  state.deploymentDetails[payload.deployment] = undefined;
+export function podDetails(state, event) {
+  state.details[event.pod] = event.details;
+  return state;
+}
+
+export function clearDetails(state) {
+  state.details = {};
   return state;
 }
 
