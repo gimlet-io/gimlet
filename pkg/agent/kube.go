@@ -192,7 +192,7 @@ var kustomizationResource = schema.GroupVersionResource{
 
 var helmReleaseResource = schema.GroupVersionResource{
 	Group:    "helm.toolkit.fluxcd.io",
-	Version:  "v2beta1",
+	Version:  "v2beta2",
 	Resource: "helmreleases",
 }
 

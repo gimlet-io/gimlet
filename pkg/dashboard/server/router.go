@@ -54,7 +54,6 @@ func SetupRouter(
 	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: logger}))
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.NoCache)
-	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(middleware.WithValue("agentHub", agentHub))
 	r.Use(middleware.WithValue("clientHub", clientHub))
@@ -85,7 +84,7 @@ func SetupRouter(
 		w.WriteHeader(http.StatusOK)
 	})
 
-	agentRoutes(r, agentWSHub, dynamicConfig.JWTSecret)
+	agentRoutes(r, agentWSHub)
 	userRoutes(r, clientHub)
 	githubOAuthRoutes(config, dynamicConfig, r)
 	gimletdRoutes(r)
@@ -104,7 +103,6 @@ func SetupRouter(
 	fileServer(r, "/", filesDir)
 	fileServer(r, "/login", filesDir)
 	fileServer(r, "/repositories", filesDir)
-	fileServer(r, "/pulse", filesDir)
 	fileServer(r, "/profile", filesDir)
 	fileServer(r, "/settings", filesDir)
 	fileServer(r, "/repo", filesDir)
@@ -116,6 +114,7 @@ func SetupRouter(
 
 func gimletdRoutes(r *chi.Mux) {
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.Timeout(60 * time.Second))
 		r.Use(session.SetUser())
 		r.Use(session.MustUser())
 		r.Post("/api/artifact", saveArtifact)
@@ -144,6 +143,7 @@ func gimletdRoutes(r *chi.Mux) {
 
 func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.Timeout(60 * time.Second))
 		r.Use(session.SetUser())
 		r.Use(session.SetCSRF())
 		r.Use(session.MustUser())
@@ -192,21 +192,27 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 	})
 }
 
-func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub, jwtSecret string) {
+func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.Timeout(60 * time.Second))
 		r.Use(session.SetUser())
 		r.Use(combinedAuthorizer)
 
-		r.Get("/agent/register", register)
 		r.Post("/agent/state", state)
 		r.Post("/agent/state/{name}/update", update)
 		r.Post("/agent/events", events)
 		r.Post("/agent/fluxState", fluxState)
 		r.Post("/agent/deploymentDetails", deploymentDetails)
-
 		r.Get("/agent/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeAgentWs(agentWSHub, w, r)
 		})
+	})
+	r.Group(func(r chi.Router) { // group with one hour timeout
+		r.Use(session.SetUser())
+		r.Use(combinedAuthorizer)
+		r.Use(middleware.Timeout(60 * time.Minute))
+
+		r.Get("/agent/register", register)
 	})
 	r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)
 }
@@ -261,6 +267,7 @@ func adminKeyAuthRoutes(r *chi.Mux) {
 
 func installerRoutes(r *chi.Mux) {
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.Timeout(60 * time.Second))
 		r.Use(session.SetUser())
 		r.Use(session.MustUser())
 		r.Get("/settings/created", created)
