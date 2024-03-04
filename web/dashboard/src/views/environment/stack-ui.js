@@ -35,7 +35,7 @@ class StackUI extends Component {
         </h1>
         <div className="flex mb-32">
           {sidebar &&
-            <aside className="flex-none py-6 px-2 sm:px-6 lg:py-0 lg:px-0 w-32">
+            <aside className="flex-none py-6 px-2 lg:py-0 lg:px-0 w-44">
               <nav className="flex flex-1 flex-col" aria-label="Sidebar">
                 <ul className="-mx-2 space-y-1">
                   {categories.map((category) => {
@@ -47,6 +47,8 @@ class StackUI extends Component {
                     }
 
                     const selected = this.state.selected.id === category.id
+                    const elements = stackDefinition.components.filter(c => c.category === category.id)
+                    const enabledElements = elements.filter(e => stack[e.variable]?.enabled)
 
                     return (
                       <li key={category.name}>
@@ -60,6 +62,11 @@ class StackUI extends Component {
                           onClick={() => this.select(category)}
                         >
                           {category.name}
+                          <div class="grid place-items-center ml-auto justify-self-end">
+                            <div class="relative grid items-center whitespace-nowrap bg-white rounded-full px-2.5 py-0.5 text-center text-xs font-medium leading-5 text-neutral-700 ring-1 ring-inset ring-neutral-200">
+                              <span>{`${enabledElements.length}/${elements.length}`}</span>
+                            </div>
+                          </div>
                         </a>
                       </li>
                     )
