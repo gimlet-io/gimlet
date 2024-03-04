@@ -491,6 +491,7 @@ export default class Repo extends Component {
           envConfigs={envConfigs}
           scmUrl={scmUrl}
           store={this.props.store}
+          gimletClient={this.props.gimletClient}
         />
         }
         <header>

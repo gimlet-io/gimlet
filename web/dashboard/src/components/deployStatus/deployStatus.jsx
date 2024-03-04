@@ -3,7 +3,8 @@ import { Modal } from "./modal";
 
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
-  const { store, runningDeploys, envs, envConfigs } = props
+  const { store, gimletClient } = props
+  const { runningDeploys, envs, envConfigs } = props
 
   const runningDeploy = runningDeploys[0]
 
@@ -20,23 +21,59 @@ export function DeployStatusModal(props) {
 
   return (
     <Modal closeHandler={closeHandler}>
-      <SimpleServiceDetail
-        stack={stack}
-        // rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
-        // rollback={rollback}
-        envName={runningDeploy.env}
-        owner={owner}
-        repoName={repoName}
-        // fileName={fileName(fileInfos, stack.service.name)}
-        // linkToDeployment={linkToDeployment}
-        config={config}
-        // releaseHistorySinceDays={releaseHistorySinceDays}
-        // gimletClient={gimletClient}
-        store={store}
-        scmUrl={scmUrl}
-        builtInEnv={envs[runningDeploy.env].builtIn}
-        // serviceAlerts={alerts[deployment]}
-      />
+      <div className="h-full flex flex-col">
+        <SimpleServiceDetail
+          stack={stack}
+          // rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
+          // rollback={rollback}
+          envName={runningDeploy.env}
+          owner={owner}
+          repoName={repoName}
+          // fileName={fileName(fileInfos, stack.service.name)}
+          // linkToDeployment={linkToDeployment}
+          config={config}
+          // releaseHistorySinceDays={releaseHistorySinceDays}
+          gimletClient={gimletClient}
+          store={store}
+          scmUrl={scmUrl}
+          builtInEnv={envs[runningDeploy.env].builtIn}
+          // serviceAlerts={alerts[deployment]}
+        />
+        <div className="overflow-y-auto flex-grow bg-stone-900 text-yellow-300 font-mono text-sm p-2">
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+          <div>alma</div>
+        </div>
+      </div>
     </Modal>
   )
 }

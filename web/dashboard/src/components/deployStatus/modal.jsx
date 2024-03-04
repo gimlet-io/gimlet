@@ -17,7 +17,7 @@ export function Modal(props) {
       onClick={closeHandler}
     >
       <div className="flex self-center items-center justify-center w-full h-full p-8">
-        <div className="transform flex flex-col overflow-hidden bg-gray-200 rounded-xl h-[90vh] max-h-full w-[90vw] pt-8"
+        <div className="transform flex flex-col overflow-hidden bg-stone-100 rounded-xl h-[90vh] max-h-full w-[90vw] pt-8"
           onClick={e => e.stopPropagation()}
         >
           <div className="absolute top-0 right-0 p-1.5">
@@ -29,7 +29,7 @@ export function Modal(props) {
               <XIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <div className="h-full relative overflow-y-auto p-4 bg-stone-100 rounded-b-lg font-normal">
+          <div className="h-full relative overflow-hidden pb-4 px-4 bg-stone-100 rounded-b-lg font-normal">
             {children}
           </div>
         </div>

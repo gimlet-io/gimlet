@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { copyToClipboard } from '../../views/settings/settings';
@@ -6,27 +6,29 @@ import Timeline from './timeline';
 import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/capacitor/Describe';
 import { Pod, podContainers } from './serviceDetail'
+import { ACTION_TYPE_ROLLOUT_HISTORY } from '../../redux/redux'
 
 function SimpleServiceDetail(props) {
-  const { stack, rolloutHistory, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts } = props;
+  const { stack, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts } = props;
   const ref = useRef(null);
-  // const posthog = usePostHog()
+  const [rolloutHistory, setRolloutHistory] = useState()
 
-  // useEffect(() => {
-  //   gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
-  //     .then(data => {
-  //       store.dispatch({
-  //         type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-  //           owner: owner,
-  //           repo: repoName,
-  //           env: envName,
-  //           app: stack.service.name,
-  //           releases: data,
-  //         }
-  //       });
-  //     }, () => {/* Generic error handler deals with it */ });
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
+  useEffect(() => {
+    gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
+      .then(data => {
+        setRolloutHistory(data)
+        store.dispatch({
+          type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+            owner: owner,
+            repo: repoName,
+            env: envName,
+            app: stack.service.name,
+            releases: data,
+          }
+        });
+      }, () => {/* Generic error handler deals with it */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [isCopied, setCopied] = useState(false)
 
@@ -61,9 +63,9 @@ function SimpleServiceDetail(props) {
 
   return (
     <>
-      <div className="w-full flex items-center justify-between space-x-6 bg-stone-100 pb-8 rounded-lg">
+      <div className="w-full flex items-center justify-between space-x-6 bg-stone-100 pb-4 rounded-lg">
         <div className="flex-1">
-          <h3 ref={ref} className="flex text-lg font-bold rounded p-4">
+          <h3 ref={ref} className="flex text-lg font-bold rounded px-4 py-2">
             <span className="cursor-pointer" onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
             <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
               <svg xmlns="http://www.w3.org/2000/svg"
@@ -96,7 +98,7 @@ function SimpleServiceDetail(props) {
             </div>
           </h3>
           <div>
-            <div className="grid grid-cols-12 mt-4 px-4">
+            <div className="grid grid-cols-12 px-4">
               <div className="col-span-5 border-r space-y-4">
                 { deployment &&
                 <>
