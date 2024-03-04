@@ -712,6 +712,19 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
+	results := dxResults(store, event)
+	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
+		Type:       event.Type,
+		Status:     event.Status,
+		StatusDesc: event.StatusDesc,
+		Results:    results,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(statusBytes)
+}
+
+func dxResults(store *store.Store, event *model.Event) []dx.Result {
 	results := []dx.Result{}
 	for _, result := range event.Results {
 		if result.TriggeredDeployRequestID != "" {
@@ -734,26 +747,22 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 			})
 			continue
 		}
+		var app, env string
+		if result.Manifest != nil {
+			env = result.Manifest.Env
+			app = result.Manifest.App
+		}
 		results = append(results, dx.Result{
-			App:                    result.Manifest.App,
+			Env:                    env,
+			App:                    app,
 			Hash:                   result.GitopsRef,
 			Status:                 result.Status.String(),
 			GitopsCommitStatus:     gitopsCommitStatus,
 			GitopsCommitStatusDesc: gitopsCommitStatusDesc,
-			Env:                    result.Manifest.Env,
 			StatusDesc:             result.StatusDesc,
 		})
 	}
-
-	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
-		Type:       event.Type,
-		Status:     event.Status,
-		StatusDesc: event.StatusDesc,
-		Results:    results,
-	})
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(statusBytes)
+	return results
 }
 
 func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {

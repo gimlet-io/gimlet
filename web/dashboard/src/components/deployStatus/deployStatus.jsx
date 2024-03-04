@@ -6,6 +6,7 @@ export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
   const { store, gimletClient } = props
   const { envConfigs } = props
+  const logsEndRef = useRef();
 
   const [imageBuildLogs, setImageBuildLogs] = useState(store.getState().imageBuildLogs);
   store.subscribe(() => setImageBuildLogs(store.getState().imageBuildLogs));
@@ -16,23 +17,21 @@ export function DeployStatusModal(props) {
   const [envs, setEnvs] = useState(store.getState().envs);
   store.subscribe(() => setEnvs(store.getState().envs));
   const [runningDeploys, setRunningDeploys] = useState(store.getState().runningDeploys);
-  store.subscribe(() => setRunningDeploys(store.getState().runningDeploys));
+  store.subscribe(() => {
+    // console.log(store.getState().runningDeploys[0].trackingId)
+    setRunningDeploys(store.getState().runningDeploys)
+  });
 
   const runningDeploy = runningDeploys[0]
-  const logsEndRef = useRef(null);
-
-  useEffect(() => {
-    logsEndRef.current.scrollIntoView();
-  }, [imageBuildLogs]);
-
   if (!runningDeploy) {
     return (
       <>
-        <p ref={logsEndRef} />
         <Loading />
       </>
     )
   }
+
+  // console.log(runningDeploy)
 
   let stack = connectedAgents[runningDeploy.env].stacks.find(s => s.service.name === runningDeploy.app)
   const config = envConfigs[runningDeploy.env].find((config) => config.app === runningDeploy.app)
@@ -46,7 +45,7 @@ export function DeployStatusModal(props) {
   }
 
   return (
-    <Modal closeHandler={closeHandler}>
+    <Modal closeHandler={closeHandler} key={`modal-${runningDeploy.trackingId}`}>
       <div className="h-full flex flex-col">
         <SimpleServiceDetail
           stack={stack}
@@ -68,13 +67,14 @@ export function DeployStatusModal(props) {
         />
         <div className="overflow-y-auto flex-grow min-h-[50vh] bg-stone-900 text-gray-300 font-mono text-sm p-2">
           <DeployStatusPanel
+            key={`panel-${runningDeploy.trackingId}`}
             runningDeploy={runningDeploy}
             scmUrl={scmUrl}
             envs={envs}
             gitopsCommits={gitopsCommits}
             imageBuildLogs={imageBuildLogs}
+            logsEndRef={logsEndRef}
           />
-          <p className='pb-12' ref={logsEndRef} />
         </div>
       </div>
     </Modal>
@@ -82,32 +82,41 @@ export function DeployStatusModal(props) {
 }
 
 function DeployStatusPanel(props) {
-  const { runningDeploy, scmUrl, envs, gitopsCommits, imageBuildLogs } = props
+  const { runningDeploy, scmUrl, envs, gitopsCommits, imageBuildLogs, logsEndRef } = props
 
-  const deployStatusWidget = runningDeploy.trackingId
+  const deployStatusWidget =
+    (runningDeploy.type !== "imageBuild" && runningDeploy.trackingId) ||
+    (runningDeploy.type === "imageBuild" && runningDeploy.trackingId && runningDeploy.imageBuildTrackingId)
     ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs})
     : null
 
   let imageBuildWidget = null
   if (runningDeploy.type === "imageBuild") {
-    console.log(runningDeploy)
     let trackingId = runningDeploy.trackingId
     if (runningDeploy.imageBuildTrackingId) {
       trackingId = runningDeploy.imageBuildTrackingId
     }
 
-    imageBuildWidget = ImageBuild(imageBuildLogs[trackingId]);
+    imageBuildWidget = ImageBuild(trackingId, imageBuildLogs[trackingId]);
   }
 
   return (
     <>
       <DeployHeader
+        key={`header-${runningDeploy.trackingId}`}
         scmUrl={scmUrl}
         runningDeploy={runningDeploy}
       />
       {!deployStatusWidget && !imageBuildWidget ? (<Loading />) : null}
       {imageBuildWidget}
       {deployStatusWidget}
+      <p className='pb-12' ref={logsEndRef} />
+      {/* TODO: 
+        - sticky toggle,
+        - if scrolled up by hand, turn off sticky toggle
+        - jump to top, bottom button
+      */}
+      {/* {logsEndRef.current && logsEndRef.current.scrollIntoView()} */}
     </>
   )
 }
@@ -145,7 +154,7 @@ export function DeployStatus(props) {
   }
 
   return (
-    <div className="">
+    <div key={`gitops-${runningDeploy.trackingId}`}>
         <div className="text-gray-100">
           <div className="flex">
             <div className="w-0 flex-1 justify-between">
@@ -190,7 +199,7 @@ export function DeployHeader({scmUrl, runningDeploy}) {
   );
 }
 
-export function ImageBuild(build) {
+export function ImageBuild(trackingId, build) {
   if (!build) {
     return null
   }
@@ -204,11 +213,11 @@ export function ImageBuild(build) {
   if (build.status === "notBuilt") {
     instructionsText = <p>We could not build an image automatically. Please check our <a className="font-bold underline" target="_blank" rel="noreferrer" href='https://gimlet.io/docs/container-image-building'>documentation</a> to proceed."</p>
   } else if (build.status === "error") {
-    statusText = "Could not build image, check server logs."
+    instructionsText = "Could not build image, check server logs."
   }
 
   return (
-    <>
+    <div key={`logs-${trackingId}`}>
       <p className="text-yellow-100 pb-2 font-semibold">
         Building image
       </p>
@@ -216,7 +225,7 @@ export function ImageBuild(build) {
         <div className="whitespace-pre-wrap">{statusText}</div>
         <div className="pt-2 text-orange-600">{instructionsText}</div>
       </div>
-    </>
+    </div>
   );
 }
 

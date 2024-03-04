@@ -425,7 +425,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 			}
 			sb.WriteString(string(logLine))
 
-			if sb.Len() > 1000 {
+			if sb.Len() > 4000 {
 				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
 				sb.Reset()
 			}

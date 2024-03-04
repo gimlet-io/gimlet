@@ -45,7 +45,6 @@ export default class Repo extends Component {
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests.configChanges[repoName],
       runningDeploys: reduxState.runningDeploys,
-      trackedDeploys: [],
       alerts: reduxState.alerts,
       deployStatusModal: false,
     }
@@ -79,26 +78,6 @@ export default class Repo extends Component {
         return { refreshQueueLength: queueLength }
       });
       this.setState({ agents: reduxState.settings.agents });
-
-      this.setState(prevState => {
-        let trackedDeploys = []
-        reduxState.runningDeploys.forEach(runningDeploy => {
-          if (!runningDeploy.trackingId) {
-            return
-          }
-          if (!prevState.trackedDeploys.includes(runningDeploy.trackingId)) {
-            setTimeout(() => {
-              this.checkDeployStatus(runningDeploy.trackingId);
-            }, 500);
-          }
-
-          trackedDeploys.push(runningDeploy.trackingId)
-        });
-
-        return {
-          trackedDeploys: trackedDeploys
-        }
-      });
     });
 
     this.branchChange = this.branchChange.bind(this)
@@ -247,7 +226,7 @@ export default class Repo extends Component {
         if (data.status === "new") {
           setTimeout(() => {
             this.checkDeployStatus(trackingId);
-          }, 500);
+          }, 1000);
         }
 
         if (data.status === "processed") {
@@ -260,7 +239,7 @@ export default class Repo extends Component {
               gitopsCommitsApplied = false;
               setTimeout(() => {
                 this.checkDeployStatus(trackingId);
-              }, 500);
+              }, 1000);
             }
           }
           if (gitopsCommitsApplied) {
@@ -323,7 +302,7 @@ export default class Repo extends Component {
         });
         setTimeout(() => {
           this.checkDeployStatus(target.trackingId);
-        }, 500);
+        }, 1000);
       }, () => {/* Generic error handler deals with it */
       });
   }
@@ -357,7 +336,7 @@ export default class Repo extends Component {
         target.type = data.type;
         setTimeout(() => {
           this.checkDeployStatus(target);
-        }, 500);
+        }, 1000);
       }, () => {/* Generic error handler deals with it */
       });
 
