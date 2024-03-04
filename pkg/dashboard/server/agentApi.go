@@ -74,13 +74,13 @@ func register(w http.ResponseWriter, r *http.Request) {
 		case <-time.After(time.Second * 30):
 			io.WriteString(w, ": ping\n\n")
 			flusher.Flush()
-		case buf, ok := <-eventChannel:
-			if ok {
-				io.WriteString(w, "data: ")
-				w.Write(buf)
-				io.WriteString(w, "\n\n")
-				flusher.Flush()
-			}
+			// case buf, ok := <-eventChannel:
+			// 	if ok {
+			// 		io.WriteString(w, "data: ")
+			// 		w.Write(buf)
+			// 		io.WriteString(w, "\n\n")
+			// 		flusher.Flush()
+			// 	}
 		}
 	}
 }

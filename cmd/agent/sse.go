@@ -48,6 +48,7 @@ func loop(reader *bufio.Reader, events chan map[string]interface{}) {
 
 	for {
 		line, err := reader.ReadBytes('\n')
+		fmt.Println(string(line))
 		if err != nil {
 			logrus.Errorf("error during resp.Body read:%s\n", err)
 			close(events)
