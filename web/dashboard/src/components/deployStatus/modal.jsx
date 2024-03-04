@@ -29,7 +29,7 @@ export function Modal(props) {
               <XIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <div className="h-full relative overflow-hidden pb-4 px-4 bg-stone-100 rounded-b-lg font-normal">
+          <div className="h-full relative overflow-y-auto pb-4 px-4 bg-stone-100 rounded-b-lg font-normal">
             {children}
           </div>
         </div>

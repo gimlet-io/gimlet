@@ -9,7 +9,7 @@ import { Pod, podContainers } from './serviceDetail'
 import { ACTION_TYPE_ROLLOUT_HISTORY } from '../../redux/redux'
 
 function SimpleServiceDetail(props) {
-  const { stack, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts } = props;
+  const { stack, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts, logsEndRef } = props;
   const ref = useRef(null);
   const [rolloutHistory, setRolloutHistory] = useState()
 
@@ -26,6 +26,7 @@ function SimpleServiceDetail(props) {
             releases: data,
           }
         });
+        logsEndRef.current.scrollIntoView();
       }, () => {/* Generic error handler deals with it */ });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

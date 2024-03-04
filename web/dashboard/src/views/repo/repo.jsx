@@ -47,7 +47,7 @@ export default class Repo extends Component {
       runningDeploys: reduxState.runningDeploys,
       trackedDeploys: [],
       alerts: reduxState.alerts,
-      deployStatusModal: true,
+      deployStatusModal: false,
     }
 
     // handling API and streaming state changes

@@ -1,14 +1,35 @@
 import SimpleServiceDetail from "../serviceDetail/simpleServiceDetail";
 import { Modal } from "./modal";
+import React, { useState, useEffect, useRef } from 'react';
 
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
   const { store, gimletClient } = props
-  const { runningDeploys, envs, envConfigs } = props
+  const { runningDeploys, envConfigs } = props
+
+  const [imageBuildLogs, setImageBuildLogs] = useState(store.getState().imageBuildLogs);
+  store.subscribe(() => setImageBuildLogs(store.getState().imageBuildLogs));
+  const [gitopsCommits, setGitopsCommits] = useState(store.getState().gitopsCommits);
+  store.subscribe(() => setGitopsCommits(store.getState().gitopsCommits));
+  const [connectedAgents, setConnectedAgents] = useState(store.getState().connectedAgents);
+  store.subscribe(() => setConnectedAgents(store.getState().connectedAgents));
+  const [envs, setEnvs] = useState(store.getState().envs);
+  store.subscribe(() => setEnvs(store.getState().envs));
 
   const runningDeploy = runningDeploys[0]
+  const logsEndRef = useRef(null);
 
-  let stack = envs[runningDeploy.env].stacks.find(s => s.service.name === runningDeploy.app)
+  useEffect(() => {
+    logsEndRef.current.scrollIntoView();
+  }, []);
+
+  if (!runningDeploy) {
+    return (
+      <p className='pb-12' ref={logsEndRef} />
+    )
+  }
+
+  let stack = connectedAgents[runningDeploy.env].stacks.find(s => s.service.name === runningDeploy.app)
   const config = envConfigs[runningDeploy.env].find((config) => config.app === runningDeploy.app)
 
   if (!stack) { // for apps we haven't deployed yet
@@ -17,6 +38,27 @@ export function DeployStatusModal(props) {
         name: runningDeploy.app
       }
     }
+  }
+
+  const loading = (
+    <div className="p-2">
+      <Loading />
+    </div>
+  )
+
+  const deployStatusWidget = runningDeploy.trackingId
+    ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs})
+    : null
+
+  let imageBuildWidget = null
+  if (runningDeploy.type === "imageBuild") {
+    console.log(runningDeploy)
+    let trackingId = runningDeploy.trackingId
+    if (runningDeploy.imageBuildTrackingId) {
+      trackingId = runningDeploy.imageBuildTrackingId
+    }
+
+    imageBuildWidget = ImageBuild(imageBuildLogs[trackingId]);
   }
 
   return (
@@ -36,99 +78,30 @@ export function DeployStatusModal(props) {
           gimletClient={gimletClient}
           store={store}
           scmUrl={scmUrl}
-          builtInEnv={envs[runningDeploy.env].builtIn}
+          builtInEnv={envs.find(env => env.name === runningDeploy.env).builtIn}
           // serviceAlerts={alerts[deployment]}
+          logsEndRef={logsEndRef}
         />
-        <div className="overflow-y-auto flex-grow bg-stone-900 text-yellow-300 font-mono text-sm p-2">
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
-          <div>alma</div>
+        <div className="overflow-y-auto flex-grow min-h-[50vh] bg-stone-900 text-gray-300 font-mono text-sm p-2">
+          <DeployHeader
+            scmUrl={scmUrl}
+            runningDeploy={runningDeploy}
+          />
+          {!deployStatusWidget && !imageBuildWidget ? loading : null}
+          {imageBuildWidget}
+          {deployStatusWidget}
+          <p className='pb-12' ref={logsEndRef} />
         </div>
       </div>
     </Modal>
   )
 }
 
-export function DeployStatusTab(props) {
-  const {runningDeploys, scmUrl, gitopsCommits, envs, imageBuildLogs, logsEndRef} = props
-  
-  if (runningDeploys.length === 0) {
-    return null;
-  }
+export function DeployStatus(props) {
+  const { runningDeploy, scmUrl, gitopsCommits, envs } = props
 
-  const runningDeploy = runningDeploys[0];
-
-  const loading = (
-    <div className="p-2">
-      <Loading />
-    </div>
-  )
-
-  let imageBuildWidget = null
-  let deployStatusWidget = null
-
-  if (runningDeploy.trackingId) {
-    deployStatusWidget = DeployStatus(runningDeploy, scmUrl, gitopsCommits, envs)
-  }
-  if (runningDeploy.type === "imageBuild") {
-    let trackingId = runningDeploy.trackingId
-    if (runningDeploy.imageBuildTrackingId) {
-      trackingId = runningDeploy.imageBuildTrackingId
-    }
-
-    imageBuildWidget = ImageBuild(imageBuildLogs[trackingId], logsEndRef);
-  }
-
-  const deployHeaderWidget = deployHeader(scmUrl, runningDeploy)
-
-  return (
-    <div className="bg-gray-800 text-gray-300 pt-4 pb-24 px-6 overflow-y-scroll h-full w-full">
-      {deployHeaderWidget}
-      {imageBuildWidget}
-      {deployStatusWidget}
-      {deployStatusWidget == null && imageBuildWidget == null ? loading : null}
-    </div>
-  );
-}
-
-export function DeployStatus(
-  deploy,
-  scmUrl,
-  gitopsCommits,
-  envs
-  ) {
-
-  const gitopsRepo = envs.find(env => env.name === deploy.env).appsRepo;
-  const builtInEnv = envs.find(env => env.name === deploy.env).builtIn;
+  const gitopsRepo = envs.find(env => env.name === runningDeploy.env).appsRepo;
+  const builtInEnv = envs.find(env => env.name === runningDeploy.env).builtIn;
 
   let gitopsWidget = (
     <div className="">
@@ -137,23 +110,23 @@ export function DeployStatus(
   )
   let appliedWidget = null;
 
-  if (deploy.status === 'error') {
+  if (runningDeploy.status === 'error') {
     gitopsWidget = (
       <div className="pt-4">
         <p className="text-red-500 font-semibold">
           Error
         </p>
         <p className="text-red-500 font-base">
-          {deploy.statusDesc}
+          {runningDeploy.statusDesc}
         </p>
       </div>
     )
   }
 
-  const hasResults = deploy.results && deploy.results.length !== 0;
-  if (deploy.status === 'processed' || hasResults) {
-    gitopsWidget = gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl, builtInEnv);
-    appliedWidget = appliedWidgetFromResults(deploy, gitopsCommits, deploy.env, gitopsRepo, scmUrl, builtInEnv);  
+  const hasResults = runningDeploy.results && runningDeploy.results.length !== 0;
+  if (runningDeploy.status === 'processed' || hasResults) {
+    gitopsWidget = gitopsWidgetFromResults(runningDeploy, gitopsRepo, scmUrl, builtInEnv);
+    appliedWidget = appliedWidgetFromResults(runningDeploy, gitopsCommits, gitopsRepo, scmUrl, builtInEnv);  
   }
 
   return (
@@ -170,71 +143,63 @@ export function DeployStatus(
   );
 }
 
-export function deployHeader(scmUrl, deploy) {
+export function DeployHeader({scmUrl, runningDeploy}) {
   return (
-    <>
-      {!deploy.rollback &&
+    <div className='pb-4'>
+      {!runningDeploy.rollback &&
       <p className="text-yellow-100 font-semibold">
-        Rolling out {deploy.app}
+        Rolling out {runningDeploy.app}
       </p>
       }
-      {deploy.rollback &&
+      {runningDeploy.rollback &&
       <p className="text-yellow-100 font-semibold">
-        Rolling back {deploy.app}
+        Rolling back {runningDeploy.app}
       </p>
       }
       <p className="pl-2  ">
-        🎯 {deploy.env}
+        🎯 {runningDeploy.env}
       </p>
-      {!deploy.rollback &&
+      {!runningDeploy.rollback &&
       <p className="pl-2">
         <span>📎</span>
         <a
-          href={`${scmUrl}/${deploy.repo}/commit/${deploy.sha}`}
+          href={`${scmUrl}/${runningDeploy.repo}/commit/${runningDeploy.sha}`}
           target="_blank" rel="noopener noreferrer"
-          className='ml-1'
+          className='ml-2'
         >
-          {deploy.sha.slice(0, 6)}
+          {runningDeploy.sha.slice(0, 6)}
         </a>
       </p>
       }
-    </>
+    </div>
   );
 }
 
-export function ImageBuild(build, logsEndRef) {
+export function ImageBuild(build) {
   if (!build) {
     return null
   }
 
-  let statusIcon = '⏳';
   let statusText = (
     <div className="w-4/5 font-mono text-xs">
       {build.logLines.join("")}
     </div>
   )
   let instructionsText = null;
-  if (build.status === "success") {
-    statusIcon = '✅';
-  } else if (build.status === "notBuilt") {
-    statusIcon = '😟';
+  if (build.status === "notBuilt") {
     instructionsText = <p>We could not build an image automatically. Please check our <a className="font-bold underline" target="_blank" rel="noreferrer" href='https://gimlet.io/docs/container-image-building'>documentation</a> to proceed."</p>
   } else if (build.status === "error") {
-    statusIcon = '❗';
     statusText = "Could not build image, check server logs."
   }
 
   return (
     <>
-      <p className="text-yellow-100 pt-4 pb-2 font-semibold">
-        Building image {statusIcon}
+      <p className="text-yellow-100 pb-2 font-semibold">
+        Building image
       </p>
-      <div className="px-2">
-      <div className="p-4 h-48 overflow-y-scroll bg-gray-900">
+      <div className="">
         <div className="whitespace-pre-wrap">{statusText}</div>
-        <p ref={logsEndRef} />
-      </div>
-      <div className="pt-2 text-orange-600">{instructionsText}</div>
+        <div className="pt-2 text-orange-600">{instructionsText}</div>
       </div>
     </>
   );
@@ -340,8 +305,8 @@ function gitopsWidgetFromResults(deploy, gitopsRepo, scmUrl, builtInEnv) {
   )
 }
 
-function appliedWidgetFromResults(deploy, gitopsCommits, env, gitopsRepo, scmUrl, builtInEnv) {
-  const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === env) : {};
+function appliedWidgetFromResults(deploy, gitopsCommits, gitopsRepo, scmUrl, builtInEnv) {
+  const firstCommitOfEnv = gitopsCommits.length > 0 ? gitopsCommits.find((gitopsCommit) => gitopsCommit.env === deploy.env) : {};
 
   let deployCommit = {};
   deploy.results.forEach(result => {
