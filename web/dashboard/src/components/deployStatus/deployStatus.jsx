@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
   const { store, gimletClient } = props
-  const { runningDeploys, envConfigs } = props
+  const { envConfigs } = props
 
   const [imageBuildLogs, setImageBuildLogs] = useState(store.getState().imageBuildLogs);
   store.subscribe(() => setImageBuildLogs(store.getState().imageBuildLogs));
@@ -15,17 +15,22 @@ export function DeployStatusModal(props) {
   store.subscribe(() => setConnectedAgents(store.getState().connectedAgents));
   const [envs, setEnvs] = useState(store.getState().envs);
   store.subscribe(() => setEnvs(store.getState().envs));
+  const [runningDeploys, setRunningDeploys] = useState(store.getState().runningDeploys);
+  store.subscribe(() => setRunningDeploys(store.getState().runningDeploys));
 
   const runningDeploy = runningDeploys[0]
   const logsEndRef = useRef(null);
 
   useEffect(() => {
     logsEndRef.current.scrollIntoView();
-  }, []);
+  }, [imageBuildLogs]);
 
   if (!runningDeploy) {
     return (
-      <p className='pb-12' ref={logsEndRef} />
+      <>
+        <p ref={logsEndRef} />
+        <Loading />
+      </>
     )
   }
 
@@ -38,27 +43,6 @@ export function DeployStatusModal(props) {
         name: runningDeploy.app
       }
     }
-  }
-
-  const loading = (
-    <div className="p-2">
-      <Loading />
-    </div>
-  )
-
-  const deployStatusWidget = runningDeploy.trackingId
-    ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs})
-    : null
-
-  let imageBuildWidget = null
-  if (runningDeploy.type === "imageBuild") {
-    console.log(runningDeploy)
-    let trackingId = runningDeploy.trackingId
-    if (runningDeploy.imageBuildTrackingId) {
-      trackingId = runningDeploy.imageBuildTrackingId
-    }
-
-    imageBuildWidget = ImageBuild(imageBuildLogs[trackingId]);
   }
 
   return (
@@ -83,17 +67,48 @@ export function DeployStatusModal(props) {
           logsEndRef={logsEndRef}
         />
         <div className="overflow-y-auto flex-grow min-h-[50vh] bg-stone-900 text-gray-300 font-mono text-sm p-2">
-          <DeployHeader
-            scmUrl={scmUrl}
+          <DeployStatusPanel
             runningDeploy={runningDeploy}
+            scmUrl={scmUrl}
+            envs={envs}
+            gitopsCommits={gitopsCommits}
+            imageBuildLogs={imageBuildLogs}
           />
-          {!deployStatusWidget && !imageBuildWidget ? loading : null}
-          {imageBuildWidget}
-          {deployStatusWidget}
           <p className='pb-12' ref={logsEndRef} />
         </div>
       </div>
     </Modal>
+  )
+}
+
+function DeployStatusPanel(props) {
+  const { runningDeploy, scmUrl, envs, gitopsCommits, imageBuildLogs } = props
+
+  const deployStatusWidget = runningDeploy.trackingId
+    ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs})
+    : null
+
+  let imageBuildWidget = null
+  if (runningDeploy.type === "imageBuild") {
+    console.log(runningDeploy)
+    let trackingId = runningDeploy.trackingId
+    if (runningDeploy.imageBuildTrackingId) {
+      trackingId = runningDeploy.imageBuildTrackingId
+    }
+
+    imageBuildWidget = ImageBuild(imageBuildLogs[trackingId]);
+  }
+
+  return (
+    <>
+      <DeployHeader
+        scmUrl={scmUrl}
+        runningDeploy={runningDeploy}
+      />
+      {!deployStatusWidget && !imageBuildWidget ? (<Loading />) : null}
+      {imageBuildWidget}
+      {deployStatusWidget}
+    </>
   )
 }
 
