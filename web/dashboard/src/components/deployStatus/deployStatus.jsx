@@ -5,6 +5,7 @@ import { ArrowUpIcon, ArrowDownIcon, PlayIcon } from '@heroicons/react/outline'
 
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
+  const ownerAndRepo = `${owner}/${repoName}`
   const { store, gimletClient } = props
   const { envConfigs } = props
   const logsEndRef = useRef();
@@ -23,6 +24,10 @@ export function DeployStatusModal(props) {
   store.subscribe(() => setConnectedAgents(store.getState().connectedAgents));
   const [envs, setEnvs] = useState(store.getState().envs);
   store.subscribe(() => setEnvs(store.getState().envs));
+  const [rolloutHistory, setRolloutHistory] = useState(store.getState().rolloutHistory[ownerAndRepo]);
+  store.subscribe(() => setRolloutHistory(store.getState().rolloutHistory[ownerAndRepo]));
+  const [settings, setSettings] = useState(store.getState().settings);
+  store.subscribe(() => setSettings(store.getState().settings));
   const [runningDeploy, setRunningDeploy] = useState(store.getState().runningDeploy);
   store.subscribe(() => {
     const r = store.getState().runningDeploy
@@ -87,15 +92,12 @@ export function DeployStatusModal(props) {
       <div className="h-full flex flex-col">
         <SimpleServiceDetail
           stack={stack}
-          // rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
-          // rollback={rollback}
+          rolloutHistory={rolloutHistory[env][stack.service.name]}
           envName={env}
           owner={owner}
           repoName={repoName}
-          // fileName={fileName(fileInfos, stack.service.name)}
-          // linkToDeployment={linkToDeployment}
           config={config}
-          // releaseHistorySinceDays={releaseHistorySinceDays}
+          releaseHistorySinceDays={settings.releaseHistorySinceDays}
           gimletClient={gimletClient}
           store={store}
           scmUrl={scmUrl}

@@ -9,14 +9,12 @@ import { Pod, podContainers } from './serviceDetail'
 import { ACTION_TYPE_ROLLOUT_HISTORY } from '../../redux/redux'
 
 function SimpleServiceDetail(props) {
-  const { stack, rollback, envName, owner, repoName, linkToDeployment, config, fileName, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts, logsEndRef } = props;
+  const { stack, envName, owner, repoName, config, rolloutHistory, releaseHistorySinceDays, gimletClient, store, scmUrl, builtInEnv, serviceAlerts, logsEndRef } = props;
   const ref = useRef(null);
-  const [rolloutHistory, setRolloutHistory] = useState()
 
   useEffect(() => {
     gimletClient.getRolloutHistoryPerApp(owner, repoName, envName, stack.service.name)
       .then(data => {
-        setRolloutHistory(data)
         store.dispatch({
           type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
             owner: owner,
@@ -67,17 +65,8 @@ function SimpleServiceDetail(props) {
       <div className="w-full flex items-center justify-between space-x-6 bg-stone-100 pb-4 rounded-lg">
         <div className="flex-1">
           <h3 ref={ref} className="flex text-lg font-bold rounded px-4 py-2">
-            <span className="cursor-pointer" onClick={() => linkToDeployment(envName, stack.service.name)}>{stack.service.name}</span>
-            <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                className="inline fill-current text-gray-500 hover:text-gray-700 ml-1 h-4 w-4"
-                viewBox="0 0 24 24">
-                <path d="M0 0h24v24H0z" fill="none" />
-                <path
-                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-              </svg>
-            </a>
-            <div className="flex items-center ml-auto">
+            <span>{stack.service.name}</span>
+            <div className="flex items-center ml-auto space-x-1">
               {deployment &&
                 <>
                   <Logs
@@ -164,7 +153,7 @@ function SimpleServiceDetail(props) {
                       Port-forward command
                     </button>
                     {isCopied && (
-                      <div className="absolute -right-12 -top-10">
+                      <div className="absolute -right-5 -top-10">
                         <div className="p-2 bg-indigo-600 select-none text-white inline-block rounded">
                           Copied!
                         </div>
@@ -216,7 +205,6 @@ function SimpleServiceDetail(props) {
                     <RolloutHistory
                       env={envName}
                       app={stack.service.name}
-                      rollback={rollback}
                       appRolloutHistory={rolloutHistory}
                       releaseHistorySinceDays={releaseHistorySinceDays}
                       scmUrl={scmUrl}
