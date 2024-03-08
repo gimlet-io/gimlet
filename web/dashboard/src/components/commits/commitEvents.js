@@ -1,8 +1,9 @@
-import { DocumentIcon, CogIcon, ThumbUpIcon } from '@heroicons/react/solid'
+import { DocumentIcon, CogIcon, CloudIcon } from '@heroicons/react/solid'
 import { EventWidget } from './eventWidget';
+import { format, formatDistance } from "date-fns";
 
 export function CommitEvents(props) {
-  const { events } = props
+  const { events, scmUrl, envs } = props
 
   return (
     <div>
@@ -13,6 +14,8 @@ export function CommitEvents(props) {
               key={event.created}
               event={event}
               last={eventIdx !== events.length - 1}
+              scmUrl={scmUrl}
+              envs={envs}
             />
           ))}
         </ul>
@@ -22,9 +25,9 @@ export function CommitEvents(props) {
 }
 
 function CommitEvent(props) {
-  const { event, last } = props
+  const { event, last, scmUrl, envs } = props
   let color = 'bg-green-500'
-  let TypeIcon = ThumbUpIcon
+  let TypeIcon = CloudIcon
   if (event.type === 'artifact') {
     color = 'bg-blue-500'
     TypeIcon = DocumentIcon
@@ -46,16 +49,85 @@ function CommitEvent(props) {
             </span>
           </div>
           <div className='grow'>
+            {event.type === 'release' &&
+              <ReleaseEventWidget event={event} scmUrl={scmUrl} envs={envs} />
+            }
+            {event.type !== 'release' &&
+            <>
             <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
               <EventWidget event={event} />
             </div>
             <div>
               <ResultsWidget event={event} />
             </div>
+            </>
+            }
           </div>
         </div>
       </div>
     </li>
+  )
+}
+
+function ReleaseEventWidget(props) {
+  const {event, scmUrl, envs} = props
+
+  const exactDate = format(event.created * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(event.created * 1000, new Date());
+
+  const triggeredBy = event.releaseRequest.triggeredBy
+  const env = event.releaseRequest.env
+  const builtInEnv = envs.filter(e => e.name ===env).builtIn
+
+  return (
+    <div>
+    <div className="flex min-w-0 flex-1 justify-between space-x-4">
+      <span>
+        <img
+          className="inline rounded-full overflow-hidden mr-1"
+          src={`${scmUrl}/${triggeredBy}.png?size=128`}
+          alt={triggeredBy}
+          width="20"
+          height="20"
+        />
+        <span className='font-medium'>{triggeredBy}</span>
+        <span className='px-1'>deployed to</span>
+        <span className='font-medium'>{env}</span>
+      </span>
+      <span title={exactDate}> {dateLabel} ago</span>
+    </div>
+      <ul>
+        {event.results.map((result, idx) => (
+          <li key={idx}>
+            <p className={`pl-5 ${result.status === 'failure' ? 'text-red-500' : ''}`}>
+              {result.gitopsRef &&
+              <span className='font-mono text-sm'> 
+                {builtInEnv &&
+                  <span>📎 {result.gitopsRef.slice(0, 6)}</span>
+                }
+                {!builtInEnv &&
+                <a
+                  href={`${scmUrl}/${result.gitopsRepo}/commit/${result.gitopsRef}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className='ml-1'
+                >
+                  📎 {result.gitopsRef.slice(0, 6)}
+                </a>
+                }
+              </span>
+              }
+              <span className='pl-1'>{result.app}</span>
+            </p>
+            {result.status === 'failure' &&
+            <p className='pl-5 text-red-500'>
+              <span>❗</span>
+              <span className='pl-1'>{result.statusDesc}</span>
+            </p>
+            }
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
@@ -78,21 +150,6 @@ function ResultsWidget(props) {
     )
   }
 
-  if (event.type === 'release' && event.results) {
-    return (
-      <ul>
-        {event.results.map((result, idx) => (
-          <li key={idx}>
-            <Result 
-              result={result}
-              scmUrl={"https://github.com"}
-            />
-          </li>
-        ))}
-      </ul>
-    )
-  }
-
   if (event.type === 'imageBuild' && event.results) {
     return (
       <ul>
@@ -100,7 +157,7 @@ function ResultsWidget(props) {
           <li key={idx}>
             <span>{result.triggeredBy}??</span>
             <span>{result.status}</span>
-            <div>{result.log}</div>
+            {/* <div>{result.log}</div> */}
           </li>
         ))}
       </ul>

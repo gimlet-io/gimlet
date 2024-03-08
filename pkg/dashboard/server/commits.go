@@ -304,12 +304,15 @@ type Commit struct {
 }
 
 type CommitEvent struct {
-	ID         string              `json:"id,omitempty"`
-	Created    int64               `json:"created,omitempty"`
-	Type       string              `json:"type,omitempty"`
-	Status     string              `json:"status"`
-	StatusDesc string              `json:"statusDesc"`
-	Results    []CommitEventResult `json:"results,omitempty"`
+	ID                string                `json:"id,omitempty"`
+	Created           int64                 `json:"created,omitempty"`
+	Type              string                `json:"type,omitempty"`
+	ReleaseRequest    *dx.ReleaseRequest    `json:"releaseRequest,omitempty"`
+	ImageBuildRequest *dx.ImageBuildRequest `json:"imageBuildRequest,omitempty"`
+	RollbackRequest   *dx.RollbackRequest   `json:"rollbackRequest,omitempty"`
+	Status            string                `json:"status"`
+	StatusDesc        string                `json:"statusDesc"`
+	Results           []CommitEventResult   `json:"results,omitempty"`
 }
 
 type CommitEventResult struct {
@@ -331,8 +334,27 @@ func asCommitEvent(event *model.Event) *CommitEvent {
 		return nil
 	}
 
-	results := []CommitEventResult{}
+	var releaseRequest dx.ReleaseRequest
+	var imageBuildRequest dx.ImageBuildRequest
+	var rollbackRequest dx.RollbackRequest
+	if event.Type == model.ReleaseRequestedEvent {
+		err := json.Unmarshal([]byte(event.Blob), &releaseRequest)
+		if err != nil {
+			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
+		}
+	} else if event.Type == model.ImageBuildRequestedEvent {
+		err := json.Unmarshal([]byte(event.Blob), &imageBuildRequest)
+		if err != nil {
+			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
+		}
+	} else if event.Type == model.RollbackRequestedEvent {
+		err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
+		if err != nil {
+			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
+		}
+	}
 
+	results := []CommitEventResult{}
 	for _, r := range event.Results {
 		var app string
 		var env string
@@ -354,12 +376,15 @@ func asCommitEvent(event *model.Event) *CommitEvent {
 	}
 
 	return &CommitEvent{
-		ID:         event.ID,
-		Created:    event.Created,
-		Type:       event.Type,
-		Status:     event.Status,
-		StatusDesc: event.StatusDesc,
-		Results:    results,
+		ID:                event.ID,
+		Created:           event.Created,
+		Type:              event.Type,
+		ReleaseRequest:    &releaseRequest,
+		ImageBuildRequest: &imageBuildRequest,
+		RollbackRequest:   &rollbackRequest,
+		Status:            event.Status,
+		StatusDesc:        event.StatusDesc,
+		Results:           results,
 	}
 }
 

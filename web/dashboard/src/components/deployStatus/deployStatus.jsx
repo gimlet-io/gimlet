@@ -169,14 +169,14 @@ function Controls(props) {
   )
 }
 
-function DeployStatusPanel(props) {
+export function DeployStatusPanel(props) {
   const { runningDeploy, runningImageBuild } = props
   const { scmUrl, envs, gitopsCommits, imageBuildLogs, logsEndRef, topRef } = props
 
   const deployStatusWidget = runningDeploy.trackingId ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs}) : null
   const imageBuildWidget = runningImageBuild ? ImageBuild(runningImageBuild.trackingId, imageBuildLogs) : null
 
-  const key = runningDeploy.trackingId+'-'+runningImageBuild.trackingId
+  const key = runningDeploy.trackingId+'-'+runningImageBuild?.trackingId
 
   return (
     <>
@@ -240,7 +240,9 @@ export function DeployStatus(props) {
   );
 }
 
-export function DeployHeader({scmUrl, runningDeploy}) {
+export function DeployHeader(props) {
+  const {scmUrl, runningDeploy} = props
+
   return (
     <div className='pb-4'>
       {!runningDeploy.rollback &&

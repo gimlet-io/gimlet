@@ -69,6 +69,7 @@ export function Commits(props) {
       connectedAgents={connectedAgents}
       deployHandler={deployHandler}
       gimletClient={gimletClient}
+      envs={envs}
     />
   )
 
@@ -106,7 +107,9 @@ export function Commits(props) {
   )
 }
 
-const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler, gimletClient }) => {
+const CommitWidget = (props) => {
+  const { owner, repo, repoName, commit, last, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler, gimletClient, envs } = props
+
   const [showModal, setShowModal] = useState(false)
   const [events, setEvents] = useState()
 
@@ -128,7 +131,7 @@ const CommitWidget = ({ owner, repo, repoName, commit, last, idx, commitsRef, en
       {showModal &&
         <Modal closeHandler={() => setShowModal(false)}>
           {events ?
-            <CommitEvents events={events} />
+            <CommitEvents events={events} scmUrl={scmUrl} envs={envs} />
             :
             <SkeletonLoader />
           }

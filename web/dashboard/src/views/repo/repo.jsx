@@ -329,6 +329,7 @@ export default class Repo extends Component {
             this.checkImageBuildStatus(trackingId);
           }, 2000);
         } else {
+          this.props.store.dispatch({type: ACTION_TYPE_IMAGEBUILD, payload: undefined});
           this.props.store.dispatch({
             type: ACTION_TYPE_DEPLOY, payload: {
               trackingId: trackingId,
