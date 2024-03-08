@@ -57,9 +57,9 @@ function CommitEvent(props) {
             {event.type === 'imageBuild' &&
               <ImageBuildEventWidget event={event} scmUrl={scmUrl} />
             }
-            {event.type === 'rollback' &&
-              <span>TODO</span>
-            }
+            {/* {event.type === 'rollback' &&
+              <p>rollback events are not associated with commit shas, they work with gitops commits</p>
+            } */}
           </div>
         </div>
       </div>

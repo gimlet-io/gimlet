@@ -365,6 +365,7 @@ export default class Repo extends Component {
   }
 
   rollback(env, app, rollbackTo, e) {
+    this.setState({deployStatusModal: true});
     const target = {
       rollback: true,
       app: app,
@@ -372,17 +373,21 @@ export default class Repo extends Component {
     };
     this.props.gimletClient.rollback(env, app, rollbackTo)
       .then(data => {
-        target.trackingId = data.id;
-        target.type = data.type;
+        const trackingId = data.id;
+        this.props.store.dispatch({
+          type: ACTION_TYPE_DEPLOY, payload: {
+            rollback: true,
+            trackingId: trackingId,
+            // repo: repo,
+            env: target.env,
+            app: target.app,
+          }
+        });
         setTimeout(() => {
-          this.checkDeployStatus(target.trackingId);
+          this.checkDeployStatus(trackingId);
         }, 1000);
       }, () => {/* Generic error handler deals with it */
       });
-
-    this.props.store.dispatch({
-      type: ACTION_TYPE_DEPLOY, payload: target
-    });
   }
 
   navigateToConfigEdit(env, config) {
