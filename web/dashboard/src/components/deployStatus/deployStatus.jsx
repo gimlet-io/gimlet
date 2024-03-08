@@ -1,6 +1,6 @@
 import SimpleServiceDetail from "../serviceDetail/simpleServiceDetail";
 import { Modal } from "./modal";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
@@ -16,13 +16,11 @@ export function DeployStatusModal(props) {
   store.subscribe(() => setConnectedAgents(store.getState().connectedAgents));
   const [envs, setEnvs] = useState(store.getState().envs);
   store.subscribe(() => setEnvs(store.getState().envs));
-  const [runningDeploys, setRunningDeploys] = useState(store.getState().runningDeploys);
-  store.subscribe(() => {
-    // console.log(store.getState().runningDeploys[0].trackingId)
-    setRunningDeploys(store.getState().runningDeploys)
-  });
+  const [runningDeploy, setRunningDeploy] = useState(store.getState().runningDeploy);
+  store.subscribe(() => {setRunningDeploy(store.getState().runningDeploy)});
+  const [runningImageBuild, setRunningImageBuild] = useState(store.getState().runningImageBuild);
+  store.subscribe(() => {setRunningImageBuild(store.getState().runningImageBuild)});
 
-  const runningDeploy = runningDeploys[0]
   if (!runningDeploy) {
     return (
       <>
@@ -31,27 +29,29 @@ export function DeployStatusModal(props) {
     )
   }
 
-  // console.log(runningDeploy)
+  const env = runningDeploy.env
+  const app = runningDeploy.app
+  const key = runningDeploy.trackingId
 
-  let stack = connectedAgents[runningDeploy.env].stacks.find(s => s.service.name === runningDeploy.app)
-  const config = envConfigs[runningDeploy.env].find((config) => config.app === runningDeploy.app)
+  let stack = connectedAgents[env].stacks.find(s => s.service.name === app)
+  const config = envConfigs[env].find((config) => config.app === app)
 
   if (!stack) { // for apps we haven't deployed yet
     stack={
       service: {
-        name: runningDeploy.app
+        name: app
       }
     }
   }
 
   return (
-    <Modal closeHandler={closeHandler} key={`modal-${runningDeploy.trackingId}`}>
+    <Modal closeHandler={closeHandler} key={`modal-${key}`}>
       <div className="h-full flex flex-col">
         <SimpleServiceDetail
           stack={stack}
           // rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
           // rollback={rollback}
-          envName={runningDeploy.env}
+          envName={env}
           owner={owner}
           repoName={repoName}
           // fileName={fileName(fileInfos, stack.service.name)}
@@ -61,14 +61,15 @@ export function DeployStatusModal(props) {
           gimletClient={gimletClient}
           store={store}
           scmUrl={scmUrl}
-          builtInEnv={envs.find(env => env.name === runningDeploy.env).builtIn}
+          builtInEnv={envs.find(e => e.name === env).builtIn}
           // serviceAlerts={alerts[deployment]}
           logsEndRef={logsEndRef}
         />
         <div className="overflow-y-auto flex-grow min-h-[50vh] bg-stone-900 text-gray-300 font-mono text-sm p-2">
           <DeployStatusPanel
-            key={`panel-${runningDeploy.trackingId}`}
+            key={`panel-${key}`}
             runningDeploy={runningDeploy}
+            runningImageBuild={runningImageBuild}
             scmUrl={scmUrl}
             envs={envs}
             gitopsCommits={gitopsCommits}
@@ -82,28 +83,18 @@ export function DeployStatusModal(props) {
 }
 
 function DeployStatusPanel(props) {
-  const { runningDeploy, scmUrl, envs, gitopsCommits, imageBuildLogs, logsEndRef } = props
+  const { runningDeploy, runningImageBuild } = props
+  const { scmUrl, envs, gitopsCommits, imageBuildLogs, logsEndRef } = props
 
-  const deployStatusWidget =
-    (runningDeploy.type !== "imageBuild" && runningDeploy.trackingId) ||
-    (runningDeploy.type === "imageBuild" && runningDeploy.trackingId && runningDeploy.imageBuildTrackingId)
-    ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs})
-    : null
+  const deployStatusWidget = runningDeploy.trackingId ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs}) : null
+  const imageBuildWidget = runningImageBuild ? ImageBuild(runningImageBuild.trackingId, imageBuildLogs[runningImageBuild.trackingId]) : null
 
-  let imageBuildWidget = null
-  if (runningDeploy.type === "imageBuild") {
-    let trackingId = runningDeploy.trackingId
-    if (runningDeploy.imageBuildTrackingId) {
-      trackingId = runningDeploy.imageBuildTrackingId
-    }
-
-    imageBuildWidget = ImageBuild(trackingId, imageBuildLogs[trackingId]);
-  }
+  const key = runningDeploy.trackingId+'-'+runningImageBuild.trackingId
 
   return (
     <>
       <DeployHeader
-        key={`header-${runningDeploy.trackingId}`}
+        key={`header-${key}`}
         scmUrl={scmUrl}
         runningDeploy={runningDeploy}
       />

@@ -6,6 +6,8 @@ import {
   ACTION_TYPE_COMMITS,
   ACTION_TYPE_DEPLOY,
   ACTION_TYPE_DEPLOY_STATUS,
+  ACTION_TYPE_IMAGEBUILD,
+  ACTION_TYPE_IMAGEBUILD_STATUS,
   ACTION_TYPE_REPO_METAS,
   ACTION_TYPE_ROLLOUT_HISTORY,
   ACTION_TYPE_REPO_PULLREQUESTS,
@@ -44,7 +46,6 @@ export default class Repo extends Component {
       repoMetas: reduxState.repoMetas,
       fileInfos: reduxState.fileInfos,
       pullRequests: reduxState.pullRequests.configChanges[repoName],
-      runningDeploys: reduxState.runningDeploys,
       alerts: reduxState.alerts,
       deployStatusModal: false,
     }
@@ -216,7 +217,7 @@ export default class Repo extends Component {
       .then(data => {
         this.props.store.dispatch({
           type: ACTION_TYPE_DEPLOY_STATUS, payload: {
-            trackingId:  trackingId,
+            trackingId: trackingId,
             status: data.status,
             statusDesc: data.statusDesc,
             results: data.results,
@@ -274,17 +275,33 @@ export default class Repo extends Component {
             }
           }
         }
+      }, () => {/* Generic error handler deals with it */
+      });
+  }
+
+  checkImageBuildStatus(trackingId) {
+    this.props.gimletClient.getDeployStatus(trackingId)
+      .then(data => {
+        const triggeredDeployRequestID = data.results && data.results.length > 0 ? data.results[0].triggeredDeployRequestID : undefined
+        this.props.store.dispatch({
+          type: ACTION_TYPE_IMAGEBUILD_STATUS, payload: {
+            triggeredDeployRequestID: triggeredDeployRequestID,
+            status: data.status,
+            statusDesc: data.statusDesc,
+            results: data.results,
+          }
+        });
+
+        if (data.status === "new") {
+          setTimeout(() => {
+            this.checkImageBuildStatus(trackingId);
+          }, 2000);
+        }
 
         if (data.type === "imageBuild" && data.status === "success") {
           const triggeredReleaseId = data.results[0].triggeredDeployRequestID
-          this.props.store.dispatch({
-            type: ACTION_TYPE_DEPLOY_STATUS, payload: {
-              imageBuildTrackingId: trackingId,
-            }
-          });
           this.checkDeployStatus(triggeredReleaseId);
         }
-
       }, () => {/* Generic error handler deals with it */
       });
   }
@@ -293,16 +310,38 @@ export default class Repo extends Component {
     this.setState({deployStatusModal: true});
     this.props.gimletClient.deploy(target.artifactId, target.env, target.app, this.state.selectedTenant)
       .then(data => {
-        target.sha = sha;
-        target.trackingId = data.id;
-        target.repo = repo;
-        target.type = data.type;
-        this.props.store.dispatch({
-          type: ACTION_TYPE_DEPLOY, payload: target
-        });
-        setTimeout(() => {
-          this.checkDeployStatus(target.trackingId);
-        }, 1000);
+        const trackingId = data.id
+        if (data.type === 'imageBuild') {
+          this.props.store.dispatch({
+            type: ACTION_TYPE_IMAGEBUILD, payload: {
+              trackingId: trackingId
+            }
+          });
+          this.props.store.dispatch({
+            type: ACTION_TYPE_DEPLOY, payload: {
+              repo: repo,
+              env: target.env,
+              app: target.app,
+              sha: sha
+            }
+          });
+          setTimeout(() => {
+            this.checkImageBuildStatus(trackingId);
+          }, 2000);
+        } else {
+          this.props.store.dispatch({
+            type: ACTION_TYPE_DEPLOY, payload: {
+              trackingId: trackingId,
+              repo: repo,
+              env: target.env,
+              app: target.app,
+              sha: sha
+            }
+          });
+          setTimeout(() => {
+            this.checkDeployStatus(trackingId);
+          }, 1000);
+        }
       }, () => {/* Generic error handler deals with it */
       });
   }
@@ -335,7 +374,7 @@ export default class Repo extends Component {
         target.trackingId = data.id;
         target.type = data.type;
         setTimeout(() => {
-          this.checkDeployStatus(target);
+          this.checkDeployStatus(target.trackingId);
         }, 1000);
       }, () => {/* Generic error handler deals with it */
       });
@@ -463,7 +502,6 @@ export default class Repo extends Component {
         {deployStatusModal && envConfigs !== undefined && 
         <DeployStatusModal
           closeHandler={()=> this.setState({deployStatusModal: false})}
-          runningDeploys={this.state.runningDeploys}
           envs={filteredEnvs}
           owner={owner}
           repoName={repo}

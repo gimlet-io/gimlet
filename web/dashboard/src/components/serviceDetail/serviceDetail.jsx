@@ -158,10 +158,10 @@ function ServiceDetail(props) {
                 </svg>
               </a>
             }
-            <div className="flex items-center ml-auto">
+            <div className="flex items-center ml-auto space-x-1">
               {configExists &&
                 <button
-                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 mr-2 border border-gray-300 rounded"
+                  className="bg-transparent hover:bg-slate-100 font-medium text-sm text-gray-700 py-1 px-4 border border-gray-300 rounded"
                   onClick={() => {
                     posthog?.capture('Env config edit pushed')
                     navigateToConfigEdit(envName, stack.service.name)

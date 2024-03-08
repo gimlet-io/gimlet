@@ -28,7 +28,8 @@ export const ACTION_TYPE_ADD_ENVCONFIG = 'addEnvConfig';
 export const ACTION_TYPE_REPO_METAS = "repoMetas";
 export const ACTION_TYPE_DEPLOY = 'deploy';
 export const ACTION_TYPE_DEPLOY_STATUS = 'deployStatus';
-export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
+export const ACTION_TYPE_IMAGEBUILD = 'imageBuild';
+export const ACTION_TYPE_IMAGEBUILD_STATUS = 'imageBuildStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GITOPS_COMMITS = 'gitopsCommits';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
@@ -94,18 +95,6 @@ export const initialState = {
     chartUpdates: {},
     gitopsUpdates: {}
   },
-  runningDeploys: [
-    // {
-    //   artifactId: 'xxx',
-    //   env: 'optimal-snow',
-    //   app: 'streamlit-app',
-    //   selectedTenant: '',
-    //   sha: 'xxx',
-    //   trackingId: 'zzz',
-    //   repo: 'streamlit-app',
-    //   type: '?'
-    // }
-  ],
   repoRefreshQueue: [],
   gitRepos: [],
   envConfigs: {},
@@ -203,8 +192,10 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.deploy(state, action.payload)
     case ACTION_TYPE_DEPLOY_STATUS:
       return eventHandlers.deployStatus(state, action.payload)
-    case ACTION_TYPE_CLEAR_DEPLOY_STATUS:
-      return eventHandlers.clearDeployStatus(state)
+    case ACTION_TYPE_IMAGEBUILD:
+      return eventHandlers.imageBuild(state, action.payload)
+    case ACTION_TYPE_IMAGEBUILD_STATUS:
+      return eventHandlers.imageBuildStatus(state, action.payload)
     case ACTION_TYPE_CLEAR_PODLOGS:
        return podEventHandlers.clearPodLogs(state, action.payload)
     case ACTION_TYPE_CLEAR_DETAILS:
