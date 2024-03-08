@@ -55,17 +55,17 @@ export function DeployStatusModal(props) {
     if (followLogs) {
       logsEndRef.current && logsEndRef.current.scrollIntoView()
     }
-  }, [imageBuildTrackingId]);
+  }, [imageBuildTrackingId, followLogs]);
   useEffect(() => {
     if (followLogs) {
       logsEndRef.current && logsEndRef.current.scrollIntoView()
     }
-  }, [releaseTrackingId]);
+  }, [releaseTrackingId, followLogs]);
   useEffect(() => {
     if (followLogs) {
       logsEndRef.current && logsEndRef.current.scrollIntoView()
     }
-  }, [imageBuildLogs?.logLines?.length]);
+  }, [imageBuildLogs?.logLines?.length, followLogs]);
 
   if (!runningDeploy) {
     return (<Loading />)
@@ -188,11 +188,6 @@ function DeployStatusPanel(props) {
       {imageBuildWidget}
       {deployStatusWidget}
       <p className='pb-12' ref={logsEndRef} />
-      {/* TODO: 
-        - sticky toggle,
-        - if scrolled up by hand, turn off sticky toggle
-        - jump to top, bottom button
-      */}
     </>
   )
 }
