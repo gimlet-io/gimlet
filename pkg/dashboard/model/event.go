@@ -21,8 +21,8 @@ type Status int
 
 const (
 	Success Status = iota
-	Pending
 	Failure
+	Pending
 )
 
 func (s Status) String() string {

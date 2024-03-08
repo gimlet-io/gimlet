@@ -139,7 +139,7 @@ func TestSendingGitopsDeployMessage(t *testing.T) {
 				Version: *version,
 			},
 			TriggeredBy: "Gimlet",
-			Status:      1,
+			Status:      model.Failure,
 			StatusDesc:  "",
 			GitopsRef:   "76ab7d611242f7c6742f0ab662133e02b2ba2b1c",
 			GitopsRepo:  "testrepo",
