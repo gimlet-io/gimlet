@@ -1,15 +1,22 @@
 import SimpleServiceDetail from "../serviceDetail/simpleServiceDetail";
 import { Modal } from "./modal";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowUpIcon, ArrowDownIcon, PlayIcon } from '@heroicons/react/outline'
 
 export function DeployStatusModal(props) {
   const { closeHandler, owner, repoName, scmUrl } = props
   const { store, gimletClient } = props
   const { envConfigs } = props
   const logsEndRef = useRef();
+  const topRef = useRef();
 
-  const [imageBuildLogs, setImageBuildLogs] = useState(store.getState().imageBuildLogs);
-  store.subscribe(() => setImageBuildLogs(store.getState().imageBuildLogs));
+  const [imageBuildLogs, setImageBuildLogs] = useState("");
+  store.subscribe(() => {
+    if (imageBuildTrackingId) {
+      const logs = store.getState().imageBuildLogs[imageBuildTrackingId]
+      setImageBuildLogs(logs)
+    }
+  });
   const [gitopsCommits, setGitopsCommits] = useState(store.getState().gitopsCommits);
   store.subscribe(() => setGitopsCommits(store.getState().gitopsCommits));
   const [connectedAgents, setConnectedAgents] = useState(store.getState().connectedAgents);
@@ -17,16 +24,51 @@ export function DeployStatusModal(props) {
   const [envs, setEnvs] = useState(store.getState().envs);
   store.subscribe(() => setEnvs(store.getState().envs));
   const [runningDeploy, setRunningDeploy] = useState(store.getState().runningDeploy);
-  store.subscribe(() => {setRunningDeploy(store.getState().runningDeploy)});
+  store.subscribe(() => {
+    const r = store.getState().runningDeploy
+    setRunningDeploy(r)
+    if (r) {
+      setReleaseTrackingId(r.trackingId)
+    }
+  });
   const [runningImageBuild, setRunningImageBuild] = useState(store.getState().runningImageBuild);
-  store.subscribe(() => {setRunningImageBuild(store.getState().runningImageBuild)});
+  store.subscribe(() => {
+    const r = store.getState().runningImageBuild
+    setRunningImageBuild(r)
+    if (r) {
+      setImageBuildTrackingId(r.trackingId)
+    }
+  });
+  const [releaseTrackingId, setReleaseTrackingId] = useState(
+    store.getState().runningDeploy
+      ? store.getState().runningDeploy.trackingId
+      : undefined
+  );
+  const [imageBuildTrackingId, setImageBuildTrackingId] = useState(
+    store.getState().runningImageBuild
+      ? store.getState().runningImageBuild.trackingId
+      : undefined
+  );
+  const [followLogs, setFollowLogs] = useState(true);
+
+  useEffect(() => {
+    if (followLogs) {
+      logsEndRef.current && logsEndRef.current.scrollIntoView()
+    }
+  }, [imageBuildTrackingId]);
+  useEffect(() => {
+    if (followLogs) {
+      logsEndRef.current && logsEndRef.current.scrollIntoView()
+    }
+  }, [releaseTrackingId]);
+  useEffect(() => {
+    if (followLogs) {
+      logsEndRef.current && logsEndRef.current.scrollIntoView()
+    }
+  }, [imageBuildLogs?.logLines?.length]);
 
   if (!runningDeploy) {
-    return (
-      <>
-        <Loading />
-      </>
-    )
+    return (<Loading />)
   }
 
   const env = runningDeploy.env
@@ -37,11 +79,7 @@ export function DeployStatusModal(props) {
   const config = envConfigs[env].find((config) => config.app === app)
 
   if (!stack) { // for apps we haven't deployed yet
-    stack={
-      service: {
-        name: app
-      }
-    }
+    stack={service:{name: app}}
   }
 
   return (
@@ -65,7 +103,16 @@ export function DeployStatusModal(props) {
           // serviceAlerts={alerts[deployment]}
           logsEndRef={logsEndRef}
         />
-        <div className="overflow-y-auto flex-grow min-h-[50vh] bg-stone-900 text-gray-300 font-mono text-sm p-2">
+        <Controls topRef={topRef} logsEndRef={logsEndRef} followLogs={followLogs} setFollowLogs={setFollowLogs} />
+        <div
+          className="overflow-y-auto flex-grow min-h-[50vh] bg-stone-900 text-gray-300 font-mono text-sm p-2"
+          onScroll={evt => {
+              if ((logsEndRef.current.offsetTop-window.innerHeight-100) > evt.target.scrollTop) {
+                setFollowLogs(false)
+                console.log('not visible')
+              }
+            }}
+          >
           <DeployStatusPanel
             key={`panel-${key}`}
             runningDeploy={runningDeploy}
@@ -75,6 +122,7 @@ export function DeployStatusModal(props) {
             gitopsCommits={gitopsCommits}
             imageBuildLogs={imageBuildLogs}
             logsEndRef={logsEndRef}
+            topRef={topRef}
           />
         </div>
       </div>
@@ -82,17 +130,55 @@ export function DeployStatusModal(props) {
   )
 }
 
+function Controls(props) {
+  const {topRef, logsEndRef, followLogs, setFollowLogs} = props
+
+  return (
+    <div className="text-end">
+      <span className="isolate inline-flex rounded-md shadow-sm">
+        <button
+          type="button"
+          onClick={() => topRef.current.scrollIntoView()}
+          className="relative inline-flex items-center rounded-l-md bg-white px-1 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-300 focus:z-10"
+        >
+          <ArrowUpIcon className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!followLogs) {
+              logsEndRef.current.scrollIntoView()
+            }
+            setFollowLogs(!followLogs)
+          }}
+          className={`relative -ml-px inline-flex items-center px-1 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 ${followLogs ? 'bg-gray-300' : 'bg-white' } hover:bg-gray-300 focus:z-10`}
+        >
+          <PlayIcon className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => logsEndRef.current.scrollIntoView()}
+          className="relative -ml-px inline-flex items-center rounded-r-md bg-white px-1 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+        >
+          <ArrowDownIcon className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </span>
+    </div>
+  )
+}
+
 function DeployStatusPanel(props) {
   const { runningDeploy, runningImageBuild } = props
-  const { scmUrl, envs, gitopsCommits, imageBuildLogs, logsEndRef } = props
+  const { scmUrl, envs, gitopsCommits, imageBuildLogs, logsEndRef, topRef } = props
 
   const deployStatusWidget = runningDeploy.trackingId ? DeployStatus({runningDeploy, scmUrl, gitopsCommits, envs}) : null
-  const imageBuildWidget = runningImageBuild ? ImageBuild(runningImageBuild.trackingId, imageBuildLogs[runningImageBuild.trackingId]) : null
+  const imageBuildWidget = runningImageBuild ? ImageBuild(runningImageBuild.trackingId, imageBuildLogs) : null
 
   const key = runningDeploy.trackingId+'-'+runningImageBuild.trackingId
 
   return (
     <>
+      <p ref={topRef} />
       <DeployHeader
         key={`header-${key}`}
         scmUrl={scmUrl}
@@ -107,7 +193,6 @@ function DeployStatusPanel(props) {
         - if scrolled up by hand, turn off sticky toggle
         - jump to top, bottom button
       */}
-      {/* {logsEndRef.current && logsEndRef.current.scrollIntoView()} */}
     </>
   )
 }
