@@ -48,6 +48,7 @@ export default class Repo extends Component {
       pullRequests: reduxState.pullRequests.configChanges[repoName],
       alerts: reduxState.alerts,
       deployStatusModal: false,
+      selectedEnvs: [],
     }
 
     // handling API and streaming state changes
@@ -56,7 +57,6 @@ export default class Repo extends Component {
 
       this.setState({
         connectedAgents: reduxState.connectedAgents,
-        search: reduxState.search,
         rolloutHistory: reduxState.rolloutHistory,
         commits: reduxState.commits,
         branches: reduxState.branches,
@@ -90,10 +90,17 @@ export default class Repo extends Component {
     this.newConfig = this.newConfig.bind(this)
     this.setSelectedTenant = this.setSelectedTenant.bind(this)
     this.refreshCommits = this.refreshCommits.bind(this)
+    this.setSelectedEnvs = this.setSelectedEnvs.bind(this)
   }
 
   componentDidMount() {
     const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+
+    if (JSON.parse(localStorage.getItem(repoName + "-selected-envs"))) {
+      const selectedEnvs =JSON.parse(localStorage.getItem(repoName + "-selected-envs"));
+      this.setState({ selectedEnvs: selectedEnvs });
+    }
 
     this.props.gimletClient.getRepoMetas(owner, repo)
       .then(data => {
@@ -399,7 +406,6 @@ export default class Repo extends Component {
     const { owner, repo } = this.props.match.params;
     this.props.history.push({
       pathname: `/repo/${owner}/${repo}/${env}/${deployment}`,
-      search: this.props.location.search
     })
   }
 
@@ -450,11 +456,9 @@ export default class Repo extends Component {
 
   setSelectedTenant(tenant) {
     this.setState({ selectedTenant: tenant });
-    const queryParam = tenant === "" ? tenant : `?tenant=${tenant}`
 
     this.props.history.push({
       pathname: this.props.location.pathname,
-      search: queryParam
     })
   }
 
@@ -490,13 +494,22 @@ export default class Repo extends Component {
     return filteredEnvs;
   }
 
+  setSelectedEnvs(selectedEnvs) {
+    const { owner, repo } = this.props.match.params;
+    const repoName = `${owner}/${repo}`;
+    localStorage.setItem(repoName + "-selected-envs", JSON.stringify(selectedEnvs))
+    this.setState({
+      selectedEnvs: selectedEnvs
+    })
+  }
+
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, search, rolloutHistory, commits, pullRequests, settings, deployStatusModal } = this.state;
+    let { envs, connectedAgents, rolloutHistory, commits, pullRequests, settings, deployStatusModal, selectedEnvs } = this.state;
     const { branches, selectedBranch, envConfigs, scmUrl, alerts } = this.state;
 
-    let filteredEnvs = envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, search.filter);
+    let decoratedEnvs = envsForRepo(envs, connectedAgents, repoName);
 
     let repoRolloutHistory = undefined;
     if (rolloutHistory && rolloutHistory[repoName]) {
@@ -508,7 +521,7 @@ export default class Repo extends Component {
         {deployStatusModal && envConfigs !== undefined && 
         <DeployStatusModal
           closeHandler={()=> this.setState({deployStatusModal: false})}
-          envs={filteredEnvs}
+          envs={decoratedEnvs}
           owner={owner}
           repoName={repo}
           envConfigs={envConfigs}
@@ -549,37 +562,48 @@ export default class Repo extends Component {
               selectedTenant={this.state.selectedTenant}
               setSelectedTenant={this.setSelectedTenant}
             />
+            {decoratedEnvs && <div className='py-4'>
+              <EnvSelector
+                envs={decoratedEnvs}
+                selectedEnvs={selectedEnvs}
+                setSelectedEnvs={this.setSelectedEnvs}
+              />
+            </div>
+            }
           </div>
         </header>
         <main>
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div className="px-4 py-8 sm:px-0">
+            <div className="px-4 sm:px-0">
               <div>
-                {envConfigs && Object.keys(filteredEnvs).sort().map((envName) =>
-                  <Env
-                    key={envName}
-                    env={filteredEnvs[envName]}
-                    repoRolloutHistory={repoRolloutHistory}
-                    envConfigs={this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)}
-                    navigateToConfigEdit={this.navigateToConfigEdit}
-                    linkToDeployment={this.linkToDeployment}
-                    newConfig={this.newConfig}
-                    rollback={this.rollback}
-                    owner={owner}
-                    repoName={repo}
-                    fileInfos={this.fileMetasByEnv(envName)}
-                    pullRequests={pullRequests?.[envName]}
-                    releaseHistorySinceDays={settings.releaseHistorySinceDays}
-                    gimletClient={this.props.gimletClient}
-                    store={this.props.store}
-                    envFromParams={environment}
-                    deploymentFromParams={deployment}
-                    scmUrl={scmUrl}
-                    history={this.props.history}
-                    alerts={alerts}
-                  />
-                )
-                }
+                {envConfigs && Object.keys(decoratedEnvs).sort().map((envName) =>
+                  {
+                    const filter = selectedEnvs.includes(envName)
+
+                    return filter ? (
+                    <Env
+                      key={envName}
+                      env={decoratedEnvs[envName]}
+                      repoRolloutHistory={repoRolloutHistory}
+                      envConfigs={this.filteredConfigsByTenant(envConfigs[envName], this.state.selectedTenant)}
+                      navigateToConfigEdit={this.navigateToConfigEdit}
+                      linkToDeployment={this.linkToDeployment}
+                      newConfig={this.newConfig}
+                      rollback={this.rollback}
+                      owner={owner}
+                      repoName={repo}
+                      fileInfos={this.fileMetasByEnv(envName)}
+                      pullRequests={pullRequests?.[envName]}
+                      releaseHistorySinceDays={settings.releaseHistorySinceDays}
+                      gimletClient={this.props.gimletClient}
+                      store={this.props.store}
+                      envFromParams={environment}
+                      deploymentFromParams={deployment}
+                      scmUrl={scmUrl}
+                      history={this.props.history}
+                      alerts={alerts}
+                    />) : null}
+                )}
 
                 {Object.keys(branches).length !== 0 &&
                   <div className="bg-gray-50 rounded-lg p-4 sm:p-6 lg:p-8 mt-8 relative">
@@ -594,7 +618,7 @@ export default class Repo extends Component {
                       <Commits
                         commits={commits[repoName]}
                         envs={envs}
-                        connectedAgents={filteredEnvs}
+                        connectedAgents={decoratedEnvs}
                         deployHandler={this.deploy}
                         repo={repo}
                         gimletClient={this.props.gimletClient}
@@ -631,37 +655,28 @@ function stacks(connectedAgents, envName) {
   return [];
 }
 
-function envsForRepoFilteredBySearchFilter(envs, connectedAgents, repoName, searchFilter) {
-  let filteredEnvs = {};
+function envsForRepo(envs, connectedAgents, repoName) {
+  let decoratedEnvs = {};
 
   if (!connectedAgents || !envs) {
-    return filteredEnvs;
+    return decoratedEnvs;
   }
   
   // iterate through all Kubernetes envs
   for (const env of envs) {
-    filteredEnvs[env.name] = {
+    decoratedEnvs[env.name] = {
       name: env.name,
       builtIn: env.builtIn,
       isOnline: isOnline(connectedAgents, env)
     };
 
     // find all stacks that belong to this repo
-    filteredEnvs[env.name].stacks = stacks(connectedAgents, env.name).filter((service) => {
+    decoratedEnvs[env.name].stacks = stacks(connectedAgents, env.name).filter((service) => {
       return service.repo === repoName
     });
-
-    // apply search box filter
-    if (searchFilter !== '') {
-      filteredEnvs[env.name].stacks = filteredEnvs[env.name].stacks.filter((service) => {
-        return service.service.name.includes(searchFilter) ||
-          (service.deployment !== undefined && service.deployment.name.includes(searchFilter)) ||
-          (service.ingresses !== undefined && service.ingresses.filter((ingress) => ingress.url.includes(searchFilter)).length > 0)
-      })
-    }
   }
 
-  return filteredEnvs;
+  return decoratedEnvs;
 }
 
 function isOnline(onlineEnvs, singleEnv) {
@@ -671,3 +686,25 @@ function isOnline(onlineEnvs, singleEnv) {
           return onlineEnv.name === singleEnv.name
       })
 };
+
+function EnvSelector(props) {
+  const { envs, selectedEnvs, setSelectedEnvs } = props
+
+  return (
+    <div className='space-x-1'>
+    {envs && Object.keys(envs).sort().map(envName => {
+      const filter = selectedEnvs.includes(envName)
+
+      return (
+        <button key={envName} className={(filter ? "text-blue-50 bg-blue-600" : "bg-gray-50 text-gray-600") + " select-none capitalize rounded-full px-3"}
+        onClick={() => filter
+          ? setSelectedEnvs(selectedEnvs.filter(i => i !== envName))
+          : selectedEnvs.push(envName) && setSelectedEnvs(selectedEnvs)}
+        >
+          {envName}
+        </button>
+      )
+      })}
+    </div>
+  )
+}
