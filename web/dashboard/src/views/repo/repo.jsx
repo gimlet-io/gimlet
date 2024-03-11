@@ -406,6 +406,7 @@ export default class Repo extends Component {
     const { owner, repo } = this.props.match.params;
     this.props.history.push({
       pathname: `/repo/${owner}/${repo}/${env}/${deployment}`,
+      search: this.props.location.search
     })
   }
 
@@ -456,9 +457,11 @@ export default class Repo extends Component {
 
   setSelectedTenant(tenant) {
     this.setState({ selectedTenant: tenant });
+    const queryParam = tenant === "" ? tenant : `?tenant=${tenant}`
 
     this.props.history.push({
       pathname: this.props.location.pathname,
+      search: queryParam
     })
   }
 
