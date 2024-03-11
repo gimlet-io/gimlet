@@ -70,14 +70,14 @@ function SimpleServiceDetail(props) {
               {deployment &&
                 <>
                   <Logs
-                    gimletClient={gimletClient}
+                    capacitorClient={gimletClient}
                     store={store}
                     namespace={deployment.namespace}
                     deployment={deployment.name}
                     containers={podContainers(deployment.pods)}
                   />
                   <Describe
-                    gimletClient={gimletClient}
+                    capacitorClient={gimletClient}
                     store={store}
                     namespace={deployment.namespace}
                     deployment={deployment.name}
