@@ -2,10 +2,6 @@ import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/solid';
 import React, { memo, Component } from 'react';
 import { Summary } from "./capacitor/Summary"
 import { ExpandedFooter } from './capacitor/ExpandedFooter';
-import {
-  ACTION_TYPE_OPEN_DEPLOY_PANEL,
-  ACTION_TYPE_CLOSE_DEPLOY_PANEL
-} from '../../redux/redux';
 
 const Footer = memo(class Footer extends Component {
   constructor(props) {
@@ -19,7 +15,7 @@ const Footer = memo(class Footer extends Component {
       selectedEnv: defaultEnvName(reduxState.connectedAgents),
       connectedAgents: reduxState.connectedAgents,
       gitopsCommits: reduxState.gitopsCommits,
-      deployPanelOpen: reduxState.deployPanelOpen,
+      open: false,
     };
 
     this.props.store.subscribe(() => {
@@ -28,7 +24,6 @@ const Footer = memo(class Footer extends Component {
           fluxEvents: reduxState.fluxEvents,
           connectedAgents: reduxState.connectedAgents,
           gitopsCommits: reduxState.gitopsCommits,
-          deployPanelOpen: reduxState.deployPanelOpen,
           selectedEnv: !prevState.selectedEnv ? defaultEnvName(reduxState.connectedAgents) : prevState.selectedEnv
         }))
     });
@@ -39,11 +34,9 @@ const Footer = memo(class Footer extends Component {
   }
 
   handleToggle() {
-    if (this.state.deployPanelOpen) {
-      this.props.store.dispatch({ type: ACTION_TYPE_CLOSE_DEPLOY_PANEL })
-    } else {
-      this.props.store.dispatch({ type: ACTION_TYPE_OPEN_DEPLOY_PANEL })
-    }
+    this.setState(prevState => ({
+      open: !prevState.open
+    }));
   }
 
   setSelectedEnv(selectedEnv) {
@@ -61,14 +54,18 @@ const Footer = memo(class Footer extends Component {
 
   render() {
     const { gimletClient, store } = this.props;
-    const { connectedAgents, fluxEvents, selectedTab, targetReference, deployPanelOpen, selectedEnv } = this.state;
+    const { connectedAgents, fluxEvents, selectedTab, targetReference, open, selectedEnv } = this.state;
 
     if (!connectedAgents || Object.keys(connectedAgents).length === 0) {
       return null
     }
 
     const fluxState = connectedAgents[selectedEnv].fluxState;
-    const fluxK8sEvents = fluxEvents[selectedEnv];
+    const fluxK8sEvents = fluxEvents ? fluxEvents[selectedEnv] : [];
+
+    if (!fluxState) {
+      return null
+    }
 
     let sources = []
     if (fluxState.ociRepositories) {
@@ -79,26 +76,26 @@ const Footer = memo(class Footer extends Component {
     sources = [...sources].sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
 
     return (
-      <div aria-labelledby="slide-over-title" role="dialog" aria-modal="true" className={`fixed inset-x-0 bottom-0 bg-neutral-200 z-40 border-t border-neutral-300 ${deployPanelOpen ? 'h-4/5' : ''}`}>
-        <div className={`flex justify-between w-full ${deployPanelOpen ? '' : 'h-full'}`}>
-          {!deployPanelOpen &&
+      <div aria-labelledby="slide-over-title" role="dialog" aria-modal="true" className={`fixed inset-x-0 bottom-0 bg-neutral-200 z-40 border-t border-neutral-300 ${open ? 'h-4/5' : ''}`}>
+        <div className={`flex justify-between w-full ${open ? '' : 'h-full'}`}>
+          {!open &&
           <div className='h-auto w-full cursor-pointer px-16 py-4 flex gap-x-12' onClick={this.handleToggle} >
             <CollapsedFooter connectedAgents={connectedAgents} />
           </div>
           }
-          {deployPanelOpen &&
+          {open &&
             <FooterNav connectedAgents={connectedAgents} selectedEnv={selectedEnv} setSelectedEnv={this.setSelectedEnv} />
           }
           <div className='px-4 py-2'>
             <button
               onClick={this.handleToggle}
               type="button" className="ml-1 rounded-md hover:bg-white hover:text-black text-neutral-700 p-1">
-              <span className="sr-only">{deployPanelOpen ? 'Close panel' : 'Open panel'}</span>
-              {deployPanelOpen ? <ArrowDownIcon className="h-5 w-5" aria-hidden="true" /> : <ArrowUpIcon className="h-5 w-5" aria-hidden="true" />}
+              <span className="sr-only">{open ? 'Close panel' : 'Open panel'}</span>
+              {open ? <ArrowDownIcon className="h-5 w-5" aria-hidden="true" /> : <ArrowUpIcon className="h-5 w-5" aria-hidden="true" />}
             </button>
           </div>
         </div>
-        {deployPanelOpen &&
+        {open &&
           <div className='no-doc-scroll h-full overscroll-contain'>
             <div className="w-full h-full overscroll-contain">
               <ExpandedFooter

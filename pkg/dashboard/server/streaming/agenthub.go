@@ -45,9 +45,7 @@ func (h *AgentHub) Run() {
 		case agent := <-h.Register:
 			h.Agents[agent.Name] = agent
 		case agent := <-h.Unregister:
-			if _, ok := h.Agents[agent.Name]; ok {
-				delete(h.Agents, agent.Name)
-			}
+			delete(h.Agents, agent.Name)
 		}
 	}
 }

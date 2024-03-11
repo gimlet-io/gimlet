@@ -134,6 +134,9 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	}
 
 	req, err := http.NewRequest("POST", uri, body)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req, err
 }
@@ -145,35 +148,67 @@ func streamImageBuilderLogs(
 	imageBuildId string,
 ) {
 	defer body.Close()
+
 	var sb strings.Builder
+	var lastLine string
 	reader := bufio.NewReader(body)
-	// first := true
+	logCh := make(chan string)
+
+	go func() {
+		for {
+			line, err := reader.ReadBytes('\n')
+			lastLine = string(line)
+			logCh <- lastLine
+			if err != nil {
+				if err == io.EOF {
+					close(logCh)
+					break
+				}
+
+				logrus.Errorf("cannot stream build logs: %s", err)
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
+				return
+			}
+		}
+	}()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer func() {
+		ticker.Stop()
+	}()
+
 	for {
-		line, err := reader.ReadBytes('\n')
-		sb.WriteString(string(line))
-		if err != nil {
-			if err == io.EOF {
+		logEnded := false
+
+		select {
+		case logLine, ok := <-logCh:
+			if !ok {
+				logEnded = true
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
 				break
 			}
+			sb.WriteString(string(logLine))
 
-			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", sb.String())
-			return
+			if sb.Len() > 4000 {
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+			}
+		case <-ticker.C:
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+			sb.Reset()
 		}
 
-		// if first || sb.Len() > 300 {
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
-		sb.Reset()
-		// first = false
-		// }
+		if logEnded {
+			break
+		}
 	}
 
-	lastLine := sb.String()
 	if strings.HasSuffix(lastLine, "IMAGE BUILT") {
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "success", lastLine)
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "success", "")
 		return
 	} else {
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", lastLine)
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", "")
 		return
 	}
 }
@@ -386,22 +421,56 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 	var sb strings.Builder
 	var lastLine string
 	reader := bufio.NewReader(podLogs)
-	for {
-		line, err := reader.ReadBytes('\n')
-		sb.WriteString(string(line))
-		if err != nil {
-			if err == io.EOF {
+	logCh := make(chan string)
+
+	go func() {
+		for {
+			line, err := reader.ReadBytes('\n')
+			lastLine = string(line)
+			logCh <- lastLine
+			if err != nil {
+				if err == io.EOF {
+					close(logCh)
+					break
+				}
+
+				logrus.Errorf("cannot stream build logs: %s", err)
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
 				break
 			}
+		}
+	}()
 
-			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
-			break
+	ticker := time.NewTicker(5 * time.Second)
+	defer func() {
+		ticker.Stop()
+	}()
+
+	for {
+		logEnded := false
+
+		select {
+		case logLine, ok := <-logCh:
+			if !ok {
+				logEnded = true
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+				break
+			}
+			sb.WriteString(string(logLine))
+
+			if sb.Len() > 4000 {
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+			}
+		case <-ticker.C:
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+			sb.Reset()
 		}
 
-		lastLine = string(line)
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
-		sb.Reset()
+		if logEnded {
+			break
+		}
 	}
 
 	if strings.Contains(lastLine, "Pushed") {

@@ -4,8 +4,13 @@ import { Transition } from '@headlessui/react'
 import DeployWidget from "../deployWidget/deployWidget";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ACTION_TYPE_UPDATE_COMMITS } from "../../redux/redux";
+import { Modal, SkeletonLoader } from "./modal";
+import { CommitEvents } from "./commitEvents";
+import { EventWidget } from "./eventWidget"
 
-const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant }) => {
+export function Commits(props) {
+  const { commits, envs, connectedAgents, deployHandler, owner, repo, gimletClient, store, branch, scmUrl, tenant } = props
+
   const [isScrollButtonActive, setIsScrollButtonActive] = useState(false)
   const repoName = `${owner}/${repo}`
   const commitsRef = useRef();
@@ -43,25 +48,101 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
     return null;
   }
 
-  const commitWidgets = [];
-
   const envNames = envs.map(env => env["name"]);
   for (let env of envs) {
-    env.isOnline = connectedAgents[env.name].isOnline 
+    env.isOnline = connectedAgents[env.name].isOnline
   }
 
-  commits.forEach((commit, idx, ar) => {
-    const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
-    const dateLabel = formatDistance(commit.created_at * 1000, new Date());
-    let ringColor = 'ring-gray-100';
+  const commitWidgets = commits.map((commit, idx, ar) =>
+    <CommitWidget
+      key={idx}
+      owner={owner}
+      repo={repo}
+      repoName={repoName}
+      commit={commit}
+      last={idx === ar.length - 1}
+      idx={idx}
+      commitsRef={commitsRef}
+      envNames={envNames}
+      scmUrl={scmUrl}
+      tenant={tenant}
+      connectedAgents={connectedAgents}
+      deployHandler={deployHandler}
+      gimletClient={gimletClient}
+      envs={envs}
+    />
+  )
 
-    commitWidgets.push(
-      <li key={idx}>
+  return (
+    <div className="flow-root">
+      <InfiniteScroll
+        dataLength={commitWidgets.length}
+        next={fetchNextCommitsWidgets}
+        style={{ overflow: 'visible' }}
+        hasMore={true}
+      >
+        <ul className="-mb-4">
+          {commitWidgets}
+        </ul>
+      </InfiniteScroll>
+      <Transition
+        show={isScrollButtonActive}
+        as={Fragment}
+        enter="transform ease-out duration-300 transition"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition ease-in duration-100"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
+        <div className='fixed inset-10 flex items-end px-4 py-6 pointer-events-none'>
+          <button onClick={handleClickScroll} className='my-8 ml-auto px-5 py-2 bg-green-500 text-white text-sm font-bold tracking-wide rounded-full focus:outline-none pointer-events-auto'>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+            </svg>
+          </button>
+        </div>
+      </Transition>
+    </div>
+  )
+}
+
+const CommitWidget = (props) => {
+  const { owner, repo, repoName, commit, last, idx, commitsRef, envNames, scmUrl, tenant, connectedAgents, deployHandler, gimletClient, envs } = props
+
+  const [showModal, setShowModal] = useState(false)
+  const [events, setEvents] = useState()
+
+  const exactDate = format(commit.created_at * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(commit.created_at * 1000, new Date());
+  let ringColor = 'ring-gray-100';
+
+  const loadEvents = () => {
+    setShowModal(true)
+    gimletClient.getCommitEvents(owner, repo, commit.sha)
+      .then(data => {
+        setEvents(data)
+      }, () => {/* Generic error handler deals with it */
+      });
+  }
+
+  return (
+    <>
+      {showModal &&
+        <Modal closeHandler={() => setShowModal(false)}>
+          {events ?
+            <CommitEvents events={events} scmUrl={scmUrl} envs={envs} />
+            :
+            <SkeletonLoader />
+          }
+        </Modal>
+      }
+      <li key={commit.sha}>
         {idx === 10 &&
           <div ref={commitsRef} />
         }
         <div className="relative pl-2 py-4 hover:bg-gray-100 rounded">
-          {idx !== ar.length - 1 &&
+          {!last &&
             <span className="absolute top-4 left-6 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
           }
           <div className="relative flex items-start space-x-3">
@@ -106,6 +187,18 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
                     {dateLabel} ago
                   </a>
                 </p>
+                {commit.lastEvent &&
+                <p className="mt-0.5 text-xs text-gray-800">
+                  <EventWidget event={commit.lastEvent} />
+                  <span
+                    className="rounded bg-gray-200 hover:bg-gray-300 ml-1 cursor-pointer"
+                    onClick={() => loadEvents()}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 inline">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                    </svg>
+                  </span>
+                </p>
+                }
               </div>
             </div>
             <div>
@@ -123,40 +216,7 @@ const Commits = ({ commits, envs, connectedAgents, deployHandler, owner, repo, g
           </div>
         </div>
       </li>
-    )
-  })
-
-  return (
-    <div className="flow-root">
-      <InfiniteScroll
-        dataLength={commitWidgets.length}
-        next={fetchNextCommitsWidgets}
-        style={{ overflow: 'visible' }}
-        hasMore={true}
-      >
-        <ul className="-mb-4">
-          {commitWidgets}
-        </ul>
-      </InfiniteScroll>
-      <Transition
-        show={isScrollButtonActive}
-        as={Fragment}
-        enter="transform ease-out duration-300 transition"
-        enterFrom="opacity-0"
-        enterTo="opacity-100"
-        leave="transition ease-in duration-100"
-        leaveFrom="opacity-100"
-        leaveTo="opacity-0"
-      >
-        <div className='fixed inset-10 flex items-end px-4 py-6 pointer-events-none'>
-          <button onClick={handleClickScroll} className='my-8 ml-auto px-5 py-2 bg-green-500 text-white text-sm font-bold tracking-wide rounded-full focus:outline-none pointer-events-auto'>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-            </svg>
-          </button>
-        </div>
-      </Transition>
-    </div>
+    </>
   )
 }
 
@@ -182,7 +242,7 @@ export default Commits;
 
 class StatusIcon extends Component {
   render() {
-    const {status} = this.props;
+    const { status } = this.props;
 
     switch (status.state) {
       case 'SUCCESS':
@@ -190,11 +250,11 @@ class StatusIcon extends Component {
       case 'NEUTRAL':
         return (
           <svg className="inline fill-current text-green-400 ml-1" viewBox="0 0 12 16" version="1.1" width="15"
-               height="20"
-               role="img"
+            height="20"
+            role="img"
           >
             <title>{status.context}</title>
-            <path fillRule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/>
+            <path fillRule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z" />
           </svg>
         );
       case 'PENDING':
@@ -202,22 +262,22 @@ class StatusIcon extends Component {
       case 'QUEUED':
         return (
           <svg className="inline fill-current text-yellow-400 ml-1" viewBox="0 0 8 16" version="1.1" width="10"
-               height="20"
-               role="img"
+            height="20"
+            role="img"
           >
             <title>{status.context}</title>
-            <path fillRule="evenodd" d="M0 8c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z"/>
+            <path fillRule="evenodd" d="M0 8c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z" />
           </svg>
         );
       default:
         return (
           <svg className="inline fill-current text-red-400 ml-1" viewBox="0 0 12 16" version="1.1" width="15"
-               height="20"
-               role="img"
+            height="20"
+            role="img"
           >
             <title>{status.context}</title>
             <path fillRule="evenodd"
-                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/>
+              d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z" />
           </svg>
         )
     }
@@ -226,7 +286,7 @@ class StatusIcon extends Component {
 
 class ReleaseBadges extends Component {
   render() {
-    const {sha, connectedAgents} = this.props;
+    const { sha, connectedAgents } = this.props;
 
     let current = [];
     for (let envName of Object.keys(connectedAgents)) {
@@ -244,7 +304,7 @@ class ReleaseBadges extends Component {
 
     let releaseBadges = current.map((release) => (
       <span key={`${release.app}-${release.env}`}
-            className="inline-flex items-center px-2.5 py-0.5 rounded-md font-medium bg-pink-100 text-pink-800 mr-2"
+        className="inline-flex items-center px-2.5 py-0.5 rounded-md font-medium bg-pink-100 text-pink-800 mr-2"
       >
         {release.app} on {release.env}
       </span>
