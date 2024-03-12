@@ -48,7 +48,7 @@ export default class Repo extends Component {
       pullRequests: reduxState.pullRequests.configChanges[repoName],
       alerts: reduxState.alerts,
       deployStatusModal: false,
-      selectedEnvs: [],
+      unselectedEnvs: [],
     }
 
     // handling API and streaming state changes
@@ -90,16 +90,16 @@ export default class Repo extends Component {
     this.newConfig = this.newConfig.bind(this)
     this.setSelectedTenant = this.setSelectedTenant.bind(this)
     this.refreshCommits = this.refreshCommits.bind(this)
-    this.setSelectedEnvs = this.setSelectedEnvs.bind(this)
+    this.setUnselectedEnvs = this.setUnselectedEnvs.bind(this)
   }
 
   componentDidMount() {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
 
-    if (JSON.parse(localStorage.getItem(repoName + "-selected-envs"))) {
-      const selectedEnvs =JSON.parse(localStorage.getItem(repoName + "-selected-envs"));
-      this.setState({ selectedEnvs: selectedEnvs });
+    if (JSON.parse(localStorage.getItem(repoName + "-unselected-envs"))) {
+      const unselectedEnvs =JSON.parse(localStorage.getItem(repoName + "-unselected-envs"));
+      this.setState({ unselectedEnvs: unselectedEnvs });
     }
 
     this.props.gimletClient.getRepoMetas(owner, repo)
@@ -497,19 +497,19 @@ export default class Repo extends Component {
     return filteredEnvs;
   }
 
-  setSelectedEnvs(selectedEnvs) {
+  setUnselectedEnvs(unselectedEnvs) {
     const { owner, repo } = this.props.match.params;
     const repoName = `${owner}/${repo}`;
-    localStorage.setItem(repoName + "-selected-envs", JSON.stringify(selectedEnvs))
+    localStorage.setItem(repoName + "-unselected-envs", JSON.stringify(unselectedEnvs))
     this.setState({
-      selectedEnvs: selectedEnvs
+      unselectedEnvs: unselectedEnvs
     })
   }
 
   render() {
     const { owner, repo, environment, deployment } = this.props.match.params;
     const repoName = `${owner}/${repo}`
-    let { envs, connectedAgents, rolloutHistory, commits, pullRequests, settings, deployStatusModal, selectedEnvs } = this.state;
+    let { envs, connectedAgents, rolloutHistory, commits, pullRequests, settings, deployStatusModal, unselectedEnvs } = this.state;
     const { branches, selectedBranch, envConfigs, scmUrl, alerts } = this.state;
 
     let decoratedEnvs = envsForRepo(envs, connectedAgents, repoName);
@@ -568,8 +568,8 @@ export default class Repo extends Component {
             {decoratedEnvs && <div className='py-4'>
               <EnvSelector
                 envs={decoratedEnvs}
-                selectedEnvs={selectedEnvs}
-                setSelectedEnvs={this.setSelectedEnvs}
+                unselectedEnvs={unselectedEnvs}
+                setUnselectedEnvs={this.setUnselectedEnvs}
               />
             </div>
             }
@@ -581,9 +581,9 @@ export default class Repo extends Component {
               <div>
                 {envConfigs && Object.keys(decoratedEnvs).sort().map((envName) =>
                   {
-                    const filter = selectedEnvs.includes(envName)
+                    const unselected = unselectedEnvs.includes(envName)
 
-                    return filter ? (
+                    return unselected ? null : (
                     <Env
                       key={envName}
                       env={decoratedEnvs[envName]}
@@ -605,7 +605,7 @@ export default class Repo extends Component {
                       scmUrl={scmUrl}
                       history={this.props.history}
                       alerts={alerts}
-                    />) : null}
+                    />)}
                 )}
 
                 {Object.keys(branches).length !== 0 &&
@@ -691,18 +691,18 @@ function isOnline(onlineEnvs, singleEnv) {
 };
 
 function EnvSelector(props) {
-  const { envs, selectedEnvs, setSelectedEnvs } = props
+  const { envs, unselectedEnvs, setUnselectedEnvs } = props
 
   return (
     <div className='space-x-1'>
     {envs && Object.keys(envs).sort().map(envName => {
-      const filter = selectedEnvs.includes(envName)
+      const unselected = unselectedEnvs.includes(envName)
 
       return (
-        <button key={envName} className={(filter ? "text-blue-50 bg-blue-600" : "bg-gray-50 text-gray-600") + " select-none capitalize rounded-full px-3"}
-        onClick={() => filter
-          ? setSelectedEnvs(selectedEnvs.filter(i => i !== envName))
-          : selectedEnvs.push(envName) && setSelectedEnvs(selectedEnvs)}
+        <button key={envName} className={(unselected ? "bg-gray-50 text-gray-600" : "text-blue-50 bg-blue-600") + " select-none capitalize rounded-full px-3"}
+        onClick={() => unselected
+          ? setUnselectedEnvs(unselectedEnvs.filter(i => i !== envName))
+          : unselectedEnvs.push(envName) && setUnselectedEnvs(unselectedEnvs)}
         >
           {envName}
         </button>
