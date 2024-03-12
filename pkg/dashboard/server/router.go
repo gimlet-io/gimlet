@@ -46,6 +46,7 @@ func SetupRouter(
 	logger *log.Logger,
 	gitServer http.Handler,
 	gitUser *model.User,
+	gitopsQueue chan int,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -67,7 +68,7 @@ func SetupRouter(
 	r.Use(middleware.WithValue("gitopsUpdatePullRequests", gitopsUpdatePullRequests))
 	r.Use(middleware.WithValue("router", r))
 	r.Use(middleware.WithValue("gitUser", gitUser))
-
+	r.Use(middleware.WithValue("gitopsQueue", gitopsQueue))
 	r.Use(middleware.WithValue("notificationsManager", notificationsManager))
 	r.Use(middleware.WithValue("perf", perf))
 

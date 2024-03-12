@@ -42,6 +42,7 @@ type GitopsWorker struct {
 	perf                 *prometheus.HistogramVec
 	gitUser              *model.User
 	gitHost              string
+	gitopsQueue          chan int
 }
 
 func NewGitopsWorker(
@@ -54,6 +55,7 @@ func NewGitopsWorker(
 	perf *prometheus.HistogramVec,
 	gitUser *model.User,
 	gitHost string,
+	gitopsQueue chan int,
 ) *GitopsWorker {
 	return &GitopsWorker{
 		store:                store,
@@ -65,18 +67,31 @@ func NewGitopsWorker(
 		perf:                 perf,
 		gitUser:              gitUser,
 		gitHost:              gitHost,
+		gitopsQueue:          gitopsQueue,
 	}
 }
 
 func (w *GitopsWorker) Run() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer func() {
+		ticker.Stop()
+	}()
+
+	logrus.Info("Gitops worker started")
 	for {
+		select {
+		case _, ok := <-w.gitopsQueue:
+			if !ok {
+				logrus.Info("Gitops worker stopped")
+				return
+			}
+		case <-ticker.C:
+		}
+
 		events, err := w.store.UnprocessedEvents()
 		if err != nil {
 			logrus.Errorf("Could not fetch unprocessed events %s", err.Error())
-			time.Sleep(1 * time.Second)
-			continue
 		}
-
 		for _, event := range events {
 			w.eventsProcessed.Inc()
 			processEvent(w.store,
@@ -90,8 +105,6 @@ func (w *GitopsWorker) Run() {
 				w.gitHost,
 			)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
