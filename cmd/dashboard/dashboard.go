@@ -145,7 +145,7 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
-	gitopsQueue := make(chan int)
+	gitopsQueue := make(chan int, 1000)
 
 	artifactsWorker := worker.NewArtifactsWorker(
 		repoCache,
