@@ -145,10 +145,13 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
+	gitopsQueue := make(chan int)
+
 	artifactsWorker := worker.NewArtifactsWorker(
 		repoCache,
 		store,
 		triggerArtifactGeneration,
+		gitopsQueue,
 	)
 	go artifactsWorker.Run()
 
@@ -163,7 +166,7 @@ func main() {
 		go weeklyReporter.Run()
 	}
 
-	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
+	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds, gitopsQueue)
 	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
@@ -200,7 +203,6 @@ func main() {
 		go stackUpdater.Run()
 	}
 
-	gitopsQueue := make(chan int)
 	gitopsWorker := worker.NewGitopsWorker(
 		store,
 		tokenManager,

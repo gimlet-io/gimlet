@@ -20,14 +20,16 @@ type ArtifactsWorker struct {
 	gitRepoCache *nativeGit.RepoCache
 	dao          *store.Store
 	trigger      chan string
+	gitopsQueue  chan int
 }
 
 func NewArtifactsWorker(
 	gitRepoCache *nativeGit.RepoCache,
 	dao *store.Store,
 	trigger chan string,
+	gitopsQueue chan int,
 ) *ArtifactsWorker {
-	return &ArtifactsWorker{gitRepoCache: gitRepoCache, dao: dao, trigger: trigger}
+	return &ArtifactsWorker{gitRepoCache: gitRepoCache, dao: dao, trigger: trigger, gitopsQueue: gitopsQueue}
 }
 
 func (a *ArtifactsWorker) Run() {
@@ -37,9 +39,6 @@ func (a *ArtifactsWorker) Run() {
 	}
 }
 
-// - should not trigger policy, if there is a newer artifact - geezus
-// should be called thourhg a channel, with a go routine to not wait for a lock
-// but then it also has to stream stuff to the gui
 func (a *ArtifactsWorker) assureGimletArtifacts(repoName string) error {
 	err := a.gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		var innerErr error
@@ -55,7 +54,10 @@ func (a *ArtifactsWorker) assureGimletArtifacts(repoName string) error {
 
 		slices.Reverse(hashes) //artifacts should be generated in commit creation order
 
-		return generateFakeArtifactsForCommits(repoName, headBranch, hashes, a.dao, repo)
+		err := generateFakeArtifactsForCommits(repoName, headBranch, hashes, a.dao, repo)
+		a.gitopsQueue <- 1
+
+		return err
 	})
 
 	return err
