@@ -47,7 +47,7 @@ func main() {
 	})
 	r.Post("/build-image", uploadFile)
 
-	err = http.ListenAndServe(":9000", r)
+	err = http.ListenAndServe(":9999", r)
 	log.Error(err)
 }
 

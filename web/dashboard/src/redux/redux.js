@@ -28,7 +28,8 @@ export const ACTION_TYPE_ADD_ENVCONFIG = 'addEnvConfig';
 export const ACTION_TYPE_REPO_METAS = "repoMetas";
 export const ACTION_TYPE_DEPLOY = 'deploy';
 export const ACTION_TYPE_DEPLOY_STATUS = 'deployStatus';
-export const ACTION_TYPE_CLEAR_DEPLOY_STATUS = 'clearDeployStatus';
+export const ACTION_TYPE_IMAGEBUILD = 'imageBuild';
+export const ACTION_TYPE_IMAGEBUILD_STATUS = 'imageBuildStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GITOPS_COMMITS = 'gitopsCommits';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
@@ -46,9 +47,6 @@ export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
 export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
 export const ACTION_TYPE_ENVSPINNEDOUT = 'envSpinnedOut';
-
-export const ACTION_TYPE_OPEN_DEPLOY_PANEL = 'openDeployPanel';
-export const ACTION_TYPE_CLOSE_DEPLOY_PANEL = 'closeDeployPanel';
 
 export const EVENT_AGENT_CONNECTED = 'agentConnected';
 export const EVENT_AGENT_DISCONNECTED = 'agentDisconnected';
@@ -97,7 +95,6 @@ export const initialState = {
     chartUpdates: {},
     gitopsUpdates: {}
   },
-  runningDeploys: [],
   repoRefreshQueue: [],
   gitRepos: [],
   envConfigs: {},
@@ -121,7 +118,6 @@ export const initialState = {
   textColors: {},
   imageBuildLogs: {},
   users: [],
-  deployPanelOpen: false,
 };
 
 export function rootReducer(state = initialState, action) {
@@ -196,18 +192,16 @@ export function rootReducer(state = initialState, action) {
       return eventHandlers.deploy(state, action.payload)
     case ACTION_TYPE_DEPLOY_STATUS:
       return eventHandlers.deployStatus(state, action.payload)
-    case ACTION_TYPE_CLEAR_DEPLOY_STATUS:
-      return eventHandlers.clearDeployStatus(state)
+    case ACTION_TYPE_IMAGEBUILD:
+      return eventHandlers.imageBuild(state, action.payload)
+    case ACTION_TYPE_IMAGEBUILD_STATUS:
+      return eventHandlers.imageBuildStatus(state, action.payload)
     case ACTION_TYPE_CLEAR_PODLOGS:
        return podEventHandlers.clearPodLogs(state, action.payload)
     case ACTION_TYPE_CLEAR_DETAILS:
       return eventHandlers.clearDetails(state, action.payload)
     case ACTION_TYPE_ENVUPDATED:
       return eventHandlers.envStackUpdated(state, action.name, action.payload)
-    case ACTION_TYPE_OPEN_DEPLOY_PANEL:
-      return eventHandlers.openDeployPanel(state)
-    case ACTION_TYPE_CLOSE_DEPLOY_PANEL:
-      return eventHandlers.closeDeployPanel(state)
     case ACTION_TYPE_ENVSPINNEDOUT:
       return eventHandlers.envSpinnedOut(state, action.payload)
     default:

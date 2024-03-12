@@ -125,16 +125,6 @@ export function envStackUpdated(state, envName, payload) {
   return state;
 }
 
-export function openDeployPanel(state) {
-  state.deployPanelOpen = true
-  return state;
-}
-
-export function closeDeployPanel(state) {
-  state.deployPanelOpen = false
-  return state;
-}
-
 export function envPullRequests(state, payload) {
   for (const [envName, pullRequests] of Object.entries(payload)) {
     if (!state.envs.some(env => env.name === envName)) {
@@ -451,35 +441,27 @@ export function settings(state, payload) {
 }
 
 export function deploy(state, payload) {
-  state.runningDeploys = [payload];
-  state = openDeployPanel(state)
+  state.runningDeploy = payload;
   return state;
 }
 
 export function deployStatus(state, payload) {
-  if (state.runningDeploys.length === 0) {
-    return state
-  }
-
-  if (payload.trackingId) {
-    state.runningDeploys[0].trackingId = payload.trackingId
-  }
-
-  if (payload.imageBuildTrackingId) {
-    state.runningDeploys[0].imageBuildTrackingId = payload.imageBuildTrackingId
-  }
-
-  if (payload.status) {
-    state.runningDeploys[0].status = payload.status
-    state.runningDeploys[0].statusDesc = payload.statusDesc
-    state.runningDeploys[0].results = payload.results
-  }
-
+  state.runningDeploy.trackingId = payload.trackingId
+  state.runningDeploy.status = payload.status
+  state.runningDeploy.statusDesc = payload.statusDesc
+  state.runningDeploy.results = payload.results
   return state;
 }
 
-export function clearDeployStatus(state) {
-  state.runningDeploys = [];
+export function imageBuild(state, payload) {
+  state.runningImageBuild = payload;
+  return state;
+}
+
+export function imageBuildStatus(state, payload) {
+  state.runningImageBuild.status = payload.status
+  state.runningImageBuild.statusDesc = payload.statusDesc
+  state.runningImageBuild.results = payload.results
   return state;
 }
 

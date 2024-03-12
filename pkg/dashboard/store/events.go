@@ -107,11 +107,11 @@ ORDER BY created desc
 
 // Artifact returns an artifact by id
 func (db *Store) Artifact(id string) (*model.Event, error) {
-	query := fmt.Sprintf(`
+	query := `
 SELECT id, repository, branch, event, source_branch, target_branch, tag, created, blob, status, status_desc, sha, artifact_id
 FROM events
 WHERE artifact_id = $1;
-`)
+`
 
 	var data model.Event
 	err := meddler.QueryRow(db, &data, query, id)
@@ -121,7 +121,7 @@ WHERE artifact_id = $1;
 // Event returns an event by id
 func (db *Store) Event(id string) (*model.Event, error) {
 	query := `
-SELECT id, created, blob, type, status, status_desc, results
+SELECT id, created, blob, type, status, status_desc, results, repository, sha
 FROM events
 WHERE id = $1;
 `
@@ -164,4 +164,47 @@ func addFilter(filters []string, filter string) []string {
 	}
 
 	return append(filters, "AND "+filter)
+}
+
+// EventsForRepoAndSha returns all events for a given sha in a repository
+func (db *Store) EventsForRepoAndSha(repository string, sha string) (events []*model.Event, err error) {
+	query := `
+SELECT id, type, repository, branch, event, created, blob, status, status_desc, sha, artifact_id, results
+FROM events
+WHERE repository = $1 and sha = $2 order by created desc;
+`
+
+	err = meddler.QueryAll(db, &events, query, repository, sha)
+	return events, err
+}
+
+// LatestEventByRepoAndSha returns the latest event for each sha in a repository
+func (db *Store) LatestEventByRepoAndSha(repo string, hashes []string) (events []*model.Event, err error) {
+	if len(hashes) == 0 {
+		return []*model.Event{}, nil
+	}
+
+	filters := []string{}
+	args := []interface{}{repo}
+
+	for _, s := range hashes {
+		filters = append(filters, fmt.Sprintf("$%d", len(filters)+2))
+		args = append(args, s)
+	}
+
+	stmt := fmt.Sprintf(`
+SELECT id, type, repository, branch, event, created, blob, status, status_desc, sha, artifact_id
+FROM (
+	select sha as hash, max(created) as maxCreated
+	from events
+	where repository = $1 and sha in (%s) group by sha
+) max
+INNER JOIN events e
+ON e.sha = max.hash AND e.created = max.maxCreated
+	`, strings.Join(filters, ","))
+
+	data := []*model.Event{}
+	err = meddler.QueryAll(db, &data, stmt, args...)
+
+	return data, err
 }

@@ -271,6 +271,16 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" || strategy == "dockerfile" {
+			// events, err := store.EventsForRepoAndSha(artifact.Version.RepositoryName, artifact.Version.SHA)
+			// if err != nil {
+			// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+			// 	return
+			// }
+
+			// if imageHasBeenBuilt(events) {
+			// 	break
+			// }
+
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
 			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
@@ -316,7 +326,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 		agentHub, _ := ctx.Value("agentHub").(*streaming.AgentHub)
 		agentHub.TriggerImageBuild(imageBuildEvent.ID, imageBuildRequest)
 	} else {
-		event, err = releaseRequestEvent(releaseRequest, artifactEvent.Repository, user.Login)
+		event, err = releaseRequestEvent(releaseRequest, artifactEvent, user.Login)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -337,7 +347,18 @@ func release(w http.ResponseWriter, r *http.Request) {
 	w.Write(eventIDBytes)
 }
 
-func releaseRequestEvent(releaseRequest dx.ReleaseRequest, repository string, login string) (*model.Event, error) {
+func imageHasBeenBuilt(events []*model.Event) bool {
+	for _, e := range events {
+		if e.Type == model.ImageBuildRequestedEvent &&
+			e.Status == model.Success.String() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func releaseRequestEvent(releaseRequest dx.ReleaseRequest, artifactEvent *model.Event, login string) (*model.Event, error) {
 	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
 		Env:         releaseRequest.Env,
 		App:         releaseRequest.App,
@@ -352,7 +373,8 @@ func releaseRequestEvent(releaseRequest dx.ReleaseRequest, repository string, lo
 	event := &model.Event{
 		Type:       model.ReleaseRequestedEvent,
 		Blob:       string(releaseRequestStr),
-		Repository: repository,
+		Repository: artifactEvent.Repository,
+		SHA:        artifactEvent.SHA,
 	}
 
 	return event, nil
@@ -368,6 +390,12 @@ func imageBuildRequestEvent(imageBuildRequest *dx.ImageBuildRequest, repository 
 		Type:       model.ImageBuildRequestedEvent,
 		Blob:       string(requestStr),
 		Repository: repository,
+		SHA:        imageBuildRequest.Sha,
+		Results: []model.Result{
+			{
+				Status: model.Pending,
+			},
+		},
 	}
 
 	return event, nil
@@ -684,6 +712,19 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
+	results := dxResults(store, event)
+	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
+		Type:       event.Type,
+		Status:     event.Status,
+		StatusDesc: event.StatusDesc,
+		Results:    results,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(statusBytes)
+}
+
+func dxResults(store *store.Store, event *model.Event) []dx.Result {
 	results := []dx.Result{}
 	for _, result := range event.Results {
 		if result.TriggeredDeployRequestID != "" {
@@ -706,26 +747,22 @@ func getEventReleaseTrack(w http.ResponseWriter, r *http.Request) {
 			})
 			continue
 		}
+		var app, env string
+		if result.Manifest != nil {
+			env = result.Manifest.Env
+			app = result.Manifest.App
+		}
 		results = append(results, dx.Result{
-			App:                    result.Manifest.App,
+			Env:                    env,
+			App:                    app,
 			Hash:                   result.GitopsRef,
 			Status:                 result.Status.String(),
 			GitopsCommitStatus:     gitopsCommitStatus,
 			GitopsCommitStatusDesc: gitopsCommitStatusDesc,
-			Env:                    result.Manifest.Env,
 			StatusDesc:             result.StatusDesc,
 		})
 	}
-
-	statusBytes, _ := json.Marshal(dx.ReleaseStatus{
-		Type:       event.Type,
-		Status:     event.Status,
-		StatusDesc: event.StatusDesc,
-		Results:    results,
-	})
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(statusBytes)
+	return results
 }
 
 func getEventArtifactTrack(w http.ResponseWriter, r *http.Request) {

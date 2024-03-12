@@ -39,6 +39,8 @@ export default class GimletClient {
 
   getCommits = (owner, name, branch, fromHash) => this.get(`/api/repo/${owner}/${name}/commits?branch=${branch}&fromHash=${fromHash}`);
 
+  getCommitEvents = (owner, name, hash) => this.get(`/api/repo/${owner}/${name}/commits/${hash}/events`);
+
   triggerCommitSync = (owner, name) => this.get(`/api/repo/${owner}/${name}/triggerCommitSync`);
 
   getBranches = (owner, name) => this.get(`/api/repo/${owner}/${name}/branches`);

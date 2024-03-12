@@ -97,7 +97,7 @@ DELETE FROM pods where name = $1;
 		SelectUnprocessedEvents: `
 SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
 FROM events
-WHERE status='new' order by created ASC limit 10;
+WHERE status='new' and type!= 'imageBuild' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
@@ -209,7 +209,7 @@ DELETE FROM pods where name = $1;
 		SelectUnprocessedEvents: `
 SELECT id, created, type, blob, status, status_desc, sha, repository, branch, event, source_branch, target_branch, tag, artifact_id
 FROM events
-WHERE status='new' order by created ASC limit 10;
+WHERE status='new' and type != 'imageBuild' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
