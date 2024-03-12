@@ -29,14 +29,14 @@ type BranchDeleteEventWorker struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 	cachePath    string
 	dao          *store.Store
-	stopCh       chan struct{}
+	stopCh       chan os.Signal
 }
 
 func NewBranchDeleteEventWorker(
 	tokenManager customScm.NonImpersonatedTokenManager,
 	cachePath string,
 	dao *store.Store,
-	stopCh chan struct{},
+	stopCh chan os.Signal,
 ) *BranchDeleteEventWorker {
 	branchDeleteEventWorker := &BranchDeleteEventWorker{
 		tokenManager: tokenManager,

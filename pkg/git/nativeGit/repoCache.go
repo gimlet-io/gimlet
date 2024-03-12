@@ -33,7 +33,7 @@ type RepoCache struct {
 	tokenManager customScm.NonImpersonatedTokenManager
 	repos        map[string]*repoData
 	reposMapLock sync.Mutex // lock this if you add or remove items from the repos map
-	stopCh       chan struct{}
+	stopCh       chan os.Signal
 
 	// For webhook registration
 	config        *dashboardConfig.Config
@@ -57,7 +57,7 @@ const BRANCH_DELETED_WORKER_SUBPATH = "branch-deleted-worker"
 
 func NewRepoCache(
 	tokenManager customScm.NonImpersonatedTokenManager,
-	stopCh chan struct{},
+	stopCh chan os.Signal,
 	config *dashboardConfig.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 	clientHub *streaming.ClientHub,
