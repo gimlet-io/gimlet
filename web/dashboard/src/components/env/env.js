@@ -66,7 +66,7 @@ export class Env extends Component {
             {renderPullRequests(pullRequests)}
             {!env.isOnline && connectEnvCard(history, env.name)}
             { env.isOnline &&
-            <div className="bg-stone-900 rounded-lg px-4 pb-4 pt-1">
+            <div className="bg-stone-900 rounded-lg p-4">
               <div className="space-y-4">
               {renderedServices.length === 10 &&
                 <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>

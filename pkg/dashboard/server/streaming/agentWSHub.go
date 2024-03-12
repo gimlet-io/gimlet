@@ -104,6 +104,8 @@ func (c *AgentWSClient) readPump() {
 				log.Errorf("could not decode image build log ws message from agent")
 			}
 
+			c.hub.imageBuilds <- imageBuildStatus
+
 			jsonString, _ := json.Marshal(ImageBuildLogEvent{
 				StreamingEvent: StreamingEvent{Event: ImageBuildLogEventString},
 				BuildId:        imageBuildStatus.BuildId,
@@ -113,10 +115,6 @@ func (c *AgentWSClient) readPump() {
 			c.hub.ClientHub.Send <- &ClientMessage{
 				ClientId: imageBuildStatus.ClientId,
 				Message:  jsonString,
-			}
-
-			if imageBuildStatus.Status != "running" {
-				c.hub.successfullImageBuilds <- imageBuildStatus
 			}
 		}
 	}
@@ -197,16 +195,16 @@ type AgentWSHub struct {
 
 	ClientHub *ClientHub
 
-	successfullImageBuilds chan ImageBuildStatusWSMessage
+	imageBuilds chan ImageBuildStatusWSMessage
 }
 
-func NewAgentWSHub(clientHub ClientHub, successfullImageBuilds chan ImageBuildStatusWSMessage) *AgentWSHub {
+func NewAgentWSHub(clientHub ClientHub, imageBuilds chan ImageBuildStatusWSMessage) *AgentWSHub {
 	return &AgentWSHub{
-		Register:               make(chan *AgentWSClient),
-		Unregister:             make(chan *AgentWSClient),
-		AgentWSClients:         make(map[*AgentWSClient]bool),
-		ClientHub:              &clientHub,
-		successfullImageBuilds: successfullImageBuilds,
+		Register:       make(chan *AgentWSClient),
+		Unregister:     make(chan *AgentWSClient),
+		AgentWSClients: make(map[*AgentWSClient]bool),
+		ClientHub:      &clientHub,
+		imageBuilds:    imageBuilds,
 	}
 }
 
