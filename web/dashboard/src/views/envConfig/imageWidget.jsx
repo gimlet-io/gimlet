@@ -4,33 +4,12 @@ class ImageWidget extends Component {
   constructor(props) {
     super(props);
 
-    const { repository, tag, dockerfile } = props.formData
-    const strategy = this.extractStrategyFromValue(repository, tag, dockerfile)
+    const { strategy } = props.formData
 
     this.state = {
-      strategy: strategy,
+      strategy: strategy ?? "dynamic",
       ...props.formData,
     };
-  }
-
-  extractStrategyFromValue(repository, tag, dockerfile) {
-    const hasVariable = repository.includes("{{") || tag.includes("{{")
-    const pointsToBuiltInRegistry = repository.includes("127.0.0.1:32447")
-    const hasDockerfile = dockerfile && dockerfile !== ""
-
-    if (!hasVariable) {
-      return "static"
-    } else {
-      if (!pointsToBuiltInRegistry) {
-        return "dynamic"
-      } else {
-        if (hasDockerfile) {
-          return "dockerfile"
-        } else {
-          return "buildpacks"
-        }
-      }
-    }
   }
 
   defaults(strategy) {
@@ -73,7 +52,7 @@ class ImageWidget extends Component {
         {
           [name]: event.target.value,
         },
-        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile})
+        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy})
       );
     };
   }
@@ -89,7 +68,7 @@ class ImageWidget extends Component {
           <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-4 sm:gap-x-4 px-2">
             <div 
               className={`relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "static" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "static", ...this.defaults("static")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag}))}
+              onClick={(e) => this.setState({strategy: "static", ...this.defaults("static")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -104,7 +83,7 @@ class ImageWidget extends Component {
 
             <div
               className={`relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "dynamic" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "dynamic", ...this.defaults("dynamic")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag}))}
+              onClick={(e) => this.setState({strategy: "dynamic", ...this.defaults("dynamic")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -119,7 +98,7 @@ class ImageWidget extends Component {
 
             <div
               className={`relative pr-8 flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "buildpacks" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "buildpacks", ...this.defaults("buildpacks")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag}))}
+              onClick={(e) => this.setState({strategy: "buildpacks", ...this.defaults("buildpacks")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -134,7 +113,7 @@ class ImageWidget extends Component {
 
             <div
               className={`relative pr-8 flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "dockerfile" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "dockerfile", ...this.defaults("dockerfile")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile}))}
+              onClick={(e) => this.setState({strategy: "dockerfile", ...this.defaults("dockerfile")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">

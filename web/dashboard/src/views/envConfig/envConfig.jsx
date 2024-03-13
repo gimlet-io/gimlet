@@ -77,6 +77,7 @@ class EnvConfig extends Component {
               image: {
                 repository: "127.0.0.1:32447/"+config,
                 tag:        "{{ .SHA }}",
+                strategy:   "buildpacks",
               },
               resources: {
                 ignoreLimits: true,
