@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/gimlet-io/capacitor/pkg/flux"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	v1 "k8s.io/api/core/v1"
 )
 

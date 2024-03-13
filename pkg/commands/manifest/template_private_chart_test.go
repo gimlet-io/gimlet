@@ -8,9 +8,8 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/commands"
+	"github.com/gimlet-io/gimlet/pkg/commands"
 )
 
 const manifestWithPrivateGitRepo = `

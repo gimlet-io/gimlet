@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	fluxEvents "github.com/fluxcd/pkg/apis/event/v1beta1"
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

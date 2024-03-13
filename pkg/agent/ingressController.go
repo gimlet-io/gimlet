@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

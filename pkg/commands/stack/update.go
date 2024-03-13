@@ -8,8 +8,8 @@ import (
 
 	markdown "github.com/MichaelMure/go-term-markdown"
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/stack"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )

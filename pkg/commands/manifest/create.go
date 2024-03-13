@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/action"

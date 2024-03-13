@@ -21,8 +21,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"

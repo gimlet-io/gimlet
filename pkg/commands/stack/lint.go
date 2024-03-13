@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/stack"
+	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/stack"
 	"github.com/urfave/cli/v2"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"

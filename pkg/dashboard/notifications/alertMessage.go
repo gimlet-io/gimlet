@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 )
 
 type AlertMessage struct {

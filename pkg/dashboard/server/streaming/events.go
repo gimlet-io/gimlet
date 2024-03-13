@@ -2,8 +2,8 @@ package streaming
 
 import (
 	"github.com/gimlet-io/capacitor/pkg/flux"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 )
 
 const AgentConnectedEventString = "agentConnected"

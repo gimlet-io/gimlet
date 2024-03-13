@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"

@@ -5,14 +5,14 @@ import (
 	"os"
 
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/artifact"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/chart"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/environment"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/manifest"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/release"
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/stack"
-	"github.com/gimlet-io/gimlet-cli/pkg/version"
+	"github.com/gimlet-io/gimlet/pkg/commands/artifact"
+	"github.com/gimlet-io/gimlet/pkg/commands/chart"
+	"github.com/gimlet-io/gimlet/pkg/commands/environment"
+	"github.com/gimlet-io/gimlet/pkg/commands/gitops"
+	"github.com/gimlet-io/gimlet/pkg/commands/manifest"
+	"github.com/gimlet-io/gimlet/pkg/commands/release"
+	"github.com/gimlet-io/gimlet/pkg/commands/stack"
+	"github.com/gimlet-io/gimlet/pkg/version"
 	"github.com/urfave/cli/v2"
 )
 

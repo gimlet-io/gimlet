@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/gimlet-io/go-scm/scm/driver/github"
 	"github.com/gimlet-io/go-scm/scm/driver/gitlab"
