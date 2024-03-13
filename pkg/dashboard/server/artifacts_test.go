@@ -51,6 +51,7 @@ func Test_saveArtifact(t *testing.T) {
 
 	_, body, err := testEndpoint(saveArtifact, func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, "store", store)
+		ctx = context.WithValue(ctx, "gitopsQueue", make(chan int, 10))
 		return ctx
 	}, "/path")
 	assert.Nil(t, err)

@@ -226,7 +226,7 @@ function ImageBuildEventWidget(props) {
               <span className='pl-1'>{result.statusDesc}</span>
             </p>
             }
-            <div className="overflow-y-auto flex-grow h-64 bg-stone-900 text-gray-300 font-mono text-sm p-2" style={{"white-space": 'pre-line'}}>
+            <div className="overflow-y-auto flex-grow h-64 bg-stone-900 text-gray-300 font-mono text-sm p-2" style={{"whiteSpace": 'pre-line'}}>
               {result.log}
             </div>
           </li>

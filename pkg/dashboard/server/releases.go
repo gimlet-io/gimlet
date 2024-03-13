@@ -410,6 +410,9 @@ func release(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("%s - cannot save release request: %s", http.StatusText(http.StatusInternalServerError), err), http.StatusInternalServerError)
 			return
 		}
+
+		gitopsQueue := ctx.Value("gitopsQueue").(chan int)
+		gitopsQueue <- 1
 	}
 
 	eventIDBytes, _ := json.Marshal(map[string]string{
@@ -650,6 +653,9 @@ func performRollback(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(eventIDBytes)
+
+	gitopsQueue := ctx.Value("gitopsQueue").(chan int)
+	gitopsQueue <- 1
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {

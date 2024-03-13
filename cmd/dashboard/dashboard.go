@@ -100,12 +100,9 @@ func main() {
 	)
 	go alertStateManager.Run()
 
-	stopCh := make(chan struct{})
+	stopCh := make(chan os.Signal, 1)
 	defer close(stopCh)
-
-	gimletdStopCh := make(chan os.Signal, 1)
-	signal.Notify(gimletdStopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	waitCh := make(chan struct{})
+	signal.Notify(stopCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	if config.GitopsRepo != "" || config.GitopsRepoDeployKeyPath != "" {
 		panic("GITOPS_REPO and GITOPS_REPO_DEPLOY_KEY_PATH are deprecated." +
@@ -148,10 +145,13 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
+	gitopsQueue := make(chan int, 1000)
+
 	artifactsWorker := worker.NewArtifactsWorker(
 		repoCache,
 		store,
 		triggerArtifactGeneration,
+		gitopsQueue,
 	)
 	go artifactsWorker.Run()
 
@@ -166,7 +166,7 @@ func main() {
 		go weeklyReporter.Run()
 	}
 
-	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
+	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds, gitopsQueue)
 	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
@@ -213,9 +213,9 @@ func main() {
 		perf,
 		gitUser,
 		config.GitHost,
+		gitopsQueue,
 	)
 	go gitopsWorker.Run()
-	log.Info("Gitops worker started")
 
 	if config.ReleaseStats == "enabled" {
 		releaseStateWorker := &worker.ReleaseStateWorker{
@@ -268,6 +268,7 @@ func main() {
 		logger,
 		gitServer,
 		gitUser,
+		gitopsQueue,
 	)
 
 	go func() {
@@ -285,7 +286,8 @@ func main() {
 		}
 	}
 
-	<-waitCh
+	<-stopCh
+	close(gitopsQueue)
 	log.Info("Successfully cleaned up resources. Stopping.")
 }
 

@@ -37,6 +37,7 @@ func Test_MustUser(t *testing.T) {
 		&logger,
 		nil,
 		nil,
+		nil,
 	)
 	server := httptest.NewServer(router)
 	defer server.Close()

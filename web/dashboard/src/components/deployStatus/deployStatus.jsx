@@ -87,12 +87,14 @@ export function DeployStatusModal(props) {
     stack={service:{name: app}}
   }
 
+  const stackRolloutHistory = rolloutHistory && rolloutHistory[env] ? rolloutHistory[env][stack.service.name] : undefined
+
   return (
     <Modal closeHandler={closeHandler} key={`modal-${key}`}>
       <div className="h-full flex flex-col">
         <SimpleServiceDetail
           stack={stack}
-          rolloutHistory={rolloutHistory[env][stack.service.name]}
+          rolloutHistory={stackRolloutHistory}
           envName={env}
           owner={owner}
           repoName={repoName}
