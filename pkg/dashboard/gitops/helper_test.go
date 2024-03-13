@@ -164,20 +164,6 @@ func initHistory() *git.Repository {
 	return repo
 }
 
-/*
-static-site
-
-static
-dynamic (artifact)
-
-image:
-  repository:
-  tag:
-  dockerfile:
-  startegy: dynamic(default)/static/dockerfile/buildpacks
-
-*/
-
 func Test_ExtractImageStrategy(t *testing.T) {
 	strategy := ExtractImageStrategy(&dx.Manifest{})
 	assert.Equal(t, "dynamic", strategy)
