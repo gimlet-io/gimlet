@@ -317,8 +317,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 			vars["APP"] = releaseRequest.App
 			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
 			var loginString string
-			var tokenString string
-			var emailString string
 			if strings.HasPrefix(imageRepository, "127.0.0.1:32447") {
 				// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
 				imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
@@ -329,9 +327,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 						if enabled.(bool) {
 							if login, ok := dockerhubRegistryConfig["login"]; ok {
 								loginString = login.(string)
-							}
-							if token, ok := dockerhubRegistryConfig["token"]; ok {
-								tokenString = token.(string)
 							}
 							imageRepository = fmt.Sprintf("ghcr.io/%s/%s", loginString, releaseRequest.App)
 						}
@@ -344,12 +339,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 						if enabled.(bool) {
 							if login, ok := dockerhubRegistryConfig["login"]; ok {
 								loginString = login.(string)
-							}
-							if token, ok := dockerhubRegistryConfig["token"]; ok {
-								tokenString = token.(string)
-							}
-							if email, ok := dockerhubRegistryConfig["email"]; ok {
-								emailString = email.(string)
 							}
 						}
 						imageRepository = fmt.Sprintf("%s/%s", loginString, releaseRequest.App)
@@ -366,9 +355,6 @@ func release(w http.ResponseWriter, r *http.Request) {
 				Image:       imageRepository,
 				Tag:         imageTag,
 				Dockerfile:  dockerfile,
-				Login:       loginString,
-				Token:       tokenString,
-				Email:       emailString,
 			}
 			break
 		}
