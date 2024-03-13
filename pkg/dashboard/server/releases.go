@@ -281,71 +281,11 @@ func release(w http.ResponseWriter, r *http.Request) {
 			// 	break
 			// }
 
-			env, err := store.GetEnvironment(releaseRequest.Env)
-			if err != nil {
-				logrus.Errorf("cannot get env: %s", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			var stackConfig *dx.StackConfig
-			stackYamlPath := "stack.yaml"
-			if !env.RepoPerEnv {
-				stackYamlPath = filepath.Join(env.Name, "stack.yaml")
-			}
-
-			gitRepoCache, _ := r.Context().Value("gitRepoCache").(*nativeGit.RepoCache)
-			err = gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) error {
-				var inerErr error
-				stackConfig, inerErr = stackYaml(repo, stackYamlPath)
-				return inerErr
-			})
-			if err != nil {
-				if !strings.Contains(err.Error(), "file not found") {
-					logrus.Errorf("cannot get stack yaml from repo: %s", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				} else {
-					logrus.Errorf("cannot get repo: %s", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				}
-			}
-
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
 			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
-			var loginString string
-			if strings.HasPrefix(imageRepository, "127.0.0.1:32447") {
-				// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
-				imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
-
-				if _, ok := stackConfig.Config["ghcrRegistry"]; ok {
-					dockerhubRegistryConfig := stackConfig.Config["ghcrRegistry"].(map[string]interface{})
-					if enabled, ok := dockerhubRegistryConfig["enabled"]; ok {
-						if enabled.(bool) {
-							if login, ok := dockerhubRegistryConfig["login"]; ok {
-								loginString = login.(string)
-							}
-							imageRepository = fmt.Sprintf("ghcr.io/%s/%s", loginString, releaseRequest.App)
-						}
-					}
-				}
-
-				if _, ok := stackConfig.Config["dockerhubRegistry"]; ok {
-					dockerhubRegistryConfig := stackConfig.Config["dockerhubRegistry"].(map[string]interface{})
-					if enabled, ok := dockerhubRegistryConfig["enabled"]; ok {
-						if enabled.(bool) {
-							if login, ok := dockerhubRegistryConfig["login"]; ok {
-								loginString = login.(string)
-							}
-						}
-						imageRepository = fmt.Sprintf("%s/%s", loginString, releaseRequest.App)
-					}
-				}
-			}
-
+			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
+			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
 			imageBuildRequest = &dx.ImageBuildRequest{
 				Env:         releaseRequest.Env,
 				App:         releaseRequest.App,
