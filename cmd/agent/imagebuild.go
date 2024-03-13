@@ -330,6 +330,11 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 									MountPath: "/workspace",
 									Name:      "workspace",
 								},
+								// TODO test purpose
+								{
+									MountPath: "/kaniko/.docker",
+									Name:      "docker-config",
+								},
 							},
 						},
 					},
@@ -342,6 +347,17 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 									SizeLimit: &[]resource.Quantity{
 										resource.MustParse("500Mi"),
 									}[0],
+								},
+							},
+						},
+						{
+							// TODO test purpose
+							Name: "docker-config",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "docker-config",
+									},
 								},
 							},
 						},
