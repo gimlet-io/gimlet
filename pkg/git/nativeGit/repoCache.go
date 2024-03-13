@@ -34,6 +34,7 @@ type RepoCache struct {
 	repos        map[string]*repoData
 	reposMapLock sync.Mutex // lock this if you add or remove items from the repos map
 	stopCh       chan os.Signal
+	repoLocks    KeyedMutex
 
 	// For webhook registration
 	config        *dashboardConfig.Config
@@ -50,7 +51,6 @@ type RepoCache struct {
 type repoData struct {
 	repo        *git.Repository
 	withHistory bool
-	lock        sync.Mutex // lock this if you do git operation on this repo
 }
 
 const BRANCH_DELETED_WORKER_SUBPATH = "branch-deleted-worker"
@@ -73,6 +73,7 @@ func NewRepoCache(
 		clientHub:                 clientHub,
 		gitUser:                   gitUser,
 		triggerArtifactGeneration: triggerArtifactGeneration,
+		repoLocks:                 KeyedMutex{},
 	}
 
 	const DirRwxRxR = 0754
@@ -165,8 +166,8 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		opts.Depth = 0
 	}
 
-	repoData.lock.Lock()
-	defer repoData.lock.Unlock()
+	unlock := r.repoLocks.Lock(repoName)
+	defer unlock()
 
 	err := repo.Fetch(opts)
 	if err == git.NoErrAlreadyUpToDate {
@@ -221,44 +222,52 @@ func (r *RepoCache) cleanRepo(repoName string) {
 }
 
 func (r *RepoCache) PerformAction(repoName string, fn func(repo *git.Repository) error) error {
-	repo, err := r.instanceForRead(repoName, false)
-	if err != nil {
-		return err
+	unlock := r.repoLocks.Lock(repoName)
+	defer unlock()
+
+	var repo *git.Repository
+	if existingRepoData, ok := r.repos[repoName]; ok {
+		repo = existingRepoData.repo
+	} else {
+		repoData, err := r.clone(repoName, false)
+		if err != nil {
+			return err
+		}
+		repo = repoData.repo
 	}
 
-	repo.lock.Lock()
-	err = fn(repo.repo)
-	repo.lock.Unlock()
-
-	return err
+	return fn(repo)
 }
 
-func (r *RepoCache) PerformActionWithHistory(repoName string, fn func(repo *git.Repository)) error {
-	repo, err := r.instanceForRead(repoName, true)
-	repo.lock.Lock()
-	fn(repo.repo)
-	repo.lock.Unlock()
+func (r *RepoCache) PerformActionWithHistory(
+	repoName string,
+	fn func(repo *git.Repository),
+) error {
+	unlock := r.repoLocks.Lock(repoName)
+	defer unlock()
 
-	return err
-}
-
-func (r *RepoCache) instanceForRead(repoName string, withHistory bool) (repo *repoData, err error) {
-	var repoData repoData
+	var repo *git.Repository
 	if existingRepoData, ok := r.repos[repoName]; ok {
-		if withHistory && !existingRepoData.withHistory {
-			repoData, err = r.clone(repoName, withHistory)
-			repo = &repoData
-			go r.registerWebhook(repoName)
+		if !existingRepoData.withHistory {
+			repoData, err := r.clone(repoName, true)
+			if err != nil {
+				return err
+			}
+			repo = repoData.repo
 		} else {
-			repo = existingRepoData
+			repo = existingRepoData.repo
 		}
 	} else {
-		repoData, err = r.clone(repoName, withHistory)
-		repo = &repoData
-		go r.registerWebhook(repoName)
+		repoData, err := r.clone(repoName, false)
+		if err != nil {
+			return err
+		}
+		repo = repoData.repo
 	}
 
-	return repo, err
+	fn(repo)
+
+	return nil
 }
 
 func (r *RepoCache) InstanceForWrite(repoName string) (*git.Repository, string, error) {
@@ -275,22 +284,19 @@ func (r *RepoCache) instanceForWrite(repoName string, withHistory bool) (*git.Re
 		errors.WithMessage(err, "couldn't get temporary directory")
 	}
 
+	unlock := r.repoLocks.Lock(repoName)
+	defer unlock()
+
 	if repoData, ok := r.repos[repoName]; ok {
 		if withHistory && !repoData.withHistory {
-			_, err = r.clone(repoName, withHistory)
-			go r.registerWebhook(repoName)
+			_, err = r.clone(repoName, true)
 		}
 	} else {
 		_, err = r.clone(repoName, withHistory)
-		go r.registerWebhook(repoName)
 	}
 	if err != nil {
-		return nil, "", err
+		return nil, tmpPath, err
 	}
-
-	repoData := r.repos[repoName]
-	repoData.lock.Lock()
-	defer repoData.lock.Unlock()
 
 	repoPath := filepath.Join(r.config.RepoCachePath, strings.ReplaceAll(repoName, "/", "%"))
 	err = copy.Copy(repoPath, tmpPath)
@@ -315,19 +321,12 @@ func (r *RepoCache) Invalidate(repoName string) {
 	r.syncGitRepo(repoName)
 }
 
-func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
-	if repoName == "" {
-		return repoData{}, fmt.Errorf("repo name is mandatory")
-	}
-
+func (r *RepoCache) clone(repoName string, withHistory bool) (*repoData, error) {
 	repoPath := filepath.Join(r.config.RepoCachePath, strings.ReplaceAll(repoName, "/", "%"))
-
-	r.reposMapLock.Lock()
-	defer r.reposMapLock.Unlock()
 	os.RemoveAll(repoPath)
 	err := os.MkdirAll(repoPath, Dir_RWX_RX_R)
 	if err != nil {
-		return repoData{}, errors.WithMessage(err, "couldn't create folder")
+		return nil, errors.WithMessage(err, "couldn't create folder")
 	}
 
 	var auth *http.BasicAuth
@@ -343,7 +342,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		url = fmt.Sprintf("%s/%s", r.dynamicConfig.ScmURL(), repoName)
 		token, _, err := r.tokenManager.Token()
 		if err != nil {
-			return repoData{}, errors.WithMessage(err, "couldn't get scm token")
+			return nil, errors.WithMessage(err, "couldn't get scm token")
 		}
 		auth = &http.BasicAuth{
 			Username: "123",
@@ -363,7 +362,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 
 	repo, err := git.PlainClone(repoPath, false, opts)
 	if err != nil {
-		return repoData{}, errors.WithMessage(err, "couldn't clone")
+		return nil, errors.WithMessage(err, "couldn't clone")
 	}
 
 	err = repo.Fetch(&git.FetchOptions{
@@ -376,11 +375,16 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (repoData, error) {
 		opts.Depth = 0
 	}
 	if err != nil && err != git.NoErrAlreadyUpToDate {
-		return repoData{}, errors.WithMessage(err, "couldn't fetch")
+		return nil, errors.WithMessage(err, "couldn't fetch")
 	}
 
+	go r.registerWebhook(repoName)
+
+	r.reposMapLock.Lock()
 	r.repos[repoName] = &repoData{repo: repo, withHistory: withHistory}
-	return repoData{repo: repo, withHistory: withHistory}, nil
+	r.reposMapLock.Unlock()
+
+	return r.repos[repoName], nil
 }
 
 func (r *RepoCache) registerWebhook(repoName string) {
@@ -406,4 +410,16 @@ func (r *RepoCache) registerWebhook(repoName string) {
 	if err != nil {
 		logrus.Warnf("could not register webhook for %s: %s", repoName, err)
 	}
+}
+
+type KeyedMutex struct {
+	mutexes sync.Map // Zero value is empty and ready for use
+}
+
+func (m *KeyedMutex) Lock(key string) func() {
+	value, _ := m.mutexes.LoadOrStore(key, &sync.Mutex{})
+	mtx := value.(*sync.Mutex)
+	mtx.Lock()
+
+	return func() { mtx.Unlock() }
 }
