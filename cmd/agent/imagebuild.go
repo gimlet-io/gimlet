@@ -285,7 +285,7 @@ func dockerfileImageBuild(
 func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.Job {
 	var ttlSecondsAfterFinished int32 = 60
 	var backOffLimit int32 = 0
-	return &batchv1.Job{
+	job := &batchv1.Job{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       "Job",
 			APIVersion: "batch/v1",
@@ -330,11 +330,6 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 									MountPath: "/workspace",
 									Name:      "workspace",
 								},
-								// TODO test purpose
-								{
-									MountPath: "/kaniko/.docker",
-									Name:      "docker-config",
-								},
 							},
 						},
 					},
@@ -350,23 +345,33 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 								},
 							},
 						},
-						{
-							// TODO test purpose
-							Name: "docker-config",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "docker-config",
-									},
-								},
-							},
-						},
 					},
 				},
 			},
 			BackoffLimit: &backOffLimit,
 		},
 	}
+
+	// TODO
+	if !strings.HasPrefix(trigger.Image, "127.0.0.1:32447") {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			MountPath: "/kaniko/.docker",
+			Name:      "docker-config",
+		})
+
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: "docker-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "docker-config",
+					},
+				},
+			},
+		})
+	}
+
+	return job
 }
 
 func streamInitContainerLogs(kubeEnv *agent.KubeEnv,
