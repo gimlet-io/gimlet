@@ -72,37 +72,7 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 	repoName := fmt.Sprintf("%s/%s", owner, repo)
 
-	var hasGithubActionsConfig bool
-	var githubActionsShipper *string
 	var err error
-	githubActionsConfigPath := filepath.Join(".github", "workflows")
-	githubActionsShipperCommand := "gimlet-io/gimlet-artifact-shipper-action"
-	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		var innerErr error
-		hasGithubActionsConfig, githubActionsShipper, innerErr = hasCiConfigAndShipper(repo, githubActionsConfigPath, githubActionsShipperCommand)
-		return innerErr
-	})
-	if err != nil {
-		logrus.Errorf("cannot determine ci status: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	var hasCircleCiConfig bool
-	var circleCiShipper *string
-	circleCiConfigPath := ".circleci"
-	circleCiShipperCommand := "gimlet/gimlet-artifact-create"
-	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		var innerErr error
-		hasCircleCiConfig, circleCiShipper, innerErr = hasCiConfigAndShipper(repo, circleCiConfigPath, circleCiShipperCommand)
-		return innerErr
-	})
-	if err != nil {
-		logrus.Errorf("cannot determine ci status: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	var files map[string]string
 	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		var innerErr error
@@ -133,11 +103,7 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoM := gitRepoMetas{
-		GithubActions:        hasGithubActionsConfig,
-		CircleCi:             hasCircleCiConfig,
-		GithubActionsShipper: githubActionsShipper,
-		CircleCiShipper:      circleCiShipper,
-		FileInfos:            fileInfos,
+		FileInfos: fileInfos,
 	}
 
 	gitRepoMString, err := json.Marshal(gitRepoM)
@@ -312,11 +278,7 @@ type fileInfo struct {
 }
 
 type gitRepoMetas struct {
-	GithubActions        bool       `json:"githubActions"`
-	CircleCi             bool       `json:"circleCi"`
-	GithubActionsShipper *string    `json:"githubActionsShipper"`
-	CircleCiShipper      *string    `json:"circleCiShipper"`
-	FileInfos            []fileInfo `json:"fileInfos"`
+	FileInfos []fileInfo `json:"fileInfos"`
 }
 
 // envConfig fetches all environment configs from source control for a repo
