@@ -356,16 +356,14 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 	if !strings.HasPrefix(trigger.Image, "127.0.0.1:32447") {
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			MountPath: "/kaniko/.docker",
-			Name:      "docker-config",
+			Name:      "dockerconfig-secret",
 		})
 
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: "docker-config",
+			Name: "dockerconfig-secret",
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "docker-config",
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "dockerconfig-secret",
 				},
 			},
 		})
