@@ -205,6 +205,9 @@ export function rootReducer(state = initialState, action) {
     case ACTION_TYPE_ENVSPINNEDOUT:
       return eventHandlers.envSpinnedOut(state, action.payload)
     default:
+      if (action.type && action.type.startsWith('@@redux/INIT')) { // Ignoring Redux ActionTypes.INIT action
+        return state
+      }
       console.log('Could not process redux event: ' + JSON.stringify(action));
       return state;
   }
@@ -260,9 +263,12 @@ function processStreamingEvent(state, event) {
       return eventHandlers.fluxEventsUpdated(state, event);
     case EVENT_DEPLOYMENT_DETAILS_EVENT:
       return eventHandlers.deploymentDetails(state, event);
-      case EVENT_POD_DETAILS_EVENT:
-        return eventHandlers.podDetails(state, event);
+    case EVENT_POD_DETAILS_EVENT:
+      return eventHandlers.podDetails(state, event);
     default:
+      if (event.type && event.type.startsWith('@@redux/INIT')) { // Ignoring Redux ActionTypes.INIT action
+        return state
+      }
       console.log('Could not process streaming event: ' + JSON.stringify(event));
       return state;
   }
