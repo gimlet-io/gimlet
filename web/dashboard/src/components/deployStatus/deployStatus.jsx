@@ -28,6 +28,8 @@ export function DeployStatusModal(props) {
   store.subscribe(() => setRolloutHistory(store.getState().rolloutHistory[ownerAndRepo]));
   const [settings, setSettings] = useState(store.getState().settings);
   store.subscribe(() => setSettings(store.getState().settings));
+  const [alerts, setAlerts] = useState(store.getState().alerts);
+  store.subscribe(() => setAlerts(store.getState().alerts));
   const [runningDeploy, setRunningDeploy] = useState(store.getState().runningDeploy);
   store.subscribe(() => {
     const r = store.getState().runningDeploy
@@ -89,6 +91,9 @@ export function DeployStatusModal(props) {
 
   const stackRolloutHistory = rolloutHistory && rolloutHistory[env] ? rolloutHistory[env][stack.service.name] : undefined
 
+  const serviceAlersKey = stack.deployment ? stack.deployment.namespace + "/" + stack.deployment.name : ""
+  const serviceAlerts = alerts[serviceAlersKey]
+
   return (
     <Modal closeHandler={closeHandler} key={`modal-${key}`}>
       <div className="h-full flex flex-col">
@@ -104,7 +109,7 @@ export function DeployStatusModal(props) {
           store={store}
           scmUrl={scmUrl}
           builtInEnv={envs.find(e => e.name === env).builtIn}
-          // serviceAlerts={alerts[deployment]}
+          serviceAlerts={serviceAlerts}
           logsEndRef={logsEndRef}
         />
         <Controls topRef={topRef} logsEndRef={logsEndRef} followLogs={followLogs} setFollowLogs={setFollowLogs} />
@@ -113,7 +118,6 @@ export function DeployStatusModal(props) {
           onScroll={evt => {
               if ((logsEndRef.current.offsetTop-window.innerHeight-100) > evt.target.scrollTop) {
                 setFollowLogs(false)
-                console.log('not visible')
               }
             }}
           >
