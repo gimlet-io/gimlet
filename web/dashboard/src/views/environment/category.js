@@ -34,7 +34,8 @@ export class Category extends Component {
       stack,
       genericComponentSaver,
       genericValidationCallback,
-      componentsToRender
+      componentsToRender,
+      customFields
     } = this.props;
 
     let selectedComponent = undefined;
@@ -93,6 +94,7 @@ export class Category extends Component {
       <HelmUI
         schema={selectedComponent.schema}
         config={selectedComponent.uiSchema}
+        fields={customFields}
         values={selectedComponentConfig}
         setValues={componentSaver}
         validate={true}

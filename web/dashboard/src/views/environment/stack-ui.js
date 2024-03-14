@@ -19,7 +19,7 @@ class StackUI extends Component {
   }
 
   render() {
-    let { stack, stackDefinition, setValues, validationCallback, categoriesToRender, componentsToRender, hideTitle } = this.props
+    let { stack, stackDefinition, setValues, validationCallback, categoriesToRender, componentsToRender, hideTitle, customFields } = this.props
 
     if (stackDefinition === undefined || stack === undefined) {
       return null;
@@ -83,6 +83,7 @@ class StackUI extends Component {
               genericComponentSaver={setValues}
               genericValidationCallback={validationCallback}
               componentsToRender={componentsToRender}
+              customFields={customFields}
             />
           </div>
         </div>

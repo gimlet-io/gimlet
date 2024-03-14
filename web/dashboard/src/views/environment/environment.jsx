@@ -18,6 +18,7 @@ import KustomizationPerApp from './kustomizationPerApp';
 import BootstrapGuide from './bootstrapGuide';
 import StackUI from './stack-ui';
 import DeleteButton from './deleteButton';
+import { GhcrRegistryWidget, DockerhubRegistryWidget } from './registryWidgets';
 
 export default class EnvironmentView extends Component {
   constructor(props) {
@@ -336,6 +337,8 @@ export default class EnvironmentView extends Component {
 
   infrastructureComponentsTab() {
     const { environment, settings, stack } = this.state;
+    const { gimletClient, store } = this.props;
+    const { env } = this.props.match.params;
 
     if (!environment.stackConfig || !environment.stackDefinition) {
       return null
@@ -369,6 +372,11 @@ export default class EnvironmentView extends Component {
       return this.builtInEnvInfo();
     }
 
+    const customFields = {
+      ghcrRegistryWidget: (props) => <GhcrRegistryWidget {...props} gimletClient={gimletClient} store={store} env={env} />,
+      dockerhubRegistryWidget: (props) => <DockerhubRegistryWidget {...props} gimletClient={gimletClient} store={store} env={env} />,
+    }
+
     return (
       <div className="relative mt-4 text-gray-700">
         <div className='absolute right-0 top-0 pointer-events-none z-10 py-1'>
@@ -384,6 +392,7 @@ export default class EnvironmentView extends Component {
           stackDefinition={environment.stackDefinition}
           setValues={this.setValues}
           validationCallback={this.validationCallback}
+          customFields={customFields}
         />
       </div>
     )
