@@ -25,8 +25,8 @@ export function Describe(props) {
   const { capacitorClient, store, namespace, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
   const [selected, setSelected] = useState(namespace + "/" + deployment)
-  const [details, setDetails] = useState(store.getState().details);
-  store.subscribe(() => setDetails(store.getState().details));
+  const [content, setContent] = useState()
+  store.subscribe(() => setContent(store.getState().details[selected]));
 
   const describeDeployment = () => {
     capacitorClient.deploymentDetailsRequest(namespace, deployment)
@@ -58,8 +58,8 @@ export function Describe(props) {
               describePod={describePod}
             />}
         >
-          <code className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
-            {details[selected] ?? <SkeletonLoader />}
+          <code key={selected} className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
+            {content ?? <SkeletonLoader />}
           </code>
         </Modal>
       }
