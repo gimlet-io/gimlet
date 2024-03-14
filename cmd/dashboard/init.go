@@ -12,12 +12,12 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )

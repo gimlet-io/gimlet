@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store/sql"
 	"github.com/russross/meddler"
 	"github.com/sirupsen/logrus"
 )

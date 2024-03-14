@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/client"
+	"github.com/gimlet-io/gimlet/pkg/client"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )

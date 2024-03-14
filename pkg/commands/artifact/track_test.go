@@ -3,7 +3,7 @@ package artifact
 import (
 	"testing"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"gotest.tools/assert"
 )
 

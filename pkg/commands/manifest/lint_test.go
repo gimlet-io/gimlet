@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/commands"
+	"github.com/gimlet-io/gimlet/pkg/commands"
 )
 
 const validEnv = `

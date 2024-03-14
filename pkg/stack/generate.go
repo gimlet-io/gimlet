@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/epiclabs-io/diff3"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"gopkg.in/yaml.v3"
 )
 

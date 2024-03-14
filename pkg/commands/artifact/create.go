@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/btubbs/datetime"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/urfave/cli/v2"
 	"io/ioutil"
+
+	"github.com/btubbs/datetime"
+	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/urfave/cli/v2"
 )
 
 var artifactCreateCmd = cli.Command{

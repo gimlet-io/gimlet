@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	commitsHelper "github.com/gimlet-io/gimlet-cli/pkg/dashboard/commits"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
+	commitsHelper "github.com/gimlet-io/gimlet/pkg/dashboard/commits"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -45,13 +45,14 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var hash plumbing.Hash
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		hash = nativeGit.BranchHeadHash(repo, branch)
-		return nil
-	})
-
 	if hashString != "head" {
 		hash = plumbing.NewHash(hashString)
+	} else {
+		gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+			logrus.Debugf("getting branchheadhash for %s", branch)
+			hash = nativeGit.BranchHeadHash(repo, branch)
+			return nil
+		})
 	}
 
 	var commitWalker object.CommitIter
@@ -64,7 +65,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if err != nil {
-		logrus.Errorf("cannot walk commits: %s", err)
+		logrus.Errorf("cannot walk commits from %s: %s", hash, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 )
 
 type threshold interface {

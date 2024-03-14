@@ -1,4 +1,4 @@
-module github.com/gimlet-io/gimlet-cli
+module github.com/gimlet-io/gimlet
 
 go 1.22.1
 

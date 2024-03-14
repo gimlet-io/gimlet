@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/ddl"
-	genericStore "github.com/gimlet-io/gimlet-cli/pkg/store"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store/ddl"
+	genericStore "github.com/gimlet-io/gimlet/pkg/store"
 
 	"github.com/russross/meddler"
 

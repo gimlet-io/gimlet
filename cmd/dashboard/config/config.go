@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 )

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 )

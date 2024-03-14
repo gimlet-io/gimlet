@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
+	"github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 )

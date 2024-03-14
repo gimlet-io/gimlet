@@ -14,7 +14,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/blang/semver/v4"
 	"github.com/fluxcd/pkg/sourceignore"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/util"
 	"github.com/go-git/go-git/v5"

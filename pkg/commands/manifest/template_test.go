@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/commands"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/commands"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/stretchr/testify/assert"
 )
 

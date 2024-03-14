@@ -3,7 +3,7 @@ package dynamicconfig
 import (
 	"testing"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/config"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
 	"gotest.tools/assert"
 )
 

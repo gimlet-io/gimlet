@@ -27,8 +27,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 )
 
 const (

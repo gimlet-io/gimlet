@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet-cli/pkg/server/token"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/pkg/server/token"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"

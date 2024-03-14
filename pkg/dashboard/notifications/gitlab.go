@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/xanzy/go-gitlab"
 )

@@ -1,9 +1,9 @@
 package customScm
 
 import (
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet-cli/pkg/git/customScm/customGitlab"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet/pkg/git/customScm/customGithub"
+	"github.com/gimlet-io/gimlet/pkg/git/customScm/customGitlab"
 )
 
 type NonImpersonatedTokenManager interface {
