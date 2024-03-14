@@ -529,7 +529,7 @@ export default class Repo extends Component {
               selectedTenant={this.state.selectedTenant}
               setSelectedTenant={this.setSelectedTenant}
             />
-            {decoratedEnvs && <div className='py-4'>
+            {decoratedEnvs && Object.keys(envs).length > 1 && <div className='py-4'>
               <EnvSelector
                 envs={decoratedEnvs}
                 unselectedEnvs={unselectedEnvs}
