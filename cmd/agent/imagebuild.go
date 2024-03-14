@@ -426,8 +426,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 	go func() {
 		for {
 			line, err := reader.ReadBytes('\n')
-			lastLine = string(line)
-			logCh <- lastLine
+			logCh <- string(line)
 			if err != nil {
 				if err == io.EOF {
 					close(logCh)
@@ -438,6 +437,7 @@ func streamLogs(kubeEnv *agent.KubeEnv,
 				streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
 				break
 			}
+			lastLine = string(line)
 		}
 	}()
 
