@@ -353,21 +353,21 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 	}
 
 	// TODO
-	if !strings.HasPrefix(trigger.Image, "127.0.0.1:32447") {
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			MountPath: "/kaniko/.docker",
-			Name:      "dockerconfig-secret",
-		})
+	// if !strings.HasPrefix(trigger.Image, "127.0.0.1:32447") {
+	job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		MountPath: "/kaniko/.docker",
+		Name:      "ghcr-registry-pushsecret",
+	})
 
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: "dockerconfig-secret",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: "dockerconfig-secret",
-				},
+	job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: "ghcr-registry-pushsecret",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: "ghcr-registry-pushsecret",
 			},
-		})
-	}
+		},
+	})
+	// }
 
 	return job
 }
