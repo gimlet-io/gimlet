@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/capacitor/pkg/flux"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"

@@ -1,7 +1,7 @@
 package stack
 
 import (
-	"github.com/gimlet-io/gimlet-cli/pkg/commands/gitops"
+	"github.com/gimlet-io/gimlet/pkg/commands/gitops"
 	"github.com/urfave/cli/v2"
 )
 

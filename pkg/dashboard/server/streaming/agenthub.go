@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/gimlet-io/capacitor/pkg/flux"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/sirupsen/logrus"
 )
 

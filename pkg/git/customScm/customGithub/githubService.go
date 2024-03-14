@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gimlet-io/gimlet-cli/cmd/dashboard/dynamicconfig"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/google/go-github/v37/github"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"

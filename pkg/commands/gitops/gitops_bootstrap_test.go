@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/gitops"
-	"github.com/gimlet-io/gimlet-cli/pkg/gitops/sync"
+	"github.com/gimlet-io/gimlet/pkg/gitops"
+	"github.com/gimlet-io/gimlet/pkg/gitops/sync"
 	"github.com/stretchr/testify/assert"
 )
 

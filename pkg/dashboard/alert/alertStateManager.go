@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/api"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/server/streaming"
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/notifications"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/server/streaming"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/sirupsen/logrus"
 )
 

@@ -3,8 +3,8 @@ package store
 import (
 	"database/sql"
 
-	"github.com/gimlet-io/gimlet-cli/pkg/dashboard/model"
-	queries "github.com/gimlet-io/gimlet-cli/pkg/dashboard/store/sql"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
+	queries "github.com/gimlet-io/gimlet/pkg/dashboard/store/sql"
 	"github.com/russross/meddler"
 )
 
