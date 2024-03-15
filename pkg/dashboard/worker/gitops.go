@@ -12,6 +12,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/fluxcd/flux2/v2/pkg/manifestgen"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/gitops"
+	"github.com/gimlet-io/gimlet/pkg/dashboard/imageBuild"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/notifications"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/server"
@@ -43,6 +44,7 @@ type GitopsWorker struct {
 	gitUser              *model.User
 	gitHost              string
 	gitopsQueue          chan int
+	agentHub             *streaming.AgentHub
 }
 
 func NewGitopsWorker(
@@ -55,7 +57,7 @@ func NewGitopsWorker(
 	perf *prometheus.HistogramVec,
 	gitUser *model.User,
 	gitHost string,
-	gitopsQueue chan int,
+	agentHub *streaming.AgentHub,
 ) *GitopsWorker {
 	return &GitopsWorker{
 		store:                store,
@@ -67,7 +69,8 @@ func NewGitopsWorker(
 		perf:                 perf,
 		gitUser:              gitUser,
 		gitHost:              gitHost,
-		gitopsQueue:          gitopsQueue,
+		gitopsQueue:          make(chan int, 1000),
+		agentHub:             agentHub,
 	}
 }
 
@@ -77,6 +80,11 @@ func (w *GitopsWorker) Run() {
 		ticker.Stop()
 	}()
 
+	w.store.SubscribeToEventCreated(func(event *model.Event) {
+		w.gitopsQueue <- 1
+	})
+
+	w.gitopsQueue <- 1 // start with processing
 	logrus.Info("Gitops worker started")
 	for {
 		select {
@@ -103,6 +111,7 @@ func (w *GitopsWorker) Run() {
 				w.perf,
 				w.gitUser,
 				w.gitHost,
+				w.agentHub,
 			)
 		}
 	}
@@ -118,6 +127,7 @@ func processEvent(
 	perf *prometheus.HistogramVec,
 	gitUser *model.User,
 	gitHost string,
+	agentHub *streaming.AgentHub,
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
@@ -137,6 +147,7 @@ func processEvent(
 			perf,
 			gitUser,
 			gitHost,
+			agentHub,
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
@@ -538,13 +549,14 @@ func shasSince(repo *git.Repository, since string) ([]string, error) {
 }
 
 func processArtifactEvent(
-	gitopsRepoCache *nativeGit.RepoCache,
+	gitRepoCache *nativeGit.RepoCache,
 	githubChartAccessToken string,
 	event *model.Event,
 	dao *store.Store,
 	perf *prometheus.HistogramVec,
 	gitUser *model.User,
 	gitHost string,
+	agentHub *streaming.AgentHub,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	artifact, err := model.ToArtifact(event)
@@ -563,7 +575,7 @@ func processArtifactEvent(
 	artifact.Environments = append(artifact.Environments, manifests...)
 
 	var repoVars map[string]string
-	err = gitopsRepoCache.PerformAction(artifact.Version.RepositoryName, func(repo *git.Repository) error {
+	err = gitRepoCache.PerformAction(artifact.Version.RepositoryName, func(repo *git.Repository) error {
 		var innerErr error
 		repoVars, innerErr = loadVars(repo, ".gimlet/vars")
 		return innerErr
@@ -587,10 +599,9 @@ func processArtifactEvent(
 			Artifact:    artifact,
 			TriggeredBy: "policy",
 			Status:      model.Success,
-			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		appsRepo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
+		appsRepo, repoTmpPath, err := gitRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 		defer nativeGit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -618,42 +629,65 @@ func processArtifactEvent(
 			vars[k] = v
 		}
 
-		err = manifest.ResolveVars(vars)
-		if err != nil {
-			deployResult.Status = model.Failure
-			deployResult.StatusDesc = err.Error()
+		strategy := gitops.ExtractImageStrategy(manifest)
+		if strategy == "buildpacks" || strategy == "dockerfile" { // image build
+			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
+			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
+			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
+			imageBuildRequest := &dx.ImageBuildRequest{
+				Env:         manifest.Env,
+				App:         manifest.App,
+				Sha:         artifact.Version.SHA,
+				ArtifactID:  artifact.ID,
+				TriggeredBy: "policy",
+				Image:       imageRepository,
+				Tag:         imageTag,
+				Dockerfile:  dockerfile,
+			}
+			imageBuildEvent, err := imageBuild.TriggerImagebuild(gitRepoCache, agentHub, dao, artifact, imageBuildRequest)
+			if err != nil {
+				deployResult.Status = model.Failure
+				deployResult.StatusDesc = err.Error()
+			}
+			deployResult.TriggeredImageBuildRequestID = imageBuildEvent.ID
 			deployResults = append(deployResults, deployResult)
-			continue
+		} else { // release
+			err = manifest.ResolveVars(vars)
+			if err != nil {
+				deployResult.Status = model.Failure
+				deployResult.StatusDesc = err.Error()
+				deployResults = append(deployResults, deployResult)
+				continue
+			}
+			releaseMeta := &dx.Release{
+				App:         manifest.App,
+				Env:         manifest.Env,
+				ArtifactID:  artifact.ID,
+				Version:     &artifact.Version,
+				TriggeredBy: "policy",
+			}
+			sha, err := cloneTemplateWriteAndPush(
+				appsRepo,
+				repoTmpPath,
+				gitRepoCache,
+				githubChartAccessToken,
+				manifest,
+				releaseMeta,
+				perf,
+				dao,
+				repoVars,
+				envVars,
+				gitUser,
+				gitHost,
+			)
+			if err != nil {
+				deployResult.Status = model.Failure
+				deployResult.StatusDesc = err.Error()
+			}
+			deployResult.GitopsRepo = envFromStore.AppsRepo
+			deployResult.GitopsRef = sha
+			deployResults = append(deployResults, deployResult)
 		}
-
-		releaseMeta := &dx.Release{
-			App:         manifest.App,
-			Env:         manifest.Env,
-			ArtifactID:  artifact.ID,
-			Version:     &artifact.Version,
-			TriggeredBy: "policy",
-		}
-
-		sha, err := cloneTemplateWriteAndPush(
-			appsRepo,
-			repoTmpPath,
-			gitopsRepoCache,
-			githubChartAccessToken,
-			manifest,
-			releaseMeta,
-			perf,
-			dao,
-			repoVars,
-			envVars,
-			gitUser,
-			gitHost,
-		)
-		if err != nil {
-			deployResult.Status = model.Failure
-			deployResult.StatusDesc = err.Error()
-		}
-		deployResult.GitopsRef = sha
-		deployResults = append(deployResults, deployResult)
 	}
 
 	return deployResults, nil

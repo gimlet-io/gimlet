@@ -20,16 +20,14 @@ type ArtifactsWorker struct {
 	gitRepoCache *nativeGit.RepoCache
 	dao          *store.Store
 	trigger      chan string
-	gitopsQueue  chan int
 }
 
 func NewArtifactsWorker(
 	gitRepoCache *nativeGit.RepoCache,
 	dao *store.Store,
 	trigger chan string,
-	gitopsQueue chan int,
 ) *ArtifactsWorker {
-	return &ArtifactsWorker{gitRepoCache: gitRepoCache, dao: dao, trigger: trigger, gitopsQueue: gitopsQueue}
+	return &ArtifactsWorker{gitRepoCache: gitRepoCache, dao: dao, trigger: trigger}
 }
 
 func (a *ArtifactsWorker) Run() {
@@ -55,7 +53,6 @@ func (a *ArtifactsWorker) assureGimletArtifacts(repoName string) error {
 		slices.Reverse(hashes) //artifacts should be generated in commit creation order
 
 		err := generateFakeArtifactsForCommits(repoName, headBranch, hashes, a.dao, repo)
-		a.gitopsQueue <- 1
 
 		return err
 	})

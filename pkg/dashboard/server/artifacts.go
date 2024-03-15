@@ -52,9 +52,6 @@ func saveArtifact(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(artifactStr)
-
-	gitopsQueue := ctx.Value("gitopsQueue").(chan int)
-	gitopsQueue <- 1
 }
 
 func getArtifacts(w http.ResponseWriter, r *http.Request) {

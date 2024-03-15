@@ -3,8 +3,10 @@ package store
 import (
 	"database/sql"
 	"os"
+	"sync"
 	"time"
 
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store/ddl"
 	genericStore "github.com/gimlet-io/gimlet/pkg/store"
 
@@ -18,6 +20,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+type EventCreatedCallback func(event *model.Event)
+
 // Store is used to access data
 // from the sql/database driver with a relational database backend.
 type Store struct {
@@ -25,6 +29,9 @@ type Store struct {
 
 	driver string
 	config string
+
+	eventCreatedCallbacksLock sync.Mutex
+	eventCreatedCallbacks     []EventCreatedCallback
 }
 
 // New creates a database connection for the given driver and datasource
@@ -132,4 +139,10 @@ func setupMeddler(driver, encryptionKey, encryptionKeyNew string) {
 	}
 
 	meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey, EncryptionKeyNew: encryptionKeyNew})
+}
+
+func (s *Store) SubscribeToEventCreated(fn EventCreatedCallback) {
+	s.eventCreatedCallbacksLock.Lock()
+	s.eventCreatedCallbacks = append(s.eventCreatedCallbacks, fn)
+	s.eventCreatedCallbacksLock.Unlock()
 }

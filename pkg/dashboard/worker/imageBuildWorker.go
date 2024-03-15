@@ -15,18 +15,15 @@ import (
 type ImageBuildWorker struct {
 	store       *store.Store
 	imageBuilds chan streaming.ImageBuildStatusWSMessage
-	gitopsQueue chan int
 }
 
 func NewImageBuildWorker(
 	store *store.Store,
 	imageBuilds chan streaming.ImageBuildStatusWSMessage,
-	gitopsQueue chan int,
 ) *ImageBuildWorker {
 	imageBuildWorker := &ImageBuildWorker{
 		store:       store,
 		imageBuilds: imageBuilds,
-		gitopsQueue: gitopsQueue,
 	}
 
 	return imageBuildWorker
@@ -41,7 +38,7 @@ func (m *ImageBuildWorker) Run() {
 		}
 
 		if imageBuildStatus.Status == "success" {
-			go createDeployRequest(imageBuildStatus.BuildId, m.store, m.gitopsQueue)
+			go createDeployRequest(imageBuildStatus.BuildId, m.store)
 		} else if imageBuildStatus.Status != "running" {
 			go handleImageBuildError(imageBuildStatus.BuildId, m.store)
 		}
@@ -73,7 +70,7 @@ func handleImageBuildError(buildId string, store *store.Store) {
 	}
 }
 
-func createDeployRequest(buildId string, store *store.Store, gitopsQueue chan int) {
+func createDeployRequest(buildId string, store *store.Store) {
 	event, err := store.Event(buildId)
 	if err != nil {
 		logrus.Error(err)
@@ -108,8 +105,6 @@ func createDeployRequest(buildId string, store *store.Store, gitopsQueue chan in
 		logrus.Error(err)
 		return
 	}
-
-	gitopsQueue <- 1
 
 	event.Status = model.Success.String()
 	event.Results[0].TriggeredDeployRequestID = triggeredDeployRequestEvent.ID
