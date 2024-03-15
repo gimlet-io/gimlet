@@ -274,9 +274,11 @@ type CommitEventResult struct {
 	Status     string `json:"status"`
 	StatusDesc string `json:"statusDesc"`
 
-	GitopsRef  string `json:"gitopsRef"`
-	GitopsRepo string `json:"gitopsRepo"`
+	GitopsRef  string `json:"gitopsRef,omitempty"`
+	GitopsRepo string `json:"gitopsRepo,omitempty"`
 
-	TriggeredBy string `json:"triggeredBy"`
-	Log         string `json:"log"`
+	TriggeredImageBuildId    string `json:"triggeredImageBuildId,omitempty"`
+	TriggeredDeployRequestId string `json:"triggeredDeployRequestId,omitempty"`
+	TriggeredBy              string `json:"triggeredBy"`
+	Log                      string `json:"log,omitempty"`
 }

@@ -321,14 +321,14 @@ func AsCommitEvent(event *model.Event) *api.CommitEvent {
 		releaseRequest = &r
 	} else if event.Type == model.ImageBuildRequestedEvent {
 		var r dx.ImageBuildRequest
-		err := json.Unmarshal([]byte(event.Blob), imageBuildRequest)
+		err := json.Unmarshal([]byte(event.Blob), &r)
 		if err != nil {
 			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
 		}
 		imageBuildRequest = &r
 	} else if event.Type == model.RollbackRequestedEvent {
 		var r dx.RollbackRequest
-		err := json.Unmarshal([]byte(event.Blob), rollbackRequest)
+		err := json.Unmarshal([]byte(event.Blob), &r)
 		if err != nil {
 			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
 		}
@@ -345,14 +345,17 @@ func AsCommitEvent(event *model.Event) *api.CommitEvent {
 		}
 
 		results = append(results, api.CommitEventResult{
-			App:         app,
-			Env:         env,
-			Status:      r.Status.String(),
-			StatusDesc:  r.StatusDesc,
-			GitopsRef:   r.GitopsRef,
-			GitopsRepo:  r.GitopsRepo,
-			TriggeredBy: r.TriggeredBy,
-			Log:         r.Log,
+			App:        app,
+			Env:        env,
+			Status:     r.Status.String(),
+			StatusDesc: r.StatusDesc,
+			GitopsRef:  r.GitopsRef,
+			GitopsRepo: r.GitopsRepo,
+
+			TriggeredImageBuildId:    r.TriggeredImageBuildRequestID,
+			TriggeredDeployRequestId: r.TriggeredDeployRequestID,
+			TriggeredBy:              r.TriggeredBy,
+			Log:                      r.Log,
 		})
 	}
 
