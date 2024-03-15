@@ -151,9 +151,9 @@ func commitEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commitEvents := []*CommitEvent{}
+	commitEvents := []*api.CommitEvent{}
 	for _, event := range events {
-		commitEvents = append(commitEvents, asCommitEvent(event))
+		commitEvents = append(commitEvents, AsCommitEvent(event))
 	}
 
 	eventsString, err := json.Marshal(commitEvents)
@@ -213,7 +213,7 @@ func decorateWithEventData(repoName string, commits []*Commit, dao *store.Store)
 
 	for _, commit := range commits {
 		event := eventsByHash[commit.SHA]
-		commit.LastEvent = asCommitEvent(event)
+		commit.LastEvent = AsCommitEvent(event)
 	}
 
 	return commits, nil
@@ -301,61 +301,41 @@ type Commit struct {
 	Tags          []string             `json:"tags,omitempty"`
 	Status        model.CombinedStatus `json:"status,omitempty"`
 	DeployTargets []*api.DeployTarget  `json:"deployTargets,omitempty"`
-	LastEvent     *CommitEvent         `json:"lastEvent,omitempty"`
+	LastEvent     *api.CommitEvent     `json:"lastEvent,omitempty"`
 }
 
-type CommitEvent struct {
-	ID                string                `json:"id,omitempty"`
-	Created           int64                 `json:"created,omitempty"`
-	Type              string                `json:"type,omitempty"`
-	ReleaseRequest    *dx.ReleaseRequest    `json:"releaseRequest,omitempty"`
-	ImageBuildRequest *dx.ImageBuildRequest `json:"imageBuildRequest,omitempty"`
-	RollbackRequest   *dx.RollbackRequest   `json:"rollbackRequest,omitempty"`
-	Status            string                `json:"status"`
-	StatusDesc        string                `json:"statusDesc"`
-	Results           []CommitEventResult   `json:"results,omitempty"`
-}
-
-type CommitEventResult struct {
-	App string `json:"app,omitempty"`
-	Env string `json:"env,omitempty"`
-
-	Status     string `json:"status"`
-	StatusDesc string `json:"statusDesc"`
-
-	GitopsRef  string `json:"gitopsRef"`
-	GitopsRepo string `json:"gitopsRepo"`
-
-	TriggeredBy string `json:"triggeredBy"`
-	Log         string `json:"log"`
-}
-
-func asCommitEvent(event *model.Event) *CommitEvent {
+func AsCommitEvent(event *model.Event) *api.CommitEvent {
 	if event == nil {
 		return nil
 	}
 
-	var releaseRequest dx.ReleaseRequest
-	var imageBuildRequest dx.ImageBuildRequest
-	var rollbackRequest dx.RollbackRequest
+	var releaseRequest *dx.ReleaseRequest
+	var imageBuildRequest *dx.ImageBuildRequest
+	var rollbackRequest *dx.RollbackRequest
 	if event.Type == model.ReleaseRequestedEvent {
-		err := json.Unmarshal([]byte(event.Blob), &releaseRequest)
+		var r dx.ReleaseRequest
+		err := json.Unmarshal([]byte(event.Blob), &r)
 		if err != nil {
 			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
 		}
+		releaseRequest = &r
 	} else if event.Type == model.ImageBuildRequestedEvent {
-		err := json.Unmarshal([]byte(event.Blob), &imageBuildRequest)
+		var r dx.ImageBuildRequest
+		err := json.Unmarshal([]byte(event.Blob), imageBuildRequest)
 		if err != nil {
 			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
 		}
+		imageBuildRequest = &r
 	} else if event.Type == model.RollbackRequestedEvent {
-		err := json.Unmarshal([]byte(event.Blob), &rollbackRequest)
+		var r dx.RollbackRequest
+		err := json.Unmarshal([]byte(event.Blob), rollbackRequest)
 		if err != nil {
 			logrus.Warnf("could not unmarshal blob for: %s - %s", event.ID, err)
 		}
+		rollbackRequest = &r
 	}
 
-	results := []CommitEventResult{}
+	results := []api.CommitEventResult{}
 	for _, r := range event.Results {
 		var app string
 		var env string
@@ -364,7 +344,7 @@ func asCommitEvent(event *model.Event) *CommitEvent {
 			env = r.Manifest.Env
 		}
 
-		results = append(results, CommitEventResult{
+		results = append(results, api.CommitEventResult{
 			App:         app,
 			Env:         env,
 			Status:      r.Status.String(),
@@ -376,13 +356,14 @@ func asCommitEvent(event *model.Event) *CommitEvent {
 		})
 	}
 
-	return &CommitEvent{
+	return &api.CommitEvent{
 		ID:                event.ID,
 		Created:           event.Created,
 		Type:              event.Type,
-		ReleaseRequest:    &releaseRequest,
-		ImageBuildRequest: &imageBuildRequest,
-		RollbackRequest:   &rollbackRequest,
+		Sha:               event.SHA,
+		ReleaseRequest:    releaseRequest,
+		ImageBuildRequest: imageBuildRequest,
+		RollbackRequest:   rollbackRequest,
 		Status:            event.Status,
 		StatusDesc:        event.StatusDesc,
 		Results:           results,

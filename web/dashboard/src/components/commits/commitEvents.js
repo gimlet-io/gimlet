@@ -136,9 +136,6 @@ function ArtifactEventWidget(props) {
   const exactDate = format(event.created * 1000, 'h:mm:ss a, MMMM do yyyy')
   const dateLabel = formatDistance(event.created * 1000, new Date());
 
-  const env = event.releaseRequest.env
-  const builtInEnv = envs.filter(e => e.name ===env).builtIn
-
   return (
     <div>
     <div className="flex min-w-0 flex-1 justify-between space-x-4">
@@ -152,35 +149,40 @@ function ArtifactEventWidget(props) {
     </div>
       <p className='pl-5'>Status: {event.status}</p>
       <ul>
-        {event.results?.map((result, idx) => (
-          <li key={idx}>
-            <p className={`pl-5 ${result.status === 'failure' ? 'text-red-500' : ''}`}>
-              {result.gitopsRef &&
-              <span className='font-mono text-sm'> 
-                {builtInEnv &&
-                  <span>📎 {result.gitopsRef.slice(0, 6)}</span>
+        {event.results?.map((result, idx) => {
+          const env = result.env
+          const builtInEnv = envs.filter(e => e.name === env).builtIn
+
+          return (
+            <li key={idx}>
+              <p className={`pl-5 ${result.status === 'failure' ? 'text-red-500' : ''}`}>
+                {result.gitopsRef &&
+                <span className='font-mono text-sm'> 
+                  {builtInEnv &&
+                    <span>📎 {result.gitopsRef.slice(0, 6)}</span>
+                  }
+                  {!builtInEnv &&
+                  <a
+                    href={`${scmUrl}/${result.gitopsRepo}/commit/${result.gitopsRef}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className='ml-1'
+                  >
+                    📎 {result.gitopsRef.slice(0, 6)}
+                  </a>
+                  }
+                </span>
                 }
-                {!builtInEnv &&
-                <a
-                  href={`${scmUrl}/${result.gitopsRepo}/commit/${result.gitopsRef}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className='ml-1'
-                >
-                  📎 {result.gitopsRef.slice(0, 6)}
-                </a>
-                }
-              </span>
+                <span className='pl-1'>{result.app}</span>
+              </p>
+              {result.status === 'failure' &&
+              <p className='pl-5 text-red-500'>
+                <span>❗</span>
+                <span className='pl-1'>{result.statusDesc}</span>
+              </p>
               }
-              <span className='pl-1'>{result.app}</span>
-            </p>
-            {result.status === 'failure' &&
-            <p className='pl-5 text-red-500'>
-              <span>❗</span>
-              <span className='pl-1'>{result.statusDesc}</span>
-            </p>
-            }
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
@@ -226,7 +228,7 @@ function ImageBuildEventWidget(props) {
               <span className='pl-1'>{result.statusDesc}</span>
             </p>
             }
-            <div className="overflow-y-auto flex-grow h-64 bg-stone-900 text-gray-300 font-mono text-sm p-2" style={{"whiteSpace": 'pre-line'}}>
+            <div className="overflow-y-auto overscroll-none flex-grow h-64 bg-stone-900 text-gray-300 font-mono text-sm p-2" style={{"whiteSpace": 'pre-line'}}>
               {result.log}
             </div>
           </li>

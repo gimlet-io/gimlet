@@ -253,3 +253,30 @@ type DeployTarget struct {
 	Tenant     string `json:"tenant"`
 	ArtifactId string `json:"artifactId"`
 }
+
+type CommitEvent struct {
+	ID                string                `json:"id,omitempty"`
+	Created           int64                 `json:"created,omitempty"`
+	Type              string                `json:"type,omitempty"`
+	Sha               string                `json:"sha,omitempty"`
+	ReleaseRequest    *dx.ReleaseRequest    `json:"releaseRequest,omitempty"`
+	ImageBuildRequest *dx.ImageBuildRequest `json:"imageBuildRequest,omitempty"`
+	RollbackRequest   *dx.RollbackRequest   `json:"rollbackRequest,omitempty"`
+	Status            string                `json:"status"`
+	StatusDesc        string                `json:"statusDesc"`
+	Results           []CommitEventResult   `json:"results,omitempty"`
+}
+
+type CommitEventResult struct {
+	App string `json:"app,omitempty"`
+	Env string `json:"env,omitempty"`
+
+	Status     string `json:"status"`
+	StatusDesc string `json:"statusDesc"`
+
+	GitopsRef  string `json:"gitopsRef"`
+	GitopsRepo string `json:"gitopsRepo"`
+
+	TriggeredBy string `json:"triggeredBy"`
+	Log         string `json:"log"`
+}
