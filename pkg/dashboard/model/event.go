@@ -50,8 +50,9 @@ type Result struct {
 	GitopsRef  string
 	GitopsRepo string
 
-	TriggeredDeployRequestID string `json:"triggeredDeployRequestID"`
-	Log                      string `json:"log"`
+	TriggeredImageBuildRequestID string `json:"triggeredImageBuildRequestID"`
+	TriggeredDeployRequestID     string `json:"triggeredDeployRequestID"`
+	Log                          string `json:"log"`
 }
 
 type Event struct {

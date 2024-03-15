@@ -214,6 +214,7 @@ func main() {
 		gitUser,
 		config.GitHost,
 		gitopsQueue,
+		agentHub,
 	)
 	go gitopsWorker.Run()
 

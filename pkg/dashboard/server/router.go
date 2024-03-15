@@ -221,7 +221,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 
 		r.Get("/agent/register", register)
 	})
-	r.Get("/agent/imagebuild/{imageBuildId}", imageBuild)
+	r.Get("/agent/imagebuild/{imageBuildId}", imageBuildMeta)
 }
 
 func githubOAuthRoutes(config *config.Config, dynamicConfig *dynamicconfig.DynamicConfig, r *chi.Mux) {

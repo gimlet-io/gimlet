@@ -208,7 +208,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
-func imageBuild(w http.ResponseWriter, r *http.Request) {
+func imageBuildMeta(w http.ResponseWriter, r *http.Request) {
 	imageBuildId := chi.URLParam(r, "imageBuildId")
 
 	ctx := r.Context()
