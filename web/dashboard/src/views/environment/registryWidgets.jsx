@@ -2,7 +2,7 @@ import { Component } from "react";
 import {
   ACTION_TYPE_POPUPWINDOWRESET,
   ACTION_TYPE_POPUPWINDOWERROR
- } from "../../redux/redux";
+} from "../../redux/redux";
 
 export class GhcrRegistryWidget extends Component {
   constructor(props) {
@@ -39,7 +39,8 @@ export class GhcrRegistryWidget extends Component {
     return () => {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
-          this.props.onChange(data)
+          this.setState({ sealed: data });
+          this.props.onChange(data);
         }, () => {
           store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
@@ -65,6 +66,19 @@ export class GhcrRegistryWidget extends Component {
           onClick={this.seal()} >
           Seal
         </button>
+        {
+          this.state.sealed &&
+          <div class="rounded-md bg-blue-50 p-4">
+            <h3 class="text-sm font-medium text-blue-800">Sealed value:</h3>
+            <div class="mt-2 text-sm text-blue-700">
+              <div class="flex items-center">
+                <span class="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">
+                  {this.state.sealed}
+                </span>
+              </div>
+            </div>
+          </div>
+        }
       </>
     );
   }
@@ -106,7 +120,8 @@ export class DockerhubRegistryWidget extends Component {
     return () => {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
-          this.props.onChange(data)
+          this.setState({ sealed: data });
+          this.props.onChange(data);
         }, () => {
           store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
@@ -135,6 +150,19 @@ export class DockerhubRegistryWidget extends Component {
           onClick={this.seal()} >
           Seal
         </button>
+        {
+          this.state.sealed &&
+          <div class="rounded-md bg-blue-50 p-4">
+            <h3 class="text-sm font-medium text-blue-800">Sealed value:</h3>
+            <div class="mt-2 text-sm text-blue-700">
+              <div class="flex items-center">
+                <span class="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">
+                  {this.state.sealed}
+                </span>
+              </div>
+            </div>
+          </div>
+        }
       </>
     );
   }
