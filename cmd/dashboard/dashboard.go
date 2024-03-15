@@ -145,13 +145,10 @@ func main() {
 	go repoCache.Run()
 	log.Info("Repo cache initialized")
 
-	gitopsQueue := make(chan int, 1000)
-
 	artifactsWorker := worker.NewArtifactsWorker(
 		repoCache,
 		store,
 		triggerArtifactGeneration,
-		gitopsQueue,
 	)
 	go artifactsWorker.Run()
 
@@ -166,7 +163,7 @@ func main() {
 		go weeklyReporter.Run()
 	}
 
-	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds, gitopsQueue)
+	imageBuildWorker := worker.NewImageBuildWorker(store, successfullImageBuilds)
 	go imageBuildWorker.Run()
 
 	chartUpdatePullRequests := map[string]interface{}{}
@@ -213,7 +210,6 @@ func main() {
 		perf,
 		gitUser,
 		config.GitHost,
-		gitopsQueue,
 		agentHub,
 	)
 	go gitopsWorker.Run()
@@ -269,7 +265,6 @@ func main() {
 		logger,
 		gitServer,
 		gitUser,
-		gitopsQueue,
 	)
 
 	go func() {
@@ -288,7 +283,6 @@ func main() {
 	}
 
 	<-stopCh
-	close(gitopsQueue)
 	log.Info("Successfully cleaned up resources. Stopping.")
 }
 

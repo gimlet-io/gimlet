@@ -17,7 +17,18 @@ func (db *Store) CreateEvent(event *model.Event) (*model.Event, error) {
 	event.ID = uuid.New().String()
 	event.Created = time.Now().Unix()
 	event.Status = model.StatusNew
-	return event, meddler.Insert(db, "events", event)
+
+	err := meddler.Insert(db, "events", event)
+
+	go func() {
+		db.eventCreatedCallbacksLock.Lock()
+		for _, callback := range db.eventCreatedCallbacks {
+			callback(event)
+		}
+		db.eventCreatedCallbacksLock.Unlock()
+	}()
+
+	return event, err
 }
 
 // createEvent stores a new event in the database, but it is able to fake the created date.

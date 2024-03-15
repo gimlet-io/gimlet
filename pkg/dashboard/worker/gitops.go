@@ -57,7 +57,6 @@ func NewGitopsWorker(
 	perf *prometheus.HistogramVec,
 	gitUser *model.User,
 	gitHost string,
-	gitopsQueue chan int,
 	agentHub *streaming.AgentHub,
 ) *GitopsWorker {
 	return &GitopsWorker{
@@ -70,7 +69,7 @@ func NewGitopsWorker(
 		perf:                 perf,
 		gitUser:              gitUser,
 		gitHost:              gitHost,
-		gitopsQueue:          gitopsQueue,
+		gitopsQueue:          make(chan int, 1000),
 		agentHub:             agentHub,
 	}
 }
@@ -80,6 +79,10 @@ func (w *GitopsWorker) Run() {
 	defer func() {
 		ticker.Stop()
 	}()
+
+	w.store.SubscribeToEventCreated(func(event *model.Event) {
+		w.gitopsQueue <- 1
+	})
 
 	w.gitopsQueue <- 1 // start with processing
 	logrus.Info("Gitops worker started")

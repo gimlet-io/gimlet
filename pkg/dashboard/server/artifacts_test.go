@@ -50,9 +50,7 @@ func Test_saveArtifact(t *testing.T) {
 	json.Unmarshal([]byte(artifactStr), &a)
 
 	_, body, err := testEndpoint(saveArtifact, func(ctx context.Context) context.Context {
-		ctx = context.WithValue(ctx, "store", store)
-		ctx = context.WithValue(ctx, "gitopsQueue", make(chan int, 10))
-		return ctx
+		return context.WithValue(ctx, "store", store)
 	}, "/path")
 	assert.Nil(t, err)
 
