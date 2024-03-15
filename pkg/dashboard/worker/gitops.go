@@ -443,6 +443,12 @@ func processReleaseEvent(
 		}
 		deployResult.GitopsRef = sha
 		deployResults = append(deployResults, deployResult)
+
+		event.Results = deployResults
+		err = updateEvent(store, event)
+		if err != nil {
+			logrus.Warnf("could not update event status %v", err)
+		}
 	}
 
 	return deployResults, nil
