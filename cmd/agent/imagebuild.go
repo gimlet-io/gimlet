@@ -240,6 +240,7 @@ func dockerfileImageBuild(
 	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
 	jobName := fmt.Sprintf("kaniko-%d", rand.Uint32())
 	job := generateJob(trigger, jobName, reqUrl)
+	job = mountPushSecret(job, trigger.Image)
 	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
@@ -285,7 +286,7 @@ func dockerfileImageBuild(
 func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.Job {
 	var ttlSecondsAfterFinished int32 = 60
 	var backOffLimit int32 = 0
-	job := &batchv1.Job{
+	return &batchv1.Job{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       "Job",
 			APIVersion: "batch/v1",
@@ -351,24 +352,42 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 			BackoffLimit: &backOffLimit,
 		},
 	}
+}
 
-	// TODO
-	// if !strings.HasPrefix(trigger.Image, "127.0.0.1:32447") {
+func mountPushSecret(job *batchv1.Job, image string) *batchv1.Job {
+	optional := true
+	if strings.HasPrefix(image, "ghcr.io") {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			MountPath: "/kaniko/.docker",
+			Name:      "ghcr-registry-pushsecret",
+		})
+
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: "ghcr-registry-pushsecret",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "ghcr-registry-pushsecret",
+					Optional:   &optional,
+				},
+			},
+		})
+		return job
+	}
+
 	job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 		MountPath: "/kaniko/.docker",
-		Name:      "ghcr-registry-pushsecret",
+		Name:      "dockerhub-registry-pushsecret-nonexist",
 	})
 
 	job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
-		Name: "ghcr-registry-pushsecret",
+		Name: "dockerhub-registry-pushsecret-nonexist",
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: "ghcr-registry-pushsecret",
+				SecretName: "dockerhub-registry-pushsecret-nonexist",
+				Optional:   &optional,
 			},
 		},
 	})
-	// }
-
 	return job
 }
 
