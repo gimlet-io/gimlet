@@ -376,14 +376,14 @@ func mountPushSecret(job *batchv1.Job, image string) *batchv1.Job {
 
 	job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 		MountPath: "/kaniko/.docker",
-		Name:      "dockerhub-registry-pushsecret-nonexist",
+		Name:      "dockerhub-registry-pushsecret",
 	})
 
 	job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
-		Name: "dockerhub-registry-pushsecret-nonexist",
+		Name: "dockerhub-registry-pushsecret",
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: "dockerhub-registry-pushsecret-nonexist",
+				SecretName: "dockerhub-registry-pushsecret",
 				Optional:   &optional,
 			},
 		},
