@@ -120,8 +120,8 @@ function CollapsedFooter(props) {
   const { connectedAgents } = props
 
   return (
-    <div className="grid grid-cols-3">
-      {Object.keys(connectedAgents).slice(0,3).map(envName => {
+    <div className="grid grid-cols-6 space-x-4">
+      {Object.keys(connectedAgents).slice(0,6).map(envName => {
         const fluxState = connectedAgents[envName].fluxState;
 
         if (!fluxState) {
@@ -132,7 +132,7 @@ function CollapsedFooter(props) {
           <div className="w-full truncate" key={envName}>
             <p className="font-semibold text-neutral-700">
               {`${envName.toUpperCase()}`}:
-              <span className='ml-2'>
+              <span className='ml-1'>
                 <Summary resources={fluxState.gitRepositories} label="SOURCES" simple={true} />
                 <Summary resources={fluxState.kustomizations} label="KUSTOMIZATIONS" simple={true}  />
                 <Summary resources={fluxState.helmReleases} label="HELM-RELEASES" simple={true}  />
