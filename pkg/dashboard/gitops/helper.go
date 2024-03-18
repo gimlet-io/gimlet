@@ -395,11 +395,11 @@ func ExtractImageStrategy(envConfig *dx.Manifest) string {
 	return "dynamic"
 }
 
-func ExtractImageRepoTagAndDockerfile(envConfig *dx.Manifest, vars map[string]string) (string, string, string) {
+func ExtractImageRepoTagDockerfileAndRegistry(envConfig *dx.Manifest, vars map[string]string) (string, string, string, string) {
 	envConfig.ResolveVars(vars)
 	image := envConfig.Values["image"]
 
-	var repository, tag, dockerfile string
+	var repository, tag, dockerfile, registry string
 	if image != nil {
 		imageMap := image.(map[string]interface{})
 
@@ -412,7 +412,10 @@ func ExtractImageRepoTagAndDockerfile(envConfig *dx.Manifest, vars map[string]st
 		if val, ok := imageMap["dockerfile"]; ok {
 			dockerfile = val.(string)
 		}
+		if val, ok := imageMap["registry"]; ok {
+			registry = val.(string)
+		}
 	}
 
-	return repository, tag, dockerfile
+	return repository, tag, dockerfile, registry
 }

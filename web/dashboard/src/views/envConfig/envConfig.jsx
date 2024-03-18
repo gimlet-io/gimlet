@@ -78,6 +78,7 @@ class EnvConfig extends Component {
                 repository: "127.0.0.1:32447/"+config,
                 tag:        "{{ .SHA }}",
                 strategy:   "buildpacks",
+                registry:   "builtInRegistry",
               },
               resources: {
                 ignoreLimits: true,

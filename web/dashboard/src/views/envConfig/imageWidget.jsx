@@ -16,6 +16,7 @@ class ImageWidget extends Component {
     let repository = ""
     let tag = ""
     let dockerfile = ""
+    let registry = "builtInRegistry"
 
     switch (strategy) {
       case 'dynamic':
@@ -43,6 +44,7 @@ class ImageWidget extends Component {
       repository: repository,
       tag: tag,
       dockerfile: dockerfile,
+      registry: registry,
     }
   }
 
@@ -52,13 +54,37 @@ class ImageWidget extends Component {
         {
           [name]: event.target.value,
         },
-        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy})
+        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": this.state.registry })
       );
     };
   }
 
+  selectOnChange(value) {
+    const { registry } = this.props;
+    let repository = "";
+    const login = registry[value].login ?? "your-company"
+
+    switch (value) {
+      case 'dockerhubRegistry':
+        repository = `${login}/{{ .APP }}`
+        break;
+      case 'ghcrRegistry':
+        repository = `ghcr.io/${login}/{{ .APP }}`
+        break;
+      default:
+        repository = "127.0.0.1:32447/{{ .APP }}"
+    }
+
+    this.props.onChange({"repository": repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": value})
+    this.setState({ registry: value });
+  }
+
   render() {
     const { strategy, repository, tag, dockerfile } = this.state;
+    const { registry } = this.props;
+
+    console.log(this.state)
+
     return (
       <>
       <div className="form-group field field-object">
@@ -68,7 +94,7 @@ class ImageWidget extends Component {
           <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-4 sm:gap-x-4 px-2">
             <div 
               className={`relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "static" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "static", ...this.defaults("static")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy}))}
+              onClick={(e) => this.setState({strategy: "static", ...this.defaults("static")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy, "registry": this.state.registry}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -83,7 +109,7 @@ class ImageWidget extends Component {
 
             <div
               className={`relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "dynamic" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "dynamic", ...this.defaults("dynamic")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy}))}
+              onClick={(e) => this.setState({strategy: "dynamic", ...this.defaults("dynamic")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy, "registry": this.state.registry}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -98,7 +124,7 @@ class ImageWidget extends Component {
 
             <div
               className={`relative pr-8 flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "buildpacks" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "buildpacks", ...this.defaults("buildpacks")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy}))}
+              onClick={(e) => this.setState({strategy: "buildpacks", ...this.defaults("buildpacks")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "strategy": this.state.strategy, "registry": this.state.registry}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -113,7 +139,7 @@ class ImageWidget extends Component {
 
             <div
               className={`relative pr-8 flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none ${strategy === "dockerfile" ? "border-indigo-600" : ""}`}
-              onClick={(e) => this.setState({strategy: "dockerfile", ...this.defaults("dockerfile")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy}))}
+              onClick={(e) => this.setState({strategy: "dockerfile", ...this.defaults("dockerfile")}, () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": this.state.registry}))}
               >
               <span className="flex flex-1">
                 <span className="flex flex-col">
@@ -140,6 +166,26 @@ class ImageWidget extends Component {
             <label className="control-label" htmlFor="root_tag">Dockerfile<span className="required">*</span></label>
             <input className="form-control" id="root_tag" label="Dockerfile" required="" placeholder="" type="text" list="examples_root_tag" value={dockerfile}  onChange={this.onChange('dockerfile')}/>
           </div>
+          }
+          {(strategy === "dockerfile" || strategy === "buildpacks") &&
+            <div className="form-group field">
+              <label className="control-label" htmlFor="root_tag">Registry<span className="required">*</span></label>
+              <select id="root_1__anyof_select" className="form-control" value={this.state.registry} onChange={e => this.selectOnChange(e.target.value)}>
+                {
+                  Object.keys(registry).map((item, idx) => {
+                    if (!registry[item].hasOwnProperty("enabled")) {
+                      return null
+                    }
+
+                    if (!registry[item].enabled) {
+                      return null
+                    }
+
+                    return (<option key={idx} value={item}>{item}</option>)
+                  })
+                }
+              </select>
+            </div>
           }
         </fieldset>
       </div>
