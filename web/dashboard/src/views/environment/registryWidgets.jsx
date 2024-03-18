@@ -11,7 +11,6 @@ export class GhcrRegistryWidget extends Component {
     this.state = {
       login: "",
       token: "",
-      value: props.formData ?? "",
       sealed: props.formData ? true : false,
     };
   }
@@ -19,8 +18,7 @@ export class GhcrRegistryWidget extends Component {
   componentDidUpdate(prevProps) {
     if (prevProps.formData !== this.props.formData) {
       this.setState({
-        value: this.props.formData,
-        sealed: true,
+        sealed: this.props.formData ? true : false,
       });
     }
   }
@@ -63,8 +61,27 @@ export class GhcrRegistryWidget extends Component {
     };
   }
 
+  reset() {
+    return () => {
+      this.props.onChange("")
+    };
+  }
+
   render() {
-    const { login, token, sealed, value } = this.state;
+    const { login, token, sealed } = this.state;
+    const disabled = login === "" || token === "";
+
+    if (sealed) {
+      return (
+        <>
+          <ConfiguredPanel />
+          <button className="my-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded h-12"
+            onClick={this.reset()} >
+            Reset
+          </button>
+        </>
+      )
+    }
 
     return (
       <>
@@ -74,23 +91,10 @@ export class GhcrRegistryWidget extends Component {
         <label class="control-label" for="root_token">Token</label>
         <input class="form-control" id="root_token" required="" label="Token" placeholder="" type="text" list="examples_root_token"
           value={token} onChange={e => this.setState({ token: e.target.value })} />
-        <button className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-12"
+        <button disabled={disabled} className={(disabled ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-700") + " my-2 text-white font-bold py-2 px-4 rounded h-12"}
           onClick={this.seal()} >
           Seal
         </button>
-        {
-          sealed &&
-          <div class="rounded-md bg-blue-50 p-4">
-            <h3 class="text-sm font-medium text-blue-800">Sealed value:</h3>
-            <div class="mt-2 text-sm text-blue-700">
-              <div class="flex items-center">
-                <span class="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">
-                  {value}
-                </span>
-              </div>
-            </div>
-          </div>
-        }
       </>
     );
   }
@@ -104,7 +108,6 @@ export class DockerhubRegistryWidget extends Component {
       email: "",
       login: "",
       token: "",
-      value: props.formData ?? "",
       sealed: props.formData ? true : false,
     };
   }
@@ -112,8 +115,7 @@ export class DockerhubRegistryWidget extends Component {
   componentDidUpdate(prevProps) {
     if (prevProps.formData !== this.props.formData) {
       this.setState({
-        value: this.props.formData,
-        sealed: true,
+        sealed: this.props.formData ? true : false,
       });
     }
   }
@@ -156,8 +158,27 @@ export class DockerhubRegistryWidget extends Component {
     };
   }
 
+  reset() {
+    return () => {
+      this.props.onChange("")
+    };
+  }
+
   render() {
-    const { email, login, token, sealed, value } = this.state;
+    const { email, login, token, sealed } = this.state;
+    const disabled = email === "" || login === "" || token === "";
+
+    if (sealed) {
+      return (
+        <>
+          <ConfiguredPanel />
+          <button className="my-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded h-12"
+            onClick={this.reset()} >
+            Reset
+          </button>
+        </>
+      )
+    }
 
     return (
       <>
@@ -170,24 +191,28 @@ export class DockerhubRegistryWidget extends Component {
         <label class="control-label" for="root_token">Token</label>
         <input class="form-control" id="root_token" required="" label="Token" placeholder="" type="text" list="examples_root_token"
           value={token} onChange={e => this.setState({ token: e.target.value })} />
-        <button className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-12"
+        <button disabled={disabled} className={(disabled ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-700") + " my-2 text-white font-bold py-2 px-4 rounded h-12"}
           onClick={this.seal()} >
           Seal
         </button>
-        {
-          sealed &&
-          <div class="rounded-md bg-blue-50 p-4">
-            <h3 class="text-sm font-medium text-blue-800">Sealed value:</h3>
-            <div class="mt-2 text-sm text-blue-700">
-              <div class="flex items-center">
-                <span class="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">
-                  {value}
-                </span>
-              </div>
-            </div>
-          </div>
-        }
       </>
     );
   }
+}
+
+const ConfiguredPanel = () => {
+  return (
+    <div class="rounded-md bg-green-50 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-green-800">Configured</h3>
+        </div>
+      </div>
+    </div>
+  )
 }
