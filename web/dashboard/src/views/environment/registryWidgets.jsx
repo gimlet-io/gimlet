@@ -11,7 +11,18 @@ export class GhcrRegistryWidget extends Component {
     this.state = {
       login: "",
       token: "",
+      value: props.formData ?? "",
+      sealed: props.formData ? true : false,
     };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.formData !== this.props.formData) {
+      this.setState({
+        value: this.props.formData,
+        sealed: true,
+      });
+    }
   }
 
   resetPopupWindowAfterThreeSeconds() {
@@ -39,7 +50,6 @@ export class GhcrRegistryWidget extends Component {
     return () => {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
-          this.setState({ sealed: data });
           this.props.onChange(data);
         }, () => {
           store.dispatch({
@@ -54,26 +64,28 @@ export class GhcrRegistryWidget extends Component {
   }
 
   render() {
+    const { login, token, sealed, value } = this.state;
+
     return (
       <>
         <label class="control-label" for="root_login">Login</label>
         <input class="form-control" id="root_login" required="" label="Login" placeholder="" type="text" list="examples_root_login"
-          value={this.state.login} onChange={e => this.setState({ login: e.target.value })} />
+          value={login} onChange={e => this.setState({ login: e.target.value })} />
         <label class="control-label" for="root_token">Token</label>
         <input class="form-control" id="root_token" required="" label="Token" placeholder="" type="text" list="examples_root_token"
-          value={this.state.token} onChange={e => this.setState({ token: e.target.value })} />
+          value={token} onChange={e => this.setState({ token: e.target.value })} />
         <button className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-12"
           onClick={this.seal()} >
           Seal
         </button>
         {
-          this.state.sealed &&
+          sealed &&
           <div class="rounded-md bg-blue-50 p-4">
             <h3 class="text-sm font-medium text-blue-800">Sealed value:</h3>
             <div class="mt-2 text-sm text-blue-700">
               <div class="flex items-center">
                 <span class="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">
-                  {this.state.sealed}
+                  {value}
                 </span>
               </div>
             </div>
@@ -92,7 +104,18 @@ export class DockerhubRegistryWidget extends Component {
       email: "",
       login: "",
       token: "",
+      value: props.formData ?? "",
+      sealed: props.formData ? true : false,
     };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.formData !== this.props.formData) {
+      this.setState({
+        value: this.props.formData,
+        sealed: true,
+      });
+    }
   }
 
   resetPopupWindowAfterThreeSeconds() {
@@ -120,7 +143,6 @@ export class DockerhubRegistryWidget extends Component {
     return () => {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
-          this.setState({ sealed: data });
           this.props.onChange(data);
         }, () => {
           store.dispatch({
@@ -135,29 +157,31 @@ export class DockerhubRegistryWidget extends Component {
   }
 
   render() {
+    const { email, login, token, sealed, value } = this.state;
+
     return (
       <>
         <label class="control-label" for="root_email">Email</label>
         <input class="form-control" id="root_email" required="" label="Email" placeholder="" type="text" list="examples_root_email"
-          value={this.state.email} onChange={e => this.setState({ email: e.target.value })} />
+          value={email} onChange={e => this.setState({ email: e.target.value })} />
         <label class="control-label" for="root_login">Login</label>
         <input class="form-control" id="root_login" required="" label="Login" placeholder="" type="text" list="examples_root_login"
-          value={this.state.login} onChange={e => this.setState({ login: e.target.value })} />
+          value={login} onChange={e => this.setState({ login: e.target.value })} />
         <label class="control-label" for="root_token">Token</label>
         <input class="form-control" id="root_token" required="" label="Token" placeholder="" type="text" list="examples_root_token"
-          value={this.state.token} onChange={e => this.setState({ token: e.target.value })} />
+          value={token} onChange={e => this.setState({ token: e.target.value })} />
         <button className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-12"
           onClick={this.seal()} >
           Seal
         </button>
         {
-          this.state.sealed &&
+          sealed &&
           <div class="rounded-md bg-blue-50 p-4">
             <h3 class="text-sm font-medium text-blue-800">Sealed value:</h3>
             <div class="mt-2 text-sm text-blue-700">
               <div class="flex items-center">
                 <span class="text-xs font-mono bg-blue-100 text-blue-500 font-medium px-1 py-1 rounded break-all">
-                  {this.state.sealed}
+                  {value}
                 </span>
               </div>
             </div>
