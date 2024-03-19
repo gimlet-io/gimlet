@@ -35,6 +35,7 @@ import (
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 
+	ssv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
 	"github.com/fluxcd/flux2/v2/pkg/manifestgen"
 )
 
@@ -259,6 +260,50 @@ func GenerateKustomizationForApp(
 	return &manifestgen.Manifest{
 		Path:    path.Join(filePath, fmt.Sprintf("kustomization-%s.yaml", app)),
 		Content: fmt.Sprintf("---\n%s", resourceToString(ksData)),
+	}, nil
+}
+
+func GenerateImagePullSecret(
+	env, app string,
+	secretName, namespace string,
+	encryptedDockerconfigjson string,
+	singleEnv bool,
+) (*manifestgen.Manifest, error) {
+	secretPath := filepath.Join(env, app)
+	if singleEnv {
+		secretPath = app
+	}
+
+	secret := ssv1alpha1.SealedSecret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SealedSecret",
+			APIVersion: "bitnami.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"sealedsecrets.bitnami.com/cluster-wide": "true",
+			},
+		},
+		Spec: ssv1alpha1.SealedSecretSpec{
+			EncryptedData: ssv1alpha1.SealedSecretEncryptedData{
+				".dockerconfigjson": encryptedDockerconfigjson,
+			},
+			Template: ssv1alpha1.SecretTemplateSpec{
+				Type: "kubernetes.io/dockerconfigjson",
+			},
+		},
+	}
+
+	secretData, err := yaml.Marshal(secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manifestgen.Manifest{
+		Path:    path.Join(secretPath, fmt.Sprintf("imagepullsecret-%s.yaml", app)),
+		Content: fmt.Sprintf("---\n%s", resourceToString(secretData)),
 	}, nil
 }
 

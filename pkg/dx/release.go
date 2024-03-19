@@ -51,6 +51,7 @@ type ImageBuildRequest struct {
 	Tag         string `json:"tag"`
 	SourcePath  string `json:"sourcePath"`
 	Dockerfile  string `json:"dockerfile"`
+	Strategy    string `json:"strategy"`
 	Registry    string `json:"registry"`
 }
 
