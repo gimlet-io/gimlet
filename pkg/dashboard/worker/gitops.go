@@ -20,11 +20,9 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
-	helper "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	bootstrap "github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/gimlet-io/gimlet/pkg/gitops/sync"
 	"github.com/joho/godotenv"
-	"sigs.k8s.io/yaml"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -726,23 +724,14 @@ func cloneTemplateWriteAndPush(
 		}
 	}
 
-	var stackConfig *dx.StackConfig
 	stackYamlPath := "stack.yaml"
 	if !envFromStore.RepoPerEnv {
 		stackYamlPath = filepath.Join(envFromStore.Name, "stack.yaml")
 	}
 
-	err = gitopsRepoCache.PerformAction(envFromStore.InfraRepo, func(repo *git.Repository) error {
-		var inerErr error
-		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
-		return inerErr
-	})
+	stackConfig, err := server.StackConfig(gitopsRepoCache, stackYamlPath, envFromStore.InfraRepo)
 	if err != nil {
-		if !strings.Contains(err.Error(), "file not found") {
-			return "", err
-		} else {
-			return "", err
-		}
+		return "", err
 	}
 
 	imagepullSecretManifest, err := imagepullSecretTemplate(
@@ -806,28 +795,6 @@ func cloneTemplateWriteAndPush(
 
 	perf.WithLabelValues("gitops_cloneTemplateWriteAndPush").Observe(float64(time.Since(t0).Seconds()))
 	return sha, nil
-}
-
-// TODO Duplication
-func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
-	var stackConfig dx.StackConfig
-
-	headBranch, err := helper.HeadBranch(repo)
-	if err != nil {
-		return nil, err
-	}
-
-	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, headBranch, path)
-	if err != nil {
-		return nil, err
-	}
-
-	err = yaml.Unmarshal([]byte(yamlString), &stackConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return &stackConfig, nil
 }
 
 func cloneTemplateDeleteAndPush(
@@ -1228,7 +1195,6 @@ func kustomizationTemplate(
 		repoPerEnv)
 }
 
-// TODO CLEANUP IN CASE OF APP DELETE!!!
 func imagepullSecretTemplate(
 	manifest *dx.Manifest,
 	stackConfig *dx.StackConfig,
@@ -1261,11 +1227,9 @@ func imagepullSecretTemplate(
 		encryptedConfigString = encryptedConfig.(string)
 	}
 
-	secretName := fmt.Sprintf("%s-pullsecret", strings.ToLower(registryString))
 	return sync.GenerateImagePullSecret(
 		manifest.Env,
 		manifest.App,
-		secretName,
 		manifest.Namespace,
 		encryptedConfigString,
 		repoPerEnv,

@@ -264,8 +264,7 @@ func GenerateKustomizationForApp(
 }
 
 func GenerateImagePullSecret(
-	env, app string,
-	secretName, namespace string,
+	env, app, namespace string,
 	encryptedDockerconfigjson string,
 	singleEnv bool,
 ) (*manifestgen.Manifest, error) {
@@ -280,7 +279,7 @@ func GenerateImagePullSecret(
 			APIVersion: "bitnami.com/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
+			Name:      "regcred",
 			Namespace: namespace,
 			Annotations: map[string]string{
 				"sealedsecrets.bitnami.com/cluster-wide": "true",

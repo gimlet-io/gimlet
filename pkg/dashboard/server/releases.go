@@ -295,6 +295,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 				Image:       imageRepository,
 				Tag:         imageTag,
 				Dockerfile:  dockerfile,
+				Strategy:    strategy,
 				Registry:    registry,
 			}
 			break

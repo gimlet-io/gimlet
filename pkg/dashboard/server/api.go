@@ -301,28 +301,17 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var stackConfig *dx.StackConfig
 	stackYamlPath := "stack.yaml"
 	if !env.RepoPerEnv {
 		stackYamlPath = filepath.Join(env.Name, "stack.yaml")
 	}
 
 	gitRepoCache, _ := r.Context().Value("gitRepoCache").(*nativeGit.RepoCache)
-	err = gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) error {
-		var inerErr error
-		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
-		return inerErr
-	})
+	stackConfig, err := StackConfig(gitRepoCache, stackYamlPath, env.InfraRepo)
 	if err != nil {
-		if !strings.Contains(err.Error(), "file not found") {
-			logrus.Errorf("cannot get stack yaml from repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else {
-			logrus.Errorf("cannot get repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		logrus.Errorf("cannot get stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	stackDefinition, err := loadStackDefinition(stackConfig)
@@ -347,6 +336,23 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write(gitopsEnvString)
+}
+
+func StackConfig(gitRepoCache *nativeGit.RepoCache, stackYamlPath, infraRepo string) (*dx.StackConfig, error) {
+	var stackConfig *dx.StackConfig
+	err := gitRepoCache.PerformAction(infraRepo, func(repo *git.Repository) error {
+		var inerErr error
+		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
+		return inerErr
+	})
+	if err != nil {
+		if !strings.Contains(err.Error(), "file not found") {
+			return nil, fmt.Errorf("cannot get stack yaml from repo: %s", err)
+		} else {
+			return nil, fmt.Errorf("cannot get repo: %s", err)
+		}
+	}
+	return stackConfig, nil
 }
 
 func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {

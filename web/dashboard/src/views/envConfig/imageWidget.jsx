@@ -12,6 +12,11 @@ class ImageWidget extends Component {
     };
   }
 
+  // TODO bug input field loses focus on writing
+  componentDidMount() {
+    this.props.setImagePullSecret("regcred")
+  }
+
   defaults(strategy) {
     let repository = ""
     let tag = ""
@@ -54,36 +59,40 @@ class ImageWidget extends Component {
         {
           [name]: event.target.value,
         },
-        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": this.state.registry })
+        () => this.props.onChange({"repository": this.state.repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": this.state.registry})
       );
     };
   }
 
-  selectOnChange(value) {
-    const { registry } = this.props;
-    let repository = "";
-    const login = registry[value].login ?? "your-company"
+  selectOnChange(name) {
+    return (event) => {
+      const { registry } = this.props;
+      const login = registry[event.target.value].login ?? "your-company"
+      let repository = "";
 
-    switch (value) {
-      case 'dockerhubRegistry':
-        repository = `${login}/{{ .APP }}`
-        break;
-      case 'ghcrRegistry':
-        repository = `ghcr.io/${login}/{{ .APP }}`
-        break;
-      default:
-        repository = "127.0.0.1:32447/{{ .APP }}"
-    }
+      switch (event.target.value) {
+        case 'dockerhubRegistry':
+          repository = `${login}/{{ .APP }}`
+          break;
+        case 'ghcrRegistry':
+          repository = `ghcr.io/${login}/{{ .APP }}`
+          break;
+        default:
+          repository = "127.0.0.1:32447/{{ .APP }}"
+      }
 
-    this.props.onChange({"repository": repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": value})
-    this.setState({ registry: value });
+      this.setState(
+        {
+          [name]: event.target.value,
+        },
+        () => this.props.onChange({"repository": repository, "tag": this.state.tag, "dockerfile": this.state.dockerfile, "strategy": this.state.strategy, "registry": this.state.registry })
+        );
+    };
   }
 
   render() {
     const { strategy, repository, tag, dockerfile } = this.state;
     const { registry } = this.props;
-
-    console.log(this.state)
 
     return (
       <>
@@ -168,9 +177,12 @@ class ImageWidget extends Component {
           </div>
           }
           {(strategy === "dockerfile" || strategy === "buildpacks") &&
+            Object.keys(registry).length !== 0 &&
             <div className="form-group field">
               <label className="control-label" htmlFor="root_tag">Registry<span className="required">*</span></label>
-              <select id="root_1__anyof_select" className="form-control" value={this.state.registry} onChange={e => this.selectOnChange(e.target.value)}>
+              <select id="root_1__anyof_select" className="form-control" value={this.state.registry} 
+              onChange={this.selectOnChange('registry')}
+              >
                 {
                   Object.keys(registry).map((item, idx) => {
                     if (!registry[item].hasOwnProperty("enabled")) {

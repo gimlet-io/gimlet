@@ -284,7 +284,7 @@ func serverCommunication(
 						var imageBuildRequest dx.ImageBuildRequest
 						_ = json.Unmarshal(requestString, &imageBuildRequest)
 
-						if imageBuildRequest.Dockerfile != "" {
+						if imageBuildRequest.Strategy == "dockerfile" {
 							go dockerfileImageBuild(kubeEnv, gimletHost, buildId, imageBuildRequest, messages)
 						} else {
 							go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)

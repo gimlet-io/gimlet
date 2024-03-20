@@ -51,6 +51,7 @@ class EnvConfig extends Component {
 
     this.setValues = this.setValues.bind(this);
     this.resetNotificationStateAfterThreeSeconds = this.resetNotificationStateAfterThreeSeconds.bind(this);
+    this.setImagePullSecret = this.setImagePullSecret.bind(this);
   }
 
   componentDidMount() {
@@ -58,6 +59,14 @@ class EnvConfig extends Component {
     const repoName = `${owner}/${repo}`;
 
     const { gimletClient } = this.props;
+
+    gimletClient.getStackConfig(env)
+      .then(data => {
+        this.setState({ 
+          stackConfig: data.stackConfig,
+          stackDefinition: data.stackDefinition
+        });
+      }, () => {/* Generic error handler deals with it */ });
 
     if (action === "new") {
       gimletClient.getDefaultDeploymentTemplates()
@@ -455,6 +464,18 @@ class EnvConfig extends Component {
     })
   }
 
+  setImagePullSecret(secret) {
+    this.setState(prevState => ({
+      configFile: {
+        ...prevState.configFile,
+        values: {
+          ...prevState.configFile.values,
+          imagePullSecrets: [secret]
+        }
+      }
+    }));
+  }
+
   renderTemplateFromConfig() {
     let title = "Web application template"
     let description = "To deploy any web application. Multiple image build options available."
@@ -530,17 +551,21 @@ class EnvConfig extends Component {
 
     const hasChange = JSON.stringify(this.state.configFile) !== JSON.stringify(this.state.defaultConfigFile)
 
-    const customFields = {
-      imageWidget: ImageWidget,
-      sealedSecretWidget: (props) => <SealedSecretWidget {...props} gimletClient={this.props.gimletClient} store={this.props.store} env={env} />,
-    }
-
     if (!this.state.configFile) {
       return <Spinner />;
     }
 
     if (!this.state.selectedTemplate) {
       return <Spinner />;
+    }
+
+    if (!this.state.stackConfig) {
+      return <Spinner />;
+    }
+
+    const customFields = {
+      imageWidget: (props) => <ImageWidget {...props} setImagePullSecret={this.setImagePullSecret} registry={filterRegistry(this.state.stackConfig, this.state.stackDefinition)} />,
+      sealedSecretWidget: (props) => <SealedSecretWidget {...props} gimletClient={this.props.gimletClient} store={this.props.store} env={env} />,
     }
 
     return (
@@ -848,6 +873,13 @@ class EnvConfig extends Component {
       </div>
     );
   }
+}
+
+const filterRegistry = (stackConfig, stackDefinition) => {
+  const config = stackConfig.config;
+  const elements = stackDefinition.components.filter(c => c.category === "registry")
+
+  return Object.fromEntries(Object.entries(config).filter(([key]) => elements.some(e => e.variable === key)))
 }
 
 export default EnvConfig;
