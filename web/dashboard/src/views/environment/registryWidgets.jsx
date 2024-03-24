@@ -9,17 +9,22 @@ export class GhcrRegistryWidget extends Component {
     super(props);
 
     this.state = {
-      login: "",
+      enabled: props.formData.enabled,
+      login: props.formData.login ?? "",
       token: "",
-      sealed: props.formData ? true : false,
+      sealed: props.formData.encryptedDockerconfigjson !== "" ? true : false,
     };
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.formData !== this.props.formData) {
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.formData.encryptedDockerconfigjson !== this.props.formData.encryptedDockerconfigjson) {
       this.setState({
-        sealed: this.props.formData ? true : false,
+        sealed: this.props.formData.encryptedDockerconfigjson !== "" ? true : false
       });
+    }
+
+    if (prevState.enabled !== this.state.enabled) {
+      this.props.onChange({ "enabled": this.state.enabled, "encryptedDockerconfigjson": this.props.formData.encryptedDockerconfigjson, "login": this.props.formData.login })
     }
   }
 
@@ -33,7 +38,7 @@ export class GhcrRegistryWidget extends Component {
   };
 
   seal() {
-    const { email, login, token } = this.state;
+    const { enabled, email, login, token } = this.state;
     const { gimletClient, store, env } = this.props;
 
     const configjson = {
@@ -48,7 +53,7 @@ export class GhcrRegistryWidget extends Component {
     return () => {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
-          this.props.onChange(data);
+          this.props.onChange({ "enabled": enabled, "encryptedDockerconfigjson": data, "login": login })
         }, () => {
           store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
@@ -63,7 +68,7 @@ export class GhcrRegistryWidget extends Component {
 
   reset() {
     return () => {
-      this.props.onChange("")
+      this.props.onChange({ "enabled": this.state.enabled, "encryptedDockerconfigjson": "", "login": this.state.login })
     };
   }
 
@@ -74,6 +79,17 @@ export class GhcrRegistryWidget extends Component {
     if (sealed) {
       return (
         <>
+          <span
+            role="checkbox"
+            tabindex="0"
+            aria-checked={this.state.enabled}
+            className={(this.state.enabled ? "bg-indigo-600" : "bg-gray-200") + " mt-1 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:shadow-outline"}
+            onClick={() => this.setState(prevState => ({
+              enabled: !prevState.enabled
+            }))}
+          >
+            <span aria-hidden="true" className={(this.state.enabled ? "translate-x-5" : "translate-x-0") + " translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition ease-in-out duration-200"}></span>
+          </span>
           <ConfiguredPanel />
           <button className="my-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded h-12"
             onClick={this.reset()} >
@@ -85,6 +101,17 @@ export class GhcrRegistryWidget extends Component {
 
     return (
       <>
+        <span
+          role="checkbox"
+          tabindex="0"
+          aria-checked={this.state.enabled}
+          className={(this.state.enabled ? "bg-indigo-600" : "bg-gray-200") + " mt-1 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:shadow-outline"}
+          onClick={() => this.setState(prevState => ({
+            enabled: !prevState.enabled
+          }))}
+        >
+          <span aria-hidden="true" className={(this.state.enabled ? "translate-x-5" : "translate-x-0") + " translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition ease-in-out duration-200"}></span>
+        </span>
         <label class="control-label" for="root_login">Login</label>
         <input class="form-control" id="root_login" required="" label="Login" placeholder="" type="text" list="examples_root_login"
           value={login} onChange={e => this.setState({ login: e.target.value })} />
@@ -105,18 +132,23 @@ export class DockerhubRegistryWidget extends Component {
     super(props);
 
     this.state = {
+      enabled: props.formData.enabled,
       email: "",
-      login: "",
+      login: props.formData.login ?? "",
       token: "",
-      sealed: props.formData ? true : false,
+      sealed: props.formData.encryptedDockerconfigjson ? true : false,
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (prevProps.formData !== this.props.formData) {
       this.setState({
-        sealed: this.props.formData ? true : false,
+        sealed: this.props.formData.encryptedDockerconfigjson !== "" ? true : false
       });
+    }
+
+    if (prevState.enabled !== this.state.enabled) {
+      this.props.onChange({ "enabled": this.state.enabled, "encryptedDockerconfigjson": this.props.formData.encryptedDockerconfigjson, "login": this.props.formData.login })
     }
   }
 
@@ -130,7 +162,7 @@ export class DockerhubRegistryWidget extends Component {
   };
 
   seal() {
-    const { email, login, token } = this.state;
+    const { enabled, email, login, token } = this.state;
     const { gimletClient, store, env } = this.props;
 
     const configjson = {
@@ -145,7 +177,7 @@ export class DockerhubRegistryWidget extends Component {
     return () => {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
-          this.props.onChange(data);
+          this.props.onChange({ "enabled": enabled, "encryptedDockerconfigjson": data, "login": login })
         }, () => {
           store.dispatch({
             type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
@@ -160,7 +192,7 @@ export class DockerhubRegistryWidget extends Component {
 
   reset() {
     return () => {
-      this.props.onChange("")
+      this.props.onChange({ "enabled": this.state.enabled, "encryptedDockerconfigjson": "", "login": "" })
     };
   }
 
@@ -171,6 +203,17 @@ export class DockerhubRegistryWidget extends Component {
     if (sealed) {
       return (
         <>
+          <span
+            role="checkbox"
+            tabindex="0"
+            aria-checked={this.state.enabled}
+            className={(this.state.enabled ? "bg-indigo-600" : "bg-gray-200") + " mt-1 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:shadow-outline"}
+            onClick={() => this.setState(prevState => ({
+              enabled: !prevState.enabled
+            }))}
+          >
+            <span aria-hidden="true" className={(this.state.enabled ? "translate-x-5" : "translate-x-0") + " translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition ease-in-out duration-200"}></span>
+          </span>
           <ConfiguredPanel />
           <button className="my-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded h-12"
             onClick={this.reset()} >
@@ -182,6 +225,17 @@ export class DockerhubRegistryWidget extends Component {
 
     return (
       <>
+        <span
+          role="checkbox"
+          tabindex="0"
+          aria-checked={this.state.enabled}
+          className={(this.state.enabled ? "bg-indigo-600" : "bg-gray-200") + " mt-1 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:shadow-outline"}
+          onClick={() => this.setState(prevState => ({
+            enabled: !prevState.enabled
+          }))}
+        >
+          <span aria-hidden="true" className={(this.state.enabled ? "translate-x-5" : "translate-x-0") + " translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition ease-in-out duration-200"}></span>
+        </span>
         <label class="control-label" for="root_email">Email</label>
         <input class="form-control" id="root_email" required="" label="Email" placeholder="" type="text" list="examples_root_email"
           value={email} onChange={e => this.setState({ email: e.target.value })} />
@@ -202,15 +256,15 @@ export class DockerhubRegistryWidget extends Component {
 
 const ConfiguredPanel = () => {
   return (
-    <div class="rounded-md bg-green-50 p-4">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"></path>
+    <div className="rounded-md bg-green-50 p-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd"></path>
           </svg>
         </div>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-green-800">Configured</h3>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-green-800">Configured</h3>
         </div>
       </div>
     </div>
