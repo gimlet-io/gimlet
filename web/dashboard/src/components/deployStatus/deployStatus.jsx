@@ -83,7 +83,7 @@ export function DeployStatusModal(props) {
   const key = runningDeploy.trackingId
 
   let stack = connectedAgents[env].stacks.find(s => s.service.name === app)
-  const config = envConfigs[env].find((config) => config.app === app)
+  const config = envConfigs[env]?.find((config) => config.app === app)
 
   if (!stack) { // for apps we haven't deployed yet
     stack={service:{name: app}}
