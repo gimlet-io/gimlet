@@ -16,6 +16,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	helmCLI "helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/registry"
 )
 
 // SplitHelmOutput splits helm's multifile string output into file paths and their content
@@ -120,7 +121,10 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 }
 
 func ChartSchema(m *Manifest, installationToken string) (string, string, error) {
-	client, settings := helmClient(m)
+	client, settings, err := helmClient(m)
+	if err != nil {
+		return "", "", err
+	}
 	chartFromManifest, err := loadChartFromManifest(m, client, settings, installationToken)
 	if err != nil {
 		return "", "", err
@@ -138,7 +142,10 @@ func ChartSchema(m *Manifest, installationToken string) (string, string, error) 
 }
 
 func templateChart(m *Manifest) (string, error) {
-	client, settings := helmClient(m)
+	client, settings, err := helmClient(m)
+	if err != nil {
+		return "", err
+	}
 	chartFromManifest, err := loadChartFromManifest(m, client, settings, "")
 	if err != nil {
 		return "", err
@@ -177,7 +184,7 @@ func loadChartFromManifest(m *Manifest, client *action.Install, settings *helmCL
 	return loader.Load(cp)
 }
 
-func helmClient(m *Manifest) (*action.Install, *helmCLI.EnvSettings) {
+func helmClient(m *Manifest) (*action.Install, *helmCLI.EnvSettings, error) {
 	actionConfig := new(action.Configuration)
 	client := action.NewInstall(actionConfig)
 
@@ -187,10 +194,24 @@ func helmClient(m *Manifest) (*action.Install, *helmCLI.EnvSettings) {
 	client.ClientOnly = true
 	client.APIVersions = []string{}
 	client.IncludeCRDs = false
+	client.DisableHooks = true
 	client.ChartPathOptions.RepoURL = m.Chart.Repository
 	client.ChartPathOptions.Version = m.Chart.Version
 	client.Namespace = m.Namespace
 
 	var settings = helmCLI.New()
-	return client, settings
+
+	// Set the registry client to support pulling charts from OCI registries
+	opts := []registry.ClientOption{
+		registry.ClientOptDebug(settings.Debug),
+		registry.ClientOptEnableCache(true),
+		registry.ClientOptWriter(os.Stdout),
+		registry.ClientOptCredentialsFile(settings.RegistryConfig),
+	}
+	registryClient, err := registry.NewClient(opts...)
+	if err != nil {
+		return nil, settings, err
+	}
+	client.SetRegistryClient(registryClient)
+	return client, settings, err
 }
