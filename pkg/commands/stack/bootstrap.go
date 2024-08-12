@@ -1,7 +1,7 @@
 package stack
 
 import (
-	"github.com/gimlet-io/gimlet/pkg/commands/gitops"
+	"github.com/gimlet-io/gimlet/pkg/commands/environment"
 	"github.com/urfave/cli/v2"
 )
 
@@ -9,7 +9,7 @@ var BootstrapCmd = cli.Command{
 	Name:      "bootstrap",
 	Usage:     "Bootstraps the gitops controller",
 	UsageText: `stack bootstrap --single-env --gitops-repo-url git@github.com:<user>/<repo>.git`,
-	Action:    gitops.Bootstrap,
+	Action:    environment.Bootstrap,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "env",

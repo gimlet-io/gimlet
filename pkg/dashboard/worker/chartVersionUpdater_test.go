@@ -3,6 +3,7 @@ package worker
 import (
 	"testing"
 
+	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
@@ -126,14 +127,18 @@ env: preview
 }
 
 func Test_getChartLatestVersion(t *testing.T) {
-	charts := []dx.Chart{
-		{
-			Name:    "onechart",
-			Version: "0.47.0",
+	charts := config.DefaultCharts{
+		config.DefaultChart{
+			Chart: dx.Chart{
+				Name:    "onechart",
+				Version: "0.47.0",
+			},
 		},
-		{
-			Name:    "static-site",
-			Version: "0.57.0",
+		config.DefaultChart{
+			Chart: dx.Chart{
+				Name:    "static-site",
+				Version: "0.57.0",
+			},
 		},
 	}
 
@@ -148,16 +153,20 @@ values: {}
 `
 
 	latestVersion := findLatestVersion(raw, charts)
-	assert.Equal(t, charts[1].Version, latestVersion)
+	assert.Equal(t, charts[1].Chart.Version, latestVersion)
 }
 
 func Test_getChartLatestVersionGitRepoHTTPSScheme(t *testing.T) {
-	charts := []dx.Chart{
-		{
-			Name: "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/",
+	charts := config.DefaultCharts{
+		config.DefaultChart{
+			Chart: dx.Chart{
+				Name: "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/",
+			},
 		},
-		{
-			Name: "https://github.com/my-fork/onechart.git?sha=ghijk&path=/charts/static-site/",
+		config.DefaultChart{
+			Chart: dx.Chart{
+				Name: "https://github.com/my-fork/onechart.git?sha=ghijk&path=/charts/static-site/",
+			},
 		},
 	}
 
@@ -170,16 +179,20 @@ values: {}
 `
 
 	latestVersion := findLatestVersion(raw, charts)
-	assert.Equal(t, charts[0].Name, latestVersion)
+	assert.Equal(t, charts[0].Chart.Name, latestVersion)
 }
 
 func Test_NonExistingLatestVersion(t *testing.T) {
-	charts := []dx.Chart{
-		{
-			Name: "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/",
+	charts := config.DefaultCharts{
+		config.DefaultChart{
+			Chart: dx.Chart{
+				Name: "https://github.com/my-fork/onechart.git?sha=abcdef&path=/charts/onechart/",
+			},
 		},
-		{
-			Name: "https://github.com/my-fork/onechart.git?sha=ghijk&path=/charts/static-site/",
+		config.DefaultChart{
+			Chart: dx.Chart{
+				Name: "https://github.com/my-fork/onechart.git?sha=ghijk&path=/charts/static-site/",
+			},
 		},
 	}
 

@@ -11,22 +11,13 @@ bin
 web/cli/node_modules
 web/cli/dist
 
-web/stack/node_modules
-web/stack/dist
-
 web/dashboard/node_modules
 web/dashboard/dist
 
-web/installer/node_modules
-web/installer/dist
+web/.vite
 
-pkg/commands/chart/bundle.js
-pkg/commands/chart/bundle.js.LICENSE.txt
-pkg/commands/chart/index.html
-
-pkg/commands/stack/web/bundle.js
-pkg/commands/stack/web/bundle.js.LICENSE.txt
-pkg/commands/stack/web/index.html
+web/node_modules
+web/dist
 
 .env
 
@@ -40,20 +31,10 @@ fixtures/k3s/kubeconfig.yaml
 
 gimlet-dashboard.sqlite
 
-__debug_bin
-
-cmd/installer/web/main.js
-cmd/installer/web/main.js.map
-cmd/installer/web/main.js.LICENSE.txt
-cmd/installer/web/1.chunk.js
-cmd/installer/web/1.chunk.js.map
-cmd/installer/web/main.css
-cmd/installer/web/main.css.map
-cmd/installer/web/index.html
-cmd/installer/web/favicon.ico
-cmd/installer/web/asset-manifest.json
+**/__debug_bin*
 
 .DS_Store
 
+web/coverage/
 web/dashboard/coverage/
 cmd/dashboard/git-root/

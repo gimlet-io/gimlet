@@ -21,6 +21,7 @@ const PodDetailsEventString = "podDetailsEvent"
 const AlertPendingEventString = "alertPending"
 const AlertFiredEventString = "alertFired"
 const AlertResolvedEventString = "alertResolved"
+const CommitEventString = "commitEvent"
 
 type StreamingEvent struct {
 	Event string `json:"event"`
@@ -102,5 +103,10 @@ type PodLogsEvent struct {
 
 type AlertEvent struct {
 	Alert *api.Alert `json:"alert"`
+	StreamingEvent
+}
+
+type CommitEvent struct {
+	CommitEvent *api.CommitEvent `json:"commitEvent"`
 	StreamingEvent
 }

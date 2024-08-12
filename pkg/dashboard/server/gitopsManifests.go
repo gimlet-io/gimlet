@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-chi/chi/v5"
@@ -20,11 +21,33 @@ func getGitopsManifests(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	envName := chi.URLParam(r, "env")
-	environment, err := store.GetEnvironment(envName)
-	if err != nil {
-		logrus.Errorf("cannot get env from db: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	var environment *model.Environment
+	var err error
+	if envName == "builtin" {
+		envs, err := store.GetEnvironments()
+		if err != nil {
+			logrus.Errorf("cannot get envs from db: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		for _, e := range envs {
+			if e.BuiltIn {
+				environment = e
+				break
+			}
+		}
+		if environment == nil {
+			logrus.Warnf("there is no builtin env")
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+	} else {
+		environment, err = store.GetEnvironment(envName)
+		if err != nil {
+			logrus.Errorf("cannot get env from db: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	path := filepath.Join(environment.Name, "flux")

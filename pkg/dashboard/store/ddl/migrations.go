@@ -23,10 +23,8 @@ const addMessageColumnToCommitsTable = "add-message-column-to-commits-table"
 const addCreatedColumnToCommitsTable = "add-created-column-to-commits-table"
 const defaultValueForMessage = "default-value-for-message"
 const defaultValueForCreated = "default-value-for-created"
-const addReposColumnToUsersTable = "addReposColumnToUsersTable"
 const addFavoriteReposColumnToUsersTable = "addFavoriteReposColumnToUsersTable"
 const addFavoriteServicesColumnToUsersTable = "addFavoriteServicesColumnToUsersTable"
-const defaultValueForRepos = "defaultValueForRepos"
 const defaultValueForFavoriteRepos = "defaultValueForFavoriteRepos"
 const defaultValueForFavoriteServices = "defaultValueForFavoriteServices"
 const createTableKeyValues = "create-table-key-values"
@@ -52,6 +50,11 @@ const defaultTimestampsInAlertsTable = "defaultTimestampsInAlertsTable"
 const addImChannelIdToAlertsTable = "add-im-channel-id-to-alerts-table"
 const addDeploymentUrlToAlertsTable = "add-deployment-url-to-alerts-table"
 const defaultStringsInAlertsTable = "defaultStringsInAlertsTable"
+const addReposColumnToUsersTable = "addReposColumnToUsersTable"
+const defaultValueForRepos = "defaultValueForRepos"
+const addEphemeralColumnToEnvironmentsTable = "addEphemeralColumnToEnvironmentsTable"
+const defaultValueForEphemeralColumnInEnvironmentsTable = "defaultValueForEphemeralColumnInEnvironmentsTable"
+const defaultValueForExpiryColumnInEnvironmentsTable = "defaultValueForExpiryColumnInEnvironmentsTable"
 
 type migration struct {
 	name string
@@ -126,20 +129,12 @@ UNIQUE(sha,repo)
 			stmt: `update commits set created=0 where created is null;`,
 		},
 		{
-			name: addReposColumnToUsersTable,
-			stmt: `ALTER TABLE users ADD COLUMN repos TEXT;`,
-		},
-		{
 			name: addFavoriteReposColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN favorite_repos TEXT;`,
 		},
 		{
 			name: addFavoriteServicesColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN favorite_services TEXT;`,
-		},
-		{
-			name: defaultValueForRepos,
-			stmt: `update users set repos='[]' where repos is null;`,
 		},
 		{
 			name: defaultValueForFavoriteRepos,
@@ -306,6 +301,26 @@ UNIQUE(id)
 			name: defaultStringsInAlertsTable,
 			stmt: `update alerts set im_channel_id='', deployment_url='' where im_channel_id is null;`,
 		},
+		{
+			name: addReposColumnToUsersTable,
+			stmt: `ALTER TABLE users ADD COLUMN repos TEXT;`,
+		},
+		{
+			name: defaultValueForRepos,
+			stmt: `update users set repos='[]' where repos is null;`,
+		},
+		{
+			name: addEphemeralColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN ephemeral BOOLEAN;ALTER TABLE environments ADD COLUMN expiry INTEGER;`,
+		},
+		{
+			name: defaultValueForEphemeralColumnInEnvironmentsTable,
+			stmt: `update environments set ephemeral=false where ephemeral is null;`,
+		},
+		{
+			name: defaultValueForExpiryColumnInEnvironmentsTable,
+			stmt: `update environments set expiry=0 where expiry is null;`,
+		},
 	},
 	"postgres": {
 		{
@@ -374,20 +389,12 @@ UNIQUE(sha,repo)
 			stmt: `update commits set created=0 where created is null;`,
 		},
 		{
-			name: addReposColumnToUsersTable,
-			stmt: `ALTER TABLE users ADD COLUMN repos TEXT;`,
-		},
-		{
 			name: addFavoriteReposColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN favorite_repos TEXT;`,
 		},
 		{
 			name: addFavoriteServicesColumnToUsersTable,
 			stmt: `ALTER TABLE users ADD COLUMN favorite_services TEXT;`,
-		},
-		{
-			name: defaultValueForRepos,
-			stmt: `update users set repos='[]' where repos is null;`,
 		},
 		{
 			name: defaultValueForFavoriteRepos,
@@ -552,6 +559,26 @@ UNIQUE(id)
 		{
 			name: defaultStringsInAlertsTable,
 			stmt: `update alerts set im_channel_id='', deployment_url='' where im_channel_id is null;`,
+		},
+		{
+			name: addReposColumnToUsersTable,
+			stmt: `ALTER TABLE users ADD COLUMN repos TEXT;`,
+		},
+		{
+			name: defaultValueForRepos,
+			stmt: `update users set repos='[]' where repos is null;`,
+		},
+		{
+			name: addEphemeralColumnToEnvironmentsTable,
+			stmt: `ALTER TABLE environments ADD COLUMN ephemeral BOOLEAN;ALTER TABLE environments ADD COLUMN expiry INTEGER;`,
+		},
+		{
+			name: defaultValueForEphemeralColumnInEnvironmentsTable,
+			stmt: `update environments set ephemeral=false where ephemeral is null;`,
+		},
+		{
+			name: defaultValueForExpiryColumnInEnvironmentsTable,
+			stmt: `update environments set expiry=0 where expiry is null;`,
 		},
 	},
 }

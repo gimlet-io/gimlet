@@ -50,8 +50,7 @@ type DynamicConfig struct {
 	Github config.Github
 	Gitlab config.Gitlab
 
-	JWTSecret string
-	AdminKey  string
+	AdminKey string
 }
 
 // persist all config fields that are not already set in the database

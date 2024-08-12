@@ -338,24 +338,6 @@ func (c *client) TrackArtifact(artifactID string) (*dx.ReleaseStatus, error) {
 	return result, nil
 }
 
-// UserGet returns the user with the given login name
-func (c *client) UserGet(login string, withToken bool) (*model.User, error) {
-	uri := fmt.Sprintf(pathUser, c.addr)
-
-	tokenClause := "?withToken=false"
-	if withToken {
-		tokenClause = "?withToken=true"
-	}
-
-	user := new(model.User)
-	err := c.get(uri+"/"+login+tokenClause, user)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
 // UsersGet returns all users
 func (c *client) UsersGet() ([]*model.User, error) {
 	uri := fmt.Sprintf(pathUsers, c.addr)

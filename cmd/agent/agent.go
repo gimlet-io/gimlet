@@ -135,8 +135,8 @@ func main() {
 
 	messages := make(chan *streaming.WSMessage)
 
-	go serverCommunication(kubeEnv, config, messages, config.Host, config.AgentKey)
 	go serverWSCommunication(config, messages)
+	go serverCommunication(kubeEnv, config, messages)
 
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
@@ -209,8 +209,6 @@ func serverCommunication(
 	kubeEnv *agent.KubeEnv,
 	config config.Config,
 	messages chan *streaming.WSMessage,
-	gimletHost string,
-	agentKey string,
 ) {
 	for {
 		done := make(chan bool)
@@ -284,10 +282,10 @@ func serverCommunication(
 						var imageBuildRequest dx.ImageBuildRequest
 						_ = json.Unmarshal(requestString, &imageBuildRequest)
 
-						if imageBuildRequest.Dockerfile != "" {
-							go dockerfileImageBuild(kubeEnv, gimletHost, buildId, imageBuildRequest, messages)
+						if imageBuildRequest.Strategy == "dockerfile" {
+							go dockerfileImageBuild(kubeEnv, config.Host, buildId, imageBuildRequest, messages, config.AgentKey)
 						} else {
-							go buildImage(gimletHost, agentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
+							go buildImage(kubeEnv, config.Host, config.AgentKey, buildId, imageBuildRequest, messages, config.ImageBuilderHost)
 						}
 
 					}
@@ -679,7 +677,7 @@ func serverWSCommunication(config config.Config, messages chan *streaming.WSMess
 			}
 		}()
 
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
 		for {

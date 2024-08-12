@@ -36,6 +36,7 @@ import (
 
 const AnnotationGitRepository = "gimlet.io/git-repository"
 const AnnotationGitSha = "gimlet.io/git-sha"
+const AnnotationGitBranch = "gimlet.io/git-branch"
 const AnnotationDocsLink = "v1alpha1.opensca.dev/documentation"
 const AnnotationLogsLink = "v1alpha1.opensca.dev/logs"
 const AnnotationMetricsLink = "v1alpha1.opensca.dev/metrics"
@@ -54,7 +55,6 @@ type KubeEnv struct {
 }
 
 func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
-
 	t0 := time.Now()
 	annotatedServices, err := e.annotatedServices(repo)
 	if err != nil {
@@ -277,12 +277,15 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 
 	for _, d := range deployments {
 		if SelectorsMatch(d.Spec.Selector.MatchLabels, service.Spec.Selector) {
-			var sha string
+			var branch, sha string
 			if hash, ok := d.GetAnnotations()[AnnotationGitSha]; ok {
 				sha = hash
 			}
+			if b, ok := d.GetAnnotations()[AnnotationGitBranch]; ok {
+				branch = b
+			}
 
-			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, SHA: sha}
+			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Branch: branch, SHA: sha}
 		}
 	}
 

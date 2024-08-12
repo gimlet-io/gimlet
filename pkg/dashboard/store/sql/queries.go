@@ -28,6 +28,7 @@ const SelectPodByName = "select-pod-by-name"
 const DeletePodByName = "delete-pod-by-name"
 const SelectUnprocessedEvents = "select-unprocessed-events"
 const UpdateEventStatus = "update-event-status"
+const UpdateImageBuildLogs = "update-image-build-logs"
 const SelectGitopsCommitBySha = "select-gitops-commit-by-sha"
 const SelectGitopsCommits = "select-gitops-commits"
 const SelectKubeEventByName = "select-kube-event-by-name"
@@ -73,12 +74,12 @@ FROM key_values
 WHERE key = $1;
 `,
 		SelectEnvironments: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in, ephemeral, expiry
 FROM environments
 ORDER BY name asc;
 `,
 		SelectEnvironment: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in, ephemeral, expiry
 FROM environments
 WHERE name = $1;
 `,
@@ -101,6 +102,9 @@ WHERE status='new' and type!= 'imageBuild' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		UpdateImageBuildLogs: `
+UPDATE events SET results = $1 WHERE id = $2;
 `,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created
@@ -185,12 +189,12 @@ FROM key_values
 WHERE key = $1;
 `,
 		SelectEnvironments: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in, ephemeral, expiry
 FROM environments
 ORDER BY name asc;
 `,
 		SelectEnvironment: `
-SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in
+SELECT id, name, infra_repo, apps_repo, repo_per_env, kustomization_per_app, built_in, ephemeral, expiry
 FROM environments
 WHERE name = $1;
 `,
@@ -213,6 +217,9 @@ WHERE status='new' and type != 'imageBuild' order by created ASC limit 10;
 `,
 		UpdateEventStatus: `
 UPDATE events SET status = $1, status_desc = $2, results = $3 WHERE id = $4;
+`,
+		UpdateImageBuildLogs: `
+UPDATE events SET results = $1 WHERE id = $2;
 `,
 		SelectGitopsCommitBySha: `
 SELECT id, sha, status, status_desc, created

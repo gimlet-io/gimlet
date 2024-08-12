@@ -1,0 +1,211 @@
+/* Hierarchy */
+
+#root__title { /* Object heading */
+    @apply font-medium text-2xl pt-0
+}
+
+#root__title { /* Object heading */
+    @apply pb-4
+}
+
+#root__title:has(+ p) { /* Object heading */
+    @apply pb-0
+}
+
+legend { /* Sub Object heading */
+    @apply text-sm font-medium pr-2
+}
+
+.panel-body>div>fieldset>legend { /* anyOf heading */
+    @apply py-4 text-lg
+}
+
+.panel-body>div>fieldset { /* anyOf heading */
+    @apply pl-4
+}
+
+.panel-body {
+    @apply p-2 bg-neutral-200 dark:bg-neutral-600 rounded
+}
+
+.control-label { /* Field heading */
+    @apply text-sm font-medium pr-2
+}
+
+#root>.field-object>fieldset>div {
+    @apply pl-4
+}
+
+.field {
+    @apply pb-4
+}
+
+div.field.field-object {
+    @apply pb-0
+}
+
+.field:has(.form-additional) {
+    @apply pb-0
+}
+
+.form-group:has(> #ingressWidget) {
+    @apply p-0 bg-neutral-100 ring-0
+}
+
+.field-description {
+    @apply text-xs mb-2 text-neutral-500 dark:text-neutral-400
+}
+
+.help-block {
+    @apply text-xs text-neutral-500 dark:text-neutral-400 mt-1
+}
+
+.form-control {
+    @apply mt-1 block w-full rounded-md border-0 p-2 pl-3 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-700 placeholder:text-neutral-300 dark:placeholder:text-neutral-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:text-neutral-500
+}
+
+#registry {
+    @apply w-56
+}
+
+/* Arrays */
+
+.row {
+
+}
+
+.row .array-item-add {
+    @apply text-left my-4;
+}
+.row .btn-add {
+    @apply h-8 w-8 inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs leading-4 font-medium rounded text-white bg-blue-500 dark:bg-blue-800 transition ease-in-out duration-150
+}
+.row .btn-add:hover {
+    @apply bg-blue-400 dark:bg-blue-900
+}
+.row .btn-add:focus {
+    @apply outline-none border-indigo-600 ring
+}
+.row .btn-add:active {
+    @apply bg-blue-300 dark:bg-blue-900
+}
+.row .btn-add::before {
+    content: "+";
+}
+
+.row .array-item-remove {
+    @apply my-4
+}
+.row .array-item-remove {
+    @apply h-8 w-8 items-center px-2.5 py-1.5 border border-transparent text-xs text-white leading-4 font-medium rounded bg-red-600 dark:bg-red-700 transition ease-in-out duration-150
+}
+.row .array-item-remove:hover {
+    @apply bg-red-500 dark:bg-red-800
+}
+.row .array-item-remove:focus {
+    @apply outline-none border-red-300 ring
+}
+.row .array-item-remove:active {
+    @apply bg-red-400 dark:bg-red-900
+}
+.row .array-item-remove::before {
+    content: "-";
+}
+
+.array-item-list {
+    display: block !important;
+}
+
+.array-item {
+    @apply flex bg-neutral-200 dark:bg-neutral-600 mt-6 rounded-md
+}
+
+.array-item .col-xs-9 {
+    @apply flex-grow px-2
+}
+
+.array-item .col-xs-3 {
+    @apply flex-none pr-2
+}
+
+.btn-info {
+    display: none;
+}
+
+/* AdditionalProperties */
+
+.row {
+    @apply flex
+}
+
+.row .col-xs-5 {
+    @apply flex-1 pr-1
+}
+
+.row .col-xs-5 label {
+    display: none;
+}
+
+.row .col-xs-2 {
+    @apply flex-none
+}
+
+.form-additional.form-group {
+    @apply my-0
+}
+
+.form-additional .form-group {
+    @apply my-0
+}
+
+.col-xs-2 .array-item-remove {
+    @apply my-2
+}
+
+.object-property-expand .btn-add {
+    @apply mt-2
+}
+
+.has-danger .control-label {
+    @apply text-red-600 !important;
+}
+
+.error-detail {
+    @apply hidden
+}
+
+.errors {
+    @apply hidden
+}
+
+.help-block h1 {
+    @apply text-2xl
+}
+
+.help-block h2 {
+    @apply text-xl
+}
+
+.help-block h3 {
+    @apply text-lg
+}
+
+.help-block h4 {
+    @apply text-base
+}
+
+.help-block h5 {
+    @apply text-sm
+}
+
+.help-block h6 {
+    @apply text-xs
+}
+
+.help-block blockquote {
+    @apply relative border-l-4 pl-4 border-neutral-700
+}
+
+.help-block li {
+    @apply list-disc
+}

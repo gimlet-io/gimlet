@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-type EventCreatedCallback func(event *model.Event)
+type EventCallback func(event *model.Event)
 
 // Store is used to access data
 // from the sql/database driver with a relational database backend.
@@ -31,7 +31,10 @@ type Store struct {
 	config string
 
 	eventCreatedCallbacksLock sync.Mutex
-	eventCreatedCallbacks     []EventCreatedCallback
+	eventCreatedCallbacks     []EventCallback
+
+	eventUpdatedCallbacksLock sync.Mutex
+	eventUpdatedCallbacks     []EventCallback
 }
 
 // New creates a database connection for the given driver and datasource
@@ -141,8 +144,14 @@ func setupMeddler(driver, encryptionKey, encryptionKeyNew string) {
 	meddler.Register("encrypted", genericStore.EncryptionMeddler{EnryptionKey: encryptionKey, EncryptionKeyNew: encryptionKeyNew})
 }
 
-func (s *Store) SubscribeToEventCreated(fn EventCreatedCallback) {
+func (s *Store) SubscribeToEventCreated(fn EventCallback) {
 	s.eventCreatedCallbacksLock.Lock()
 	s.eventCreatedCallbacks = append(s.eventCreatedCallbacks, fn)
 	s.eventCreatedCallbacksLock.Unlock()
+}
+
+func (s *Store) SubscribeToEventUpdated(fn EventCallback) {
+	s.eventUpdatedCallbacksLock.Lock()
+	s.eventUpdatedCallbacks = append(s.eventUpdatedCallbacks, fn)
+	s.eventUpdatedCallbacksLock.Unlock()
 }

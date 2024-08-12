@@ -39,22 +39,21 @@ func (a *ArtifactsWorker) Run() {
 
 func (a *ArtifactsWorker) assureGimletArtifacts(repoName string) error {
 	err := a.gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		var innerErr error
-		headBranch, innerErr := nativeGit.HeadBranch(repo) //TODO we need to generate this for all branches wehn it comes to preview apps
-		if innerErr != nil {
-			return innerErr
+		branches := nativeGit.BranchList(repo)
+		for _, branch := range branches {
+			hashes, innerErr := lastTenCommits(repo, branch)
+			if innerErr != nil {
+				return innerErr
+			}
+
+			slices.Reverse(hashes) //artifacts should be generated in commit creation order
+			err := generateFakeArtifactsForCommits(repoName, branch, hashes, a.dao, repo)
+			if err != nil {
+				return err
+			}
 		}
 
-		hashes, innerErr := lastTenCommits(repo, headBranch)
-		if innerErr != nil {
-			return innerErr
-		}
-
-		slices.Reverse(hashes) //artifacts should be generated in commit creation order
-
-		err := generateFakeArtifactsForCommits(repoName, headBranch, hashes, a.dao, repo)
-
-		return err
+		return nil
 	})
 
 	return err
@@ -122,23 +121,11 @@ func generateFakeArtifact(hash string, branch string, store *store.Store, repo *
 		return err
 	}
 
-	manifestsThatNeedFakeArtifact := []*dx.Manifest{}
-	for _, m := range manifests {
-		strategy := gitops.ExtractImageStrategy(m)
-
-		if strategy == "static" ||
-			strategy == "static-site" ||
-			strategy == "buildpacks" ||
-			strategy == "dockerfile" {
-			manifestsThatNeedFakeArtifact = append(manifestsThatNeedFakeArtifact, m)
-		}
-	}
-
-	if len(manifestsThatNeedFakeArtifact) == 0 {
+	if len(manifests) == 0 {
 		return nil
 	}
 
-	err = doGenerateFakeArtifact(hash, branch, manifestsThatNeedFakeArtifact, store, repoName, repo)
+	err = doGenerateFakeArtifact(hash, branch, manifests, store, repoName, repo)
 	if err != nil {
 		return err
 	}

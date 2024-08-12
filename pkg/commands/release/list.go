@@ -48,6 +48,7 @@ var releaseListCmd = cli.Command{
 		&cli.IntFlag{
 			Name:  "limit",
 			Usage: "limit the number of returned artifacts",
+			Value: 3,
 		}, &cli.IntFlag{
 			Name:  "offset",
 			Usage: "offset the returned artifacts",
@@ -108,9 +109,6 @@ func list(c *cli.Context) error {
 	}
 
 	limit := c.Int("limit")
-	if limit == 0 {
-		limit = 3
-	}
 
 	releases, err := client.ReleasesGet(
 		c.String("app"),

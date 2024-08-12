@@ -58,15 +58,14 @@ func main() {
 		panic(fmt.Errorf("please provide the HOST variable"))
 	}
 
-	if dynamicConfig.JWTSecret == "" {
-		generateAndPersistJwtSecret(dynamicConfig)
-	}
-
 	agentHub := streaming.NewAgentHub()
 	go agentHub.Run()
 
 	clientHub := streaming.NewClientHub()
 	go clientHub.Run()
+
+	eventsWorker := worker.NewEventsWorker(store, clientHub)
+	go eventsWorker.Run()
 
 	successfullImageBuilds := make(chan streaming.ImageBuildStatusWSMessage)
 	agentWSHub := streaming.NewAgentWSHub(*clientHub, successfullImageBuilds)
@@ -211,6 +210,7 @@ func main() {
 		gitUser,
 		config.GitHost,
 		agentHub,
+		dynamicConfig,
 	)
 	go gitopsWorker.Run()
 
@@ -232,6 +232,9 @@ func main() {
 		stopCh,
 	)
 	go branchDeleteEventWorker.Run()
+
+	cloudSettingsWriter := worker.NewCloudSettingsWriter(store, repoCache, tokenManager, gitUser, config, agentHub)
+	go cloudSettingsWriter.Run()
 
 	metricsRouter := chi.NewRouter()
 	metricsRouter.Get("/metrics", promhttp.Handler().ServeHTTP)
@@ -276,7 +279,7 @@ func main() {
 
 	if config.BuiltinEnvFeatureFlag() {
 		time.Sleep(time.Millisecond * 100) // wait til the router is up
-		err = bootstrapBuiltInEnv(store, repoCache, gitUser, config, dynamicConfig)
+		err = bootstrapBuiltInEnv(store, gitUser, config, dynamicConfig)
 		if err != nil {
 			panic(err)
 		}

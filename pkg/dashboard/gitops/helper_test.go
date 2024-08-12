@@ -174,7 +174,7 @@ func Test_ExtractImageStrategy(t *testing.T) {
 			Name:       "onechart",
 		},
 	})
-	assert.Equal(t, "static", strategy)
+	assert.Equal(t, "dynamic", strategy)
 
 	strategy = ExtractImageStrategy(&dx.Manifest{
 		Chart: dx.Chart{
@@ -185,6 +185,7 @@ func Test_ExtractImageStrategy(t *testing.T) {
 			"image": map[string]interface{}{
 				"repository": "nginx",
 				"tag":        "1.19",
+				"strategy":   "static", //breaking change
 			},
 		},
 	})
@@ -221,8 +222,25 @@ func Test_ExtractImageStrategy(t *testing.T) {
 			"image": map[string]interface{}{
 				"repository": "127.0.0.1:32447",
 				"tag":        "{{ .SHA }}",
+				"strategy":   "buildpacks", //breaking change
 			},
 		},
 	})
 	assert.Equal(t, "buildpacks", strategy)
+
+	strategy = ExtractImageStrategy(&dx.Manifest{
+		Chart: dx.Chart{
+			Repository: "repository: https://chart.onechart.dev",
+			Name:       "onechart",
+		},
+		Values: map[string]interface{}{
+			"image": map[string]interface{}{
+				"repository": "127.0.0.1:32447",
+				"tag":        "{{ .SHA }}",
+				"dockerfile": "Dockerfile",
+				"strategy":   "dockerfile",
+			},
+		},
+	})
+	assert.Equal(t, "dockerfile", strategy)
 }

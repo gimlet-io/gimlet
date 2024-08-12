@@ -133,7 +133,7 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 	if owner == "builtin" {
 		auth = &http.BasicAuth{
 			Username: r.gitUser.Login,
-			Password: r.gitUser.Secret,
+			Password: r.gitUser.Token,
 		}
 	} else {
 		token, _, err := r.tokenManager.Token()
@@ -336,7 +336,7 @@ func (r *RepoCache) clone(repoName string, withHistory bool) (*repoData, error) 
 		url = fmt.Sprintf("http://%s/%s", r.config.GitHost, repoName)
 		auth = &http.BasicAuth{
 			Username: r.gitUser.Login,
-			Password: r.gitUser.Secret,
+			Password: r.gitUser.Token,
 		}
 	} else {
 		url = fmt.Sprintf("%s/%s", r.dynamicConfig.ScmURL(), repoName)
@@ -402,6 +402,7 @@ func (r *RepoCache) registerWebhook(repoName string) {
 	goScmHelper := genericScm.NewGoScmHelper(r.dynamicConfig, nil)
 	err = goScmHelper.RegisterWebhook(
 		r.config.Host,
+		r.config.Instance,
 		token,
 		r.config.WebhookSecret,
 		owner,

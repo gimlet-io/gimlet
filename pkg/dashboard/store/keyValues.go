@@ -82,3 +82,76 @@ func (db *Store) DeploymentSilencedUntil(deployment string, alertType string) (i
 
 	return until.Unix(), nil
 }
+
+func (db *Store) SaveRepoPullRequestPolicy(repoName string, pullRequestPolicy bool) error {
+	reposWithPullRequestPolicy, err := db.reposWithPullRequestPolicy()
+	if err != nil {
+		return err
+	}
+
+	alreadySaved, err := db.RepoHasPullRequestPolicy(repoName)
+	if err != nil {
+		return err
+	}
+
+	if !alreadySaved && pullRequestPolicy {
+		reposWithPullRequestPolicy = append(reposWithPullRequestPolicy, repoName)
+	}
+
+	if alreadySaved && !pullRequestPolicy {
+		reposWithPullRequestPolicy = filter(reposWithPullRequestPolicy, repoName)
+	}
+
+	reposWithPullRequestPolicyBytes, err := json.Marshal(reposWithPullRequestPolicy)
+	if err != nil {
+		return err
+	}
+
+	return db.SaveKeyValue(&model.KeyValue{
+		Key:   model.ReposWithPullRequestPolicy,
+		Value: string(reposWithPullRequestPolicyBytes),
+	})
+}
+
+func (db *Store) RepoHasPullRequestPolicy(repoName string) (bool, error) {
+	reposWithPullRequestPolicy, err := db.reposWithPullRequestPolicy()
+	if err != nil {
+		return false, err
+	}
+
+	for _, repo := range reposWithPullRequestPolicy {
+		if repo == repoName {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (db *Store) reposWithPullRequestPolicy() ([]string, error) {
+	reposWithPullRequestPolicyKeyValue, err := db.KeyValue(model.ReposWithPullRequestPolicy)
+	if err != nil && err != database_sql.ErrNoRows {
+		return []string{}, err
+	}
+
+	if reposWithPullRequestPolicyKeyValue.Value == "" {
+		reposWithPullRequestPolicyKeyValue.Value = "[]"
+	}
+
+	var reposWithPullRequestPolicy []string
+	err = json.Unmarshal([]byte(reposWithPullRequestPolicyKeyValue.Value), &reposWithPullRequestPolicy)
+	if err != nil {
+		return []string{}, err
+	}
+	return reposWithPullRequestPolicy, nil
+}
+
+func filter(slice []string, elem string) []string {
+	n := 0
+	for _, e := range slice {
+		if e != elem {
+			slice[n] = e
+			n++
+		}
+	}
+	return slice[:n]
+}

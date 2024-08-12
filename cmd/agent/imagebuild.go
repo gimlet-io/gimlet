@@ -25,9 +25,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 )
 
-func buildImage(gimletHost, agentKey, buildId string, trigger dx.ImageBuildRequest, messages chan *streaming.WSMessage, imageBuilderHost string) {
+func buildImage(kubeEnv *agent.KubeEnv, gimletHost, agentKey, buildId string, trigger dx.ImageBuildRequest, messages chan *streaming.WSMessage, imageBuilderHost string) {
 	tarFile, err := ioutil.TempFile("/tmp", "source-*.tar.gz")
 	if err != nil {
 		logrus.Errorf("cannot get temp file: %s", err)
@@ -36,7 +37,7 @@ func buildImage(gimletHost, agentKey, buildId string, trigger dx.ImageBuildReque
 	}
 	defer tarFile.Close()
 
-	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
+	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s?access_token=%s", gimletHost, buildId, agentKey)
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
@@ -69,25 +70,43 @@ func buildImage(gimletHost, agentKey, buildId string, trigger dx.ImageBuildReque
 		return
 	}
 
+	configJson, err := getSecretConfigJson(kubeEnv, trigger.Registry)
+	if err != nil {
+		logrus.Errorf("could not get secret configjson: %s", err)
+		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
+		return
+	}
+
 	imageBuilder(
 		tarFile.Name(),
 		imageBuilderHost,
+		configJson,
 		trigger,
 		messages,
 		buildId,
 	)
 }
 
+func getSecretConfigJson(kubeEnv *agent.KubeEnv, registry string) (string, error) {
+	pushSecret, err := kubeEnv.Client.CoreV1().Secrets("infrastructure").Get(context.TODO(), strings.ToLower(registry)+"-pushsecret", meta_v1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return string(pushSecret.Data["config.json"]), nil
+}
+
 func imageBuilder(
 	path string, url string,
+	configJson string,
 	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
 	buildId string,
 ) {
 	request, err := newfileUploadRequest(url, map[string]string{
-		"image": trigger.Image,
-		"tag":   trigger.Tag,
-		"app":   trigger.App,
+		"image":      trigger.Image,
+		"tag":        trigger.Tag,
+		"app":        trigger.App,
+		"configJson": configJson,
 	}, "data", path)
 	if err != nil {
 		logrus.Errorf("cannot upload file: %s", err)
@@ -236,10 +255,13 @@ func dockerfileImageBuild(
 	gimletHost, buildId string,
 	trigger dx.ImageBuildRequest,
 	messages chan *streaming.WSMessage,
+	agentKey string,
 ) {
-	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s", gimletHost, buildId)
+	reqUrl := fmt.Sprintf("%s/agent/imagebuild/%s?access_token=%s", gimletHost, buildId, agentKey)
 	jobName := fmt.Sprintf("kaniko-%d", rand.Uint32())
 	job := generateJob(trigger, jobName, reqUrl)
+	job = mountPushSecret(job, trigger.Registry)
+	job = mountRegistryCertSecret(kubeEnv.Client, job, trigger)
 	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, meta_v1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
@@ -248,7 +270,7 @@ func dockerfileImageBuild(
 	}
 
 	var pods *corev1.PodList
-	err = wait.PollImmediate(1*time.Second, 20*time.Second, func() (done bool, err error) {
+	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (done bool, err error) {
 		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), meta_v1.ListOptions{
 			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
 		})
@@ -267,6 +289,7 @@ func dockerfileImageBuild(
 		}
 
 		if pods.Items[0].Status.Phase == corev1.PodPending {
+			streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "running", fmt.Sprintf("%s: %s\n", pods.Items[0].Name, corev1.PodPending))
 			return false, nil
 		}
 		return true, nil
@@ -331,6 +354,16 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 									Name:      "workspace",
 								},
 							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("4"),
+									"memory": resource.MustParse("8Gi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("1000m"),
+									"memory": resource.MustParse("1000Mi"),
+								},
+							},
 						},
 					},
 					RestartPolicy: "Never",
@@ -351,6 +384,63 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 			BackoffLimit: &backOffLimit,
 		},
 	}
+}
+
+func mountPushSecret(job *batchv1.Job, registry string) *batchv1.Job {
+	if registry == "" {
+		return job
+	}
+
+	job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		MountPath: "/kaniko/.docker",
+		Name:      "pushsecret",
+	})
+	optional := false
+	job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: "pushsecret",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: strings.ToLower(registry) + "-pushsecret",
+				Optional:   &optional,
+			},
+		},
+	})
+
+	return job
+}
+
+func mountRegistryCertSecret(client kubernetes.Interface, job *batchv1.Job, trigger dx.ImageBuildRequest) *batchv1.Job {
+	if trigger.Registry == "" {
+		return job
+	}
+
+	_, err := client.CoreV1().Secrets("infrastructure").Get(context.TODO(), strings.ToLower(trigger.Registry)+"-registrycert", meta_v1.GetOptions{})
+	if err != nil {
+		return job
+	}
+
+	url := strings.Split(trigger.Image, "/")[0]
+
+	job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		MountPath: "/kaniko/mounted-certs/",
+		Name:      "registrycert",
+	})
+	optional := false
+	job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: "registrycert",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: strings.ToLower(trigger.Registry) + "-registrycert",
+				Optional:   &optional,
+			},
+		},
+	})
+
+	job.Spec.Template.Spec.Containers[0].Args = append(job.Spec.Template.Spec.Containers[0].Args,
+		fmt.Sprintf("--registry-certificate=%s=/kaniko/mounted-certs/certificate.cert", url),
+	)
+
+	return job
 }
 
 func streamInitContainerLogs(kubeEnv *agent.KubeEnv,
@@ -374,27 +464,63 @@ func streamInitContainerLogs(kubeEnv *agent.KubeEnv,
 	defer podLogs.Close()
 
 	var sb strings.Builder
+	var lastLine string
 	reader := bufio.NewReader(podLogs)
-	for {
-		line, err := reader.ReadBytes('\n')
-		sb.WriteString(string(line))
-		if err != nil {
-			if err == io.EOF {
+	logCh := make(chan string)
+
+	go func() {
+		for {
+			line, err := reader.ReadBytes('\n')
+			logCh <- string(line)
+			if err != nil {
+				if err == io.EOF {
+					close(logCh)
+					break
+				}
+
+				logrus.Errorf("cannot stream build logs: %s", err)
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
 				break
 			}
+			lastLine = string(line)
+		}
+	}()
 
-			logrus.Errorf("cannot stream build logs: %s", err)
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "error", "")
-			break
+	ticker := time.NewTicker(5 * time.Second)
+	defer func() {
+		ticker.Stop()
+	}()
+
+	for {
+		logEnded := false
+
+		select {
+		case logLine, ok := <-logCh:
+			if !ok {
+				logEnded = true
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+				break
+			}
+			sb.WriteString(string(logLine))
+
+			if sb.Len() > 4000 {
+				streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+				sb.Reset()
+			}
+		case <-ticker.C:
+			streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
+			sb.Reset()
 		}
 
-		if strings.Contains(strings.ToLower(sb.String()), "error") {
-			streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", sb.String())
+		if logEnded {
 			break
 		}
+	}
 
-		streamImageBuildEvent(messages, userLogin, imageBuildId, "running", sb.String())
-		sb.Reset()
+	if strings.Contains(lastLine, "error") {
+		streamImageBuildEvent(messages, userLogin, imageBuildId, "notBuilt", sb.String())
+		return
 	}
 }
 

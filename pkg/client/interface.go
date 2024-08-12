@@ -74,9 +74,6 @@ type Client interface {
 	// TrackArtifact returns the state of an event by the artifact id
 	TrackArtifact(artifactID string) (*dx.ReleaseStatus, error)
 
-	// UserGet returns the user with the given login
-	UserGet(login string, withToken bool) (*model.User, error)
-
 	// UsersGet returns all users
 	UsersGet() ([]*model.User, error)
 

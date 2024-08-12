@@ -258,6 +258,15 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 	var imageBuildRequest *dx.ImageBuildRequest
 	for _, manifest := range artifact.Environments {
+		manifest.PrepPreview("not-needed-in-creating-deploy-requests")
+		vars := artifact.CollectVariables()
+		vars["APP"] = manifest.App
+		err = manifest.ResolveVars(vars)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		if manifest.Env != releaseRequest.Env {
 			continue
 		}
@@ -279,7 +288,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
-			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
+			imageRepository, imageTag, dockerfile, registry := gitops.ExtractImageRepoTagDockerfileAndRegistry(manifest, vars)
 			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
 			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
 			imageBuildRequest = &dx.ImageBuildRequest{
@@ -291,6 +300,8 @@ func release(w http.ResponseWriter, r *http.Request) {
 				Image:       imageRepository,
 				Tag:         imageTag,
 				Dockerfile:  dockerfile,
+				Strategy:    strategy,
+				Registry:    registry,
 			}
 			break
 		}
@@ -344,7 +355,6 @@ func releaseRequestEvent(releaseRequest dx.ReleaseRequest, artifactEvent *model.
 	releaseRequestStr, err := json.Marshal(dx.ReleaseRequest{
 		Env:         releaseRequest.Env,
 		App:         releaseRequest.App,
-		Tenant:      releaseRequest.Tenant,
 		ArtifactID:  releaseRequest.ArtifactID,
 		TriggeredBy: login,
 	})
@@ -490,7 +500,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet] %s/%s deleted by %s", env, app, user.Login)
-	_, err = nativeGit.Commit(repo, gitMessage)
+	gitopsCommitSha, err := nativeGit.Commit(repo, gitMessage)
 	if err != nil {
 		logrus.Errorf("could not delete: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -508,7 +518,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 
 	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, envFromStore.AppsRepo)
 	if owner == "builtin" {
-		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, config.GitHost, envFromStore.AppsRepo)
+		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Token, config.GitHost, envFromStore.AppsRepo)
 	}
 	err = nativeGit.NativePushWithToken(
 		url,
@@ -523,6 +533,24 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("Pushing took %d", (time.Now().UnixNano()-t0)/1000/1000)
 
 	gitopsRepoCache.Invalidate(envFromStore.AppsRepo)
+
+	var gc *model.GitopsCommit
+	for retries := 10; retries > 0; retries-- {
+		gc, err = store.GitopsCommit(gitopsCommitSha)
+		if err != nil {
+			logrus.Errorf("could not get gitops commit: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if gc != nil && gc.Status == model.ReconciliationSucceeded {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	if gc == nil || gc.Status != model.ReconciliationSucceeded {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))

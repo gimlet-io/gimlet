@@ -47,7 +47,7 @@ func main() {
 	})
 	r.Post("/build-image", uploadFile)
 
-	err = http.ListenAndServe(":9999", r)
+	err = http.ListenAndServe(":9000", r)
 	log.Error(err)
 }
 
@@ -57,6 +57,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	image := r.FormValue("image")
 	tag := r.FormValue("tag")
 	app := r.FormValue("app")
+	configJson := r.FormValue("configJson")
 	// cacheImage := r.FormValue("cacheImage")
 	// previousImage := r.FormValue("previousImage")
 	// Parse our multipart form, 1000 << 20 specifies a maximum
@@ -76,6 +77,23 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
 	fmt.Printf("File Size: %+v\n", handler.Size)
 	fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+	if configJson != "" {
+		// write docker config
+		err := os.MkdirAll("/home/cnb/.docker", 0755)
+		if err != nil {
+			fmt.Println(err)
+			w.Write([]byte("IMAGE BUILD ERROR"))
+			return
+		}
+
+		err = os.WriteFile("/home/cnb/.docker/config.json", []byte(configJson), 0755)
+		if err != nil {
+			fmt.Println(err)
+			w.Write([]byte("IMAGE BUILD ERROR"))
+			return
+		}
+	}
 
 	// Create a temporary file within our temp-images directory that follows
 	// a particular naming pattern

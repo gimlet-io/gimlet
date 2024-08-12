@@ -9,14 +9,17 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
+	"github.com/gimlet-io/gimlet/pkg/commands/environment"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet/pkg/gitops"
+	"github.com/gimlet-io/gimlet/pkg/server/token"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -26,18 +29,17 @@ import (
 )
 
 func bootstrapBuiltInEnv(
-	store *store.Store,
-	repoCache *nativeGit.RepoCache,
+	dao *store.Store,
 	gitUser *model.User,
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 ) error {
-	_, err := store.KeyValue(model.SpinnedOut)
+	_, err := dao.KeyValue(model.SpinnedOut)
 	if err == nil { // built in env has been spinned out
 		return nil
 	}
 
-	envsInDB, err := store.GetEnvironments()
+	envsInDB, err := dao.GetEnvironments()
 	if err != nil {
 		panic(err)
 	}
@@ -47,6 +49,13 @@ func bootstrapBuiltInEnv(
 		}
 	}
 
+	activatedTrial := false
+	_, err = dao.KeyValue(model.ActivatedTrial)
+	if err == nil { // trial is activated
+		activatedTrial = true
+	}
+	trial := config.Instance != "" && !activatedTrial
+
 	randomFirstName := firstNames[rand.Intn(len(firstNames))]
 	randomSecondName := secondNames[rand.Intn(len(secondNames))]
 	builtInEnv := &model.Environment{
@@ -55,8 +64,10 @@ func bootstrapBuiltInEnv(
 		AppsRepo:   "builtin/apps",
 		BuiltIn:    true,
 		RepoPerEnv: true,
+		Ephemeral:  trial,
+		Expiry:     time.Now().Add(time.Hour * 168).Unix(),
 	}
-	err = store.CreateEnvironment(builtInEnv)
+	err = dao.CreateEnvironment(builtInEnv)
 	if err != nil {
 		return err
 	}
@@ -76,7 +87,7 @@ func bootstrapBuiltInEnv(
 	opts.ShouldGenerateDeployKey = false
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = gitUser.Login
-	opts.BasicAuthPassword = gitUser.Secret
+	opts.BasicAuthPassword = gitUser.Token
 	opts.GitopsRepoUrl = fmt.Sprintf("%s/%s", config.ApiHost, builtInEnv.InfraRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
@@ -85,12 +96,22 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = server.PrepInfraComponentManifests(builtInEnv, tmpPath, repo, config, dynamicConfig, server.ComponentOpts{ImageBuilder: true, Registry: true, SealedSecrets: true})
+	serverComponents := server.ComponentOpts{
+		Agent:                 true,
+		ImageBuilder:          true,
+		ContainerizedRegistry: true,
+		SealedSecrets:         true,
+	}
+	if config.Instance != "" {
+		serverComponents.ContainerizedRegistry = false
+	}
+
+	err = server.PrepInfraComponentManifests(builtInEnv, tmpPath, repo, config, dynamicConfig, serverComponents, dao)
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
 
-	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
+	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Token, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -107,7 +128,7 @@ func bootstrapBuiltInEnv(
 	opts.ShouldGenerateDeployKey = false
 	opts.ShouldGenerateBasicAuthSecret = true
 	opts.BasicAuthUser = gitUser.Login
-	opts.BasicAuthPassword = gitUser.Secret
+	opts.BasicAuthPassword = gitUser.Token
 	opts.GitopsRepoUrl = fmt.Sprintf("%s/%s", config.ApiHost, builtInEnv.AppsRepo)
 	opts.GitopsRepoPath = tmpPath
 	opts.Branch = headBranch
@@ -116,7 +137,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	gimletToken, err := server.PrepNotificationsApiKey(builtInEnv, store)
+	gimletToken, err := server.PrepApiKey(fmt.Sprintf(server.FluxApiKeyPattern, environment.Command.Name), dao, config.Instance)
 	if err != nil {
 		return fmt.Errorf("couldn't create user token %s", err)
 	}
@@ -126,7 +147,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot generate notifications manifest: %s", err)
 	}
 
-	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Bootstrapping")
+	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Token, "[Gimlet] Bootstrapping")
 	if err != nil {
 		return fmt.Errorf("cannot stage commit and push: %s", err)
 	}
@@ -222,7 +243,12 @@ func builtInGitServer(gitUser *model.User, gitRoot string) (http.Handler, error)
 	// If return value is false or error is set, user's request will be rejected.
 	// You can hook up your database/redis/cache for authentication purposes.
 	service.AuthFunc = func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
-		authorized := cred.Username == "git" && cred.Password == gitUser.Secret
+		t, err := token.Parse(cred.Password, func(t *token.Token) (string, error) {
+			return gitUser.Secret, nil
+		})
+
+		authorized := err == nil && t.Subject == "git"
+
 		if !authorized {
 			logrus.Warnf("could not auth user %s to builtin git repo", cred.Username)
 		}
@@ -256,6 +282,13 @@ func setupGitUser(config *config.Config, store *store.Store) (*model.User, error
 	} else if err != nil {
 		return nil, fmt.Errorf("couldn't list users to create admin user %s", err)
 	}
+
+	t := token.New(token.UserToken, gitUser.Login, config.Instance)
+	tokenString, err := t.Sign(gitUser.Secret)
+	if err != nil {
+		return nil, fmt.Errorf("could not sign git user token: %s", err)
+	}
+	gitUser.Token = tokenString
 
 	return gitUser, nil
 }

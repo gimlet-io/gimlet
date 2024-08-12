@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
@@ -281,8 +282,8 @@ type queryObjects struct {
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
 
-// OrgRepos returns all repos of an org using the installation
-func (c *GithubClient) OrgRepos(installationToken string) ([]string, error) {
+// InstallationRepos returns all repos of an org using the installation
+func (c *GithubClient) InstallationRepos(installationToken string) ([]string, error) {
 	client := github.NewClient(
 		&http.Client{
 			Transport: &transport{
@@ -433,5 +434,59 @@ func (c *GithubClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 		Key:      &keyValue,
 		ReadOnly: &readOnly,
 	})
+	return err
+}
+
+func (c *GithubClient) Comments(token, repoName string, pullNumber int) ([]*github.IssueComment, error) {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	parts := strings.Split(repoName, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("cannot determine repo owner and name")
+	}
+	owner := parts[0]
+	repo := parts[1]
+
+	comments, _, err := client.Issues.ListComments(context.Background(), owner, repo, pullNumber, &github.IssueListCommentsOptions{})
+	return comments, err
+}
+
+func (c *GithubClient) CreateComment(token, repoName string, pullNumber int, body string) error {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	parts := strings.Split(repoName, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("cannot determine repo owner and name")
+	}
+	owner := parts[0]
+	repo := parts[1]
+
+	_, _, err := client.Issues.CreateComment(context.Background(), owner, repo, pullNumber, &github.IssueComment{
+		Body: &body,
+	})
+
+	return err
+}
+
+func (c *GithubClient) UpdateComment(token, repoName string, commentId int64, body string) error {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+
+	parts := strings.Split(repoName, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("cannot determine repo owner and name")
+	}
+	owner := parts[0]
+	repo := parts[1]
+
+	_, _, err := client.Issues.EditComment(context.Background(), owner, repo, commentId, &github.IssueComment{
+		Body: &body,
+	})
+
 	return err
 }

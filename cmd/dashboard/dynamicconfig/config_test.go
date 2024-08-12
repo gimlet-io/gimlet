@@ -16,8 +16,7 @@ func Test_UpdateConfig(t *testing.T) {
 	}
 
 	new := &DynamicConfig{
-		AdminKey:  "new-admin-key",
-		JWTSecret: "new-jwt-secret",
+		AdminKey: "new-admin-key",
 		Github: config.Github{
 			Debug:      true,
 			SkipVerify: true,
@@ -27,7 +26,6 @@ func Test_UpdateConfig(t *testing.T) {
 	updateConfigWhenZeroValue(toUpdate, new)
 
 	assert.Equal(t, toUpdate.AdminKey, "admin-key", "Set values should not be updated")
-	assert.Equal(t, toUpdate.JWTSecret, "new-jwt-secret", "Empty strings should be updated")
 	assert.Equal(t, toUpdate.Github.Debug, true, "Equal values should stay equal")
 	assert.Equal(t, toUpdate.Github.SkipVerify, true, "Booelan fields should be set")
 }

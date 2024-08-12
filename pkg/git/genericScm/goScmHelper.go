@@ -271,6 +271,7 @@ func (helper *GoScmHelper) DirectoryContents(accessToken string, repo string, di
 
 func (helper *GoScmHelper) RegisterWebhook(
 	host string,
+	instance string,
 	token string,
 	webhookSecret string,
 	owner string,
@@ -286,9 +287,14 @@ func (helper *GoScmHelper) RegisterWebhook(
 		Refresh: "",
 	})
 
+	hookPath := host + "/hook"
+	if instance != "" {
+		hookPath = hookPath + "/" + instance
+	}
+
 	hook := &scm.HookInput{
 		Name:   "Gimlet",
-		Target: host + "/hook",
+		Target: hookPath,
 		Secret: webhookSecret,
 		Events: scm.HookEvents{
 			Push:   true,

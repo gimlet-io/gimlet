@@ -62,6 +62,7 @@ const SignerAlgo = "HS256"
 type Token struct {
 	Kind    string
 	Subject string
+	Issuer  string
 }
 
 // Parse parses a JWT token
@@ -125,8 +126,8 @@ func CheckCsrf(r *http.Request, fn SecretFunc) error {
 	return err
 }
 
-func New(kind string, subject string) *Token {
-	return &Token{Kind: kind, Subject: subject}
+func New(kind string, subject string, issuer string) *Token {
+	return &Token{Kind: kind, Subject: subject, Issuer: issuer}
 }
 
 // Sign signs the token using the given secret hash
@@ -145,12 +146,14 @@ func (t *Token) SignExpires(secret string, exp int64) (string, error) {
 			"iat":  time.Now().Unix(),
 			"exp":  float64(exp),
 			"sub":  t.Subject,
+			"iss":  t.Issuer,
 		})
 	} else {
 		token = jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"type": t.Kind,
 			"iat":  time.Now().Unix(),
 			"sub":  t.Subject,
+			"iss":  t.Issuer,
 		})
 	}
 

@@ -61,6 +61,13 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err = updateUserRepos(dynamicConfig, store, user)
+	if err != nil {
+		log.Errorf("cannot update user repos: %s", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	err = setSessionCookie(w, r, user)
 	if err != nil {
 		log.Errorf("cannot set session cookie: %s", err)
@@ -180,7 +187,7 @@ func getOrCreateUser(store *store.Store, scmUser *scm.User, token *login.Token) 
 func setSessionCookie(w http.ResponseWriter, r *http.Request, user *model.User) error {
 	fortyEightHours, _ := time.ParseDuration("48h")
 	exp := time.Now().Add(fortyEightHours).Unix()
-	t := token.New(token.SessToken, user.Login)
+	t := token.New(token.SessToken, user.Login, "")
 	tokenStr, err := t.SignExpires(user.Secret, exp)
 	if err != nil {
 		return err

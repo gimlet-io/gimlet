@@ -8,5 +8,7 @@ var Command = cli.Command{
 	Subcommands: []*cli.Command{
 		&environmentConnectCmd,
 		&environmentCheckCmd,
+		&environmentBootstrapCmd,
+		&environmentUpgradeCmd,
 	},
 }

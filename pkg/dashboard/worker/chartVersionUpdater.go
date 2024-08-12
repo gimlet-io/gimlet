@@ -51,9 +51,9 @@ func (c *ChartVersionUpdater) Run() {
 		token, _, _ := c.tokenManager.Token()
 		gitSvc := customScm.NewGitService(c.dynamicConfig)
 
-		repos, err := gitSvc.OrgRepos(token)
+		repos, err := gitSvc.InstallationRepos(token)
 		if err != nil {
-			logrus.Errorf("cannot get org repos: %s", err)
+			logrus.Errorf("cannot get installation repos: %s", err)
 		}
 		for _, repoName := range repos {
 			err = c.updateRepoEnvConfigsChartVersion(token, repoName)
@@ -142,8 +142,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		}
 
 		for fileName, content := range configs {
-			latestVersion := findLatestVersion(content, c.config.Charts)
-
+			latestVersion := findLatestVersion(content, c.config.DefaultCharts)
 			updatedContent := updateChartVersion(content, latestVersion)
 
 			_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), helper.Dir_RWX_RX_R)
@@ -235,7 +234,7 @@ func configsPerEnv(files map[string]string) (map[string]map[string]string, error
 	return configsPerEnv, nil
 }
 
-func findLatestVersion(content string, charts config.Charts) string {
+func findLatestVersion(content string, charts config.DefaultCharts) string {
 	var manifest dx.Manifest
 	err := yaml.Unmarshal([]byte(content), &manifest)
 	if err != nil {
@@ -246,7 +245,7 @@ func findLatestVersion(content string, charts config.Charts) string {
 	return findChartInConfig(charts, manifest.Chart.Name)
 }
 
-func findChartInConfig(charts config.Charts, chartName string) string {
+func findChartInConfig(charts config.DefaultCharts, chartName string) string {
 	if strings.HasPrefix(chartName, "git@") || strings.Contains(chartName, ".git") {
 		path := chartPath(chartName)
 		return charts.FindGitRepoHTTPSScheme(path)

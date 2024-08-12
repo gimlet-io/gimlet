@@ -11,14 +11,11 @@ import (
 	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/notifications"
-	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm/customGithub"
-	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
 	"github.com/go-chi/chi/v5"
 	"github.com/laszlocph/go-login/login"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -75,46 +72,11 @@ func installed(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 	formValues := r.Form
-	fmt.Println(formValues)
 	installationId := formValues.Get("installation_id")
 
 	ctx := r.Context()
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	dynamicConfig.Github.InstallationID = installationId
-
-	token, err := exchange(
-		formValues["code"][0],
-		"",
-		dynamicConfig.Github.ClientID,
-		dynamicConfig.Github.ClientSecret,
-		"",
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	goScmHelper := genericScm.NewGoScmHelper(dynamicConfig, nil)
-	scmUser, err := goScmHelper.User(token.Access, token.Refresh)
-	if err != nil {
-		log.Errorf("cannot find git user: %s", err)
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
-	dao := ctx.Value("store").(*store.Store)
-	user, err := getOrCreateUser(dao, scmUser, token)
-	if err != nil {
-		log.Errorf("cannot get or store user: %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	err = setSessionCookie(w, r, user)
-	if err != nil {
-		log.Errorf("cannot set session cookie: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
 
 	tokenManager := ctx.Value("tokenManager").(*customScm.TokenManager)
 	tokenManager.Configure(dynamicConfig)
@@ -142,7 +104,7 @@ func installed(w http.ResponseWriter, r *http.Request) {
 	config := ctx.Value("config").(*config.Config)
 	githubOAuthRoutes(config, dynamicConfig, router)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/logout", http.StatusSeeOther)
 }
 
 func gitlabInit(w http.ResponseWriter, r *http.Request) {

@@ -35,7 +35,6 @@ type Release struct {
 type ReleaseRequest struct {
 	Env         string `json:"env"`
 	App         string `json:"app,omitempty"`
-	Tenant      string `json:"tenant"`
 	ArtifactID  string `json:"artifactId"`
 	TriggeredBy string `json:"triggeredBy"`
 }
@@ -51,6 +50,8 @@ type ImageBuildRequest struct {
 	Tag         string `json:"tag"`
 	SourcePath  string `json:"sourcePath"`
 	Dockerfile  string `json:"dockerfile"`
+	Strategy    string `json:"strategy"`
+	Registry    string `json:"registry"`
 }
 
 // RollbackRequest contains all metadata about the rollback intent

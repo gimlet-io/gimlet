@@ -26,7 +26,6 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/server/token"
 	"github.com/gimlet-io/gimlet/pkg/stack"
 	"github.com/gimlet-io/go-scm/scm"
-	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-git/go-git/v5"
 	gitConfig "github.com/go-git/go-git/v5/config"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -173,7 +172,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 			Sha:     createdPR.Sha,
 			Link:    createdPR.Link,
 			Title:   createdPR.Title,
-			Source:  createdPR.Source,
+			Branch:  createdPR.Source,
 			Number:  createdPR.Number,
 			Author:  createdPR.Author.Login,
 			Created: int(createdPR.Created.Unix()),
@@ -211,8 +210,8 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	gitToken, gitUser, _ := tokenManager.Token()
 	org := dynamicConfig.Org()
 
-	db := r.Context().Value("store").(*store.Store)
-	environment, err := db.GetEnvironment(bootstrapConfig.EnvName)
+	dao := r.Context().Value("store").(*store.Store)
+	environment, err := dao.GetEnvironment(bootstrapConfig.EnvName)
 	if err != nil {
 		logrus.Errorf("cannot get environment: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -230,7 +229,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 
 	environment.RepoPerEnv = bootstrapConfig.RepoPerEnv
 	environment.KustomizationPerApp = bootstrapConfig.KusomizationPerApp
-	err = db.UpdateEnvironment(environment)
+	err = dao.UpdateEnvironment(environment)
 	if err != nil {
 		logrus.Errorf("cannot update environment: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -272,8 +271,6 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	go updateOrgRepos(dynamicConfig, tokenManager, db)
-	go updateUserRepos(dynamicConfig, db, user)
 
 	scmURL := dynamicConfig.ScmURL()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -324,7 +321,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenStr, err := PrepNotificationsApiKey(environment, db)
+	tokenStr, err := PrepApiKey(fmt.Sprintf(FluxApiKeyPattern, environment.Name), dao, config.Instance)
 	if err != nil {
 		logrus.Errorf("couldn't create user token %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -350,7 +347,7 @@ func bootstrapGitops(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t0 = time.Now()
-	err = installAgent(environment, gitRepoCache, config, dynamicConfig, gitToken)
+	err = installAgent(environment, gitRepoCache, config, dynamicConfig, gitToken, dao)
 	perf.WithLabelValues("gimlet_bootstrap_gitops_install_agent").Observe(float64(time.Since(t0).Seconds()))
 
 	if err != nil {
@@ -445,7 +442,7 @@ func MigrateEnv(
 	oldRepoName string,
 	newRepoName string,
 	repoPerEnv bool,
-	token string,
+	scmToken string,
 	shouldGenerateController bool,
 	shouldGenerateDependencies bool,
 	kustomizationPerApp bool,
@@ -491,13 +488,13 @@ func MigrateEnv(
 		return "", "", fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Secret, "[Gimlet] Migrating")
+	err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Token, "[Gimlet] Migrating")
 	if err != nil {
 		return "", "", fmt.Errorf("cannot stage commit and push: %s", err)
 	}
 
 	head, _ := repo.Head()
-	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", token, newRepoName)
+	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", scmToken, newRepoName)
 	err = nativeGit.NativeForcePushWithToken(
 		url,
 		tmpPath,
@@ -511,7 +508,7 @@ func MigrateEnv(
 	err = gitServiceImpl.AddDeployKeyToRepo(
 		owner,
 		repository,
-		token,
+		scmToken,
 		"flux",
 		publicKey,
 		deployKeyCanWrite,
@@ -659,16 +656,21 @@ func AssureRepoExists(
 }
 
 func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg string) error {
+	_, err := stageCommitAndPushWithHash(repo, tmpPath, token, msg)
+	return err
+}
+
+func stageCommitAndPushWithHash(repo *git.Repository, tmpPath string, token string, msg string) (string, error) {
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = worktree.AddWithOptions(&git.AddOptions{
 		All: true,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Temporarily staging deleted files to git with a simple CLI command until the
@@ -678,20 +680,17 @@ func StageCommitAndPush(repo *git.Repository, tmpPath string, token string, msg 
 	cmd.Dir = tmpPath
 	err = cmd.Run()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	_, err = nativeGit.Commit(repo, msg)
+	hash, err := nativeGit.Commit(repo, msg)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = nativeGit.PushWithToken(repo, token)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return hash, err
 }
 
 func StageCommitAndPushGimletFolder(repo *git.Repository, tmpPath string, token string, msg string) error {
@@ -712,30 +711,26 @@ func StageCommitAndPushGimletFolder(repo *git.Repository, tmpPath string, token 
 		return err
 	}
 
-	err = nativeGit.PushWithToken(repo, token)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return nativeGit.PushWithToken(repo, token)
 }
 
-func PrepNotificationsApiKey(
-	env *model.Environment,
-	db *store.Store,
+func PrepApiKey(
+	name string,
+	dao *store.Store,
+	issuer string,
 ) (string, error) {
-	fluxUser := &model.User{
-		Login:  fmt.Sprintf(fluxPattern, env.Name),
+	user := &model.User{
+		Login:  name,
 		Secret: base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
 	}
 
-	err := db.CreateUser(fluxUser)
+	err := dao.CreateUser(user)
 	if err != nil {
-		return "", fmt.Errorf("cannot create user %s: %s", fluxUser.Login, err)
+		return "", fmt.Errorf("cannot create user %s: %s", user.Login, err)
 	}
 
-	token := token.New(token.UserToken, fluxUser.Login)
-	tokenStr, err := token.Sign(fluxUser.Secret)
+	token := token.New(token.UserToken, user.Login, issuer)
+	tokenStr, err := token.Sign(user.Secret)
 	if err != nil {
 		return "", fmt.Errorf("couldn't create user token %s", err)
 	}
@@ -749,6 +744,7 @@ func installAgent(
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 	gitToken string,
+	dao *store.Store,
 ) error {
 	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
 	defer os.RemoveAll(tmpPath)
@@ -756,7 +752,13 @@ func installAgent(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	err = PrepInfraComponentManifests(env, tmpPath, repo, config, dynamicConfig, ComponentOpts{})
+	serverComponents := ComponentOpts{
+		Agent:                 true,
+		ImageBuilder:          true,
+		ContainerizedRegistry: true,
+		SealedSecrets:         true,
+	}
+	err = PrepInfraComponentManifests(env, tmpPath, repo, config, dynamicConfig, serverComponents, dao)
 	if err != nil {
 		return fmt.Errorf("cannot configure agent: %s", err)
 	}
@@ -772,9 +774,10 @@ func installAgent(
 }
 
 type ComponentOpts struct {
-	ImageBuilder  bool
-	Registry      bool
-	SealedSecrets bool
+	Agent                 bool
+	ImageBuilder          bool
+	ContainerizedRegistry bool
+	SealedSecrets         bool
 }
 
 func PrepInfraComponentManifests(
@@ -784,6 +787,7 @@ func PrepInfraComponentManifests(
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
 	opts ComponentOpts,
+	dao *store.Store,
 ) error {
 	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
 	if env.RepoPerEnv {
@@ -811,23 +815,30 @@ func PrepInfraComponentManifests(
 		}
 	}
 
-	agentAuth = jwtauth.New("HS256", []byte(dynamicConfig.JWTSecret), nil)
-	_, agentKey, _ := agentAuth.Encode(map[string]interface{}{"user_id": "gimlet-agent"})
+	if opts.Agent {
+		agentKey, err := PrepApiKey(fmt.Sprintf(AgentApiKeyPattern, env.Name), dao, config.Instance)
+		if err != nil {
+			return fmt.Errorf("cannot prep agent key: %s", err)
+		}
 
-	stackConfig.Config["gimletAgent"] = map[string]interface{}{
-		"enabled":          true,
-		"environment":      env.Name,
-		"agentKey":         agentKey,
-		"dashboardAddress": config.ApiHost,
+		stackConfig.Config["gimletAgent"] = map[string]interface{}{
+			"enabled":          true,
+			"environment":      env.Name,
+			"agentKey":         agentKey,
+			"dashboardAddress": config.ApiHost,
+		}
 	}
 	if opts.ImageBuilder {
 		stackConfig.Config["imageBuilder"] = map[string]interface{}{
 			"enabled": true,
 		}
 	}
-	if opts.Registry {
-		stackConfig.Config["dockerRegistry"] = map[string]interface{}{
+	if opts.ContainerizedRegistry {
+		stackConfig.Config["containerizedRegistry"] = map[string]interface{}{
 			"enabled": true,
+			"credentials": map[string]interface{}{
+				"url": "127.0.0.1:32447",
+			},
 		}
 	}
 	if opts.SealedSecrets {
@@ -861,4 +872,121 @@ func ParseRepo(repoName string) (string, string) {
 	owner := strings.Split(repoName, "/")[0]
 	repo := strings.Split(repoName, "/")[1]
 	return owner, repo
+}
+
+func EnsureGimletCloudSettings(
+	dao *store.Store,
+	gitRepoCache *nativeGit.RepoCache,
+	tokenManager customScm.NonImpersonatedTokenManager,
+	gitUser *model.User,
+	envName string,
+	sealedSecretsCertificate []byte,
+	instance string,
+) {
+	_, err := dao.KeyValue(model.EnsuredCustomRegistry)
+	if err == nil { // custom registry is ensured
+		return
+	}
+
+	env, err := dao.GetEnvironment(envName)
+	if err != nil {
+		logrus.Errorf("could not ensure custom registry: %s", err)
+		return
+	}
+
+	repo, tmpPath, err := gitRepoCache.InstanceForWrite(env.InfraRepo)
+	defer os.RemoveAll(tmpPath)
+	if err != nil {
+		logrus.Errorf("could not get infra repo: %s", err)
+		return
+	}
+
+	stackYamlPath := filepath.Join(env.Name, "stack.yaml")
+	if env.RepoPerEnv {
+		stackYamlPath = "stack.yaml"
+	}
+
+	stackConfig, err := stackYaml(repo, stackYamlPath)
+	if err != nil {
+		logrus.Errorf("could not get infra repo %s: %s", env.InfraRepo, err)
+		return
+	}
+
+	key, err := parseKey(sealedSecretsCertificate)
+	if err != nil {
+		logrus.Errorf("cannot parse public key: %s", err)
+		return
+	}
+
+	creds, err := sealValue(key, os.Getenv("GIMLET_CLOUD_REGISTRY_CREDS"))
+	if err != nil {
+		logrus.Errorf("cannot seal item: %s", err)
+		return
+	}
+	login := os.Getenv("GIMLET_CLOUD_REGISTRY_LOGIN")
+	cert, err := sealValue(key, os.Getenv("GIMLET_CLOUD_REGISTRY_CERT"))
+	if err != nil {
+		logrus.Errorf("cannot seal item: %s", err)
+		return
+	}
+
+	stackConfig.Config["customRegistry"] = map[string]interface{}{
+		"credentials": map[string]interface{}{
+			"encryptedDockerconfigjson": creds,
+			"login":                     login,
+			"url":                       "registry.gimlet:30003",
+		},
+		"displayName":    "Gimlet Registry",
+		"selfSignedCert": cert,
+	}
+	stackConfig.Config["existingIngress"] = map[string]interface{}{
+		"enabled": true,
+		"host":    fmt.Sprintf("-%s.gimlet.app", instance),
+		"ingressAnnotations": map[string]interface{}{
+			"kubernetes.io/ingress.class":    "nginx",
+			"cert-manager.io/cluster-issuer": "letsencrypt",
+		},
+	}
+
+	stackConfigBuff := bytes.NewBufferString("")
+	e := yaml.NewEncoder(stackConfigBuff)
+	e.SetIndent(2)
+	err = e.Encode(stackConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize stack config: %s", err)
+		return
+	}
+
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
+	if err != nil {
+		logrus.Errorf("cannot write file %s: %s", stackYamlPath, err)
+		return
+	}
+
+	err = stack.GenerateAndWriteFiles(*stackConfig, filepath.Join(tmpPath, stackYamlPath))
+	if err != nil {
+		logrus.Errorf("cannot generate and write files: %s", err)
+		return
+	}
+
+	if env.BuiltIn {
+		err = stageCommitAndPush(repo, tmpPath, gitUser.Login, gitUser.Token, "[Gimlet] Gimlet Cloud settings")
+		if err != nil {
+			logrus.Errorf("cannot stage commit and push: %s", err)
+			return
+		}
+	} else {
+		token, _, _ := tokenManager.Token()
+		err = StageCommitAndPush(repo, tmpPath, token, "[Gimlet] Gimlet Cloud settings")
+		if err != nil {
+			logrus.Errorf("cannot stage commit and push: %s", err)
+			return
+		}
+	}
+
+	// this should happen only once
+	_ = dao.SaveKeyValue(&model.KeyValue{
+		Key:   model.EnsuredCustomRegistry,
+		Value: "true",
+	})
 }

@@ -33,21 +33,11 @@ jobs:
             echo "::set-output name=version::$GITHUB_SHA"
         fi
     - name: 🏗️ Build frontend
-      run: make build-dashboard-frontend
+      run: make build-frontend
     - name: Dist
       run: make dist-dashboard
       env:
         VERSION: ${{ steps.version.outputs.version }}
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Gimlet ${{ steps.version.outputs.version }}
-        draft: false
-        prerelease: false
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2.2.0
     - name: Set up Docker Buildx

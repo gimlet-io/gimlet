@@ -9,6 +9,7 @@ import (
 
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/go-scm/scm"
+	"github.com/google/go-github/v37/github"
 	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
@@ -100,7 +101,7 @@ func (c *GitlabClient) FetchCommits(
 	}
 }
 
-func (c *GitlabClient) OrgRepos(token string) ([]string, error) {
+func (c *GitlabClient) InstallationRepos(token string) ([]string, error) {
 	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(c.BaseURL))
 	if err != nil {
 		return nil, err
@@ -189,6 +190,18 @@ func (c *GitlabClient) AddDeployKeyToRepo(owner, repo, token, keyTitle, keyValue
 		CanPush: &canWrite,
 	})
 	return err
+}
+
+func (c *GitlabClient) Comments(token, repoName string, pullNumber int) ([]*github.IssueComment, error) {
+	return nil, nil
+}
+
+func (c *GitlabClient) CreateComment(token, repoName string, pullNumber int, body string) error {
+	return nil
+}
+
+func (c *GitlabClient) UpdateComment(token, repoName string, commentId int64, body string) error {
+	return nil
 }
 
 func fromGitlabStatus(gitlabStatus string) string {

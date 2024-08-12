@@ -11,13 +11,13 @@ import (
 
 // ConnectedAgent represents a connected k8s cluster
 type ConnectedAgent struct {
-	Name         string          `json:"name"`
-	Namespace    string          `json:"namespace"`
-	Certificate  []byte          `json:"-"`
-	EventChannel chan []byte     `json:"-"`
-	Stacks       []*api.Stack    `json:"-"`
-	FluxState    *flux.FluxState `json:"-"`
-	FluxEvents   []*flux.Event   `json:"-"`
+	Name                     string          `json:"name"`
+	Namespace                string          `json:"namespace"`
+	SealedSecretsCertificate []byte          `json:"-"`
+	EventChannel             chan []byte     `json:"-"`
+	Stacks                   []*api.Stack    `json:"-"`
+	FluxState                *flux.FluxState `json:"-"`
+	FluxEvents               []*flux.Event   `json:"-"`
 }
 
 // AgentHub is the central registry of all connected agents

@@ -1,17 +1,11 @@
 package server
 
 import (
-	"bytes"
-	"encoding/base32"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet/pkg/server/token"
-	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/securecookie"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,7 +20,14 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usersString, err := json.Marshal(users)
+	onlyAPIKeys := []*model.User{}
+	for _, u := range users {
+		if !u.Admin {
+			onlyAPIKeys = append(onlyAPIKeys, u)
+		}
+	}
+
+	usersString, err := json.Marshal(onlyAPIKeys)
 	if err != nil {
 		logrus.Errorf("cannot serialize users: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -35,46 +36,6 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(usersString)
-}
-
-func getUser(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	store := ctx.Value("store").(*store.Store)
-
-	login := chi.URLParam(r, "login")
-	user, err := store.User(login)
-	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-		logrus.Errorf("cannot get user %s: %s", login, err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	withToken := r.URL.Query().Get("withToken")
-	if withToken == "true" {
-		token := token.New(token.UserToken, user.Login)
-		tokenStr, err := token.Sign(user.Secret)
-		if err != nil {
-			logrus.Errorf("couldn't generate JWT token %s", err)
-			http.Error(w, http.StatusText(500), 500)
-			return
-		}
-		// token is not saved as it is JWT
-		user.Token = tokenStr
-	}
-
-	userString, err := json.Marshal(user)
-	if err != nil {
-		logrus.Errorf("cannot serialize user %s: %s", login, err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(userString)
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
@@ -104,47 +65,4 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func saveUserGimletD(w http.ResponseWriter, r *http.Request) {
-	body, _ := ioutil.ReadAll(r.Body)
-	var user model.User
-	err := json.NewDecoder(bytes.NewReader(body)).Decode(&user)
-	if err != nil {
-		logrus.Errorf("cannot decode user: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	user.Secret = base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
-
-	ctx := r.Context()
-	store := ctx.Value("store").(*store.Store)
-
-	err = store.CreateUser(&user)
-	if err != nil {
-		logrus.Errorf("cannot creat user %s: %s", user.Login, err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	token := token.New(token.UserToken, user.Login)
-	tokenStr, err := token.Sign(user.Secret)
-	if err != nil {
-		logrus.Errorf("couldn't create user token %s", err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-	// token is not saved as it is JWT
-	user.Token = tokenStr
-
-	userString, err := json.Marshal(user)
-	if err != nil {
-		logrus.Errorf("cannot serialize user %s: %s", user.Login, err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	w.Write(userString)
 }

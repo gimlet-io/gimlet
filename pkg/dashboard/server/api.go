@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"io/ioutil"
 	"path/filepath"
 
 	"encoding/base32"
@@ -39,13 +40,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const fluxPattern = "flux-%s"
+const FluxApiKeyPattern = "flux-%s"
+const AgentApiKeyPattern = "agent-%s"
 
 func user(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
+	config := ctx.Value("config").(*config.Config)
 
-	token := token.New(token.UserToken, user.Login)
+	token := token.New(token.UserToken, user.Login, config.Instance)
 	tokenStr, err := token.Sign(user.Secret)
 	if err != nil {
 		logrus.Errorf("couldn't generate JWT token %s", err)
@@ -90,7 +93,9 @@ func saveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := token.New(token.UserToken, user.Login)
+	config := ctx.Value("config").(*config.Config)
+
+	token := token.New(token.UserToken, user.Login, config.Instance)
 	tokenStr, err := token.Sign(user.Secret)
 	if err != nil {
 		logrus.Errorf("couldn't create user token %s", err)
@@ -143,18 +148,15 @@ func envs(w http.ResponseWriter, r *http.Request) {
 	envs := []*api.GitopsEnv{}
 	for _, env := range envsFromDB {
 		envs = append(envs, &api.GitopsEnv{
-			Name:                        env.Name,
-			InfraRepo:                   env.InfraRepo,
-			AppsRepo:                    env.AppsRepo,
-			RepoPerEnv:                  env.RepoPerEnv,
-			KustomizationPerApp:         env.KustomizationPerApp,
-			BuiltIn:                     env.BuiltIn,
-			DeploymentAutomationEnabled: false,
+			Name:                env.Name,
+			InfraRepo:           env.InfraRepo,
+			AppsRepo:            env.AppsRepo,
+			RepoPerEnv:          env.RepoPerEnv,
+			KustomizationPerApp: env.KustomizationPerApp,
+			BuiltIn:             env.BuiltIn,
+			Ephemeral:           env.Ephemeral,
+			Expiry:              env.Expiry,
 		})
-	}
-
-	for _, env := range envs {
-		env.DeploymentAutomationEnabled = deploymentAutomationEnabled(env.Name, envs)
 	}
 
 	allEnvs := map[string]interface{}{}
@@ -265,30 +267,6 @@ func getAlerts(w http.ResponseWriter, r *http.Request) {
 	w.Write(alertsString)
 }
 
-func deploymentAutomationEnabled(envName string, envs []*api.GitopsEnv) bool {
-	for _, env := range envs {
-		if env.StackConfig == nil {
-			continue
-		}
-
-		if _, ok := env.StackConfig.Config["gimletd"]; !ok {
-			continue
-		}
-
-		gimletdConfig := env.StackConfig.Config["gimletd"].(map[string]interface{})
-		if gimletdEnvs, ok := gimletdConfig["environments"]; ok {
-			for _, e := range gimletdEnvs.([]interface{}) {
-				envConfig := e.(map[string]interface{})
-				if envConfig["name"] == envName {
-					return true
-				}
-			}
-		}
-	}
-
-	return false
-}
-
 func stackConfig(w http.ResponseWriter, r *http.Request) {
 	envName := chi.URLParam(r, "env")
 	db := r.Context().Value("store").(*store.Store)
@@ -301,31 +279,20 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var stackConfig *dx.StackConfig
 	stackYamlPath := "stack.yaml"
 	if !env.RepoPerEnv {
 		stackYamlPath = filepath.Join(env.Name, "stack.yaml")
 	}
 
 	gitRepoCache, _ := r.Context().Value("gitRepoCache").(*nativeGit.RepoCache)
-	err = gitRepoCache.PerformAction(env.InfraRepo, func(repo *git.Repository) error {
-		var inerErr error
-		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
-		return inerErr
-	})
+	stackConfig, err := StackConfig(gitRepoCache, stackYamlPath, env.InfraRepo)
 	if err != nil {
-		if !strings.Contains(err.Error(), "file not found") {
-			logrus.Errorf("cannot get stack yaml from repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else {
-			logrus.Errorf("cannot get repo: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		logrus.Errorf("cannot get stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
-	stackDefinition, err := loadStackDefinition(stackConfig)
+	stackDefinition, err := LoadStackDefinition(stackConfig)
 	if err != nil && !strings.Contains(err.Error(), "file not found") {
 		logrus.Errorf("cannot get stack definition: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -349,7 +316,24 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsEnvString)
 }
 
-func loadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {
+func StackConfig(gitRepoCache *nativeGit.RepoCache, stackYamlPath, infraRepo string) (*dx.StackConfig, error) {
+	var stackConfig *dx.StackConfig
+	err := gitRepoCache.PerformAction(infraRepo, func(repo *git.Repository) error {
+		var inerErr error
+		stackConfig, inerErr = stackYaml(repo, stackYamlPath)
+		return inerErr
+	})
+	if err != nil {
+		if !strings.Contains(err.Error(), "file not found") {
+			return nil, fmt.Errorf("cannot get stack yaml from repo: %s", err)
+		} else {
+			return nil, fmt.Errorf("cannot get repo: %s", err)
+		}
+	}
+	return stackConfig, nil
+}
+
+func LoadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, error) {
 	var url string
 	if stackConfig != nil {
 		url = stackConfig.Stack.Repository
@@ -454,7 +438,7 @@ func defaultDeploymentTemplates(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
 
-	templates, err := deploymentTemplates(config.Charts, installationToken)
+	templates, err := deploymentTemplates(config.DefaultCharts, installationToken)
 	if err != nil {
 		logrus.Errorf("cannot convert charts: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -483,8 +467,7 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	var appChart *dx.Chart
-	var err error
-	gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
+	err := gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
 		func(repo *git.Repository) error {
 			var innerErr error
 			appChart, innerErr = getChartForApp(repo, env, configName)
@@ -496,7 +479,10 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := deploymentTemplates([]dx.Chart{*appChart}, installationToken)
+	templates, err := deploymentTemplates(
+		[]config.DefaultChart{{Chart: *appChart}},
+		installationToken,
+	)
 	if err != nil {
 		logrus.Errorf("cannot convert charts: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -514,11 +500,11 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(templatesString))
 }
 
-func deploymentTemplates(charts []dx.Chart, installationToken string) ([]DeploymentTemplate, error) {
+func deploymentTemplates(charts config.DefaultCharts, installationToken string) ([]DeploymentTemplate, error) {
 	var templates []DeploymentTemplate
 	for _, chart := range charts {
 		m := &dx.Manifest{
-			Chart: chart,
+			Chart: chart.Chart,
 		}
 
 		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
@@ -616,8 +602,7 @@ func application(w http.ResponseWriter, r *http.Request) {
 }
 
 func seal(w http.ResponseWriter, r *http.Request) {
-	var secret string
-	err := json.NewDecoder(r.Body).Decode(&secret)
+	secret, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logrus.Errorf("cannot decode secret: %s", err)
 		http.Error(w, http.StatusText(400), 400)
@@ -640,7 +625,7 @@ func seal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sealedValue, err := sealValue(key, secret)
+	sealedValue, err := sealValue(key, string(secret))
 	if err != nil {
 		logrus.Errorf("cannot seal item: %s", err)
 		http.Error(w, http.StatusText(500), 500)
@@ -653,8 +638,8 @@ func seal(w http.ResponseWriter, r *http.Request) {
 
 func extractCert(agents map[string]*streaming.ConnectedAgent, env string) ([]byte, error) {
 	if agent, ok := agents[env]; ok {
-		if len(agent.Certificate) != 0 {
-			return agent.Certificate, nil
+		if len(agent.SealedSecretsCertificate) != 0 {
+			return agent.SealedSecretsCertificate, nil
 		}
 	}
 
@@ -808,13 +793,8 @@ func spinOutBuiltInEnv(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
-	gitUser, err := store.User("git")
-	if err != nil {
-		logrus.Errorf("cannot get git user: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	gitUser := ctx.Value("gitUser").(*model.User)
+
 	_, _, err = MigrateEnv(
 		gitRepoCache,
 		gitServiceImpl,
@@ -907,10 +887,18 @@ func deleteEnvFromDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fluxUser := fmt.Sprintf(fluxPattern, envNameToDelete)
+	fluxUser := fmt.Sprintf(FluxApiKeyPattern, envNameToDelete)
 	err = db.DeleteUser(fluxUser)
 	if err != nil {
 		logrus.Errorf("cannot delete user %s: %s", fluxUser, err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	agentUser := fmt.Sprintf(AgentApiKeyPattern, envNameToDelete)
+	err = db.DeleteUser(agentUser)
+	if err != nil {
+		logrus.Errorf("cannot delete user %s: %s", agentUser, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

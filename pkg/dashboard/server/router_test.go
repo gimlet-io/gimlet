@@ -68,7 +68,7 @@ func Test_MustUser(t *testing.T) {
 	err = store.CreateUser(user)
 	assert.Nil(t, err)
 
-	tokenInstance := token.New(token.UserToken, user.Login)
+	tokenInstance := token.New(token.UserToken, user.Login, "")
 	tokenStr, err := tokenInstance.Sign(user.Secret)
 	assert.Nil(t, err)
 

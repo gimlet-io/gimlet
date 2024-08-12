@@ -7,7 +7,6 @@ var Command = cli.Command{
 	Usage: "Bootstrap curated Kubernetes stacks",
 	Subcommands: []*cli.Command{
 		&GenerateCmd,
-		&ConfigureCmd,
 		&LintCmd,
 		&UpdateCmd,
 	},

@@ -92,7 +92,7 @@ func TestJWTexpiryWithExpiredToken(t *testing.T) {
 	secret := "mySecretString"
 	subtractTwelveHours, _ := time.ParseDuration("-12h")
 	exp := time.Now().Add(subtractTwelveHours).Unix()
-	expiredJWT := token.New("sess", "test")
+	expiredJWT := token.New("sess", "test", "")
 	expiredJWTStr, err := expiredJWT.SignExpires(secret, exp)
 	if err != nil {
 		t.Errorf("Cannot sign token expiration time: %s", err)
@@ -114,7 +114,7 @@ func TestJWTexpiryWithValidToken(t *testing.T) {
 	secret := "mySecretString"
 	twelveHours, _ := time.ParseDuration("12h")
 	exp := time.Now().Add(twelveHours).Unix()
-	validJWT := token.New("sess", "test")
+	validJWT := token.New("sess", "test", "")
 	validJWTStr, err := validJWT.SignExpires(secret, exp)
 	if err != nil {
 		t.Errorf("Cannot sign token expiration time: %s", err)

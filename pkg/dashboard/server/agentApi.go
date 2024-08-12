@@ -185,7 +185,7 @@ func state(w http.ResponseWriter, r *http.Request) {
 		stackPointers = append(stackPointers, copy)
 	}
 	agent.Stacks = stackPointers
-	agent.Certificate = agentState.Certificate
+	agent.SealedSecretsCertificate = agentState.Certificate
 
 	envs := []*api.ConnectedAgent{{
 		Name:      name,
@@ -372,7 +372,9 @@ func update(w http.ResponseWriter, r *http.Request) {
 func poorMansNewServiceHandler(update api.StackUpdate, r *http.Request) {
 	// delete it when properly handling svc created event in agents,
 	// and covered all eventual consistency cases
-	if update.Event == agent.EventDeploymentCreated {
+	if update.Event == agent.EventDeploymentCreated ||
+		update.Event == agent.EventDeploymentUpdated ||
+		update.Event == agent.EventDeploymentDeleted {
 		agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
 		go func() {
 			time.Sleep(100 * time.Millisecond)

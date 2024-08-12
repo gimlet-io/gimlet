@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gimlet-io/gimlet/cmd/dashboard/config"
 	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
@@ -73,9 +74,16 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	repoName := fmt.Sprintf("%s/%s", owner, repo)
 
 	var err error
+	var headBranch string
 	var files map[string]string
 	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		var innerErr error
+
+		headBranch, innerErr = nativeGit.HeadBranch(repo)
+		if innerErr != nil {
+			return innerErr
+		}
+
 		files, innerErr = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
 		return innerErr
 	})
@@ -99,6 +107,7 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 			AppName:  envConfig.App,
 			EnvName:  envConfig.Env,
 			FileName: fileName,
+			Branch:   headBranch,
 		})
 	}
 
@@ -117,6 +126,63 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitRepoMString)
 }
 
+func configChangePullRequestsPerConfig(w http.ResponseWriter, r *http.Request) {
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	env := chi.URLParam(r, "env")
+	config := chi.URLParam(r, "config")
+	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
+
+	ctx := r.Context()
+	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	token, _, _ := tokenManager.Token()
+
+	prList, err := goScm.ListOpenPRs(token, repoPath)
+	if err != nil {
+		logrus.Errorf("cannot list pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	pullRequestsPerEnvConfig := []*api.PR{}
+	for _, pullRequest := range prList {
+		if !strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
+			continue
+		}
+
+		if !strings.Contains(pullRequest.Source, env) {
+			continue
+		}
+
+		if !strings.Contains(pullRequest.Title, fmt.Sprintf("`%s`", config)) {
+			continue
+		}
+
+		pullRequestsPerEnvConfig = append(pullRequestsPerEnvConfig, &api.PR{
+			Branch:  pullRequest.Source,
+			Sha:     pullRequest.Sha,
+			Link:    pullRequest.Link,
+			Title:   pullRequest.Title,
+			Number:  pullRequest.Number,
+			Author:  pullRequest.Author.Login,
+			Created: int(pullRequest.Created.Unix()),
+			Updated: int(pullRequest.Updated.Unix()),
+		})
+	}
+
+	pullRequestsString, err := json.Marshal(pullRequestsPerEnvConfig)
+	if err != nil {
+		logrus.Errorf("cannot serialize pull requests: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(pullRequestsString)
+}
+
 func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
@@ -128,13 +194,6 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	token, _, _ := tokenManager.Token()
 
-	db := r.Context().Value("store").(*store.Store)
-	envsFromDB, err := db.GetEnvironments()
-	if err != nil {
-		logrus.Errorf("cannot get all environments from database: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-
 	prList, err := goScm.ListOpenPRs(token, repoPath)
 	if err != nil {
 		logrus.Errorf("cannot list pull requests: %s", err)
@@ -142,32 +201,18 @@ func getPullRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	prListCreatedByGimlet := []*scm.PullRequest{}
+	pullRequests := []*api.PR{}
 	for _, pullRequest := range prList {
-		if strings.HasPrefix(pullRequest.Source, "gimlet-config-change") {
-			prListCreatedByGimlet = append(prListCreatedByGimlet, pullRequest)
-		}
-	}
-
-	pullRequests := map[string]interface{}{}
-	for _, env := range envsFromDB {
-		pullRequestsByEnv := []*api.PR{}
-		for _, pullRequest := range prListCreatedByGimlet {
-			if strings.Contains(pullRequest.Source, env.Name) {
-				pullRequestsByEnv = append(pullRequestsByEnv, &api.PR{
-					Sha:     pullRequest.Sha,
-					Link:    pullRequest.Link,
-					Title:   pullRequest.Title,
-					Source:  pullRequest.Source,
-					Number:  pullRequest.Number,
-					Author:  pullRequest.Author.Login,
-					Created: int(pullRequest.Created.Unix()),
-					Updated: int(pullRequest.Updated.Unix()),
-				})
-			}
-		}
-
-		pullRequests[env.Name] = pullRequestsByEnv
+		pullRequests = append(pullRequests, &api.PR{
+			Branch:  pullRequest.Source,
+			Sha:     pullRequest.Sha,
+			Link:    pullRequest.Link,
+			Title:   pullRequest.Title,
+			Number:  pullRequest.Number,
+			Author:  pullRequest.Author.Login,
+			Created: int(pullRequest.Created.Unix()),
+			Updated: int(pullRequest.Updated.Unix()),
+		})
 	}
 
 	pullRequestsString, err := json.Marshal(pullRequests)
@@ -198,9 +243,15 @@ func getChartUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
 
 func getGitopsUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	env := chi.URLParam(r, "env")
 	gitopsUpdatePullRequests := ctx.Value("gitopsUpdatePullRequests").(*map[string]interface{})
 
-	gitopsUpdatePullRequestsString, err := json.Marshal(gitopsUpdatePullRequests)
+	gitopsUpdatePullRequestsPerEnv := []*api.PR{}
+	if (*gitopsUpdatePullRequests)[env] != nil {
+		gitopsUpdatePullRequestsPerEnv = (*gitopsUpdatePullRequests)[env].([]*api.PR)
+	}
+
+	gitopsUpdatePullRequestsString, err := json.Marshal(gitopsUpdatePullRequestsPerEnv)
 	if err != nil {
 		logrus.Errorf("cannot serialize pull requests: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -213,6 +264,7 @@ func getGitopsUpdatePullRequests(w http.ResponseWriter, r *http.Request) {
 
 func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	envParam := r.URL.Query().Get("env")
 	dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
 	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
@@ -225,10 +277,10 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	infraRepoPullRequests := map[string]interface{}{}
+	prListCreatedByGimlet := []*api.PR{}
 	for _, env := range envsFromDB {
 		owner, _ := scm.Split(env.InfraRepo)
-		if owner == "builtin" {
+		if owner == "builtin" || env.Name != envParam {
 			continue
 		}
 
@@ -241,14 +293,13 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		var prListCreatedByGimlet []*api.PR
 		for _, pullRequest := range prList {
 			if strings.HasPrefix(pullRequest.Source, "gimlet-stack") && strings.Contains(pullRequest.Source, env.Name) {
 				prListCreatedByGimlet = append(prListCreatedByGimlet, &api.PR{
 					Sha:     pullRequest.Sha,
 					Link:    pullRequest.Link,
 					Title:   pullRequest.Title,
-					Source:  pullRequest.Source,
+					Branch:  pullRequest.Source,
 					Number:  pullRequest.Number,
 					Author:  pullRequest.Author.Login,
 					Created: int(pullRequest.Created.Unix()),
@@ -256,11 +307,9 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 				})
 			}
 		}
-
-		infraRepoPullRequests[env.Name] = prListCreatedByGimlet
 	}
 
-	infraRepoPullRequestsString, err := json.Marshal(infraRepoPullRequests)
+	PullRequestsString, err := json.Marshal(prListCreatedByGimlet)
 	if err != nil {
 		logrus.Errorf("cannot serialize pull requests: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -268,17 +317,19 @@ func getPullRequestsFromInfraRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(infraRepoPullRequestsString)
+	w.Write(PullRequestsString)
 }
 
 type fileInfo struct {
 	EnvName  string `json:"envName"`
 	AppName  string `json:"appName"`
 	FileName string `json:"fileName"`
+	Branch   string `json:"branch"`
 }
 
 type gitRepoMetas struct {
-	FileInfos []fileInfo `json:"fileInfos"`
+	FileInfos         []fileInfo `json:"fileInfos"`
+	PullRequestPolicy bool       `json:"pullRequestPolicy"`
 }
 
 // envConfig fetches all environment configs from source control for a repo
@@ -340,31 +391,14 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(configsPerEnvJson))
 }
 
-type envConfig struct {
-	Values          map[string]interface{}
-	Namespace       string
-	Chart           Chart
-	AppName         string
-	UseDeployPolicy bool
-	DeployBranch    string
-	DeployTag       string
-	DeployEvent     *dx.GitEvent
-}
-
 type DeploymentTemplate struct {
-	Reference dx.Chart    `json:"reference"`
-	Schema    interface{} `json:"schema"`
-	UISchema  interface{} `json:"uiSchema"`
-}
-
-type Chart struct {
-	Repository string
-	Name       string
-	Version    string
+	Reference config.DefaultChart `json:"reference"`
+	Schema    interface{}         `json:"schema"`
+	UISchema  interface{}         `json:"uiSchema"`
 }
 
 func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
-	envConfigData := &envConfig{}
+	var envConfigData dx.Manifest
 	err := json.NewDecoder(r.Body).Decode(&envConfigData)
 	if err != nil {
 		logrus.Errorf("cannot decode env config data: %s", err)
@@ -375,7 +409,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
 	repoPath := fmt.Sprintf("%s/%s", owner, repoName)
-	env := chi.URLParam(r, "env")
+	env := envConfigData.Env
 
 	ctx := r.Context()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
@@ -407,7 +441,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envConfigFileName := envConfigPath(env, envConfigData.AppName, existingEnvConfigs)
+	envConfigFileName := envConfigPath(env, envConfigData.App, existingEnvConfigs)
 	envConfigFilePath := fmt.Sprintf(".gimlet/%s", envConfigFileName)
 
 	createCase := false // indicates if we need to create the file, we update existing manifests on the default path
@@ -423,69 +457,51 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var manifest *dx.Manifest
-	if createCase {
-		manifest = &dx.Manifest{
-			App: envConfigData.AppName,
-			Env: env,
-			Chart: dx.Chart{
-				Name:       envConfigData.Chart.Name,
-				Repository: envConfigData.Chart.Repository,
-				Version:    envConfigData.Chart.Version,
-			},
-			Namespace: envConfigData.Namespace,
-			Values:    envConfigData.Values,
-		}
-	} else { // we are updating an existing manifest file
-		manifest = existingEnvConfigs[envConfigFileName]
-		manifest.Values = envConfigData.Values
-		manifest.Namespace = envConfigData.Namespace
-	}
-
-	if !createCase && manifest.App != envConfigData.AppName { // we do not allow updating application names
+	if !createCase && existingEnvConfigs[envConfigFileName].App != envConfigData.App { // we do not allow updating application names
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
-	}
-
-	if envConfigData.UseDeployPolicy {
-		manifest.Deploy = &dx.Deploy{
-			Branch: envConfigData.DeployBranch,
-			Event:  envConfigData.DeployEvent,
-			Tag:    envConfigData.DeployTag,
-		}
-	} else {
-		manifest.Deploy = nil
 	}
 
 	// marshall and ident the manifest
 	var toSaveBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&toSaveBuffer)
 	yamlEncoder.SetIndent(2)
-	err = yamlEncoder.Encode(&manifest)
+	err = yamlEncoder.Encode(&envConfigData)
 	if err != nil {
 		logrus.Errorf("cannot marshal manifest: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	// generate branch name to write changes on
-	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+	dao := ctx.Value("store").(*store.Store)
+	pullRequestPolicy, err := dao.RepoHasPullRequestPolicy(repoPath)
 	if err != nil {
-		logrus.Errorf("cannot generate branch name: %s", err)
+		logrus.Errorf("cannot get pull request policy for %s: %s", repoPath, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
-	if err != nil {
-		logrus.Errorf("cannot checkout branch: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	var sourceBranch string
+	if pullRequestPolicy {
+		// generate branch name to write changes on
+		sourceBranch, err = GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+		if err != nil {
+			logrus.Errorf("cannot generate branch name: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+		if err != nil {
+			logrus.Errorf("cannot checkout branch: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
-	message := fmt.Sprintf("[Gimlet] Updating %s gimlet manifest for the %s env", envConfigData.AppName, env)
+	message := fmt.Sprintf("[Gimlet] Updating %s gimlet manifest for the %s env", envConfigData.App, env)
 	if createCase {
-		message = fmt.Sprintf("[Gimlet] Creating %s gimlet manifest for the %s env", envConfigData.AppName, env)
+		message = fmt.Sprintf("[Gimlet] Creating %s gimlet manifest for the %s env", envConfigData.App, env)
 	}
 
 	_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), nativeGit.Dir_RWX_RX_R)
@@ -496,16 +512,33 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = StageCommitAndPush(repo, tmpPath, token, message)
+	hash, err := stageCommitAndPushWithHash(repo, tmpPath, token, message)
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
+	if !pullRequestPolicy {
+		response := map[string]interface{}{
+			"link": fmt.Sprintf("%s/%s/commit/%s", dynamicConfig.ScmURL(), repoPath, hash),
+		}
+
+		responseJson, err := json.Marshal(response)
+		if err != nil {
+			logrus.Errorf("cannot marshal response: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJson)
+		return
+	}
+
 	createdPR, _, err := goScm.CreatePR(token, repoPath, sourceBranch, headBranch,
-		fmt.Sprintf("[Gimlet] `%s` ➡️ `%s` deployment configuration change", envConfigData.AppName, env),
-		fmt.Sprintf("@%s is editing the `%s` deployment configuration for the `%s` environment.", user.Login, envConfigData.AppName, env))
+		fmt.Sprintf("[Gimlet] `%s` ➡️ `%s` deployment configuration change", envConfigData.App, env),
+		fmt.Sprintf("@%s is editing the `%s` deployment configuration for the `%s` environment.", user.Login, envConfigData.App, env))
 	if err != nil {
 		logrus.Errorf("cannot create pr: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -513,21 +546,12 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"createdPr": &api.PR{
-			Sha:     createdPR.Sha,
-			Link:    createdPR.Link,
-			Title:   createdPR.Title,
-			Source:  createdPR.Source,
-			Number:  createdPR.Number,
-			Author:  createdPR.Author.Login,
-			Created: int(createdPR.Created.Unix()),
-			Updated: int(createdPR.Updated.Unix()),
-		},
+		"link": createdPR.Link,
 	}
 
 	responseJson, err := json.Marshal(response)
 	if err != nil {
-		logrus.Errorf("cannot marshal manifest: %s", err)
+		logrus.Errorf("cannot marshal response: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -591,18 +615,29 @@ func deleteEnvConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sourceBranch, err := GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+	dao := ctx.Value("store").(*store.Store)
+	pullRequestPolicy, err := dao.RepoHasPullRequestPolicy(repoPath)
 	if err != nil {
-		logrus.Errorf("cannot generate branch name: %s", err)
+		logrus.Errorf("cannot get pull request policy for %s: %s", repoPath, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
-	if err != nil {
-		logrus.Errorf("cannot checkout branch: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	var sourceBranch string
+	if pullRequestPolicy {
+		sourceBranch, err = GenerateBranchNameWithUniqueHash(fmt.Sprintf("gimlet-config-change-%s", env), 4)
+		if err != nil {
+			logrus.Errorf("cannot generate branch name: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+		if err != nil {
+			logrus.Errorf("cannot checkout branch: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	err = os.Remove(filepath.Join(tmpPath, envConfigFilePath))
@@ -612,10 +647,27 @@ func deleteEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = StageCommitAndPush(repo, tmpPath, token, fmt.Sprintf("[Gimlet] Deleting %s gimlet manifest for the %s env", configName, env))
+	hash, err := stageCommitAndPushWithHash(repo, tmpPath, token, fmt.Sprintf("[Gimlet] Deleting %s gimlet manifest for the %s env", configName, env))
 	if err != nil {
 		logrus.Errorf("cannot stage commit and push: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	if !pullRequestPolicy {
+		response := map[string]interface{}{
+			"link": fmt.Sprintf("%s/%s/commit/%s", dynamicConfig.ScmURL(), repoPath, hash),
+		}
+
+		responseJson, err := json.Marshal(response)
+		if err != nil {
+			logrus.Errorf("cannot marshal response: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJson)
 		return
 	}
 
@@ -629,16 +681,7 @@ func deleteEnvConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"createdPr": &api.PR{
-			Sha:     createdPR.Sha,
-			Link:    createdPR.Link,
-			Title:   createdPR.Title,
-			Source:  createdPR.Source,
-			Number:  createdPR.Number,
-			Author:  createdPR.Author.Login,
-			Created: int(createdPR.Created.Unix()),
-			Updated: int(createdPR.Updated.Unix()),
-		},
+		"link": createdPR.Link,
 	}
 
 	responseJson, err := json.Marshal(response)
@@ -687,67 +730,22 @@ func existingEnvConfigs(repo *git.Repository, headBranch string) (map[string]*dx
 	return existingEnvConfigs, nil
 }
 
-func getOrgRepos(dao *store.Store) ([]string, error) {
-	var orgRepos []string
-	orgReposJson, err := dao.KeyValue(model.OrgRepos)
+func getImportedRepos(dao *store.Store) ([]string, error) {
+	var importedRepos []string
+	importedReposJson, err := dao.KeyValue(model.ImportedRepos)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	if orgReposJson.Value == "" {
-		orgReposJson.Value = "[]"
+	if importedReposJson.Value == "" {
+		importedReposJson.Value = "[]"
 	}
 
-	err = json.Unmarshal([]byte(orgReposJson.Value), &orgRepos)
+	err = json.Unmarshal([]byte(importedReposJson.Value), &importedRepos)
 	if err != nil {
 		return nil, err
 	}
 
-	return orgRepos, nil
-}
-
-func hasRepo(orgRepos []string, repo string) bool {
-	for _, orgRepo := range orgRepos {
-		if orgRepo == repo {
-			return true
-		}
-	}
-	return false
-}
-
-func findShipper(files map[string]string, shipperCommand string) *string {
-	for fileName, fileContent := range files {
-		if strings.Contains(fileContent, shipperCommand) {
-			lines := strings.Split(fileContent, "\n")
-			for i, line := range lines {
-				if strings.Contains(line, shipperCommand) {
-					lineNumber := i + 1
-					shipper := fmt.Sprintf("%s#L%d", fileName, lineNumber)
-					return &shipper
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func hasCiConfigAndShipper(repo *git.Repository, ciConfigPath string, shipperCommand string) (bool, *string, error) {
-	branch, err := helper.HeadBranch(repo)
-	if err != nil {
-		return false, nil, err
-	}
-
-	ciConfigFiles, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ciConfigPath)
-	if err != nil {
-		if !strings.Contains(err.Error(), "directory not found") {
-			return false, nil, err
-		}
-	}
-
-	if len(ciConfigFiles) == 0 {
-		return false, nil, nil
-	}
-
-	return true, findShipper(ciConfigFiles, shipperCommand), nil
+	return importedRepos, nil
 }
 
 func GenerateBranchNameWithUniqueHash(defaultBranchName string, uniqieHashlength int) (string, error) {

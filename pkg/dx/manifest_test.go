@@ -168,7 +168,6 @@ dependencies:
       size: 1GB
 env: ""
 namespace: ""
-tenant: {}
 `, string(marshalledBytes))
 	}
 }
@@ -205,4 +204,92 @@ dependencies:
 			// fmt.Println(string(renderredDep))
 		}
 	}
+}
+
+func Test_PrepPreview(t *testing.T) {
+	notPreview := &Manifest{
+		App:       "my-app",
+		Namespace: "my-namespace",
+		Values: map[string]interface{}{
+			"image": "debian",
+		},
+	}
+
+	notPreview.PrepPreview("")
+	assert.Equal(t, "my-app", notPreview.App)
+
+	boolTrue := true
+	preview := &Manifest{
+		App:       "my-app-preview",
+		Namespace: "my-namespace",
+		Preview:   &boolTrue,
+		Values: map[string]interface{}{
+			"image": "debian",
+		},
+	}
+
+	preview.PrepPreview("")
+	assert.Equal(t, "my-app-{{ .BRANCH | sanitizeDNSName }}", preview.App)
+
+	previewWithIngress := &Manifest{
+		App:       "my-app-preview",
+		Namespace: "my-namespace",
+		Preview:   &boolTrue,
+		Values: map[string]interface{}{
+			"image": "debian",
+			"ingress": map[string]interface{}{
+				"host": "my-app-preview.gimlet.app",
+			},
+		},
+	}
+
+	previewWithIngress.PrepPreview("")
+	ingressValues := previewWithIngress.Values["ingress"].(map[string]interface{})
+	assert.Equal(t, "my-app-{{ .BRANCH | sanitizeDNSName }}.gimlet.app", ingressValues["host"])
+	assert.Equal(t, "{{ .BRANCH }}", previewWithIngress.Values["gitBranch"])
+
+	assert.NotNil(t, preview.Deploy)
+	push := Push
+	assert.Equal(t, &push, preview.Deploy.Event)
+	assert.Equal(t, "!{main,master}", preview.Deploy.Branch)
+
+	assert.NotNil(t, preview.Cleanup)
+	assert.Equal(t, "my-app-{{ .BRANCH | sanitizeDNSName }}", preview.Cleanup.AppToCleanup)
+}
+
+func Test_PrepPreview_Ingress(t *testing.T) {
+	boolTrue := true
+
+	previewWithIngress := &Manifest{
+		App:       "my-app-preview",
+		Namespace: "my-namespace",
+		Preview:   &boolTrue,
+		Values: map[string]interface{}{
+			"image": "debian",
+			"ingress": map[string]interface{}{
+				"host": "my-app-preview.gimlet.app",
+			},
+		},
+	}
+
+	previewWithIngress.PrepPreview("")
+	ingressValues := previewWithIngress.Values["ingress"].(map[string]interface{})
+	assert.Equal(t, "my-app-{{ .BRANCH | sanitizeDNSName }}.gimlet.app", ingressValues["host"])
+
+	previewWithIngress = &Manifest{
+		App:       "my-app-preview",
+		Namespace: "my-namespace",
+		Preview:   &boolTrue,
+		Values: map[string]interface{}{
+			"image": "debian",
+			"ingress": map[string]interface{}{
+				"host": "my-app-preview-blabla.gimlet.app",
+			},
+		},
+	}
+
+	previewWithIngress.PrepPreview("-blabla.gimlet.app")
+	ingressValues = previewWithIngress.Values["ingress"].(map[string]interface{})
+	assert.Equal(t, "my-app-{{ .BRANCH | sanitizeDNSName }}-blabla.gimlet.app", ingressValues["host"])
+
 }

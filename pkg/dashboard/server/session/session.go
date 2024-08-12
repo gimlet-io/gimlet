@@ -22,6 +22,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/server/token"
+	"github.com/sirupsen/logrus"
 )
 
 func SetUser() func(next http.Handler) http.Handler {
@@ -53,10 +54,13 @@ func SetUser() func(next http.Handler) http.Handler {
 					// if csrf token validation fails, exit immediately
 					// with a not authorized error.
 					if err != nil {
+						logrus.Warnf("csrf token error: %s", err)
 						http.Error(w, http.StatusText(401), 401)
 						return
 					}
 				}
+			} else {
+				logrus.Warnf("could not set user: %s", err)
 			}
 			next.ServeHTTP(w, r)
 		}
@@ -76,6 +80,7 @@ func SetCSRF() func(next http.Handler) http.Handler {
 					csrf, _ = token.New(
 						token.CsrfToken,
 						user.Login,
+						"",
 					).Sign(user.Secret)
 				}
 				w.Header().Set("X-CSRF-TOKEN", csrf)

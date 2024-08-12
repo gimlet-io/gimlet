@@ -97,7 +97,7 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 	repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{""}})
 
 	repoPerEnv := false
-	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
 	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
@@ -107,7 +107,7 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 	assert.True(t, len(content) > 1)
 
 	repoPerEnv = true
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
 	content, _ = nativeGit.Content(repo, "my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
@@ -163,10 +163,10 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 	json.Unmarshal([]byte(withVolume), &a)
 
 	repoPerEnv := true
-	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
+	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
 
-	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil)
+	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
 
 	content, _ := nativeGit.Content(repo, "my-app/deployment.yaml")
@@ -204,7 +204,7 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 
 	var b dx.Artifact
 	json.Unmarshal([]byte(withoutVolume), &b)
-	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false, nil, nil, nil)
+	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false, nil, nil, nil, nil)
 	assert.Nil(t, err)
 
 	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
@@ -269,6 +269,42 @@ func Test_branchTrigger(t *testing.T) {
 			Branch: "master",
 		})
 	assert.False(t, triggered, "Branch triggers need an event always to trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch: "master",
+			},
+		},
+		&dx.Deploy{
+			Branch: "!master",
+			Event:  dx.PushPtr(),
+		})
+	assert.False(t, triggered, "Negated branch triggers should not trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch: "notMain",
+			},
+		},
+		&dx.Deploy{
+			Branch: "!{main,master}",
+			Event:  dx.PushPtr(),
+		})
+	assert.True(t, triggered, "Matching negated branch trigger should trigger a deploy")
+
+	triggered = deployTrigger(
+		&dx.Artifact{
+			Version: dx.Version{
+				Branch: "master",
+			},
+		},
+		&dx.Deploy{
+			Branch: "!{main,master}",
+			Event:  dx.PushPtr(),
+		})
+	assert.False(t, triggered, "Negated branch trigger should not trigger a deploy")
 }
 
 func Test_eventTrigger(t *testing.T) {

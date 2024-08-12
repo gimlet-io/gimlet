@@ -27,8 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var agentAuth *jwtauth.JWTAuth
-
 func SetupRouter(
 	config *config.Config,
 	dynamicConfig *dynamicconfig.DynamicConfig,
@@ -102,11 +100,13 @@ func SetupRouter(
 	fileServer(r, "/", filesDir)
 	fileServer(r, "/login", filesDir)
 	fileServer(r, "/repositories", filesDir)
-	fileServer(r, "/profile", filesDir)
+	fileServer(r, "/cli", filesDir)
 	fileServer(r, "/settings", filesDir)
 	fileServer(r, "/repo", filesDir)
 	fileServer(r, "/environments", filesDir)
 	fileServer(r, "/env", filesDir)
+	fileServer(r, "/import-repositories", filesDir)
+	fileServer(r, "/github-integration", filesDir)
 
 	return r
 }
@@ -126,15 +126,12 @@ func gimletdRoutes(r *chi.Mux) {
 		r.Get("/api/eventReleaseTrack", getEventReleaseTrack)
 		r.Get("/api/eventArtifactTrack", getEventArtifactTrack)
 		r.Post("/api/flux-events", fluxEvent)
-		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/gitopsManifests/{env}", getGitopsManifests)
 	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(session.SetUser())
 		r.Use(session.MustAdmin())
-		r.Get("/api/user/{login}", getUser)
-		r.Post("/api/user", saveUserGimletD)
 		r.Post("/api/deleteUser", deleteUser)
 		r.Get("/api/users", getUsers)
 	})
@@ -159,15 +156,18 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Post("/api/reconcile", reconcile)
 		r.Get("/api/alerts", getAlerts)
 		r.Get("/api/gitRepos", gitRepos)
-		r.Get("/api/refreshRepos", refreshRepos)
+		r.Get("/api/searchRepo", searchRepo)
+		r.Get("/api/importRepo", importRepo)
 		r.Get("/api/settings", settings)
 		r.Get("/api/repo/{owner}/{name}/commits", commits)
 		r.Get("/api/repo/{owner}/{name}/commits/{sha}/events", commitEvents)
 		r.Get("/api/repo/{owner}/{name}/triggerCommitSync", triggerCommitSync)
-		r.Get("/api/gitopsCommits", getGitopsCommits)
 		r.Get("/api/repo/{owner}/{name}/branches", branches)
 		r.Get("/api/repo/{owner}/{name}/metas", getMetas)
+		r.Get("/api/repo/{owner}/{name}/env/{env}/config/{config}/configChangePullRequestsPerConfig", configChangePullRequestsPerConfig)
 		r.Get("/api/repo/{owner}/{name}/pullRequests", getPullRequests)
+		r.Get("/api/repo/{owner}/{name}/pullRequestPolicy", repoPullRequestPolicy)
+		r.Post("/api/repo/{owner}/{name}/saveRepoPullRequestPolicy", saveRepoPullRequestPolicy)
 		r.Get("/api/chartUpdatePullRequests", getChartUpdatePullRequests)
 		r.Get("/api/gitopsUpdatePullRequests", getGitopsUpdatePullRequests)
 		r.Get("/api/infraRepoPullRequests", getPullRequestsFromInfraRepos)
@@ -199,7 +199,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Timeout(60 * time.Second))
 		r.Use(session.SetUser())
-		r.Use(combinedAuthorizer)
+		r.Use(session.MustUser())
 
 		r.Post("/agent/state", state)
 		r.Post("/agent/state/{name}/update", update)
@@ -214,7 +214,7 @@ func agentRoutes(r *chi.Mux, agentWSHub *streaming.AgentWSHub) {
 	})
 	r.Group(func(r chi.Router) { // group with one hour timeout
 		r.Use(session.SetUser())
-		r.Use(combinedAuthorizer)
+		r.Use(session.MustUser())
 		r.Use(middleware.Timeout(60 * time.Minute))
 
 		r.Get("/agent/register", register)
@@ -275,8 +275,8 @@ func installerRoutes(r *chi.Mux) {
 		r.Use(middleware.Timeout(60 * time.Second))
 		r.Use(session.SetUser())
 		r.Use(session.MustUser())
-		r.Get("/settings/created", created)
-		r.Get("/settings/installed", installed)
+		r.Get("/created", created)
+		r.Get("/installed", installed)
 		r.Post("/settings/gitlabInit", gitlabInit)
 	})
 }
@@ -316,28 +316,5 @@ func mustAgent(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
-	})
-}
-
-func combinedAuthorizer(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		ctx := r.Context()
-
-		// check if a user is authenticated
-		_, userSet := ctx.Value("user").(*model.User)
-		if userSet {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		// do agent authentication and authorization
-		dynamicConfig := ctx.Value("dynamicConfig").(*dynamicconfig.DynamicConfig)
-		agentAuth = jwtauth.New("HS256", []byte(dynamicConfig.JWTSecret), nil)
-
-		verifierFunc := jwtauth.Verifier(agentAuth)
-		authenticatorFunc := jwtauth.Authenticator
-
-		verifierFunc(authenticatorFunc(mustAgent(next))).ServeHTTP(w, r)
 	})
 }

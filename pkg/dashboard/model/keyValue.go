@@ -14,14 +14,18 @@
 
 package model
 
-const OrgRepos = "orgRepos"
+const ImportedRepos = "importedRepos"
 const SpinnedOut = "spinnedOut"
+const EnsuredCustomRegistry = "ensuredCustomRegistry"
+const ActivatedTrial = "activatedTrial"
 
 // CommitArtifactsGenerated is a prefix we use for commit IDs to indicate we have generated fake artifacts for them
 const CommitArtifactsGenerated = "cag"
 
 // ReposWithCleanupPolicy an array of repo names that have a cleanup policy
 const ReposWithCleanupPolicy = "reposWithCleanupPolicy"
+
+const ReposWithPullRequestPolicy = "reposWithPullRequestPolicy"
 
 // KeyValue is a key-value pair for simple storage for things fit in the data model
 type KeyValue struct {

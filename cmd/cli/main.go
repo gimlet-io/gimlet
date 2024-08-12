@@ -5,10 +5,9 @@ import (
 	"os"
 
 	"github.com/enescakir/emoji"
+	"github.com/gimlet-io/gimlet/pkg/commands"
 	"github.com/gimlet-io/gimlet/pkg/commands/artifact"
-	"github.com/gimlet-io/gimlet/pkg/commands/chart"
 	"github.com/gimlet-io/gimlet/pkg/commands/environment"
-	"github.com/gimlet-io/gimlet/pkg/commands/gitops"
 	"github.com/gimlet-io/gimlet/pkg/commands/manifest"
 	"github.com/gimlet-io/gimlet/pkg/commands/release"
 	"github.com/gimlet-io/gimlet/pkg/commands/stack"
@@ -20,16 +19,15 @@ func main() {
 	app := &cli.App{
 		Name:                 "gimlet",
 		Version:              version.String(),
-		Usage:                "a modular Gitops workflow for Kubernetes deployments",
+		Usage:                "",
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{
-			&chart.Command,
-			&gitops.Command,
 			&manifest.Command,
 			&artifact.Command,
 			&release.Command,
 			&stack.Command,
 			&environment.Command,
+			&commands.SyncCmd,
 		},
 	}
 	err := app.Run(os.Args)

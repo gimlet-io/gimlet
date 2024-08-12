@@ -117,7 +117,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	commits, err = decorateWithDeployTargets(commits, dao)
+	commits, err = decorateWithDeployTargets(commits, dao, branch)
 	if err != nil {
 		logrus.Errorf("cannot decorate commits: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -219,7 +219,7 @@ func decorateWithEventData(repoName string, commits []*Commit, dao *store.Store)
 	return commits, nil
 }
 
-func decorateWithDeployTargets(commits []*Commit, store *store.Store) ([]*Commit, error) {
+func decorateWithDeployTargets(commits []*Commit, store *store.Store, branch string) ([]*Commit, error) {
 	hashes := []string{}
 	for _, c := range commits {
 		hashes = append(hashes, c.SHA)
@@ -257,7 +257,13 @@ func decorateWithDeployTargets(commits []*Commit, store *store.Store) ([]*Commit
 		if as, ok := artifactsBySha[c.SHA]; ok {
 			for _, artifact := range as {
 				for _, targetEnv := range artifact.Environments {
-					targetEnv.ResolveVars(artifact.CollectVariables())
+					targetEnv.PrepPreview("not-needed-in-deploy-targets")
+					vars := artifact.CollectVariables()
+					vars["APP"] = targetEnv.App
+					err = targetEnv.ResolveVars(vars)
+					if err != nil {
+						logrus.Warnf("could not resolve var for deploytargets: %s", err)
+					}
 					if c.DeployTargets == nil {
 						c.DeployTargets = []*api.DeployTarget{}
 					}
@@ -267,7 +273,6 @@ func decorateWithDeployTargets(commits []*Commit, store *store.Store) ([]*Commit
 					c.DeployTargets = append(c.DeployTargets, &api.DeployTarget{
 						App:        targetEnv.App,
 						Env:        targetEnv.Env,
-						Tenant:     targetEnv.Tenant.Name,
 						ArtifactId: artifact.ID,
 					})
 				}

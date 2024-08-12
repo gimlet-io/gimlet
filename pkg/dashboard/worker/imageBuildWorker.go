@@ -63,7 +63,17 @@ func handleImageBuildError(buildId string, store *store.Store) {
 
 	event.Status = model.StatusError
 	event.StatusDesc = "image build failed"
-	err = store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, "[]")
+
+	resultsString := []byte("[]")
+	if len(event.Results) > 0 {
+		resultsString, err = json.Marshal(event.Results)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+	}
+
+	err = store.UpdateEventStatus(event.ID, event.Status, event.StatusDesc, string(resultsString))
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -135,7 +145,7 @@ func saveLogLine(imageBuildStatus streaming.ImageBuildStatusWSMessage, dao *stor
 	if err != nil {
 		return err
 	}
-	err = dao.UpdateEventStatus(imageBuildStatus.BuildId, event.Status, event.StatusDesc, string(resultsString))
+	err = dao.UpdateImageBuildLogs(imageBuildStatus.BuildId, string(resultsString))
 	if err != nil {
 		return err
 	}

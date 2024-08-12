@@ -8,4 +8,6 @@ type Environment struct {
 	InfraRepo           string `json:"infraRepo"  meddler:"infra_repo"`
 	AppsRepo            string `json:"appsRepo"  meddler:"apps_repo"`
 	BuiltIn             bool   `json:"builtIn"  meddler:"built_in"`
+	Ephemeral           bool   `json:"ephemeral"  meddler:"ephemeral"`
+	Expiry              int64  `json:"expiry,omitempty"  meddler:"expiry"`
 }

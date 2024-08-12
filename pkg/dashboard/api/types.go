@@ -49,6 +49,7 @@ type Deployment struct {
 	Namespace     string `json:"namespace"`
 	Pods          []*Pod `json:"pods,omitempty"`
 	SHA           string `json:"sha"`
+	Branch        string `json:"branch"`
 	CommitMessage string `json:"commitMessage"`
 	Details       string `json:"details,omitempty"`
 }
@@ -148,15 +149,16 @@ func NewAlert(alert *model.Alert, text string, name string, silencedUntil int64)
 }
 
 type GitopsEnv struct {
-	Name                        string                 `json:"name"`
-	InfraRepo                   string                 `json:"infraRepo"`
-	AppsRepo                    string                 `json:"appsRepo"`
-	RepoPerEnv                  bool                   `json:"repoPerEnv"`
-	KustomizationPerApp         bool                   `json:"kustomizationPerApp"`
-	BuiltIn                     bool                   `json:"builtIn"`
-	StackConfig                 *dx.StackConfig        `json:"stackConfig"`
-	StackDefinition             map[string]interface{} `json:"stackDefinition"`
-	DeploymentAutomationEnabled bool                   `json:"deploymentAutomationEnabled"`
+	Name                string                 `json:"name"`
+	InfraRepo           string                 `json:"infraRepo"`
+	AppsRepo            string                 `json:"appsRepo"`
+	RepoPerEnv          bool                   `json:"repoPerEnv"`
+	KustomizationPerApp bool                   `json:"kustomizationPerApp"`
+	BuiltIn             bool                   `json:"builtIn"`
+	Ephemeral           bool                   `json:"ephemeral"`
+	Expiry              int64                  `json:"expiry"`
+	StackConfig         *dx.StackConfig        `json:"stackConfig"`
+	StackDefinition     map[string]interface{} `json:"stackDefinition"`
 }
 
 type GitopsBootstrapConfig struct {
@@ -207,6 +209,7 @@ type StackUpdate struct {
 	ImChannelId string `json:"imChannelId"`
 
 	// Deployment
+	Branch        string `json:"branch"`
 	SHA           string `json:"sha"`
 	CommitMessage string `json:"commitMessage"` // only used in streamed update to frontend
 
@@ -237,10 +240,10 @@ type Tag struct {
 }
 
 type PR struct {
+	Branch  string `json:"branch"`
 	Sha     string `json:"sha"`
 	Link    string `json:"link"`
 	Title   string `json:"title"`
-	Source  string `json:"source"`
 	Number  int    `json:"number"`
 	Author  string `json:"author"`
 	Created int    `json:"created"`
@@ -250,7 +253,6 @@ type PR struct {
 type DeployTarget struct {
 	App        string `json:"app"`
 	Env        string `json:"env"`
-	Tenant     string `json:"tenant"`
 	ArtifactId string `json:"artifactId"`
 }
 

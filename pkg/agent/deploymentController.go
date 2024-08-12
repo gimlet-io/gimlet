@@ -30,9 +30,12 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 				createdDeployment := obj.(*apps_v1.Deployment)
 				for _, svc := range integratedServices {
 					if SelectorsMatch(createdDeployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-						var sha string
+						var branch, sha string
 						if hash, ok := createdDeployment.GetAnnotations()[AnnotationGitSha]; ok {
 							sha = hash
+						}
+						if b, ok := createdDeployment.GetAnnotations()[AnnotationGitBranch]; ok {
+							branch = b
 						}
 
 						update := &api.StackUpdate{
@@ -42,7 +45,8 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 							Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 							Svc:     svc.Namespace + "/" + svc.Name,
 
-							SHA: sha,
+							Branch: branch,
+							SHA:    sha,
 						}
 						sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
 					}
@@ -56,9 +60,12 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 				updatedDeployment := obj.(*apps_v1.Deployment)
 				for _, svc := range integratedServices {
 					if SelectorsMatch(updatedDeployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-						var sha string
+						var branch, sha string
 						if hash, ok := updatedDeployment.GetAnnotations()[AnnotationGitSha]; ok {
 							sha = hash
+						}
+						if b, ok := updatedDeployment.GetAnnotations()[AnnotationGitBranch]; ok {
+							branch = b
 						}
 
 						update := &api.StackUpdate{
@@ -68,7 +75,8 @@ func DeploymentController(kubeEnv *KubeEnv, gimletHost string, agentKey string) 
 							Subject: objectMeta.Namespace + "/" + objectMeta.Name,
 							Svc:     svc.Namespace + "/" + svc.Name,
 
-							SHA: sha,
+							Branch: branch,
+							SHA:    sha,
 						}
 						sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
 					}

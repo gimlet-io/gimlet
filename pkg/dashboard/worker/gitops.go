@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	ssv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/fluxcd/flux2/v2/pkg/manifestgen"
+	"github.com/gimlet-io/gimlet/cmd/dashboard/dynamicconfig"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/gitops"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/imageBuild"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
@@ -20,10 +23,13 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	bootstrap "github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/gimlet-io/gimlet/pkg/gitops/sync"
 	"github.com/joho/godotenv"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -45,6 +51,7 @@ type GitopsWorker struct {
 	gitHost              string
 	gitopsQueue          chan int
 	agentHub             *streaming.AgentHub
+	dynamicConfig        *dynamicconfig.DynamicConfig
 }
 
 func NewGitopsWorker(
@@ -58,7 +65,9 @@ func NewGitopsWorker(
 	gitUser *model.User,
 	gitHost string,
 	agentHub *streaming.AgentHub,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 ) *GitopsWorker {
+
 	return &GitopsWorker{
 		store:                store,
 		notificationsManager: notificationsManager,
@@ -71,6 +80,7 @@ func NewGitopsWorker(
 		gitHost:              gitHost,
 		gitopsQueue:          make(chan int, 1000),
 		agentHub:             agentHub,
+		dynamicConfig:        dynamicConfig,
 	}
 }
 
@@ -112,6 +122,7 @@ func (w *GitopsWorker) Run() {
 				w.gitUser,
 				w.gitHost,
 				w.agentHub,
+				w.dynamicConfig,
 			)
 		}
 	}
@@ -128,10 +139,17 @@ func processEvent(
 	gitUser *model.User,
 	gitHost string,
 	agentHub *streaming.AgentHub,
+	dynamicConfig *dynamicconfig.DynamicConfig,
 ) {
 	var token string
 	if tokenManager != nil { // only needed for private helm charts
 		token, _, _ = tokenManager.Token()
+	}
+
+	envConfigs, configLoadError := envConfigs(store, repoCache)
+	if configLoadError != nil {
+		logrus.Warnf("Could not load envConfigs - preview ingresses may get a wrong url")
+		envConfigs = map[string]*dx.StackConfig{}
 	}
 
 	// process event based on type
@@ -148,6 +166,7 @@ func processEvent(
 			gitUser,
 			gitHost,
 			agentHub,
+			envConfigs,
 		)
 	case model.ReleaseRequestedEvent:
 		results, err = processReleaseEvent(
@@ -158,6 +177,7 @@ func processEvent(
 			perf,
 			gitUser,
 			gitHost,
+			envConfigs,
 		)
 	case model.RollbackRequestedEvent:
 		results, err = processRollbackEvent(
@@ -174,6 +194,7 @@ func processEvent(
 			event,
 			token,
 			store,
+			envConfigs,
 		)
 	case model.ImageBuildRequestedEvent:
 		requestedAt := time.Unix(event.Created, 0)
@@ -217,6 +238,17 @@ func processEvent(
 		saveAndBroadcastGitopsCommit(result.GitopsRef, env, event, store, clientHub)
 	}
 
+	// comment on github PRs
+	if event.Type == model.ArtifactCreatedEvent ||
+		event.Type == model.ReleaseRequestedEvent {
+		for _, result := range results {
+			if result.Manifest.Preview == nil || !*result.Manifest.Preview {
+				break
+			}
+			commentOnPR(result, dynamicConfig, token)
+		}
+	}
+
 	// send out notifications
 	if event.Type == model.RollbackRequestedEvent {
 		if event.Results != nil {
@@ -240,11 +272,38 @@ func processEvent(
 	}
 }
 
+func commentOnPR(result model.Result, dynamicConfig *dynamicconfig.DynamicConfig, token string) {
+	vars := result.Artifact.CollectVariables()
+	gitRepo := vars["REPO"]
+	branch := vars["BRANCH"]
+	gitSha := vars["SHA"]
+
+	if result.Status == model.Failure {
+		err := comment(dynamicConfig, token, gitRepo, branch, fmt.Sprintf(customScm.BodyFailed, result.Manifest.App, gitSha))
+		if err != nil {
+			logrus.Warnf("could not update comment %v", err)
+		}
+	} else {
+		var hostString string
+		if ingress, ok := result.Manifest.Values["ingress"]; ok {
+			ingressMap := ingress.(map[string]interface{})
+			if host, ok := ingressMap["host"]; ok {
+				hostString = host.(string)
+			}
+		}
+		err := comment(dynamicConfig, token, gitRepo, branch, fmt.Sprintf(customScm.BodyReady, result.Manifest.App, gitSha, hostString, hostString))
+		if err != nil {
+			logrus.Warnf("could not update comment %v", err)
+		}
+	}
+}
+
 func processBranchDeletedEvent(
 	gitopsRepoCache *nativeGit.RepoCache,
 	event *model.Event,
 	nonImpersonatedToken string,
 	store *store.Store,
+	envConfigs map[string]*dx.StackConfig,
 ) ([]model.Result, error) {
 	var branchDeletedEvent dx.BranchDeletedEvent
 	err := json.Unmarshal([]byte(event.Blob), &branchDeletedEvent)
@@ -253,23 +312,24 @@ func processBranchDeletedEvent(
 	}
 
 	results := []model.Result{}
-	for _, env := range branchDeletedEvent.Manifests {
-		if env.Cleanup == nil {
+	for _, manifest := range branchDeletedEvent.Manifests {
+		manifest.PrepPreview(ingressHost(envConfigs[manifest.Env]))
+		if manifest.Cleanup == nil {
 			continue
 		}
 
-		envFromStore, err := store.GetEnvironment(env.Env)
+		envFromStore, err := store.GetEnvironment(manifest.Env)
 		if err != nil {
 			return nil, err
 		}
 
 		result := model.Result{
-			Manifest:    env,
+			Manifest:    manifest,
 			TriggeredBy: "policy",
 			GitopsRepo:  envFromStore.AppsRepo,
 		}
 
-		err = env.Cleanup.ResolveVars(map[string]string{
+		err = manifest.Cleanup.ResolveVars(map[string]string{
 			"BRANCH": branchDeletedEvent.Branch,
 		})
 		if err != nil {
@@ -279,14 +339,14 @@ func processBranchDeletedEvent(
 			continue
 		}
 
-		if !cleanupTrigger(branchDeletedEvent.Branch, env.Cleanup) {
+		if !cleanupTrigger(branchDeletedEvent.Branch, manifest.Cleanup) {
 			continue
 		}
 
 		sha, err := cloneTemplateDeleteAndPush(
 			gitopsRepoCache,
-			env.Cleanup,
-			env.Env,
+			manifest.Cleanup,
+			manifest.Env,
 			"policy",
 			nonImpersonatedToken,
 			store,
@@ -315,6 +375,7 @@ func processReleaseEvent(
 	perf *prometheus.HistogramVec,
 	gitUser *model.User,
 	gitHost string,
+	envConfigs map[string]*dx.StackConfig,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	var releaseRequest dx.ReleaseRequest
@@ -350,11 +411,6 @@ func processReleaseEvent(
 
 	for _, manifest := range artifact.Environments {
 		if manifest.Env != releaseRequest.Env {
-			continue
-		}
-
-		if releaseRequest.Tenant != "" &&
-			manifest.Tenant.Name != releaseRequest.Tenant {
 			continue
 		}
 
@@ -399,6 +455,7 @@ func processReleaseEvent(
 			vars[k] = v
 		}
 
+		manifest.PrepPreview(ingressHost(envConfigs[manifest.Env]))
 		err = manifest.ResolveVars(vars)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -433,6 +490,7 @@ func processReleaseEvent(
 			envVars,
 			gitUser,
 			gitHost,
+			envConfigs[manifest.Env],
 		)
 		if err != nil {
 			deployResult.Status = model.Failure
@@ -503,7 +561,7 @@ func processRollbackEvent(
 	head, _ := repo.Head()
 	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
 	if envFromStore.BuiltIn {
-		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, gitHost, envFromStore.AppsRepo)
+		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Token, gitHost, envFromStore.AppsRepo)
 	}
 	err = nativeGit.NativePushWithToken(
 		url,
@@ -563,6 +621,7 @@ func processArtifactEvent(
 	gitUser *model.User,
 	gitHost string,
 	agentHub *streaming.AgentHub,
+	envConfigs map[string]*dx.StackConfig,
 ) ([]model.Result, error) {
 	var deployResults []model.Result
 	artifact, err := model.ToArtifact(event)
@@ -591,13 +650,9 @@ func processArtifactEvent(
 	}
 
 	for _, manifest := range artifact.Environments {
+		manifest.PrepPreview(ingressHost(envConfigs[manifest.Env]))
 		if !deployTrigger(artifact, manifest.Deploy) {
 			continue
-		}
-
-		envFromStore, err := dao.GetEnvironment(manifest.Env)
-		if err != nil {
-			return deployResults, err
 		}
 
 		deployResult := model.Result{
@@ -605,6 +660,14 @@ func processArtifactEvent(
 			Artifact:    artifact,
 			TriggeredBy: "policy",
 			Status:      model.Success,
+		}
+
+		envFromStore, err := dao.GetEnvironment(manifest.Env)
+		if err != nil {
+			deployResult.Status = model.Failure
+			deployResult.StatusDesc = fmt.Sprintf("could not load environment: %s", manifest.Env)
+			deployResults = append(deployResults, deployResult)
+			continue
 		}
 
 		appsRepo, repoTmpPath, err := gitRepoCache.InstanceForWrite(envFromStore.AppsRepo)
@@ -637,7 +700,7 @@ func processArtifactEvent(
 
 		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" || strategy == "dockerfile" { // image build
-			imageRepository, imageTag, dockerfile := gitops.ExtractImageRepoTagAndDockerfile(manifest, vars)
+			imageRepository, imageTag, dockerfile, registry := gitops.ExtractImageRepoTagDockerfileAndRegistry(manifest, vars)
 			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
 			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
 			imageBuildRequest := &dx.ImageBuildRequest{
@@ -649,6 +712,8 @@ func processArtifactEvent(
 				Image:       imageRepository,
 				Tag:         imageTag,
 				Dockerfile:  dockerfile,
+				Strategy:    strategy,
+				Registry:    registry,
 			}
 			imageBuildEvent, err := imageBuild.TriggerImagebuild(gitRepoCache, agentHub, dao, artifact, imageBuildRequest)
 			if err != nil {
@@ -685,6 +750,7 @@ func processArtifactEvent(
 				envVars,
 				gitUser,
 				gitHost,
+				envConfigs[manifest.Env],
 			)
 			if err != nil {
 				deployResult.Status = model.Failure
@@ -697,6 +763,54 @@ func processArtifactEvent(
 	}
 
 	return deployResults, nil
+}
+
+func comment(
+	dynamicConfig *dynamicconfig.DynamicConfig,
+	token string,
+	gitRepo, branch string,
+	commentBody string,
+) error {
+	gitSvc := customScm.NewGitService(dynamicConfig)
+
+	goScm := genericScm.NewGoScmHelper(dynamicConfig, nil)
+	openpullrequests, err := goScm.ListOpenPRs(token, gitRepo)
+	if err != nil {
+		return fmt.Errorf("cannot list open pullrequests: %s", err)
+	}
+
+	var pullNumber int
+	for _, pr := range openpullrequests {
+		if pr.Source == branch {
+			pullNumber = pr.Number
+		}
+	}
+	if pullNumber == 0 {
+		return nil
+	}
+
+	comments, err := gitSvc.Comments(token, gitRepo, pullNumber)
+	if err != nil {
+		return fmt.Errorf("cannot list comments: %s", err)
+	}
+
+	for _, c := range comments {
+		if strings.Contains(*c.Body, "Deploy Preview for") {
+			return gitSvc.UpdateComment(
+				token,
+				gitRepo,
+				*c.ID,
+				commentBody,
+			)
+		}
+	}
+
+	return gitSvc.CreateComment(
+		token,
+		gitRepo,
+		pullNumber,
+		commentBody,
+	)
 }
 
 func loadVars(repo *git.Repository, varsPath string) (map[string]string, error) {
@@ -743,25 +857,35 @@ func cloneTemplateWriteAndPush(
 	envVars map[string]string,
 	gitUser *model.User,
 	gitHost string,
+	stackConfig *dx.StackConfig,
 ) (string, error) {
 	t0 := time.Now()
 
-	envFromStore, err := store.GetEnvironment(manifest.Env)
+	environment, err := store.GetEnvironment(manifest.Env)
 	if err != nil {
 		return "", err
 	}
 
 	var kustomizationManifest *manifestgen.Manifest
-	if envFromStore.KustomizationPerApp {
+	if environment.KustomizationPerApp {
 		kustomizationManifest, err = kustomizationTemplate(
 			manifest,
-			envFromStore.AppsRepo,
+			environment.AppsRepo,
 			repoTmpPath,
-			envFromStore.RepoPerEnv,
+			environment.RepoPerEnv,
 		)
 		if err != nil {
 			return "", err
 		}
+	}
+
+	imagepullSecretManifest, err := imagepullSecretTemplate(
+		manifest,
+		stackConfig,
+		environment.RepoPerEnv,
+	)
+	if err != nil {
+		return "", err
 	}
 
 	owner, repository := server.ParseRepo(releaseMeta.Version.RepositoryName)
@@ -771,7 +895,7 @@ func cloneTemplateWriteAndPush(
 		return "", err
 	}
 
-	perEnvConfigMapManifest, err := sync.GenerateConfigMap(strings.ToLower(envFromStore.Name), manifest.Namespace, envVars)
+	perEnvConfigMapManifest, err := sync.GenerateConfigMap(strings.ToLower(environment.Name), manifest.Namespace, envVars)
 	if err != nil {
 		return "", err
 	}
@@ -781,8 +905,9 @@ func cloneTemplateWriteAndPush(
 		manifest,
 		releaseMeta,
 		nonImpersonatedToken,
-		envFromStore.RepoPerEnv,
+		environment.RepoPerEnv,
 		kustomizationManifest,
+		imagepullSecretManifest,
 		perRepoConfigMapManifest,
 		perEnvConfigMapManifest,
 	)
@@ -793,9 +918,9 @@ func cloneTemplateWriteAndPush(
 	if sha != "" { // if there is a change to push
 		operation := func() error {
 			head, _ := repo.Head()
-			url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo)
-			if envFromStore.BuiltIn {
-				url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Secret, gitHost, envFromStore.AppsRepo)
+			url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, environment.AppsRepo)
+			if environment.BuiltIn {
+				url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Token, gitHost, environment.AppsRepo)
 			}
 
 			return nativeGit.NativePushWithToken(
@@ -810,11 +935,38 @@ func cloneTemplateWriteAndPush(
 		if err != nil {
 			return "", err
 		}
-		gitopsRepoCache.Invalidate(envFromStore.AppsRepo)
+		gitopsRepoCache.Invalidate(environment.AppsRepo)
 	}
 
 	perf.WithLabelValues("gitops_cloneTemplateWriteAndPush").Observe(float64(time.Since(t0).Seconds()))
 	return sha, nil
+}
+
+func injectGimletCTA(manifest *dx.Manifest) {
+	if _, ok := manifest.Values["ingress"]; !ok {
+		return
+	}
+
+	ingress := manifest.Values["ingress"].(map[string]interface{})
+	if _, ok := ingress["annotations"]; !ok {
+		ingress["annotations"] = map[string]interface{}{}
+	}
+	annotations := ingress["annotations"].(map[string]interface{})
+	annotations["nginx.ingress.kubernetes.io/configuration-snippet"] = `sub_filter '</body>' '
+		<div class="bg-transparent bottom-0 md:px-0 fixed z-[2147483647] left-0 md:left-[calc(50%-390px)]">
+			<iframe class="h-48 min-h-[initial] max-h-[initial] translate-[initial] bg-transparent border-0 block w-screen md:w-[780px]"
+				id="github-iframe"
+				title="Gimlet Drawer"
+				src=""
+			>
+			</iframe>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script>
+			fetch("https://api.github.com/repos/dzsak/deploying-a-static-site-with-netlify-sample/contents/gimlet-preview.html?ref=v0.0.1-rc.19").then(function(t){return t.json()})
+				.then(function(t){(iframe=document.getElementById("github-iframe")).src="data:text/html;base64,"+encodeURIComponent(t.content)});
+		</script>
+	</body>';
+	proxy_set_header Accept-Encoding "";`
 }
 
 func cloneTemplateDeleteAndPush(
@@ -946,6 +1098,7 @@ func gitopsTemplateAndWrite(
 	tokenForChartClone string,
 	repoPerEnv bool,
 	kustomizationManifest *manifestgen.Manifest,
+	imagepullsecretManifest *manifestgen.Manifest,
 	perRepoConfigMapManifest *manifestgen.Manifest,
 	perEnvConfigMapManifest *manifestgen.Manifest,
 ) (string, error) {
@@ -986,6 +1139,10 @@ func gitopsTemplateAndWrite(
 
 	if kustomizationManifest != nil {
 		files[kustomizationManifest.Path] = kustomizationManifest.Content
+	}
+
+	if imagepullsecretManifest != nil {
+		files[imagepullsecretManifest.Path] = imagepullsecretManifest.Content
 	}
 
 	if perRepoConfigMapManifest != nil {
@@ -1210,6 +1367,48 @@ func kustomizationTemplate(
 		repoPerEnv)
 }
 
+func imagepullSecretTemplate(
+	manifest *dx.Manifest,
+	stackConfig *dx.StackConfig,
+	repoPerEnv bool,
+) (*manifestgen.Manifest, error) {
+	var registryString string
+	if image, ok := manifest.Values["image"]; ok {
+		imageMap := image.(map[string]interface{})
+		if registry, ok := imageMap["registry"]; ok {
+			registryString = registry.(string)
+		}
+	}
+	if registryString == "" {
+		return nil, nil
+	}
+	registry, ok := stackConfig.Config[registryString]
+	if !ok {
+		return nil, nil
+	}
+	registryMap := registry.(map[string]interface{})
+
+	credentials, ok := registryMap["credentials"]
+	if !ok {
+		return nil, nil
+	}
+	credentialsMap := credentials.(map[string]interface{})
+
+	var encryptedConfigString string
+	if encryptedConfig, ok := credentialsMap["encryptedDockerconfigjson"]; ok {
+		encryptedConfigString = encryptedConfig.(string)
+	}
+
+	return generateImagePullSecret(
+		manifest.Env,
+		manifest.App,
+		manifest.Namespace,
+		strings.ToLower(registryString),
+		encryptedConfigString,
+		repoPerEnv,
+	)
+}
+
 func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env string, namespace string, appName string) string {
 	if len(owner) > 10 {
 		owner = owner[:10]
@@ -1232,4 +1431,99 @@ func uniqueKustomizationName(singleEnv bool, owner string, repoName string, env 
 		)
 	}
 	return uniqueName
+}
+
+func generateImagePullSecret(
+	env, app, namespace, registry string,
+	encryptedDockerconfigjson string,
+	singleEnv bool,
+) (*manifestgen.Manifest, error) {
+	secretPath := filepath.Join(env, app)
+	if singleEnv {
+		secretPath = app
+	}
+
+	secretName := fmt.Sprintf("%s-%s-pullsecret", app, registry)
+	secret := ssv1alpha1.SealedSecret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SealedSecret",
+			APIVersion: "bitnami.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"sealedsecrets.bitnami.com/cluster-wide": "true",
+			},
+		},
+		Spec: ssv1alpha1.SealedSecretSpec{
+			EncryptedData: ssv1alpha1.SealedSecretEncryptedData{
+				".dockerconfigjson": encryptedDockerconfigjson,
+			},
+			Template: ssv1alpha1.SecretTemplateSpec{
+				Type: "kubernetes.io/dockerconfigjson",
+			},
+		},
+	}
+
+	secretData, err := yaml.Marshal(secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manifestgen.Manifest{
+		Path:    path.Join(secretPath, fmt.Sprintf("imagepullsecret-%s.yaml", app)),
+		Content: fmt.Sprintf("---\n%s", string(secretData)),
+	}, nil
+}
+
+func ingressHost(envConfig *dx.StackConfig) string {
+	if envConfig == nil {
+		return ""
+	}
+
+	if val, ok := envConfig.Config["existingIngress"]; ok {
+		existingIngress := val.(map[string]interface{})
+		if val, ok := existingIngress["host"]; ok {
+			return val.(string)
+		} else {
+			return ""
+		}
+	} else if val, ok := envConfig.Config["nginx"]; ok {
+		nginx := val.(map[string]interface{})
+		if val, ok := nginx["host"]; ok {
+			return val.(string)
+		} else {
+			return ""
+		}
+	} else {
+		return ""
+	}
+}
+
+func envConfigs(
+	dao *store.Store,
+	gitRepoCache *nativeGit.RepoCache,
+) (map[string]*dx.StackConfig, error) {
+	environments, err := dao.GetEnvironments()
+	if err != nil {
+		return nil, err
+	}
+
+	envConfigs := map[string]*dx.StackConfig{}
+	for _, env := range environments {
+		stackYamlPath := "stack.yaml"
+		if !env.RepoPerEnv {
+			stackYamlPath = filepath.Join(env.Name, "stack.yaml")
+		}
+
+		stackConfig, err := server.StackConfig(gitRepoCache, stackYamlPath, env.InfraRepo)
+		if err != nil {
+			return nil, err
+		}
+
+		envConfigs[env.Name] = stackConfig
+	}
+
+	return envConfigs, nil
 }

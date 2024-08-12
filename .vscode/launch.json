@@ -78,5 +78,18 @@
             "program": "cmd/agent",
             "envFile": "${workspaceFolder}/.env"
         },
+        {
+            "name": "sync",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd/cli",
+            "args": [
+                "sync",
+                "../../fixtures",
+                "laszlo-debug@infrastructure:/"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
     ]
 }

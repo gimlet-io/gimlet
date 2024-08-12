@@ -23,11 +23,11 @@ import (
 type Manifest struct {
 	App                   string                 `yaml:"app" json:"app"`
 	Env                   string                 `yaml:"env" json:"env"`
+	Preview               *bool                  `yaml:"preview,omitempty" json:"preview,omitempty"`
 	Namespace             string                 `yaml:"namespace" json:"namespace"`
 	Deploy                *Deploy                `yaml:"deploy,omitempty" json:"deploy,omitempty"`
 	Cleanup               *Cleanup               `yaml:"cleanup,omitempty" json:"cleanup,omitempty"`
 	Chart                 Chart                  `yaml:"chart" json:"chart"`
-	Tenant                Tenant                 `yaml:"tenant,omitempty" json:"tenant,omitempty"`
 	Values                map[string]interface{} `yaml:"values,omitempty" json:"values,omitempty"`
 	StrategicMergePatches string                 `yaml:"strategicMergePatches,omitempty" json:"strategicMergePatches,omitempty"`
 	Json6902Patches       []Json6902Patch        `yaml:"json6902Patches,omitempty" json:"json6902Patches,omitempty"`
@@ -114,11 +114,79 @@ type Module struct {
 	Secret string `yaml:"secret,omitempty" json:"secret,omitempty"`
 }
 
-type Tenant struct {
-	Name string `yaml:"name,omitempty" json:"name,omitempty"`
+func (m *Manifest) PrepPreview(ingressHost string) {
+	if m.Preview == nil || !*m.Preview {
+		return
+	}
+
+	m.App = strings.TrimSuffix(m.App, "-preview")
+	m.App = fmt.Sprintf("%s-{{ .BRANCH | sanitizeDNSName }}", m.App)
+
+	if m.Values == nil {
+		m.Values = map[string]interface{}{}
+	}
+
+	m.Values["gitBranch"] = "{{ .BRANCH }}"
+
+	if val, ok := m.Values["ingress"]; ok {
+		ingress := val.(map[string]interface{})
+		if v, ok := ingress["host"]; ok {
+			host := v.(string)
+
+			if ingressHost != "" {
+				ingress["host"] = m.App + ingressHost
+			} else {
+				dotIndex := strings.Index(host, ".")
+				if dotIndex >= 0 && dotIndex < len(host) {
+					host = host[dotIndex:]
+					ingress["host"] = m.App + host
+				}
+			}
+		}
+	}
+
+	m.Deploy = &Deploy{Event: PushPtr(), Branch: "!{main,master}"}
+
+	m.Cleanup = &Cleanup{
+		AppToCleanup: m.App,
+		Event:        BranchDeleted,
+		Branch:       "*",
+	}
 }
 
 func (m *Manifest) ResolveVars(vars map[string]string) error {
+	functions := make(map[string]interface{})
+	for k, v := range sprig.GenericFuncMap() {
+		functions[k] = v
+	}
+	functions["sanitizeDNSName"] = sanitizeDNSName
+
+	// resolving vars in vars first
+	varsString, err := yaml.Marshal(vars)
+	if err != nil {
+		return fmt.Errorf("cannot marshal vars %s", err.Error())
+	}
+	tpl, err := template.New("").
+		Option("missingkey=error").
+		Funcs(functions).
+		Parse(string(varsString))
+	if err != nil {
+		return err
+	}
+
+	var templated bytes.Buffer
+	err = tpl.Execute(&templated, vars)
+	if err != nil {
+		return err
+	}
+
+	var resolvedVars map[string]string
+	err = yaml.Unmarshal(templated.Bytes(), &resolvedVars)
+	if err != nil {
+		return err
+	}
+
+	// then resolving the manifest
 	cleanupBkp := m.Cleanup
 	m.Cleanup = nil // cleanup only supports the BRANCH variable, not resolving it here
 	manifestString, err := yaml.Marshal(m)
@@ -126,12 +194,7 @@ func (m *Manifest) ResolveVars(vars map[string]string) error {
 		return fmt.Errorf("cannot marshal manifest %s", err.Error())
 	}
 
-	functions := make(map[string]interface{})
-	for k, v := range sprig.GenericFuncMap() {
-		functions[k] = v
-	}
-	functions["sanitizeDNSName"] = sanitizeDNSName
-	tpl, err := template.New("").
+	tpl, err = template.New("").
 		Option("missingkey=error").
 		Funcs(functions).
 		Parse(string(manifestString))
@@ -139,8 +202,7 @@ func (m *Manifest) ResolveVars(vars map[string]string) error {
 		return err
 	}
 
-	var templated bytes.Buffer
-	err = tpl.Execute(&templated, vars)
+	err = tpl.Execute(&templated, resolvedVars)
 	if err != nil {
 		return err
 	}

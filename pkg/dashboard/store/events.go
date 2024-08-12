@@ -10,6 +10,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/google/uuid"
 	"github.com/russross/meddler"
+	"github.com/sirupsen/logrus"
 )
 
 // CreateEvent stores a new event in the database
@@ -19,6 +20,9 @@ func (db *Store) CreateEvent(event *model.Event) (*model.Event, error) {
 	event.Status = model.StatusNew
 
 	err := meddler.Insert(db, "events", event)
+	if err != nil {
+		return nil, err
+	}
 
 	go func() {
 		db.eventCreatedCallbacksLock.Lock()
@@ -28,7 +32,7 @@ func (db *Store) CreateEvent(event *model.Event) (*model.Event, error) {
 		db.eventCreatedCallbacksLock.Unlock()
 	}()
 
-	return event, err
+	return event, nil
 }
 
 // createEvent stores a new event in the database, but it is able to fake the created date.
@@ -166,7 +170,35 @@ func (db *Store) UnprocessedEvents() (events []*model.Event, err error) {
 func (db *Store) UpdateEventStatus(id string, status string, desc string, results string) error {
 	stmt := sql.Stmt(db.driver, sql.UpdateEventStatus)
 	_, err := db.Exec(stmt, status, desc, results, id)
-	return err
+	if err != nil {
+		return err
+	}
+
+	event, err := db.Event(id)
+	if err != nil {
+		logrus.Warnf("could not find event: %s: %s", id, err)
+		return nil
+	}
+	go func() {
+		db.eventUpdatedCallbacksLock.Lock()
+		for _, callback := range db.eventUpdatedCallbacks {
+			callback(event)
+		}
+		db.eventUpdatedCallbacksLock.Unlock()
+	}()
+
+	return nil
+}
+
+// UpdateEventStatus updates an event status in the database
+func (db *Store) UpdateImageBuildLogs(id string, results string) error {
+	stmt := sql.Stmt(db.driver, sql.UpdateImageBuildLogs)
+	_, err := db.Exec(stmt, results, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func addFilter(filters []string, filter string) []string {
@@ -204,7 +236,7 @@ func (db *Store) LatestEventByRepoAndSha(repo string, hashes []string) (events [
 	}
 
 	stmt := fmt.Sprintf(`
-SELECT id, type, repository, branch, event, created, blob, status, status_desc, sha, artifact_id
+SELECT id, type, repository, branch, event, created, blob, status, status_desc, sha, artifact_id, results
 FROM (
 	select sha as hash, max(created) as maxCreated
 	from events

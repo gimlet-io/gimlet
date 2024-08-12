@@ -112,6 +112,7 @@ func parseResolveAndRenderManifest(manifestString []byte, vars map[string]string
 		return "", fmt.Errorf("cannot unmarshal manifest: %s", err.Error())
 	}
 
+	m.PrepPreview("")
 	err = m.ResolveVars(vars)
 	if err != nil {
 		return "", fmt.Errorf("cannot resolve manifest vars %s", err.Error())
