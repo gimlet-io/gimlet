@@ -13,7 +13,7 @@ export default function ConnectCluster(props) {
           <p className="font-medium">Prerequisite - Install Gimlet CLI</p>
           <CopiableCodeSnippet
             copiable
-            code={`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v0.27.0/gimlet-$(uname)-$(uname -m)" -o gimlet
+            code={`curl -L "https://github.com/gimlet-io/gimlet/releases/download/cli-v1.0.0-beta.1/gimlet-$(uname)-$(uname -m)" -o gimlet
 chmod +x gimlet
 sudo mv ./gimlet /usr/local/bin/gimlet`}
           />
