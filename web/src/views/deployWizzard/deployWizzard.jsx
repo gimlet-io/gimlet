@@ -11,6 +11,7 @@ import Confetti from 'react-confetti'
 import { Loading } from '../repo/deployStatus';
 import { ACTION_TYPE_CLEAR_DEPLOY, ACTION_TYPE_POPUPWINDOWSUCCESS } from "../../redux/redux";
 import { v4 as uuidv4 } from 'uuid';
+import SealedSecretWidget from "../envConfig/sealedSecretWidget";
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
@@ -158,6 +159,12 @@ export function DeployWizzard(props) {
 
   const customFields = {
     imageWidget: ImageWidget,
+    sealedSecretWidget: (props) => <SealedSecretWidget
+      {...props}
+      gimletClient={gimletClient}
+      store={store}
+      env={env}
+    />,
     ingressWidget: IngressWidget
   }
 
@@ -336,7 +343,8 @@ export function DeployWizzard(props) {
             validationCallback={validationCallback}
           />
           </div>
-          { onechart && !staticSite &&
+          { onechart &&
+          <>
           <div className='w-full card p-6 pb-8'>
           <HelmUI
             key={`helmui-envvars`}
@@ -349,6 +357,19 @@ export function DeployWizzard(props) {
             validationCallback={validationCallback}
           />
           </div>
+          <div className='w-full card p-6 pb-8'>
+          <HelmUI
+            key={`helmui-sealedsecrets`}
+            schema={patchedTemplate.schema}
+            config={[patchedTemplate.uiSchema[3]]}
+            fields={customFields}
+            values={configFile.values}
+            setValues={setValues}
+            validate={true}
+            validationCallback={validationCallback}
+          />
+          </div>
+          </>
           }
           <div className='w-full card p-6 pb-8'>
           <HelmUI
@@ -478,10 +499,10 @@ export function DeployWizzard(props) {
         </div>
       </div>
     </div>
-    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex ${!deployed ? "opacity-25 dark:opacity-30" : ""}`}>
+    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex ${!deployed && !deploying ? "opacity-25 dark:opacity-30" : ""}`}>
       <div className="w-80 relative">
         <div className={`absolute h-8 left-0 top-0 flex w-2 -mt-10 justify-center`}>
-        <div className={`w-px ${deployed ? 'bg-neutral-400' : 'bg-neutral-200'}`} />
+        <div className={`w-px ${deployed || deploying ? 'bg-neutral-400' : 'bg-neutral-200'}`} />
         </div>
         <h2 className='text-lg font-medium flex items-center'>
           <span className={`inline-block h-2 w-2 rounded-full bg-neutral-900 dark:bg-neutral-100 mr-2`} />
@@ -491,10 +512,10 @@ export function DeployWizzard(props) {
       <div className="w-full ml-14 space-y-6">
         <button
           onClick={saveConfig}
-          disabled={!deployed || savingConfigInProgress}
-          className={`w-full ${deployed ? "primaryButton" : "primaryButtonDisabled"}`}>
+          disabled={!(deployed || deploying) || savingConfigInProgress}
+          className={`w-full ${deployed ? "primaryButton" : deploying ? "secondaryButton" : "primaryButtonDisabled"}`}>
           <p className='w-full flex text-center justify-center'>
-            {savingConfigInProgress ? <><Loading />Writing Configuration to Git</> : 'Write Configuration to Git'}
+            {savingConfigInProgress ? <><Loading />Writing Configuration to Git</> : `Write Configuration to Git ${deploying ? " (even though the app is not deployed yet)" : ""}`}
           </p>
         </button>
       </div>
@@ -548,6 +569,17 @@ export const patchUIWidgets = (chart, registries, preferredDomain) => {
         "ui:widget": "hidden"
       },
       "ui:order": ["host", "tlsEnabled", "nginxBasicAuth", "annotations"]
+    }
+  }
+
+  if (chart.uiSchema.length >= 3) {
+    chart.uiSchema[3].uiSchema = {
+      ...chart.uiSchema[3].uiSchema,
+      "#/properties/sealedSecrets": {
+        "additionalProperties": {
+          "ui:field": "sealedSecretWidget"
+        }
+      },
     }
   }
 
