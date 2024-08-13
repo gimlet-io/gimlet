@@ -10,6 +10,7 @@ import DeployHandler from '../../deployHandler';
 import Confetti from 'react-confetti'
 import { Loading } from '../repo/deployStatus';
 import { ACTION_TYPE_CLEAR_DEPLOY, ACTION_TYPE_POPUPWINDOWSUCCESS } from "../../redux/redux";
+import { v4 as uuidv4 } from 'uuid';
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
@@ -41,6 +42,7 @@ export function DeployWizzard(props) {
   const [headBranch, setHeadBranch] = useState("")
   const [latestCommit, setLatestCommit] = useState()
   const [savingConfigInProgress, setSavingConfigInProgress] = useState(false)
+  const [renderId, setRenderId] = useState()
 
   const deployHandler = new DeployHandler(owner, repo, gimletClient, store)
 
@@ -93,10 +95,6 @@ export function DeployWizzard(props) {
     .then(data => {
       setTemplates(data)
       setSelectedTemplate(data[0])
-      if (preferredDomain) {
-        setConfigFile(newConfig(repo, env, data[0].reference.chart, repoName, preferredDomain))
-      }
-      setDefaultConfigFile({})
     }, () => {/* Generic error handler deals with it */ });
 
     gimletClient.getEnvConfigs(owner, repo)
@@ -134,33 +132,10 @@ export function DeployWizzard(props) {
 
     if (!podStatuses.some(c=> c!=='Running') && deploying) {
       endRef.current && endRef.current.scrollIntoView({block: "nearest", inline: "nearest"})
-      console.log("setting deployed")
       setDeployed(true)
       setDeploying(false)
     }
   }, [latestGitopsCommitStatus, connectedAgents]);
-
-  useEffect(() => {
-    if (!configFile || !configFile.values.ingress || !ingressAnnotations) {
-      return
-    }
-
-    setConfigFile(prevState => ({
-      ...prevState,
-      values: {
-        ...prevState.values,
-        ingress: {
-          ...prevState.values.ingress,
-          annotations: {
-            ...prevState.values.ingress.annotations,
-            ...ingressAnnotations
-          }
-        }
-      },
-    }))
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configFile && configFile.values.ingress && configFile.values.ingress.tlsEnabled, ingressAnnotations])
 
   useEffect(() => {
     let defaultBranch = 'main'
@@ -187,7 +162,9 @@ export function DeployWizzard(props) {
   }
 
   const validationCallback = (errors) => {
-    console.log(errors)
+    if (errors) {
+      console.log(errors)
+    }
   }
 
   const setValues = (values, nonDefaultValues) => {
@@ -234,21 +211,6 @@ export function DeployWizzard(props) {
 
   const setDeploymentTemplate = (template) => {
     setSelectedTemplate(template)
-
-    let copiedConfigFile = Object.assign({}, configFile)
-    copiedConfigFile.values = {}
-    copiedConfigFile.chart = template.reference.chart
-    copiedConfigFile.values.gitSha="{{ .SHA }}"
-    copiedConfigFile.values.gitRepository=repoName
-    copiedConfigFile.values.ingress=configFile.values.ingress
-
-    if (template.reference.chart.name === "static-site" ||
-        (template.reference.chart.name.includes("onechart") && template.reference.chart.name.includes("static-site"))
-    ) {
-      copiedConfigFile.values.gitCloneUrl= `${settings.scmUrl}/${repoName}.git`
-    }
-
-    setConfigFile(copiedConfigFile)
   }
 
   useEffect(() => {
@@ -260,12 +222,18 @@ export function DeployWizzard(props) {
   }, [selectedTemplate, registries, preferredDomain]);
 
   useEffect(() => {
-    if(configFile || !selectedTemplate) {
+    if(!selectedTemplate || !preferredDomain || !ingressAnnotations) {
       return
     }
 
-    setConfigFile(newConfig(repo, env, selectedTemplate.reference.chart, repoName, preferredDomain))
-  }, [selectedTemplate, preferredDomain]);
+    setConfigFile(newConfig(configFile ? configFile.app : repo, configFile ? configFile.namespace : "default", env, selectedTemplate.reference.chart, repoName, preferredDomain, settings.scmUrl, ingressAnnotations, false))
+    setDefaultConfigFile({})
+    setRenderId(uuidv4())
+  }, [selectedTemplate, preferredDomain, ingressAnnotations]);
+
+  // useEffect(() => {
+  //   console.log(configFile)
+  // }, [configFile]);
 
   const saveConfig = () => {
     setSavingConfigInProgress(true)
@@ -301,7 +269,7 @@ export function DeployWizzard(props) {
   const invalidAppName = !configFile.app.match(/^[a-z]([a-z0-9-]{0,51}[a-z0-9])?$/)
 
   return (
-    <div className='text-neutral-900 dark:text-neutral-200'>
+    <div className='text-neutral-900 dark:text-neutral-200' key={renderId}>
     <div className='fixed'>
       {deployed &&
       <Confetti
@@ -361,7 +329,6 @@ export function DeployWizzard(props) {
             key={`helmui-container-image`+staticSite}
             schema={patchedTemplate.schema}
             config={[patchedTemplate.uiSchema[0]]}
-            formContext={{a: "hello"}}
             fields={customFields}
             values={configFile.values}
             setValues={setValues}
@@ -407,13 +374,6 @@ export function DeployWizzard(props) {
               setDeploying(true)
 
               let configFileToDeploy = JSON.parse(JSON.stringify(configFile))
-
-              if (configFileToDeploy.values.ingress?.host === "") {
-                delete configFileToDeploy.values.ingress
-                setConfigFile(configFileToDeploy)
-              }
-
-              console.log(configFile)
 
               gimletClient.saveArtifact({
                 version: {

@@ -4,8 +4,6 @@ export default function ImageWidget(props) {
   const [registries, setRegistries] = useState([...props.uiSchema["ui:options"]?.registries])
   const [image, setImage] = useState(props.formData)
 
-  console.log(registries)
-
   const setRepository = (repository) => {
     setImage({
       ...image,
