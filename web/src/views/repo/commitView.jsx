@@ -22,7 +22,7 @@ export function CommitView(props) {
   const [commitEvents, setCommitEvents] = useState(reduxState.commitEvents)
   const [branches, setBranches] = useState()
   const [selectedBranch, setSelectedBranch] = useState(queryParams.get("branch") ?? '')
-  const [scmUrl, setScmUrl] = useState(reduxState.settings.scmUrl)
+  const [settings, setSettigns] = useState(reduxState.settings)
   const [envConfigs, setEnvConfigs] = useState(reduxState.envConfigs[repoName])
   const [envs, setEnvs] = useState(reduxState.envs)
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
@@ -36,7 +36,7 @@ export function CommitView(props) {
     setEnvConfigs(reduxState.envConfigs[repoName])
     setEnvs(reduxState.envs)
     setConnectedAgents(reduxState.connectedAgents)
-    setScmUrl(reduxState.settings.scmUrl)
+    setSettigns(reduxState.settings)
 
     const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length;
     setRefreshQueue(prevQueueLength => {
@@ -198,12 +198,27 @@ export function CommitView(props) {
           gimletClient={gimletClient}
         />
       }
-      <div className="w-96 mb-4 lg:mb-8">
-        <Dropdown
-          items={branches}
-          value={selectedBranch}
-          changeHandler={setSelectedBranch}
-        />
+      <div className="mb-4 lg:mb-8 flex">
+        <div className='flex-grow'>
+          <div className='w-96'>
+            <Dropdown
+              items={branches}
+              value={selectedBranch}
+              changeHandler={setSelectedBranch}
+            />
+          </div>
+        </div>
+        {settings.instance === "" &&
+        <button
+            type="button"
+            className='secondaryButton'
+            onClick={() => {
+              gimletClient.triggerCommitSync(owner, repo)
+            }}
+          >
+            Refresh
+        </button>
+        }
       </div>
       <div className="card p-4">
         <Commits
@@ -219,7 +234,7 @@ export function CommitView(props) {
           store={store}
           owner={owner}
           fetchNextCommitsWidgets={fetchNextCommitsWidgets}
-          scmUrl={scmUrl}
+          scmUrl={settings.scmUrl}
         />
       </div>
     </div>
