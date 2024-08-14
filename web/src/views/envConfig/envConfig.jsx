@@ -62,16 +62,11 @@ export function EnvConfig(props) {
         setFileInfos(data.fileInfos)
       }, () => {/* Generic error handler deals with it */ });
 
-    if (action === "new" || action === "new-preview") {
+    if (action === "new-preview") {
       gimletClient.getDefaultDeploymentTemplates()
       .then(data => {
         setTemplates(data)
         setSelectedTemplate(data[0])
-        setNavigation(translateToNavigation(data[0]))
-        preview
-          ? setConfigFile(newPreviewConfig(config, env, data[0].reference.chart, repoName))
-          : setConfigFile(newConfig(config, env, data[0].reference.chart, repoName))
-        setSavedConfigFile({})
       }, () => {/* Generic error handler deals with it */ });
     } else {
       gimletClient.getDefaultDeploymentTemplates()
@@ -85,13 +80,12 @@ export function EnvConfig(props) {
           }
           setTemplates(templates)
           setSelectedTemplate(existingTemplate ? existingTemplate : appTemplate[0])
-          setNavigation(translateToNavigation(existingTemplate ? existingTemplate : appTemplate[0]))
         }, () => {
           setTemplateLoadError(true)
         });
       }, () => {/* Generic error handler deals with it */ });
       gimletClient.getEnvConfigs(owner, repo)
-        .then(envConfigs => {         
+        .then(envConfigs => {
           if (envConfigs[env]) {
             const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
             let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
@@ -111,35 +105,6 @@ export function EnvConfig(props) {
 
     setPatchedTemplate(patchUIWidgets(selectedTemplate, registries, preferredDomain))
   }, [selectedTemplate, registries, preferredDomain]);
-
-  useEffect(() => {
-    if (configFile && configFile.values.ingress) {
-      if (configFile.values.ingress.tlsEnabled) {
-        setConfigFile(prevState => ({
-          ...prevState,
-          values: {
-            ...prevState.values,
-            ingress: {
-              ...prevState.values.ingress,
-              annotations: {
-                ...prevState.values.ingress.annotations,
-                "cert-manager.io/cluster-issuer": "letsencrypt",
-                "kubernetes.io/ingress.class": "nginx",
-              }
-            }
-          },
-        }))
-      }
-
-      if (!configFile.values.ingress.tlsEnabled && configFile.values.ingress.annotations) {
-        let copiedConfigFile = Object.assign({}, configFile)
-        delete copiedConfigFile.values.ingress.annotations["cert-manager.io/cluster-issuer"]
-        delete copiedConfigFile.values.ingress.annotations["kubernetes.io/ingress.class"]
-        setConfigFile(copiedConfigFile)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configFile && configFile.values.ingress && configFile.values.ingress.tlsEnabled])
 
   useEffect(() => {
     if (configFile && configFile.values.ingress) {
@@ -359,27 +324,22 @@ export function EnvConfig(props) {
       })
   }
 
+  useEffect(() => {
+    if(!selectedTemplate || !preferredDomain || !ingressAnnotations) {
+      return
+    }
+
+    if (action === "new-preview") {
+      setConfigFile(newConfig(configFile ? configFile.app : config, configFile ? configFile.namespace : "default", env, selectedTemplate.reference.chart, repoName, preferredDomain, scmUrl, ingressAnnotations, true))
+      setSavedConfigFile({})
+    }
+
+    setNavigation(translateToNavigation(selectedTemplate))
+  }, [selectedTemplate, preferredDomain, ingressAnnotations]);
+
+
   const setDeploymentTemplate = (template) => {
     setSelectedTemplate(template)
-    setNavigation(translateToNavigation(template))
-
-    let copiedConfigFile = Object.assign({}, configFile)
-    copiedConfigFile.values = {}
-    copiedConfigFile.chart = template.reference.chart
-    copiedConfigFile.values.gitSha="{{ .SHA }}"
-    copiedConfigFile.values.gitRepository=repoName
-
-    if (preview) {
-      copiedConfigFile.values.gitBranch="{{ .BRANCH }}"
-    }
-
-    if (template.reference.chart.name === "static-site" ||
-        (template.reference.chart.name.includes("onechart") && template.reference.chart.name.includes("static-site"))
-    ) {
-      copiedConfigFile.values.gitCloneUrl= `${scmUrl}/${repoName}.git`
-    }
-
-    setConfigFile(copiedConfigFile)
   }
 
   if (!configFile || !savedConfigFile) {
@@ -716,60 +676,52 @@ export function robustName(str) {
   return replacedStr.toLowerCase()
 }
 
-export function newConfig(configName, env, chartRef, repoName, preferredDomain) {
+export function newConfig(configName, namespace, env, chartRef, repoName, preferredDomain, scmUrl, ingressAnnotations, preview) {
   let sanitizedRepoName = robustName(repoName)
   sanitizedRepoName = sanitizedRepoName.length > 55 ? sanitizedRepoName.slice(0, 55) : sanitizedRepoName
-  return {
+
+  const config = {
     app: configName,
-    namespace: "default",
+    namespace: namespace,
     env:       env,
     chart: chartRef,
     values: {
       gitRepository: repoName,
       gitSha:        "{{ .SHA }}",
-      image: {
-        repository: "127.0.0.1:32447/{{ .APP }}",
-        tag:        "{{ .SHA }}",
-        strategy:   "buildpacks",
-        registry:   "dockerRegistry",
-      },
-      resources: {
-        ignoreLimits: true,
-      },
       ingress: {
         host: `${sanitizedRepoName}${preferredDomain}`,
         tlsEnabled: true,
+        annotations: {
+          ...ingressAnnotations
+        }
       }
     },
   }
-}
 
-function newPreviewConfig(configName, env, chartRef, repoName) {
-  return {
-    app: configName,
-    namespace: "default",
-    env:       env,
-    preview: true,
-    chart: chartRef,
-    values: {
-      gitRepository: repoName,
-      gitSha:        "{{ .SHA }}",
-      gitBranch:     "{{ .BRANCH }}",
-      image: {
-        repository: "127.0.0.1:32447/{{ .APP }}",
-        tag:        "{{ .SHA }}",
-        strategy:   "buildpacks",
-        registry:   "dockerRegistry",
-      },
-      resources: {
-        ignoreLimits: true,
-      },
-      ingress: {
-        host: configName+".gimlet.app",
-        tlsEnabled: true,
-      }
-    },
+  const oneChart = chartRef.name.includes("onechart")
+  const staticSite = chartRef.name.includes("static-site")
+
+  if (oneChart && !staticSite) {
+    config.values.image = {
+      repository: "127.0.0.1:32447/{{ .APP }}",
+      tag:        "{{ .SHA }}",
+      strategy:   "buildpacks",
+      registry:   "dockerRegistry",
+    }
+    config.values.resources = {
+      ignoreLimits: true,
+    }
   }
+
+  if (staticSite) {
+    config.values.gitCloneUrl= `${scmUrl}/${repoName}.git`
+  }
+
+  if (preview) {
+    config.preview = true
+  }
+
+  return config
 }
 
 const patchUIWidgets = (chart, registries, preferredDomain) => {

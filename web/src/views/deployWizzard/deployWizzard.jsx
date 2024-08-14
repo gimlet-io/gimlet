@@ -10,6 +10,8 @@ import DeployHandler from '../../deployHandler';
 import Confetti from 'react-confetti'
 import { Loading } from '../repo/deployStatus';
 import { ACTION_TYPE_CLEAR_DEPLOY, ACTION_TYPE_POPUPWINDOWSUCCESS } from "../../redux/redux";
+import { v4 as uuidv4 } from 'uuid';
+import SealedSecretWidget from "../envConfig/sealedSecretWidget";
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
@@ -41,6 +43,7 @@ export function DeployWizzard(props) {
   const [headBranch, setHeadBranch] = useState("")
   const [latestCommit, setLatestCommit] = useState()
   const [savingConfigInProgress, setSavingConfigInProgress] = useState(false)
+  const [renderId, setRenderId] = useState()
 
   const deployHandler = new DeployHandler(owner, repo, gimletClient, store)
 
@@ -93,10 +96,6 @@ export function DeployWizzard(props) {
     .then(data => {
       setTemplates(data)
       setSelectedTemplate(data[0])
-      if (preferredDomain) {
-        setConfigFile(newConfig(repo, env, data[0].reference.chart, repoName, preferredDomain))
-      }
-      setDefaultConfigFile({})
     }, () => {/* Generic error handler deals with it */ });
 
     gimletClient.getEnvConfigs(owner, repo)
@@ -134,33 +133,10 @@ export function DeployWizzard(props) {
 
     if (!podStatuses.some(c=> c!=='Running') && deploying) {
       endRef.current && endRef.current.scrollIntoView({block: "nearest", inline: "nearest"})
-      console.log("setting deployed")
       setDeployed(true)
       setDeploying(false)
     }
   }, [latestGitopsCommitStatus, connectedAgents]);
-
-  useEffect(() => {
-    if (!configFile || !configFile.values.ingress || !ingressAnnotations) {
-      return
-    }
-
-    setConfigFile(prevState => ({
-      ...prevState,
-      values: {
-        ...prevState.values,
-        ingress: {
-          ...prevState.values.ingress,
-          annotations: {
-            ...prevState.values.ingress.annotations,
-            ...ingressAnnotations
-          }
-        }
-      },
-    }))
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configFile && configFile.values.ingress && configFile.values.ingress.tlsEnabled, ingressAnnotations])
 
   useEffect(() => {
     let defaultBranch = 'main'
@@ -183,11 +159,19 @@ export function DeployWizzard(props) {
 
   const customFields = {
     imageWidget: ImageWidget,
+    sealedSecretWidget: (props) => <SealedSecretWidget
+      {...props}
+      gimletClient={gimletClient}
+      store={store}
+      env={env}
+    />,
     ingressWidget: IngressWidget
   }
 
   const validationCallback = (errors) => {
-    console.log(errors)
+    if (errors) {
+      console.log(errors)
+    }
   }
 
   const setValues = (values, nonDefaultValues) => {
@@ -234,21 +218,6 @@ export function DeployWizzard(props) {
 
   const setDeploymentTemplate = (template) => {
     setSelectedTemplate(template)
-
-    let copiedConfigFile = Object.assign({}, configFile)
-    copiedConfigFile.values = {}
-    copiedConfigFile.chart = template.reference.chart
-    copiedConfigFile.values.gitSha="{{ .SHA }}"
-    copiedConfigFile.values.gitRepository=repoName
-    copiedConfigFile.values.ingress=configFile.values.ingress
-
-    if (template.reference.chart.name === "static-site" ||
-        (template.reference.chart.name.includes("onechart") && template.reference.chart.name.includes("static-site"))
-    ) {
-      copiedConfigFile.values.gitCloneUrl= `${settings.scmUrl}/${repoName}.git`
-    }
-
-    setConfigFile(copiedConfigFile)
   }
 
   useEffect(() => {
@@ -260,12 +229,18 @@ export function DeployWizzard(props) {
   }, [selectedTemplate, registries, preferredDomain]);
 
   useEffect(() => {
-    if(configFile || !selectedTemplate) {
+    if(!selectedTemplate || !preferredDomain || !ingressAnnotations) {
       return
     }
 
-    setConfigFile(newConfig(repo, env, selectedTemplate.reference.chart, repoName, preferredDomain))
-  }, [selectedTemplate, preferredDomain]);
+    setConfigFile(newConfig(configFile ? configFile.app : repo, configFile ? configFile.namespace : "default", env, selectedTemplate.reference.chart, repoName, preferredDomain, settings.scmUrl, ingressAnnotations, false))
+    setDefaultConfigFile({})
+    setRenderId(uuidv4())
+  }, [selectedTemplate, preferredDomain, ingressAnnotations]);
+
+  // useEffect(() => {
+  //   console.log(configFile)
+  // }, [configFile]);
 
   const saveConfig = () => {
     setSavingConfigInProgress(true)
@@ -301,7 +276,7 @@ export function DeployWizzard(props) {
   const invalidAppName = !configFile.app.match(/^[a-z]([a-z0-9-]{0,51}[a-z0-9])?$/)
 
   return (
-    <div className='text-neutral-900 dark:text-neutral-200'>
+    <div className='text-neutral-900 dark:text-neutral-200' key={renderId}>
     <div className='fixed'>
       {deployed &&
       <Confetti
@@ -361,7 +336,6 @@ export function DeployWizzard(props) {
             key={`helmui-container-image`+staticSite}
             schema={patchedTemplate.schema}
             config={[patchedTemplate.uiSchema[0]]}
-            formContext={{a: "hello"}}
             fields={customFields}
             values={configFile.values}
             setValues={setValues}
@@ -369,7 +343,8 @@ export function DeployWizzard(props) {
             validationCallback={validationCallback}
           />
           </div>
-          { onechart && !staticSite &&
+          { onechart &&
+          <>
           <div className='w-full card p-6 pb-8'>
           <HelmUI
             key={`helmui-envvars`}
@@ -382,6 +357,19 @@ export function DeployWizzard(props) {
             validationCallback={validationCallback}
           />
           </div>
+          <div className='w-full card p-6 pb-8'>
+          <HelmUI
+            key={`helmui-sealedsecrets`}
+            schema={patchedTemplate.schema}
+            config={[patchedTemplate.uiSchema[3]]}
+            fields={customFields}
+            values={configFile.values}
+            setValues={setValues}
+            validate={true}
+            validationCallback={validationCallback}
+          />
+          </div>
+          </>
           }
           <div className='w-full card p-6 pb-8'>
           <HelmUI
@@ -407,13 +395,6 @@ export function DeployWizzard(props) {
               setDeploying(true)
 
               let configFileToDeploy = JSON.parse(JSON.stringify(configFile))
-
-              if (configFileToDeploy.values.ingress?.host === "") {
-                delete configFileToDeploy.values.ingress
-                setConfigFile(configFileToDeploy)
-              }
-
-              console.log(configFile)
 
               gimletClient.saveArtifact({
                 version: {
@@ -518,10 +499,10 @@ export function DeployWizzard(props) {
         </div>
       </div>
     </div>
-    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex ${!deployed ? "opacity-25 dark:opacity-30" : ""}`}>
+    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex ${!deployed && !deploying ? "opacity-25 dark:opacity-30" : ""}`}>
       <div className="w-80 relative">
         <div className={`absolute h-8 left-0 top-0 flex w-2 -mt-10 justify-center`}>
-        <div className={`w-px ${deployed ? 'bg-neutral-400' : 'bg-neutral-200'}`} />
+        <div className={`w-px ${deployed || deploying ? 'bg-neutral-400' : 'bg-neutral-200'}`} />
         </div>
         <h2 className='text-lg font-medium flex items-center'>
           <span className={`inline-block h-2 w-2 rounded-full bg-neutral-900 dark:bg-neutral-100 mr-2`} />
@@ -531,10 +512,10 @@ export function DeployWizzard(props) {
       <div className="w-full ml-14 space-y-6">
         <button
           onClick={saveConfig}
-          disabled={!deployed || savingConfigInProgress}
-          className={`w-full ${deployed ? "primaryButton" : "primaryButtonDisabled"}`}>
+          disabled={!(deployed || deploying) || savingConfigInProgress}
+          className={`w-full ${deployed ? "primaryButton" : deploying ? "secondaryButton" : "primaryButtonDisabled"}`}>
           <p className='w-full flex text-center justify-center'>
-            {savingConfigInProgress ? <><Loading />Writing Configuration to Git</> : 'Write Configuration to Git'}
+            {savingConfigInProgress ? <><Loading />Writing Configuration to Git</> : `Write Configuration to Git ${deploying ? " (even though the app is not deployed yet)" : ""}`}
           </p>
         </button>
       </div>
@@ -588,6 +569,17 @@ export const patchUIWidgets = (chart, registries, preferredDomain) => {
         "ui:widget": "hidden"
       },
       "ui:order": ["host", "tlsEnabled", "nginxBasicAuth", "annotations"]
+    }
+  }
+
+  if (chart.uiSchema.length >= 3) {
+    chart.uiSchema[3].uiSchema = {
+      ...chart.uiSchema[3].uiSchema,
+      "#/properties/sealedSecrets": {
+        "additionalProperties": {
+          "ui:field": "sealedSecretWidget"
+        }
+      },
     }
   }
 
