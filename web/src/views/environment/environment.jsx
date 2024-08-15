@@ -191,12 +191,9 @@ export default function EnvironmentView(props) {
   let hasChange = false
   var addedLines, removedLines
   if (stackConfig) {
-    console.log(stackConfig)
-    console.log(savedStackConfig)
     const stackConfigString = JSON.stringify(stackConfig)
     if (savedStackConfig) {
       const savedStackConfigString = JSON.stringify(savedStackConfig)
-      console.log("hello")
       hasChange = stackConfigString !== savedStackConfigString
       const diffStat = Diff.diffChars(savedStackConfigString, stackConfigString);
       const addedStat = diffStat.find(stat=>stat.added)?.count
