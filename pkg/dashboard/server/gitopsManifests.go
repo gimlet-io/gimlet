@@ -31,7 +31,7 @@ func getGitopsManifests(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for _, e := range envs {
-			if e.BuiltIn {
+			if e.BuiltIn || e.Ephemeral {
 				environment = e
 				break
 			}
