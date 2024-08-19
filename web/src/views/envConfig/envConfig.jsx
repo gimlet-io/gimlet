@@ -209,6 +209,7 @@ export function EnvConfig(props) {
   }
 
   const setValues = (values, nonDefaultValues) => {
+    nonDefaultValues = handlePullSecret(nonDefaultValues)
     setConfigFile(prevState => ({
       ...prevState,
       values: nonDefaultValues,
@@ -784,6 +785,26 @@ const patchUIWidgets = (chart, registries, preferredDomain) => {
   }
 
   return chart
+}
+
+export function handlePullSecret(nonDefaultValues) {
+  switch (nonDefaultValues.image?.registry) {
+    case 'dockerRegistry':
+      delete nonDefaultValues.imagePullSecrets
+      break
+    case 'public':
+      delete nonDefaultValues.imagePullSecrets
+      break
+    default:
+      if (nonDefaultValues.image){
+        nonDefaultValues = {
+          ...nonDefaultValues,
+          imagePullSecrets: [`{{ .APP }}-${nonDefaultValues.image.registry?.toLowerCase()}-pullsecret`]
+        }
+      }
+      break
+  }
+  return nonDefaultValues
 }
 
 export default EnvConfig;

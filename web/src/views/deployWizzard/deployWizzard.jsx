@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Generaltab }  from '../envConfig/generalTab'
-import { newConfig, configuredRegistries, extractPreferredDomain, extractIngressAnnotations }  from '../envConfig/envConfig'
+import { newConfig, configuredRegistries, extractPreferredDomain, extractIngressAnnotations, handlePullSecret }  from '../envConfig/envConfig'
 import HelmUI from "helm-react-ui";
 import ImageWidget from "../envConfig/imageWidget";
 import IngressWidget from "../envConfig/ingressWidget";
@@ -179,23 +179,7 @@ export function DeployWizzard(props) {
       delete nonDefaultValues.ingress
     }
 
-    switch (nonDefaultValues.image?.registry) {
-      case 'dockerRegistry':
-        delete nonDefaultValues.imagePullSecrets
-        break
-      case 'public':
-        delete nonDefaultValues.imagePullSecrets
-        break
-      default:
-        if (nonDefaultValues.image){
-          nonDefaultValues = {
-            ...nonDefaultValues,
-            imagePullSecrets: [`{{ .APP }}-${nonDefaultValues.image.registry?.toLowerCase()}-pullsecret`]
-          }
-        }
-        break
-    }
-
+    handlePullSecret(nonDefaultValues)
     setConfigFile(prevState => ({
       ...prevState,
       values: nonDefaultValues,
