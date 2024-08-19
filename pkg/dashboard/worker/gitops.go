@@ -347,7 +347,7 @@ func processBranchDeletedEvent(
 			gitopsRepoCache,
 			manifest.Cleanup,
 			manifest.Env,
-			"policy",
+			"cleanup policy",
 			nonImpersonatedToken,
 			store,
 		)
@@ -653,6 +653,9 @@ func processArtifactEvent(
 		manifest.PrepPreview(ingressHost(envConfigs[manifest.Env]))
 		if !deployTrigger(artifact, manifest.Deploy) {
 			continue
+		}
+		if manifest.Cleanup != nil {
+			keepReposWithCleanupPolicyUpToDate(dao, artifact)
 		}
 
 		deployResult := model.Result{
@@ -1017,7 +1020,7 @@ func cloneTemplateDeleteAndPush(
 		return "", nil
 	}
 
-	gitMessage := fmt.Sprintf("[GimletD delete] %s/%s deleted by %s", env, cleanupPolicy.AppToCleanup, triggeredBy)
+	gitMessage := fmt.Sprintf("[Gimlet] %s/%s deleted by %s", env, cleanupPolicy.AppToCleanup, triggeredBy)
 	sha, err := nativeGit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
