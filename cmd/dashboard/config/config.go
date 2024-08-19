@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const DEFAULT_CHARTS = "title=Web application template,description=Deploy any web application. Multiple container image build options available.,name=https://github.com/gimlet-io/onechart.git?branch=simplified-schema&path=/charts/onechart/;title=static website template,description=If your build generates static files%2C we will host it in an Nginx container.,name=https://github.com/gimlet-io/onechart.git?branch=simplified-schema&path=/charts/static-site/"
+const DEFAULT_CHARTS = "title=Web application template,description=Deploy any web application. Multiple container image build options available.,name=onechart,repo=https://chart.onechart.dev,version=0.70.0;title=static website template,description=If your build generates static files%2C we will host it in an Nginx container.,name=static-site,repo=https://chart.onechart.dev,version=0.70.0"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
