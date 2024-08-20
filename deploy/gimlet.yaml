@@ -82,7 +82,7 @@ spec:
       - envFrom:
         - configMapRef:
             name: gimlet
-        image: ghcr.io/gimlet-io/gimlet:v1.0.0-beta.7
+        image: ghcr.io/gimlet-io/gimlet:v1.0.0-beta.8
         imagePullPolicy: IfNotPresent
         name: gimlet
         ports:
