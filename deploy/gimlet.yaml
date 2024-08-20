@@ -6,7 +6,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.69.0
+    helm.sh/chart: onechart-0.70.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -34,7 +34,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.69.0
+    helm.sh/chart: onechart-0.70.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -56,7 +56,7 @@ metadata:
   name: gimlet
   namespace: default
   labels:
-    helm.sh/chart: onechart-0.69.0
+    helm.sh/chart: onechart-0.70.0
     app.kubernetes.io/name: onechart
     app.kubernetes.io/instance: gimlet
     app.kubernetes.io/managed-by: Helm
@@ -73,7 +73,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 7b475fab208f957fdc3d88ed36f674f0d1290cb5c67baab8b20779fbfae1f476
+        checksum/config: 4f74568a72e9d29d551ce52353b942ce66b593f42825ae7567c64dfb374b9ad9
       labels:
         app.kubernetes.io/name: onechart
         app.kubernetes.io/instance: gimlet
@@ -82,7 +82,7 @@ spec:
       - envFrom:
         - configMapRef:
             name: gimlet
-        image: ghcr.io/gimlet-io/gimlet:v1.0.0-beta.6
+        image: ghcr.io/gimlet-io/gimlet:v1.0.0-beta.7
         imagePullPolicy: IfNotPresent
         name: gimlet
         ports:
