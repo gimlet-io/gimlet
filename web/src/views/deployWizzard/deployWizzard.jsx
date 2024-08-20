@@ -205,7 +205,7 @@ export function DeployWizzard(props) {
   }
 
   useEffect(() => {
-    if(!selectedTemplate) {
+    if(!selectedTemplate || !registries) {
       return
     }
 
