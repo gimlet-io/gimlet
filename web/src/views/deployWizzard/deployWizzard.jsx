@@ -179,7 +179,7 @@ export function DeployWizzard(props) {
       delete nonDefaultValues.ingress
     }
 
-    handlePullSecret(nonDefaultValues)
+    nonDefaultValues = handlePullSecret(nonDefaultValues)
     setConfigFile(prevState => ({
       ...prevState,
       values: nonDefaultValues,
@@ -377,8 +377,6 @@ export function DeployWizzard(props) {
               store.dispatch({ type: ACTION_TYPE_CLEAR_DEPLOY });
               setDeployed(false)
               setDeploying(true)
-
-              let configFileToDeploy = JSON.parse(JSON.stringify(configFile))
 
               gimletClient.saveArtifact({
                 version: {
