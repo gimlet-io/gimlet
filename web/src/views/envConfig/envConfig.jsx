@@ -99,7 +99,7 @@ export function EnvConfig(props) {
   }, []);
 
   useEffect(() => {
-    if(!selectedTemplate) {
+    if(!selectedTemplate || !registries) {
       return
     }
 
