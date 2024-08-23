@@ -14,7 +14,7 @@ import { SideBar } from '../envConfig/envConfig';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
 import {produce} from 'immer';
 import yaml from "js-yaml";
-import ReactDiffViewer from "react-diff-viewer";
+import ReactDiffViewer from "react-diff-viewer-continued";
 import { Modal } from '../../components/modal'
 import * as Diff from "diff";
 import { InformationCircleIcon } from '@heroicons/react/20/solid';

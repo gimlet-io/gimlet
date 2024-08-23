@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import HelmUI from "helm-react-ui";
-import ReactDiffViewer from "react-diff-viewer";
+import ReactDiffViewer from "react-diff-viewer-continued";
 import yaml from "js-yaml";
 import {
   ACTION_TYPE_POPUPWINDOWERROR,
