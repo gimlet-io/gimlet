@@ -23,7 +23,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.22.1
+        go-version: 1.23
 
     - id: go-cache-paths
       run: |
@@ -68,7 +68,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.22.1
+        go-version: 1.23
     - name: Set Node version
       uses: actions/setup-node@v3
       with:
@@ -104,7 +104,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.22.1
+        go-version: 1.23
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
@@ -136,7 +136,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.22.1
+        go-version: 1.23
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
@@ -168,7 +168,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.22.1
+        go-version: 1.23
     - name: ⬇️ Check out code into the Go module directory
       uses: actions/checkout@v1
       with:
@@ -184,7 +184,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.22.1
+        go-version: 1.23
     - name: ⬇️ Check out code into the Go module directory
       uses: actions/checkout@v1
       with:
