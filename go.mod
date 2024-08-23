@@ -28,10 +28,10 @@ require (
 	github.com/bitnami-labs/sealed-secrets v0.27.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/btubbs/datetime v0.1.1
-	github.com/bwmarrin/discordgo v0.27.1
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/bwmarrin/discordgo v0.28.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/enescakir/emoji v1.0.0
-	github.com/epiclabs-io/diff3 v0.0.0-20181217103619-05282cece609
+	github.com/epiclabs-io/diff3 v0.0.0-20240325112732-ba77e92bf0e4
 	github.com/fatih/color v1.17.0
 	github.com/fluxcd/flux2/v2 v2.2.3
 	github.com/fluxcd/kustomize-controller/api v1.2.2
@@ -53,7 +53,7 @@ require (
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/securecookie v1.1.2
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
