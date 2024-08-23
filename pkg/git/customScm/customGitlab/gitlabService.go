@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
-	"github.com/gimlet-io/go-scm/scm"
 	"github.com/google/go-github/v37/github"
-	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -27,78 +23,81 @@ func (c *GitlabClient) FetchCommits(
 	token string,
 	hashesToFetch []string,
 ) ([]*model.Commit, error) {
-	git, err := gitlab.NewClient(token, gitlab.WithBaseURL(c.BaseURL))
-	if err != nil {
-		return nil, err
-	}
+	// git, err := gitlab.NewClient(token, gitlab.WithBaseURL(c.BaseURL))
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	commits := make(chan *model.Commit, 5)
-	waitCh := make(chan struct{})
-	go func() {
-		var wg sync.WaitGroup
-		for _, hash := range hashesToFetch {
-			wg.Add(1)
+	// commits := make(chan *model.Commit, 5)
+	// waitCh := make(chan struct{})
+	// go func() {
+	// 	var wg sync.WaitGroup
+	// 	for _, hash := range hashesToFetch {
+	// 		wg.Add(1)
 
-			go func(sha string, commits chan *model.Commit) {
-				defer wg.Done()
+	// 		go func(sha string, commits chan *model.Commit) {
+	// 			defer wg.Done()
 
-				commit, _, err := git.Commits.GetCommit(scm.Join(owner, repo), sha)
-				if err != nil {
-					logrus.Warnf("couldn't fetch commit info (%s): %s", sha, err)
-					return
-				}
+	// 			git.
 
-				statuses, _, err := git.Commits.GetCommitStatuses(
-					scm.Join(owner, repo),
-					sha,
-					&gitlab.GetCommitStatusesOptions{},
-				)
-				if err != nil {
-					logrus.Warnf("couldn't fetch commit status (%s): %s", sha, err)
-				}
+	// 			// commit, _, err := git.Commits.GetCommit(scm.Join(owner, repo), sha)
+	// 			// if err != nil {
+	// 			// 	logrus.Warnf("couldn't fetch commit info (%s): %s", sha, err)
+	// 			// 	return
+	// 			// }
 
-				contexts := []model.CommitStatus{}
-				for _, s := range statuses {
-					state := fromGitlabStatus(s.Status)
-					contexts = append(contexts, model.CommitStatus{
-						State:       state,
-						Context:     s.Name,
-						CreatedAt:   s.CreatedAt.Format(time.RFC3339),
-						TargetUrl:   s.TargetURL,
-						Description: s.Description,
-					})
-				}
+	// 			statuses, _, err := git.Commits.GetCommitStatuses(
+	// 				scm.Join(owner, repo),
+	// 				sha,
+	// 				&gitlab.GetCommitStatusesOptions{},
+	// 			)
+	// 			if err != nil {
+	// 				logrus.Warnf("couldn't fetch commit status (%s): %s", sha, err)
+	// 			}
 
-				var commitStatus string
-				if commit.Status != nil {
-					commitStatus = string(*commit.Status)
-				}
+	// 			contexts := []model.CommitStatus{}
+	// 			for _, s := range statuses {
+	// 				state := fromGitlabStatus(s.Status)
+	// 				contexts = append(contexts, model.CommitStatus{
+	// 					State:       state,
+	// 					Context:     s.Name,
+	// 					CreatedAt:   s.CreatedAt.Format(time.RFC3339),
+	// 					TargetUrl:   s.TargetURL,
+	// 					Description: s.Description,
+	// 				})
+	// 			}
 
-				commits <- &model.Commit{
-					SHA:     sha,
-					Message: commit.Message,
-					URL:     commit.WebURL,
-					Status: model.CombinedStatus{
-						State:    commitStatus,
-						Contexts: contexts,
-					},
-				}
-			}(hash, commits)
-		}
+	// 			var commitStatus string
+	// 			if commit.Status != nil {
+	// 				commitStatus = string(*commit.Status)
+	// 			}
 
-		wg.Wait()
-		close(waitCh)
-	}()
+	// 			commits <- &model.Commit{
+	// 				SHA:     sha,
+	// 				Message: commit.Message,
+	// 				URL:     commit.WebURL,
+	// 				Status: model.CombinedStatus{
+	// 					State:    commitStatus,
+	// 					Contexts: contexts,
+	// 				},
+	// 			}
+	// 		}(hash, commits)
+	// 	}
 
-	fetched := []*model.Commit{}
-	for {
-		select {
-		case <-waitCh:
-			return fetched, nil
-		case c := <-commits:
-			fetched = append(fetched, c)
-		}
-	}
+	// 	wg.Wait()
+	// 	close(waitCh)
+	// }()
+
+	// fetched := []*model.Commit{}
+	// for {
+	// 	select {
+	// 	case <-waitCh:
+	// 		return fetched, nil
+	// 	case c := <-commits:
+	// 		fetched = append(fetched, c)
+	// 	}
+	// }
+	return nil, nil
 }
 
 func (c *GitlabClient) InstallationRepos(token string) ([]string, error) {
