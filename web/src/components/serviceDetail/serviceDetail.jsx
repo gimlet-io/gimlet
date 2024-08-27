@@ -313,7 +313,7 @@ function ServiceDetail(props) {
           {stack.osca && Object.keys(stack.osca.links).length !== 0 &&
             <div>
               <p className="serviceCardLabel">Links</p>
-              <div className="text-sm mt-2">
+              <div className="text-sm mt-2 flex">
                 {
                   Object.keys(stack.osca.links).map((k, idx, ar) => {
                     return (
