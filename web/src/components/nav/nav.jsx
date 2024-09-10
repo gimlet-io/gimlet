@@ -112,7 +112,7 @@ export default function Nav (props) {
                   <a href="https://gimlet.io/pricing" className='underline' target="_blank" rel="noopener noreferrer">Licensed for individual and non-profit use.</a>
                 </div>
                 }
-                { !settings.trial && <Connecting connectedAgents={connectedAgents} envs={envs} /> }
+                { settings.trial && <Connecting connectedAgents={connectedAgents} envs={envs} /> }
               </div>
               <div className="hidden sm:flex mr-10 font-sans font-light space-x-4 text-sm text-neutral-500 dark:text-neutral-400">
                 {/* <a
