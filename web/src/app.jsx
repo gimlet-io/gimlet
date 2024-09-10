@@ -77,7 +77,7 @@ export default class App extends Component {
   render() {
     const { store, gimletClient } = this.state;
 
-    const NavBar = withRouter(props => <Nav {...props} store={store} licensed={this.state.settings.licensed} />);
+    const NavBar = withRouter(props => <Nav {...props} store={store} />);
     const APIBackendWithLocation = withRouter(
       props => <APIBackend {...props} store={store} gimletClient={gimletClient} />
     );
