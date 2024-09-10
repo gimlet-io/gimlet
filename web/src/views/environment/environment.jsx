@@ -278,6 +278,7 @@ export default function EnvironmentView(props) {
               <p>Gimlet made this environment for you so you can start deploying.</p>
               <p className='pb-4'>This environment will run on our Kubernetes cluster for 7 days with plenty of resources for you to get started.</p>
               <p>Once you upgrade Gimlet, you will be able to connect your own Kubernetes cluster running on your preferred provider.</p>
+              <p>We have some recommendations(<a href="https://gimlet.io/blog/running-kubernetes-on-your-laptop-with-k3d" className='underline' target="_blank" rel="noopener noreferrer">blog</a> and <a href="https://www.youtube.com/watch?v=LCk25U7Gaj4" className='underline' target="_blank" rel="noopener noreferrer">video</a>) about how you can keep your Kubernetes experience simple and cheap.</p>
                 
               {expired &&
               <p className='pt-4'>This environment was disabled <span className='font-medium text-red-500' title={`at ${exactDate}`}>{dateLabel} ago</span>.</p>
