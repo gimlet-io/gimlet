@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/gimlet-io/gimlet
-  tag: v1.0.0-beta.8
+  tag: v1.0.0-beta.11
 containerPort: 9000
 probe:
   enabled: true
