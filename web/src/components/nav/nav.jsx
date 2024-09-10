@@ -436,7 +436,7 @@ function Connecting(props) {
     <div className='rounded-lg bg-blue-100 text-blue-900 text-sm px-4'>
       <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
         <span>Ephemeral cluster starting up</span>
-        <svg className="animate-spin h-3 w-3 text-black dark:text-white inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none"
+        <svg className="animate-spin h-3 w-3 text-black inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4}></circle>
             <path className="opacity-75" fill="currentColor"
