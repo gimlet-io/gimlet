@@ -392,7 +392,6 @@ export function DeployWizzard(props) {
               store.dispatch({ type: ACTION_TYPE_CLEAR_DEPLOY });
               setDeployed(false)
               setDeploying(true)
-              console.log(configFile)
 
               gimletClient.saveArtifact({
                 version: {
