@@ -47,9 +47,7 @@ export function DeployWizzard(props) {
 
   const deployHandler = new DeployHandler(owner, repo, gimletClient, store)
 
-  const [registries, setRegistries] = useState()
-  const [preferredDomain, setPreferredDomain] = useState()
-  const [ingressAnnotations, setIngressAnnotations] = useState()
+  const [stackConfigDerivedValues, setStackConfigDerivedValues] = useState()
 
   store.subscribe(() => {
     setEnvs(reduxState.envs)
@@ -87,9 +85,12 @@ export function DeployWizzard(props) {
   useEffect(() => {
     gimletClient.getStackConfig(env)
       .then(data => {
-        setRegistries(configuredRegistries(data.stackConfig, data.stackDefinition))
-        setPreferredDomain(extractPreferredDomain(data.stackConfig, data.stackDefinition))
-        setIngressAnnotations(extractIngressAnnotations(data.stackConfig, data.stackDefinition))
+        setStackConfigDerivedValues({
+            "registries": configuredRegistries(data.stackConfig, data.stackDefinition),
+            "preferredDomain": extractPreferredDomain(data.stackConfig, data.stackDefinition),
+            "ingressAnnotations": extractIngressAnnotations(data.stackConfig, data.stackDefinition),
+          }
+        )
       }, () => {/* Generic error handler deals with it */ });
 
     gimletClient.getDefaultDeploymentTemplates()
@@ -205,22 +206,36 @@ export function DeployWizzard(props) {
   }
 
   useEffect(() => {
-    if(!selectedTemplate || !registries) {
+    if(!selectedTemplate || !stackConfigDerivedValues) {
       return
     }
 
-    setPatchedTemplate(patchUIWidgets(selectedTemplate, registries, preferredDomain))
-  }, [selectedTemplate, registries, preferredDomain]);
+    setPatchedTemplate(
+      patchUIWidgets(selectedTemplate, stackConfigDerivedValues.registries, stackConfigDerivedValues.preferredDomain)
+    )
+  }, [selectedTemplate, stackConfigDerivedValues]);
 
   useEffect(() => {
-    if(!selectedTemplate || !preferredDomain || !ingressAnnotations) {
+    if(!selectedTemplate || !stackConfigDerivedValues) {
       return
     }
 
-    setConfigFile(newConfig(configFile ? configFile.app : repo, configFile ? configFile.namespace : "default", env, selectedTemplate.reference.chart, repoName, preferredDomain, settings.scmUrl, ingressAnnotations, false))
+    setConfigFile(
+      newConfig(
+        configFile ? configFile.app : repo,
+        configFile ? configFile.namespace : "default",
+        env,
+        selectedTemplate.reference.chart,
+        repoName,
+        stackConfigDerivedValues.preferredDomain,
+        settings.scmUrl,
+        stackConfigDerivedValues.ingressAnnotations,
+        false
+      )
+    )
     setDefaultConfigFile({})
     setRenderId(uuidv4())
-  }, [selectedTemplate, preferredDomain, ingressAnnotations]);
+  }, [selectedTemplate, stackConfigDerivedValues]);
 
   // useEffect(() => {
   //   console.log(configFile)
@@ -377,6 +392,7 @@ export function DeployWizzard(props) {
               store.dispatch({ type: ACTION_TYPE_CLEAR_DEPLOY });
               setDeployed(false)
               setDeploying(true)
+              console.log(configFile)
 
               gimletClient.saveArtifact({
                 version: {
