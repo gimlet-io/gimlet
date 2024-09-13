@@ -707,10 +707,10 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
 
   if (oneChart && !staticSite) {
     config.values.image = {
-      repository: "127.0.0.1:32447/{{ .APP }}",
-      tag:        "{{ .SHA }}",
-      strategy:   "buildpacks",
-      registry:   "dockerRegistry",
+      repository: "nginx",
+      tag:        "1.27",
+      strategy:   "static",
+      registry:   "public",
     }
     config.values.resources = {
       ignoreLimits: true,
