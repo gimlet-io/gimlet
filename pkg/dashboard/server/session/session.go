@@ -98,7 +98,7 @@ func MustUser() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			_, userSet := ctx.Value("user").(*model.User)
 			if !userSet {
-				if r.URL.Path == "/settings/installed" {
+				if r.URL.Path == "/installed" {
 					http.Redirect(w, r, "/auth?"+r.URL.RawQuery, http.StatusSeeOther)
 				}
 				http.Error(w, http.StatusText(401), 401)

@@ -41,7 +41,7 @@ export default function ImageWidget(props) {
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": "dockerRegistry",
+          "registry": "containerizedRegistry",
           "repository": "127.0.0.1:32447/{{ .APP }}",
           "tag": "{{ .SHA }}",
           "dockerfile": "Dockerfile"
@@ -51,7 +51,7 @@ export default function ImageWidget(props) {
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": "dockerRegistry",
+          "registry": "containerizedRegistry",
           "repository": "127.0.0.1:32447/{{ .APP }}",
           "tag": "{{ .SHA }}",
           "dockerfile": ""
@@ -63,7 +63,7 @@ export default function ImageWidget(props) {
           "strategy": strategy,
           "registry": "public",
           "repository": "nginx",
-          "tag": "1.25",
+          "tag": "1.27",
           "dockerfile": ""
         })
     }

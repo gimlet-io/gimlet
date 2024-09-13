@@ -38,9 +38,7 @@ export function EnvConfig(props) {
   const [navigation, setNavigation] = useState([])
   const [showModal, setShowModal] = useState(false)
 
-  const [registries, setRegistries] = useState()
-  const [preferredDomain, setPreferredDomain] = useState()
-  const [ingressAnnotations, setIngressAnnotations] = useState()
+  const [stackConfigDerivedValues, setStackConfigDerivedValues] = useState()
   const [templateLoadError, setTemplateLoadError] = useState(false)
 
   store.subscribe(() => {
@@ -52,9 +50,12 @@ export function EnvConfig(props) {
   useEffect(() => {
     gimletClient.getStackConfig(env)
       .then(data => {
-        setRegistries(configuredRegistries(data.stackConfig, data.stackDefinition))
-        setPreferredDomain(extractPreferredDomain(data.stackConfig, data.stackDefinition))
-        setIngressAnnotations(extractIngressAnnotations(data.stackConfig, data.stackDefinition))
+        setStackConfigDerivedValues({
+          "registries": configuredRegistries(data.stackConfig, data.stackDefinition),
+          "preferredDomain": extractPreferredDomain(data.stackConfig, data.stackDefinition),
+          "ingressAnnotations": extractIngressAnnotations(data.stackConfig, data.stackDefinition),
+        }
+      )
       }, () => {/* Generic error handler deals with it */ });
 
     gimletClient.getRepoMetas(owner, repo)
@@ -99,12 +100,12 @@ export function EnvConfig(props) {
   }, []);
 
   useEffect(() => {
-    if(!selectedTemplate || !registries) {
+    if(!selectedTemplate || !stackConfigDerivedValues) {
       return
     }
 
-    setPatchedTemplate(patchUIWidgets(selectedTemplate, registries, preferredDomain))
-  }, [selectedTemplate, registries, preferredDomain]);
+    setPatchedTemplate(patchUIWidgets(selectedTemplate, stackConfigDerivedValues.registries, stackConfigDerivedValues.preferredDomain))
+  }, [selectedTemplate, stackConfigDerivedValues]);
 
   useEffect(() => {
     if (configFile && configFile.values.ingress) {
@@ -117,8 +118,8 @@ export function EnvConfig(props) {
               ...prevState.values.ingress,
               annotations: {
                 ...prevState.values.ingress.annotations,
-                "nginx.ingress.kubernetes.io/auth-url": "https://auth"+preferredDomain+"/oauth2/auth",
-                "nginx.ingress.kubernetes.io/auth-signin": "https://auth"+preferredDomain+"/oauth2/start?rd=/redirect/$http_host$escaped_request_uri",
+                "nginx.ingress.kubernetes.io/auth-url": "https://auth"+stackConfigDerivedValues.preferredDomain+"/oauth2/auth",
+                "nginx.ingress.kubernetes.io/auth-signin": "https://auth"+stackConfigDerivedValues.preferredDomain+"/oauth2/start?rd=/redirect/$http_host$escaped_request_uri",
               }
             }
           },
@@ -133,7 +134,7 @@ export function EnvConfig(props) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configFile && configFile.values.ingress && configFile.values.ingress.protectWithOauthProxy, preferredDomain])
+  }, [configFile && configFile.values.ingress && configFile.values.ingress.protectWithOauthProxy, stackConfigDerivedValues])
 
   const setAppName = (appName) => {
     setConfigFile(prevState => ({
@@ -326,17 +327,29 @@ export function EnvConfig(props) {
   }
 
   useEffect(() => {
-    if(!selectedTemplate || !preferredDomain || !ingressAnnotations) {
+    if(!selectedTemplate || !stackConfigDerivedValues) {
       return
     }
 
     if (action === "new-preview") {
-      setConfigFile(newConfig(configFile ? configFile.app : config, configFile ? configFile.namespace : "default", env, selectedTemplate.reference.chart, repoName, preferredDomain, scmUrl, ingressAnnotations, true))
+      setConfigFile(
+        newConfig(
+          configFile ? configFile.app : config,
+          configFile ? configFile.namespace : "default",
+          env,
+          selectedTemplate.reference.chart,
+          repoName,
+          stackConfigDerivedValues.preferredDomain,
+          scmUrl,
+          stackConfigDerivedValues.ingressAnnotations,
+          true
+        )
+      )
       setSavedConfigFile({})
     }
 
     setNavigation(translateToNavigation(selectedTemplate))
-  }, [selectedTemplate, preferredDomain, ingressAnnotations]);
+  }, [selectedTemplate, stackConfigDerivedValues]);
 
 
   const setDeploymentTemplate = (template) => {
@@ -678,9 +691,6 @@ export function robustName(str) {
 }
 
 export function newConfig(configName, namespace, env, chartRef, repoName, preferredDomain, scmUrl, ingressAnnotations, preview) {
-  let sanitizedRepoName = robustName(repoName)
-  sanitizedRepoName = sanitizedRepoName.length > 55 ? sanitizedRepoName.slice(0, 55) : sanitizedRepoName
-
   const config = {
     app: configName,
     namespace: namespace,
@@ -688,14 +698,7 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
     chart: chartRef,
     values: {
       gitRepository: repoName,
-      gitSha:        "{{ .SHA }}",
-      ingress: {
-        host: `${sanitizedRepoName}${preferredDomain}`,
-        tlsEnabled: true,
-        annotations: {
-          ...ingressAnnotations
-        }
-      }
+      gitSha:        "{{ .SHA }}"
     },
   }
 
@@ -704,10 +707,10 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
 
   if (oneChart && !staticSite) {
     config.values.image = {
-      repository: "127.0.0.1:32447/{{ .APP }}",
-      tag:        "{{ .SHA }}",
-      strategy:   "buildpacks",
-      registry:   "dockerRegistry",
+      repository: "nginx",
+      tag:        "1.27",
+      strategy:   "static",
+      registry:   "public",
     }
     config.values.resources = {
       ignoreLimits: true,
@@ -720,6 +723,19 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
 
   if (preview) {
     config.preview = true
+  }
+
+  if (preferredDomain) {
+    let sanitizedRepoName = robustName(repoName)
+    sanitizedRepoName = sanitizedRepoName.length > 55 ? sanitizedRepoName.slice(0, 55) : sanitizedRepoName
+
+    config.values.ingress = {
+      host: `${sanitizedRepoName}${preferredDomain}`,
+      tlsEnabled: true,
+      annotations: {
+        ...ingressAnnotations
+      }
+    }
   }
 
   return config
