@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
+	terraformv1 "github.com/flux-iac/tofu-controller/api/v1alpha1"
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	terraformv1 "github.com/weaveworks/tf-controller/api/v1alpha2"
 	giturl "github.com/whilp/git-urls"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -300,10 +300,6 @@ func renderDependency(dependency Dependency, manifest *Manifest) (string, error)
 		tfKindBytes, err := renderTFKind(
 			manifest.App+"-"+dependency.Name,
 			manifest.Namespace,
-			moduleUrl,
-			branch,
-			tag,
-			sha,
 			path,
 			tfSpec.Secret,
 			tfSpec.Values,
@@ -362,10 +358,6 @@ func renderTFGitRepo(
 func renderTFKind(
 	name string,
 	namespace string,
-	url string,
-	branch string,
-	tag string,
-	sha string,
 	path string,
 	secretName string,
 	vars map[string]interface{},
@@ -392,14 +384,17 @@ func renderTFKind(
 			WriteOutputsToSecret: &terraformv1.WriteOutputsToSecretSpec{
 				Name: name + "-output",
 			},
-			VarsFrom: []terraformv1.VarsReference{
-				{
-					Kind: "Secret",
-					Name: secretName,
-				},
-			},
 			Vars: []terraformv1.Variable{},
 		},
+	}
+
+	if secretName != "" {
+		terraform.Spec.VarsFrom = []terraformv1.VarsReference{
+			{
+				Kind: "Secret",
+				Name: secretName,
+			},
+		}
 	}
 
 	for k, v := range vars {
