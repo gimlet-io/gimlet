@@ -5,7 +5,7 @@ import {
 } from "../../redux/redux";
 
 export function EncryptedWidget(props) {
-  const { formData, onChange, gimletClient, store, env } = props;
+  const { formData, onChange, gimletClient, store, env, singleLine } = props;
   const [plainTextValue, setPlainTextValue] = useState("")
   const [encryptedValue, setEncryptedValue] = useState(formData)
 
@@ -42,8 +42,14 @@ export function EncryptedWidget(props) {
       {encryptedValue
         ? <Encrypted resetFunc={reset()} />
         : <>
+            {singleLine &&
+            <input className="form-control" id="root_repository" required="" placeholder="" type="text" list="examples_root_repository"
+            value={plainTextValue} onChange={e => setPlainTextValue(e.target.value)} />
+            }
+            {!singleLine &&
             <textarea rows="8" className="form-control" id="root_repository" required="" placeholder="" type="text" list="examples_root_repository"
               value={plainTextValue} onChange={e => setPlainTextValue(e.target.value)} />
+            }
             <div className='flex justify-end pt-2'>
               <button
                 onClick={encrypt()}

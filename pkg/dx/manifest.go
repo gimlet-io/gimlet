@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
-	terraformv1 "github.com/flux-iac/tofu-controller/api/v1alpha1"
+	terraformv1 "github.com/flux-iac/tofu-controller/api/v1alpha2"
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	giturl "github.com/whilp/git-urls"

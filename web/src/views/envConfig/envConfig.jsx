@@ -14,9 +14,11 @@ import ImageWidget from "./imageWidget";
 import SealedSecretWidget from "./sealedSecretWidget";
 import * as Diff from "diff";
 import { Generaltab, templateIdentity } from './generalTab';
+import { DatabasesTab } from './databasesTab';
 import { Modal } from '../../components/modal'
 import { ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/solid';
 import IngressWidget from "../envConfig/ingressWidget";
+import {produce} from 'immer';
 
 export function EnvConfig(props) {
   const { store, gimletClient } = props
@@ -30,6 +32,7 @@ export function EnvConfig(props) {
   const [scmUrl, setScmUrl] = useState(reduxState.settings.scmUrl)
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
   const [configFile, setConfigFile] = useState()
+  const [databaseConfig, setDatabaseConfig] = useState()
   const [savedConfigFile, setSavedConfigFile] = useState()
   const [templates, setTemplates] = useState()
   const [selectedTemplate, setSelectedTemplate] = useState()
@@ -91,6 +94,7 @@ export function EnvConfig(props) {
             const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
             let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
             setConfigFile(configFileContentFromEnvConfigs)
+            setDatabaseConfig(extractDatabaseConfig(configFileContentFromEnvConfigs.manifests))
             setSavedConfigFile(deepCopied)
           }
         }, () => {/* Generic error handler deals with it */
@@ -215,6 +219,33 @@ export function EnvConfig(props) {
       ...prevState,
       values: nonDefaultValues,
     }));
+  }
+
+  const setDatabaseValues = (variable, values, nonDefaultValues) => {
+    if (!databaseConfig[variable] && Object.keys(nonDefaultValues).length === 0) {
+      return
+    }
+    let updatedDatabaseConfig = {}
+    if (databaseConfig[variable] && Object.keys(nonDefaultValues).length === 0) {
+      setDatabaseConfig(produce(databaseConfig, draft => {
+        delete draft[variable]
+      }))
+    } else {
+      updatedDatabaseConfig = produce(databaseConfig, draft => {
+        draft[variable]=nonDefaultValues
+      })
+    }
+
+    setDatabaseConfig(updatedDatabaseConfig)
+    setConfigFile(prevState => {
+      const manifestString = serializeDatabaseConfig(prevState.manifests, updatedDatabaseConfig)
+      console.log(manifestString)
+
+      return {
+        ...prevState,
+        manifests: manifestString
+      }
+    });
   }
 
   const resetNotificationStateAfterThreeSeconds = () => {
@@ -481,7 +512,7 @@ export function EnvConfig(props) {
           preview={preview}
         />
         }
-        { selectedNavigation && selectedNavigation.name !== "General" &&
+        { selectedNavigation && selectedNavigation.name !== "General" && selectedNavigation.name !== "Databases" &&
           <>
           <div className='w-full card p-6 pb-8'>
           <HelmUI
@@ -521,6 +552,15 @@ export function EnvConfig(props) {
             </div>
           }
           </>
+        }
+        { selectedNavigation?.name === "Databases" &&
+        <DatabasesTab
+          gimletClient={gimletClient}
+          store={store}
+          environment={env}
+          setDatabaseValues={setDatabaseValues}
+          databaseConfig={databaseConfig}
+        />
         }
       </div>
     </div>
@@ -675,6 +715,7 @@ export const extractIngressAnnotations = (stackConfig, stackDefinition) => {
 function translateToNavigation(template) {
   const navigation = template.uiSchema.map((elem, idx) => ({name: elem.metaData.name, href: ref(elem.metaData.name), uiSchemaOrder: idx}))
   navigation.unshift({name: "General", href: "/general"})
+  navigation.push({name: "Databases", href: "/databases"})
   return navigation
 }
 
@@ -821,6 +862,61 @@ export function handlePullSecret(nonDefaultValues) {
       break
   }
   return nonDefaultValues
+}
+
+const configHeaderLine = "# database configuration (generated value, do not edit)"
+const configFooterLine = "# database configuration end"
+
+function extractDatabaseConfig(manifests) {
+  if (!manifests) {
+    return {}
+  }
+
+  var lines = manifests.split(/\r?\n/);
+  const configHeaderLineNumber = lines.indexOf(configHeaderLine)
+  const configFooterLineNumber = lines.indexOf(configFooterLine)
+  if (configHeaderLineNumber === -1 || configFooterLineNumber === -1 || configFooterLineNumber < configHeaderLineNumber) {
+    return {}
+  }
+
+  let databaseConfig = ""
+  for (let i = configHeaderLineNumber+1; i < configFooterLineNumber; i++) {
+    databaseConfig += lines[i].slice(1);
+  }
+
+  let databaseConfigObject = {}
+  try {
+    databaseConfigObject = JSON.parse(databaseConfig)
+  } catch (e) {
+    console.log(e)
+  }
+
+  return databaseConfigObject
+}
+
+function serializeDatabaseConfig(manifests, databaseConfig){
+  if (!databaseConfig || JSON.stringify(databaseConfig) === '{}'){
+    return manifests
+  }
+
+  var lines = manifests ? manifests.split(/\r?\n/) : [];
+  const configHeaderLineNumber = lines.indexOf(configHeaderLine)
+  const configFooterLineNumber = lines.indexOf(configFooterLine)
+  var linesToAdd = []
+  linesToAdd.push(configHeaderLine)
+  const databaseConfigLines = JSON.stringify(databaseConfig).split(/\r?\n/);
+  databaseConfigLines.forEach(line => {
+    linesToAdd.push("# " + line)
+  });
+  linesToAdd.push(configFooterLine)
+
+  if (configHeaderLineNumber === -1){
+    lines.push(...linesToAdd)
+  } else {
+    lines.splice(configHeaderLineNumber, configFooterLineNumber - configHeaderLineNumber + 1, ...linesToAdd)
+  }
+
+  return lines.join("\n")
 }
 
 export default EnvConfig;
