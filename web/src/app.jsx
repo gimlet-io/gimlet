@@ -83,7 +83,6 @@ export default class App extends Component {
     );
     const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store} />);
     const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient} />);
-    const RepositoriesWithRouting = withRouter(props => <Repositories {...props} store={store} gimletClient={gimletClient} />);
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
     const EnvironmentWithRouting = withRouter(props => <Environment {...props} store={store} gimletClient={gimletClient} />);
     const EnvConfigWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
@@ -149,7 +148,7 @@ export default class App extends Component {
             <Switch>
               <Route path="/repositories">
                 <NavBar />
-                <RepositoriesWithRouting />
+                <Repositories store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/environments">
