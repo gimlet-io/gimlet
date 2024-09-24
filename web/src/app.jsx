@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
 import './app.css';
 import Nav from "./components/nav/nav";
 import StreamingBackend from "./streamingBackend";
 import { createStore } from 'redux';
 import { rootReducer } from './redux/redux';
-import { BrowserRouter as Router, Redirect, Route, Routes, withRouter } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 import GimletClient from "./client/client";
 import Repositories from "./views/repositories/repositories";
 import APIBackend from "./apiBackend";
@@ -77,18 +77,6 @@ export default class App extends Component {
   render() {
     const { store, gimletClient } = this.state;
 
-    const NavBar = withRouter(props => <Nav {...props} store={store} />);
-    const APIBackendWithLocation = withRouter(
-      props => <APIBackend {...props} store={store} gimletClient={gimletClient} />
-    );
-    const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store} />);
-    const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient} />);
-    const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
-    const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
-    const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
-    const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
-    const FooterWithRouting = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />)
-
     if (!this.state.userLoaded) {
       return (<div>loading</div>)
     }
@@ -125,85 +113,107 @@ export default class App extends Component {
 
     return (
       <Router>
-        <StreamingBackendWithLocation />
-        <APIBackendWithLocation />
-        <PopUpWindowWithLocation />
+        <StreamingBackend store={store} />
+        <APIBackend store={store} gimletClient={gimletClient} />
+        <PopUpWindow store={store} />
         <Posthog store={store} />
 
-
-
         <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
-          <FooterWithRouting />
+          <Footer store={store} gimletClient={gimletClient} />
           <div className="">
             <Routes>
-              <Route exact path="/">
-                <Redirect to="/repositories" />
-              </Route>
+              <Route exact path="/" element={<RedirectToRepositories />} />
 
-              <Route path="/repositories">
-                <NavBar />
-                <Repositories store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/repositories" element= {
+                <>
+                  <Nav store={store} />
+                  <Repositories store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/environments">
-                <NavBar />
-                <EnvironmentsWithRouting />
-              </Route>
+              <Route path="/environments" element= {
+                <>
+                  <Nav store={store} />
+                  <Environments store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/env/:env/:tab?">
-                <NavBar />
-                <Environment store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/env/:env/:tab?" element= {
+                <>
+                  <Nav store={store} />
+                  <Environment store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/cli">
-                <NavBar />
-                <ProfileWithRouting store={store} />
-              </Route>
+              <Route path="/cli" element= {
+                <>
+                  <Nav store={store} />
+                  <Profile store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/settings">
-                <NavBar />
-                <SettingsWithRouting store={store} />
-              </Route>
+              <Route path="/settings" element= {
+                <>
+                  <Nav store={store} />
+                  <Settings store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/login">
-                <NavBar />
-                <LoginPage />
-              </Route>
+              <Route path="/login" element= {
+                <>
+                  <Nav store={store} />
+                  <LoginPage />
+                </>
+              } />
 
-              <Route path="/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?">
-                <NavBar />
-                <EnvConfig store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?" element= {
+                <>
+                  <Nav store={store} />
+                  <EnvConfig store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/repo/:owner/:repo/envs/:env/deploy">
-                <NavBar />
-                <DeployWizzard store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/repo/:owner/:repo/envs/:env/deploy" element= {
+                <>
+                  <Nav store={store} />
+                  <DeployWizzard store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/import-repositories">
-                <NavBar />
-                <RepositoryWizard store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/import-repositories" element= {
+                <>
+                  <Nav store={store} />
+                  <RepositoryWizard store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/repo/:owner/:repo/commits">
-                <NavBar />
-                <CommitView store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/repo/:owner/:repo/commits" element= {
+                <>
+                  <Nav store={store} />
+                  <CommitView store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/repo/:owner/:repo/settings/:nav?">
-                <NavBar />
-                <RepoSettingsView store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/repo/:owner/:repo/settings/:nav?" element= {
+                <>
+                  <Nav store={store} />
+                  <RepoSettingsView store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/repo/:owner/:repo/previews/:deployment?">
-                <NavBar />
-                <PreviewView store={store} gimletClient={gimletClient} />
-              </Route>
+              <Route path="/repo/:owner/:repo/previews/:deployment?" element= {
+                <>
+                  <Nav store={store} />
+                  <PreviewView store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
-              <Route path="/repo/:owner/:repo/:environment?/:deployment?">
-                <NavBar />
-                <RepoWithRouting />
-              </Route>
+              <Route path="/repo/:owner/:repo/:environment?/:deployment?" element= {
+                <>
+                  <Nav store={store} />
+                  <Repo store={store} gimletClient={gimletClient} />
+                </>
+              } />
 
             </Routes>
           </div>
@@ -212,3 +222,13 @@ export default class App extends Component {
     )
   }
 }
+
+const RedirectToRepositories = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate('/repositories');
+  });
+
+  return null;
+};

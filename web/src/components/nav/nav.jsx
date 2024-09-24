@@ -6,6 +6,7 @@ import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
 import logo from "./logo.svg";
 import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 import { ThemeSelector } from '../../views/repositories/themeSelector';
+import { useMatch, matchPath, useLocation, useParams, useNavigate } from 'react-router-dom'
 
 const navigation = [
   {name: 'Repositories', href: '/repositories'},
@@ -34,6 +35,7 @@ export default function Nav (props) {
   const [settings, setSettings] = useState(reduxState.settings)
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
   const [envs, setEnvs] = useState(reduxState.envs)
+  const { owner, repo, env, config, action } = useParams()
 
   store.subscribe(() => {
     const reduxState = store.getState();
@@ -43,28 +45,23 @@ export default function Nav (props) {
     setEnvs(reduxState.envs);
   })
 
+  user.imageUrl = `${settings.scmUrl}/${user.login}.png?size=128`
+
+  const configScreen = useMatch('/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?') && (action === 'new' || action === 'edit')
+  const previewConfigScreen = useMatch('/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?') && (action === 'new-preview' || action === 'edit-preview')
+  const deployment = useMatch('/repo/:owner/:repo/:environment?/:deployment?')
+  const commits = useMatch('/repo/:owner/:repo/commits')
+  const previewDeployments = useMatch('/repo/:owner/:repo/previews/:deployment?')
+  const repoSettings = useMatch('/repo/:owner/:repo/settings/:nav?')
+  const repoScreen = deployment || commits || previewDeployments || repoSettings
+  const environmentScreen = useMatch('/env/:env/:tab?')
+  const deployWizzardScreen = useMatch('/repo/:owner/:repo/envs/:env/deploy')
+  const repoWizzardScreen = useMatch('/import-repositories')
+
   const loggedIn = user !== undefined;
   if (!loggedIn) {
     return null;
   }
-
-  user.imageUrl = `${settings.scmUrl}/${user.login}.png?size=128`
-
-  const { owner, repo, env, config } = props.match.params
-  const configScreen =
-    props.match.path === '/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?' &&
-    (props.match.params.action === 'new' || props.match.params.action === 'edit')
-  const previewConfigScreen =
-    props.match.path === '/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?' &&
-    (props.match.params.action === 'new-preview' || props.match.params.action === 'edit-preview')
-  const repoScreen = 
-    props.match.path === '/repo/:owner/:repo/:environment?/:deployment?' ||
-    props.match.path === '/repo/:owner/:repo/commits' ||
-    props.match.path === '/repo/:owner/:repo/previews/:deployment?' ||
-    props.match.path === '/repo/:owner/:repo/settings/:nav?'
-  const environmentScreen = props.match.path === '/env/:env/:tab?'
-  const deployWizzardScreen = props.match.path === '/repo/:owner/:repo/envs/:env/deploy'
-  const repoWizzardScreen = props.match.path === '/import-repositories'
 
   let menu = <MainMenu location={props.location} history={props.history} items={navigation} />
   let submenu = null
@@ -220,7 +217,9 @@ export default function Nav (props) {
 }
 
 function MainMenu(props) {
-  const { items, location, history, submenu } = props
+  const { items, submenu } = props
+  const location = useLocation()
+  const navigate = useNavigate()
 
   let current = items.find(i => location.pathname.endsWith(i.href))
   if (!current) {
@@ -251,9 +250,9 @@ function MainMenu(props) {
             aria-current={selected ? 'page' : undefined}
             onClick={() => {
               if (submenu) {
-                history.push(location.pathname.replace(current.href, "") + item.href);
+                navigate(location.pathname.replace(current.href, "") + item.href);
               } else {
-                history.push(item.href);
+                navigate(item.href);
               }
               return true
             }}
