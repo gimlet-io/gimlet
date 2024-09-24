@@ -130,14 +130,16 @@ export default class App extends Component {
         <PopUpWindowWithLocation />
         <Posthog store={store} />
 
-        <Route exact path="/">
-          <Redirect to="/repositories" />
-        </Route>
+
 
         <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
           <FooterWithRouting />
           <div className="">
             <Switch>
+              <Route exact path="/">
+                <Redirect to="/repositories" />
+              </Route>
+
               <Route path="/repositories">
                 <NavBar />
                 <Repositories store={store} gimletClient={gimletClient} />
