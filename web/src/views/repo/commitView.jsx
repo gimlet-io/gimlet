@@ -6,16 +6,18 @@ import {
   ACTION_TYPE_ENVCONFIGS,
 } from "../../redux/redux";
 import DeployHandler from '../../deployHandler';
-import { useHistory, useLocation } from 'react-router-dom'
+import { useHistory, useLocation, useParams } from 'react-router-dom'
 import {produce} from 'immer';
 
 export function CommitView(props) {
   const { store, gimletClient } = props;
   const reduxState = store.getState();
+  const location = useLocation()
+  const history = useHistory();
 
-  const { owner, repo } = props.match.params;
+  const { owner, repo } = useParams();
   const repoName = `${owner}/${repo}`;
-  const queryParams = new URLSearchParams(props.location.search)
+  const queryParams = new URLSearchParams(location.search)
 
   const [deployStatusModal, setDeployStatusModal] = useState(false)
   const [commits, setCommits] = useState()
@@ -28,8 +30,6 @@ export function CommitView(props) {
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
   // eslint-disable-next-line no-unused-vars
   const [refreshQueue, setRefreshQueue] = useState(reduxState.repoRefreshQueue.filter(repo => repo === repoName).length)
-  const history = useHistory();
-  const location = useLocation();
 
   store.subscribe(() => {
     const reduxState = store.getState()

@@ -84,14 +84,10 @@ export default class App extends Component {
     const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store} />);
     const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient} />);
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
-    const DeployWizzardWithRouting = withRouter(props => <DeployWizzard {...props} store={store} gimletClient={gimletClient} />);
-    const RepositoryWizardWithRouting = withRouter(props => <RepositoryWizard {...props} store={store} gimletClient={gimletClient} />);
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
     const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
     const FooterWithRouting = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />)
-    const CommitViewWithRouting = withRouter(props => <CommitView {...props} store={store} gimletClient={gimletClient} />)
-    const RepoSettingsViewWithRouting = withRouter(props => <RepoSettingsView {...props} store={store} gimletClient={gimletClient} />)
 
     if (!this.state.userLoaded) {
       return (<div>loading</div>)
@@ -179,22 +175,22 @@ export default class App extends Component {
 
               <Route path="/repo/:owner/:repo/envs/:env/deploy">
                 <NavBar />
-                <DeployWizzardWithRouting />
+                <DeployWizzard store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/import-repositories">
                 <NavBar />
-                <RepositoryWizardWithRouting />
+                <RepositoryWizard store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/repo/:owner/:repo/commits">
                 <NavBar />
-                <CommitViewWithRouting />
+                <CommitView store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/repo/:owner/:repo/settings/:nav?">
                 <NavBar />
-                <RepoSettingsViewWithRouting />
+                <RepoSettingsView store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/repo/:owner/:repo/previews/:deployment?">

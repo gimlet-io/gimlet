@@ -5,6 +5,7 @@ import {
   ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWERROR
 } from '../../redux/redux';
+import { useParams, useLocation } from 'react-router-dom'
 
 export function RepoSettingsView(props) {
   const { store, gimletClient } = props;
@@ -12,9 +13,10 @@ export function RepoSettingsView(props) {
   const [pullRequestPolicy, setPullRequestPolicy] = useState()
   const [defaultpullRequestPolicy, setDefaultPullRequestPolicy] = useState()
 
-  useEffect(() => {
-    const { owner, repo } = props.match.params;
+  const { owner, repo } = useParams();
+  const location = useLocation()
 
+  useEffect(() => {
     gimletClient.repoPullRequestsPolicy(owner, repo)
       .then(data => {
         setPullRequestPolicyLoaded(true)
@@ -61,7 +63,7 @@ export function RepoSettingsView(props) {
   const navigation = [
     { name: "General", href: "/general" },
   ]
-  let selectedNavigation = navigation.find(i => props.location.pathname.endsWith(i.href))
+  let selectedNavigation = navigation.find(i => location.pathname.endsWith(i.href))
   if (!selectedNavigation) {
     selectedNavigation = navigation[0]
   }
