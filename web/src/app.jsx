@@ -84,18 +84,14 @@ export default class App extends Component {
     const StreamingBackendWithLocation = withRouter(props => <StreamingBackend {...props} store={store} />);
     const RepoWithRouting = withRouter(props => <Repo {...props} store={store} gimletClient={gimletClient} />);
     const EnvironmentsWithRouting = withRouter(props => <Environments {...props} store={store} gimletClient={gimletClient} />);
-    const EnvironmentWithRouting = withRouter(props => <Environment {...props} store={store} gimletClient={gimletClient} />);
-    const EnvConfigWithRouting = withRouter(props => <EnvConfig {...props} store={store} gimletClient={gimletClient} />);
     const DeployWizzardWithRouting = withRouter(props => <DeployWizzard {...props} store={store} gimletClient={gimletClient} />);
     const RepositoryWizardWithRouting = withRouter(props => <RepositoryWizard {...props} store={store} gimletClient={gimletClient} />);
-    const GithubIntegrationWithRouting = withRouter(props => <GithubIntegration {...props} store={store} gimletClient={gimletClient} />);
     const PopUpWindowWithLocation = withRouter(props => <PopUpWindow {...props} store={store} />);
     const ProfileWithRouting = withRouter(props => <Profile {...props} store={store} gimletClient={gimletClient} />);
     const SettingsWithRouting = withRouter(props => <Settings {...props} store={store} gimletClient={gimletClient} />);
     const FooterWithRouting = withRouter(props => <Footer {...props} store={store} gimletClient={gimletClient} />)
     const CommitViewWithRouting = withRouter(props => <CommitView {...props} store={store} gimletClient={gimletClient} />)
     const RepoSettingsViewWithRouting = withRouter(props => <RepoSettingsView {...props} store={store} gimletClient={gimletClient} />)
-    const PreviewViewWithRouting = withRouter(props => <PreviewView {...props} store={store} gimletClient={gimletClient} />)
 
     if (!this.state.userLoaded) {
       return (<div>loading</div>)
@@ -125,7 +121,7 @@ export default class App extends Component {
       return (
         <Router>
           <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
-            <GithubIntegrationWithRouting />
+            <GithubIntegration store={store} gimletClient={gimletClient} />
           </div>
         </Router>
       )
@@ -158,7 +154,7 @@ export default class App extends Component {
 
               <Route path="/env/:env/:tab?">
                 <NavBar />
-                <EnvironmentWithRouting />
+                <Environment store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/cli">
@@ -178,7 +174,7 @@ export default class App extends Component {
 
               <Route path="/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?">
                 <NavBar />
-                <EnvConfigWithRouting />
+                <EnvConfig store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/repo/:owner/:repo/envs/:env/deploy">
@@ -203,7 +199,7 @@ export default class App extends Component {
 
               <Route path="/repo/:owner/:repo/previews/:deployment?">
                 <NavBar />
-                <PreviewViewWithRouting />
+                <PreviewView store={store} gimletClient={gimletClient} />
               </Route>
 
               <Route path="/repo/:owner/:repo/:environment?/:deployment?">

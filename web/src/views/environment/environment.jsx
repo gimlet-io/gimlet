@@ -19,11 +19,13 @@ import { Modal } from '../../components/modal'
 import * as Diff from "diff";
 import { InformationCircleIcon } from '@heroicons/react/20/solid';
 import { format, formatDistance } from "date-fns";
+import { useParams, useLocation } from 'react-router-dom'
 
 export default function EnvironmentView(props) {
   const { store, gimletClient } = props
   const reduxState = props.store.getState();
-  const { env } = props.match.params;
+  let { env } = useParams()
+  let location = useLocation()
 
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
   const [environment, setEnvironment] = useState(findEnv(reduxState.envs, env))
@@ -203,7 +205,7 @@ export default function EnvironmentView(props) {
     }  
   }
   
-  let selectedNavigation = navigation.find(i => props.location.pathname.endsWith(i.href))
+  let selectedNavigation = navigation.find(i => location.pathname.endsWith(i.href))
   if (!selectedNavigation) {
     selectedNavigation = navigation[0]
   }
@@ -357,8 +359,6 @@ export default function EnvironmentView(props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex pt-8">
         <div className="sticky top-0 h-96 top-56">
           <SideBar
-            location={props.location}
-            history={props.history}
             navigation={navigation}
             selected={selectedNavigation}
           />
@@ -403,7 +403,6 @@ export default function EnvironmentView(props) {
               provider={settings.provider}
               isOnline={isOnline}
               userToken={user.token}
-              history={props.history}
             />
           }
           { selectedNavigation && selectedNavigation.name !== "General" &&  !environment.builtIn &&

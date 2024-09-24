@@ -12,13 +12,15 @@ import MenuButton from '../../components/menuButton/menuButton';
 import { CommitWidget } from '../../components/commits/commits';
 import { v4 as uuidv4 } from 'uuid';
 import {produce} from 'immer';
+import { useParams, useLocation, useHistory } from 'react-router-dom'
 
 export function PreviewView(props) {
   const { store, gimletClient } = props;
   const reduxState = store.getState();
 
-  const { owner, repo } = props.match.params;
+  const { owner, repo } = useParams();
   const repoName = `${owner}/${repo}`;
+  let history = useHistory()
 
   const [pullRequests, setPullRequests] = useState()
   const [rolloutHistory, setRolloutHistory] = useState(reduxState.rolloutHistory?.[repoName])
@@ -87,7 +89,7 @@ export function PreviewView(props) {
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32">
           <h1 className="text-2xl leading-tight font-medium flex-grow">Previews</h1>
-          <NoConfig items={envs} owner={owner} repo={repo} history={props.history} />
+          <NoConfig items={envs} owner={owner} repo={repo} />
         </div>
         <div className="border-b border-neutral-200 dark:border-neutral-700 my-8"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
@@ -128,7 +130,7 @@ export function PreviewView(props) {
         <button
             type="button"
             className='secondaryButton'
-            onClick={() => props.history.push(encodeURI(`/repo/${owner}/${repo}/envs/${previewEnvConfig.env}/config/${repo}-preview/edit-preview`))}
+            onClick={() => history.push(encodeURI(`/repo/${owner}/${repo}/envs/${previewEnvConfig.env}/config/${repo}-preview/edit-preview`))}
           >
             Edit Preview Config
         </button>
@@ -189,7 +191,10 @@ export function PreviewView(props) {
 }
 
 const NoConfig = (props) => {
-  const { owner, repo, history } = props;
+  const { owner, repo } = props;
+
+  let history = useHistory()
+
   return (
     <div className='w-full card p-4 mt-4'>
       <div className='items-center border-dashed border border-neutral-200 dark:border-neutral-700 rounded-md p-4 py-16'>
@@ -214,7 +219,9 @@ const NoPullRequests = () => {
 }
 
 const Branch = (props) => {
-  const { owner, repo, deployment } = props.match.params;
+  const { owner, repo, deployment } = useParams();
+  let location = useLocation()
+  let history = useHistory()
   const { store, gimletClient, renderId } = props;
   const { branch, pr, stacks, envs, config, settings, rolloutHistory } = props
   const { setDeployStatusModal, deployHandler } = props
@@ -279,10 +286,9 @@ const Branch = (props) => {
   }, [latestCommitEvent]);
 
   const linkToDeployment = (env, deployment) => {
-    const { owner, repo } = props.match.params;
-    props.history.push({
+    history.push({
       pathname: `/repo/${owner}/${repo}/previews/${deployment}`,
-      search: props.location.search
+      search: location.search
     })
   }
 

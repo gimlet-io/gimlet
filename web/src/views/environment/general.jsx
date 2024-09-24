@@ -8,10 +8,13 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVS
 } from "../../redux/redux";
+import { useHistory } from 'react-router-dom'
 
 export default function General(props) {
   const { gimletClient, store } = props;
   const { environment, scmUrl, isOnline, userToken } = props;
+
+  let history = useHistory()
 
   const deleteEnv = (envName) => {
     store.dispatch({
@@ -29,7 +32,7 @@ export default function General(props) {
           }
         });
         refreshEnvs();
-        props.history.push("/environments");
+        history.push("/environments");
       }, err => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
@@ -84,7 +87,7 @@ export default function General(props) {
     return (
       <div className="w-full space-y-8">
         <GitopsBootstrapWizard environment={environment} bootstrap={bootstrapGitops} />
-        <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} history={props.history} />
+        <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} />
       </div>
     )
   }
@@ -96,7 +99,7 @@ export default function General(props) {
         { !environment.builtIn && 
           <GitopRepositories environment={environment} scmUrl={scmUrl} />
         }
-        <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} history={props.history} />
+        <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} />
       </div>
     )
   }
@@ -106,7 +109,7 @@ export default function General(props) {
       { !environment.builtIn && 
         <GitopRepositories environment={environment} scmUrl={scmUrl} />
       }
-      <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} history={props.history} />
+      <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} />
     </div>
   )
 }
