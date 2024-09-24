@@ -6,8 +6,8 @@ import {
   ACTION_TYPE_ENVCONFIGS,
 } from "../../redux/redux";
 import DeployHandler from '../../deployHandler';
-import { useHistory, useLocation, useParams } from 'react-router-dom'
 import {produce} from 'immer';
+import { useHistory, useLocation, useParams } from 'react-router-dom'
 
 export function CommitView(props) {
   const { store, gimletClient } = props;
