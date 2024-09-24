@@ -117,6 +117,8 @@ export default class GimletClient {
 
   restartDeploymentRequest = (namespace, name) =>this.post(`/api/restartDeployment?namespace=${namespace}&name=${name}`);
 
+  getPlainModules = () =>  this.get(`/api/plainModules`);
+
   get = async (path, signal) => {
     try {
       const { data } = await axios.get(path, {

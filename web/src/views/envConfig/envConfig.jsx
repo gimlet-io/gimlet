@@ -31,6 +31,7 @@ export function EnvConfig(props) {
   const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
   const [scmUrl, setScmUrl] = useState(reduxState.settings.scmUrl)
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
+  const [plainModules, setPlainModules] = useState(reduxState.fileInfos)
   const [configFile, setConfigFile] = useState()
   const [databaseConfig, setDatabaseConfig] = useState()
   const [savedConfigFile, setSavedConfigFile] = useState()
@@ -100,6 +101,11 @@ export function EnvConfig(props) {
         }, () => {/* Generic error handler deals with it */
       });
     }
+    gimletClient.getPlainModules()
+      .then(data => {
+        setPlainModules(data)
+      }, () => {/* Generic error handler deals with it */ });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -553,7 +559,17 @@ export function EnvConfig(props) {
           }
           </>
         }
-        { selectedNavigation?.name === "Databases" &&
+        { selectedNavigation?.name === "Containerized Dependencies" &&
+        <DatabasesTab
+          gimletClient={gimletClient}
+          store={store}
+          environment={env}
+          setDatabaseValues={setDatabaseValues}
+          databaseConfig={databaseConfig}
+          plainModules={plainModules}
+        />
+        }
+        { selectedNavigation?.name === "Cloud Dependencies" &&
         <DatabasesTab
           gimletClient={gimletClient}
           store={store}
@@ -715,7 +731,8 @@ export const extractIngressAnnotations = (stackConfig, stackDefinition) => {
 function translateToNavigation(template) {
   const navigation = template.uiSchema.map((elem, idx) => ({name: elem.metaData.name, href: ref(elem.metaData.name), uiSchemaOrder: idx}))
   navigation.unshift({name: "General", href: "/general"})
-  navigation.push({name: "Databases", href: "/databases"})
+  navigation.push({name: "Containerized Dependencies", href: "/containerized-databases"})
+  // navigation.push({name: "Cloud Dependencies", href: "/cloud-databases"})
   return navigation
 }
 

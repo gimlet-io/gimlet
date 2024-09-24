@@ -316,6 +316,74 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsEnvString)
 }
 
+func plainModules(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	config := ctx.Value("config").(*config.Config)
+
+	repo, err := nativeGit.FlexibleURLCloneToMemory(config.PlainModulesURL)
+	if err != nil {
+		logrus.Errorf("cannot get plain modules: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	headBranch, err := helper.HeadBranch(repo)
+	if err != nil {
+		logrus.Errorf("cannot get plain modules: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	folders, err := helper.RemoteFoldersOnBranchWithoutCheckout(repo, headBranch, "")
+	if err != nil {
+		logrus.Errorf("cannot get plain modules: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	plainModules := []*dx.PlainModule{}
+	for _, folder := range folders {
+		fmt.Println(folder)
+		files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, folder)
+		if err != nil {
+			logrus.Errorf("cannot get plain modules: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		pm := &dx.PlainModule{URL: config.PlainModulesURL + "?path=" + folder}
+		for path, content := range files {
+			if path == "schema.json" {
+				var schema map[string]interface{}
+				err := json.Unmarshal([]byte(content), &schema)
+				if err != nil {
+					logrus.Warn(err)
+				}
+				pm.Schema = schema
+			} else if path == "uiSchema.json" {
+				var schema []map[string]interface{}
+				err := json.Unmarshal([]byte(content), &schema)
+				if err != nil {
+					logrus.Warn(err)
+				}
+				pm.UISchema = schema
+			} else if path == "template.yaml" {
+				pm.Template = content
+			}
+		}
+		plainModules = append(plainModules, pm)
+	}
+
+	modulesString, err := json.Marshal(plainModules)
+	if err != nil {
+		logrus.Errorf("cannot serialize plain modules: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte(modulesString))
+}
+
 func StackConfig(gitRepoCache *nativeGit.RepoCache, stackYamlPath, infraRepo string) (*dx.StackConfig, error) {
 	var stackConfig *dx.StackConfig
 	err := gitRepoCache.PerformAction(infraRepo, func(repo *git.Repository) error {
