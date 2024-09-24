@@ -5,7 +5,6 @@ import {
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import FilterBar from '../filterBar/filterBar';
-import { v4 as uuidv4 } from 'uuid';
 
 export default function Repositories (props) {
   const { store, gimletClient } = props;

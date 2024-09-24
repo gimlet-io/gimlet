@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export default function ImageWidget(props) {
-  const [registries, setRegistries] = useState([...props.uiSchema["ui:options"]?.registries])
+  const registries = [...props.uiSchema["ui:options"]?.registries]
   const [image, setImage] = useState(props.formData)
 
   const setRepository = (repository) => {

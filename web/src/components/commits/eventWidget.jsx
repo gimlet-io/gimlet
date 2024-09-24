@@ -27,7 +27,6 @@ export function EventWidget(props) {
               } else {
                 let errorCount = 0;
                 let successCount = 0;
-                let hasError = false
                 event.results.forEach((result) => {
                   if (result.status === 'failure') {
                     errorCount++

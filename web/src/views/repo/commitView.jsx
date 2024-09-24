@@ -65,7 +65,7 @@ export function CommitView(props) {
           }
         })
         if (latest.created > c.lastEvent.created ||
-          latest.status != c.lastEvent.status // handle status updates on an existing event, not just newer events
+          latest.status !== c.lastEvent.status // handle status updates on an existing event, not just newer events
         ) {
           const updated = produce(commits, draft => {
             var idx

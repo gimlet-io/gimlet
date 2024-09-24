@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
+import { useState, useEffect } from 'react';
 import Toggle from '../../components/toggle/toggle';
 import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
