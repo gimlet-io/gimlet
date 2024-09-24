@@ -4,7 +4,7 @@ import Nav from "./components/nav/nav";
 import StreamingBackend from "./streamingBackend";
 import { createStore } from 'redux';
 import { rootReducer } from './redux/redux';
-import { BrowserRouter as Router, Redirect, Route, Switch, withRouter } from "react-router-dom";
+import { BrowserRouter as Router, Redirect, Route, Routes, withRouter } from "react-router-dom";
 import GimletClient from "./client/client";
 import Repositories from "./views/repositories/repositories";
 import APIBackend from "./apiBackend";
@@ -98,11 +98,11 @@ export default class App extends Component {
         <Router>
           <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
             <div className="py-10">
-              <Switch>
+              <Routes>
                 <Route path="/login">
                   <LoginPage />
                 </Route>
-              </Switch>
+              </Routes>
             </div>
           </div>
         </Router>
@@ -135,7 +135,7 @@ export default class App extends Component {
         <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
           <FooterWithRouting />
           <div className="">
-            <Switch>
+            <Routes>
               <Route exact path="/">
                 <Redirect to="/repositories" />
               </Route>
@@ -205,7 +205,7 @@ export default class App extends Component {
                 <RepoWithRouting />
               </Route>
 
-            </Switch>
+            </Routes>
           </div>
         </div>
       </Router>

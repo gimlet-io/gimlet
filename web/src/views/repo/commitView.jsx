@@ -7,13 +7,13 @@ import {
 } from "../../redux/redux";
 import DeployHandler from '../../deployHandler';
 import {produce} from 'immer';
-import { useHistory, useLocation, useParams } from 'react-router-dom'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 
 export function CommitView(props) {
   const { store, gimletClient } = props;
   const reduxState = store.getState();
   const location = useLocation()
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const { owner, repo } = useParams();
   const repoName = `${owner}/${repo}`;
@@ -85,7 +85,7 @@ export function CommitView(props) {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     params.set('branch', selectedBranch);
-    history.replace({ pathname: location.pathname, search: params.toString() });
+    navigate(location.pathname+"?" + params.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch]);
 

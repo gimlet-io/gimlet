@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { ArrowRightIcon } from '@heroicons/react/20/solid'
 import { ACTION_TYPE_GIT_REPOS } from '../../redux/redux';
 import { Loading } from '../repo/deployStatus';
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function RepositoryWizard(props) {
-  const history = useHistory()
+  const navigate = useNavigate()
   return (
     <div className='text-neutral-900 dark:text-neutral-200'>
       <div className="w-full bg-white dark:bg-neutral-800">
@@ -14,7 +14,7 @@ export default function RepositoryWizard(props) {
           <button
             type="button"
             className='secondaryButton'
-            onClick={() => history.push("/repositories")}
+            onClick={() => navigate("/repositories")}
           >
             I am done importing
           </button>

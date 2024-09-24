@@ -12,13 +12,13 @@ import { Loading } from '../repo/deployStatus';
 import { ACTION_TYPE_CLEAR_DEPLOY, ACTION_TYPE_POPUPWINDOWSUCCESS } from "../../redux/redux";
 import { v4 as uuidv4 } from 'uuid';
 import SealedSecretWidget from "../envConfig/sealedSecretWidget";
-import { useParams, useHistory } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
   const { owner, repo, env } = useParams();
   const repoName = `${owner}/${repo}`;
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const reduxState = props.store.getState();
   const [templates, setTemplates] = useState()
@@ -256,7 +256,7 @@ export function DeployWizzard(props) {
         });
 
         setSavingConfigInProgress(false)
-        history.push(`/repo/${repoName}`);
+        navigate(`/repo/${repoName}`);
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
         setSavingConfigInProgress(false)

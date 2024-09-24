@@ -5,10 +5,10 @@ import {
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import FilterBar from '../filterBar/filterBar';
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function Repositories (props) {
-  let history = useHistory()
+  let navigate = useNavigate()
   const { store, gimletClient } = props;
   const reduxState = store.getState();
 
@@ -39,7 +39,7 @@ export default function Repositories (props) {
           setRepositoriesLoading(false)
 
           if (repos.length === 0) {
-            history.push("/import-repositories")
+            navigate("/import-repositories")
           }
         }, () => {
           setRepositoriesLoading(false)
@@ -101,7 +101,7 @@ export default function Repositories (props) {
               change={setFilters}
             />
             <button
-              onClick={() => history.push("/import-repositories")}
+              onClick={() => navigate("/import-repositories")}
               className="primaryButton px-8">
               Import
             </button>
@@ -121,7 +121,7 @@ export default function Repositories (props) {
                   <RepoCard
                     name={repo}
                     services={services[repo]}
-                    navigateToRepo={() => history.push(`/repo/${repo}`)}
+                    navigateToRepo={() => navigate(`/repo/${repo}`)}
                     favorite={favorites.includes(repo)}
                     favoriteHandler={favoriteHandler}
                   />
@@ -174,8 +174,7 @@ const filterRepos = (repos, services, favorites, filters) => {
 }
 
 const SetupGithubCard = () => {
-  let history = useHistory()
-
+  const navigate = useNavigate()
   return (
     <div className="rounded-md bg-blue-50 p-4 mb-4">
     <div className="flex">
@@ -188,7 +187,7 @@ const SetupGithubCard = () => {
           This view will load your git repositories once you integrated Github.<br />
           <button
             className="font-medium"
-            onClick={() => {history.push("/settings");return true}}
+            onClick={() => {navigate("/settings");return true}}
           >
             Click to integrate Github on the Settings page.
           </button>

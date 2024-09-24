@@ -12,7 +12,7 @@ import MenuButton from '../../components/menuButton/menuButton';
 import { CommitWidget } from '../../components/commits/commits';
 import { v4 as uuidv4 } from 'uuid';
 import {produce} from 'immer';
-import { useParams, useLocation, useHistory } from 'react-router-dom'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
 
 export function PreviewView(props) {
   const { store, gimletClient } = props;
@@ -20,7 +20,7 @@ export function PreviewView(props) {
 
   const { owner, repo } = useParams();
   const repoName = `${owner}/${repo}`;
-  let history = useHistory()
+  const navigate = useNavigate()
 
   const [pullRequests, setPullRequests] = useState()
   const [rolloutHistory, setRolloutHistory] = useState(reduxState.rolloutHistory?.[repoName])
@@ -130,7 +130,7 @@ export function PreviewView(props) {
         <button
             type="button"
             className='secondaryButton'
-            onClick={() => history.push(encodeURI(`/repo/${owner}/${repo}/envs/${previewEnvConfig.env}/config/${repo}-preview/edit-preview`))}
+            onClick={() => navigate(encodeURI(`/repo/${owner}/${repo}/envs/${previewEnvConfig.env}/config/${repo}-preview/edit-preview`))}
           >
             Edit Preview Config
         </button>
@@ -192,8 +192,7 @@ export function PreviewView(props) {
 
 const NoConfig = (props) => {
   const { owner, repo } = props;
-
-  let history = useHistory()
+  const navigate = useNavigate()
 
   return (
     <div className='w-full card p-4 mt-4'>
@@ -201,7 +200,7 @@ const NoConfig = (props) => {
         <h3 className="mt-2 text-sm font-semibold text-center">No preview config</h3>
         <p className="mt-1 text-sm text-neutral-500 text-center">Get started by configuring preview deploys.</p>
         <div className="mt-6 text-center">
-          <MenuButton {...props} handleClick={(envName) => history.push(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/config/${repo}-preview/new-preview`))}>
+          <MenuButton {...props} handleClick={(envName) => navigate(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/config/${repo}-preview/new-preview`))}>
             Configure Previews..
           </MenuButton>
         </div>
@@ -220,8 +219,8 @@ const NoPullRequests = () => {
 
 const Branch = (props) => {
   const { owner, repo, deployment } = useParams();
-  let location = useLocation()
-  let history = useHistory()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { store, gimletClient, renderId } = props;
   const { branch, pr, stacks, envs, config, settings, rolloutHistory } = props
   const { setDeployStatusModal, deployHandler } = props
@@ -286,7 +285,7 @@ const Branch = (props) => {
   }, [latestCommitEvent]);
 
   const linkToDeployment = (env, deployment) => {
-    history.push({
+    navigate({
       pathname: `/repo/${owner}/${repo}/previews/${deployment}`,
       search: location.search
     })

@@ -17,12 +17,12 @@ import { Generaltab, templateIdentity } from './generalTab';
 import { Modal } from '../../components/modal'
 import { ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/solid';
 import IngressWidget from "../envConfig/ingressWidget";
-import { useHistory, useLocation, useParams } from 'react-router-dom'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 
 export function EnvConfig(props) {
   const { store, gimletClient } = props
   const { owner, repo, env, config, action } = useParams();
-  let history = useHistory()
+  let navigate = useNavigate()
   let location = useLocation()
   const preview = action === "new-preview" || action === "edit-preview"
   const repoName = `${owner}/${repo}`;
@@ -274,9 +274,9 @@ export function EnvConfig(props) {
 
         clearTimeout(timeoutTimer);
         if (preview) {
-          history.push(`/repo/${repoName}/previews`);
+          navigate(`/repo/${repoName}/previews`);
         } else {
-          history.push(`/repo/${repoName}`);
+          navigate(`/repo/${repoName}`);
         }
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
@@ -315,7 +315,7 @@ export function EnvConfig(props) {
         });
 
         clearTimeout(timeoutTimer);
-        history.replace(`/repo/${repoName}`);
+        navigate(`/repo/${repoName}`);
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
         clearTimeout(timeoutTimer);
@@ -532,8 +532,8 @@ export function EnvConfig(props) {
 export function SideBar(props) {
   const { navigation, selected } = props;
 
-  let history = useHistory()
-  let location = useLocation()
+  const location = useLocation()
+  const navigate = useNavigate()
 
   return (
     <nav aria-label="Sidebar">
@@ -542,7 +542,7 @@ export function SideBar(props) {
           <li key={item.name}>
             <button
               className={`${item.name === selected.name ? 'font-medium' : 'text-neutral-600 dark:text-neutral-400'} group flex w-full gap-x-3 p-2 pl-3 text-sm leading-6 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 font-light`}
-              onClick={() => history.push(location.pathname.replace(selected.href, "") + item.href)}
+              onClick={() => navigate(location.pathname.replace(selected.href, "") + item.href)}
             >
               {item.name}
             </button>

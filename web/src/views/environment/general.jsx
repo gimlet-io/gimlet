@@ -8,13 +8,13 @@ import {
   ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVS
 } from "../../redux/redux";
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function General(props) {
   const { gimletClient, store } = props;
   const { environment, scmUrl, isOnline, userToken } = props;
 
-  let history = useHistory()
+  const navigate = useNavigate()
 
   const deleteEnv = (envName) => {
     store.dispatch({
@@ -32,7 +32,7 @@ export default function General(props) {
           }
         });
         refreshEnvs();
-        history.push("/environments");
+        navigate("/environments");
       }, err => {
         store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
