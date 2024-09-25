@@ -302,7 +302,7 @@ function ImportRepoCrumbs(props) {
             href="https://gimlet.io"
             className='navUnselected inline-flex items-center px-3 py-2 transition-colors duration-150 ease-in-out hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded-md text-sm font-light font-sans'
             onClick={() => {
-              history.push(item.href);
+              navigate(item.href);
               return true
             }}
           >

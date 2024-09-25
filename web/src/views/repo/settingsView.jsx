@@ -29,7 +29,6 @@ export function RepoSettingsView(props) {
   }, []);
 
   const saveRepoPullRequestPolicy = () => {
-    const { owner, repo } = props.match.params;
     store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Saving repository settings"
