@@ -22,7 +22,7 @@ test('should process agent connected event', () => {
     }
   };
 
-  let reduced = rootReducer(initialState, agentConnected);
+  const reduced = rootReducer(initialState, agentConnected);
 
   expect(Object.keys(reduced.connectedAgents).length).toEqual(1);
   expect(reduced.connectedAgents['agent-a']).toEqual({name: 'agent-a', stacks: []});
@@ -42,7 +42,7 @@ test('should process agent disconnected event', () => {
 
   const state = deepCopy(initialState)
   state.connectedAgents['agent-a'] = {name: 'agent-a', namespace: ''}
-  let reduced = rootReducer(state, agentDisconnected);
+  const reduced = rootReducer(state, agentDisconnected);
 
   expect(Object.keys(reduced.connectedAgents).length).toEqual(0);
 });

@@ -17,10 +17,13 @@ import { Generaltab, templateIdentity } from './generalTab';
 import { Modal } from '../../components/modal'
 import { ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/solid';
 import IngressWidget from "../envConfig/ingressWidget";
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 
 export function EnvConfig(props) {
   const { store, gimletClient } = props
-  const { owner, repo, env, config, action } = props.match.params;
+  const { owner, repo, env, config, action } = useParams();
+  let navigate = useNavigate()
+  let location = useLocation()
   const preview = action === "new-preview" || action === "edit-preview"
   const repoName = `${owner}/${repo}`;
 
@@ -109,7 +112,7 @@ export function EnvConfig(props) {
 
   useEffect(() => {
     if (configFile && configFile.values.ingress) {
-      if (configFile.values.ingress.protectWithOauthProxy) {
+      if (configFile.values.ingress.protectWithOauthProxy && stackConfigDerivedValues) {
         setConfigFile(prevState => ({
           ...prevState,
           values: {
@@ -271,9 +274,9 @@ export function EnvConfig(props) {
 
         clearTimeout(timeoutTimer);
         if (preview) {
-          props.history.push(`/repo/${repoName}/previews`);
+          navigate(`/repo/${repoName}/previews`);
         } else {
-          props.history.push(`/repo/${repoName}`);
+          navigate(`/repo/${repoName}`);
         }
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
@@ -312,7 +315,7 @@ export function EnvConfig(props) {
         });
 
         clearTimeout(timeoutTimer);
-        props.history.replace(`/repo/${repoName}`);
+        navigate(`/repo/${repoName}`);
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
         clearTimeout(timeoutTimer);
@@ -391,7 +394,7 @@ export function EnvConfig(props) {
   const addedLines = addedStat ? addedStat : 0
   const removedLines = removedStat ? removedStat : 0
 
-  let selectedNavigation = navigation.find(i => props.location.pathname.endsWith(i.href))
+  let selectedNavigation = navigation.find(i => location.pathname.endsWith(i.href))
   if (!selectedNavigation) {
     selectedNavigation = navigation[0]
   }
@@ -457,8 +460,6 @@ export function EnvConfig(props) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex pt-56">
       <div className="sticky top-0 h-96 top-56">
         <SideBar
-          location={props.location}
-          history={props.history}
           navigation={navigation}
           selected={selectedNavigation}
         />
@@ -529,7 +530,10 @@ export function EnvConfig(props) {
 }
 
 export function SideBar(props) {
-  const { location, history, navigation, selected } = props;
+  const { navigation, selected } = props;
+
+  const location = useLocation()
+  const navigate = useNavigate()
 
   return (
     <nav aria-label="Sidebar">
@@ -538,7 +542,7 @@ export function SideBar(props) {
           <li key={item.name}>
             <button
               className={`${item.name === selected.name ? 'font-medium' : 'text-neutral-600 dark:text-neutral-400'} group flex w-full gap-x-3 p-2 pl-3 text-sm leading-6 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 font-light`}
-              onClick={() => history.push(location.pathname.replace(selected.href, "") + item.href)}
+              onClick={() => navigate(location.pathname.replace(selected.href, "") + item.href)}
             >
               {item.name}
             </button>

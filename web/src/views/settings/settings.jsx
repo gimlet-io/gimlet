@@ -310,7 +310,6 @@ function TokenInfo({ token }) {
 };
 
 export const Licensed = (props) => {
-  console.log(props.settings)
   if (!props.settings.licensed) {
     return null
   }

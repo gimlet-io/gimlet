@@ -1,10 +1,7 @@
-import { format, formatDistance } from "date-fns";
+import { format } from "date-fns";
 
 function EnvironmentCard({ env, navigateToEnv, isOnline, trial }) {
-  const expiringAt = new Date(env.expiry * 1000);
-  const expired = expiringAt < new Date()
   const exactDate = format(env.expiry * 1000, 'h:mm:ss a, MMMM do yyyy')
-  const dateLabel = formatDistance(env.expiry * 1000, new Date());
 
   return (
     <li className="card h-24 cursor-pointer"

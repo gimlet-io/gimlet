@@ -5,9 +5,10 @@ import {
 } from "../../redux/redux";
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import FilterBar from '../filterBar/filterBar';
-import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom'
 
 export default function Repositories (props) {
+  let navigate = useNavigate()
   const { store, gimletClient } = props;
   const reduxState = store.getState();
 
@@ -38,7 +39,7 @@ export default function Repositories (props) {
           setRepositoriesLoading(false)
 
           if (repos.length === 0) {
-            props.history.push("/import-repositories")
+            navigate("/import-repositories")
           }
         }, () => {
           setRepositoriesLoading(false)
@@ -76,7 +77,7 @@ export default function Repositories (props) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div>
               <div className="mt-8">
-                <SetupGithubCard history={props.history} />
+                <SetupGithubCard />
               </div>
             </div>
           </div>
@@ -100,7 +101,7 @@ export default function Repositories (props) {
               change={setFilters}
             />
             <button
-              onClick={() => props.history.push("/import-repositories")}
+              onClick={() => navigate("/import-repositories")}
               className="primaryButton px-8">
               Import
             </button>
@@ -120,7 +121,7 @@ export default function Repositories (props) {
                   <RepoCard
                     name={repo}
                     services={services[repo]}
-                    navigateToRepo={() => props.history.push(`/repo/${repo}`)}
+                    navigateToRepo={() => navigate(`/repo/${repo}`)}
                     favorite={favorites.includes(repo)}
                     favoriteHandler={favoriteHandler}
                   />
@@ -172,7 +173,8 @@ const filterRepos = (repos, services, favorites, filters) => {
   return filteredRepositories;
 }
 
-const SetupGithubCard = (props) => {
+const SetupGithubCard = () => {
+  const navigate = useNavigate()
   return (
     <div className="rounded-md bg-blue-50 p-4 mb-4">
     <div className="flex">
@@ -185,7 +187,7 @@ const SetupGithubCard = (props) => {
           This view will load your git repositories once you integrated Github.<br />
           <button
             className="font-medium"
-            onClick={() => {props.history.push("/settings");return true}}
+            onClick={() => {navigate("/settings");return true}}
           >
             Click to integrate Github on the Settings page.
           </button>

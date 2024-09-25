@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export default function IngressWidget(props) {
-  const [preferredDomain, setPreferredDomain] = useState(props.uiSchema["ui:options"]?.preferredDomain)
+  const preferredDomain = props.uiSchema["ui:options"]?.preferredDomain
   const [host, setHost] = useState(props.formData)
 
   useEffect(() => {

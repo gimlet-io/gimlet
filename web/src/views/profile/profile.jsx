@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import DefaultProfilePicture from './defaultProfilePicture.png';
 
 export default class Profile extends Component {
   constructor(props) {

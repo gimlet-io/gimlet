@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
 
-export default function GithubIntegration(props) {
+export default function GithubIntegration() {
     return (
       <div className='text-neutral-900 dark:text-neutral-200'>
       <div className="w-full bg-white dark:bg-neutral-800">
