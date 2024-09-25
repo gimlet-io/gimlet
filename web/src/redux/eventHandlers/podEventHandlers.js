@@ -10,7 +10,7 @@ export function podCreated(state, event) {
   }
 
   state.connectedAgents = produce(state.connectedAgents, draft => {
-    draft[env].stacks.forEach((stack, stackID, stacks) => {
+    draft[env].stacks.forEach((stack) => {
       if (stack.service.namespace + '/' + stack.service.name !== event.svc) {
         return;
       }
@@ -74,7 +74,7 @@ export function podDeleted(state, event) {
   }
 
   state.connectedAgents = produce(state.connectedAgents, draft => {
-    draft[env].stacks.forEach((stack, stackID, stacks) => {
+    draft[env].stacks.forEach((stack) => {
       let toRemove = undefined;
       if (!stack.deployment) {
         // happens when a deployment is deleted

@@ -6,16 +6,18 @@ import {
   ACTION_TYPE_ENVCONFIGS,
 } from "../../redux/redux";
 import DeployHandler from '../../deployHandler';
-import { useHistory, useLocation } from 'react-router-dom'
 import {produce} from 'immer';
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 
 export function CommitView(props) {
   const { store, gimletClient } = props;
   const reduxState = store.getState();
+  const location = useLocation()
+  const navigate = useNavigate();
 
-  const { owner, repo } = props.match.params;
+  const { owner, repo } = useParams();
   const repoName = `${owner}/${repo}`;
-  const queryParams = new URLSearchParams(props.location.search)
+  const queryParams = new URLSearchParams(location.search)
 
   const [deployStatusModal, setDeployStatusModal] = useState(false)
   const [commits, setCommits] = useState()
@@ -28,8 +30,6 @@ export function CommitView(props) {
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
   // eslint-disable-next-line no-unused-vars
   const [refreshQueue, setRefreshQueue] = useState(reduxState.repoRefreshQueue.filter(repo => repo === repoName).length)
-  const history = useHistory();
-  const location = useLocation();
 
   store.subscribe(() => {
     const reduxState = store.getState()
@@ -65,7 +65,7 @@ export function CommitView(props) {
           }
         })
         if (latest.created > c.lastEvent.created ||
-          latest.status != c.lastEvent.status // handle status updates on an existing event, not just newer events
+          latest.status !== c.lastEvent.status // handle status updates on an existing event, not just newer events
         ) {
           const updated = produce(commits, draft => {
             var idx
@@ -85,7 +85,7 @@ export function CommitView(props) {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     params.set('branch', selectedBranch);
-    history.replace({ pathname: location.pathname, search: params.toString() });
+    navigate(location.pathname+"?" + params.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch]);
 

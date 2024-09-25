@@ -6,6 +6,7 @@ import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
 import logo from "./logo.svg";
 import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 import { ThemeSelector } from '../../views/repositories/themeSelector';
+import { useMatch, useLocation, useParams, useNavigate } from 'react-router-dom'
 
 const navigation = [
   {name: 'Repositories', href: '/repositories'},
@@ -34,6 +35,7 @@ export default function Nav (props) {
   const [settings, setSettings] = useState(reduxState.settings)
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
   const [envs, setEnvs] = useState(reduxState.envs)
+  const { owner, repo, env, config, action } = useParams()
 
   store.subscribe(() => {
     const reduxState = store.getState();
@@ -43,45 +45,41 @@ export default function Nav (props) {
     setEnvs(reduxState.envs);
   })
 
+  user.imageUrl = `${settings.scmUrl}/${user.login}.png?size=128`
+
+  const configScreen = useMatch('/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?') && (action === 'new' || action === 'edit')
+  const previewConfigScreen = useMatch('/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?') && (action === 'new-preview' || action === 'edit-preview')
+  const deployment = useMatch('/repo/:owner/:repo/:environment?/:deployment?')
+  const commits = useMatch('/repo/:owner/:repo/commits')
+  const previewDeployments = useMatch('/repo/:owner/:repo/previews/:deployment?')
+  const repoSettings = useMatch('/repo/:owner/:repo/settings/:nav?')
+  const repoScreen = deployment || commits || previewDeployments || repoSettings
+  const environmentScreen = useMatch('/env/:env/:tab?')
+  const deployWizzardScreen = useMatch('/repo/:owner/:repo/envs/:env/deploy')
+  const repoWizzardScreen = useMatch('/import-repositories')
+  const navigate = useNavigate()
+
   const loggedIn = user !== undefined;
   if (!loggedIn) {
     return null;
   }
 
-  user.imageUrl = `${settings.scmUrl}/${user.login}.png?size=128`
-
-  const { owner, repo, env, config } = props.match.params
-  const configScreen =
-    props.match.path === '/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?' &&
-    (props.match.params.action === 'new' || props.match.params.action === 'edit')
-  const previewConfigScreen =
-    props.match.path === '/repo/:owner/:repo/envs/:env/config/:config/:action?/:nav?' &&
-    (props.match.params.action === 'new-preview' || props.match.params.action === 'edit-preview')
-  const repoScreen = 
-    props.match.path === '/repo/:owner/:repo/:environment?/:deployment?' ||
-    props.match.path === '/repo/:owner/:repo/commits' ||
-    props.match.path === '/repo/:owner/:repo/previews/:deployment?' ||
-    props.match.path === '/repo/:owner/:repo/settings/:nav?'
-  const environmentScreen = props.match.path === '/env/:env/:tab?'
-  const deployWizzardScreen = props.match.path === '/repo/:owner/:repo/envs/:env/deploy'
-  const repoWizzardScreen = props.match.path === '/import-repositories'
-
-  let menu = <MainMenu location={props.location} history={props.history} items={navigation} />
+  let menu = <MainMenu items={navigation} />
   let submenu = null
   if (repoScreen) {
     const repoLink = <a href={`${settings.scmUrl}/${owner}/${repo}`} target="_blank" rel="noreferrer" className='externalLink'>{owner}/{repo} <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-    menu = <Crumbs crumb={repoLink} label='Repositories' href="/repositories" history={props.history} />
-    submenu = <MainMenu location={props.location} history={props.history} items={repoNavigation} submenu={true} />
+    menu = <Crumbs crumb={repoLink} label='Repositories' href="/repositories" />
+    submenu = <MainMenu items={repoNavigation} submenu={true} />
   } else if (environmentScreen) {
-    menu = <Crumbs crumb={env} label='Environments' href="/environments" history={props.history} />
+    menu = <Crumbs crumb={env} label='Environments' href="/environments" />
   } else if (configScreen) {
-    menu = <ConfigCrumbs owner={owner} repo={repo} history={props.history} config={config} env={env} />
+    menu = <ConfigCrumbs owner={owner} repo={repo} config={config} env={env} />
   } else if (previewConfigScreen) {
-    menu = <PreviewConfigCrumbs owner={owner} repo={repo} history={props.history} />
+    menu = <PreviewConfigCrumbs owner={owner} repo={repo} />
   } else if (deployWizzardScreen) {
-    menu = <DeployWizzardCrumbs owner={owner} repo={repo} history={props.history} env={env} />
+    menu = <DeployWizzardCrumbs owner={owner} repo={repo} env={env} />
   } else if (repoWizzardScreen) {
-    menu = <ImportRepoCrumbs history={props.history} items={navigation} />
+    menu = <ImportRepoCrumbs items={navigation} />
   }
 
   return (
@@ -97,7 +95,7 @@ export default function Nav (props) {
                     src={logo}
                     alt=""
                     onClick={() => {
-                      props.history.push("/");
+                      navigate("/");
                       return true
                     }}
                   />
@@ -193,7 +191,7 @@ export default function Nav (props) {
                                         window.location.replace(item.href);
                                         return true
                                       }
-                                      props.history.push(item.href);
+                                      navigate(item.href);
                                       return true
                                     }}
                                   >
@@ -220,7 +218,9 @@ export default function Nav (props) {
 }
 
 function MainMenu(props) {
-  const { items, location, history, submenu } = props
+  const { items, submenu } = props
+  const location = useLocation()
+  const navigate = useNavigate()
 
   let current = items.find(i => location.pathname.endsWith(i.href))
   if (!current) {
@@ -251,9 +251,9 @@ function MainMenu(props) {
             aria-current={selected ? 'page' : undefined}
             onClick={() => {
               if (submenu) {
-                history.push(location.pathname.replace(current.href, "") + item.href);
+                navigate(location.pathname.replace(current.href, "") + item.href);
               } else {
-                history.push(item.href);
+                navigate(item.href);
               }
               return true
             }}
@@ -268,6 +268,7 @@ function MainMenu(props) {
 
 function Crumbs(props) {
   const { label, crumb, href } = props
+  const navigate = useNavigate()
 
   return (
     <span className='inline-flex items-center text-sm text-neutral-500 dark:text-neutral-300 font-light py-1 border-b-2 border-transparent'>
@@ -275,7 +276,7 @@ function Crumbs(props) {
       href="https://gimlet.io"
       className='navUnselected pl-3 py-2'
       onClick={() => {
-        props.history.push(href);
+        navigate(href);
         return true
       }}
     >{label}</button>
@@ -286,7 +287,9 @@ function Crumbs(props) {
 }
 
 function ImportRepoCrumbs(props) {
-  const { history, items } = props
+  const { items } = props
+  const navigate = useNavigate()
+
   return (
     items.map((item) => {
       return (
@@ -299,7 +302,7 @@ function ImportRepoCrumbs(props) {
             href="https://gimlet.io"
             className='navUnselected inline-flex items-center px-3 py-2 transition-colors duration-150 ease-in-out hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded-md text-sm font-light font-sans'
             onClick={() => {
-              history.push(item.href);
+              navigate(item.href);
               return true
             }}
           >
@@ -313,6 +316,7 @@ function ImportRepoCrumbs(props) {
 
 function ConfigCrumbs(props) {
   const { owner, repo, config, env } = props
+  const navigate = useNavigate()
 
   return (
     <span className='inline-flex items-center text-sm text-neutral-500 dark:text-neutral-300 font-light py-1 border-b-2 border-transparent'>
@@ -320,7 +324,7 @@ function ConfigCrumbs(props) {
       href="https://gimlet.io"
       className='navUnselected pl-3 py-2'
       onClick={() => {
-        props.history.push('/repositories');
+        navigate('/repositories');
         return true
       }}
     >Repositories</button>
@@ -329,7 +333,7 @@ function ConfigCrumbs(props) {
       href="https://gimlet.io"
       className='navUnselected py-2'
       onClick={() => {
-        props.history.push(`/repo/${owner}/${repo}`);
+        navigate(`/repo/${owner}/${repo}`);
         return true
       }}
     >{owner}/{repo}</button>
@@ -341,6 +345,7 @@ function ConfigCrumbs(props) {
 
 function DeployWizzardCrumbs(props) {
   const { owner, repo, env } = props
+  const navigate = useNavigate()
 
   return (
     <span className='inline-flex items-center text-sm text-neutral-500 font-light py-1 border-b-2 border-transparent'>
@@ -348,7 +353,7 @@ function DeployWizzardCrumbs(props) {
       href="https://gimlet.io"
       className='navUnselected pl-3 py-2'
       onClick={() => {
-        props.history.push('/repositories');
+        navigate('/repositories');
         return true
       }}
     >Repositories</button>
@@ -357,7 +362,7 @@ function DeployWizzardCrumbs(props) {
       href="https://gimlet.io"
       className='navUnselected py-2'
       onClick={() => {
-        props.history.push(`/repo/${owner}/${repo}`);
+        navigate(`/repo/${owner}/${repo}`);
         return true
       }}
     >{owner}/{repo}</button>
@@ -369,6 +374,7 @@ function DeployWizzardCrumbs(props) {
 
 function PreviewConfigCrumbs(props) {
   const { owner, repo } = props
+  const navigate = useNavigate()
 
   return (
     <span className='inline-flex items-center text-sm text-neutral-500 font-light py-1 border-b-2 border-transparent'>
@@ -376,7 +382,7 @@ function PreviewConfigCrumbs(props) {
       href="https://gimlet.io"
       className='navUnselected pl-3 py-2'
       onClick={() => {
-        props.history.push('/repositories');
+        navigate('/repositories');
         return true
       }}
     >Repositories</button>
@@ -385,7 +391,7 @@ function PreviewConfigCrumbs(props) {
       href="https://gimlet.io"
       className='navUnselected py-2'
       onClick={() => {
-        props.history.push(`/repo/${owner}/${repo}`);
+        navigate(`/repo/${owner}/${repo}`);
         return true
       }}
     >{owner}/{repo}</button>

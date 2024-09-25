@@ -19,11 +19,13 @@ import { Modal } from '../../components/modal'
 import * as Diff from "diff";
 import { InformationCircleIcon } from '@heroicons/react/20/solid';
 import { format, formatDistance } from "date-fns";
+import { useParams, useLocation } from 'react-router-dom'
 
 export default function EnvironmentView(props) {
   const { store, gimletClient } = props
   const reduxState = props.store.getState();
-  const { env } = props.match.params;
+  let { env } = useParams()
+  let location = useLocation()
 
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
   const [environment, setEnvironment] = useState(findEnv(reduxState.envs, env))
@@ -203,7 +205,7 @@ export default function EnvironmentView(props) {
     }  
   }
   
-  let selectedNavigation = navigation.find(i => props.location.pathname.endsWith(i.href))
+  let selectedNavigation = navigation.find(i => location.pathname.endsWith(i.href))
   if (!selectedNavigation) {
     selectedNavigation = navigation[0]
   }
@@ -306,18 +308,13 @@ export default function EnvironmentView(props) {
               <p>Now it is time to connect your Kubernetes cluster running on your preferred provider.</p>
               <p className='pt-4'>Follow one of the following tutorials:</p>
               <ul className='list-disc ml-8'>
-                <li><a href="" className='underline'>CIVO Cloud</a></li>
-                <li><a href="" className='underline'>Digital Ocean</a></li>
-                <li><a href="" className='underline'>Linode</a></li>
-                <li><a href="" className='underline'>Scaleway</a></li>
-                <li><a href="" className='underline'>Any other Kubernetes cluster</a></li>
+                <li><a href="https://www.youtube.com/watch?v=LCk25U7Gaj4" rel="noreferrer" target="_blank" className='underline'>CIVO Cloud example video</a></li>
               </ul>
 
               {expired &&
               <p className='pt-4'>
                 This environment was disabled <span className='font-medium text-red-500' title={`at ${exactDate}`}>{dateLabel} ago</span>, you can
-                <a
-                  href="#"
+                <span
                   className='underline ml-1'
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
@@ -326,7 +323,7 @@ export default function EnvironmentView(props) {
                   }}
                   >
                   start the migration here
-                </a>.
+                </span>.
               </p>
               }
               {!expired &&
@@ -334,7 +331,7 @@ export default function EnvironmentView(props) {
                 <p className='pt-4'>To ease the transition we will host this environment for another 7 days.</p>
                 <p className='pt-4'>
                   This environment will be disabled <span className='font-medium text-red-500' title={`at ${exactDate}`}>in {dateLabel}</span>, or you can
-                  <a
+                  <span
                   href="#"
                   className='underline ml-1'
                   onClick={() => {
@@ -344,7 +341,7 @@ export default function EnvironmentView(props) {
                   }}
                   >
                     start the migration here
-                  </a>.
+                  </span>.
                 </p>
               </>
               }
@@ -362,8 +359,6 @@ export default function EnvironmentView(props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex pt-8">
         <div className="sticky top-0 h-96 top-56">
           <SideBar
-            location={props.location}
-            history={props.history}
             navigation={navigation}
             selected={selectedNavigation}
           />
@@ -408,7 +403,6 @@ export default function EnvironmentView(props) {
               provider={settings.provider}
               isOnline={isOnline}
               userToken={user.token}
-              history={props.history}
             />
           }
           { selectedNavigation && selectedNavigation.name !== "General" &&  !environment.builtIn &&

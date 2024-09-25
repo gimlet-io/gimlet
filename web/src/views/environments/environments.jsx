@@ -1,56 +1,53 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ACTION_TYPE_ENVS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
 } from "../../redux/redux";
 import EnvironmentCard from '../../components/environmentCard/environmentCard';
 import { SkeletonLoader } from '../../../src/views/repositories/repositories';
+import { useNavigate } from 'react-router-dom'
 
-class Environments extends Component {
-  constructor(props) {
-    super(props);
-    let reduxState = this.props.store.getState();
+export default function Environments(props) {
+  const { store, gimletClient } = props
+  const navigate = useNavigate()
 
-    this.state = {
-      connectedAgents: reduxState.connectedAgents,
-      envs: reduxState.envs,
-      input: "",
-      saveButtonTriggered: false,
-      settings: reduxState.settings,
-      environmentsLoading: true,
-    };
-    this.props.store.subscribe(() => {
-      let reduxState = this.props.store.getState();
+  const reduxState = store.getState();
+  const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
+  const [envs, setEnvs] = useState(reduxState.envs)
+  const [input, setInput] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
+  const [saveButtonTriggered, setSaveButtonTriggered] = useState(false)
+  const [settings, setSettings] = useState(reduxState.settings)
+  const [environmentsLoading, setEnvironmentsLoading] = useState(true)
 
-      this.setState({
-        connectedAgents: reduxState.connectedAgents,
-        envs: reduxState.envs,
-        settings: reduxState.settings
-      });
-    });
-  }
+  store.subscribe(() => {
+    const reduxState = store.getState();
+    setConnectedAgents(reduxState.connectedAgents)
+    setEnvs(reduxState.envs)
+    setSettings(reduxState.settings)
+  });
 
-  componentDidMount() {
-    this.props.gimletClient.getEnvs()
+  useEffect(() => {
+    gimletClient.getEnvs()
       .then(data => {
-        this.props.store.dispatch({
+        store.dispatch({
           type: ACTION_TYPE_ENVS, payload: data
         });
-        this.setState({ environmentsLoading: false });
+        setEnvironmentsLoading(false);
       }, () => {
-        this.setState({ environmentsLoading: false });
-      });
-  }
+      setEnvironmentsLoading(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  sortingByName(envs) {
+  const sortingByName = (envs) => {
     const envsCopy = [...envs]
     return envsCopy.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  isOnline(onlineEnvs, singleEnv) {
+  const isOnline = (onlineEnvs, singleEnv) => {
     return Object.keys(onlineEnvs)
       .map(env => onlineEnvs[env])
       .some(onlineEnv => {
@@ -58,10 +55,10 @@ class Environments extends Component {
       })
   };
 
-  refreshEnvs() {
-    this.props.gimletClient.getEnvs()
+  const refreshEnvs = () => {
+    gimletClient.getEnvs()
       .then(data => {
-        this.props.store.dispatch({
+        store.dispatch({
           type: ACTION_TYPE_ENVS,
           payload: data
         });
@@ -69,17 +66,9 @@ class Environments extends Component {
       });
   }
 
-  setTimeOutForButtonTriggeredAndPopupWindow() {
-    setTimeout(() => {
-      this.props.store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
-    }, 3000);
-  }
-
-  save() {
-    if (this.state.envs.some(env => env.name === this.state.input)) {
-      this.props.store.dispatch({
+  const save = () => {
+    if (envs.some(env => env.name === input)) {
+      store.dispatch({
         type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
           header: "Error",
           message: "Environment already exists"
@@ -88,143 +77,102 @@ class Environments extends Component {
       return
     }
 
-    this.setState({ isOpen: false });
-    this.props.store.dispatch({
+    setIsOpen(false);
+    store.dispatch({
       type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
         header: "Saving..."
       }
     });
-    this.setState({ saveButtonTriggered: true });
-    this.props.gimletClient.saveEnvToDB(this.state.input)
+    setSaveButtonTriggered(true);
+    gimletClient.saveEnvToDB(input)
       .then(() => {
-        this.setState({
-          envs: [...this.state.envs, {
-            name: this.state.input,
-            infraRepo: "",
-            appsRepo: "",
-            expiry: 0,
-          }],
-          input: "",
-          saveButtonTriggered: false
-        });
-        this.refreshEnvs();
-        this.props.store.dispatch({
+        setEnvs([...envs, {name: input, infraRepo: "", appsRepo: "", expiry: 0}])
+        setInput("")
+        setSaveButtonTriggered(false);
+        refreshEnvs();
+        store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWRESET
         });
       }, err => {
-        this.props.store.dispatch({
+        store.dispatch({
           type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
             header: "Error",
             message: err.statusText
           }
         });
-      })
+    })
   }
 
-  delete(envName) {
-    this.props.store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Deleting..."
-      }
-    });
-
-    this.props.gimletClient.deleteEnvFromDB(envName)
-      .then(() => {
-        this.props.store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Environment deleted"
-          }
-        });
-        this.setState({ envs: this.state.envs.filter(env => env.name !== envName) });
-        this.refreshEnvs();
-        this.setTimeOutForButtonTriggeredAndPopupWindow();
-      }, err => {
-        this.props.store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
-        });
-        this.setTimeOutForButtonTriggeredAndPopupWindow();
-      });
+  if (!envs) {
+    return null;
   }
 
-  render() {
-    const { connectedAgents, envs, settings } = this.state;
-    if (!envs) {
-      return null;
-    }
+  if (!connectedAgents) {
+    return null;
+  }
 
-    if (!connectedAgents) {
-      return null;
-    }
+  const sortedEnvs = sortingByName(envs);
 
-    const sortedEnvs = this.sortingByName(envs);
-
-    return (
-      <div>
-        <header>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 flex items-center">
-            <h1 className="text-3xl leading-tight text-medium flex-grow">Environments</h1>
-            <button type="button" className={`${!settings.trial ? 'primaryButton' : 'primaryButtonDisabled'} px-4`}
-              onClick={() => !settings.trial && this.setState({ isOpen: true })}
-              title={`${!settings.trial ? '' : 'Upgrade Gimlet to create environments'}`}
-              >
-              Create
-            </button>
-          </div>
-        </header>
-        <main>
-          <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-8">
-            <div className="px-4 sm:px-0">
-              {this.state.isOpen &&
-                <div className="card mb-4 p-4 flex space-x-2 items-center">
-                  <input
-                    onChange={e => this.setState({ input: e.target.value })}
-                    className="input" id="environment" type="text" value={this.state.input} placeholder="Staging" />
-                  <div className="p-0 flow-root space-x-1">
-                    <span className="inline-flex rounded-md shadow-sm gap-x-1 float-right">
-                      <button
-                        disabled={this.state.input === "" || this.state.saveButtonTriggered}
-                        onClick={() => this.save()}
-                        className={(this.state.input === "" || this.state.saveButtonTriggered ? "primaryButtonDisabled" : "primaryButton") + " px-4"}>
-                        Save
-                      </button>
-                      <button
-                        disabled={this.state.input === "" || this.state.saveButtonTriggered}
-                        onClick={() => this.setState({ isOpen: false })}
-                        className='border-blue-500 dark:border-blue-700 text-blue-500 dark:text-blue-700 border hover:border-blue-400 dark:hover:border-blue-800 hover:text-blue-400 dark:hover:text-blue-800 cursor-pointer inline-flex items-center px-6 py-2 text-base leading-6 font-medium rounded-md transition ease-in-out duration-150'>
-                        Cancel
-                      </button>
-                    </span>
-                  </div>
+  return (
+    <div>
+      <header>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 flex items-center">
+          <h1 className="text-3xl leading-tight text-medium flex-grow">Environments</h1>
+          <button type="button" className={`${!settings.trial ? 'primaryButton' : 'primaryButtonDisabled'} px-4`}
+            onClick={() => !settings.trial && setIsOpen(true)}
+            title={`${!settings.trial ? '' : 'Upgrade Gimlet to create environments'}`}
+            >
+            Create
+          </button>
+        </div>
+      </header>
+      <main>
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-8">
+          <div className="px-4 sm:px-0">
+            {isOpen &&
+              <div className="card mb-4 p-4 flex space-x-2 items-center">
+                <input
+                  onChange={e => setInput(e.target.value)}
+                  className="input" id="environment" type="text" value={input} placeholder="Staging" />
+                <div className="p-0 flow-root space-x-1">
+                  <span className="inline-flex rounded-md shadow-sm gap-x-1 float-right">
+                    <button
+                      disabled={input === "" || saveButtonTriggered}
+                      onClick={() => save()}
+                      className={(input === "" || saveButtonTriggered ? "primaryButtonDisabled" : "primaryButton") + " px-4"}>
+                      Save
+                    </button>
+                    <button
+                      disabled={input === "" || saveButtonTriggered}
+                      onClick={() => setIsOpen(false)}
+                      className='border-blue-500 dark:border-blue-700 text-blue-500 dark:text-blue-700 border hover:border-blue-400 dark:hover:border-blue-800 hover:text-blue-400 dark:hover:text-blue-800 cursor-pointer inline-flex items-center px-6 py-2 text-base leading-6 font-medium rounded-md transition ease-in-out duration-150'>
+                      Cancel
+                    </button>
+                  </span>
                 </div>
+              </div>
+            }
+            <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {
+                environmentsLoading ?
+                  <SkeletonLoader />
+                  :
+                  <>
+                    {
+                      sortedEnvs.map(env => (<EnvironmentCard
+                        key={env.name}
+                        env={env}
+                        navigateToEnv={() => navigate(`/env/${env.name}`)}
+                        isOnline={isOnline(connectedAgents, env)}
+                        trial={settings.trial}
+                      />))
+                    }
+                  </>
               }
-              <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {
-                  this.state.environmentsLoading ?
-                    <SkeletonLoader />
-                    :
-                    <>
-                      {
-                        sortedEnvs.map(env => (<EnvironmentCard
-                          key={env.name}
-                          env={env}
-                          navigateToEnv={() => this.props.history.push(`/env/${env.name}`)}
-                          isOnline={this.isOnline(connectedAgents, env)}
-                          trial={settings.trial}
-                        />))
-                      }
-                    </>
-                }
-              </ul>
-            </div>
+            </ul>
           </div>
-        </main>
-      </div>
-    )
-  }
+        </div>
+      </main>
+    </div>
+  )
 }
-
-export default Environments;

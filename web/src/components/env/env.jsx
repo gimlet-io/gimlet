@@ -1,12 +1,14 @@
+import { useNavigate } from "react-router-dom";
 import ServiceDetail from "../serviceDetail/serviceDetail";
 import { InformationCircleIcon } from '@heroicons/react/20/solid';
 
 export function Env(props) {
   const { store, gimletClient } = props
   const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos } = props;
-  const { releaseHistorySinceDays, deploymentFromParams, scmUrl, history, alerts, appFilter } = props;
+  const { releaseHistorySinceDays, deploymentFromParams, scmUrl, alerts, appFilter } = props;
 
   const renderedServices = renderServices(env.stacks, envConfigs, env, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, alerts, appFilter);
+  const navigate = useNavigate()
 
   return (
     <div>
@@ -22,7 +24,7 @@ export function Env(props) {
       </h4>
       <div className="space-y-4">
         {!env.isOnline &&
-          <ConnectEnvCard history={history} envName={env.name}/>
+          <ConnectEnvCard envName={env.name}/>
         }
         {renderedServices.length === 10 &&
           <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
@@ -32,7 +34,7 @@ export function Env(props) {
             {renderedServices}
           </>
         }
-        { renderedServices.length === 0 && emptyStateDeployThisRepo(history,env.name, owner, repoName) }
+        { renderedServices.length === 0 && emptyStateDeployThisRepo(navigate, env.name, owner, repoName) }
       </div>
     </div>
   )
@@ -156,7 +158,8 @@ function fileName(fileInfos, appName) {
 }
 
 function ConnectEnvCard(props) {
-  const {history, envName} = props
+  const {envName} = props
+  const navigate = useNavigate()
 
   return (
     <div className="rounded-md bg-red-200 p-4">
@@ -169,7 +172,7 @@ function ConnectEnvCard(props) {
         <div className="mt-2 text-sm text-red-800">
           This environment is disconnected.<br />
           <button className='font-bold cursor-pointer'
-            onClick={() => {history.push(`/env/${envName}`);return true}}
+            onClick={() => {navigate(`/env/${envName}`);return true}}
           >
             Click to connect this environment to a cluster on the Environments page.
           </button>
@@ -180,7 +183,7 @@ function ConnectEnvCard(props) {
   );
 }
 
-function emptyStateDeployThisRepo(history, envName, owner, repo) {
+function emptyStateDeployThisRepo(navigate, envName, owner, repo) {
   return (
     <div className='card w-full p-4 mt-4'>
       <div className='items-center border-dashed border border-neutral-200 dark:border-neutral-700 rounded-md p-4 py-16'>
@@ -188,7 +191,7 @@ function emptyStateDeployThisRepo(history, envName, owner, repo) {
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400 text-center">Get started by configuring a new deployment.</p>
         <div className="mt-6 text-center">
           <button
-            onClick={() => history.push(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/deploy`))}
+            onClick={() => navigate(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/deploy`))}
             className="primaryButton px-8 capitalize">
             New Deployment to {envName}
           </button>

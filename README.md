@@ -13,6 +13,26 @@ Gimlet is a deployment tool built on Kubernetes to make the deploy, preview and 
 - [Production Setup](https://gimlet.io/docs/self-host/production-setup)
 - [Upgrade to 1.0.0](https://gimlet.io/blog/steps-to-upgrade-gimlet-to-v1-0-0)
 
+## Roadmap
+
+### Q3 2024
+
+- [ ] Provision databases
+- [ ] Edit Settings (like notification settings) on the Dashboard
+
+### Q4 2024
+
+- [ ] Integrate External Secrets Operator
+- [ ] Gitlab Support
+- [ ] Support for Github Enterprise
+- [ ] Edit Settings (like notification settings) on the Dashboard
+- [ ] Stream build logs
+
+### Q1 2025
+
+- [ ] Respect Kubernetes RBAC
+- [ ] Flux tree / Argo style resource tree
+
 ## License
 
 We switched to a source-available license with source code still hosted on Github.

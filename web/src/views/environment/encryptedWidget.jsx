@@ -7,7 +7,7 @@ import {
 export function EncryptedWidget(props) {
   const { formData, onChange, gimletClient, store, env, singleLine } = props;
   const [plainTextValue, setPlainTextValue] = useState("")
-  const [encryptedValue, setEncryptedValue] = useState(formData)
+  const encryptedValue = formData
 
   const encrypt = () => {
     return () => {

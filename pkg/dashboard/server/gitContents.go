@@ -41,11 +41,17 @@ func branches(w http.ResponseWriter, r *http.Request) {
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
 	var refIter storer.ReferenceIter
+	var innerErr error
 	branches := []string{}
-	gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		refIter, _ = repo.References()
-		return nil
+	err := gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
+		refIter, innerErr = repo.References()
+		return innerErr
 	})
+	if err != nil {
+		logrus.Errorf("cannot get refs: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	refIter.ForEach(func(r *plumbing.Reference) error {
 		if r.Name().IsRemote() {
 			branch := r.Name().Short()

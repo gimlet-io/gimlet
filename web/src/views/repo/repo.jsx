@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ACTION_TYPE_ENVCONFIGS,
   ACTION_TYPE_REPO_METAS,
@@ -9,78 +9,66 @@ import MenuButton from '../../components/menuButton/menuButton';
 import Dropdown from '../../components/dropdown/dropdown';
 import { DeployStatusModal } from './deployStatus';
 import DeployHandler from '../../deployHandler';
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
-export default class Repo extends Component {
-  constructor(props) {
-    super(props);
-    const { owner, repo } = this.props.match.params;
-    const repoName = `${owner}/${repo}`;
+export default function Repo(props) {
+  const { store, gimletClient } = props
+  const { owner, repo, environment, deployment } = useParams()
+  const repoName = `${owner}/${repo}`
+  const navigate = useNavigate()
+  const location = useLocation()
 
-    let reduxState = this.props.store.getState();
-    this.state = {
-      connectedAgents: reduxState.connectedAgents,
-      rolloutHistory: reduxState.rolloutHistory,
-      envConfigs: reduxState.envConfigs[repoName],
-      settings: reduxState.settings,
-      refreshQueue: reduxState.repoRefreshQueue.filter(repo => repo === repoName).length,
-      agents: reduxState.settings.agents,
-      envs: reduxState.envs,
-      repoMetas: reduxState.repoMetas,
-      fileInfos: reduxState.fileInfos,
-      alerts: reduxState.alerts,
-      deployStatusModal: false,
-      selectedEnv: localStorage.getItem(repoName + "-selected-env") ?? "All Environments",
-      appFilter: ""
-    }
+  const reduxState = store.getState();
+  const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
+  const [rolloutHistory, setRolloutHistory] = useState(reduxState.rolloutHistory)
+  const [envConfigs, setEnvConfigs] = useState(reduxState.envConfigs[repoName])
+  const [settings, setSettings] = useState(reduxState.settings)
+  const [refreshQueue, setRefreshQueue] = useState(reduxState.repoRefreshQueue.filter(repo => repo === repoName).length)
+  const [refreshQueueLength, setRefreshQueueLength] = useState(0)
+  const [agents, setAgents] = useState(reduxState.settings.agents)
+  const [envs, setEnvs] = useState(reduxState.envs)
+  const [repoMetas, setRepoMetas] = useState(reduxState.repoMetas)
+  const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
+  const [alerts, setAlerts] = useState(reduxState.alerts)
+  const [deployStatusModal, setDeployStatusModal] = useState(false)
+  const [selectedEnv, setSelectedEnv] = useState(localStorage.getItem(repoName + "-selected-env") ?? "All Environments")
+  const [appFilter, setAppFilter] = useState("")
+  const deployHandler = new DeployHandler(owner, repo, gimletClient, store)
 
-    this.deployHandler = new DeployHandler(owner, repo, this.props.gimletClient, this.props.store)
+  store.subscribe(() => {
+    const reduxState = store.getState();
+    setConnectedAgents(reduxState.connectedAgents)
+    setRolloutHistory(reduxState.rolloutHistory)
+    setEnvConfigs(reduxState.envConfigs[repoName])
+    setEnvs(reduxState.envs)
+    setRepoMetas(reduxState.repoMetas)
+    setFileInfos(reduxState.fileInfos)
+    setSettings(reduxState.settings)
+    setAlerts(reduxState.alerts)
 
-    this.props.store.subscribe(() => {
-      let reduxState = this.props.store.getState();
-
-      this.setState({
-        connectedAgents: reduxState.connectedAgents,
-        rolloutHistory: reduxState.rolloutHistory,
-        envConfigs: reduxState.envConfigs[repoName],
-        envs: reduxState.envs,
-        repoMetas: reduxState.repoMetas,
-        fileInfos: reduxState.fileInfos,
-        scmUrl: reduxState.settings.scmUrl,
-        alerts: reduxState.alerts,
-      });
-
-      const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
-      this.setState(prevState => {
-        if (prevState.refreshQueueLength !== queueLength) {
-          this.refreshConfigs(owner, repo);
-        }
-        return { refreshQueueLength: queueLength }
-      });
-      this.setState({ agents: reduxState.settings.agents });
+    const queueLength = reduxState.repoRefreshQueue.filter(r => r === repoName).length
+    setRefreshQueueLength(prevState => {
+      if (prevState !== queueLength) {
+        refreshConfigs(owner, repo);
+      }
+      return queueLength
     });
+    setAgents(reduxState.settings.agents);
+  });
 
-    this.navigateToConfigEdit = this.navigateToConfigEdit.bind(this)
-    this.linkToDeployment = this.linkToDeployment.bind(this)
-    this.setSelectedEnv = this.setSelectedEnv.bind(this)
-    this.setAppFilter = this.setAppFilter.bind(this)
-  }
-
-  componentDidMount() {
-    const { owner, repo } = this.props.match.params;
-
-    this.props.gimletClient.getRepoMetas(owner, repo)
+  useEffect(() => {
+    gimletClient.getRepoMetas(owner, repo)
       .then(data => {
-        this.props.store.dispatch({
+        store.dispatch({
           type: ACTION_TYPE_REPO_METAS, payload: {
             repoMetas: data,
           }
         });
       }, () => {/* Generic error handler deals with it */
     });
-
-    this.props.gimletClient.getEnvConfigs(owner, repo)
+    gimletClient.getEnvConfigs(owner, repo)
       .then(envConfigs => {
-        this.props.store.dispatch({
+        store.dispatch({
           type: ACTION_TYPE_ENVCONFIGS, payload: {
             owner: owner,
             repo: repo,
@@ -89,33 +77,17 @@ export default class Repo extends Component {
         });
       }, () => {/* Generic error handler deals with it */
     });
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.selectedEnv !== this.state.selectedEnv) {
-      const { owner, repo } = this.props.match.params;
-      const repoName = `${owner}/${repo}`;
+  useEffect(() => {
+    localStorage.setItem(repoName + "-selected-env", selectedEnv)    
+  }, [selectedEnv]);
 
-      localStorage.setItem(repoName + "-selected-env", this.state.selectedEnv)
-    }
-  }
-
-  setSelectedEnv(selectedEnv) {
-    this.setState({
-      selectedEnv: selectedEnv
-    })
-  }
-
-  setAppFilter(filter) {
-    this.setState({
-      appFilter: filter
-    })
-  }
-
-  refreshConfigs(owner, repo) {
-    this.props.gimletClient.getEnvConfigs(owner, repo)
+  const refreshConfigs = (owner, repo) => {
+    gimletClient.getEnvConfigs(owner, repo)
       .then(envConfigs => {
-        this.props.store.dispatch({
+        store.dispatch({
           type: ACTION_TYPE_ENVCONFIGS, payload: {
             owner: owner,
             repo: repo,
@@ -126,115 +98,103 @@ export default class Repo extends Component {
       });
   }
 
-  navigateToConfigEdit(env, config) {
-    const { owner, repo } = this.props.match.params;
-    this.props.history.push(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}/edit`))
+  const navigateToConfigEdit = (env, config) => {
+    navigate(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}/edit`))
   }
 
-  linkToDeployment(env, deployment) {
-    const { owner, repo } = this.props.match.params;
-    this.props.history.push({
-      pathname: `/repo/${owner}/${repo}/${env}/${deployment}`,
-      search: this.props.location.search
-    })
+  const linkToDeployment = (env, deployment) => {
+    navigate(`/repo/${owner}/${repo}/${env}/${deployment}?${location.search}`)
   }
 
-  fileMetasByEnv(envName) {
-    return this.state.fileInfos.filter(fileInfo => fileInfo.envName === envName)
+  const fileMetasByEnv = (envName) => {
+    return fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  render() {
-    const { owner, repo, environment, deployment } = this.props.match.params;
-    const repoName = `${owner}/${repo}`
-    const { envs, connectedAgents, rolloutHistory, settings, selectedEnv } = this.state;
-    const { envConfigs, scmUrl, alerts, appFilter, deployStatusModal } = this.state;
+  const stacksForRepo = envsForRepo(envs, connectedAgents, repoName);
 
-    const stacksForRepo = envsForRepo(envs, connectedAgents, repoName);
+  let repoRolloutHistory = undefined;
+  if (rolloutHistory && rolloutHistory[repoName]) {
+    repoRolloutHistory = rolloutHistory[repoName]
+  }
 
-    let repoRolloutHistory = undefined;
-    if (rolloutHistory && rolloutHistory[repoName]) {
-      repoRolloutHistory = rolloutHistory[repoName]
-    }
+  const envLabels = envs.map((env) => env.name)
+  envLabels.unshift('All Environments')
 
-    const envLabels = envs.map((env) => env.name)
-    envLabels.unshift('All Environments')
-
-    return (
-      <div>
-        {deployStatusModal && envConfigs !== undefined &&
-          <DeployStatusModal
-            closeHandler={() => this.setState({deployStatusModal: false})}
-            owner={owner}
-            repoName={repo}
-            envConfigs={envConfigs}
-            store={this.props.store}
-            gimletClient={this.props.gimletClient}
-          />
-        }
-        <header>
-          <div className="max-w-7xl mx-auto pt-32 px-4 sm:px-6 lg:px-8">
-            <div className='flex items-center space-x-2'>
-              <AppFilter
-                setFilter={this.setAppFilter}
+  return (
+    <div>
+      {deployStatusModal && envConfigs &&
+        <DeployStatusModal
+          closeHandler={() => setDeployStatusModal(false)}
+          owner={owner}
+          repoName={repo}
+          envConfigs={envConfigs}
+          store={store}
+          gimletClient={gimletClient}
+        />
+      }
+      <header>
+        <div className="max-w-7xl mx-auto pt-32 px-4 sm:px-6 lg:px-8">
+          <div className='flex items-center space-x-2'>
+            <AppFilter
+              setFilter={setAppFilter}
+            />
+            <div className="w-96 capitalize">
+              <Dropdown
+                items={envLabels}
+                value={selectedEnv}
+                changeHandler={setSelectedEnv}
+                buttonClass="capitalize"
               />
-              <div className="w-96 capitalize">
-                <Dropdown
-                  items={envLabels}
-                  value={selectedEnv}
-                  changeHandler={this.setSelectedEnv}
-                  buttonClass="capitalize"
-                />
-              </div>
-              <MenuButton
-                items={envs}
-                handleClick={
-                  (envName) => this.props.history.push(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/deploy`))}
-              >
-                New deployment..
-              </MenuButton>
+            </div>
+            <MenuButton
+              items={envs}
+              handleClick={
+                (envName) => navigate(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/deploy`))}
+            >
+              New deployment..
+            </MenuButton>
+          </div>
+        </div>
+      </header>
+      <main>
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+          <div className="pt-8 px-4 sm:px-0">
+            <div>
+              {envConfigs && Object.keys(stacksForRepo).sort().map((envName) =>
+                {
+                  const unselected = envName !== selectedEnv && selectedEnv !== "All Environments"
+                  return unselected ? null :
+                  <Env
+                    key={envName}
+                    env={stacksForRepo[envName]}
+                    repoRolloutHistory={repoRolloutHistory}
+                    envConfigs={envConfigs[envName]}
+                    navigateToConfigEdit={navigateToConfigEdit}
+                    linkToDeployment={linkToDeployment}
+                    rollback={(env, app, rollbackTo) => {
+                      setDeployStatusModal(true);
+                      deployHandler.rollback(env, app, rollbackTo)
+                    }}
+                    owner={owner}
+                    repoName={repo}
+                    fileInfos={fileMetasByEnv(envName)}
+                    releaseHistorySinceDays={settings.releaseHistorySinceDays}
+                    gimletClient={gimletClient}
+                    store={store}
+                    envFromParams={environment}
+                    deploymentFromParams={deployment}
+                    scmUrl={settings.scmUrl}
+                    alerts={alerts}
+                    appFilter={appFilter}
+                  />
+                }
+              )}
             </div>
           </div>
-        </header>
-        <main>
-          <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div className="pt-8 px-4 sm:px-0">
-              <div>
-                {envConfigs && Object.keys(stacksForRepo).sort().map((envName) =>
-                  {
-                    const unselected = envName !== selectedEnv && selectedEnv !== "All Environments"
-                    return unselected ? null : (
-                    <Env
-                      key={envName}
-                      env={stacksForRepo[envName]}
-                      repoRolloutHistory={repoRolloutHistory}
-                      envConfigs={envConfigs[envName]}
-                      navigateToConfigEdit={this.navigateToConfigEdit}
-                      linkToDeployment={this.linkToDeployment}
-                      rollback={(env, app, rollbackTo) => {
-                        this.setState({deployStatusModal: true});
-                        this.deployHandler.rollback(env, app, rollbackTo)
-                      }}
-                      owner={owner}
-                      repoName={repo}
-                      fileInfos={this.fileMetasByEnv(envName)}
-                      releaseHistorySinceDays={settings.releaseHistorySinceDays}
-                      gimletClient={this.props.gimletClient}
-                      store={this.props.store}
-                      envFromParams={environment}
-                      deploymentFromParams={deployment}
-                      scmUrl={scmUrl}
-                      history={this.props.history}
-                      alerts={alerts}
-                      appFilter={appFilter}
-                    />)}
-                )}
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
+        </div>
+      </main>
+    </div>
+  )
 }
 
 function AppFilter(props) {

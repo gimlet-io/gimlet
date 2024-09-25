@@ -2,8 +2,10 @@ import { format, formatDistance } from "date-fns";
 import { Remarkable } from "remarkable";
 import { Menu } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
+import { useNavigate } from "react-router-dom";
 
-export function AlertPanel({ alerts, history, hideButton, silenceAlert }) {
+export function AlertPanel({ alerts, hideButton, silenceAlert }) {
+  const navigate = useNavigate()
   if (!alerts) {
     return null;
   }
@@ -38,7 +40,7 @@ export function AlertPanel({ alerts, history, hideButton, silenceAlert }) {
                 </div>}
                 {alert.repoName && <div className="absolute bottom-0 right-0 p-2 space-x-2">
                   <button className="inline-flex items-center px-3 py-0.5 rounded-md text-sm font-medium bg-blue-400 text-neutral-50"
-                    onClick={() => history.push(`/repo/${alert.repoName}/${alert.envName}/${parseDeploymentName(alert.deploymentName)}`)}
+                    onClick={() => navigate(`/repo/${alert.repoName}/${alert.envName}/${parseDeploymentName(alert.deploymentName)}`)}
                   >
                     Jump there
                   </button>

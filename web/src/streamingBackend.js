@@ -1,5 +1,6 @@
-import {Component} from "react";
+import {useEffect} from "react";
 import {ACTION_TYPE_STREAMING} from "./redux/redux"
+import { useLocation } from 'react-router-dom'
 
 let URL = '';
 if (typeof window !== 'undefined') {
@@ -15,46 +16,44 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export default class StreamingBackend extends Component {
-  componentDidMount() {
-    if (this.props.location.pathname === '/login') {
+export default function StreamingBackend(props) {
+  const location = useLocation()
+  
+  const onOpen = () => {
+    console.log('connected');
+  };
+
+  const onClose = (evt) => {
+    console.log('disconnected: ' + evt.code + ': ' + evt.reason);
+
+    setTimeout(() => {
+      console.log("Connecting to " + URL + '/ws/')
+      const ws = new WebSocket(URL + '/ws/');
+      ws.onopen = onOpen;
+      ws.onmessage = onMessage;
+      ws.onclose = onClose;
+    }, 100);
+  }
+
+  const onMessage = (evt) => {
+    evt.data.split('\n').forEach((line) => {
+      const message = JSON.parse(line);
+      // console.log(line)
+      props.store.dispatch({type: ACTION_TYPE_STREAMING, payload: message});
+    });
+  }
+
+  useEffect(() => {
+    if (location.pathname === '/login') {
       return;
     }
 
     console.log("Connecting to " + URL + '/ws/')
-
-    this.ws = new WebSocket(URL + '/ws/');
-    this.ws.onopen = this.onOpen;
-    this.ws.onmessage = this.onMessage;
-    this.ws.onclose = this.onClose;
-
-    this.onClose = this.onClose.bind(this);
-  }
-
-  render() {
-    return null;
-  }
-
-  onOpen = () => {
-    console.log('connected');
-  };
-
-  onClose = (evt) => {
-    console.log('disconnected: ' + evt.code + ': ' + evt.reason);
     const ws = new WebSocket(URL + '/ws/');
-    ws.onopen = this.onOpen;
-    ws.onmessage = this.onMessage;
-    ws.onclose = this.onClose;
-    this.setState({
-      ws
-    });
-  }
+    ws.onopen = onOpen;
+    ws.onmessage = onMessage;
+    ws.onclose = onClose;
+  })
 
-  onMessage = (evt) => {
-    evt.data.split('\n').forEach((line) => {
-      const message = JSON.parse(line);
-      // console.log(line)
-      this.props.store.dispatch({type: ACTION_TYPE_STREAMING, payload: message});
-    });
-  }
+  return null;
 }
