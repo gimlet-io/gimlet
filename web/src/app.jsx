@@ -87,9 +87,7 @@ export default class App extends Component {
           <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
             <div className="py-10">
               <Routes>
-                <Route path="/login">
-                  <LoginPage />
-                </Route>
+                <Route path="/login"  element={ <LoginPage />} />
               </Routes>
             </div>
           </div>
