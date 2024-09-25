@@ -10,7 +10,7 @@ export function ingressCreated(state, event) {
   }
 
   state.connectedAgents = produce(state.connectedAgents, draft => {
-    draft[env].stacks.forEach((stack, stackID, stacks) => {
+    draft[env].stacks.forEach((stack) => {
       if (stack.service.namespace + '/' + stack.service.name !== event.svc) {
         return;
       }
@@ -37,7 +37,7 @@ export function ingressUpdated(state, event) {
   }
 
   state.connectedAgents = produce(state.connectedAgents, draft => {
-    draft[env].stacks.forEach((stack, stackID, stacks) => {
+    draft[env].stacks.forEach((stack) => {
       if (stack.service.namespace + '/' + stack.service.name !== event.svc) {
         return;
       }
