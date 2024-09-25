@@ -287,7 +287,7 @@ function Crumbs(props) {
 }
 
 function ImportRepoCrumbs(props) {
-  const { history, items } = props
+  const { items } = props
   const navigate = useNavigate()
 
   return (
@@ -403,7 +403,6 @@ function PreviewConfigCrumbs(props) {
 
 function Connecting(props) {
   const { connectedAgents, envs } = props
-  const navigate = useNavigate()
 
   if (envs.length !== 1) {
     return null

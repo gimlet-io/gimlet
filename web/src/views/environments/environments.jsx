@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   ACTION_TYPE_ENVS,
   ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
   ACTION_TYPE_POPUPWINDOWERROR,
   ACTION_TYPE_POPUPWINDOWRESET,
 } from "../../redux/redux";
@@ -65,14 +64,6 @@ export default function Environments(props) {
         });
       }, () => {/* Generic error handler deals with it */
       });
-  }
-
-  const setTimeOutForButtonTriggeredAndPopupWindow = () => {
-    setTimeout(() => {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
-    }, 3000);
   }
 
   const save = () => {
