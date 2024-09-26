@@ -3,12 +3,15 @@ import { useState, useEffect } from 'react';
 import {produce} from 'immer';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Label } from '@headlessui/react'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
+import HelmUI from "helm-react-ui";
+import { EncryptedWidget } from '../environment/encryptedWidget';
 
 export function DatabasesTab(props) {
   const { gimletClient, store } = props;
   const { environment } = props;
   const { databaseConfig, setDatabaseValues } = props
   const { plainModules } = props;
+  const [ values, setValues ] = useState({})
 
   const validationCallback = (variable, validationErrors) => {
     if(validationErrors) {
@@ -16,11 +19,30 @@ export function DatabasesTab(props) {
     }
   }
 
+  const customFields = {
+    "encryptedSingleLineWidget": (props) => <EncryptedWidget
+      {...props}
+      gimletClient={gimletClient}
+      store={store}
+      env={environment}
+      singleLine={true}
+    />,
+  }
+  
   console.log(databaseConfig)
 
   return (
-    <div className="w-full space-y-8">
-      <Example/>
+    <div className="w-full card p-6 pb-8">
+      {/* <ModuleSelector modules={plainModules} /> */}
+      <HelmUI
+        schema={schema2}
+        config={uiSchema2}
+        fields={customFields}
+        values={values}
+        setValues={setValues}
+        validate={true}
+        validationCallback={(errors) => validationCallback("", errors)}
+      />
       {/* {databases.map(component =>
         <InfraComponent
           key={component.schema.$id}
@@ -37,13 +59,12 @@ export function DatabasesTab(props) {
   )
 }
 
-
 const people = [
   { id: 1, name: 'Leslie Alexander' },
 ]
 
-
-export default function Example() {
+export default function ModuleSelector(props) {
+  const { modules } = props
   const [query, setQuery] = useState('')
   const [selectedPerson, setSelectedPerson] = useState(null)
 
@@ -53,6 +74,8 @@ export default function Example() {
       : people.filter((person) => {
           return person.name.toLowerCase().includes(query.toLowerCase())
         })
+
+  console.log(modules)
 
   return (
     <Combobox
@@ -77,17 +100,21 @@ export default function Example() {
 
         {filteredPeople.length > 0 && (
           <ComboboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-            {filteredPeople.map((person) => (
+            {modules.map((module) => (
               <ComboboxOption
-                key={person.id}
-                value={person}
+                key={module.schema.id}
+                value={module.schema.title}
                 className="group relative cursor-default select-none py-2 pl-3 pr-9 text-gray-900 data-[focus]:bg-indigo-600 data-[focus]:text-white"
               >
-                <span className="block truncate group-data-[selected]:font-semibold">{person.name}</span>
-
-                <span className="absolute inset-y-0 right-0 hidden items-center pr-4 text-indigo-600 group-data-[selected]:flex group-data-[focus]:text-white">
-                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
-                </span>
+                <div>
+                  <span className="block truncate group-data-[selected]:font-semibold">{module.schema.title}</span>
+                  <span className="absolute inset-y-0 right-0 hidden items-center pr-4 text-indigo-600 group-data-[selected]:flex group-data-[focus]:text-white">
+                    <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                </div>
+                <div>
+                  <span className="block truncate group-data-[selected]:font-semibold text-xs">{module.schema.description}</span>
+                </div>
               </ComboboxOption>
             ))}
           </ComboboxOptions>
@@ -191,5 +218,110 @@ const databases = [
         }
       }
     ]
+  }
+]
+
+const schema2 = {
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "#/properties/dependencies",
+  "type": "array",
+  "title": "Dependencies",
+  "default": [],
+  "additionalItems": true,
+  "items": {
+    "$id": "#/properties/dependencies/items",
+    "type": "object",
+    "anyOf": [
+      {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "$id": "#redis",
+        "type": "object",
+        "title": "Redis",
+        "description": "Install a Redis instance dedicated for your application",
+        "properties": {
+          "encryptedPassword": {
+            "$id": "#/properties/encryptedPassword",
+            "type": "string",
+            "title": "Password"
+          }
+        }
+      },
+      {
+        "id": "#/properties/dependencies/oneOf/0",
+        "title": "Redis",
+        "description": "Install a Redis instance dedicated for your application",
+        "type": "object",
+        "properties": {
+          "encryptedPassword": {
+            "$id": "#/properties/encryptedPassword",
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "required": []
+      },
+      {
+        "id": "#/properties/dependencies/oneOf/1",
+        "title": "PostgreSQL",
+        "description": "A containerized PostgreSQL dedicated for your application, without backups",
+        "type": "object",
+        "properties": {
+          "name": {
+            "$id": "#/properties/name",
+            "type": "string",
+            "title": "Database Name"
+          },
+          "user": {
+            "$id": "#/properties/user",
+            "type": "string",
+            "title": "Username"
+          },
+          "encryptedPassword": {
+            "$id": "#/properties/encryptedPassword",
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "required": []
+      },
+      {
+        "id": "#/properties/dependencies/oneOf/2",
+        "title": "RabbitMQ",
+        "description": "A containerized RabbitMQ dedicated for your application",
+        "type": "object",
+        "properties": {
+          "user": {
+            "$id": "#/properties/user",
+            "type": "string",
+            "title": "Username"
+          },
+          "encryptedPassword": {
+            "$id": "#/properties/encryptedPassword",
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "required": []
+      }
+    ]
+  }
+}
+
+const uiSchema2 = [
+  {
+    "schemaIDs": [
+      "#/properties/dependencies"
+    ],
+    "uiSchema": {
+      "#/properties/dependencies": {
+        "items": {
+          "encryptedPassword": {
+            "ui:field": "encryptedSingleLineWidget"
+          },
+        }
+      }
+    },
+    "metaData": {
+    }
   }
 ]
