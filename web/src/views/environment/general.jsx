@@ -187,7 +187,7 @@ function GitopRepositories(props) {
         </div>
       </div>
       <div className='learnMoreBox'>
-        Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/environment-settings/introduction#gitops-repositories" className='learnMoreLink'>Gitops Repositories <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+        Learn more about <a href="https://gimlet.io/docs/environment-settings/introduction#gitops-repositories" className='learnMoreLink'>Gitops Repositories <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
       </div>
     </div>
   )

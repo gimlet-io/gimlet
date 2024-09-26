@@ -28,7 +28,7 @@ sudo mv ./gimlet /usr/local/bin/gimlet`}
         </div>
       </div>
       <div className='learnMoreBox'>
-        Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/kubernetes-resources" className='learnMoreLink'>Kubernetes Clusters<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+        Learn more about <a href="https://gimlet.io/docs/kubernetes-resources/kubernetes-essentials" className='learnMoreLink'>Kubernetes Clusters<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
       </div>
     </div>
   )
