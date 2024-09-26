@@ -33,7 +33,7 @@ legend { /* Sub Object heading */
 }
 
 .panel-body {
-    @apply py-2 bg-neutral-200 dark:bg-neutral-600 rounded
+    @apply pt-2 pb-8
 }
 
 .panel-body>div>select {
