@@ -9,6 +9,7 @@ export function DatabasesTab(props) {
   const { environment } = props;
   const { databaseConfig, setDatabaseValues } = props
   const { plainModules } = props;
+  const [ selectedModule, setSelectedModule ] = useState()
   const [ dependencies, setDependencies ] = useState({
     "xxx": {
       url: "https://github.com/gimlet-io/plain-modules.git?path=postgresql",
@@ -33,10 +34,14 @@ export function DatabasesTab(props) {
   useEffect(() => {
     console.log(dependencies)
   }, [dependencies]);
+
+  useEffect(() => {
+    console.log(selectedModule)
+  }, [selectedModule]);
   
   return (
     <div className="">
-      <ModuleSelector modules={plainModules} />
+      <ModuleSelector modules={plainModules} setSelectedModule={setSelectedModule} />
       {Object.keys(dependencies).map((id) => {
         const dependency = dependencies[id]
         const module = plainModules.find(m => m.url == dependency.url)
@@ -58,6 +63,7 @@ export function DatabasesTab(props) {
 }
 
 export default function ModuleSelector(props) {
+  const { setSelectedModule } = props
   const parsedModules = props.modules.map((m) => {
     return {
       ...m,
@@ -74,6 +80,10 @@ export default function ModuleSelector(props) {
       : parsedModules.filter((module) => {
           return module.schema.title.toLowerCase().includes(query.toLowerCase())
         })
+
+  useEffect(() => {
+    setSelectedModule(parsedModules.find(m => m.schema.title === selected))
+  }, [selected]);
 
   return (
     <Combobox
