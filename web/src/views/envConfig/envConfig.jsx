@@ -519,7 +519,9 @@ export function EnvConfig(props) {
           preview={preview}
         />
         }
-        { selectedNavigation && selectedNavigation.name !== "General" && selectedNavigation.name !== "Databases" &&
+        { selectedNavigation && selectedNavigation.name !== "General"
+          && selectedNavigation.name !== "Containerized Dependencies"
+          && selectedNavigation.name !== "Cloud Dependencies" &&
           <>
           <div className='w-full card p-6 pb-8'>
           <HelmUI
@@ -561,14 +563,19 @@ export function EnvConfig(props) {
           </>
         }
         { selectedNavigation?.name === "Containerized Dependencies" &&
-        <DatabasesTab
-          gimletClient={gimletClient}
-          store={store}
-          environment={env}
-          setDatabaseValues={setDatabaseValues}
-          databaseConfig={databaseConfig}
-          plainModules={plainModules}
-        />
+        <>
+          <DatabasesTab
+            gimletClient={gimletClient}
+            store={store}
+            environment={env}
+            setDatabaseValues={setDatabaseValues}
+            databaseConfig={databaseConfig}
+            plainModules={plainModules}
+          />
+          <div className='-mt-2 learnMoreBox'>
+            Learn more about <a href="https://gimlet.io/docs/deployment-settings/databases" className='learnMoreLink'>Containerized Dependencies <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+          </div>
+        </>
         }
         { selectedNavigation?.name === "Cloud Dependencies" &&
         <DatabasesTab
