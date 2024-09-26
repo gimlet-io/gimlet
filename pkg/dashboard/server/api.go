@@ -353,19 +353,9 @@ func plainModules(w http.ResponseWriter, r *http.Request) {
 		pm := &dx.PlainModule{URL: config.PlainModulesURL + "?path=" + folder}
 		for path, content := range files {
 			if path == "schema.json" {
-				var schema map[string]interface{}
-				err := json.Unmarshal([]byte(content), &schema)
-				if err != nil {
-					logrus.Warn(err)
-				}
-				pm.Schema = schema
+				pm.Schema = content
 			} else if path == "uiSchema.json" {
-				var schema []map[string]interface{}
-				err := json.Unmarshal([]byte(content), &schema)
-				if err != nil {
-					logrus.Warn(err)
-				}
-				pm.UISchema = schema
+				pm.UISchema = content
 			} else if path == "template.yaml" {
 				pm.Template = content
 			}

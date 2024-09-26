@@ -9,13 +9,6 @@ type StackConfig struct {
 	Config map[string]interface{} `yaml:"config" json:"config"`
 }
 
-type PlainModule struct {
-	URL      string                   `json:"url"`
-	Schema   map[string]interface{}   `json:"schema"`
-	UISchema []map[string]interface{} `json:"uiSchema"`
-	Template string                   `json:"-"`
-}
-
 type Component struct {
 	Name        string `json:"name,omitempty" yaml:"name"`
 	Description string `json:"description,omitempty" yaml:"description"`

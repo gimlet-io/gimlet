@@ -114,6 +114,13 @@ type Module struct {
 	Secret string `yaml:"secret,omitempty" json:"secret,omitempty"`
 }
 
+type PlainModule struct {
+	URL      string `json:"url"`
+	Schema   string `json:"schema"`
+	UISchema string `json:"uiSchema"`
+	Template string `json:"-"`
+}
+
 func (m *Manifest) PrepPreview(ingressHost string) {
 	if m.Preview == nil || !*m.Preview {
 		return

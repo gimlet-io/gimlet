@@ -563,19 +563,14 @@ export function EnvConfig(props) {
           </>
         }
         { selectedNavigation?.name === "Containerized Dependencies" &&
-        <>
-          <DatabasesTab
-            gimletClient={gimletClient}
-            store={store}
-            environment={env}
-            setDatabaseValues={setDatabaseValues}
-            databaseConfig={databaseConfig}
-            plainModules={plainModules}
-          />
-          <div className='-mt-2 learnMoreBox'>
-            Learn more about <a href="https://gimlet.io/docs/deployment-settings/databases" className='learnMoreLink'>Containerized Dependencies <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-          </div>
-        </>
+        <DatabasesTab
+          gimletClient={gimletClient}
+          store={store}
+          environment={env}
+          setDatabaseValues={setDatabaseValues}
+          databaseConfig={databaseConfig}
+          plainModules={plainModules}
+        />
         }
         { selectedNavigation?.name === "Cloud Dependencies" &&
         <DatabasesTab
