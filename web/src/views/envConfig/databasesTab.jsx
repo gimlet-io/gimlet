@@ -40,8 +40,17 @@ export function DatabasesTab(props) {
   }, [selectedModule]);
   
   return (
-    <div className="">
-      <ModuleSelector modules={plainModules} setSelectedModule={setSelectedModule} />
+    <div className='space-y-12'>
+      <div className='flex space-x-2'>
+        <div className='flex-grow'>
+          <ModuleSelector modules={plainModules} setSelectedModule={setSelectedModule} />
+        </div>
+        <button
+              onClick={() => navigate("/import-repositories")}
+              className="primaryButton px-8">
+              Add
+        </button>
+      </div>
       {Object.keys(dependencies).map((id) => {
         const dependency = dependencies[id]
         const module = plainModules.find(m => m.url == dependency.url)
@@ -94,9 +103,9 @@ export default function ModuleSelector(props) {
         setSelected(moduleTitle)
       }}
     >
-      <div className="relative mt-2">
+      <div className="relative">
         <ComboboxInput
-          className="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+          className="input"
           onChange={(event) => setQuery(event.target.value)}
           onBlur={() => setQuery('')}
           displayValue={selected}
