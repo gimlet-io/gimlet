@@ -1,59 +1,58 @@
 import { useEffect, useState } from 'react';
-import HelmUI from "helm-react-ui";
-import { EncryptedWidget } from '../environment/encryptedWidget';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Label } from '@headlessui/react'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
 import {InfraComponent} from '../environment/category';
+import {produce} from 'immer';
 
 export function DatabasesTab(props) {
   const { gimletClient, store } = props;
   const { environment } = props;
   const { databaseConfig, setDatabaseValues } = props
   const { plainModules } = props;
-  const [ values, setValues ] = useState({})
+  const [ dependencies, setDependencies ] = useState({
+    "xxx": {
+      url: "https://github.com/gimlet-io/plain-modules.git?path=postgresql",
+      values: {}
+    }
+  })
 
-  const validationCallback = (variable, validationErrors) => {
+  const validationCallback = (id, validationErrors) => {
     if(validationErrors) {
-      console.log(variable, validationErrors)
+      console.log(id, validationErrors)
     }
   }
 
-  const customFields = {
-    "encryptedSingleLineWidget": (props) => <EncryptedWidget
-      {...props}
-      gimletClient={gimletClient}
-      store={store}
-      env={environment}
-      singleLine={true}
-    />,
+  const setDependencyValues = (id, values, nonDefaultValues) => {
+    console.log(id, nonDefaultValues)
+
+    setDependencies(produce(dependencies, draft => {
+      draft[id].values = nonDefaultValues
+    }))
   }
 
   useEffect(() => {
-    console.log(values)
-  }, [values]);
+    console.log(dependencies)
+  }, [dependencies]);
   
   return (
     <div className="">
       <ModuleSelector modules={plainModules} />
-      {/* <HelmUI
-        schema={schema2}
-        config={uiSchema2}
-        fields={customFields}
-        values={values}
-        setValues={setValues}
-        validate={true}
-        validationCallback={(errors) => validationCallback("", errors)}
-      /> */}
-      <InfraComponent
-        key={plainModules[0].schema.$id}
-        componentDefinition={plainModules[0]}
-        config={{}}
-        setValues={setDatabaseValues}
-        validationCallback={validationCallback}
-        gimletClient={gimletClient}
-        store={store}
-        environment={{name: environment}}
-      />
+      {Object.keys(dependencies).map((id) => {
+        const dependency = dependencies[id]
+        const module = plainModules.find(m => m.url == dependency.url)
+
+        return <InfraComponent
+            key={id}
+            componentDefinition={module}
+            config={dependency.values}
+            setValues={(variable, values, nonDefaultValues) => setDependencyValues(id, values, nonDefaultValues)}
+            validationCallback={(variable, validationErrors) => validationCallback(id, validationErrors)}
+            gimletClient={gimletClient}
+            store={store}
+            environment={{name: environment}}
+          />
+        })
+      }
     </div>
   )
 }
@@ -75,8 +74,6 @@ export default function ModuleSelector(props) {
       : parsedModules.filter((module) => {
           return module.schema.title.toLowerCase().includes(query.toLowerCase())
         })
-
-  console.log(parsedModules)
 
   return (
     <Combobox
@@ -124,100 +121,3 @@ export default function ModuleSelector(props) {
     </Combobox>
   )
 }
-
-const schema2 = {
-  "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "#/properties/dependencies",
-  "type": "array",
-  "title": "Dependencies",
-  "default": [],
-  "additionalItems": true,
-  "items": {
-    "$id": "#/properties/dependencies/items",
-    "type": "object",
-    "anyOf": [
-      {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "#redis",
-        "type": "object",
-        "title": "Redis",
-        "description": "Install a Redis instance dedicated for your application",
-        "properties": {
-          "encryptedPassword": {
-            "$id": "#/properties/encryptedPassword",
-            "type": "string",
-            "title": "Password"
-          }
-        }
-      },
-      {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "#postgresql",
-        "title": "PostgreSQL",
-        "description": "A containerized PostgreSQL dedicated for your application, without backups",
-        "type": "object",
-        "properties": {
-          "name": {
-            "$id": "#/properties/name",
-            "type": "string",
-            "title": "Database Name"
-          },
-          "user": {
-            "$id": "#/properties/user",
-            "type": "string",
-            "title": "Username"
-          },
-          "encryptedPassword": {
-            "$id": "#/properties/encryptedPassword",
-            "type": "string",
-            "title": "Password"
-          }
-        }
-      },
-      {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "#rabbitmq",
-        "title": "RabbitMQ",
-        "description": "A containerized RabbitMQ dedicated for your application",
-        "type": "object",
-        "properties": {
-          "user": {
-            "$id": "#/properties/user",
-            "type": "string",
-            "title": "Username"
-          },
-          "encryptedPassword": {
-            "$id": "#/properties/encryptedPassword",
-            "type": "string",
-            "title": "Password"
-          }
-        }
-      }
-    ]
-  }
-}
-
-const uiSchema2 = [
-  {
-    "schemaIDs": [
-      "#/properties/dependencies"
-    ],
-    "uiSchema": {
-      "#/properties/dependencies": {
-        "items": {
-          "encryptedPassword": {
-            "ui:field": "encryptedSingleLineWidget"
-          },
-          "encryptedPassword": {
-            "ui:field": "encryptedSingleLineWidget"
-          },
-          "encryptedPassword": {
-            "ui:field": "encryptedSingleLineWidget"
-          }
-        }
-      }
-    },
-    "metaData": {
-    }
-  }
-]
