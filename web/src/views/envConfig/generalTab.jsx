@@ -27,7 +27,7 @@ export function Generaltab(props) {
           </div>
         </div>
         <div className='learnMoreBox'>
-          Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployments/preview-deployments" className='learnMoreLink'>Preview Deploys <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+          Learn more about <a href="https://gimlet.io/docs/deployments/preview-deployments" className='learnMoreLink'>Preview Deploys <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
         </div>
       </div>
       }
@@ -95,7 +95,7 @@ export function Generaltab(props) {
           </div>
         </div>
         <div className='learnMoreBox'>
-          Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/image-settings" className='learnMoreLink'>Deployment Templates <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+          Learn more about <a href="https://gimlet.io/docs/deployment-settings/image-settings" className='learnMoreLink'>Deployment Templates <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
         </div>
       </div>
 
@@ -116,7 +116,7 @@ export function Generaltab(props) {
           </div>
         </div>
         <div className='learnMoreBox'>
-          Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/kubernetes-resources/kubernetes-essentials#namespaces" className='learnMoreLink'>Kubernetes Namespaces <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+          Learn more about <a href="https://gimlet.io/docs/kubernetes-resources/kubernetes-essentials#namespaces" className='learnMoreLink'>Kubernetes Namespaces <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export function Generaltab(props) {
           }
         </div>
         <div className='learnMoreBox'>
-          Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployments/automated-deployments" className='learnMoreLink'>Automatic Deploys <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+          Learn more about <a href="https://gimlet.io/docs/deployments/automated-deployments" className='learnMoreLink'>Automatic Deploys <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
         </div>
       </div>
       }

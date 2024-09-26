@@ -535,27 +535,27 @@ export function EnvConfig(props) {
           </div>
           {selectedNavigation.name === "Container Image" &&
             <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/image-settings" className='learnMoreLink'>Container Build Settings<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+              Learn more about <a href="https://gimlet.io/docs/deployment-settings/image-settings" className='learnMoreLink'>Container Build Settings<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
             </div>
           }
           {selectedNavigation.name === "Domain" &&
             <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/dns" className='learnMoreLink'>Setting Domain Names <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+              Learn more about <a href="https://gimlet.io/docs/deployment-settings/dns" className='learnMoreLink'>Setting Domain Names <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
             </div>
           }
           {selectedNavigation.name === "Secrets" &&
             <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/secrets" className='learnMoreLink'>Encrypted Secrets <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+              Learn more about <a href="https://gimlet.io/docs/deployment-settings/secrets" className='learnMoreLink'>Encrypted Secrets <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
             </div>
           }
           {selectedNavigation.name === "Resources" &&
             <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/resource-usage" className='learnMoreLink'>Resource Usage <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+              Learn more about <a href="https://gimlet.io/docs/deployment-settings/resource-usage" className='learnMoreLink'>Resource Usage <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
             </div>
           }
           {selectedNavigation.name === "Volumes" &&
             <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/volumes" className='learnMoreLink'>Volumes <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+              Learn more about <a href="https://gimlet.io/docs/deployment-settings/volumes" className='learnMoreLink'>Volumes <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
             </div>
           }
           </>
@@ -633,7 +633,7 @@ function TemplateLoadError(props) {
           <div className='items-center border-dashed border border-neutral-200 dark:border-neutral-700 rounded-md p-4 py-16'>
             <h3 className="mt-2 text-sm font-semibold text-center text-red-500">Template Load Error</h3>
             <p className="mt-1 text-sm text-neutral-500 text-center">The used custom deployment <pre>{configFile.chart.name}</pre> template is not following conventions that Gimlet requires.</p>
-            <p className="mt-1 text-sm text-neutral-500 text-center underline"><a href="https://gimlet-documentation-home-page-revamp-emxxuioo.gimlet.app/docs/deployment-settings/custom-template" target="_blank" rel="noreferrer" className='externalLink'>Learn more about template conventions<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a></p>
+            <p className="mt-1 text-sm text-neutral-500 text-center underline"><a href="https://gimlet.io/docs/deployment-settings/custom-template" target="_blank" rel="noreferrer" className='externalLink'>Learn more about template conventions<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a></p>
           </div>
         </div>
       </div>
