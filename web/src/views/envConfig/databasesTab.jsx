@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export function DatabasesTab(props) {
   const { gimletClient, store } = props;
-  const { app, namespace, environment, plainModules } = props;
+  const { app, environment, plainModules } = props;
   const parsedModules = plainModules.map((m) => {
     return {
       ...m,
@@ -55,7 +55,6 @@ export function DatabasesTab(props) {
     for(const dependency of Object.values(dependencies)) {
       rebuiltDependencies.push({
         name: app+"-"+dependency.title.toLowerCase(),
-        namespace: namespace,
         kind: "plain",
         spec: {
           module: {

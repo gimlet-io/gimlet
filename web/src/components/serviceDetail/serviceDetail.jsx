@@ -420,7 +420,7 @@ export function Pod(props) {
 
   return (
     <span className={`inline-block mr-1 mt-2 shadow-lg ${textColor} ${color} ${pulsar} font-bold px-2 cursor-default`} title={`${pod.name} - ${pod.status}`}>
-      {pod.status}
+      {pod.name}
     </span>
   );
 }
