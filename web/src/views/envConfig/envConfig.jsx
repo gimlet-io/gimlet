@@ -551,8 +551,6 @@ export function EnvConfig(props) {
         <DatabasesTab
           gimletClient={gimletClient}
           store={store}
-          app={configFile.app}
-          namespace={configFile.namespace}
           environment={env}
           plainModules={plainModules}
           configFileDependencies={configFile.dependencies}
@@ -563,8 +561,6 @@ export function EnvConfig(props) {
         <DatabasesTab
           gimletClient={gimletClient}
           store={store}
-          app={configFile.app}
-          namespace={configFile.namespace}
           environment={env}
           configFileDependencies={configFile.dependencies}
           setConfigFileDependencies={setDependencies}

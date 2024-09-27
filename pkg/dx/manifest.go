@@ -279,65 +279,112 @@ func (m *Manifest) Render() (string, error) {
 }
 
 func renderDependency(dependency Dependency, manifest *Manifest) (string, error) {
-	depString := ""
 	switch dependency.Kind {
 	case "terraform":
-		tfSpec := dependency.Spec.(TFSpec)
-
-		gitAddress, err := giturl.Parse(tfSpec.Module.Url)
-		if err != nil {
-			return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
-		}
-		moduleUrl := strings.ReplaceAll(tfSpec.Module.Url, gitAddress.RawQuery, "")
-		moduleUrl = strings.ReplaceAll(moduleUrl, "?", "")
-
-		params, _ := url.ParseQuery(gitAddress.RawQuery)
-		branch := ""
-		if v, found := params["branch"]; found {
-			branch = v[0]
-		}
-		tag := ""
-		if v, found := params["tag"]; found {
-			tag = v[0]
-		}
-		sha := ""
-		if v, found := params["sha"]; found {
-			sha = v[0]
-		}
-		path := ""
-		if v, found := params["path"]; found {
-			path = v[0]
-		}
-
-		gitRepoBytes, err := renderTFGitRepo(
-			manifest.App+"-"+dependency.Name,
-			manifest.Namespace,
-			moduleUrl,
-			branch,
-			tag,
-			sha,
-			tfSpec.Module.Secret,
-		)
-		if err != nil {
-			return "", err
-		}
-		depString += "---\n"
-		depString += string(gitRepoBytes)
-
-		tfKindBytes, err := renderTFKind(
-			manifest.App+"-"+dependency.Name,
-			manifest.Namespace,
-			path,
-			tfSpec.Secret,
-			tfSpec.Values,
-		)
-		if err != nil {
-			return "", err
-		}
-		depString += "---\n"
-		depString += string(tfKindBytes)
-
+		return renderTFDependency(dependency, manifest)
+	case "plain":
+		return renderPlainDependency(dependency, manifest)
+	default:
+		return "", fmt.Errorf("unknown dependency kind: %s", dependency.Kind)
 	}
+}
+
+func renderTFDependency(dependency Dependency, manifest *Manifest) (string, error) {
+	depString := ""
+	tfSpec := dependency.Spec.(TFSpec)
+
+	gitAddress, err := giturl.Parse(tfSpec.Module.Url)
+	if err != nil {
+		return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
+	}
+	moduleUrl := strings.ReplaceAll(tfSpec.Module.Url, gitAddress.RawQuery, "")
+	moduleUrl = strings.ReplaceAll(moduleUrl, "?", "")
+
+	params, _ := url.ParseQuery(gitAddress.RawQuery)
+	branch := ""
+	if v, found := params["branch"]; found {
+		branch = v[0]
+	}
+	tag := ""
+	if v, found := params["tag"]; found {
+		tag = v[0]
+	}
+	sha := ""
+	if v, found := params["sha"]; found {
+		sha = v[0]
+	}
+	path := ""
+	if v, found := params["path"]; found {
+		path = v[0]
+	}
+
+	gitRepoBytes, err := renderTFGitRepo(
+		manifest.App+"-"+dependency.Name,
+		manifest.Namespace,
+		moduleUrl,
+		branch,
+		tag,
+		sha,
+		tfSpec.Module.Secret,
+	)
+	if err != nil {
+		return "", err
+	}
+	depString += "---\n"
+	depString += string(gitRepoBytes)
+
+	tfKindBytes, err := renderTFKind(
+		manifest.App+"-"+dependency.Name,
+		manifest.Namespace,
+		path,
+		tfSpec.Secret,
+		tfSpec.Values,
+	)
+	if err != nil {
+		return "", err
+	}
+	depString += "---\n"
+	depString += string(tfKindBytes)
+	return depString, nil
+}
+
+func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, error) {
+	depString := ""
+	// tfSpec := dependency.Spec.(TFSpec)
+
+	// gitAddress, err := giturl.Parse(tfSpec.Module.Url)
+	// if err != nil {
+	// 	return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
+	// }
+	// params, _ := url.ParseQuery(gitAddress.RawQuery)
+	// path := ""
+	// if v, found := params["path"]; found {
+	// 	path = v[0]
+	// }
+
+	// repo, err := nativeGit.FlexibleURLCloneToMemory(tfSpec.Module.Url)
+	// if err != nil {
+	// 	return "", fmt.Errorf("cannot clone module on %s: %s", tfSpec.Module.Url, err)
+	// }
+
+	// templateYaml, err := nativeGit.Content(repo, filepath.Join(path, "template.yaml"))
+	// if err != nil {
+	// 	return "", fmt.Errorf("cannot get folder %s: %s", path, err)
+	// }
+
+	// templates, err := template.New(path).Funcs(sprig.TxtFuncMap()).Parse(templateYaml)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// var templated bytes.Buffer
+	// err = templates.Execute(&templated, tfSpec.Values)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// depString += "---\n"
+	// depString += templated.String()
 	return depString, nil
 }
 
