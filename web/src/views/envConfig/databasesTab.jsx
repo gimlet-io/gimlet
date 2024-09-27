@@ -3,6 +3,7 @@ import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOption
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
 import {InfraComponent} from '../environment/category';
 import {produce} from 'immer';
+import { v4 as uuidv4 } from 'uuid';
 
 export function DatabasesTab(props) {
   const { gimletClient, store } = props;
@@ -10,12 +11,7 @@ export function DatabasesTab(props) {
   const { databaseConfig, setDatabaseValues } = props
   const { plainModules } = props;
   const [ selectedModule, setSelectedModule ] = useState()
-  const [ dependencies, setDependencies ] = useState({
-    "xxx": {
-      url: "https://github.com/gimlet-io/plain-modules.git?path=postgresql",
-      values: {}
-    }
-  })
+  const [ dependencies, setDependencies ] = useState({})
 
   const validationCallback = (id, validationErrors) => {
     if(validationErrors) {
@@ -28,6 +24,21 @@ export function DatabasesTab(props) {
 
     setDependencies(produce(dependencies, draft => {
       draft[id].values = nonDefaultValues
+    }))
+  }
+
+  const addDependency = () => {
+    setDependencies(produce(dependencies, draft => {
+      draft[uuidv4()] = {
+        url: selectedModule.url,
+        values: {}
+      }
+    }))
+  }
+
+  const deleteDependency = (id) => {
+    setDependencies(produce(dependencies, draft => {
+      delete draft[id]
     }))
   }
 
@@ -45,27 +56,27 @@ export function DatabasesTab(props) {
         <div className='flex-grow'>
           <ModuleSelector modules={plainModules} setSelectedModule={setSelectedModule} />
         </div>
-        <button
-              onClick={() => navigate("/import-repositories")}
-              className="primaryButton px-8">
-              Add
-        </button>
+        <button onClick={addDependency} className="primaryButton px-8">Add</button>
       </div>
       {Object.keys(dependencies).map((id) => {
         const dependency = dependencies[id]
         const module = plainModules.find(m => m.url == dependency.url)
 
-        return <InfraComponent
-            key={id}
-            componentDefinition={module}
-            config={dependency.values}
-            setValues={(variable, values, nonDefaultValues) => setDependencyValues(id, values, nonDefaultValues)}
-            validationCallback={(variable, validationErrors) => validationCallback(id, validationErrors)}
-            gimletClient={gimletClient}
-            store={store}
-            environment={{name: environment}}
-          />
-        })
+        return (
+          <div className='relative'>
+            <button onClick={() => deleteDependency(id)} className="destructiveButtonSecondary absolute top-6 right-6">Delete</button>
+            <InfraComponent
+              key={id}
+              componentDefinition={module}
+              config={dependency.values}
+              setValues={(variable, values, nonDefaultValues) => setDependencyValues(id, values, nonDefaultValues)}
+              validationCallback={(variable, validationErrors) => validationCallback(id, validationErrors)}
+              gimletClient={gimletClient}
+              store={store}
+              environment={{name: environment}}
+            />
+          </div>
+        )})
       }
     </div>
   )
