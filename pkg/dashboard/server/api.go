@@ -26,8 +26,8 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
-	helper "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet/pkg/server/token"
 	"github.com/gimlet-io/gimlet/pkg/stack"
 	"github.com/gimlet-io/gimlet/pkg/version"
@@ -320,21 +320,21 @@ func plainModules(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	config := ctx.Value("config").(*config.Config)
 
-	repo, err := nativeGit.FlexibleURLCloneToMemory(config.PlainModulesURL)
+	repo, err := gogit.FlexibleURLCloneToMemory(config.PlainModulesURL)
 	if err != nil {
 		logrus.Errorf("cannot get plain modules: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	headBranch, err := helper.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		logrus.Errorf("cannot get plain modules: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	folders, err := helper.RemoteFoldersOnBranchWithoutCheckout(repo, headBranch, "")
+	folders, err := gogit.RemoteFoldersOnBranchWithoutCheckout(repo, headBranch, "")
 	if err != nil {
 		logrus.Errorf("cannot get plain modules: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -344,7 +344,7 @@ func plainModules(w http.ResponseWriter, r *http.Request) {
 	plainModules := []*dx.PlainModule{}
 	for _, folder := range folders {
 		fmt.Println(folder)
-		files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, folder)
+		files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, folder)
 		if err != nil {
 			logrus.Errorf("cannot get plain modules: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -415,12 +415,12 @@ func LoadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, e
 func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
 	var stackConfig dx.StackConfig
 
-	headBranch, err := helper.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, headBranch, path)
+	yamlString, err := gogit.RemoteContentOnBranchWithoutCheckout(repo, headBranch, path)
 	if err != nil {
 		return nil, err
 	}
@@ -592,12 +592,12 @@ func deploymentTemplates(charts config.DefaultCharts, installationToken string) 
 }
 
 func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, error) {
-	branch, err := helper.HeadBranch(repo)
+	branch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		return nil, err
 	}

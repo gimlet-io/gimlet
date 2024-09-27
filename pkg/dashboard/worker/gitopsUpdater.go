@@ -12,6 +12,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/sirupsen/logrus"
@@ -145,7 +146,7 @@ func updateGitopsManifests(
 		return nil, fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get head branch: %s", err)
 	}
@@ -155,7 +156,7 @@ func updateGitopsManifests(
 		return nil, fmt.Errorf("cannot generate branch name: %s", err)
 	}
 
-	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+	err = gogit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 	if err != nil {
 		return nil, fmt.Errorf("cannot checkout branch: %s", err)
 	}
@@ -182,7 +183,7 @@ func updateGitopsManifests(
 		return nil, fmt.Errorf("cannot generate manifest: %s", err)
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := gogit.NothingToCommit(repo)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get git state: %s", err)
 	}

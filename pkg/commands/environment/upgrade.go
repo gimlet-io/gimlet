@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/enescakir/emoji"
-	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
@@ -72,7 +72,7 @@ func Upgrade(c *cli.Context) error {
 	repo, _ := git.PlainOpen(gitopsRepoPath)
 	branch, _ := branchName(repo, gitopsRepoPath)
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := gogit.NothingToCommit(repo)
 	if err != nil {
 		return err
 	}

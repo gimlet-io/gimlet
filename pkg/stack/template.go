@@ -15,7 +15,7 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/fluxcd/pkg/sourceignore"
 	"github.com/gimlet-io/gimlet/pkg/dx"
-	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/util"
 	"github.com/go-git/go-git/v5"
@@ -76,7 +76,7 @@ func StackDefinitionFromRepo(repoUrl string) (string, error) {
 // cloneStackFromRepo takes a git repo url, and returns the files of the git reference
 // if the repoUrl is a local filesystem location, it loads the files from there
 func cloneStackFromRepo(repoURL string) (map[string]string, error) {
-	repo, err := nativeGit.FlexibleURLCloneToMemory(repoURL)
+	repo, err := gogit.FlexibleURLCloneToMemory(repoURL)
 	if err != nil {
 		_, err2 := os.Stat(repoURL)
 		if err2 != nil {

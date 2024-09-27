@@ -249,6 +249,7 @@ dependencies:
 func Test_renderPlainDependency(t *testing.T) {
 	manifestString := `
 app: hello
+namespace: hello
 dependencies:
 - name: my-redis
   kind: plain
@@ -264,11 +265,8 @@ dependencies:
 	if assert.NoError(t, err) {
 		renderredDep, err := renderDependency(m.Dependencies[0], &m)
 		if assert.NoError(t, err) {
-			assert.True(t, strings.Contains(string(renderredDep), "url: https://github.com/gimlet-io/tfmodule"), "git repo url must be set")
-			assert.True(t, strings.Contains(string(renderredDep), "commit: xyz"), "git tag must be set")
-			assert.True(t, strings.Contains(string(renderredDep), "kind: Terraform"), "terraform kind must be set")
-			assert.True(t, strings.Contains(string(renderredDep), "name: db-admin-secret"), "db secret must be set")
-			assert.True(t, strings.Contains(string(renderredDep), "value: my-app"), "values must be set")
+			assert.True(t, strings.Contains(string(renderredDep), "name: my-redis"), "should render name")
+			assert.True(t, strings.Contains(string(renderredDep), "namespace: hello"), "should render namespace")
 			// fmt.Println(string(renderredDep))
 		}
 	}

@@ -1,4 +1,4 @@
-package nativeGit
+package gogit
 
 import (
 	"context"

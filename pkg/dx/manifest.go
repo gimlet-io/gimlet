@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -14,6 +15,7 @@ import (
 	terraformv1 "github.com/flux-iac/tofu-controller/api/v1alpha2"
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	giturl "github.com/whilp/git-urls"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -350,41 +352,47 @@ func renderTFDependency(dependency Dependency, manifest *Manifest) (string, erro
 
 func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, error) {
 	depString := ""
-	// tfSpec := dependency.Spec.(TFSpec)
+	tfSpec := dependency.Spec.(TFSpec)
 
-	// gitAddress, err := giturl.Parse(tfSpec.Module.Url)
-	// if err != nil {
-	// 	return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
-	// }
-	// params, _ := url.ParseQuery(gitAddress.RawQuery)
-	// path := ""
-	// if v, found := params["path"]; found {
-	// 	path = v[0]
-	// }
+	gitAddress, err := giturl.Parse(tfSpec.Module.Url)
+	if err != nil {
+		return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
+	}
+	params, _ := url.ParseQuery(gitAddress.RawQuery)
+	path := ""
+	if v, found := params["path"]; found {
+		path = v[0]
+	}
 
-	// repo, err := nativeGit.FlexibleURLCloneToMemory(tfSpec.Module.Url)
-	// if err != nil {
-	// 	return "", fmt.Errorf("cannot clone module on %s: %s", tfSpec.Module.Url, err)
-	// }
+	repo, err := gogit.FlexibleURLCloneToMemory(tfSpec.Module.Url)
+	if err != nil {
+		return "", fmt.Errorf("cannot clone module on %s: %s", tfSpec.Module.Url, err)
+	}
 
-	// templateYaml, err := nativeGit.Content(repo, filepath.Join(path, "template.yaml"))
-	// if err != nil {
-	// 	return "", fmt.Errorf("cannot get folder %s: %s", path, err)
-	// }
+	templateYaml, err := gogit.Content(repo, filepath.Join(path, "template.yaml"))
+	if err != nil {
+		return "", fmt.Errorf("cannot get folder %s: %s", path, err)
+	}
 
-	// templates, err := template.New(path).Funcs(sprig.TxtFuncMap()).Parse(templateYaml)
-	// if err != nil {
-	// 	return "", err
-	// }
+	templates, err := template.New(path).Funcs(sprig.TxtFuncMap()).Parse(templateYaml)
+	if err != nil {
+		return "", err
+	}
 
-	// var templated bytes.Buffer
-	// err = templates.Execute(&templated, tfSpec.Values)
-	// if err != nil {
-	// 	return "", err
-	// }
+	var templated bytes.Buffer
+	vars := map[string]interface{}{
+		"name":      dependency.Name,
+		"namespace": manifest.Namespace,
+	}
+	for k, v := range tfSpec.Values {
+		vars[k] = v
+	}
+	err = templates.Execute(&templated, vars)
+	if err != nil {
+		return "", err
+	}
 
-	// depString += "---\n"
-	// depString += templated.String()
+	depString += templated.String()
 	return depString, nil
 }
 

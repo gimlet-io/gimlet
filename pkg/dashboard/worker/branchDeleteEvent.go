@@ -14,6 +14,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	commonGit "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -76,7 +77,7 @@ func (r *BranchDeleteEventWorker) cleanup() {
 			}
 
 			branchesWithManifests := map[string][]*dx.Manifest{}
-			branches := commonGit.BranchList(repo)
+			branches := gogit.BranchList(repo)
 			for _, branch := range branches {
 				manifests, err := r.extractManifestsFromBranch(repo, branch)
 				if err != nil {
@@ -135,7 +136,7 @@ func (r *BranchDeleteEventWorker) cleanup() {
 }
 
 func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([]string, error) {
-	staleBranches := commonGit.BranchList(repo)
+	staleBranches := gogit.BranchList(repo)
 
 	token, user, err := r.tokenManager.Token()
 	if err != nil {
@@ -155,7 +156,7 @@ func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([
 		return []string{}, fmt.Errorf("could not fetch: %s", err)
 	}
 
-	prunedBranches := commonGit.BranchList(repo)
+	prunedBranches := gogit.BranchList(repo)
 
 	return difference(staleBranches, prunedBranches), nil
 }
@@ -163,7 +164,7 @@ func (r *BranchDeleteEventWorker) detectDeletedBranches(repo *git.Repository) ([
 func (r *BranchDeleteEventWorker) extractManifestsFromBranch(repo *git.Repository, branch string) ([]*dx.Manifest, error) {
 	var manifests []*dx.Manifest
 
-	files, err := commonGit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		return manifests, err
 	}

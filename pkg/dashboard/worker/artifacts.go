@@ -9,6 +9,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
@@ -39,7 +40,7 @@ func (a *ArtifactsWorker) Run() {
 
 func (a *ArtifactsWorker) assureGimletArtifacts(repoName string) error {
 	err := a.gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
-		branches := nativeGit.BranchList(repo)
+		branches := gogit.BranchList(repo)
 		for _, branch := range branches {
 			hashes, innerErr := lastTenCommits(repo, branch)
 			if innerErr != nil {
@@ -60,7 +61,7 @@ func (a *ArtifactsWorker) assureGimletArtifacts(repoName string) error {
 }
 
 func lastTenCommits(repo *git.Repository, branch string) ([]string, error) {
-	branchHeadHash := nativeGit.BranchHeadHash(repo, branch)
+	branchHeadHash := gogit.BranchHeadHash(repo, branch)
 
 	commitWalker, err := repo.Log(&git.LogOptions{
 		From: branchHeadHash,
