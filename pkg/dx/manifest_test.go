@@ -172,6 +172,46 @@ namespace: ""
 	}
 }
 
+func Test_planiDependencyMarshal(t *testing.T) {
+	m := Manifest{
+		App: "first",
+		Dependencies: []Dependency{
+			{
+				Name: "my-redis",
+				Kind: "plain",
+				Spec: TFSpec{
+					Module: Module{
+						Url: "a-git-url",
+					},
+					Values: map[string]interface{}{
+						"size": "1GB",
+					},
+					Secret: "xx",
+				},
+			},
+		},
+	}
+
+	marshalledBytes, err := yaml.Marshal(m)
+	if assert.NoError(t, err) {
+		assert.Equal(t, `app: first
+chart:
+  name: ""
+dependencies:
+- kind: plain
+  name: my-redis
+  spec:
+    module:
+      url: a-git-url
+    secret: xx
+    values:
+      size: 1GB
+env: ""
+namespace: ""
+`, string(marshalledBytes))
+	}
+}
+
 func Test_renderTFDependency(t *testing.T) {
 	manifestString := `
 app: hello

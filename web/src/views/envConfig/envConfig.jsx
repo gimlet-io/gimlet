@@ -18,8 +18,8 @@ import { DatabasesTab } from './databasesTab';
 import { Modal } from '../../components/modal'
 import { ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/solid';
 import IngressWidget from "../envConfig/ingressWidget";
-import {produce} from 'immer';
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
+import {produce} from 'immer';
 
 export function EnvConfig(props) {
   const { store, gimletClient } = props
@@ -36,7 +36,6 @@ export function EnvConfig(props) {
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
   const [plainModules, setPlainModules] = useState(reduxState.fileInfos)
   const [configFile, setConfigFile] = useState()
-  const [databaseConfig, setDatabaseConfig] = useState()
   const [savedConfigFile, setSavedConfigFile] = useState()
   const [templates, setTemplates] = useState()
   const [selectedTemplate, setSelectedTemplate] = useState()
@@ -98,7 +97,6 @@ export function EnvConfig(props) {
             const configFileContentFromEnvConfigs = envConfigs[env].find(c => c.app === config)
             let deepCopied = JSON.parse(JSON.stringify(configFileContentFromEnvConfigs))
             setConfigFile(configFileContentFromEnvConfigs)
-            setDatabaseConfig(extractDatabaseConfig(configFileContentFromEnvConfigs.manifests))
             setSavedConfigFile(deepCopied)
           }
         }, () => {/* Generic error handler deals with it */
@@ -230,31 +228,18 @@ export function EnvConfig(props) {
     }));
   }
 
-  const setDatabaseValues = (variable, values, nonDefaultValues) => {
-    if (!databaseConfig[variable] && Object.keys(nonDefaultValues).length === 0) {
+  const setDependencies = (dependencies) => {
+    if (dependencies.length === 0) {
+      setConfigFile(produce(configFile, draft => {
+        delete draft.dependencies
+      }))
       return
     }
-    let updatedDatabaseConfig = {}
-    if (databaseConfig[variable] && Object.keys(nonDefaultValues).length === 0) {
-      setDatabaseConfig(produce(databaseConfig, draft => {
-        delete draft[variable]
-      }))
-    } else {
-      updatedDatabaseConfig = produce(databaseConfig, draft => {
-        draft[variable]=nonDefaultValues
-      })
-    }
 
-    setDatabaseConfig(updatedDatabaseConfig)
-    setConfigFile(prevState => {
-      const manifestString = serializeDatabaseConfig(prevState.manifests, updatedDatabaseConfig)
-      console.log(manifestString)
-
-      return {
-        ...prevState,
-        manifests: manifestString
-      }
-    });
+    setConfigFile(prevState => ({
+      ...prevState,
+      dependencies: dependencies,
+    }));
   }
 
   const resetNotificationStateAfterThreeSeconds = () => {
@@ -566,19 +551,23 @@ export function EnvConfig(props) {
         <DatabasesTab
           gimletClient={gimletClient}
           store={store}
+          app={configFile.app}
+          namespace={configFile.namespace}
           environment={env}
-          setDatabaseValues={setDatabaseValues}
-          databaseConfig={databaseConfig}
           plainModules={plainModules}
+          configFileDependencies={configFile.dependencies}
+          setConfigFileDependencies={setDependencies}
         />
         }
         { selectedNavigation?.name === "Cloud Dependencies" &&
         <DatabasesTab
           gimletClient={gimletClient}
           store={store}
+          app={configFile.app}
+          namespace={configFile.namespace}
           environment={env}
-          setDatabaseValues={setDatabaseValues}
-          databaseConfig={databaseConfig}
+          configFileDependencies={configFile.dependencies}
+          setConfigFileDependencies={setDependencies}
         />
         }
       </div>
@@ -885,61 +874,6 @@ export function handlePullSecret(nonDefaultValues) {
       break
   }
   return nonDefaultValues
-}
-
-const configHeaderLine = "# database configuration (generated value, do not edit)"
-const configFooterLine = "# database configuration end"
-
-function extractDatabaseConfig(manifests) {
-  if (!manifests) {
-    return {}
-  }
-
-  var lines = manifests.split(/\r?\n/);
-  const configHeaderLineNumber = lines.indexOf(configHeaderLine)
-  const configFooterLineNumber = lines.indexOf(configFooterLine)
-  if (configHeaderLineNumber === -1 || configFooterLineNumber === -1 || configFooterLineNumber < configHeaderLineNumber) {
-    return {}
-  }
-
-  let databaseConfig = ""
-  for (let i = configHeaderLineNumber+1; i < configFooterLineNumber; i++) {
-    databaseConfig += lines[i].slice(1);
-  }
-
-  let databaseConfigObject = {}
-  try {
-    databaseConfigObject = JSON.parse(databaseConfig)
-  } catch (e) {
-    console.log(e)
-  }
-
-  return databaseConfigObject
-}
-
-function serializeDatabaseConfig(manifests, databaseConfig){
-  if (!databaseConfig || JSON.stringify(databaseConfig) === '{}'){
-    return manifests
-  }
-
-  var lines = manifests ? manifests.split(/\r?\n/) : [];
-  const configHeaderLineNumber = lines.indexOf(configHeaderLine)
-  const configFooterLineNumber = lines.indexOf(configFooterLine)
-  var linesToAdd = []
-  linesToAdd.push(configHeaderLine)
-  const databaseConfigLines = JSON.stringify(databaseConfig).split(/\r?\n/);
-  databaseConfigLines.forEach(line => {
-    linesToAdd.push("# " + line)
-  });
-  linesToAdd.push(configFooterLine)
-
-  if (configHeaderLineNumber === -1){
-    lines.push(...linesToAdd)
-  } else {
-    lines.splice(configHeaderLineNumber, configFooterLineNumber - configHeaderLineNumber + 1, ...linesToAdd)
-  }
-
-  return lines.join("\n")
 }
 
 export default EnvConfig;

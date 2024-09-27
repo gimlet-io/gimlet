@@ -99,7 +99,27 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 			tfSpec.Secret = val.(string)
 		}
 		d.Spec = tfSpec
+	case "plain":
+		dat, ok := dat["spec"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("could not parse dependency.spec in gimlet manifest")
+		}
+		module := dat["module"].(map[string]interface{})
+		tfSpec := TFSpec{
+			Module: Module{
+				Url: module["url"].(string),
+			},
+			Values: dat["values"].(map[string]interface{}),
+		}
+		if val, ok := module["secret"]; ok {
+			tfSpec.Module.Secret = val.(string)
+		}
+		if val, ok := dat["secret"]; ok {
+			tfSpec.Secret = val.(string)
+		}
+		d.Spec = tfSpec
 	}
+
 	return nil
 }
 

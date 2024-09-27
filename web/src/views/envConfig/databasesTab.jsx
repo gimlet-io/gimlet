@@ -7,11 +7,17 @@ import { v4 as uuidv4 } from 'uuid';
 
 export function DatabasesTab(props) {
   const { gimletClient, store } = props;
-  const { environment } = props;
-  const { databaseConfig, setDatabaseValues } = props
-  const { plainModules } = props;
+  const { app, namespace, environment, plainModules } = props;
+  const parsedModules = plainModules.map((m) => {
+    return {
+      ...m,
+      schema: JSON.parse(m.schema),
+      uiSchema: JSON.parse(m.uiSchema),
+    }
+  })
+  const { configFileDependencies, setConfigFileDependencies } = props;
   const [ selectedModule, setSelectedModule ] = useState()
-  const [ dependencies, setDependencies ] = useState({})
+  const [ dependencies, setDependencies ] = useState(fromConfigFileDependencies(configFileDependencies, parsedModules))
 
   const validationCallback = (id, validationErrors) => {
     if(validationErrors) {
@@ -31,6 +37,7 @@ export function DatabasesTab(props) {
     setDependencies(produce(dependencies, draft => {
       draft[uuidv4()] = {
         url: selectedModule.url,
+        title: selectedModule.schema.title,
         values: {}
       }
     }))
@@ -44,17 +51,28 @@ export function DatabasesTab(props) {
 
   useEffect(() => {
     console.log(dependencies)
+    const rebuiltDependencies = []
+    for(const dependency of Object.values(dependencies)) {
+      rebuiltDependencies.push({
+        name: app+"-"+dependency.title.toLowerCase(),
+        namespace: namespace,
+        kind: "plain",
+        spec: {
+          module: {
+            url: dependency.url
+          },
+          values: dependency.values
+        }
+      })
+    }
+    setConfigFileDependencies(rebuiltDependencies)
   }, [dependencies]);
 
-  useEffect(() => {
-    console.log(selectedModule)
-  }, [selectedModule]);
-  
   return (
     <div className='space-y-12'>
       <div className='flex space-x-2'>
         <div className='flex-grow'>
-          <ModuleSelector modules={plainModules} setSelectedModule={setSelectedModule} />
+          <ModuleSelector parsedModules={parsedModules} setSelectedModule={setSelectedModule} />
         </div>
         <button onClick={addDependency} className="primaryButton px-8">Add</button>
       </div>
@@ -63,10 +81,9 @@ export function DatabasesTab(props) {
         const module = plainModules.find(m => m.url == dependency.url)
 
         return (
-          <div className='relative'>
+          <div key={id} className='relative'>
             <button onClick={() => deleteDependency(id)} className="destructiveButtonSecondary absolute top-6 right-6">Delete</button>
             <InfraComponent
-              key={id}
               componentDefinition={module}
               config={dependency.values}
               setValues={(variable, values, nonDefaultValues) => setDependencyValues(id, values, nonDefaultValues)}
@@ -83,14 +100,7 @@ export function DatabasesTab(props) {
 }
 
 export default function ModuleSelector(props) {
-  const { setSelectedModule } = props
-  const parsedModules = props.modules.map((m) => {
-    return {
-      ...m,
-      schema: JSON.parse(m.schema),
-      uiSchema: JSON.parse(m.uiSchema),
-    }
-  })
+  const { setSelectedModule, parsedModules } = props
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(parsedModules[0].schema.title)
 
@@ -149,4 +159,21 @@ export default function ModuleSelector(props) {
       </div>
     </Combobox>
   )
+}
+
+function fromConfigFileDependencies(configfileDependencies, parsedModules){
+  if (!configfileDependencies) {
+    return {}
+  }
+
+  const dependencies = {}
+  for (const dependency of configfileDependencies) {
+    dependencies[uuidv4()] = {
+      url: dependency.spec.module.url,
+      title: parsedModules.find((m) => m.url === dependency.spec.module.url).schema.title,
+      values: dependency.spec.values,
+    }
+  }
+
+  return dependencies
 }
