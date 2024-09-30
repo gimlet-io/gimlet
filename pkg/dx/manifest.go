@@ -382,6 +382,7 @@ func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, e
 	var templated bytes.Buffer
 	vars := map[string]interface{}{
 		"name":      dependency.Name,
+		"app":       manifest.App,
 		"namespace": manifest.Namespace,
 	}
 	for k, v := range tfSpec.Values {

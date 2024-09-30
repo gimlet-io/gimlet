@@ -14,7 +14,7 @@ func EventController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Cont
 		eventListWatcher,
 		&v1.Event{},
 		func(informerEvent Event, objectMeta meta_v1.ObjectMeta, obj interface{}) error {
-			events, err := kubeEnv.WarningEvents("")
+			events, err := kubeEnv.WarningEvents()
 			if err != nil {
 				return err
 			}

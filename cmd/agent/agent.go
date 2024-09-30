@@ -305,7 +305,7 @@ func serverCommunication(
 }
 
 func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	stacks, err := kubeEnv.Services("")
+	stacks, err := kubeEnv.Services()
 	if err != nil {
 		logrus.Errorf("could not get state from k8s apiServer: %v", err)
 		return
@@ -357,7 +357,7 @@ func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 }
 
 func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	events, err := kubeEnv.WarningEvents("")
+	events, err := kubeEnv.WarningEvents()
 	if err != nil {
 		logrus.Errorf("could not get events from k8s apiServer: %v", err)
 		return
