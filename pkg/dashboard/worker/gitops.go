@@ -946,33 +946,6 @@ func cloneTemplateWriteAndPush(
 	return sha, nil
 }
 
-func injectGimletCTA(manifest *dx.Manifest) {
-	if _, ok := manifest.Values["ingress"]; !ok {
-		return
-	}
-
-	ingress := manifest.Values["ingress"].(map[string]interface{})
-	if _, ok := ingress["annotations"]; !ok {
-		ingress["annotations"] = map[string]interface{}{}
-	}
-	annotations := ingress["annotations"].(map[string]interface{})
-	annotations["nginx.ingress.kubernetes.io/configuration-snippet"] = `sub_filter '</body>' '
-		<div class="bg-transparent bottom-0 md:px-0 fixed z-[2147483647] left-0 md:left-[calc(50%-390px)]">
-			<iframe class="h-48 min-h-[initial] max-h-[initial] translate-[initial] bg-transparent border-0 block w-screen md:w-[780px]"
-				id="github-iframe"
-				title="Gimlet Drawer"
-				src=""
-			>
-			</iframe>
-		<script src="https://cdn.tailwindcss.com"></script>
-		<script>
-			fetch("https://api.github.com/repos/dzsak/deploying-a-static-site-with-netlify-sample/contents/gimlet-preview.html?ref=v0.0.1-rc.19").then(function(t){return t.json()})
-				.then(function(t){(iframe=document.getElementById("github-iframe")).src="data:text/html;base64,"+encodeURIComponent(t.content)});
-		</script>
-	</body>';
-	proxy_set_header Accept-Encoding "";`
-}
-
 func cloneTemplateDeleteAndPush(
 	gitopsRepoCache *nativeGit.RepoCache,
 	cleanupPolicy *dx.Cleanup,
