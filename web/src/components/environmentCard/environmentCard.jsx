@@ -22,7 +22,7 @@ function EnvironmentCard({ env, navigateToEnv, isOnline, trial }) {
                 className="flex-shrink-0 inline-block px-2 py-0.5 mx-1 text-neutral-800 dark:text-neutral-400 text-xs font-medium bg-neutral-100 dark:bg-neutral-700 rounded-full"
                 title={`Environment will be disabled at ${exactDate}`}
                 >
-                  ephemeral
+                  trial
               </span>
               }
               <span className={`flex-shrink-0 inline-block px-2 py-0.5 mx-1 ${isOnline ? 'text-teal-800 dark:text-teal-400' : 'text-red-700 dark:text-red-300'} text-xs font-medium ${isOnline ? 'bg-teal-100 dark:bg-teal-700' : 'bg-red-200 dark:bg-red-700'} rounded-full`}>

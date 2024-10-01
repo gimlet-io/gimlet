@@ -48,7 +48,7 @@ Non-profit and individual use of Gimlet is free and comes without usage limitati
 
 You'll start with a 7-day trial to evaluate if Gimlet is helpful for you.
 
-On the technical level, you'll start off with an ephemeral infrastructure provided by us for the trial period and can't connect any real clusters until you purchase the license.
+On the technical level, you'll start off with an temporary infrastructure provided by us for the trial period and can't connect any real clusters until you purchase the license.
 
 After your purchase, you can connect your own Kubernetes clusters and move your applications to this permanent infrastructure.
 

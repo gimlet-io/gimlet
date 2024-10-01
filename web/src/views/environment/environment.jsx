@@ -276,7 +276,7 @@ export default function EnvironmentView(props) {
           </div>
           <div className="ml-3 flex-1 md:flex md:justify-between">
             <div className="text-sm flex flex-col">
-              <p className="font-semibold text-sm pb-4">This is an ephemeral environment</p>
+              <p className="font-semibold text-sm pb-4">This is a trial environment</p>
               <p>Gimlet made this environment for you so you can start deploying.</p>
               <p className='pb-4'>This environment will run on our Kubernetes cluster for 7 days with plenty of resources for you to get started.</p>
               <p>Once you upgrade Gimlet, you will be able to connect your own Kubernetes cluster running on your preferred provider.</p>
@@ -318,7 +318,7 @@ export default function EnvironmentView(props) {
                   className='underline ml-1'
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
-                    confirm(`Are you sure you want to stop the ephemeral environment?`) &&
+                    confirm(`Are you sure you want to stop the trial environment?`) &&
                     stopEnv();
                   }}
                   >
@@ -336,7 +336,7 @@ export default function EnvironmentView(props) {
                   className='underline ml-1'
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
-                    confirm(`Are you sure you want to stop the ephemeral environment?`) &&
+                    confirm(`Are you sure you want to stop the trial environment?`) &&
                     stopEnv();
                   }}
                   >

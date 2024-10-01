@@ -421,7 +421,7 @@ function Connecting(props) {
     return (
       <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
         <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
-          <span>Ephemeral cluster expired</span>
+          <span>Trial Kubernetes cluster expired</span>
         </a>
       </div>
     )
@@ -432,7 +432,7 @@ function Connecting(props) {
     return (
       <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
         <a href="https://gimlet.io/docs/learn-more/contact-us" className='underline' target="_blank" rel="noopener noreferrer">
-          <span>Ephemeral cluster stuck - contact support</span>
+          <span>Trial Kubernetes cluster stuck - contact support</span>
         </a>
       </div>
     )
@@ -441,7 +441,7 @@ function Connecting(props) {
   return (
     <div className='rounded-lg bg-blue-100 text-blue-900 text-sm px-4'>
       <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
-        <span>Ephemeral cluster starting up</span>
+        <span>Trial Kubernetes cluster starting up</span>
         <svg className="animate-spin h-3 w-3 text-black inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4}></circle>
