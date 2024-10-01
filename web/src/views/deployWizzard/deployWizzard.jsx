@@ -13,12 +13,14 @@ import { ACTION_TYPE_CLEAR_DEPLOY, ACTION_TYPE_POPUPWINDOWSUCCESS } from "../../
 import { v4 as uuidv4 } from 'uuid';
 import SealedSecretWidget from "../envConfig/sealedSecretWidget";
 import { useParams, useNavigate } from 'react-router-dom'
+import { usePostHog } from 'posthog-js/react'
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
   const { owner, repo, env } = useParams();
   const repoName = `${owner}/${repo}`;
   const navigate = useNavigate()
+  const posthog = usePostHog()
 
   const reduxState = props.store.getState();
   const [templates, setTemplates] = useState()
@@ -244,6 +246,7 @@ export function DeployWizzard(props) {
   // }, [configFile]);
 
   const saveConfig = () => {
+    posthog?.capture('Config written to git')
     setSavingConfigInProgress(true)
     gimletClient.saveEnvConfig(owner, repo, env, app, configFile)
       .then((data) => {
@@ -394,6 +397,7 @@ export function DeployWizzard(props) {
               store.dispatch({ type: ACTION_TYPE_CLEAR_DEPLOY });
               setDeployed(false)
               setDeploying(true)
+              posthog?.capture('Deploywizzard deploy pushed')
 
               gimletClient.saveArtifact({
                 version: {
