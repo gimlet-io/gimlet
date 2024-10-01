@@ -13,7 +13,7 @@ export default function RepositoryWizard(props) {
           <h1 className="text-3xl leading-tight text-medium flex-grow">Import Git Repository</h1>
           <button
             type="button"
-            className='secondaryButton'
+            className='primaryButton'
             onClick={() => navigate("/repositories")}
           >
             I am done importing
