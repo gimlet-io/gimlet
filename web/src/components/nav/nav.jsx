@@ -7,6 +7,7 @@ import logo from "./logo.svg";
 import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 import { ThemeSelector } from '../../views/repositories/themeSelector';
 import { useMatch, useLocation, useParams, useNavigate } from 'react-router-dom'
+import { format, formatDistance } from "date-fns";
 
 const navigation = [
   {name: 'Repositories', href: '/repositories'},
@@ -411,24 +412,34 @@ function Connecting(props) {
   const env = envs[0]
   const isOnline = Object.keys(connectedAgents).includes(env.name)
 
-  if (isOnline) {
-    return null
-  }
-
   const expiringAt = new Date(env.expiry * 1000);
   const expired = expiringAt < new Date()
+  const exactDate = format(env.expiry * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(env.expiry * 1000, new Date());
+
+  if (isOnline) {
+    return (
+      <div className='rounded-lg bg-blue-100 text-blue-900 text-sm px-4'>
+        <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
+          <span title={`at ${exactDate}`}>Trial expires in {dateLabel}</span>
+        </a>
+      </div>
+    )
+  }
+
   if (expired) {
     return (
       <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
         <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
-          <span>Trial Kubernetes cluster expired</span>
+          <span>Trial expired, click to purchase license</span>
         </a>
       </div>
     )
   }
 
   const age = new Date() - expiringAt
-  if (age > 5*60*1000) {
+  const stuck = age > 5*60*1000
+  if (stuck) {
     return (
       <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
         <a href="https://gimlet.io/docs/learn-more/contact-us" className='underline' target="_blank" rel="noopener noreferrer">

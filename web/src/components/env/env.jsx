@@ -5,9 +5,9 @@ import { InformationCircleIcon } from '@heroicons/react/20/solid';
 export function Env(props) {
   const { store, gimletClient } = props
   const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos } = props;
-  const { releaseHistorySinceDays, deploymentFromParams, scmUrl, alerts, appFilter } = props;
+  const { releaseHistorySinceDays, deploymentFromParams, settings, alerts, appFilter } = props;
 
-  const renderedServices = renderServices(env.stacks, envConfigs, env, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, scmUrl, alerts, appFilter);
+  const renderedServices = renderServices(env.stacks, envConfigs, env, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, settings.scmUrl, alerts, appFilter);
   const navigate = useNavigate()
 
   return (
@@ -24,7 +24,7 @@ export function Env(props) {
       </h4>
       <div className="space-y-4">
         {!env.isOnline &&
-          <ConnectEnvCard envName={env.name}/>
+          <ConnectEnvCard env={env} trial={settings.trial} />
         }
         {renderedServices.length === 10 &&
           <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
@@ -55,7 +55,7 @@ function renderServices(
   gimletClient,
   store,
   deploymentFromParams,
-  scmUrl,
+  settings,
   alerts,
   appFilter) {
   let services = [];
@@ -105,7 +105,7 @@ function renderServices(
           gimletClient={gimletClient}
           store={store}
           deploymentFromParams={deploymentFromParams}
-          scmUrl={scmUrl}
+          scmUrl={settings.scmUrl}
           serviceAlerts={alerts[deployment]}
         />
       </div>
@@ -142,7 +142,7 @@ function renderServices(
             gimletClient={gimletClient}
             store={store} 
             deploymentFromParams={deploymentFromParams}
-            scmUrl={scmUrl}
+            scmUrl={settings.scmUrl}
           />
         </div>)
     }
@@ -158,24 +158,74 @@ function fileName(fileInfos, appName) {
 }
 
 function ConnectEnvCard(props) {
-  const {envName} = props
+  let { env, trial } = props
   const navigate = useNavigate()
 
+  let expired = false
+  let stuck = false
+  let startingUp = false
+  if (trial) {
+    const expiringAt = new Date(env.expiry * 1000);
+    expired = expiringAt < new Date()
+    const age = new Date() - expiringAt
+    stuck = age > 5*60*1000
+    startingUp = !expired && !stuck
+  }
+
+  const color = startingUp ? 'blue' : 'red'
+
   return (
-    <div className="rounded-md bg-red-200 p-4">
+    <div className={`rounded-md bg-${color}-100 p-4`}>
     <div className="flex">
       <div className="flex-shrink-0">
-        <InformationCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+        <InformationCircleIcon className={`h-5 w-5 text-${color}-400`} aria-hidden="true" />
       </div>
       <div className="ml-3">
-        <h3 className="text-sm font-bold text-red-800">Environment disconnected</h3>
-        <div className="mt-2 text-sm text-red-800">
-          This environment is disconnected.<br />
-          <button className='font-bold cursor-pointer'
-            onClick={() => {navigate(`/env/${envName}`);return true}}
-          >
-            Click to connect this environment to a cluster on the Environments page.
-          </button>
+        <h3 className={`text-sm font-bold text-${color}-800`}>Environment disconnected</h3>
+        <div className={`mt-2 text-sm text-${color}-800`}>
+          {startingUp &&
+          <>
+            This environment is still initializing and should be up in a couple of minutes.
+            <svg className="animate-spin h-3 w-3 text-black inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4}></circle>
+              <path className="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg><br />
+            <button className='font-bold cursor-pointer'
+              onClick={() => {navigate(`/env/${env.name}`);return true}}
+            >
+              Click to learn more about this environment
+            </button>
+          </>
+          }
+          {expired &&
+          <>
+            This environment is disconnected.
+            Your trial expired, so the underlying Kubernetes cluster is stopped.<br />
+            <button className='font-bold cursor-pointer'
+              onClick={() => {navigate(`/env/${env.name}`);return true}}
+            >
+              Click to purchase a license.
+            </button>
+          </>
+          }
+          {!expired && stuck &&
+          <>
+            This environment is disconnected as
+            your trial Kubernetes cluster is stuck - please contact support.
+          </>
+          }
+          {!trial &&
+          <>
+            This environment is disconnected.<br />
+            <button className='font-bold cursor-pointer'
+              onClick={() => {navigate(`/env/${env.name}`);return true}}
+            >
+              Click to connect this environment to a cluster on the Environments page.
+            </button>
+          </>
+          }
         </div>
       </div>
     </div>

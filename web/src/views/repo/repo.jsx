@@ -183,7 +183,7 @@ export default function Repo(props) {
                     store={store}
                     envFromParams={environment}
                     deploymentFromParams={deployment}
-                    scmUrl={settings.scmUrl}
+                    settings={settings}
                     alerts={alerts}
                     appFilter={appFilter}
                   />
