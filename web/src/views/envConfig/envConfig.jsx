@@ -1,14 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import HelmUI from "helm-react-ui";
 import ReactDiffViewer from "react-diff-viewer-continued";
 import yaml from "js-yaml";
-import {
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWERRORLIST,
-} from "../../redux/redux";
 import posthog from "posthog-js"
 import ImageWidget from "./imageWidget";
 import SealedSecretWidget from "./sealedSecretWidget";
@@ -18,6 +11,9 @@ import { Modal } from '../../components/modal'
 import { ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/solid';
 import IngressWidget from "../envConfig/ingressWidget";
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { CheckIcon } from '@heroicons/react/24/solid'
+import { InProgress, Success, Error } from '../../popUpWindow';
 
 export function EnvConfig(props) {
   const { store, gimletClient } = props
@@ -44,6 +40,8 @@ export function EnvConfig(props) {
   const [stackConfigDerivedValues, setStackConfigDerivedValues] = useState()
   const [templateLoadError, setTemplateLoadError] = useState(false)
 
+  const progressToastId = useRef(null);
+
   store.subscribe(() => {
     const reduxState = store.getState()
     setPopupWindow(reduxState.popupWindow)
@@ -58,7 +56,7 @@ export function EnvConfig(props) {
           "preferredDomain": extractPreferredDomain(data.stackConfig, data.stackDefinition),
           "ingressAnnotations": extractIngressAnnotations(data.stackConfig, data.stackDefinition),
         }
-      )
+        )
       }, () => {/* Generic error handler deals with it */ });
 
     gimletClient.getRepoMetas(owner, repo)
@@ -68,26 +66,26 @@ export function EnvConfig(props) {
 
     if (action === "new-preview") {
       gimletClient.getDefaultDeploymentTemplates()
-      .then(data => {
-        setTemplates(data)
-        setSelectedTemplate(data[0])
-      }, () => {/* Generic error handler deals with it */ });
+        .then(data => {
+          setTemplates(data)
+          setSelectedTemplate(data[0])
+        }, () => {/* Generic error handler deals with it */ });
     } else {
       gimletClient.getDefaultDeploymentTemplates()
-      .then(defaultTemplates => {
-        gimletClient.getDeploymentTemplates(owner, repo, env, encodeURIComponent(config))
-        .then(appTemplate => {
-          const templates = [...defaultTemplates]
-          const existingTemplate = defaultTemplates.find(d => templateIdentity(d) === templateIdentity(appTemplate[0]))
-          if (!existingTemplate) {
-            templates.push(appTemplate[0])
-          }
-          setTemplates(templates)
-          setSelectedTemplate(existingTemplate ? existingTemplate : appTemplate[0])
-        }, () => {
-          setTemplateLoadError(true)
-        });
-      }, () => {/* Generic error handler deals with it */ });
+        .then(defaultTemplates => {
+          gimletClient.getDeploymentTemplates(owner, repo, env, encodeURIComponent(config))
+            .then(appTemplate => {
+              const templates = [...defaultTemplates]
+              const existingTemplate = defaultTemplates.find(d => templateIdentity(d) === templateIdentity(appTemplate[0]))
+              if (!existingTemplate) {
+                templates.push(appTemplate[0])
+              }
+              setTemplates(templates)
+              setSelectedTemplate(existingTemplate ? existingTemplate : appTemplate[0])
+            }, () => {
+              setTemplateLoadError(true)
+            });
+        }, () => {/* Generic error handler deals with it */ });
       gimletClient.getEnvConfigs(owner, repo)
         .then(envConfigs => {
           if (envConfigs[env]) {
@@ -97,13 +95,13 @@ export function EnvConfig(props) {
             setSavedConfigFile(deepCopied)
           }
         }, () => {/* Generic error handler deals with it */
-      });
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if(!selectedTemplate || !stackConfigDerivedValues) {
+    if (!selectedTemplate || !stackConfigDerivedValues) {
       return
     }
 
@@ -121,8 +119,8 @@ export function EnvConfig(props) {
               ...prevState.values.ingress,
               annotations: {
                 ...prevState.values.ingress.annotations,
-                "nginx.ingress.kubernetes.io/auth-url": "https://auth"+stackConfigDerivedValues.preferredDomain+"/oauth2/auth",
-                "nginx.ingress.kubernetes.io/auth-signin": "https://auth"+stackConfigDerivedValues.preferredDomain+"/oauth2/start?rd=/redirect/$http_host$escaped_request_uri",
+                "nginx.ingress.kubernetes.io/auth-url": "https://auth" + stackConfigDerivedValues.preferredDomain + "/oauth2/auth",
+                "nginx.ingress.kubernetes.io/auth-signin": "https://auth" + stackConfigDerivedValues.preferredDomain + "/oauth2/start?rd=/redirect/$http_host$escaped_request_uri",
               }
             }
           },
@@ -187,29 +185,17 @@ export function EnvConfig(props) {
   const toggleDeployPolicy = () => {
     setConfigFile(prevState => ({
       ...prevState,
-      deploy: prevState.deploy ? undefined : {event: "push"},
+      deploy: prevState.deploy ? undefined : { event: "push" },
     }));
   }
 
   const validationCallback = (errors) => {
     if (errors) {
+      errors.forEach(e => toast.warn(e.message), { autoClose: 7000, className: 'font-xs font-mono' })
       setErrors(errors);
-      displayErrors(errors);
     } else {
       setErrors(undefined);
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
     }
-  }
-
-  const displayErrors = (errors) => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
-        header: "Error",
-        errorList: errors
-      }
-    });
   }
 
   const setValues = (values, nonDefaultValues) => {
@@ -220,59 +206,27 @@ export function EnvConfig(props) {
     }));
   }
 
-  const resetNotificationStateAfterThreeSeconds = () => {
-    setTimeout(() => {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
-    }, 3000);
-  }
-
-  const startApiCallTimeOutHandler = () => {
-    const timeoutTimer = setTimeout(() => {
-      if (popupWindow.visible) {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: "Saving failed: The process has timed out."
-          }
-        });
-        resetNotificationStateAfterThreeSeconds()
-      }
-    }, 60000);
-
-    setTimeoutTimer(timeoutTimer)
-  }
-
   const save = () => {
     if (errors) {
-      displayErrors(errors);
+      errors.forEach(e => toast.warn(e.message), {
+        className: "bg-gray-50 shadow-lg p-2",
+        autoClose: 7000,
+      })
       return
     }
 
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Saving..."
-      }
-    });
-    startApiCallTimeOutHandler();
+    progressToastId.current = toast(<InProgress header="Saving..."/>, { autoClose: false });
 
     gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), configFile)
       .then((data) => {
-        if (!popupWindow.visible) {
-          // if no saving is in progress, practically it timed out
-          return
-        }
-
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Configuration saved",
-            link: data.link
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Configuration Saved" link={data.link}/>,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          // progressClassName: "bg-red-200",
+          // autoClose: 5000
         });
 
-        clearTimeout(timeoutTimer);
         if (preview) {
           navigate(`/repo/${repoName}/previews`);
         } else {
@@ -280,14 +234,13 @@ export function EnvConfig(props) {
         }
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
-        clearTimeout(timeoutTimer);
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.data?.message ?? err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.data?.message ?? err.statusText}/>,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "bg-red-200",
+          autoClose: 5000
         });
-        resetNotificationStateAfterThreeSeconds();
       })
   }
 
@@ -297,7 +250,6 @@ export function EnvConfig(props) {
         header: "Deleting..."
       }
     });
-    startApiCallTimeOutHandler();
 
     gimletClient.deleteEnvConfig(owner, repo, env, config)
       .then((data) => {
@@ -325,12 +277,12 @@ export function EnvConfig(props) {
             message: err.data?.message ?? err.statusText
           }
         });
-        resetNotificationStateAfterThreeSeconds();
+        resetficationStateAfterThreeSeconds();
       })
   }
 
   useEffect(() => {
-    if(!selectedTemplate || !stackConfigDerivedValues) {
+    if (!selectedTemplate || !stackConfigDerivedValues) {
       return
     }
 
@@ -360,7 +312,7 @@ export function EnvConfig(props) {
   }
 
   if (!configFile || !savedConfigFile) {
-    return <SkeletonLoader preview={preview}/>;
+    return <SkeletonLoader preview={preview} />;
   }
 
   const fileInfo = fileInfos.find(f => f.envName === configFile.env && f.appName === configFile.app)
@@ -369,7 +321,7 @@ export function EnvConfig(props) {
     if (templateLoadError) {
       return <TemplateLoadError preview={preview} configFile={configFile} fileInfo={fileInfo} scmUrl={scmUrl} repoName={repoName} />
     } else {
-      return <SkeletonLoader preview={preview}/>;
+      return <SkeletonLoader preview={preview} />;
     }
   }
 
@@ -389,8 +341,8 @@ export function EnvConfig(props) {
   const hasChange = configFileString !== savedConfigFileString
 
   const diffStat = Diff.diffChars(savedConfigFileString, configFileString);
-  const addedStat = diffStat.find(stat=>stat.added)?.count
-  const removedStat = diffStat.find(stat=>stat.removed)?.count
+  const addedStat = diffStat.find(stat => stat.added)?.count
+  const removedStat = diffStat.find(stat => stat.removed)?.count
   const addedLines = addedStat ? addedStat : 0
   const removedLines = removedStat ? removedStat : 0
 
@@ -399,13 +351,13 @@ export function EnvConfig(props) {
     selectedNavigation = navigation[0]
   }
 
-  const canSave = hasChange && !popupWindow.visible && configFile.namespace && configFile.app
+  const canSave = hasChange && configFile.namespace && configFile.app
 
   return (
     <>
-    {showModal &&
-      <Modal closeHandler={() => setShowModal(false)}>
-        <ReactDiffViewer
+      {showModal &&
+        <Modal closeHandler={() => setShowModal(false)}>
+          <ReactDiffViewer
             oldValue={yaml.dump(savedConfigFile)}
             newValue={yaml.dump(configFile)}
             splitView={false}
@@ -419,22 +371,22 @@ export function EnvConfig(props) {
                 "& pre": { whiteSpace: "pre" }
               },
             }} />
-      </Modal>
-    }
-    <div className="fixed w-full bg-neutral-100 dark:bg-neutral-900 z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 flex items-center">
-        <h1 className="text-3xl leading-tight text-medium flex-grow">{preview ? 'Preview Config' : 'Deployment Config'}</h1>
-        {hasChange &&
-          <span className="mr-8 text-sm bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 ml-2 px-1 rounded-md cursor-pointer"
-            onClick={()=> setShowModal(true)}
-          >
-            <span>Review changes (</span>
-            <span className="font-mono text-teal-500">+{addedLines}</span>
-            <span className="font-mono ml-1 text-red-500">-{removedLines}</span>
-            <span>)</span>
-          </span>
-        }
-        <button
+        </Modal>
+      }
+      <div className="fixed w-full bg-neutral-100 dark:bg-neutral-900 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 flex items-center">
+          <h1 className="text-3xl leading-tight text-medium flex-grow">{preview ? 'Preview Config' : 'Deployment Config'}</h1>
+          {hasChange &&
+            <span className="mr-8 text-sm bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 ml-2 px-1 rounded-md cursor-pointer"
+              onClick={() => setShowModal(true)}
+            >
+              <span>Review changes (</span>
+              <span className="font-mono text-teal-500">+{addedLines}</span>
+              <span className="font-mono ml-1 text-red-500">-{removedLines}</span>
+              <span>)</span>
+            </span>
+          }
+          <button
             type="button"
             disabled={!canSave}
             className={`${canSave ? 'primaryButton' : 'primaryButtonDisabled'} px-4`}
@@ -444,87 +396,87 @@ export function EnvConfig(props) {
             }}
           >
             Save
-        </button>
+          </button>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4 flex items-center">
+          {fileInfo &&
+            <a className="externalLink flex space-x-1 text-sm font-mono font-thin items-center text-neutral-500" href={`${scmUrl}/${repoName}/blob/${fileInfo.branch}/.gimlet/${encodeURIComponent(fileInfo.fileName)}`} target="_blank" rel="noopener noreferrer">
+              <FolderIcon className="externalLinkIcon" aria-hidden="true" />
+              <span>{`.gimlet/${fileInfo.fileName}`}</span>
+              <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" />
+            </a>
+          }
+        </div>
+        <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4 flex items-center">
-        {fileInfo &&
-          <a className="externalLink flex space-x-1 text-sm font-mono font-thin items-center text-neutral-500" href={`${scmUrl}/${repoName}/blob/${fileInfo.branch}/.gimlet/${encodeURIComponent(fileInfo.fileName)}`} target="_blank" rel="noopener noreferrer">
-            <FolderIcon className="externalLinkIcon" aria-hidden="true" />
-            <span>{`.gimlet/${fileInfo.fileName}`}</span>
-            <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" />
-          </a>
-        }
-      </div>
-      <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-    </div>
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex pt-56">
-      <div className="sticky top-0 h-96 top-56">
-        <SideBar
-          navigation={navigation}
-          selected={selectedNavigation}
-        />
-      </div>
-      <div className="w-full ml-14">
-        { (!selectedNavigation || selectedNavigation?.name === "General") &&
-        <Generaltab
-          config={config}
-          action={action}
-          configFile={configFile}
-          setAppName={setAppName}
-          setNamespace={setNamespace}
-          deleteApp={deleteApp}
-          toggleDeployPolicy={toggleDeployPolicy}
-          setDeployEvent = {setDeployEvent}
-          setDeployFilter = {setDeployFilter}
-          templates = {templates}
-          selectedTemplate={patchedTemplate}
-          setDeploymentTemplate={setDeploymentTemplate}
-          preview={preview}
-        />
-        }
-        { selectedNavigation && selectedNavigation.name !== "General" &&
-          <>
-          <div className='w-full card p-6 pb-8'>
-          <HelmUI
-            key={`helmui-${selectedNavigation.name}`}
-            schema={patchedTemplate.schema}
-            config={[patchedTemplate.uiSchema[selectedNavigation.uiSchemaOrder]]}
-            fields={customFields}
-            values={configFile.values}
-            setValues={setValues}
-            validate={true}
-            validationCallback={validationCallback}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex pt-56">
+        <div className="sticky top-0 h-96 top-56">
+          <SideBar
+            navigation={navigation}
+            selected={selectedNavigation}
           />
-          </div>
-          {selectedNavigation.name === "Container Image" &&
-            <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet.io/docs/deployment-settings/image-settings" className='learnMoreLink'>Container Build Settings<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-            </div>
+        </div>
+        <div className="w-full ml-14">
+          {(!selectedNavigation || selectedNavigation?.name === "General") &&
+            <Generaltab
+              config={config}
+              action={action}
+              configFile={configFile}
+              setAppName={setAppName}
+              setNamespace={setNamespace}
+              deleteApp={deleteApp}
+              toggleDeployPolicy={toggleDeployPolicy}
+              setDeployEvent={setDeployEvent}
+              setDeployFilter={setDeployFilter}
+              templates={templates}
+              selectedTemplate={patchedTemplate}
+              setDeploymentTemplate={setDeploymentTemplate}
+              preview={preview}
+            />
           }
-          {selectedNavigation.name === "Domain" &&
-            <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet.io/docs/deployment-settings/dns" className='learnMoreLink'>Setting Domain Names <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-            </div>
+          {selectedNavigation && selectedNavigation.name !== "General" &&
+            <>
+              <div className='w-full card p-6 pb-8'>
+                <HelmUI
+                  key={`helmui-${selectedNavigation.name}`}
+                  schema={patchedTemplate.schema}
+                  config={[patchedTemplate.uiSchema[selectedNavigation.uiSchemaOrder]]}
+                  fields={customFields}
+                  values={configFile.values}
+                  setValues={setValues}
+                  validate={true}
+                  validationCallback={validationCallback}
+                />
+              </div>
+              {selectedNavigation.name === "Container Image" &&
+                <div className='-mt-2 learnMoreBox'>
+                  Learn more about <a href="https://gimlet.io/docs/deployment-settings/image-settings" className='learnMoreLink'>Container Build Settings<ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+                </div>
+              }
+              {selectedNavigation.name === "Domain" &&
+                <div className='-mt-2 learnMoreBox'>
+                  Learn more about <a href="https://gimlet.io/docs/deployment-settings/dns" className='learnMoreLink'>Setting Domain Names <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+                </div>
+              }
+              {selectedNavigation.name === "Secrets" &&
+                <div className='-mt-2 learnMoreBox'>
+                  Learn more about <a href="https://gimlet.io/docs/deployment-settings/secrets" className='learnMoreLink'>Encrypted Secrets <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+                </div>
+              }
+              {selectedNavigation.name === "Resources" &&
+                <div className='-mt-2 learnMoreBox'>
+                  Learn more about <a href="https://gimlet.io/docs/deployment-settings/resource-usage" className='learnMoreLink'>Resource Usage <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+                </div>
+              }
+              {selectedNavigation.name === "Volumes" &&
+                <div className='-mt-2 learnMoreBox'>
+                  Learn more about <a href="https://gimlet.io/docs/deployment-settings/volumes" className='learnMoreLink'>Volumes <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
+                </div>
+              }
+            </>
           }
-          {selectedNavigation.name === "Secrets" &&
-            <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet.io/docs/deployment-settings/secrets" className='learnMoreLink'>Encrypted Secrets <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-            </div>
-          }
-          {selectedNavigation.name === "Resources" &&
-            <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet.io/docs/deployment-settings/resource-usage" className='learnMoreLink'>Resource Usage <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-            </div>
-          }
-          {selectedNavigation.name === "Volumes" &&
-            <div className='-mt-2 learnMoreBox'>
-              Learn more about <a href="https://gimlet.io/docs/deployment-settings/volumes" className='learnMoreLink'>Volumes <ArrowTopRightOnSquareIcon className="externalLinkIcon" aria-hidden="true" /></a>
-            </div>
-          }
-          </>
-        }
+        </div>
       </div>
-    </div>
     </>
   );
 }
@@ -623,7 +575,7 @@ export const configuredRegistries = (stackConfig, stackDefinition) => {
   const config = stackConfig.config;
   const registryComponents = stackDefinition.components.filter(c => c.category === "registry")
   const configuredRegistries = registryComponents
-    .filter(c => Object.keys(config).includes(c.variable) && config[c.variable] )
+    .filter(c => Object.keys(config).includes(c.variable) && config[c.variable])
   const decoratedConfiguredRegistries = configuredRegistries.map(r => {
     const schema = typeof r.schema === 'object'
       ? r.schema
@@ -634,8 +586,9 @@ export const configuredRegistries = (stackConfig, stackDefinition) => {
       "variable": r.variable,
       "login": config[r.variable].credentials?.login,
       "url": config[r.variable].credentials?.url ?? schema.properties.credentials?.properties.url?.default,
-    }})
-  decoratedConfiguredRegistries.unshift({name: "Public", variable: "public"})
+    }
+  })
+  decoratedConfiguredRegistries.unshift({ name: "Public", variable: "public" })
   return decoratedConfiguredRegistries
 }
 
@@ -643,7 +596,7 @@ export const extractPreferredDomain = (stackConfig, stackDefinition) => {
   const config = stackConfig.config;
   const registryComponents = stackDefinition.components.filter(c => c.category === "ingress")
   const configuredIngresses = registryComponents
-    .filter(c => Object.keys(config).includes(c.variable) && config[c.variable] )
+    .filter(c => Object.keys(config).includes(c.variable) && config[c.variable])
   if (configuredIngresses.length > 0) {
     return config[configuredIngresses[0].variable].host
   } else {
@@ -655,7 +608,7 @@ export const extractIngressAnnotations = (stackConfig, stackDefinition) => {
   const config = stackConfig.config;
   const registryComponents = stackDefinition.components.filter(c => c.category === "ingress")
   const configuredIngresses = registryComponents
-    .filter(c => Object.keys(config).includes(c.variable) && config[c.variable] && config[c.variable].enabled )
+    .filter(c => Object.keys(config).includes(c.variable) && config[c.variable] && config[c.variable].enabled)
 
   if (configuredIngresses.length > 0) {
     const definition = configuredIngresses[0]
@@ -677,13 +630,13 @@ export const extractIngressAnnotations = (stackConfig, stackDefinition) => {
 }
 
 function translateToNavigation(template) {
-  const navigation = template.uiSchema.map((elem, idx) => ({name: elem.metaData.name, href: ref(elem.metaData.name), uiSchemaOrder: idx}))
-  navigation.unshift({name: "General", href: "/general"})
+  const navigation = template.uiSchema.map((elem, idx) => ({ name: elem.metaData.name, href: ref(elem.metaData.name), uiSchemaOrder: idx }))
+  navigation.unshift({ name: "General", href: "/general" })
   return navigation
 }
 
 function ref(name) {
-  return  "/" + name.replaceAll(" ", "-").toLowerCase()
+  return "/" + name.replaceAll(" ", "-").toLowerCase()
 }
 
 export function robustName(str) {
@@ -698,11 +651,11 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
   const config = {
     app: configName,
     namespace: namespace,
-    env:       env,
+    env: env,
     chart: chartRef,
     values: {
       gitRepository: repoName,
-      gitSha:        "{{ .SHA }}"
+      gitSha: "{{ .SHA }}"
     },
   }
 
@@ -712,9 +665,9 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
   if (oneChart && !staticSite) {
     config.values.image = {
       repository: "nginx",
-      tag:        "1.27",
-      strategy:   "static",
-      registry:   "public",
+      tag: "1.27",
+      strategy: "static",
+      registry: "public",
     }
     config.values.resources = {
       ignoreLimits: true,
@@ -722,7 +675,7 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
   }
 
   if (staticSite) {
-    config.values.gitCloneUrl= `${scmUrl}/${repoName}.git`
+    config.values.gitCloneUrl = `${scmUrl}/${repoName}.git`
   }
 
   if (preview) {
@@ -747,7 +700,7 @@ export function newConfig(configName, namespace, env, chartRef, repoName, prefer
 
 const patchUIWidgets = (chart, registries, preferredDomain) => {
   if (!chart.reference.chart.name.includes("onechart")) {
-    return chart  
+    return chart
   }
 
   if (!chart.uiSchema[0].uiSchema["#/properties/image"]) {
@@ -816,7 +769,7 @@ export function handlePullSecret(nonDefaultValues) {
       delete nonDefaultValues.imagePullSecrets
       break
     default:
-      if (nonDefaultValues.image){
+      if (nonDefaultValues.image) {
         nonDefaultValues = {
           ...nonDefaultValues,
           imagePullSecrets: [`{{ .APP }}-${nonDefaultValues.image.registry?.toLowerCase()}-pullsecret`]
