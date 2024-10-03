@@ -23,7 +23,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
@@ -88,7 +88,7 @@ func buildImage(kubeEnv *agent.KubeEnv, gimletHost, agentKey, buildId string, tr
 }
 
 func getSecretConfigJson(kubeEnv *agent.KubeEnv, registry string) (string, error) {
-	pushSecret, err := kubeEnv.Client.CoreV1().Secrets("infrastructure").Get(context.TODO(), strings.ToLower(registry)+"-pushsecret", meta_v1.GetOptions{})
+	pushSecret, err := kubeEnv.Client.CoreV1().Secrets("infrastructure").Get(context.TODO(), strings.ToLower(registry)+"-pushsecret", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -262,7 +262,7 @@ func dockerfileImageBuild(
 	job := generateJob(trigger, jobName, reqUrl)
 	job = mountPushSecret(job, trigger.Registry)
 	job = mountRegistryCertSecret(kubeEnv.Client, job, trigger)
-	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, meta_v1.CreateOptions{})
+	_, err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
 		logrus.Errorf("cannot apply job: %s", err)
 		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
@@ -271,7 +271,7 @@ func dockerfileImageBuild(
 
 	var pods *corev1.PodList
 	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (done bool, err error) {
-		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), meta_v1.ListOptions{
+		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), metav1.ListOptions{
 			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
 		})
 		if err != nil {
@@ -295,8 +295,45 @@ func dockerfileImageBuild(
 		return true, nil
 	})
 	if err != nil {
-		logrus.Errorf("cannot get pods: %s", err)
-		streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "")
+		pods, err = kubeEnv.Client.CoreV1().Pods("infrastructure").List(context.TODO(), metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
+		})
+		if err != nil {
+			logrus.Error(err)
+			streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "ERROR: could not start up image build pods")
+			return
+		}
+
+		if len(pods.Items) == 0 {
+			logrus.Error(fmt.Errorf("found zero pods"))
+			streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "ERROR: could not start up image build pods")
+			return
+		}
+
+		if pods.Items[0].Status.Phase == corev1.PodPending {
+			events, _ := kubeEnv.Client.CoreV1().Events("infrastructure").List(
+				context.TODO(),
+				metav1.ListOptions{FieldSelector: "involvedObject.name=" + pods.Items[0].ObjectMeta.Name, TypeMeta: metav1.TypeMeta{Kind: "Pod"}})
+			for _, item := range events.Items {
+				logrus.Error(fmt.Errorf("kaniko pod pending: %s ", item.Message))
+				streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "ERROR: kaniko pod stuck in Pending state: "+item.Message+"\n")
+			}
+			for _, c := range pods.Items[0].Status.Conditions {
+				logrus.Error(fmt.Errorf("kaniko pod pending: %s ", c.Message))
+				streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "ERROR: kaniko pod stuck in Pending state: "+c.Message+"\n")
+			}
+		} else {
+			streamImageBuildEvent(messages, trigger.TriggeredBy, buildId, "error", "ERROR: unknown error. Could not start up image build pods, check for kaniko pods in the infrastructure namespace")
+		}
+
+		dp := metav1.DeletePropagationBackground
+		err := kubeEnv.Client.BatchV1().Jobs("infrastructure").Delete(context.TODO(), jobName, metav1.DeleteOptions{
+			PropagationPolicy: &dp,
+		})
+		if err != nil {
+			logrus.Errorf("could not delete job %s: %s", jobName, err)
+		}
+
 		return
 	}
 
@@ -309,11 +346,11 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 	var ttlSecondsAfterFinished int32 = 60
 	var backOffLimit int32 = 0
 	return &batchv1.Job{
-		TypeMeta: meta_v1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "Job",
 			APIVersion: "batch/v1",
 		},
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: batchv1.JobSpec{
@@ -414,7 +451,7 @@ func mountRegistryCertSecret(client kubernetes.Interface, job *batchv1.Job, trig
 		return job
 	}
 
-	_, err := client.CoreV1().Secrets("infrastructure").Get(context.TODO(), strings.ToLower(trigger.Registry)+"-registrycert", meta_v1.GetOptions{})
+	_, err := client.CoreV1().Secrets("infrastructure").Get(context.TODO(), strings.ToLower(trigger.Registry)+"-registrycert", metav1.GetOptions{})
 	if err != nil {
 		return job
 	}

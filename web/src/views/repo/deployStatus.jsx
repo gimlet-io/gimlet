@@ -282,7 +282,7 @@ function ImageBuild(props) {
   if (build.status === "notBuilt") {
     instructionsText = "We could not build the image."
   } else if (build.status === "error") {
-    instructionsText = "Could not build image, check server logs."
+    instructionsText = "Could not build image"
   }
 
   return (
