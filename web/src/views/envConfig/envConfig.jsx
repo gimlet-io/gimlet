@@ -187,7 +187,6 @@ export function EnvConfig(props) {
 
   const validationCallback = (errors) => {
     if (errors) {
-      errors.forEach(e => toast.warn(e.message), { autoClose: 7000, className: 'font-xs font-mono' })
       setErrors(errors);
     } else {
       setErrors(undefined);
@@ -205,8 +204,7 @@ export function EnvConfig(props) {
   const save = () => {
     if (errors) {
       errors.forEach(e => toast.warn(e.message), {
-        className: "bg-gray-50 shadow-lg p-2",
-        autoClose: 7000,
+        autoClose: 5000,
       })
       return
     }

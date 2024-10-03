@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ACTION_TYPE_ENVS,
 } from "../../redux/redux";
 import EnvironmentCard from '../../components/environmentCard/environmentCard';
 import { SkeletonLoader } from '../../../src/views/repositories/repositories';
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { InProgress, Success, Error } from '../../popUpWindow';
 
 export default function Environments(props) {
   const { store, gimletClient } = props
   const navigate = useNavigate()
+  const progressToastId = useRef(null);
 
   const reduxState = store.getState();
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)

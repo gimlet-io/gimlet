@@ -96,10 +96,9 @@ export default function EnvironmentView(props) {
   const saveComponents = () => {
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
-        toast({
-          render: <Error header="Error" message={<ul>
-            {errors[variable].map(error => (<li>{`${error.message}`}</li>))}
-          </ul>} />,
+        toast(<Error header="Error" message={<ul>
+          {errors[variable].map(error => (<li>{`${error.message}`}</li>))}
+        </ul>} />, {
           className: "bg-red-50 shadow-lg p-2",
           bodyClassName: "p-2",
           progressClassName: "!bg-red-200",
@@ -114,7 +113,7 @@ export default function EnvironmentView(props) {
     gimletClient.saveInfrastructureComponents(environment.name, stackConfig)
       .then((data) => {
         toast.update(progressToastId.current, {
-          render: <Success header="Success" message="A Pull Request was created" link={data.link}/>,
+          render: <Success header="Success" message={<div className='pb-4'>A Pull Request was created</div>} link={data.createdPr.link}/>,
           className: "bg-green-50 shadow-lg p-2",
           bodyClassName: "p-2",
         });
