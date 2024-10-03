@@ -15,7 +15,7 @@ import SealedSecretWidget from "../envConfig/sealedSecretWidget";
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePostHog } from 'posthog-js/react'
 import { toast } from 'react-toastify';
-import { InProgress, Success, Error } from '../../popUpWindow';
+import { Success } from '../../popUpWindow';
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
@@ -87,7 +87,6 @@ export function DeployWizzard(props) {
   const topRef = useRef();
   const endRef = useRef();
   const [followLogs, setFollowLogs] = useState(true);
-  const progressToastId = useRef(null);
 
   useEffect(() => {
     gimletClient.getStackConfig(env)
@@ -249,10 +248,10 @@ export function DeployWizzard(props) {
     setSavingConfigInProgress(true)
     gimletClient.saveEnvConfig(owner, repo, env, app, configFile)
       .then((data) => {
-        toast(progressToastId.current, {
-          render: <Success header="Success" message="Configuration saved." link={data.link} />,
+        toast(<Success header="Success" message={<div className='pb-4'>Configuration saved</div>} link={data.link} />, {
           className: "bg-green-50 shadow-lg p-2",
           bodyClassName: "p-2",
+          autoClose: false
         });
 
         setSavingConfigInProgress(false)
