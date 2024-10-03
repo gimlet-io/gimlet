@@ -139,9 +139,9 @@ export default function Settings(props) {
                   <div className="p-0 flow-root">
                     <span className="inline-flex rounded-md shadow-sm gap-x-3 float-right">
                       <button
-                        disabled={input === "" || saveButtonTriggered}
+                        disabled={input === ""}
                         onClick={() => save()}
-                        className={input === "" || saveButtonTriggered ? "primaryButtonDisabled px-4" : "primaryButton px-4"}>
+                        className={input === "" ? "primaryButtonDisabled px-4" : "primaryButton px-4"}>
                         Create
                       </button>
                     </span>
