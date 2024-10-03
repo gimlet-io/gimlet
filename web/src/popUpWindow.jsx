@@ -98,7 +98,7 @@ export function Success(props) {
       <div className="ml-3">
         <h3 className="text-sm font-semibold text-green-800">{props.header}</h3>
         <div className="mt-2 text-sm text-green-700">
-          <p>{props.message}</p>
+          <div>{props.message}</div>
           <a
             href={props.link}
             rel="noreferrer"

@@ -220,7 +220,7 @@ export function EnvConfig(props) {
     gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), configFile)
       .then((data) => {
         toast.update(progressToastId.current, {
-          render: <Success header="Configuration Saved" link={data.link}/>,
+          render: <Success header="Configuration Saved" message={<div className='pb-4'>Deploy it on <span className='underline cursor-pointer' onClick={()=>navigate(`/repo/${owner}/${repo}/commits`)}>Commits view</span></div>} link={data.link}/>,
           className: "bg-green-50 shadow-lg p-2",
           bodyClassName: "p-2",
           // progressClassName: "bg-red-200",
@@ -238,8 +238,8 @@ export function EnvConfig(props) {
           render: <Error header="Error" message={err.data?.message ?? err.statusText}/>,
           className: "bg-red-50 shadow-lg p-2",
           bodyClassName: "p-2",
-          progressClassName: "bg-red-200",
-          autoClose: 5000
+          progressClassName: "!bg-red-200",
+          autoClose: 30000
         });
       })
   }
