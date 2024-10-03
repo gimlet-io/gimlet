@@ -23,17 +23,11 @@ export const ACTION_TYPE_IMAGEBUILD = 'imageBuild';
 export const ACTION_TYPE_IMAGEBUILD_STATUS = 'imageBuildStatus';
 export const ACTION_TYPE_GITOPS_REPO = 'gitopsRepo';
 export const ACTION_TYPE_GIT_REPOS = 'gitRepos';
-export const ACTION_TYPE_POPUPWINDOWPROGRESS = 'popupWindowProgress';
-export const ACTION_TYPE_POPUPWINDOWERROR = 'popupWindowError';
-export const ACTION_TYPE_POPUPWINDOWERRORLIST = 'popupWindowErrorList';
 export const ACTION_TYPE_ENVUPDATED = 'envUpdated';
 export const ACTION_TYPE_SETTINGS = 'settings';
 export const ACTION_TYPE_CLEAR_PODLOGS = 'clearPodLogs'
 export const ACTION_TYPE_CLEAR_DETAILS = 'clearDetails'
 export const ACTION_TYPE_ALERTS = 'alerts'
-
-export const ACTION_TYPE_POPUPWINDOWSUCCESS = 'popupWindowSaved';
-export const ACTION_TYPE_POPUPWINDOWRESET = 'popupWindowReset';
 
 export const ACTION_TYPE_ENVSPINNEDOUT = 'envSpinnedOut';
 
@@ -88,15 +82,6 @@ export const initialState = {
   envs: [],
   gitopsCommits: [],
   alerts: {},
-  popupWindow: {
-    visible: false,
-    finished: false,
-    isError: false,
-    header: "",
-    message: "",
-    link: "",
-    errorList: null
-  },
   podLogs: {},
   details: {},
   textColors: {},
@@ -111,16 +96,6 @@ export function rootReducer(state = initialState, action) {
       return processStreamingEvent(state, action.payload)
     case ACTION_TYPE_GIT_REPOS:
       return eventHandlers.gitRepos(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWPROGRESS:
-      return eventHandlers.popupWindowProgress(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWERROR:
-      return eventHandlers.popupWindowError(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWERRORLIST:
-      return eventHandlers.popupWindowErrorList(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWSUCCESS:
-      return eventHandlers.popupWindowSuccess(state, action.payload);
-    case ACTION_TYPE_POPUPWINDOWRESET:
-      return eventHandlers.popupWindowReset(state);
     case ACTION_TYPE_ENVS:
       return eventHandlers.envs(state, action.payload)
     case ACTION_FLUX_EVENTS_RECEIVED:

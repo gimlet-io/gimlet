@@ -1,20 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Toggle from '../../components/toggle/toggle';
-import {
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWERROR
-} from '../../redux/redux';
 import { useParams, useLocation } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { InProgress, Success, Error } from '../../popUpWindow';
 
 export function RepoSettingsView(props) {
-  const { store, gimletClient } = props;
+  const { gimletClient } = props;
   const [pullRequestPolicyLoaded, setPullRequestPolicyLoaded] = useState()
   const [pullRequestPolicy, setPullRequestPolicy] = useState()
   const [defaultpullRequestPolicy, setDefaultPullRequestPolicy] = useState()
 
   const { owner, repo } = useParams();
   const location = useLocation()
+  const progressToastId = useRef(null);
 
   useEffect(() => {
     gimletClient.repoPullRequestsPolicy(owner, repo)
@@ -29,27 +27,24 @@ export function RepoSettingsView(props) {
   }, []);
 
   const saveRepoPullRequestPolicy = () => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Saving repository settings"
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Saving..." />, { autoClose: false });
 
     gimletClient.saveRepoPullRequestPolicy(owner, repo, pullRequestPolicy)
-      .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Repository settings saved",
-          }
+      .then(() => {
+        toast.update(progressToastId.current, {
+          render: <Success header="Saved" />,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          autoClose: 3000,
         });
         setDefaultPullRequestPolicy(pullRequestPolicy)
       }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
       });
   }

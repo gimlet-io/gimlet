@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root:has(.no-doc-scroll) {
-  overflow:hidden;
-}
-
 @font-face {
   font-family: 'geist';
   src: url('./GeistVF.woff2') format('woff');

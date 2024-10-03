@@ -1,8 +1,6 @@
 import { Component } from "react";
-import {
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWRESET
-} from "../../redux/redux";
+import { toast } from 'react-toastify';
+import { Error } from '../../popUpWindow';
 
 class SealedSecretWidget extends Component {
   constructor(props) {
@@ -31,29 +29,19 @@ class SealedSecretWidget extends Component {
     };
   }
 
-  resetPopupWindowAfterThreeSeconds() {
-    const { store } = this.props;
-    setTimeout(() => {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
-    }, 3000);
-  };
-
   seal() {
-    const { gimletClient, store, env } = this.props;
+    const { gimletClient, env } = this.props;
     return () => {
       gimletClient.seal(env, this.state.value)
         .then(data => {
           this.props.onChange(data)
-        }, () => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-              header: "Error",
-              message: "Failed to encrypt."
-            }
+        }, (err) => {
+          toast(<Error header="Failed to encrypt" message={`${err.statusText}, is the environment connected?`} />, {
+            className: "bg-red-50 shadow-lg p-2",
+            bodyClassName: "p-2",
+            progressClassName: "!bg-red-200",
+            autoClose: 3000
           });
-          this.resetPopupWindowAfterThreeSeconds()
         });
     };
   }

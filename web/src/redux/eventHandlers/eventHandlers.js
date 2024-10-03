@@ -19,50 +19,6 @@ export function gitRepos(state, event) {
   return state;
 }
 
-export function popupWindowProgress(state, payload) {
-  state.popupWindow.visible = true;
-  state.popupWindow.header = payload.header;
-  return state;
-}
-
-export function popupWindowError(state, payload) {
-  state.popupWindow.visible = true;
-  state.popupWindow.finished = true;
-  state.popupWindow.isError = true;
-  state.popupWindow.header = payload.header;
-  state.popupWindow.message = payload.message;
-  return state;
-}
-
-export function popupWindowErrorList(state, payload) {
-  state.popupWindow.visible = true;
-  state.popupWindow.finished = true;
-  state.popupWindow.isError = true;
-  state.popupWindow.header = payload.header;
-  state.popupWindow.errorList = payload.errorList;
-  return state;
-}
-
-export function popupWindowSuccess(state, payload) {
-  state.popupWindow.visible = true;
-  state.popupWindow.finished = true;
-  state.popupWindow.header = payload.header;
-  state.popupWindow.message = payload.message;
-  state.popupWindow.link = payload.link;
-  return state;
-}
-
-export function popupWindowReset(state) {
-  state.popupWindow.visible = false;
-  state.popupWindow.isError = false;
-  state.popupWindow.finished = false;
-  state.popupWindow.header = "";
-  state.popupWindow.message = "";
-  state.popupWindow.link = "";
-  state.popupWindow.errorList = null;
-  return state;
-}
-
 export function envs(state, allEnvs) {
   state.connectedAgents = produce(state.connectedAgents, draft => {
     allEnvs.connectedAgents.forEach((agent) => {
