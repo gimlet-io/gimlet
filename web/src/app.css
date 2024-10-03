@@ -79,5 +79,9 @@
 }
 
 :root:has(.no-doc-scroll) {
-  overflow:hidden;
+    overflow: hidden;
+}
+
+:root {
+    --toastify-color-progress-light: #2dd4bf
 }

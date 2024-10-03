@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   ACTION_TYPE_ENVS,
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWRESET,
 } from "../../redux/redux";
 import EnvironmentCard from '../../components/environmentCard/environmentCard';
 import { SkeletonLoader } from '../../../src/views/repositories/repositories';
@@ -37,8 +34,8 @@ export default function Environments(props) {
         });
         setEnvironmentsLoading(false);
       }, () => {
-      setEnvironmentsLoading(false);
-    });
+        setEnvironmentsLoading(false);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,39 +65,41 @@ export default function Environments(props) {
 
   const save = () => {
     if (envs.some(env => env.name === input)) {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-          header: "Error",
-          message: "Environment already exists"
-        }
+      toast(progressToastId.current, {
+        render: <Error header="Error" message="Environment already exists" />,
+        className: "bg-red-50 shadow-lg p-2",
+        bodyClassName: "p-2",
+        progressClassName: "!bg-red-200",
+        autoClose: 5000
       });
       return
     }
 
     setIsOpen(false);
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Saving..."
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Saving..." />, { autoClose: false });
+
     setSaveButtonTriggered(true);
     gimletClient.saveEnvToDB(input)
       .then(() => {
-        setEnvs([...envs, {name: input, infraRepo: "", appsRepo: "", expiry: 0}])
+        setEnvs([...envs, { name: input, infraRepo: "", appsRepo: "", expiry: 0 }])
         setInput("")
         setSaveButtonTriggered(false);
         refreshEnvs();
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWRESET
+        toast.update(progressToastId.current, {
+          render: <Success header="Saved" />,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          autoClose: 3000,
         });
       }, err => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
-    })
+      })
   }
 
   if (!envs) {
@@ -121,7 +120,7 @@ export default function Environments(props) {
           <button type="button" className={`${!settings.trial ? 'primaryButton' : 'primaryButtonDisabled'} px-4`}
             onClick={() => !settings.trial && setIsOpen(true)}
             title={`${!settings.trial ? '' : 'Upgrade Gimlet to create environments'}`}
-            >
+          >
             Create
           </button>
         </div>

@@ -1,8 +1,6 @@
 import { useState } from "react";
-import {
-  ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWERROR
-} from "../../redux/redux";
+import { toast } from 'react-toastify';
+import { Error } from '../../popUpWindow';
 
 export function RegistryWidget(props) {
   const { formData, onChange, gimletClient, store, env } = props;
@@ -25,13 +23,12 @@ export function RegistryWidget(props) {
         .then(data => {
           onChange({ "login": login, "url": url, "encryptedDockerconfigjson": data })
         }, () => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-              header: "Error",
-              message: "Failed to encrypt."
-            }
+          toast(<Error header="Failed to encrypt" message={`${err.statusText}, is the environment connected?`} />, {
+            className: "bg-red-50 shadow-lg p-2",
+            bodyClassName: "p-2",
+            progressClassName: "!bg-red-200",
+            autoClose: 3000
           });
-          resetPopupWindowAfterThreeSeconds(store)
         });
     };
   }
@@ -88,14 +85,6 @@ export function RegistryWidget(props) {
 function encrypted(configJson) {
   return configJson && configJson !== ""
 }
-
-function resetPopupWindowAfterThreeSeconds(store) {
-  setTimeout(() => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWRESET
-    });
-  }, 3000);
-};
 
 function Registry(props) {
   const { url, login, resetFunc } = props;

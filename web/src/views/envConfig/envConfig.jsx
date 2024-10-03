@@ -12,7 +12,6 @@ import { ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/solid
 import IngressWidget from "../envConfig/ingressWidget";
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify';
-import { CheckIcon } from '@heroicons/react/24/solid'
 import { InProgress, Success, Error } from '../../popUpWindow';
 
 export function EnvConfig(props) {
@@ -24,8 +23,6 @@ export function EnvConfig(props) {
   const repoName = `${owner}/${repo}`;
 
   const reduxState = props.store.getState();
-  const [timeoutTimer, setTimeoutTimer] = useState({})
-  const [popupWindow, setPopupWindow] = useState(reduxState.popupWindow)
   const [scmUrl, setScmUrl] = useState(reduxState.settings.scmUrl)
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
   const [configFile, setConfigFile] = useState()
@@ -44,7 +41,6 @@ export function EnvConfig(props) {
 
   store.subscribe(() => {
     const reduxState = store.getState()
-    setPopupWindow(reduxState.popupWindow)
     setScmUrl(reduxState.settings.scmUrl)
   })
 
@@ -223,8 +219,6 @@ export function EnvConfig(props) {
           render: <Success header="Configuration Saved" message={<div className='pb-4'>Deploy it on <span className='underline cursor-pointer' onClick={()=>navigate(`/repo/${owner}/${repo}/commits`)}>Commits view</span></div>} link={data.link}/>,
           className: "bg-green-50 shadow-lg p-2",
           bodyClassName: "p-2",
-          // progressClassName: "bg-red-200",
-          // autoClose: 5000
         });
 
         if (preview) {
@@ -239,45 +233,32 @@ export function EnvConfig(props) {
           className: "bg-red-50 shadow-lg p-2",
           bodyClassName: "p-2",
           progressClassName: "!bg-red-200",
-          autoClose: 30000
+          autoClose: 5000
         });
       })
   }
 
   const deleteApp = () => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Deleting..."
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Deleting..."/>, { autoClose: false });
 
     gimletClient.deleteEnvConfig(owner, repo, env, config)
       .then((data) => {
-        if (!popupWindow.visible) {
-          // if no deleting is in progress, practically it timed out
-          return
-        }
-
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Configuration deleted",
-            link: data.link
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Configuration deleted" link={data.link}/>,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
         });
 
-        clearTimeout(timeoutTimer);
         navigate(`/repo/${repoName}`);
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
-        clearTimeout(timeoutTimer);
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.data?.message ?? err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.data?.message ?? err.statusText}/>,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
-        resetficationStateAfterThreeSeconds();
       })
   }
 

@@ -21,7 +21,6 @@ import { DeployWizzard } from './views/deployWizzard/deployWizzard'
 import RepositoryWizard from './views/repositoryWizard/repositoryWizard';
 import Environments from './views/environments/environments'
 import Environment from './views/environment/environment';
-import PopUpWindow from './popUpWindow';
 import Footer from './views/footer/footer';
 import {
   ACTION_TYPE_USER,
@@ -115,7 +114,6 @@ export default class App extends Component {
       <Router>
         <StreamingBackend store={store} />
         <APIBackend store={store} gimletClient={gimletClient} />
-        <PopUpWindow store={store} />
         <Posthog store={store} />
 
         <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
