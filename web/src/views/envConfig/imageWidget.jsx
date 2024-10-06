@@ -38,6 +38,7 @@ export default function ImageWidget(props) {
     if (!registry) {
       registry = registries.find(r => r.variable === "containerizedRegistry")
     }
+    const repository = repositoryFromRegistry(registry)
 
     switch (strategy) {
       case 'dynamic':
@@ -55,7 +56,7 @@ export default function ImageWidget(props) {
           ...image,
           "strategy": strategy,
           "registry": registry.variable,
-          "repository": registry.url+"/{{ .APP }}",
+          "repository": repository,
           "tag": "{{ .SHA }}",
           "context": ".",
           "dockerfile": "Dockerfile"
@@ -66,7 +67,7 @@ export default function ImageWidget(props) {
           ...image,
           "strategy": strategy,
           "registry": registry.variable,
-          "repository": registry.url+"/{{ .APP }}",
+          "repository": repository,
           "tag": "{{ .SHA }}",
           "dockerfile": ""
         })
@@ -87,6 +88,23 @@ export default function ImageWidget(props) {
     props.onChange(image)
   }, [image]);
 
+  const repositoryFromRegistry = (registry) => {
+    const login = registry.login ?? "your-company"
+    let repository = ""
+
+    switch(registry.variable) {
+      case "containerizedRegistry":
+        repository = `${registry.url}/{{ .APP }}`
+        break
+      case "dockerhubRegistry":
+        repository = `${login}/{{ .APP }}`
+        break
+      default:
+        repository = `${registry.url}/${login}/{{ .APP }}`
+    }
+    return repository
+  }
+
   const setRegistry = (registry) => {
     if (!registries) {
       return
@@ -99,18 +117,7 @@ export default function ImageWidget(props) {
         "registry": registry,
       })
     } else {
-      const login = selectedRegistry.login ?? "your-company"
-      let repository = ""
-      switch(selectedRegistry.variable) {
-        case "containerizedRegistry":
-          repository = `${selectedRegistry.url}/{{ .APP }}`
-          break
-        case "dockerhubRegistry":
-          repository = `${login}/{{ .APP }}`
-          break
-        default:
-          repository = `${selectedRegistry.url}/${login}/{{ .APP }}`
-      }
+      const repository = repositoryFromRegistry(selectedRegistry)
       setImage({
         ...image,
         "registry": registry,
