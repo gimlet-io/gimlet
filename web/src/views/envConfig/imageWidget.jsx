@@ -26,12 +26,18 @@ export default function ImageWidget(props) {
   }
 
   const setStrategy = (strategy) => {
+    let registry = {}
+    registry = registries.find(r => r.variable === "customRegistry")
+    if (!registry) {
+      registry = registries.find(r => r.variable === "containerizedRegistry")
+    }
+
     switch (strategy) {
       case 'dynamic':
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": "public",
+          "registry": "",
           "repository": "your-company/your-repo",
           "tag": "{{ .SHA }}",
           "dockerfile": ""
@@ -41,8 +47,8 @@ export default function ImageWidget(props) {
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": "containerizedRegistry",
-          "repository": "127.0.0.1:32447/{{ .APP }}",
+          "registry": registry.variable,
+          "repository": registry.url+"/{{ .APP }}",
           "tag": "{{ .SHA }}",
           "dockerfile": "Dockerfile"
         })
@@ -51,8 +57,8 @@ export default function ImageWidget(props) {
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": "containerizedRegistry",
-          "repository": "127.0.0.1:32447/{{ .APP }}",
+          "registry": registry.variable,
+          "repository": registry.url+"/{{ .APP }}",
           "tag": "{{ .SHA }}",
           "dockerfile": ""
         })
