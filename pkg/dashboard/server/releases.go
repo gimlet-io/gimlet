@@ -288,7 +288,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 
 			vars := artifact.CollectVariables()
 			vars["APP"] = releaseRequest.App
-			imageRepository, imageTag, dockerfile, registry := gitops.ExtractImageRepoTagDockerfileAndRegistry(manifest, vars)
+			imageRepository, imageTag, context, dockerfile, registry := gitops.ExtractImageRepoTagDockerfileAndRegistry(manifest, vars)
 			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
 			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
 			imageBuildRequest = &dx.ImageBuildRequest{
@@ -299,6 +299,7 @@ func release(w http.ResponseWriter, r *http.Request) {
 				TriggeredBy: user.Login,
 				Image:       imageRepository,
 				Tag:         imageTag,
+				Context:     context,
 				Dockerfile:  dockerfile,
 				Strategy:    strategy,
 				Registry:    registry,

@@ -382,7 +382,7 @@ func generateJob(trigger dx.ImageBuildRequest, name, sourceUrl string) *batchv1.
 							Image: "gcr.io/kaniko-project/executor:latest",
 							Args: []string{
 								fmt.Sprintf("--dockerfile=/workspace/%s", trigger.Dockerfile),
-								"--context=dir:///workspace",
+								"--context=dir:///workspace/" + trigger.Context,
 								fmt.Sprintf("--destination=%s:%s", trigger.Image, trigger.Tag),
 							},
 							VolumeMounts: []corev1.VolumeMount{
