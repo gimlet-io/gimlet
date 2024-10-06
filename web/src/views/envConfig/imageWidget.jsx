@@ -25,6 +25,13 @@ export default function ImageWidget(props) {
     })
   }
 
+  const setContext = (context) => {
+    setImage({
+      ...image,
+      "context": context,
+    })
+  }
+
   const setStrategy = (strategy) => {
     let registry = {}
     registry = registries.find(r => r.variable === "customRegistry")
@@ -50,6 +57,7 @@ export default function ImageWidget(props) {
           "registry": registry.variable,
           "repository": registry.url+"/{{ .APP }}",
           "tag": "{{ .SHA }}",
+          "context": ".",
           "dockerfile": "Dockerfile"
         })
         break;
@@ -192,14 +200,21 @@ export default function ImageWidget(props) {
         </div>
         <div className="form-group field field-string">
           <label className="control-label" htmlFor="root_tag">Tag<span className="required"></span></label>
-          <input className="form-control" id="root_tag" label="Tag" required="" placeholder="" type="text" list="examples_root_tag" value={image.tag}  onChange={e=>setTag(e.target.value)}/>
+          <input className="form-control max-w-64" id="root_tag" label="Tag" required="" placeholder="" type="text" list="examples_root_tag" value={image.tag}  onChange={e=>setTag(e.target.value)}/>
         </div>
         { image.strategy === "dockerfile" &&
-        <div className="form-group field field-string">
-          <label className="control-label" htmlFor="root_tag">Dockerfile<span className="required"></span></label>
-          <input className="form-control" id="root_tag" label="Dockerfile" required="" placeholder="" type="text" list="examples_root_tag" value={image.dockerfile}  onChange={e=>setDockerfile(e.target.value)}/>
-          <p className="help-block">Case-sensitive relative path from the project root to the Dockerfile.</p>
-        </div>
+        <>
+          <div className="form-group field field-string">
+            <label className="control-label" htmlFor="root_tag">Context<span className="required"></span></label>
+            <input className="form-control max-w-64" id="root_tag" label="Context" required="" placeholder="" type="text" list="examples_root_tag" value={image.context}  onChange={e=>setContext(e.target.value)}/>
+            <p className="help-block">Case-sensitive relative path from the git repository root (signaled as '.') to the project root. Change it for monorepos, like 'backend/'.</p>
+          </div>
+          <div className="form-group field field-string">
+            <label className="control-label" htmlFor="root_tag">Dockerfile<span className="required"></span></label>
+            <input className="form-control max-w-64" id="root_tag" label="Dockerfile" required="" placeholder="" type="text" list="examples_root_tag" value={image.dockerfile}  onChange={e=>setDockerfile(e.target.value)}/>
+            <p className="help-block">Case-sensitive relative path from the project root to the Dockerfile, like 'backend/Dockerfile'</p>
+          </div>
+        </>
         }
       </fieldset>
     </div>
