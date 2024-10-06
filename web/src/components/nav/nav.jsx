@@ -437,6 +437,7 @@ function Connecting(props) {
     )
   }
 
+  const sevenDays = 604800000
   const age = new Date() - (expiringAt-sevenDays)
   const stuck = age > 5*60*1000
   if (stuck) {
