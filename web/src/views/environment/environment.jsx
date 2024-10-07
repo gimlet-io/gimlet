@@ -370,7 +370,7 @@ export default function EnvironmentView(props) {
                     onClick={() => {
                       // eslint-disable-next-line no-restricted-globals
                       confirm(`Are you sure you want to convert to a gitops environment?`) &&
-                        spinOutBuiltInEnv(store, gimletClient)
+                        spinOutBuiltInEnv(progressToastId, store, gimletClient)
                     }}
                   >Create</button>
                 </div>
@@ -453,7 +453,7 @@ const findEnv = (envs, envName) => {
   return envs.find(env => env.name === envName)
 };
 
-const spinOutBuiltInEnv = (store, gimletClient) => {
+const spinOutBuiltInEnv = (progressToastId, store, gimletClient) => {
   progressToastId.current = toast(<InProgress header="Converting environment..."/>, { autoClose: false });
 
   gimletClient.spinOutBuiltInEnv()
