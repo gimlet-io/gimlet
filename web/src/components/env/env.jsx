@@ -167,7 +167,8 @@ function ConnectEnvCard(props) {
   if (trial) {
     const expiringAt = new Date(env.expiry * 1000);
     expired = expiringAt < new Date()
-    const age = new Date() - expiringAt
+    const sevenDays = 604800000
+    const age = new Date() - (expiringAt-sevenDays)
     stuck = age > 5*60*1000
     startingUp = !expired && !stuck
   }
