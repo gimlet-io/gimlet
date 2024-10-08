@@ -33,8 +33,7 @@ export default function ImageWidget(props) {
   }
 
   const setStrategy = (strategy) => {
-    let registry = {}
-    registry = registries.find(r => r.variable === "customRegistry")
+    let registry = registries.find(r => r.variable === "customRegistry")
     if (!registry) {
       registry = registries.find(r => r.variable === "containerizedRegistry")
     }
@@ -55,7 +54,7 @@ export default function ImageWidget(props) {
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": registry.variable,
+          "registry": registry ? registry.variable : "",
           "repository": repository,
           "tag": "{{ .SHA }}",
           "context": ".",
@@ -66,7 +65,7 @@ export default function ImageWidget(props) {
         setImage({
           ...image,
           "strategy": strategy,
-          "registry": registry.variable,
+          "registry": registry ? registry.variable : "",
           "repository": repository,
           "tag": "{{ .SHA }}",
           "dockerfile": ""
@@ -89,6 +88,9 @@ export default function ImageWidget(props) {
   }, [image]);
 
   const repositoryFromRegistry = (registry) => {
+    if (!registry) {
+      return ""
+    }
     const login = registry.login ?? "your-company"
     let repository = ""
 
