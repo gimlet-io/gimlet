@@ -417,7 +417,7 @@ export function EnvConfig(props) {
           />
         </div>
         <div className="w-full ml-14">
-          {selectedNavigation && selectedNavigation.name !== "General"
+          {selectedNavigation && selectedNavigation.name === "General"
             && selectedNavigation.name !== "Containerized Dependencies"
             && selectedNavigation.name !== "Cloud Dependencies" &&
             <Generaltab
@@ -436,7 +436,9 @@ export function EnvConfig(props) {
               preview={preview}
             />
           }
-          {selectedNavigation && selectedNavigation.name !== "General" &&
+          {selectedNavigation && selectedNavigation.name !== "General"
+            && selectedNavigation.name !== "Containerized Dependencies"
+            && selectedNavigation.name !== "Cloud Dependencies" &&
             <>
               <div className='w-full card p-6 pb-8'>
                 <HelmUI

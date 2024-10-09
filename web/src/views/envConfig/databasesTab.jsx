@@ -138,7 +138,7 @@ export default function ModuleSelector(props) {
           <ComboboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
             {filteredModules.map((module) => (
               <ComboboxOption
-                key={module.schema.id}
+                key={module.schema["$id"]}
                 value={module.schema.title}
                 className="group relative cursor-default select-none py-2 pl-3 pr-9 text-gray-900 data-[focus]:bg-indigo-600 data-[focus]:text-white"
               >
