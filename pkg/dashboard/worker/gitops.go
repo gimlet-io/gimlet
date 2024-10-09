@@ -704,7 +704,7 @@ func processArtifactEvent(
 
 		strategy := gitops.ExtractImageStrategy(manifest)
 		if strategy == "buildpacks" || strategy == "dockerfile" { // image build
-			imageRepository, imageTag, dockerfile, registry := gitops.ExtractImageRepoTagDockerfileAndRegistry(manifest, vars)
+			imageRepository, imageTag, context, dockerfile, registry := gitops.ExtractImageRepoTagDockerfileAndRegistry(manifest, vars)
 			// Image push happens inside the cluster, pull is handled by the kubelet that doesn't speak cluster local addresses
 			imageRepository = strings.ReplaceAll(imageRepository, "127.0.0.1:32447", "registry.infrastructure.svc.cluster.local:5000")
 			imageBuildRequest := &dx.ImageBuildRequest{
@@ -715,6 +715,7 @@ func processArtifactEvent(
 				TriggeredBy: "policy",
 				Image:       imageRepository,
 				Tag:         imageTag,
+				Context:     context,
 				Dockerfile:  dockerfile,
 				Strategy:    strategy,
 				Registry:    registry,

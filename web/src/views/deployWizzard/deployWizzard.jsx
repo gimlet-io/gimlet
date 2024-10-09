@@ -9,16 +9,20 @@ import SimpleServiceDetail from '../../components/serviceDetail/simpleServiceDet
 import DeployHandler from '../../deployHandler';
 import Confetti from 'react-confetti'
 import { Loading } from '../repo/deployStatus';
-import { ACTION_TYPE_CLEAR_DEPLOY, ACTION_TYPE_POPUPWINDOWSUCCESS } from "../../redux/redux";
+import { ACTION_TYPE_CLEAR_DEPLOY } from "../../redux/redux";
 import { v4 as uuidv4 } from 'uuid';
 import SealedSecretWidget from "../envConfig/sealedSecretWidget";
 import { useParams, useNavigate } from 'react-router-dom'
+import { usePostHog } from 'posthog-js/react'
+import { toast } from 'react-toastify';
+import { Success } from '../../popUpWindow';
 
 export function DeployWizzard(props) {
   const { store, gimletClient } = props
   const { owner, repo, env } = useParams();
   const repoName = `${owner}/${repo}`;
   const navigate = useNavigate()
+  const posthog = usePostHog()
 
   const reduxState = props.store.getState();
   const [templates, setTemplates] = useState()
@@ -239,20 +243,15 @@ export function DeployWizzard(props) {
     setRenderId(uuidv4())
   }, [selectedTemplate, stackConfigDerivedValues]);
 
-  // useEffect(() => {
-  //   console.log(configFile)
-  // }, [configFile]);
-
   const saveConfig = () => {
+    posthog?.capture('Config written to git')
     setSavingConfigInProgress(true)
     gimletClient.saveEnvConfig(owner, repo, env, app, configFile)
       .then((data) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Configuration saved.",
-            link: data.link
-          }
+        toast(<Success header="Success" message={<div className='pb-4'>Configuration saved</div>} link={data.link} />, {
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          autoClose: false
         });
 
         setSavingConfigInProgress(false)
@@ -394,6 +393,7 @@ export function DeployWizzard(props) {
               store.dispatch({ type: ACTION_TYPE_CLEAR_DEPLOY });
               setDeployed(false)
               setDeploying(true)
+              posthog?.capture('Deploywizzard deploy pushed')
 
               gimletClient.saveArtifact({
                 version: {

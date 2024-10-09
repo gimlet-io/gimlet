@@ -7,6 +7,7 @@ import logo from "./logo.svg";
 import DefaultProfilePicture from '../../../src/views/profile/defaultProfilePicture.png';
 import { ThemeSelector } from '../../views/repositories/themeSelector';
 import { useMatch, useLocation, useParams, useNavigate } from 'react-router-dom'
+import { format, formatDistance } from "date-fns";
 
 const navigation = [
   {name: 'Repositories', href: '/repositories'},
@@ -411,28 +412,39 @@ function Connecting(props) {
   const env = envs[0]
   const isOnline = Object.keys(connectedAgents).includes(env.name)
 
-  if (isOnline) {
-    return null
-  }
-
   const expiringAt = new Date(env.expiry * 1000);
   const expired = expiringAt < new Date()
-  if (expired) {
+  const exactDate = format(env.expiry * 1000, 'h:mm:ss a, MMMM do yyyy')
+  const dateLabel = formatDistance(env.expiry * 1000, new Date());
+
+  if (isOnline) {
     return (
-      <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
+      <div className='rounded-lg bg-blue-100 text-blue-900 text-sm px-4'>
         <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
-          <span>Ephemeral cluster expired</span>
+          <span title={`at ${exactDate}`}>Trial expires in {dateLabel}</span>
         </a>
       </div>
     )
   }
 
-  const age = new Date() - expiringAt
-  if (age > 5*60*1000) {
+  if (expired) {
+    return (
+      <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
+        <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
+          <span>Trial expired, click to purchase license</span>
+        </a>
+      </div>
+    )
+  }
+
+  const sevenDays = 604800000
+  const age = new Date() - (expiringAt-sevenDays)
+  const stuck = age > 5*60*1000
+  if (stuck) {
     return (
       <div className='rounded-lg bg-red-100 text-red-900 text-sm px-4 mx-1'>
         <a href="https://gimlet.io/docs/learn-more/contact-us" className='underline' target="_blank" rel="noopener noreferrer">
-          <span>Ephemeral cluster stuck - contact support</span>
+          <span>Trial Kubernetes cluster stuck - contact support</span>
         </a>
       </div>
     )
@@ -441,7 +453,7 @@ function Connecting(props) {
   return (
     <div className='rounded-lg bg-blue-100 text-blue-900 text-sm px-4'>
       <a href={"/env/"+env.name} className='underline' rel="noopener noreferrer">
-        <span>Ephemeral cluster starting up</span>
+        <span>Trial Kubernetes cluster starting up</span>
         <svg className="animate-spin h-3 w-3 text-black inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4}></circle>

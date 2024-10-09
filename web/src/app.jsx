@@ -1,4 +1,5 @@
 import React, { Component, useEffect } from 'react';
+import "react-toastify/dist/ReactToastify.css";
 import './app.css';
 import Nav from "./components/nav/nav";
 import StreamingBackend from "./streamingBackend";
@@ -20,7 +21,6 @@ import { DeployWizzard } from './views/deployWizzard/deployWizzard'
 import RepositoryWizard from './views/repositoryWizard/repositoryWizard';
 import Environments from './views/environments/environments'
 import Environment from './views/environment/environment';
-import PopUpWindow from './popUpWindow';
 import Footer from './views/footer/footer';
 import {
   ACTION_TYPE_USER,
@@ -29,6 +29,7 @@ import {
 import Posthog from './posthog';
 import './style.css'
 import GithubIntegration from './views/githubIntegration';
+import { ToastContainer } from 'react-toastify';
 
 export default class App extends Component {
   constructor(props) {
@@ -113,10 +114,10 @@ export default class App extends Component {
       <Router>
         <StreamingBackend store={store} />
         <APIBackend store={store} gimletClient={gimletClient} />
-        <PopUpWindow store={store} />
         <Posthog store={store} />
 
         <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 pb-20">
+          <ToastContainer limit={3} theme="light" className="max-w-lg w-full" />
           <Footer store={store} gimletClient={gimletClient} />
           <div className="">
             <Routes>

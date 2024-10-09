@@ -81,3 +81,11 @@
 .serviceLinkIcon {
     @apply hover:text-teal-300 inline fill-current h-4 w-4
 }
+
+:root:has(.no-doc-scroll) {
+    overflow: hidden;
+}
+
+:root {
+    --toastify-color-progress-light: #2dd4bf
+}

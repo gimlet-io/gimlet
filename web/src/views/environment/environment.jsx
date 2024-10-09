@@ -1,10 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWERRORLIST,
-  ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVSPINNEDOUT,
   ACTION_TYPE_ENVS,
 } from "../../redux/redux";
@@ -20,6 +15,8 @@ import * as Diff from "diff";
 import { InformationCircleIcon } from '@heroicons/react/20/solid';
 import { format, formatDistance } from "date-fns";
 import { useParams, useLocation } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { InProgress, Success, Error } from '../../popUpWindow';
 
 export default function EnvironmentView(props) {
   const { store, gimletClient } = props
@@ -33,22 +30,20 @@ export default function EnvironmentView(props) {
   const [pullRequests, setPullRequests] = useState([])
   const [settings, setSettings] = useState(reduxState.settings)
   const [errors, setErrors] = useState({})
-  // eslint-disable-next-line no-unused-vars
-  const [popupWindow, setPopupWindow] = useState()
   const [stackConfig, setStackConfig] = useState()
   const [savedStackConfig, setSavedStackConfig] = useState()
-  // const [stackConfigLoaded, setStackConfigLoaded] = useState()
   const [stackDefinition, setStackDefinition] = useState()
   const [isOnline, setIsOnline] = useState(false)
   const [navigation, setNavigation] = useState([])
   const [showModal, setShowModal] = useState(false)
+
+  const progressToastId = useRef(null);
 
   store.subscribe(() => {
     const reduxState = store.getState()
     setConnectedAgents(reduxState.connectedAgents)
     setEnvironment(findEnv(reduxState.envs, env))
     setUser(reduxState.user)
-    setPopupWindow(reduxState.popupWindow)
     setSettings(reduxState.settings)
   })
 
@@ -99,54 +94,42 @@ export default function EnvironmentView(props) {
   }, [environment]);
 
   const saveComponents = () => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Saving components..."
-      }
-    });
-
     for (const variable of Object.keys(errors)) {
       if (errors[variable] !== null) {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERRORLIST, payload: {
-            header: "Error",
-            errorList: errors
-          }
+        toast(<Error header="Error" message={<ul>
+          {errors[variable].map(error => (<li>{`${error.message}`}</li>))}
+        </ul>} />, {
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
         return false
       }
     }
 
+    progressToastId.current = toast(<InProgress header="Saving components..." />, { autoClose: false });
+
     gimletClient.saveInfrastructureComponents(environment.name, stackConfig)
       .then((data) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Pull request was created",
-            link: data.createdPr.link
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Success" message={<div className='pb-4'>A Pull Request was created</div>} link={data.createdPr.link}/>,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
         });
         setPullRequests(prevState => [...prevState, data.createdPr]);
         let deepCopied = JSON.parse(JSON.stringify(stackConfig))
         setSavedStackConfig(deepCopied)
       }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
-        resetPopupWindowAfterThreeSeconds()
       })
   }
-
-  const resetPopupWindowAfterThreeSeconds = () =>  {
-    setTimeout(() => {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWRESET
-      });
-    }, 3000);
-  };
 
   const setValues = (variable, values, nonDefaultValues) => {
     if (!stackConfig[variable] && Object.keys(nonDefaultValues).length === 0) {
@@ -276,7 +259,7 @@ export default function EnvironmentView(props) {
           </div>
           <div className="ml-3 flex-1 md:flex md:justify-between">
             <div className="text-sm flex flex-col">
-              <p className="font-semibold text-sm pb-4">This is an ephemeral environment</p>
+              <p className="font-semibold text-sm pb-4">This is a trial environment</p>
               <p>Gimlet made this environment for you so you can start deploying.</p>
               <p className='pb-4'>This environment will run on our Kubernetes cluster for 7 days with plenty of resources for you to get started.</p>
               <p>Once you upgrade Gimlet, you will be able to connect your own Kubernetes cluster running on your preferred provider.</p>
@@ -318,7 +301,7 @@ export default function EnvironmentView(props) {
                   className='underline ml-1'
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
-                    confirm(`Are you sure you want to stop the ephemeral environment?`) &&
+                    confirm(`Are you sure you want to stop the trial environment?`) &&
                     stopEnv();
                   }}
                   >
@@ -336,7 +319,7 @@ export default function EnvironmentView(props) {
                   className='underline ml-1'
                   onClick={() => {
                     // eslint-disable-next-line no-restricted-globals
-                    confirm(`Are you sure you want to stop the ephemeral environment?`) &&
+                    confirm(`Are you sure you want to stop the trial environment?`) &&
                     stopEnv();
                   }}
                   >
@@ -387,7 +370,7 @@ export default function EnvironmentView(props) {
                     onClick={() => {
                       // eslint-disable-next-line no-restricted-globals
                       confirm(`Are you sure you want to convert to a gitops environment?`) &&
-                        spinOutBuiltInEnv(store, gimletClient)
+                        spinOutBuiltInEnv(progressToastId, store, gimletClient)
                     }}
                   >Create</button>
                 </div>
@@ -470,36 +453,29 @@ const findEnv = (envs, envName) => {
   return envs.find(env => env.name === envName)
 };
 
-const spinOutBuiltInEnv = (store, gimletClient) => {
-  store.dispatch({
-    type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-      header: "Converting environment..."
-    }
-  });
+const spinOutBuiltInEnv = (progressToastId, store, gimletClient) => {
+  progressToastId.current = toast(<InProgress header="Converting environment..."/>, { autoClose: false });
+
   gimletClient.spinOutBuiltInEnv()
     .then((data) => {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-          header: "Success",
-          message: "Environment was converted",
-        }
+      toast.update(progressToastId.current, {
+        render: <Success header="Success" message="Environment was converted" />,
+        className: "bg-green-50 shadow-lg p-2",
+        bodyClassName: "p-2",
+        autoClose: 3000,
       });
       store.dispatch({
         type: ACTION_TYPE_ENVSPINNEDOUT,
         payload: data
       });
     }, (err) => {
-      store.dispatch({
-        type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-          header: "Error",
-          message: err.statusText
-        }
+      toast.update(progressToastId.current, {
+        render: <Error header="Error" message={err.statusText} />,
+        className: "bg-red-50 shadow-lg p-2",
+        bodyClassName: "p-2",
+        progressClassName: "!bg-red-200",
+        autoClose: 5000
       });
-      setTimeout(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWRESET
-        });
-      }, 3000);
     })
 }
 

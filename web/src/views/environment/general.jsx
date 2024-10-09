@@ -1,44 +1,42 @@
+import { useRef } from 'react';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
 import GitopsBootstrapWizard from './gitopsBootstrapWizard';
 import ConnectCluster from './bootstrapGuide';
 import Toggle from '../../components/toggle/toggle';
 import {
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
   ACTION_TYPE_ENVS
 } from "../../redux/redux";
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { InProgress, Success, Error } from '../../popUpWindow';
 
 export default function General(props) {
   const { gimletClient, store } = props;
   const { environment, scmUrl, isOnline, userToken } = props;
 
   const navigate = useNavigate()
+  const progressToastId = useRef(null);
 
   const deleteEnv = (envName) => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Deleting..."
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Deleting..." />, { autoClose: false });
 
     gimletClient.deleteEnvFromDB(envName)
       .then(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Environment deleted"
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Environment deleted" />,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          autoClose: 3000,
         });
         refreshEnvs();
         navigate("/environments");
       }, err => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
       });
   }
@@ -55,31 +53,25 @@ export default function General(props) {
   }
 
   const bootstrapGitops = (envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo) => {
-    // setDisabled(true);
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Bootstrapping..."
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Bootstrapping..." />, { autoClose: false });
 
     gimletClient.bootstrapGitops(envName, repoPerEnv, kustomizationPerApp, infraRepo, appsRepo)
       .then(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Gitops environment bootstrapped"
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Success" message="Gitops environment bootstrapped" />,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          autoClose: 3000,
         });
         refreshEnvs();
-        // setDisabled(false);
       }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
-        // setDisabled(false);
       })
   }
 
@@ -96,7 +88,7 @@ export default function General(props) {
     return (
       <div className="w-full space-y-8">
         <ConnectCluster envName={environment.name} token={userToken} />
-        { !environment.builtIn && 
+        {!environment.builtIn &&
           <GitopRepositories environment={environment} scmUrl={scmUrl} />
         }
         <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} />
@@ -106,7 +98,7 @@ export default function General(props) {
 
   return (
     <div className="w-full space-y-8">
-      { !environment.builtIn && 
+      {!environment.builtIn &&
         <GitopRepositories environment={environment} scmUrl={scmUrl} />
       }
       <DeleteEnvCard environment={environment} deleteEnv={deleteEnv} />
@@ -115,7 +107,7 @@ export default function General(props) {
 }
 
 function DeleteEnvCard(props) {
-  const {environment, deleteEnv } = props
+  const { environment, deleteEnv } = props
 
   return (
     <div className="w-full redCard">
@@ -145,7 +137,7 @@ function DeleteEnvCard(props) {
 }
 
 function GitopRepositories(props) {
-  const {environment, scmUrl} = props
+  const { environment, scmUrl } = props
 
   const gitopsRepositories = [
     { name: environment.infraRepo, href: `${scmUrl}/${environment.infraRepo}` },

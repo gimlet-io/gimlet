@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { Fragment } from 'react'
@@ -6,10 +6,6 @@ import { Menu, Transition } from '@headlessui/react'
 import { ArrowPathIcon } from '@heroicons/react/20/solid'
 import {
   ACTION_TYPE_ROLLOUT_HISTORY,
-  ACTION_TYPE_POPUPWINDOWERROR,
-  ACTION_TYPE_POPUPWINDOWRESET,
-  ACTION_TYPE_POPUPWINDOWSUCCESS,
-  ACTION_TYPE_POPUPWINDOWPROGRESS,
 } from "../../redux/redux";
 import { copyToClipboard } from '../../views/settings/settings';
 import { usePostHog } from 'posthog-js/react'
@@ -18,6 +14,8 @@ import { AlertPanel } from './alert';
 import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/capacitor/Describe';
 import { ArrowTopRightOnSquareIcon, LinkIcon } from '@heroicons/react/24/solid';
+import { toast } from 'react-toastify';
+import { InProgress, Success, Error } from '../../popUpWindow';
 
 function ServiceDetail(props) {
   const { store, gimletClient } = props;
@@ -27,6 +25,8 @@ function ServiceDetail(props) {
   const ref = useRef(null);
   const posthog = usePostHog()
   const [pullRequests, setPullRequests] = useState()
+
+  const progressToastId = useRef(null);
 
   useEffect(() => {
     if (deploymentFromParams === stack.service.name) {
@@ -67,32 +67,23 @@ function ServiceDetail(props) {
   };
 
   const deleteAppInstance = () => {
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Deleting application instance..."
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Deleting application instance..."/>, { autoClose: false });
 
     gimletClient.deleteAppInstance(environment.name, stack.service.name)
       .then(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-            message: "Application instance deleted",
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Application instance deleted"/>,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
         });
       }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
       });
   }
 
@@ -100,36 +91,24 @@ function ServiceDetail(props) {
     var date = new Date();
     date.setHours(date.getHours() + hours);
 
-    store.dispatch({
-      type: ACTION_TYPE_POPUPWINDOWPROGRESS, payload: {
-        header: "Silence deployment alerts..."
-      }
-    });
+    progressToastId.current = toast(<InProgress header="Silencing alerts..." />, { autoClose: false });
 
     gimletClient.silenceAlert(object, date.toISOString())
       .then(() => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWSUCCESS, payload: {
-            header: "Success",
-          }
+        toast.update(progressToastId.current, {
+          render: <Success header="Silenced" />,
+          className: "bg-green-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          autoClose: 3000,
         });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
       }, (err) => {
-        store.dispatch({
-          type: ACTION_TYPE_POPUPWINDOWERROR, payload: {
-            header: "Error",
-            message: err.statusText
-          }
+        toast.update(progressToastId.current, {
+          render: <Error header="Error" message={err.statusText} />,
+          className: "bg-red-50 shadow-lg p-2",
+          bodyClassName: "p-2",
+          progressClassName: "!bg-red-200",
+          autoClose: 5000
         });
-        setTimeout(() => {
-          store.dispatch({
-            type: ACTION_TYPE_POPUPWINDOWRESET
-          });
-        }, 3000);
       });
   }
 
