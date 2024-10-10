@@ -198,9 +198,11 @@ func fluxK8sEvents(w http.ResponseWriter, r *http.Request) {
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	deployment := r.URL.Query().Get("deploymentName")
+	pod := r.URL.Query().Get("podName")
+	container := r.URL.Query().Get("containerName")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.StreamPodLogsSend(namespace, deployment)
+	agentHub.StreamPodLogsSend(namespace, deployment, pod, container)
 }
 
 func stopPodLogs(w http.ResponseWriter, r *http.Request) {

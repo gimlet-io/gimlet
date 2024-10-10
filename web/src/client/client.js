@@ -71,7 +71,7 @@ export default class GimletClient {
 
   getGitopsUpdatePullRequests = (env) => this.get(`/api/gitopsUpdatePullRequests?env=${env}`);
 
-  podLogsRequest = (namespace, deployment) => this.get(`/api/podLogs?namespace=${namespace}&deploymentName=${deployment}`);
+  podLogsRequest = (namespace, deployment, pod) => this.get(`/api/podLogs?namespace=${namespace}&deploymentName=${deployment}&podName=${pod}`);
 
   stopPodlogsRequest = (namespace, deployment) => this.get(`/api/stopPodLogs?namespace=${namespace}&deploymentName=${deployment}`);
 

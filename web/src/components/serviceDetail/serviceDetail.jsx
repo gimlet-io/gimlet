@@ -153,7 +153,7 @@ function ServiceDetail(props) {
                 store={store}
                 namespace={deployment.namespace}
                 deployment={deployment.name}
-                containers={podContainers(deployment.pods)}
+                pods={deployment.pods}
               />
               <Describe
                 capacitorClient={gimletClient}
@@ -402,17 +402,6 @@ export function Pod(props) {
       {pod.name}
     </span>
   );
-}
-
-export function podContainers(pods) {
-  const containers = [];
-  pods?.forEach((pod) => {
-    pod.containers?.forEach(container => {
-      containers.push(`${pod.name}/${container.name}`);
-    })
-  });
-
-  return containers;
 }
 
 function DeployIndicator(props) {
