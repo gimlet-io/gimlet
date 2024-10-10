@@ -44,6 +44,7 @@ const AnnotationTracesLink = "v1alpha1.opensca.dev/traces"
 const AnnotationIssuesLink = "v1alpha1.opensca.dev/issues"
 const AnnotationOwnerName = "v1alpha1.opensca.dev/owner.name"
 const AnnotationOwnerIm = "v1alpha1.opensca.dev/owner.im"
+const AnnotationBelongsTo = "gimlet.io/belongs-to"
 
 type KubeEnv struct {
 	Name          string
@@ -54,9 +55,9 @@ type KubeEnv struct {
 	Perf          *prometheus.HistogramVec
 }
 
-func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
+func (e *KubeEnv) Services() ([]*api.Stack, error) {
 	t0 := time.Now()
-	annotatedServices, err := e.annotatedServices(repo)
+	annotatedServices, err := e.annotatedServices(AnnotationGitRepository)
 	if err != nil {
 		logrus.Errorf("could not get 1 %v", err)
 		return nil, err
@@ -69,6 +70,13 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		return nil, fmt.Errorf("could not get deployments: %s", err)
 	}
 	e.Perf.WithLabelValues("gimlet_agent_deployments").Observe(float64(time.Since(t0).Seconds()))
+
+	t0 = time.Now()
+	s, err := e.Client.AppsV1().StatefulSets(e.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not get statefulsets: %s", err)
+	}
+	e.Perf.WithLabelValues("gimlet_agent_statefulsets").Observe(float64(time.Since(t0).Seconds()))
 
 	t0 = time.Now()
 	i, err := e.Client.NetworkingV1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
@@ -87,7 +95,7 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	t0 = time.Now()
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
-		deployment, err := e.deploymentForService(service, d.Items)
+		deployment, err := e.deploymentForService(service, d.Items, s.Items)
 		if err != nil {
 			return nil, fmt.Errorf("could not get deployment for service: %s", err)
 		}
@@ -126,6 +134,44 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 		})
 	}
 	e.Perf.WithLabelValues("gimlet_agent_stacks").Observe(float64(time.Since(t0).Seconds()))
+
+	dependencyServices, err := e.annotatedServices(AnnotationBelongsTo)
+	if err != nil {
+		logrus.Errorf("could not get 1 %v", err)
+		return nil, err
+	}
+	e.Perf.WithLabelValues("gimlet_agent_dependency_services").Observe(float64(time.Since(t0).Seconds()))
+
+	for _, service := range dependencyServices {
+		deployment, err := e.deploymentForService(service, d.Items, s.Items)
+		if err != nil {
+			return nil, fmt.Errorf("could not get deployment for service: %s", err)
+		}
+		if deployment == nil {
+			continue
+		}
+
+		if deployment != nil {
+			deployment.Pods = []*api.Pod{}
+			for _, pod := range pods.Items {
+				if labelsMatchSelectors(pod.ObjectMeta.Labels, service.Spec.Selector) {
+					podStatus := podStatus(pod)
+					podLogs := ""
+					if podStatus == "CrashLoopBackOff" || podStatus == "Error" {
+						podLogs = logs(e, pod)
+					}
+					deployment.Pods = append(deployment.Pods, &api.Pod{Name: pod.Name, DeploymentName: deployment.Name, Namespace: pod.Namespace, Status: podStatus, StatusDescription: podErrorCause(pod), Logs: podLogs, ImChannelId: service.ObjectMeta.GetAnnotations()[AnnotationOwnerIm], Containers: PodContainers(pod.Spec)})
+				}
+			}
+		}
+
+		belongTo := service.ObjectMeta.GetAnnotations()[AnnotationBelongsTo]
+		for _, stack := range stacks {
+			if stack.Service.Name == belongTo {
+				stack.Deployment.Pods = append(stack.Deployment.Pods, deployment.Pods...)
+			}
+		}
+	}
 
 	return stacks, nil
 }
@@ -202,8 +248,8 @@ var helmReleaseResource = schema.GroupVersionResource{
 	Resource: "helmreleases",
 }
 
-func (e *KubeEnv) WarningEvents(repo string) ([]api.Event, error) {
-	integratedServices, err := e.annotatedServices(repo)
+func (e *KubeEnv) WarningEvents() ([]api.Event, error) {
+	integratedServices, err := e.annotatedServices(AnnotationGitRepository)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +298,7 @@ func (e *KubeEnv) WarningEvents(repo string) ([]api.Event, error) {
 }
 
 // annotatedServices returns all services that are enabled for Gimlet
-func (e *KubeEnv) annotatedServices(repo string) ([]v1.Service, error) {
+func (e *KubeEnv) annotatedServices(annotation string) ([]v1.Service, error) {
 	svc, err := e.Client.CoreV1().Services(e.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -260,19 +306,15 @@ func (e *KubeEnv) annotatedServices(repo string) ([]v1.Service, error) {
 
 	var services []v1.Service
 	for _, s := range svc.Items {
-		if _, ok := s.ObjectMeta.GetAnnotations()[AnnotationGitRepository]; ok {
-			if repo == "" {
-				services = append(services, s)
-			} else if repo == s.ObjectMeta.GetAnnotations()[AnnotationGitRepository] {
-				services = append(services, s)
-			}
+		if _, ok := s.ObjectMeta.GetAnnotations()[annotation]; ok {
+			services = append(services, s)
 		}
 	}
 
 	return services, nil
 }
 
-func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment) (*api.Deployment, error) {
+func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment, statefulsets []appsv1.StatefulSet) (*api.Deployment, error) {
 	var deployment *api.Deployment
 
 	for _, d := range deployments {
@@ -286,6 +328,20 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 			}
 
 			deployment = &api.Deployment{Name: d.Name, Namespace: d.Namespace, Branch: branch, SHA: sha}
+		}
+	}
+
+	for _, s := range statefulsets {
+		if SelectorsMatch(s.Spec.Selector.MatchLabels, service.Spec.Selector) {
+			var branch, sha string
+			if hash, ok := s.GetAnnotations()[AnnotationGitSha]; ok {
+				sha = hash
+			}
+			if b, ok := s.GetAnnotations()[AnnotationGitBranch]; ok {
+				branch = b
+			}
+
+			deployment = &api.Deployment{Name: s.Name, Namespace: s.Namespace, Branch: branch, SHA: sha}
 		}
 	}
 

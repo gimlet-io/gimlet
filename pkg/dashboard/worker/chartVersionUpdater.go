@@ -16,6 +16,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	helper "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/sirupsen/logrus"
 	giturl "github.com/whilp/git-urls"
@@ -92,12 +93,12 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		return fmt.Errorf("could not open %s: %s", repoName, err)
 	}
 
-	headBranch, err := helper.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return fmt.Errorf("cannot get head branch: %s", err)
 	}
 
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
+	files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
 			return fmt.Errorf("cannot list files in .gimlet/: %s", err)
@@ -123,7 +124,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 		}
 
 		// Checkout the head branch before creating a new branch
-		err = helper.Checkout(repo, fmt.Sprintf("refs/heads/%s", headBranch))
+		err = gogit.Checkout(repo, fmt.Sprintf("refs/heads/%s", headBranch))
 		if err != nil {
 			logrus.Warnf("cannot checkout head branch: %s", err)
 			continue
@@ -135,7 +136,7 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			continue
 		}
 
-		err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+		err = gogit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 		if err != nil {
 			logrus.Warnf("cannot checkout branch: %s", err)
 			continue
@@ -145,15 +146,15 @@ func (c *ChartVersionUpdater) updateRepoEnvConfigsChartVersion(token string, rep
 			latestVersion := findLatestVersion(content, c.config.DefaultCharts)
 			updatedContent := updateChartVersion(content, latestVersion)
 
-			_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), helper.Dir_RWX_RX_R)
-			err = os.WriteFile(filepath.Join(tmpPath, fmt.Sprintf(".gimlet/%s", fileName)), []byte(updatedContent), helper.Dir_RWX_RX_R)
+			_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), gogit.Dir_RWX_RX_R)
+			err = os.WriteFile(filepath.Join(tmpPath, fmt.Sprintf(".gimlet/%s", fileName)), []byte(updatedContent), gogit.Dir_RWX_RX_R)
 			if err != nil {
 				logrus.Warnf("cannot write file in %s: %s", repoName, err)
 				continue
 			}
 		}
 
-		empty, err := helper.NothingToCommit(repo)
+		empty, err := gogit.NothingToCommit(repo)
 		if err != nil {
 			logrus.Warnf("cannot get git state: %s", err)
 			continue

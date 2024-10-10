@@ -237,13 +237,18 @@ func serverCommunication(
 						go sendState(kubeEnv, config.Host, config.AgentKey)
 						// go sendEvents(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
-						go podLogs(
-							kubeEnv,
-							e["namespace"].(string),
-							e["deploymentName"].(string),
-							messages,
-							runningLogStreams,
-						)
+						var namespace, deploymentName, podName, containerName string
+						namespace = e["namespace"].(string)
+						if val, ok := e["deploymentName"]; ok {
+							deploymentName = val.(string)
+						}
+						if val, ok := e["podName"]; ok {
+							podName = val.(string)
+						}
+						if val, ok := e["containerName"]; ok {
+							containerName = val.(string)
+						}
+						go podLogs(kubeEnv, namespace, deploymentName, podName, containerName, messages, runningLogStreams)
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
 						deployment := e["deploymentName"].(string)
@@ -305,7 +310,7 @@ func serverCommunication(
 }
 
 func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	stacks, err := kubeEnv.Services("")
+	stacks, err := kubeEnv.Services()
 	if err != nil {
 		logrus.Errorf("could not get state from k8s apiServer: %v", err)
 		return
@@ -357,7 +362,7 @@ func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 }
 
 func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	events, err := kubeEnv.WarningEvents("")
+	events, err := kubeEnv.WarningEvents()
 	if err != nil {
 		logrus.Errorf("could not get events from k8s apiServer: %v", err)
 		return
@@ -399,31 +404,48 @@ func podLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
 	deploymentName string,
+	podName string,
+	containerName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
-	deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
-	if err != nil {
-		logrus.Errorf("could not get deployments: %v", err)
-		return
-	}
+	if podName != "" {
+		if containerName != "" {
+			go streamPodLogs(kubeEnv, namespace, podName, containerName, deploymentName, messages, runningLogStreams)
+		} else {
+			pod, err := kubeEnv.Client.CoreV1().Pods(namespace).Get(context.TODO(), podName, meta_v1.GetOptions{})
+			if err != nil {
+				logrus.Errorf("could not get pod %s: %v", podName, err)
+				return
+			}
 
-	podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		logrus.Errorf("could not get pods: %v", err)
-		return
-	}
-
-	for _, pod := range podsInNamespace.Items {
-		if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
 			containers := agent.PodContainers(pod.Spec)
 			for _, container := range containers {
 				go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
 			}
 		}
-	}
+	} else {
+		deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
+		if err != nil {
+			logrus.Errorf("could not get deployments: %v", err)
+			return
+		}
 
-	logrus.Debug("pod logs sent")
+		podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+		if err != nil {
+			logrus.Errorf("could not get pods: %v", err)
+			return
+		}
+
+		for _, pod := range podsInNamespace.Items {
+			if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
+				containers := agent.PodContainers(pod.Spec)
+				for _, container := range containers {
+					go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
+				}
+			}
+		}
+	}
 }
 
 func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {

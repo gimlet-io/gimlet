@@ -10,6 +10,7 @@ import (
 
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
@@ -90,12 +91,12 @@ func gitopsManifests(gitRepoCache *nativeGit.RepoCache, repoName string, filesPa
 		return nil, err
 	}
 
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := nativeGit.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, filesPath)
+	files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, filesPath)
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
 			return nil, fmt.Errorf("cannot list files in %s: %s", filesPath, err)

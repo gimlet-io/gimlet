@@ -198,6 +198,8 @@ github.com/fatih/color v1.17.0 h1:GlRw1BRJxkpqUCBKzKOw098ed57fEsKeNjpTe3cSjK4=
 github.com/fatih/color v1.17.0/go.mod h1:YZ7TlrGPkiz6ku9fK3TLD/pl3CpsiFyu8N92HLgmosI=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
+github.com/flux-iac/tofu-controller/api v0.0.0-20240915173836-867f89680486 h1:oYW/iQRw8Sd9HGf24OiHWnWx2LIXFNvb7pKvz/CzC4E=
+github.com/flux-iac/tofu-controller/api v0.0.0-20240915173836-867f89680486/go.mod h1:9uAp7XEq+1UNh4pfBynz5zhtc6wr4Wvb6cSb6b+xXpM=
 github.com/fluxcd/flux2/v2 v2.3.0 h1:R90fCqLj52F2KL7DWG3/r5LyhJF+zgCaNjdzF2/WrvY=
 github.com/fluxcd/flux2/v2 v2.3.0/go.mod h1:nFebvCRq3CIQGeZuoC9h76oGjd2H+doM+Nmxc54fLJ0=
 github.com/fluxcd/helm-controller/api v1.0.1 h1:Gn9qEVuif6D5+gHmVwTEZkR4+nmLOcOhKx4Sw2gL2EA=
@@ -659,8 +661,6 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/urfave/cli/v2 v2.27.4 h1:o1owoI+02Eb+K107p27wEX9Bb8eqIoZCfLXloLUSWJ8=
 github.com/urfave/cli/v2 v2.27.4/go.mod h1:m4QzxcD2qpra4z7WhzEGn74WZLViBnMpb1ToCAKdGRQ=
-github.com/weaveworks/tf-controller/api v0.0.0-20230601175619-7e9ed0753431 h1:iz0B5Sv+RSMjflZ3AIknGLJ5KyYZVSlELh+Bx3Whtow=
-github.com/weaveworks/tf-controller/api v0.0.0-20230601175619-7e9ed0753431/go.mod h1:/nU6MWmV9oOf5JDHDg3fWUzf3Udu714Te1MUtjRvmbo=
 github.com/whilp/git-urls v1.0.0 h1:95f6UMWN5FKW71ECsXRUd3FVYiXdrE7aX4NZKcPmIjU=
 github.com/whilp/git-urls v1.0.0/go.mod h1:J16SAmobsqc3Qcy98brfl5f5+e0clUvg1krgwk/qCfE=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=

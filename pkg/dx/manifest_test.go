@@ -1,6 +1,7 @@
 package dx
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -172,6 +173,46 @@ namespace: ""
 	}
 }
 
+func Test_planiDependencyMarshal(t *testing.T) {
+	m := Manifest{
+		App: "first",
+		Dependencies: []Dependency{
+			{
+				Name: "my-redis",
+				Kind: "plain",
+				Spec: TFSpec{
+					Module: Module{
+						Url: "a-git-url",
+					},
+					Values: map[string]interface{}{
+						"size": "1GB",
+					},
+					Secret: "xx",
+				},
+			},
+		},
+	}
+
+	marshalledBytes, err := yaml.Marshal(m)
+	if assert.NoError(t, err) {
+		assert.Equal(t, `app: first
+chart:
+  name: ""
+dependencies:
+- kind: plain
+  name: my-redis
+  spec:
+    module:
+      url: a-git-url
+    secret: xx
+    values:
+      size: 1GB
+env: ""
+namespace: ""
+`, string(marshalledBytes))
+	}
+}
+
 func Test_renderTFDependency(t *testing.T) {
 	manifestString := `
 app: hello
@@ -201,6 +242,32 @@ dependencies:
 			assert.True(t, strings.Contains(string(renderredDep), "kind: Terraform"), "terraform kind must be set")
 			assert.True(t, strings.Contains(string(renderredDep), "name: db-admin-secret"), "db secret must be set")
 			assert.True(t, strings.Contains(string(renderredDep), "value: my-app"), "values must be set")
+			fmt.Println(string(renderredDep))
+		}
+	}
+}
+
+func Test_renderPlainDependency(t *testing.T) {
+	manifestString := `
+app: hello
+namespace: hello
+dependencies:
+- name: my-redis
+  kind: plain
+  spec:
+    module:
+      url: https://github.com/gimlet-io/plain-modules?path=redis
+    values:
+      encryptedPassword: AgC5/3vQNLfXqrCaxVj94xBsi9bO90hTWkK+n+HjqBqUutyzLANYpmWnUMF/mdu+oEc6LnPaXl72k6e84w7flhMgwR/UkQZq3Cf6QedJtnfaclvJKgAPM6VdvH0xha8nK55/xiKSvq6By7zI7DhwcYS8D+wMTUyWzBp+bhUJuuJBOpf3/uavnAkNOcyr9AR3VRR+98Y8+hScadWCHC8tSfUlgMT0X6oruhDihwotaDk4QXW23SJtf7y1k0uZE2JY0oorrXgKssuI3B72wPW0RHMLy47hAmH4rFa2ISzfRwg/DzFXlxfox3mbrH7dbnTc5fA2zS0Wcxs0KEeMkfwgJ2Nt37LRnqtY9wwaKwxTUOQioAYbprpq971FTx0Bz3Sdd7PsDL+bKog7G/mIMLtQtntYjqTElIIxkURK9vvNO4ItYfXTkWIeCnBgV4E+1y1SSzHDbTzoOasuDIxhdCuUBHeB/qnBiOydatEW4/GU3hf7+vi6Q5f3Zucyjf08ApXk33AB+HJV0zsW5RRrl0k+HXpGit/EGzcBgZJBAyY+F9metQV6LqKSDFLBtIh/W+oLPDNVH3jTiKswdzmEUzo/LSrvScpQ0UG9g1yB4XRLmu59pOji8Kh7gzzTTDi1Sw8ZzEGpOA6rwB7TFFusiJdlUMUROiNUBDnFKx1Y+4TxphnYQ60VRq3Q7EEdTO0IhkIeHKuCcGMBcw==
+`
+
+	var m Manifest
+	err := yaml.Unmarshal([]byte(manifestString), &m)
+	if assert.NoError(t, err) {
+		renderredDep, err := renderDependency(m.Dependencies[0], &m)
+		if assert.NoError(t, err) {
+			assert.True(t, strings.Contains(string(renderredDep), "name: my-redis"), "should render name")
+			assert.True(t, strings.Contains(string(renderredDep), "namespace: hello"), "should render namespace")
 			// fmt.Println(string(renderredDep))
 		}
 	}

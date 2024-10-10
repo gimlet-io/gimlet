@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/gimlet-io/gimlet/pkg/dx"
-	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -99,21 +99,21 @@ func Test_gitopsTemplateAndWrite(t *testing.T) {
 	repoPerEnv := false
 	_, err := gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
-	content, _ := nativeGit.Content(repo, "staging/my-app/deployment.yaml")
+	content, _ := gogit.Content(repo, "staging/my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
-	content, _ = nativeGit.Content(repo, "staging/my-app/release.json")
+	content, _ = gogit.Content(repo, "staging/my-app/release.json")
 	assert.True(t, len(content) > 1)
-	content, _ = nativeGit.Content(repo, "staging/release.json")
+	content, _ = gogit.Content(repo, "staging/release.json")
 	assert.True(t, len(content) > 1)
 
 	repoPerEnv = true
 	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
-	content, _ = nativeGit.Content(repo, "my-app/deployment.yaml")
+	content, _ = gogit.Content(repo, "my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
-	content, _ = nativeGit.Content(repo, "my-app/release.json")
+	content, _ = gogit.Content(repo, "my-app/release.json")
 	assert.True(t, len(content) > 1)
-	content, _ = nativeGit.Content(repo, "release.json")
+	content, _ = gogit.Content(repo, "release.json")
 	assert.True(t, len(content) > 1)
 }
 
@@ -169,9 +169,9 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 	_, err = gitopsTemplateAndWrite(repo, a.Environments[0], &dx.Release{}, "", repoPerEnv, nil, nil, nil, nil)
 	assert.Nil(t, err)
 
-	content, _ := nativeGit.Content(repo, "my-app/deployment.yaml")
+	content, _ := gogit.Content(repo, "my-app/deployment.yaml")
 	assert.True(t, len(content) > 100)
-	content, _ = nativeGit.Content(repo, "my-app/pvc.yaml")
+	content, _ = gogit.Content(repo, "my-app/pvc.yaml")
 	assert.True(t, len(content) > 100)
 
 	withoutVolume := `
@@ -207,7 +207,7 @@ func Test_gitopsTemplateAndWrite_deleteStaleFiles(t *testing.T) {
 	_, err = gitopsTemplateAndWrite(repo, b.Environments[0], &dx.Release{}, "", false, nil, nil, nil, nil)
 	assert.Nil(t, err)
 
-	content, _ = nativeGit.Content(repo, "staging/my-app/pvc.yaml")
+	content, _ = gogit.Content(repo, "staging/my-app/pvc.yaml")
 	assert.Equal(t, content, "")
 }
 
@@ -470,7 +470,7 @@ func Test_revertTo(t *testing.T) {
 		SHAs[2],
 	)
 	assert.Nil(t, err)
-	content, _ := nativeGit.Content(repo, "staging/my-app/file")
+	content, _ := gogit.Content(repo, "staging/my-app/file")
 	assert.Equal(t, "1\n", content)
 
 	SHAs = []string{}
@@ -490,7 +490,7 @@ func Test_revertTo(t *testing.T) {
 		SHAs[4],
 	)
 	assert.Nil(t, err)
-	content, _ = nativeGit.Content(repo, "staging/my-app/file")
+	content, _ = gogit.Content(repo, "staging/my-app/file")
 	assert.Equal(t, "1\n", content)
 
 	err = revertTo(
@@ -502,12 +502,12 @@ func Test_revertTo(t *testing.T) {
 		SHAs[5],
 	)
 	assert.Nil(t, err)
-	content, _ = nativeGit.Content(repo, "staging/my-app/file")
+	content, _ = gogit.Content(repo, "staging/my-app/file")
 	assert.Equal(t, "0\n", content)
 }
 
 func initHistory(repo *git.Repository) {
-	sha, _ := nativeGit.CommitFilesToGit(
+	sha, _ := gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `0`,
@@ -518,7 +518,7 @@ func initHistory(repo *git.Repository) {
 		"0st commit",
 	)
 	fmt.Printf("%s - %s\n", sha, "0")
-	sha, _ = nativeGit.CommitFilesToGit(
+	sha, _ = gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `1`,
@@ -529,7 +529,7 @@ func initHistory(repo *git.Repository) {
 		"1st commit",
 	)
 	fmt.Printf("%s - %s\n", sha, "1")
-	sha, _ = nativeGit.CommitFilesToGit(
+	sha, _ = gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `2`,
@@ -540,7 +540,7 @@ func initHistory(repo *git.Repository) {
 		"2nd commit",
 	)
 	fmt.Printf("%s - %s\n", sha, "2")
-	sha, _ = nativeGit.CommitFilesToGit(
+	sha, _ = gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `3`,

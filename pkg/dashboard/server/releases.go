@@ -21,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
@@ -473,7 +474,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		if envFromStore.RepoPerEnv {
 			kustomizationFilePath = filepath.Join("flux", fmt.Sprintf("kustomization-%s.yaml", app))
 		}
-		err := nativeGit.DelFile(repo, kustomizationFilePath)
+		err := gogit.DelFile(repo, kustomizationFilePath)
 		if err != nil {
 			logrus.Errorf("cannot delete kustomization file: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -481,14 +482,14 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = nativeGit.DelDir(repo, path)
+	err = gogit.DelDir(repo, path)
 	if err != nil {
 		logrus.Errorf("cannot delete release: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := gogit.NothingToCommit(repo)
 	if err != nil {
 		logrus.Errorf("cannot determine git status: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -501,7 +502,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet] %s/%s deleted by %s", env, app, user.Login)
-	gitopsCommitSha, err := nativeGit.Commit(repo, gitMessage)
+	gitopsCommitSha, err := gogit.Commit(repo, gitMessage)
 	if err != nil {
 		logrus.Errorf("could not delete: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -521,7 +522,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	if owner == "builtin" {
 		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Token, config.GitHost, envFromStore.AppsRepo)
 	}
-	err = nativeGit.NativePushWithToken(
+	err = gogit.NativePushWithToken(
 		url,
 		pathToCleanUp,
 		head.Name().Short(),

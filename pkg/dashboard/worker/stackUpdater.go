@@ -15,6 +15,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet/pkg/stack"
 	"github.com/sirupsen/logrus"
@@ -100,7 +101,7 @@ func updateGimletStack(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return fmt.Errorf("cannot get head branch: %s", err)
 	}
@@ -110,7 +111,7 @@ func updateGimletStack(
 		stackPath = "stack.yaml"
 	}
 
-	yamlString, err := nativeGit.RemoteContentOnBranchWithoutCheckout(repo, headBranch, stackPath)
+	yamlString, err := gogit.RemoteContentOnBranchWithoutCheckout(repo, headBranch, stackPath)
 	if err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func updateGimletStack(
 		return fmt.Errorf("cannot generate branch name: %s", err)
 	}
 
-	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+	err = gogit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 	if err != nil {
 		return fmt.Errorf("cannot checkout branch: %s", err)
 	}
@@ -157,7 +158,7 @@ func updateGimletStack(
 		return fmt.Errorf("could not generate and write files: %s", err.Error())
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := gogit.NothingToCommit(repo)
 	if err != nil {
 		return fmt.Errorf("cannot get git state: %s", err)
 	}

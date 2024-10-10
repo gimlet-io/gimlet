@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
+	terraformv1 "github.com/flux-iac/tofu-controller/api/v1alpha2"
 	"github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	terraformv1 "github.com/weaveworks/tf-controller/api/v1alpha2"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	giturl "github.com/whilp/git-urls"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,6 +87,12 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 	switch d.Kind {
 	case "terraform":
 		dat = dat["spec"].(map[string]interface{})
+		if _, ok := dat["module"]; !ok {
+			return fmt.Errorf("module field is mandatory in dependency.spec for kind: plain")
+		}
+		if _, ok := dat["values"]; !ok {
+			return fmt.Errorf("values field is mandatory in dependency.spec for kind: plain")
+		}
 		module := dat["module"].(map[string]interface{})
 		tfSpec := TFSpec{
 			Module: Module{
@@ -99,7 +107,26 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 			tfSpec.Secret = val.(string)
 		}
 		d.Spec = tfSpec
+	case "plain":
+		dat, ok := dat["spec"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("could not parse dependency.spec in gimlet manifest")
+		}
+		if _, ok := dat["url"]; !ok {
+			// return fmt.Errorf("url field is mandatory in dependency.spec for kind: plain")
+			d.Spec = map[string]interface{}{}
+			return nil
+		}
+		if _, ok := dat["values"]; !ok {
+			return fmt.Errorf("values field is mandatory in dependency.spec for kind: plain")
+		}
+		spec := PlainSpec{
+			Url:    dat["url"].(string),
+			Values: dat["values"].(map[string]interface{}),
+		}
+		d.Spec = spec
 	}
+
 	return nil
 }
 
@@ -109,9 +136,21 @@ type TFSpec struct {
 	Secret string                 `yaml:"secret" json:"secret"`
 }
 
+type PlainSpec struct {
+	Url    string                 `yaml:"url" json:"url"`
+	Values map[string]interface{} `yaml:"values" json:"values"`
+}
+
 type Module struct {
 	Url    string `yaml:"url" json:"url"`
 	Secret string `yaml:"secret,omitempty" json:"secret,omitempty"`
+}
+
+type PlainModule struct {
+	URL      string `json:"url"`
+	Schema   string `json:"schema"`
+	UISchema string `json:"uiSchema"`
+	Template string `json:"-"`
 }
 
 func (m *Manifest) PrepPreview(ingressHost string) {
@@ -252,69 +291,119 @@ func (m *Manifest) Render() (string, error) {
 }
 
 func renderDependency(dependency Dependency, manifest *Manifest) (string, error) {
-	depString := ""
 	switch dependency.Kind {
 	case "terraform":
-		tfSpec := dependency.Spec.(TFSpec)
-
-		gitAddress, err := giturl.Parse(tfSpec.Module.Url)
-		if err != nil {
-			return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
-		}
-		moduleUrl := strings.ReplaceAll(tfSpec.Module.Url, gitAddress.RawQuery, "")
-		moduleUrl = strings.ReplaceAll(moduleUrl, "?", "")
-
-		params, _ := url.ParseQuery(gitAddress.RawQuery)
-		branch := ""
-		if v, found := params["branch"]; found {
-			branch = v[0]
-		}
-		tag := ""
-		if v, found := params["tag"]; found {
-			tag = v[0]
-		}
-		sha := ""
-		if v, found := params["sha"]; found {
-			sha = v[0]
-		}
-		path := ""
-		if v, found := params["path"]; found {
-			path = v[0]
-		}
-
-		gitRepoBytes, err := renderTFGitRepo(
-			manifest.App+"-"+dependency.Name,
-			manifest.Namespace,
-			moduleUrl,
-			branch,
-			tag,
-			sha,
-			tfSpec.Module.Secret,
-		)
-		if err != nil {
-			return "", err
-		}
-		depString += "---\n"
-		depString += string(gitRepoBytes)
-
-		tfKindBytes, err := renderTFKind(
-			manifest.App+"-"+dependency.Name,
-			manifest.Namespace,
-			moduleUrl,
-			branch,
-			tag,
-			sha,
-			path,
-			tfSpec.Secret,
-			tfSpec.Values,
-		)
-		if err != nil {
-			return "", err
-		}
-		depString += "---\n"
-		depString += string(tfKindBytes)
-
+		return renderTFDependency(dependency, manifest)
+	case "plain":
+		return renderPlainDependency(dependency, manifest)
+	default:
+		return "", fmt.Errorf("unknown dependency kind: %s", dependency.Kind)
 	}
+}
+
+func renderTFDependency(dependency Dependency, manifest *Manifest) (string, error) {
+	depString := ""
+	tfSpec := dependency.Spec.(TFSpec)
+
+	gitAddress, err := giturl.Parse(tfSpec.Module.Url)
+	if err != nil {
+		return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
+	}
+	moduleUrl := strings.ReplaceAll(tfSpec.Module.Url, gitAddress.RawQuery, "")
+	moduleUrl = strings.ReplaceAll(moduleUrl, "?", "")
+
+	params, _ := url.ParseQuery(gitAddress.RawQuery)
+	branch := ""
+	if v, found := params["branch"]; found {
+		branch = v[0]
+	}
+	tag := ""
+	if v, found := params["tag"]; found {
+		tag = v[0]
+	}
+	sha := ""
+	if v, found := params["sha"]; found {
+		sha = v[0]
+	}
+	path := ""
+	if v, found := params["path"]; found {
+		path = v[0]
+	}
+
+	gitRepoBytes, err := renderTFGitRepo(
+		manifest.App+"-"+dependency.Name,
+		manifest.Namespace,
+		moduleUrl,
+		branch,
+		tag,
+		sha,
+		tfSpec.Module.Secret,
+	)
+	if err != nil {
+		return "", err
+	}
+	depString += "---\n"
+	depString += string(gitRepoBytes)
+
+	tfKindBytes, err := renderTFKind(
+		manifest.App+"-"+dependency.Name,
+		manifest.Namespace,
+		path,
+		tfSpec.Secret,
+		tfSpec.Values,
+	)
+	if err != nil {
+		return "", err
+	}
+	depString += "---\n"
+	depString += string(tfKindBytes)
+	return depString, nil
+}
+
+func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, error) {
+	depString := ""
+	spec := dependency.Spec.(PlainSpec)
+
+	gitAddress, err := giturl.Parse(spec.Url)
+	if err != nil {
+		return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
+	}
+	params, _ := url.ParseQuery(gitAddress.RawQuery)
+	path := ""
+	if v, found := params["path"]; found {
+		path = v[0]
+	}
+
+	repo, err := gogit.FlexibleURLCloneToMemory(spec.Url)
+	if err != nil {
+		return "", fmt.Errorf("cannot clone module on %s: %s", spec.Url, err)
+	}
+
+	templateYaml, err := gogit.Content(repo, filepath.Join(path, "template.yaml"))
+	if err != nil {
+		return "", fmt.Errorf("cannot get folder %s: %s", path, err)
+	}
+
+	templates, err := template.New(path).Funcs(sprig.TxtFuncMap()).Parse(templateYaml)
+	if err != nil {
+		return "", err
+	}
+
+	var templated bytes.Buffer
+	vars := map[string]interface{}{
+		"name":      dependency.Name,
+		"app":       manifest.App,
+		"namespace": manifest.Namespace,
+	}
+	for k, v := range spec.Values {
+		vars[k] = v
+	}
+	err = templates.Execute(&templated, vars)
+	if err != nil {
+		return "", err
+	}
+
+	depString += templated.String()
 	return depString, nil
 }
 
@@ -362,10 +451,6 @@ func renderTFGitRepo(
 func renderTFKind(
 	name string,
 	namespace string,
-	url string,
-	branch string,
-	tag string,
-	sha string,
 	path string,
 	secretName string,
 	vars map[string]interface{},
@@ -392,14 +477,17 @@ func renderTFKind(
 			WriteOutputsToSecret: &terraformv1.WriteOutputsToSecretSpec{
 				Name: name + "-output",
 			},
-			VarsFrom: []terraformv1.VarsReference{
-				{
-					Kind: "Secret",
-					Name: secretName,
-				},
-			},
 			Vars: []terraformv1.Variable{},
 		},
+	}
+
+	if secretName != "" {
+		terraform.Spec.VarsFrom = []terraformv1.VarsReference{
+			{
+				Kind: "Secret",
+				Name: secretName,
+			},
+		}
 	}
 
 	for k, v := range vars {

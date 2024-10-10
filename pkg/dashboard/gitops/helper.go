@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gimlet-io/gimlet/pkg/dx"
-	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -60,7 +60,7 @@ func Releases(
 	if err != nil {
 		return nil, err
 	}
-	commits = nativeGit.NewCommitDirIterFromIter(path, commits, repo)
+	commits = gogit.NewCommitDirIterFromIter(path, commits, repo)
 
 	err = commits.ForEach(func(c *object.Commit) error {
 		if limit != -1 && len(releases) >= limit {
@@ -276,7 +276,7 @@ func HasBeenReverted(
 	if err != nil {
 		return false, errors.WithMessage(err, "could not walk commits")
 	}
-	commits = nativeGit.NewCommitDirIterFromIter(path, commits, repo)
+	commits = gogit.NewCommitDirIterFromIter(path, commits, repo)
 
 	hasBeenReverted := false
 	err = commits.ForEach(func(c *object.Commit) error {
@@ -350,7 +350,7 @@ func Manifests(
 	repo *git.Repository,
 	sha string,
 ) ([]*dx.Manifest, error) {
-	files, err := nativeGit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
+	files, err := gogit.RemoteFolderOnHashWithoutCheckout(repo, sha, ".gimlet")
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
 			return nil, nil

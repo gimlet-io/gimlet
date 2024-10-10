@@ -76,11 +76,13 @@ func (h *AgentHub) TriggerImageBuild(imageBuildId string, imageBuildRequest *dx.
 	}
 }
 
-func (h *AgentHub) StreamPodLogsSend(namespace string, deployment string) {
+func (h *AgentHub) StreamPodLogsSend(namespace string, deployment string, pod string, container string) {
 	podlogsRequest := map[string]interface{}{
 		"action":         "podLogs",
 		"namespace":      namespace,
 		"deploymentName": deployment,
+		"podName":        pod,
+		"containerName":  container,
 	}
 
 	podlogsRequestString, err := json.Marshal(podlogsRequest)
