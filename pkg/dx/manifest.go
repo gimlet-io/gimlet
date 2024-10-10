@@ -87,6 +87,12 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 	switch d.Kind {
 	case "terraform":
 		dat = dat["spec"].(map[string]interface{})
+		if _, ok := dat["module"]; !ok {
+			return fmt.Errorf("module field is mandatory in dependency.spec for kind: plain")
+		}
+		if _, ok := dat["values"]; !ok {
+			return fmt.Errorf("values field is mandatory in dependency.spec for kind: plain")
+		}
 		module := dat["module"].(map[string]interface{})
 		tfSpec := TFSpec{
 			Module: Module{
@@ -106,20 +112,19 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 		if !ok {
 			return fmt.Errorf("could not parse dependency.spec in gimlet manifest")
 		}
-		module := dat["module"].(map[string]interface{})
-		tfSpec := TFSpec{
-			Module: Module{
-				Url: module["url"].(string),
-			},
+		if _, ok := dat["url"]; !ok {
+			// return fmt.Errorf("url field is mandatory in dependency.spec for kind: plain")
+			d.Spec = map[string]interface{}{}
+			return nil
+		}
+		if _, ok := dat["values"]; !ok {
+			return fmt.Errorf("values field is mandatory in dependency.spec for kind: plain")
+		}
+		spec := PlainSpec{
+			Url:    dat["url"].(string),
 			Values: dat["values"].(map[string]interface{}),
 		}
-		if val, ok := module["secret"]; ok {
-			tfSpec.Module.Secret = val.(string)
-		}
-		if val, ok := dat["secret"]; ok {
-			tfSpec.Secret = val.(string)
-		}
-		d.Spec = tfSpec
+		d.Spec = spec
 	}
 
 	return nil
@@ -129,6 +134,11 @@ type TFSpec struct {
 	Module Module                 `yaml:"module" json:"module"`
 	Values map[string]interface{} `yaml:"values" json:"values"`
 	Secret string                 `yaml:"secret" json:"secret"`
+}
+
+type PlainSpec struct {
+	Url    string                 `yaml:"url" json:"url"`
+	Values map[string]interface{} `yaml:"values" json:"values"`
 }
 
 type Module struct {
@@ -352,9 +362,9 @@ func renderTFDependency(dependency Dependency, manifest *Manifest) (string, erro
 
 func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, error) {
 	depString := ""
-	tfSpec := dependency.Spec.(TFSpec)
+	spec := dependency.Spec.(PlainSpec)
 
-	gitAddress, err := giturl.Parse(tfSpec.Module.Url)
+	gitAddress, err := giturl.Parse(spec.Url)
 	if err != nil {
 		return "", fmt.Errorf("cannot parse dependency's git address: %s", err)
 	}
@@ -364,9 +374,9 @@ func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, e
 		path = v[0]
 	}
 
-	repo, err := gogit.FlexibleURLCloneToMemory(tfSpec.Module.Url)
+	repo, err := gogit.FlexibleURLCloneToMemory(spec.Url)
 	if err != nil {
-		return "", fmt.Errorf("cannot clone module on %s: %s", tfSpec.Module.Url, err)
+		return "", fmt.Errorf("cannot clone module on %s: %s", spec.Url, err)
 	}
 
 	templateYaml, err := gogit.Content(repo, filepath.Join(path, "template.yaml"))
@@ -385,7 +395,7 @@ func renderPlainDependency(dependency Dependency, manifest *Manifest) (string, e
 		"app":       manifest.App,
 		"namespace": manifest.Namespace,
 	}
-	for k, v := range tfSpec.Values {
+	for k, v := range spec.Values {
 		vars[k] = v
 	}
 	err = templates.Execute(&templated, vars)

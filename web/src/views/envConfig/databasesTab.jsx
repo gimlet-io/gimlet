@@ -50,16 +50,13 @@ export function DatabasesTab(props) {
   }
 
   useEffect(() => {
-    console.log(dependencies)
     const rebuiltDependencies = []
     for(const dependency of Object.values(dependencies)) {
       rebuiltDependencies.push({
         name: app+"-"+dependency.title.toLowerCase(),
         kind: "plain",
         spec: {
-          module: {
-            url: dependency.url
-          },
+          url: dependency.url,
           values: dependency.values
         }
       })
@@ -168,8 +165,8 @@ function fromConfigFileDependencies(configfileDependencies, parsedModules){
   const dependencies = {}
   for (const dependency of configfileDependencies) {
     dependencies[uuidv4()] = {
-      url: dependency.spec.module.url,
-      title: parsedModules.find((m) => m.url === dependency.spec.module.url).schema.title,
+      url: dependency.spec.url,
+      title: parsedModules.find((m) => m.url === dependency.spec.url).schema.title,
       values: dependency.spec.values,
     }
   }
