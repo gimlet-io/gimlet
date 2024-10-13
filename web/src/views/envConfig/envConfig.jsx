@@ -418,8 +418,7 @@ export function EnvConfig(props) {
         </div>
         <div className="w-full ml-14">
           {selectedNavigation && selectedNavigation.name === "General"
-            && selectedNavigation.name !== "Containerized Dependencies"
-            && selectedNavigation.name !== "Cloud Dependencies" &&
+            && selectedNavigation.name !== "Databases / Queues / Buckets" &&
             <Generaltab
               config={config}
               action={action}
@@ -437,8 +436,7 @@ export function EnvConfig(props) {
             />
           }
           {selectedNavigation && selectedNavigation.name !== "General"
-            && selectedNavigation.name !== "Containerized Dependencies"
-            && selectedNavigation.name !== "Cloud Dependencies" &&
+            && selectedNavigation.name !== "Databases / Queues / Buckets" &&
             <>
               <div className='w-full card p-6 pb-8'>
                 <HelmUI
@@ -479,23 +477,13 @@ export function EnvConfig(props) {
               }
             </>
           }
-          {selectedNavigation?.name === "Containerized Dependencies" &&
+          {selectedNavigation?.name === "Databases / Queues / Buckets" &&
             <DatabasesTab
               gimletClient={gimletClient}
               store={store}
               app={configFile.app}
               environment={env}
               plainModules={plainModules}
-              configFileDependencies={configFile.dependencies}
-              setConfigFileDependencies={setDependencies}
-            />
-          }
-          {selectedNavigation?.name === "Cloud Dependencies" &&
-            <DatabasesTab
-              gimletClient={gimletClient}
-              store={store}
-              app={configFile.app}
-              environment={env}
               configFileDependencies={configFile.dependencies}
               setConfigFileDependencies={setDependencies}
             />
@@ -657,8 +645,7 @@ export const extractIngressAnnotations = (stackConfig, stackDefinition) => {
 function translateToNavigation(template) {
   const navigation = template.uiSchema.map((elem, idx) => ({ name: elem.metaData.name, href: ref(elem.metaData.name), uiSchemaOrder: idx }))
   navigation.unshift({ name: "General", href: "/general" })
-  navigation.push({ name: "Containerized Dependencies", href: "/containerized-databases" })
-  // navigation.push({name: "Cloud Dependencies", href: "/cloud-databases"})
+  navigation.push({ name: "Databases / Queues / Buckets", href: "/dependencies" })
   return navigation
 }
 
