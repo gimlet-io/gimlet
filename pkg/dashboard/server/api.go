@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 
@@ -318,62 +319,66 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsEnvString)
 }
 
-func plainModules(w http.ResponseWriter, r *http.Request) {
+func downloadFile(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return []byte(""), err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	return body, nil
+}
+
+func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := ctx.Value("config").(*config.Config)
+	cfg := ctx.Value("config").(*config.Config)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	installationToken, _, _ := tokenManager.Token()
 
-	repo, err := gogit.FlexibleURLCloneToMemory(config.PlainModulesURL)
+	catalogBytes, err := downloadFile(cfg.DependencyCatalogURL)
 	if err != nil {
-		logrus.Errorf("cannot get plain modules: %s", err)
+		logrus.Errorf("cannot get dependency catalog: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	headBranch, err := gogit.HeadBranch(repo)
+	var catalog map[string]interface{}
+	err = yaml.Unmarshal(catalogBytes, &catalog)
 	if err != nil {
-		logrus.Errorf("cannot get plain modules: %s", err)
+		logrus.Errorf("cannot unmarshal catalog: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	folders, err := gogit.RemoteFoldersOnBranchWithoutCheckout(repo, headBranch, "")
-	if err != nil {
-		logrus.Errorf("cannot get plain modules: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	plainModules := []*dx.PlainModule{}
-	for _, folder := range folders {
-		fmt.Println(folder)
-		files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, folder)
+	components := []DeploymentTemplate{}
+	for _, component := range catalog["catalog"].([]interface{}) {
+		url := component.(map[string]interface{})["url"].(string)
+		schema, schemaUI, err := dx.ChartSchema(dx.Chart{Name: url}, installationToken)
 		if err != nil {
-			logrus.Errorf("cannot get plain modules: %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			logrus.Warnf("could not get chart schema from %s: %s", url, err)
 		}
-		pm := &dx.PlainModule{URL: config.PlainModulesURL + "?path=" + folder}
-		for path, content := range files {
-			if path == "schema.json" {
-				pm.Schema = content
-			} else if path == "uiSchema.json" {
-				pm.UISchema = content
-			} else if path == "template.yaml" {
-				pm.Template = content
-			}
-		}
-		plainModules = append(plainModules, pm)
+
+		components = append(components, DeploymentTemplate{
+			Reference: config.DefaultChart{Chart: dx.Chart{Repository: url}},
+			Schema:    schema,
+			UISchema:  schemaUI,
+		})
 	}
 
-	modulesString, err := json.Marshal(plainModules)
+	componentsString, err := json.Marshal(components)
 	if err != nil {
-		logrus.Errorf("cannot serialize plain modules: %s", err)
+		logrus.Errorf("cannot serialize dependency catalog: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(200)
-	w.Write([]byte(modulesString))
+	w.Write([]byte(componentsString))
 }
 
 func StackConfig(gitRepoCache *nativeGit.RepoCache, stackYamlPath, infraRepo string) (*dx.StackConfig, error) {
@@ -563,23 +568,7 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 func deploymentTemplates(charts config.DefaultCharts, installationToken string) ([]DeploymentTemplate, error) {
 	var templates []DeploymentTemplate
 	for _, chart := range charts {
-		m := &dx.Manifest{
-			Chart: chart.Chart,
-		}
-
-		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
-		if err != nil {
-			return nil, err
-		}
-
-		var schema interface{}
-		err = json.Unmarshal([]byte(schemaString), &schema)
-		if err != nil {
-			return nil, err
-		}
-
-		var schemaUI interface{}
-		err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
+		schema, schemaUI, err := dx.ChartSchema(chart.Chart, installationToken)
 		if err != nil {
 			return nil, err
 		}

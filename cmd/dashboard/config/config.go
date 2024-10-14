@@ -9,7 +9,7 @@ import (
 )
 
 const DEFAULT_CHARTS = "title=Web application template,description=Deploy any web application. Multiple container image build options available.,name=onechart,repo=https://chart.onechart.dev,version=0.70.0;title=static website template,description=If your build generates static files%2C we will host it in an Nginx container.,name=static-site,repo=https://chart.onechart.dev,version=0.70.0"
-const DEFAULT_PLAIN_MODULES_URL = "https://github.com/gimlet-io/plain-modules.git"
+const DEFAULT_PLAIN_MODULES_URL = "https://raw.githubusercontent.com/gimlet-io/gimlet/refs/heads/move-to-tofu-controller/dependency-catalog.yaml"
 
 // LoadConfig returns the static config from the environment.
 func LoadConfig() (*Config, error) {
@@ -36,8 +36,8 @@ func defaults(c *Config) {
 	if c.DefaultCharts == nil {
 		c.DefaultCharts.Decode(DEFAULT_CHARTS)
 	}
-	if c.PlainModulesURL == "" {
-		c.PlainModulesURL = DEFAULT_PLAIN_MODULES_URL
+	if c.DependencyCatalogURL == "" {
+		c.DependencyCatalogURL = DEFAULT_PLAIN_MODULES_URL
 	}
 	if c.GitSSHAddressFormat == "" {
 		c.GitSSHAddressFormat = "git@github.com:%s.git"
@@ -123,7 +123,7 @@ type Config struct {
 	Instance string `envconfig:"INSTANCE"`
 	License  string `envconfig:"LICENSE"`
 
-	PlainModulesURL string `envconfig:"PLAIN_MODULES_URL"`
+	DependencyCatalogURL string `envconfig:"DEPENDENCY_CATALOG_URL"`
 }
 
 // Logging provides the logging configuration.

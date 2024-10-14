@@ -7,17 +7,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export function DatabasesTab(props) {
   const { gimletClient, store } = props;
-  const { app, environment, plainModules } = props;
-  const parsedModules = plainModules.map((m) => {
-    return {
-      ...m,
-      schema: JSON.parse(m.schema),
-      uiSchema: JSON.parse(m.uiSchema),
-    }
-  })
+  const { app, environment, dependencyCatalog } = props;
   const { configFileDependencies, setConfigFileDependencies } = props;
   const [ selectedModule, setSelectedModule ] = useState()
-  const [ dependencies, setDependencies ] = useState(fromConfigFileDependencies(configFileDependencies, parsedModules))
+  const [ dependencies, setDependencies ] = useState(fromConfigFileDependencies(configFileDependencies))
 
   const validationCallback = (id, validationErrors) => {
     if(validationErrors) {
@@ -26,8 +19,6 @@ export function DatabasesTab(props) {
   }
 
   const setDependencyValues = (id, values, nonDefaultValues) => {
-    console.log(id, nonDefaultValues)
-
     setDependencies(produce(dependencies, draft => {
       draft[id].values = nonDefaultValues
     }))
@@ -36,8 +27,8 @@ export function DatabasesTab(props) {
   const addDependency = () => {
     setDependencies(produce(dependencies, draft => {
       draft[uuidv4()] = {
-        url: selectedModule.url,
-        title: selectedModule.schema.title,
+        name: app + "-" + selectedModule.schema.title,
+        chart: selectedModule.reference.chart,
         values: {}
       }
     }))
@@ -52,14 +43,7 @@ export function DatabasesTab(props) {
   useEffect(() => {
     const rebuiltDependencies = []
     for(const dependency of Object.values(dependencies)) {
-      rebuiltDependencies.push({
-        name: app+"-"+dependency.title.toLowerCase(),
-        kind: "plain",
-        spec: {
-          url: dependency.url,
-          values: dependency.values
-        }
-      })
+      rebuiltDependencies.push(dependency)
     }
     setConfigFileDependencies(rebuiltDependencies)
   }, [dependencies]);
@@ -68,13 +52,13 @@ export function DatabasesTab(props) {
     <div className='space-y-12'>
       <div className='flex space-x-2'>
         <div className='flex-grow'>
-          <ModuleSelector parsedModules={parsedModules} setSelectedModule={setSelectedModule} />
+          <ModuleSelector dependencyCatalog={dependencyCatalog} setSelectedModule={setSelectedModule} />
         </div>
         <button onClick={addDependency} className="primaryButton px-8">Add</button>
       </div>
       {Object.keys(dependencies).map((id) => {
         const dependency = dependencies[id]
-        const module = plainModules.find(m => m.url == dependency.url)
+        const module = dependencyCatalog.find(m => m.url == dependency.url)
 
         return (
           <div key={id} className='relative'>
@@ -96,19 +80,19 @@ export function DatabasesTab(props) {
 }
 
 export default function ModuleSelector(props) {
-  const { setSelectedModule, parsedModules } = props
+  const { setSelectedModule, dependencyCatalog } = props
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(parsedModules[0].schema.title)
+  const [selected, setSelected] = useState(dependencyCatalog[0].schema.title)
 
   const filteredModules =
     query === ''
-      ? parsedModules
-      : parsedModules.filter((module) => {
+      ? dependencyCatalog
+      : dependencyCatalog.filter((module) => {
           return module.schema.title.toLowerCase().includes(query.toLowerCase())
         })
 
   useEffect(() => {
-    setSelectedModule(parsedModules.find(m => m.schema.title === selected))
+    setSelectedModule(dependencyCatalog.find(m => m.schema.title === selected))
   }, [selected]);
 
   return (
@@ -157,18 +141,14 @@ export default function ModuleSelector(props) {
   )
 }
 
-function fromConfigFileDependencies(configfileDependencies, parsedModules){
+function fromConfigFileDependencies(configfileDependencies){
   if (!configfileDependencies) {
     return {}
   }
 
   const dependencies = {}
   for (const dependency of configfileDependencies) {
-    dependencies[uuidv4()] = {
-      url: dependency.spec.url,
-      title: parsedModules.find((m) => m.url === dependency.spec.url).schema.title,
-      values: dependency.spec.values,
-    }
+    dependencies[uuidv4()] = dependency
   }
 
   return dependencies

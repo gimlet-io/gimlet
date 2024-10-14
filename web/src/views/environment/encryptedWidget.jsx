@@ -12,7 +12,7 @@ export function EncryptedWidget(props) {
       gimletClient.seal(env, plainTextValue)
         .then(data => {
           onChange(data)
-        }, () => {
+        }, (err) => {
           toast(<Error header="Failed to encrypt" message={`${err.statusText}, is the environment connected?`} />, {
             className: "bg-red-50 shadow-lg p-2",
             bodyClassName: "p-2",

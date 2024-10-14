@@ -1085,7 +1085,7 @@ func gitopsTemplateAndWrite(
 	}
 	if strings.Contains(manifest.Chart.Name, ".git") {
 		t0 := time.Now().UnixNano()
-		tmpChartDir, err := dx.CloneChartFromRepo(manifest, tokenForChartClone)
+		tmpChartDir, err := dx.CloneChartFromRepo(manifest.Chart, tokenForChartClone)
 		if err != nil {
 			return "", fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}

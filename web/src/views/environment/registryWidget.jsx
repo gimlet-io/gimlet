@@ -22,7 +22,7 @@ export function RegistryWidget(props) {
       gimletClient.seal(env, JSON.stringify(configjson))
         .then(data => {
           onChange({ "login": login, "url": url, "encryptedDockerconfigjson": data })
-        }, () => {
+        }, (err) => {
           toast(<Error header="Failed to encrypt" message={`${err.statusText}, is the environment connected?`} />, {
             className: "bg-red-50 shadow-lg p-2",
             bodyClassName: "p-2",

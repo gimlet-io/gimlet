@@ -27,7 +27,7 @@ export function EnvConfig(props) {
   const reduxState = props.store.getState();
   const [scmUrl, setScmUrl] = useState(reduxState.settings.scmUrl)
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
-  const [plainModules, setPlainModules] = useState(reduxState.fileInfos)
+  const [dependencyCatalog, setDependencyCatalog] = useState([])
   const [configFile, setConfigFile] = useState()
   const [savedConfigFile, setSavedConfigFile] = useState()
   const [templates, setTemplates] = useState()
@@ -96,9 +96,9 @@ export function EnvConfig(props) {
         }, () => {/* Generic error handler deals with it */
         });
     }
-    gimletClient.getPlainModules()
+    gimletClient.getDependencyCatalog()
       .then(data => {
-        setPlainModules(data)
+        setDependencyCatalog(data)
       }, () => {/* Generic error handler deals with it */ });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -483,7 +483,7 @@ export function EnvConfig(props) {
               store={store}
               app={configFile.app}
               environment={env}
-              plainModules={plainModules}
+              dependencyCatalog={dependencyCatalog}
               configFileDependencies={configFile.dependencies}
               setConfigFileDependencies={setDependencies}
             />
