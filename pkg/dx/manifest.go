@@ -181,18 +181,6 @@ func (m *Manifest) Render() (string, error) {
 		return templatedManifests, fmt.Errorf("no chart or raw yaml has been found")
 	}
 
-	// Check for patches
-	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
-		templatedManifests, err = ApplyPatches(
-			m.StrategicMergePatches,
-			m.Json6902Patches,
-			templatedManifests,
-		)
-		if err != nil {
-			return "", fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
-		}
-	}
-
 	for _, dependency := range m.Dependencies {
 		renderredDep, err := templateChart(
 			dependency.Name,
@@ -204,6 +192,18 @@ func (m *Manifest) Render() (string, error) {
 			return templatedManifests, fmt.Errorf("cannot render dependency %s", err)
 		}
 		templatedManifests += renderredDep
+	}
+
+	// Check for patches
+	if m.StrategicMergePatches != "" || len(m.Json6902Patches) > 0 {
+		templatedManifests, err = ApplyPatches(
+			m.StrategicMergePatches,
+			m.Json6902Patches,
+			templatedManifests,
+		)
+		if err != nil {
+			return "", fmt.Errorf("cannot apply Kustomize patches to chart %s", err)
+		}
 	}
 
 	return templatedManifests, nil
