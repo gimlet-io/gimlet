@@ -27,7 +27,7 @@ export function DatabasesTab(props) {
   const addDependency = () => {
     setDependencies(produce(dependencies, draft => {
       draft[uuidv4()] = {
-        name: app + "-" + selectedModule.schema.title,
+        name: `${app}-${selectedModule.schema.title}`.toLowerCase(),
         chart: selectedModule.reference.chart,
         values: {}
       }

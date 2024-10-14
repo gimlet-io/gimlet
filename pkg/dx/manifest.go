@@ -165,7 +165,11 @@ func (m *Manifest) Render() (string, error) {
 	var templatedManifests string
 	var err error
 	if m.Chart.Name != "" {
-		templatedManifests, err = templateChart(m)
+		templatedManifests, err = templateChart(
+			m.App, m.Namespace,
+			m.Chart,
+			m.Values,
+		)
 		if err != nil {
 			return templatedManifests, fmt.Errorf("cannot template Helm chart %s", err)
 		}
@@ -190,7 +194,12 @@ func (m *Manifest) Render() (string, error) {
 	}
 
 	for _, dependency := range m.Dependencies {
-		renderredDep, err := renderDependency(dependency)
+		renderredDep, err := templateChart(
+			dependency.Name,
+			m.Namespace,
+			dependency.Chart,
+			dependency.Values,
+		)
 		if err != nil {
 			return templatedManifests, fmt.Errorf("cannot render dependency %s", err)
 		}
@@ -198,10 +207,6 @@ func (m *Manifest) Render() (string, error) {
 	}
 
 	return templatedManifests, nil
-}
-
-func renderDependency(dependency Dependency) (string, error) {
-	return "", nil
 }
 
 func (c *Cleanup) ResolveVars(vars map[string]string) error {

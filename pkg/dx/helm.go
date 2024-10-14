@@ -58,11 +58,12 @@ func SplitHelmOutput(input map[string]string) map[string]string {
 
 // CloneChartFromRepo returns the chart location of the specified chart
 func CloneChartFromRepo(chart Chart, token string) (string, error) {
-	gitAddress, err := giturl.Parse(chart.Name)
+	gitAddress, err := giturl.Parse(chart.Repository)
 	if err != nil {
 		return "", fmt.Errorf("cannot parse chart's git address: %s", err)
 	}
-	gitUrl := strings.ReplaceAll(chart.Name, gitAddress.RawQuery, "")
+
+	gitUrl := strings.ReplaceAll(chart.Repository, gitAddress.RawQuery, "")
 	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
 
 	tmpChartDir, err := ioutil.TempDir("", "gimlet-git-chart")
@@ -150,36 +151,44 @@ func ChartSchema(chart Chart, installationToken string) (interface{}, interface{
 	return schema, schemaUI, nil
 }
 
-func templateChart(m *Manifest) (string, error) {
-	client, settings := helmClient(m.App, m.Namespace, m.Chart)
-	chartFromManifest, err := loadChartFromManifest(m.Chart, client, settings, "")
+func templateChart(
+	app string, namespace string,
+	chart Chart,
+	values map[string]interface{},
+) (string, error) {
+	client, settings := helmClient(app, namespace, chart)
+	chartFromManifest, err := loadChartFromManifest(chart, client, settings, "")
 	if err != nil {
 		return "", err
 	}
 
-	rel, err := client.Run(chartFromManifest, m.Values)
+	rel, err := client.Run(chartFromManifest, values)
 	if err != nil {
 		return "", err
 	}
 
 	return rel.Manifest, err
-
 }
 
 func loadChartFromManifest(chart Chart, client *action.Install, settings *helmCLI.EnvSettings, token string) (*chart.Chart, error) {
-	if chart.Name == "" {
+	if chart.Name == "" && chart.Repository == "" {
 		return nil, nil
 	}
 
 	if strings.HasPrefix(chart.Name, "git@") ||
-		strings.Contains(chart.Name, ".git") { // for https:// git urls
+		strings.Contains(chart.Name, ".git") {
+		chart.Repository = chart.Name // backwards compatibility
+		chart.Name = ""               // backwards compatibility
+	}
+
+	if strings.HasPrefix(chart.Repository, "git@") ||
+		strings.Contains(chart.Repository, ".git") { // for https:// git urls
 		tmpChartDir, err := CloneChartFromRepo(chart, token)
 		if err != nil {
 			return nil, fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
 		chart.Name = tmpChartDir
 		defer os.RemoveAll(tmpChartDir)
-
 	}
 
 	cp, err := client.ChartPathOptions.LocateChart(chart.Name, settings)
