@@ -20,14 +20,14 @@ export function DatabasesTab(props) {
 
   const setDependencyValues = (id, values, nonDefaultValues) => {
     setDependencies(produce(dependencies, draft => {
-      draft[id].values = nonDefaultValues
+      draft[id].values = values
     }))
   }
 
   const addDependency = () => {
     setDependencies(produce(dependencies, draft => {
       draft[uuidv4()] = {
-        name: `${app}-${selectedModule.schema.title}`.toLowerCase(),
+        name: `${app}-${selectedModule.schema["$id"].substring(1)}`.toLowerCase(),
         chart: selectedModule.reference.chart,
         values: {}
       }
@@ -58,7 +58,7 @@ export function DatabasesTab(props) {
       </div>
       {Object.keys(dependencies).map((id) => {
         const dependency = dependencies[id]
-        const module = dependencyCatalog.find(m => m.url == dependency.url)
+        const module = dependencyCatalog.find(m => m.reference.chart.repository === dependency.chart.repository)
 
         return (
           <div key={id} className='relative'>
@@ -82,7 +82,7 @@ export function DatabasesTab(props) {
 export default function ModuleSelector(props) {
   const { setSelectedModule, dependencyCatalog } = props
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(dependencyCatalog[0].schema.title)
+  const [selected, setSelected] = useState(dependencyCatalog.length > 0 ? dependencyCatalog[0].schema.title : "")
 
   const filteredModules =
     query === ''
