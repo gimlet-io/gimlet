@@ -19,6 +19,7 @@ export default function Repo(props) {
 
   const reduxState = store.getState();
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
+  const [fluxState, setFluxState] = useState(reduxState.fluxState)
   const [rolloutHistory, setRolloutHistory] = useState(reduxState.rolloutHistory)
   const [envConfigs, setEnvConfigs] = useState(reduxState.envConfigs[repoName])
   const [settings, setSettings] = useState(reduxState.settings)
@@ -35,6 +36,7 @@ export default function Repo(props) {
   store.subscribe(() => {
     const reduxState = store.getState();
     setConnectedAgents(reduxState.connectedAgents)
+    setFluxState(reduxState.fluxState)
     setRolloutHistory(reduxState.rolloutHistory)
     setEnvConfigs(reduxState.envConfigs[repoName])
     setEnvs(reduxState.envs)
@@ -153,6 +155,7 @@ export default function Repo(props) {
                     key={env.name}
                     env={env}
                     connectedAgents={connectedAgents}
+                    fluxState={fluxState}
                     repoRolloutHistory={repoRolloutHistory}
                     envConfigs={envConfigs[env.name]}
                     rollback={(env, app, rollbackTo) => {

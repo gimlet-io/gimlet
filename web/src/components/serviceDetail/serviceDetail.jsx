@@ -17,11 +17,15 @@ import { Describe } from '../../views/footer/capacitor/Describe';
 import { ArrowTopRightOnSquareIcon, LinkIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import { InProgress, Success, Error } from '../../popUpWindow';
+import { ReadyWidget } from '../../views/footer/capacitor/ReadyWidget'
 
 function ServiceDetail(props) {
   const { store, gimletClient } = props;
   const { ephemeralEnv, envName, builtInEnv } = props;
-  const { stack, rolloutHistory, rollback, config, fileName, releaseHistorySinceDays, scmUrl, serviceAlerts } = props;
+  const { stack, tfResources, config } = props
+  const { rolloutHistory, releaseHistorySinceDays } = props
+  const { fileName, scmUrl, serviceAlerts, rollback } = props
+
   const ref = useRef(null);
   const posthog = usePostHog()
   const [pullRequests, setPullRequests] = useState()
@@ -115,6 +119,7 @@ function ServiceDetail(props) {
   }
 
   const deployment = stack.deployment;
+  const tfDependencies = tfResources?.filter(r => r.metadata.annotations["gimlet.io/belongs-to"] === config.app)
 
   let hostPort = "<host-port>"
   let appPort = "<app-port>"
@@ -288,6 +293,17 @@ function ServiceDetail(props) {
               <span className="pl-2 text-sm font-normal">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</span>
             </p>
           </div>
+          {tfDependencies && tfDependencies.length > 0 &&
+          <div>
+            <p className="serviceCardLabel">Terraform Dependencies</p>
+            {tfDependencies.map((d) =>
+              <div key={d.name} className='text-xs font-mono flex'>
+                <span className='pl-4 -mt-0.5'><ReadyWidget resource={d} displayMessage={false} /></span>
+                {d.metadata.name}
+              </div>)
+            }
+          </div>
+          }
           </>
           }
           {stack.osca && Object.keys(stack.osca.links).length !== 0 &&

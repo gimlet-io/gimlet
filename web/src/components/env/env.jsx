@@ -4,7 +4,7 @@ import { InformationCircleIcon } from '@heroicons/react/20/solid';
 
 export function Env(props) {
   const { store, gimletClient } = props
-  const { env, connectedAgents, repoRolloutHistory, envConfigs, rollback, fileInfos } = props;
+  const { env, connectedAgents, fluxState, repoRolloutHistory, envConfigs, rollback, fileInfos } = props;
   const { releaseHistorySinceDays, settings, alerts, appFilter } = props;
 
   const { owner, repo } = useParams()
@@ -14,8 +14,7 @@ export function Env(props) {
   const stacks = connectedAgents[env.name]?.stacks
     ? connectedAgents[env.name].stacks.filter(service => service.repo === repoName)
     : []
-
-  console.log(env)
+  const tfResources = fluxState[env.name]?.tfResources
 
   return (
     <div>
@@ -38,6 +37,7 @@ export function Env(props) {
           gimletClient={gimletClient}
           envName={env.name}
           stacks={stacks}
+          tfResources={tfResources}
           ephemeralEnv={env.ephemeral}
           builtInEnv={env.builtIn}
           envConfigs={envConfigs}
@@ -55,7 +55,12 @@ export function Env(props) {
 }
 
 function Services(props) {
-  const { envName, ephemeralEnv, builtInEnv, stacks, envConfigs, repoRolloutHistory, rollback, fileInfos, releaseHistorySinceDays, gimletClient, store, settings, alerts, appFilter } = props
+  const { store, gimletClient } = props
+  const { envName, ephemeralEnv, builtInEnv } = props
+  const { stacks, envConfigs, tfResources, settings } = props
+  const { repoRolloutHistory, releaseHistorySinceDays } = props
+  const { alerts, appFilter, rollback, fileInfos } = props
+
   const { owner, repo, deployment } = useParams()
   const repoName = `${owner}/${repo}`
 
@@ -83,9 +88,9 @@ function Services(props) {
   const configsWeHaventDeployed = configsWeHave.filter(config => !configsWeDeployed.includes(config) && config.includes(appFilter));
 
   services.push(
-    ...configsWeHaventDeployed.map(config => ({
-      stack: {service: {name: config}},
-      config: config
+    ...configsWeHaventDeployed.map(configName => ({
+      stack: {service: {name: configName}},
+      config: envConfigs.find((config) => config.app === configName)
     }))
   )
 
@@ -116,6 +121,7 @@ function Services(props) {
           scmUrl={settings.scmUrl}
           serviceAlerts={alerts[deployment]}
           builtInEnv={builtInEnv}
+          tfResources={tfResources}
         />
       </div>
     ))}
