@@ -1,14 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import ServiceDetail from "../serviceDetail/serviceDetail";
 import { InformationCircleIcon } from '@heroicons/react/20/solid';
 
 export function Env(props) {
   const { store, gimletClient } = props
-  const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos } = props;
-  const { releaseHistorySinceDays, deploymentFromParams, settings, alerts, appFilter } = props;
-
-  const renderedServices = renderServices(env.stacks, envConfigs, env, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, settings.scmUrl, alerts, appFilter);
-  const navigate = useNavigate()
+  const { env, repoRolloutHistory, envConfigs, rollback, fileInfos } = props;
+  const { releaseHistorySinceDays, settings, alerts, appFilter } = props;
 
   return (
     <div>
@@ -26,39 +23,33 @@ export function Env(props) {
         {!env.isOnline &&
           <ConnectEnvCard env={env} trial={settings.trial} />
         }
-        {renderedServices.length === 10 &&
-          <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
-        }
-        {renderedServices.length !== 0 &&
-          <>
-            {renderedServices}
-          </>
-        }
-        { renderedServices.length === 0 && emptyStateDeployThisRepo(navigate, env.name, owner, repoName) }
+        <Services
+          store={store}
+          gimletClient={gimletClient}
+          envName={env.name}
+          stacks={env.stacks}
+          ephemeralEnv={env.ephemeral}
+          builtInEnv={env.builtIn}
+          envConfigs={envConfigs}
+          repoRolloutHistory={repoRolloutHistory}
+          rollback={rollback}
+          fileInfos={fileInfos}
+          releaseHistorySinceDays={releaseHistorySinceDays}
+          settings={settings}
+          alerts={alerts}
+          appFilter={appFilter}
+        />
       </div>
     </div>
   )
 }
 
-function renderServices(
-  stacks,
-  envConfigs,
-  environment,
-  repoRolloutHistory,
-  navigateToConfigEdit,
-  linkToDeployment,
-  rollback,
-  owner,
-  repoName,
-  fileInfos,
-  releaseHistorySinceDays,
-  gimletClient,
-  store,
-  deploymentFromParams,
-  settings,
-  alerts,
-  appFilter) {
-  let services = [];
+function Services(props) {
+  const { envName, ephemeralEnv, builtInEnv, stacks, envConfigs, repoRolloutHistory, rollback, fileInfos, releaseHistorySinceDays, gimletClient, store, settings, alerts, appFilter } = props
+  const { owner, repo, deployment } = useParams()
+  const repoName = `${owner}/${repo}`
+
+  console.log(repoRolloutHistory)
 
   let configsWeHave = [];
   if (envConfigs) {
@@ -72,83 +63,56 @@ function renderServices(
     .filter(stack => stack.deployment?.branch === "") // filter preview deploys from this view
 
   let configsWeDeployed = [];
-  // render services that are deployed on k8s
+  let services = [];
+
+  // services that are deployed on k8s
   services = filteredStacks.map((stack) => {
     configsWeDeployed.push(stack.service.name);
-    const configExists = configsWeHave.includes(stack.service.name)
-    let config = undefined;
-    if (configExists) {
-      config = envConfigs.find((config) => config.app === stack.service.name)
-    }
-
-    let deployment = "";
-    if (stack.deployment) {
-      deployment = stack.deployment.namespace + "/" + stack.deployment.name
-    }
-
-    return (
-      <div key={'sc-'+stack.service.name} className="w-full flex items-center justify-between space-x-6 p-4 card">
-        <ServiceDetail
-          key={'sc-'+stack.service.name}
-          stack={stack}
-          rolloutHistory={repoRolloutHistory?.[environment.name]?.[stack.service.name]}
-          rollback={rollback}
-          environment={environment}
-          owner={owner}
-          repoName={repoName}
-          fileName={fileName(fileInfos, stack.service.name)}
-          navigateToConfigEdit={navigateToConfigEdit}
-          linkToDeployment={linkToDeployment}
-          configExists={configExists}
-          config={config}
-          releaseHistorySinceDays={releaseHistorySinceDays}
-          gimletClient={gimletClient}
-          store={store}
-          deploymentFromParams={deploymentFromParams}
-          scmUrl={settings.scmUrl}
-          serviceAlerts={alerts[deployment]}
-        />
-      </div>
-    )
+    const config = envConfigs.find((config) => config.app === stack.service.name)
+    return {stack, config}
   })
+
+  const configsWeHaventDeployed = configsWeHave.filter(config => !configsWeDeployed.includes(config) && config.includes(appFilter));
+
+  services.push(
+    ...configsWeHaventDeployed.map(config => ({
+      stack: {service: {name: config}},
+      config: config
+    }))
+  )
 
   if (services.length >= 10) {
     return services.slice(0, 10);
   }
 
-  const configsWeHaventDeployed = configsWeHave.filter(config => !configsWeDeployed.includes(config) && config.includes(appFilter));
-
-  services.push(
-    ...configsWeHaventDeployed.sort().map(config => {
-      return (
-        <div key={config} className="w-full flex items-center justify-between space-x-6 p-4 pb-8 card">
-          <ServiceDetail
-            key={config}
-            stack={{
-              service: {
-                name: config
-              }
-            }}
-            rolloutHistory={repoRolloutHistory?.[environment.name]?.[config]}
-            rollback={rollback}
-            environment={environment}
-            owner={owner}
-            repoName={repoName}
-            fileName={fileName(fileInfos, config)}
-            navigateToConfigEdit={navigateToConfigEdit}
-            linkToDeployment={linkToDeployment}
-            configExists={true}
-            releaseHistorySinceDays={releaseHistorySinceDays}
-            gimletClient={gimletClient}
-            store={store} 
-            deploymentFromParams={deploymentFromParams}
-            scmUrl={settings.scmUrl}
-          />
-        </div>)
+  return (
+    <>
+    {services.length === 10 &&
+      <span className="text-xs text-blue-700">Displaying at most 10 application configurations per environment.</span>
     }
-    )
+    {services.length === 0 && emptyStateDeployThisRepo(navigate, envName, owner, repoName) }
+    {services.map(({stack, config}) => (
+      <div key={'sc-'+stack.service.name} className="w-full flex items-center justify-between space-x-6 p-4 card">
+        <ServiceDetail
+          key={'sc-'+stack.service.name}
+          store={store}
+          gimletClient={gimletClient}
+          stack={stack}
+          rolloutHistory={repoRolloutHistory?.[envName]?.[stack.service.name]}
+          rollback={rollback}
+          envName={envName}
+          ephemeralEnv={ephemeralEnv}
+          fileName={fileName(fileInfos, stack.service.name)}
+          config={config}
+          releaseHistorySinceDays={releaseHistorySinceDays}
+          scmUrl={settings.scmUrl}
+          serviceAlerts={alerts[deployment]}
+          builtInEnv={builtInEnv}
+        />
+      </div>
+    ))}
+    </>
   )
-  return services.slice(0, 10)
 }
 
 function fileName(fileInfos, appName) {

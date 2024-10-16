@@ -40,11 +40,8 @@ export function TerraformResources(props) {
       a.metadata.name.localeCompare(b.metadata.name),
     );
   }, [tfResources]);
-
   
   // const filteredHelmReleases = filterResources(sortedHelmReleases, filters);
-
-  console.log(sortedHelmReleases)
 
   return (
     <div className="space-y-4">

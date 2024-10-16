@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useParams } from "react-router-dom";
 import { RolloutHistory } from "../rolloutHistory/rolloutHistory";
 import Emoji from "react-emoji-render";
 import { Fragment } from 'react'
@@ -19,13 +20,14 @@ import { InProgress, Success, Error } from '../../popUpWindow';
 
 function ServiceDetail(props) {
   const { store, gimletClient } = props;
-  const { owner, repoName } = props;
-  const { environment } = props;
-  const { stack, rolloutHistory, rollback, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, deploymentFromParams, scmUrl, serviceAlerts } = props;
+  const { ephemeralEnv, envName, builtInEnv } = props;
+  const { stack, rolloutHistory, rollback, config, fileName, releaseHistorySinceDays, scmUrl, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
   const [pullRequests, setPullRequests] = useState()
 
+  const navigate = useNavigate()
+  const { owner, repo, deploymentFromParams } = useParams()
   const progressToastId = useRef(null);
 
   useEffect(() => {
@@ -36,20 +38,20 @@ function ServiceDetail(props) {
   }, [deploymentFromParams, stack.service.name]);
 
   useEffect(() => {
-    gimletClient.getRolloutHistoryPerApp(owner, repoName, environment.name, stack.service.name)
+    gimletClient.getRolloutHistoryPerApp(owner, repo, envName, stack.service.name)
       .then(data => {
         store.dispatch({
           type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
             owner: owner,
-            repo: repoName,
-            env: environment.name,
+            repo: repo,
+            env: envName,
             app: stack.service.name,
             releases: data,
           }
         });
       }, () => {/* Generic error handler deals with it */ });
 
-    gimletClient.getConfigChangePullRequestsPerConfig(owner, repoName, environment.name, stack.service.name)
+    gimletClient.getConfigChangePullRequestsPerConfig(owner, repo, envName, stack.service.name)
       .then(data => {
         setPullRequests(data)
       })
@@ -69,7 +71,7 @@ function ServiceDetail(props) {
   const deleteAppInstance = () => {
     progressToastId.current = toast(<InProgress header="Deleting application instance..."/>, { autoClose: false });
 
-    gimletClient.deleteAppInstance(environment.name, stack.service.name)
+    gimletClient.deleteAppInstance(envName, stack.service.name)
       .then(() => {
         toast.update(progressToastId.current, {
           render: <Success header="Application instance deleted"/>,
@@ -113,7 +115,6 @@ function ServiceDetail(props) {
   }
 
   const deployment = stack.deployment;
-  const repo = stack.repo;
 
   let hostPort = "<host-port>"
   let appPort = "<app-port>"
@@ -137,11 +138,11 @@ function ServiceDetail(props) {
     <div className="flex-1 text-neutral-900 dark:text-neutral-200">
       <h3 ref={ref} className="flex text-lg font-bold rounded">
         <span>{stack.service.name}</span>
-        <button onClick={() => linkToDeployment(environment.name, stack.service.name)} target="_blank" rel="noopener noreferrer">
+        <button onClick={() => navigate(`/repo/${owner}/${repo}/${envName}/${stack.service.name}?${location.search}`)} target="_blank" rel="noopener noreferrer">
           <LinkIcon className="serviceLinkIcon ml-1" aria-hidden="true" />
         </button>
-        {configExists &&
-          <a href={`${scmUrl}/${owner}/${repoName}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
+        {config &&
+          <a href={`${scmUrl}/${owner}/${repo}/blob/main/.gimlet/${encodeURIComponent(fileName)}`} target="_blank" rel="noopener noreferrer">
             <ArrowTopRightOnSquareIcon className="serviceLinkIcon ml-1" aria-hidden="true" />
           </a>
         }
@@ -190,15 +191,15 @@ function ServiceDetail(props) {
                   <Menu.Item>
                     {({ active }) => (
                       <button
-                        className={`${configExists && active && 'bg-neutral-600'} ${configExists ? 'text-neutral-100' : 'text-neutral-500'} block px-4 py-2 text-sm w-full text-left font-normal`}
+                        className={`${config && active && 'bg-neutral-600'} ${config ? 'text-neutral-100' : 'text-neutral-500'} block px-4 py-2 text-sm w-full text-left font-normal`}
                         onClick={() => {
-                          if (configExists) {
+                          if (config) {
                             posthog?.capture('Env config edit pushed')
-                            navigateToConfigEdit(environment.name, stack.service.name)
+                            navigate(encodeURI(`/repo/${owner}/${repo}/envs/${envName}/config/${stack.service.name}/edit`))
                           }
                         }}
                       >
-                        Edit{!configExists && ' (no config)'}
+                        Edit{!config && ' (no config)'}
                       </button>
                     )}
                   </Menu.Item>
@@ -232,7 +233,7 @@ function ServiceDetail(props) {
                           </button>
                         )}
                       </Menu.Item>
-                      {!environment.ephemeral &&
+                      {!ephemeralEnv &&
                         <Menu.Item>
                           {({ active }) => (
                             <button
@@ -258,7 +259,7 @@ function ServiceDetail(props) {
           </Menu>
         </div>
       </h3>
-      {deployment && config && <DeployIndicator deploy={config.values.deploy} owner={owner} repo={repoName} branch={deployment.branch} />}
+      {deployment && config && <DeployIndicator deploy={config.values.deploy} owner={owner} repo={repo} branch={deployment.branch} />}
       {pullRequests && pullRequests.length !== 0 &&
         <PullRequests items={pullRequests} />
       }
@@ -283,7 +284,7 @@ function ServiceDetail(props) {
             <p className="serviceCardLabel">Version</p>
             <p>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" className="h4 w-4 inline fill-current"><path d="M320 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160zm156.8-48C462 361 397.4 416 320 416s-142-55-156.8-128H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H163.2C178 151 242.6 96 320 96s142 55 156.8 128H608c17.7 0 32 14.3 32 32s-14.3 32-32 32H476.8z"/></svg>
-              <span className="text-xs pl-2 font-mono"><a href={`${scmUrl}/${repo}/commit/${deployment.sha}`} target="_blank" rel="noopener noreferrer">{deployment.sha.slice(0, 8)}</a></span>
+              <span className="text-xs pl-2 font-mono"><a href={`${scmUrl}/${stack.repo}/commit/${deployment.sha}`} target="_blank" rel="noopener noreferrer">{deployment.sha.slice(0, 8)}</a></span>
               <span className="pl-2 text-sm font-normal">{deployment.commitMessage && <Emoji text={deployment.commitMessage} />}</span>
             </p>
           </div>
@@ -318,7 +319,7 @@ function ServiceDetail(props) {
               <div className="relative">
               {stack.service.name}.{stack.service.namespace}.svc.cluster.local
               </div>
-              {config && !environment.ephemeral &&
+              {config && !ephemeralEnv &&
                 <>
                   <a className="externalLink" href={'http://127.0.0.1:' + hostPort} target="_blank" rel="noopener noreferrer">http://127.0.0.1:{hostPort}
                     <ArrowTopRightOnSquareIcon className="externalLinkIcon mr-1" aria-hidden="true" />
@@ -349,13 +350,13 @@ function ServiceDetail(props) {
             <p className="serviceCardLabel">Deploy History</p>
             <div className="text-neutral-900 text-sm pt-2">
               <RolloutHistory
-                env={environment.name}
+                env={envName}
                 app={stack.service.name}
                 rollback={rollback}
                 appRolloutHistory={rolloutHistory}
                 releaseHistorySinceDays={releaseHistorySinceDays}
                 scmUrl={scmUrl}
-                builtInEnv={environment.builtIn}
+                builtInEnv={builtInEnv}
               />
             </div>
           </div>
