@@ -297,9 +297,13 @@ function ServiceDetail(props) {
           <div>
             <p className="serviceCardLabel">Terraform Dependencies</p>
             {tfDependencies.map((d) =>
-              <div key={d.name} className='text-xs font-mono flex'>
-                <span className='pl-4 -mt-0.5'><ReadyWidget resource={d} displayMessage={false} /></span>
-                {d.metadata.name}
+              <div key={d.name} className='text-xs font-mono'>
+                <span className='flex cursor-pointer'
+                  onClick={() => window.navigateFooter("Terraform", d.metadata.namespace, d.metadata.name, d.kind)}
+                >
+                  <span className='pl-4 -mt-0.5'><ReadyWidget resource={d} displayMessage={false} /></span>
+                  {d.metadata.name}
+                </span>
               </div>)
             }
           </div>
