@@ -4,15 +4,25 @@ import { InformationCircleIcon } from '@heroicons/react/20/solid';
 
 export function Env(props) {
   const { store, gimletClient } = props
-  const { env, repoRolloutHistory, envConfigs, rollback, fileInfos } = props;
+  const { env, connectedAgents, repoRolloutHistory, envConfigs, rollback, fileInfos } = props;
   const { releaseHistorySinceDays, settings, alerts, appFilter } = props;
+
+  const { owner, repo } = useParams()
+  const repoName = `${owner}/${repo}`
+
+  const online = isOnline(connectedAgents, env.name)
+  const stacks = connectedAgents[env.name]?.stacks
+    ? connectedAgents[env.name].stacks.filter(service => service.repo === repoName)
+    : []
+
+  console.log(env)
 
   return (
     <div>
       <h4 className="relative flex items-stretch select-none text-xl font-medium capitalize leading-tight text-neutral-900 dark:text-neutral-200 my-4">
         {env.name}
-        <span title={env.isOnline ? "Connected" : "Disconnected"}>
-          <svg className={(env.isOnline ? "text-green-400 dark:text-teal-600" : "text-red-400") + " inline fill-current ml-1"} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20">
+        <span title={online ? "Connected" : "Disconnected"}>
+          <svg className={(online ? "text-green-400 dark:text-teal-600" : "text-red-400") + " inline fill-current ml-1"} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20">
             <path
               d="M0 14v1.498c0 .277.225.502.502.502h.997A.502.502 0 0 0 2 15.498V14c0-.959.801-2.273 2-2.779V9.116C1.684 9.652 0 11.97 0 14zm12.065-9.299l-2.53 1.898c-.347.26-.769.401-1.203.401H6.005C5.45 7 5 7.45 5 8.005v3.991C5 12.55 5.45 13 6.005 13h2.327c.434 0 .856.141 1.203.401l2.531 1.898a3.502 3.502 0 0 0 2.102.701H16V4h-1.832c-.758 0-1.496.246-2.103.701zM17 6v2h3V6h-3zm0 8h3v-2h-3v2z"
             />
@@ -20,14 +30,14 @@ export function Env(props) {
         </span>
       </h4>
       <div className="space-y-4">
-        {!env.isOnline &&
+        {!online &&
           <ConnectEnvCard env={env} trial={settings.trial} />
         }
         <Services
           store={store}
           gimletClient={gimletClient}
           envName={env.name}
-          stacks={env.stacks}
+          stacks={stacks}
           ephemeralEnv={env.ephemeral}
           builtInEnv={env.builtIn}
           envConfigs={envConfigs}
@@ -48,8 +58,6 @@ function Services(props) {
   const { envName, ephemeralEnv, builtInEnv, stacks, envConfigs, repoRolloutHistory, rollback, fileInfos, releaseHistorySinceDays, gimletClient, store, settings, alerts, appFilter } = props
   const { owner, repo, deployment } = useParams()
   const repoName = `${owner}/${repo}`
-
-  console.log(repoRolloutHistory)
 
   let configsWeHave = [];
   if (envConfigs) {
@@ -215,3 +223,11 @@ function emptyStateDeployThisRepo(navigate, envName, owner, repo) {
     </div>
   )
 }
+
+function isOnline(connectedAgents, envName) {
+  return Object.keys(connectedAgents)
+      .map(env => connectedAgents[env])
+      .some(onlineEnv => {
+          return onlineEnv.name === envName
+      })
+};

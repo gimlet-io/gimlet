@@ -97,13 +97,10 @@ export default function Repo(props) {
     return fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
 
-  const stacksForRepo = envsForRepo(envs, connectedAgents, repoName);
-
   let repoRolloutHistory = undefined;
   if (rolloutHistory && rolloutHistory[repoName]) {
     repoRolloutHistory = rolloutHistory[repoName]
   }
-  console.log(rolloutHistory)
 
   const envLabels = envs.map((env) => env.name)
   envLabels.unshift('All Environments')
@@ -148,20 +145,21 @@ export default function Repo(props) {
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="pt-8 px-4 sm:px-0">
             <div>
-              {envConfigs && Object.keys(stacksForRepo).sort().map((envName) =>
+              {envConfigs && envs.map((env) =>
                 {
-                  const unselected = envName !== selectedEnv && selectedEnv !== "All Environments"
+                  const unselected = env.name !== selectedEnv && selectedEnv !== "All Environments"
                   return unselected ? null :
                   <Env
-                    key={envName}
-                    env={stacksForRepo[envName]}
+                    key={env.name}
+                    env={env}
+                    connectedAgents={connectedAgents}
                     repoRolloutHistory={repoRolloutHistory}
-                    envConfigs={envConfigs[envName]}
+                    envConfigs={envConfigs[env.name]}
                     rollback={(env, app, rollbackTo) => {
                       setDeployStatusModal(true);
                       deployHandler.rollback(env, app, rollbackTo)
                     }}
-                    fileInfos={fileMetasByEnv(envName)}
+                    fileInfos={fileMetasByEnv(env.name)}
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={gimletClient}
                     store={store}
@@ -200,33 +198,3 @@ function AppFilter(props) {
     </div>
   )
 }
-
-export function envsForRepo(envs, connectedAgents, repoName) {
-  let envsForRepo = {};
-
-  if (!connectedAgents || !envs) {
-    return envsForRepo;
-  }
-  
-  for (const env of envs) {
-    envsForRepo[env.name] = {
-      ...env,
-      isOnline: isOnline(connectedAgents, env)
-    };
-
-    envsForRepo[env.name].stacks = connectedAgents[env.name]?.stacks
-      ? connectedAgents[env.name].stacks.filter(service => service.repo === repoName)
-      : []
-  }
-
-  return envsForRepo;
-}
-
-function isOnline(onlineEnvs, singleEnv) {
-  return Object.keys(onlineEnvs)
-      .map(env => onlineEnvs[env])
-      .some(onlineEnv => {
-          return onlineEnv.name === singleEnv.name
-      })
-};
-
