@@ -117,7 +117,7 @@ export default class GimletClient {
 
   restartDeploymentRequest = (namespace, name) =>this.post(`/api/restartDeployment?namespace=${namespace}&name=${name}`);
 
-  getDependencyCatalog = () =>  this.get(`/api/dependencyCatalog`);
+  getDependencyCatalog = (owner, name, env, config) => this.get(`/api/repo/${owner}/${name}/env/${env}/config/${config}/dependencyCatalog`);
 
   get = async (path, signal) => {
     try {

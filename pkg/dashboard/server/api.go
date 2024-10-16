@@ -340,6 +340,25 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
 
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	env := chi.URLParam(r, "env")
+	configName := chi.URLParam(r, "config")
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+
+	var manifest *dx.Manifest
+	err := gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
+		func(repo *git.Repository) error {
+			var innerErr error
+			manifest, innerErr = getManifest(repo, env, configName)
+			return innerErr
+		})
+	if err != nil {
+		logrus.Errorf("cannot get manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	catalogBytes, err := downloadFile(cfg.DependencyCatalogURL)
 	if err != nil {
 		logrus.Errorf("cannot get dependency catalog: %s", err)
@@ -365,6 +384,18 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 
 		components = append(components, DeploymentTemplate{
 			Reference: config.DefaultChart{Chart: dx.Chart{Repository: url}},
+			Schema:    schema,
+			UISchema:  schemaUI,
+		})
+	}
+	for _, dep := range manifest.Dependencies {
+		schema, schemaUI, err := dx.ChartSchema(dep.Chart, installationToken)
+		if err != nil {
+			logrus.Warnf("could not get chart schema for %s: %s", dep.Name, err)
+		}
+
+		components = append(components, DeploymentTemplate{
+			Reference: config.DefaultChart{Chart: dep.Chart},
 			Schema:    schema,
 			UISchema:  schemaUI,
 		})
@@ -531,11 +562,11 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	installationToken, _, _ := tokenManager.Token()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	var appChart *dx.Chart
+	var manifest *dx.Manifest
 	err := gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
 		func(repo *git.Repository) error {
 			var innerErr error
-			appChart, innerErr = getChartForApp(repo, env, configName)
+			manifest, innerErr = getManifest(repo, env, configName)
 			return innerErr
 		})
 	if err != nil {
@@ -545,7 +576,7 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates, err := deploymentTemplates(
-		[]config.DefaultChart{{Chart: *appChart}},
+		[]config.DefaultChart{{Chart: manifest.Chart}},
 		installationToken,
 	)
 	if err != nil {
@@ -582,7 +613,7 @@ func deploymentTemplates(charts config.DefaultCharts, installationToken string) 
 	return templates, nil
 }
 
-func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, error) {
+func getManifest(repo *git.Repository, env string, app string) (*dx.Manifest, error) {
 	branch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, err
@@ -593,7 +624,6 @@ func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, er
 		return nil, err
 	}
 
-	envConfigs := []dx.Manifest{}
 	for _, content := range files {
 		var envConfig dx.Manifest
 		err = yaml.Unmarshal([]byte(content), &envConfig)
@@ -601,12 +631,8 @@ func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, er
 			logrus.Warnf("cannot parse env config string: %s", err)
 			continue
 		}
-		envConfigs = append(envConfigs, envConfig)
-	}
-
-	for _, envConfig := range envConfigs {
 		if envConfig.Env == env && envConfig.App == app {
-			return &envConfig.Chart, nil
+			return &envConfig, nil
 		}
 	}
 

@@ -188,7 +188,7 @@ func userRoutes(r *chi.Mux, clientHub *streaming.ClientHub) {
 		r.Get(("/api/env/{env}/stackConfig"), stackConfig)
 		r.Post("/api/silenceAlert", silenceAlert)
 		r.Post("/api/restartDeployment", restartDeployment)
-		r.Get(("/api/dependencyCatalog"), dependencyCatalog)
+		r.Get(("/api/repo/{owner}/{name}/env/{env}/config/{config}/dependencyCatalog"), dependencyCatalog)
 
 		r.Get("/ws/", func(w http.ResponseWriter, r *http.Request) {
 			streaming.ServeWs(clientHub, w, r)

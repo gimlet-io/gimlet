@@ -248,6 +248,12 @@ var helmReleaseResource = schema.GroupVersionResource{
 	Resource: "helmreleases",
 }
 
+var tfResource = schema.GroupVersionResource{
+	Group:    "infra.contrib.fluxcd.io",
+	Version:  "v1alpha2",
+	Resource: "terraforms",
+}
+
 func (e *KubeEnv) WarningEvents() ([]api.Event, error) {
 	integratedServices, err := e.annotatedServices(AnnotationGitRepository)
 	if err != nil {

@@ -96,7 +96,7 @@ export function EnvConfig(props) {
         }, () => {/* Generic error handler deals with it */
         });
     }
-    gimletClient.getDependencyCatalog()
+    gimletClient.getDependencyCatalog(owner, repo, env, config)
       .then(data => {
         setDependencyCatalog(data)
       }, () => {/* Generic error handler deals with it */ });
