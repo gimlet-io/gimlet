@@ -89,3 +89,7 @@
 :root {
     --toastify-color-progress-light: #2dd4bf
 }
+
+.capacitorField {
+    @apply text-ellipsis overflow-hidden whitespace-nowrap
+}

@@ -50,11 +50,11 @@ export function ReadyWidget(props) {
   if (resource.kind === 'GitRepository' || resource.kind === "OCIRepository" || resource.kind === "Bucket") {
     color = fetchFailed ? "bg-orange-400 animate-pulse" : reconciling ? "bg-blue-400 animate-pulse" : ready ? "bg-green-300 dark:bg-teal-600" : "bg-orange-400 animate-pulse"
     statusLabel = fetchFailed ? "Error" : reconciling ?  "Reconciling" : ready ? readyLabel : "Error"
-    messageColor = fetchFailed ? "bg-orange-400" : reconciling ?  "" : ready ? "field" : "bg-orange-400"
+    messageColor = fetchFailed ? "bg-orange-400" : reconciling ?  "" : ready ? "capacitorField" : "bg-orange-400"
   } else {
     color = ready ? "bg-green-300 dark:bg-teal-600" : (reconciling || dependencyNotReady) && !stalled ? "bg-blue-400 animate-pulse" : "bg-orange-400 animate-pulse"
     statusLabel = ready ? readyLabel : (reconciling || dependencyNotReady) && !stalled ? "Reconciling" : "Error"
-    messageColor = ready ? "field" : (reconciling || dependencyNotReady) && !stalled ? "" : "bg-orange-400"
+    messageColor = ready ? "capacitorField" : (reconciling || dependencyNotReady) && !stalled ? "" : "bg-orange-400"
   }
 
   return (

@@ -90,7 +90,7 @@ export function TerraformResourceWidget(props) {
         </span>
       )}
       <span
-        className={`block ${ready || reconciling ? "" : "font-normal text-neutral-600"} field`}
+        className={`block ${ready || reconciling ? "" : "font-normal text-neutral-600"} capacitorField`}
       >
         <span>Currently Installed: </span>
         <NavigationButton handleNavigation={navigationHandler}>
