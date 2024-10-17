@@ -26,6 +26,7 @@ import { fallbackRender } from "./FallbackRender"
 export function TerraformResources(props) {
   const {
     capacitorClient,
+    store,
     tfResources,
     targetReference,
     handleNavigationSelect,
@@ -55,6 +56,7 @@ export function TerraformResources(props) {
         <TerraformResource
           key={"hr-" + resource.metadata.namespace + resource.metadata.name}
           capacitorClient={capacitorClient}
+          store={store}
           item={resource}
           handleNavigationSelect={handleNavigationSelect}
           targetReference={targetReference}

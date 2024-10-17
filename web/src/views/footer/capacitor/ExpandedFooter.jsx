@@ -64,6 +64,7 @@ export function ExpandedFooter(props) {
               <ErrorBoundary fallbackRender={fallbackRender}>
               <TerraformResources
                 capacitorClient={client}
+                store={store}
                 tfResources={fluxState.tfResources}
                 targetReference={targetReference}
                 handleNavigationSelect={handleNavigationSelect}

@@ -469,6 +469,8 @@ func describeResource(
 		gk = schema.GroupKind{Group: appsv1.GroupName, Kind: "Deployment"}
 	case "Pod":
 		gk = schema.GroupKind{Group: v1.GroupName, Kind: "Pod"}
+	case "Terraform":
+		gk = schema.GroupKind{Group: "infra.contrib.fluxcd.io", Kind: "Terraform"}
 	}
 
 	describer, ok := describe.DescriberFor(gk, kubeEnv.Config)

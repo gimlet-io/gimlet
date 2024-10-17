@@ -21,9 +21,10 @@ import { ReadyWidget } from "./ReadyWidget";
 import { TerraformResourceWidget } from "./TerraformResourceWidget";
 import { ErrorBoundary } from "react-error-boundary";
 import { fallbackRender } from "./FallbackRender";
+import { Describe } from './Describe'
 
 export function TerraformResource(props) {
-  const { capacitorClient, item, targetReference, handleNavigationSelect } =
+  const { capacitorClient, store, item, targetReference, handleNavigationSelect } =
     props;
   const ref = useRef(null);
   const [highlight, setHighlight] = useState(false);
@@ -75,18 +76,13 @@ export function TerraformResource(props) {
         </div>
       </div>
       <div className="grid-cols-1 text-right space-y-1">
-        <button
-          className="w-24 bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-2 border border-neutral-300 rounded"
-          onClick={() =>
-            capacitorClient.reconcile(
-              "Terraform",
-              item.metadata.namespace,
-              item.metadata.name,
-            )
-          }
-        >
-          Describe
-        </button>
+        <Describe
+          capacitorClient={capacitorClient}
+          resource="Terraform"
+          namespace={item.metadata.namespace}
+          name={item.metadata.name}
+          store={store}
+        />
         <button
           className="w-24 bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-2 border border-neutral-300 rounded"
           onClick={() =>
