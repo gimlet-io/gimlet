@@ -31,8 +31,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -463,17 +463,52 @@ func describeResource(
 	gimletHost string,
 	agentKey string,
 ) {
-	var gk schema.GroupKind
+	var gvr schema.GroupVersionResource
+	var gvk schema.GroupVersionKind
 	switch resource {
 	case "Deployment":
-		gk = schema.GroupKind{Group: appsv1.GroupName, Kind: "Deployment"}
+		gvr = schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: "deployments",
+		}
+		gvk = schema.GroupVersionKind{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "Deployment",
+		}
 	case "Pod":
-		gk = schema.GroupKind{Group: v1.GroupName, Kind: "Pod"}
+		gvr = schema.GroupVersionResource{
+			Group:    "",
+			Version:  "v1",
+			Resource: "pods",
+		}
+		gvk = schema.GroupVersionKind{
+			Group:   "",
+			Version: "v1",
+			Kind:    "Pod",
+		}
 	case "Terraform":
-		gk = schema.GroupKind{Group: "infra.contrib.fluxcd.io", Kind: "Terraform"}
+		gvr = schema.GroupVersionResource{
+			Group:    "infra.contrib.fluxcd.io",
+			Version:  "v1alpha2",
+			Resource: "terraforms",
+		}
+		gvk = schema.GroupVersionKind{
+			Group:   "infra.contrib.fluxcd.io",
+			Version: "v1alpha2",
+			Kind:    "Terraform",
+		}
 	}
 
-	describer, ok := describe.DescriberFor(gk, kubeEnv.Config)
+	describer, ok := describe.GenericDescriberFor(
+		&meta.RESTMapping{
+			Resource:         gvr,
+			GroupVersionKind: gvk,
+			Scope:            meta.RESTScopeNamespace,
+		},
+		kubeEnv.Config,
+	)
 	if !ok {
 		logrus.Errorf("could not get describer for %s", resource)
 		return

@@ -55,7 +55,7 @@ export function Describe(props) {
               setSelected={setSelected}
             />}
         >
-          <code key={selected} className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
+          <code key={selected} className='text-left flex whitespace-pre font-mono text-xs p-2 text-yellow-100 rounded'>
             {content ?? <SkeletonLoader />}
           </code>
         </Modal>
@@ -63,7 +63,7 @@ export function Describe(props) {
       <button onClick={() => {
         setShowModal(true);
       }}
-        className="transparentBtn">
+        className="transparentBtn w-24">
         Describe
       </button>
     </>
