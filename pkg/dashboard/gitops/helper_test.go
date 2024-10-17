@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gimlet-io/gimlet/pkg/dx"
-	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/storage/memory"
@@ -90,7 +90,7 @@ func Test_Status(t *testing.T) {
 func initHistory() *git.Repository {
 	repo, _ := git.Init(memory.NewStorage(), memfs.New())
 
-	nativeGit.CommitFilesToGit(
+	gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app2/file":         `1`,
@@ -102,7 +102,7 @@ func initHistory() *git.Repository {
 	)
 
 	releaseJson := `{"app":"xxx","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test2","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
-	nativeGit.CommitFilesToGit(
+	gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app2/file":         `2`,
@@ -114,7 +114,7 @@ func initHistory() *git.Repository {
 	)
 
 	releaseJson = `{"app":"fosdem-2021","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
-	nativeGit.CommitFilesToGit(
+	gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `3`,
@@ -126,7 +126,7 @@ func initHistory() *git.Repository {
 	)
 
 	releaseJson = `{"app":"fosdem-2022","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
-	nativeGit.CommitFilesToGit(
+	gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `4`,
@@ -138,7 +138,7 @@ func initHistory() *git.Repository {
 	)
 
 	releaseJson = `{"app":"fosdem-2023","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
-	nativeGit.CommitFilesToGit(
+	gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"staging/my-app/file":         `5`,
@@ -150,7 +150,7 @@ func initHistory() *git.Repository {
 	)
 
 	releaseJson = `{"app":"fosdem-2024","env":"staging","artifactId":"my-app-94578d91-ef9a-413d-9afb-602256d2b124","triggeredBy":"policy","gitopsRef":"","gitopsRepo":"", "version":{"repositoryName":"laszlocph/gimletd-test3","sha":"d7aa20d7055999200b52c4ffd146d5c7c415e3e7","created":1622792757,"branch":"master","event":"pr"}}`
-	nativeGit.CommitFilesToGit(
+	gogit.CommitFilesToGit(
 		repo,
 		map[string]string{
 			"my-app3/file":         `5`,

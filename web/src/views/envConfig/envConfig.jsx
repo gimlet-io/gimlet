@@ -13,6 +13,8 @@ import IngressWidget from "../envConfig/ingressWidget";
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import { InProgress, Success, Error } from '../../popUpWindow';
+import { DatabasesTab } from './databasesTab';
+import { produce } from 'immer';
 
 export function EnvConfig(props) {
   const { store, gimletClient } = props
@@ -25,6 +27,7 @@ export function EnvConfig(props) {
   const reduxState = props.store.getState();
   const [scmUrl, setScmUrl] = useState(reduxState.settings.scmUrl)
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
+  const [dependencyCatalog, setDependencyCatalog] = useState([])
   const [configFile, setConfigFile] = useState()
   const [savedConfigFile, setSavedConfigFile] = useState()
   const [templates, setTemplates] = useState()
@@ -93,6 +96,10 @@ export function EnvConfig(props) {
         }, () => {/* Generic error handler deals with it */
         });
     }
+    gimletClient.getDependencyCatalog(owner, repo, env, config)
+      .then(data => {
+        setDependencyCatalog(data)
+      }, () => {/* Generic error handler deals with it */ });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -145,6 +152,20 @@ export function EnvConfig(props) {
       ...prevState,
       namespace: namespace,
     }))
+  }
+
+  const setDependencies = (dependencies) => {
+    if (dependencies.length === 0) {
+      setConfigFile(produce(configFile, draft => {
+        delete draft.dependencies
+      }))
+      return
+    }
+
+    setConfigFile(prevState => ({
+      ...prevState,
+      dependencies: dependencies,
+    }));
   }
 
   const setDeployFilter = (filter) => {
@@ -209,12 +230,12 @@ export function EnvConfig(props) {
       return
     }
 
-    progressToastId.current = toast(<InProgress header="Saving..."/>, { autoClose: false });
+    progressToastId.current = toast(<InProgress header="Saving..." />, { autoClose: false });
 
     gimletClient.saveEnvConfig(owner, repo, env, encodeURIComponent(config), configFile)
       .then((data) => {
         toast.update(progressToastId.current, {
-          render: <Success header="Configuration Saved" message={<div className='pb-4'>Deploy it on <span className='underline cursor-pointer' onClick={()=>navigate(`/repo/${owner}/${repo}/commits`)}>Commits view</span></div>} link={data.link}/>,
+          render: <Success header="Configuration Saved" message={<div className='pb-4'>Deploy it on <span className='underline cursor-pointer' onClick={() => navigate(`/repo/${owner}/${repo}/commits`)}>Commits view</span></div>} link={data.link} />,
           className: "bg-green-50 shadow-lg p-2",
           bodyClassName: "p-2",
         });
@@ -227,7 +248,7 @@ export function EnvConfig(props) {
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
         toast.update(progressToastId.current, {
-          render: <Error header="Error" message={err.data?.message ?? err.statusText}/>,
+          render: <Error header="Error" message={err.data?.message ?? err.statusText} />,
           className: "bg-red-50 shadow-lg p-2",
           bodyClassName: "p-2",
           progressClassName: "!bg-red-200",
@@ -237,12 +258,12 @@ export function EnvConfig(props) {
   }
 
   const deleteApp = () => {
-    progressToastId.current = toast(<InProgress header="Deleting..."/>, { autoClose: false });
+    progressToastId.current = toast(<InProgress header="Deleting..." />, { autoClose: false });
 
     gimletClient.deleteEnvConfig(owner, repo, env, config)
       .then((data) => {
         toast.update(progressToastId.current, {
-          render: <Success header="Configuration deleted" link={data.link}/>,
+          render: <Success header="Configuration deleted" link={data.link} />,
           className: "bg-green-50 shadow-lg p-2",
           bodyClassName: "p-2",
         });
@@ -251,7 +272,7 @@ export function EnvConfig(props) {
         window.scrollTo({ top: 0, left: 0 });
       }, err => {
         toast.update(progressToastId.current, {
-          render: <Error header="Error" message={err.data?.message ?? err.statusText}/>,
+          render: <Error header="Error" message={err.data?.message ?? err.statusText} />,
           className: "bg-red-50 shadow-lg p-2",
           bodyClassName: "p-2",
           progressClassName: "!bg-red-200",
@@ -396,7 +417,8 @@ export function EnvConfig(props) {
           />
         </div>
         <div className="w-full ml-14">
-          {(!selectedNavigation || selectedNavigation?.name === "General") &&
+          {selectedNavigation && selectedNavigation.name === "General"
+            && selectedNavigation.name !== "Databases / Queues / Buckets" &&
             <Generaltab
               config={config}
               action={action}
@@ -413,7 +435,8 @@ export function EnvConfig(props) {
               preview={preview}
             />
           }
-          {selectedNavigation && selectedNavigation.name !== "General" &&
+          {selectedNavigation && selectedNavigation.name !== "General"
+            && selectedNavigation.name !== "Databases / Queues / Buckets" &&
             <>
               <div className='w-full card p-6 pb-8'>
                 <HelmUI
@@ -453,6 +476,17 @@ export function EnvConfig(props) {
                 </div>
               }
             </>
+          }
+          {selectedNavigation?.name === "Databases / Queues / Buckets" &&
+            <DatabasesTab
+              gimletClient={gimletClient}
+              store={store}
+              app={configFile.app}
+              environment={env}
+              dependencyCatalog={dependencyCatalog}
+              configFileDependencies={configFile.dependencies}
+              setConfigFileDependencies={setDependencies}
+            />
           }
         </div>
       </div>
@@ -611,6 +645,7 @@ export const extractIngressAnnotations = (stackConfig, stackDefinition) => {
 function translateToNavigation(template) {
   const navigation = template.uiSchema.map((elem, idx) => ({ name: elem.metaData.name, href: ref(elem.metaData.name), uiSchemaOrder: idx }))
   navigation.unshift({ name: "General", href: "/general" })
+  navigation.push({ name: "Databases / Queues / Buckets", href: "/dependencies" })
   return navigation
 }
 

@@ -44,6 +44,13 @@ func (p *Pod) FQN() string {
 	return p.Namespace + "/" + p.Name
 }
 
+type DesrcribeResult struct {
+	Resource  string `json:"resource"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Result    string `json:"result"`
+}
+
 type Deployment struct {
 	Name          string `json:"name"`
 	Namespace     string `json:"namespace"`
@@ -51,7 +58,6 @@ type Deployment struct {
 	SHA           string `json:"sha"`
 	Branch        string `json:"branch"`
 	CommitMessage string `json:"commitMessage"`
-	Details       string `json:"details,omitempty"`
 }
 
 func (d *Deployment) FQN() string {

@@ -63,7 +63,7 @@ export function Kustomization(props) {
         <span className="block"><ReadyWidget resource={item} displayMessage={true} label="Applied" /></span>
       </div>
       <div className="col-span-5">
-        <div className="text-base font-medium field">
+        <div className="text-base font-medium capacitorField">
           <RevisionWidget
             kustomization={item}
             source={source}
@@ -131,7 +131,7 @@ export function RevisionWidget(props) {
         </NavigationButton>
       </span>
     }
-    <span className={`${ready ? '' : 'font-normal'} field`}>
+    <span className={`${ready ? '' : 'font-normal'} capacitorField`}>
       { !ready &&
       <span>Currently Applied: </span>
       }

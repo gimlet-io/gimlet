@@ -12,6 +12,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5"
@@ -34,7 +35,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	if branch == "" {
 		err := gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 			var err error
-			branch, err = nativeGit.HeadBranch(repo)
+			branch, err = gogit.HeadBranch(repo)
 			return err
 		})
 		if err != nil {
@@ -50,7 +51,7 @@ func commits(w http.ResponseWriter, r *http.Request) {
 	} else {
 		gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 			logrus.Debugf("getting branchheadhash for %s", branch)
-			hash = nativeGit.BranchHeadHash(repo, branch)
+			hash = gogit.BranchHeadHash(repo, branch)
 			return nil
 		})
 	}

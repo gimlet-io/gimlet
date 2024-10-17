@@ -299,11 +299,11 @@ func sendFluxEvents(w http.ResponseWriter, r *http.Request) {
 	clientHub.Broadcast <- jsonString
 }
 
-func deploymentDetails(w http.ResponseWriter, r *http.Request) {
-	var deployment api.Deployment
-	err := json.NewDecoder(r.Body).Decode(&deployment)
+func describeResult(w http.ResponseWriter, r *http.Request) {
+	var result api.DesrcribeResult
+	err := json.NewDecoder(r.Body).Decode(&result)
 	if err != nil {
-		logrus.Errorf("cannot decode deployment: %s", err)
+		logrus.Errorf("cannot decode describe result: %s", err)
 		http.Error(w, http.StatusText(400), 400)
 		return
 	}
@@ -311,30 +311,12 @@ func deploymentDetails(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.DeploymentDetailsEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.DeploymentDetailsEventString},
-		Deployment:     deployment.FQN(),
-		Details:        deployment.Details,
-	})
-	clientHub.Broadcast <- jsonString
-}
-
-func podDetails(w http.ResponseWriter, r *http.Request) {
-	var pod api.Pod
-	err := json.NewDecoder(r.Body).Decode(&pod)
-	if err != nil {
-		logrus.Errorf("cannot decode pod: %s", err)
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	clientHub, _ := r.Context().Value("clientHub").(*streaming.ClientHub)
-	jsonString, _ := json.Marshal(streaming.PodDetailsEvent{
-		StreamingEvent: streaming.StreamingEvent{Event: streaming.PodDetailsEventString},
-		Pod:            pod.FQN(),
-		Details:        pod.Details,
+	jsonString, _ := json.Marshal(streaming.DescribeResultEvent{
+		StreamingEvent: streaming.StreamingEvent{Event: streaming.DescribeResultEventString},
+		Resource:       result.Resource,
+		Namespace:      result.Namespace,
+		Name:           result.Name,
+		Result:         result.Result,
 	})
 	clientHub.Broadcast <- jsonString
 }

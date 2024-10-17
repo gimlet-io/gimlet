@@ -56,7 +56,7 @@ export function HelmRevisionWidget(props) {
           <span>{helmRelease.spec.chart.spec.version}@{helmRelease.spec.chart.spec.chart}</span>
         </span>
       }
-      <span className={`block ${ready || reconciling ? '' : 'font-normal text-neutral-600 dark:text-neutral-400'} field`}>
+      <span className={`block ${ready || reconciling ? '' : 'font-normal text-neutral-600 dark:text-neutral-400'} capacitorField`}>
         <span>Currently Installed: </span>
         {appliedRevision}@{version && version.chartName}
       </span>

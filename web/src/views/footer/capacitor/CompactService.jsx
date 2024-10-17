@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React from 'react';
 import { Logs } from '../logs'
 import { Describe } from './Describe'
-import { Pod, podContainers } from './Service'
+import { Pod } from './Service'
+import jp from 'jsonpath';
 
 export function CompactService(props) {
   const { service, capacitorClient, store } = props;
@@ -36,7 +36,7 @@ export function CompactService(props) {
                   store={store}
                   namespace={deployment.metadata.namespace}
                   deployment={deployment.metadata.name}
-                  containers={podContainers(service.pods)}
+                  pods={gimletPods(service.pods)}
                 />
                 <Describe
                   capacitorClient={capacitorClient}
@@ -66,4 +66,25 @@ export function CompactService(props) {
       </div>
     </div>
   )
+}
+
+export function gimletPods(pods) {
+  return pods.map((pod) => {
+    const podName = jp.query(pod, '$.metadata.name')[0];
+
+    let containers = []
+    const initContainerNames = jp.query(pod, '$.spec.initContainers[*].name');
+    initContainerNames.forEach((initContainerName) => {
+      containers.push({name: initContainerName});
+    });
+    const containerNames = jp.query(pod, '$.spec.containers[*].name');
+    containerNames.forEach((containerName) => {
+      containers.push({name: containerName});
+    });
+
+    return {
+      name: podName,
+      containers: containers
+    }
+  });
 }

@@ -3,7 +3,6 @@ import { ArrowPathIcon } from '@heroicons/react/20/solid'
 import { format, formatDistance } from "date-fns";
 import { DeployStatusModal } from './deployStatus';
 import DeployHandler from '../../deployHandler';
-import { envsForRepo } from './repo'
 import {
   ACTION_TYPE_ENVCONFIGS,
 } from "../../redux/redux";
@@ -109,8 +108,9 @@ export function PreviewView(props) {
     )
   }
 
-  const stacksForRepo = envsForRepo(envs, connectedAgents, repoName);
-  const stacks = stacksForRepo[previewEnvConfig.env]?.stacks
+  const stacks = connectedAgents[previewEnvConfig.env]?.stacks
+    ? connectedAgents[previewEnvConfig.env].stacks.filter(service => service.repo === repoName)
+    : []
   const deployHandler = new DeployHandler(owner, repo, gimletClient, store)
 
   return (

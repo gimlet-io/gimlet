@@ -15,6 +15,7 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/fluxcd/pkg/sourceignore"
 	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/util"
 	"github.com/go-git/go-git/v5"
@@ -75,7 +76,7 @@ func StackDefinitionFromRepo(repoUrl string) (string, error) {
 // cloneStackFromRepo takes a git repo url, and returns the files of the git reference
 // if the repoUrl is a local filesystem location, it loads the files from there
 func cloneStackFromRepo(repoURL string) (map[string]string, error) {
-	gitAddress, err := giturl.ParseScp(repoURL)
+	repo, err := gogit.FlexibleURLCloneToMemory(repoURL)
 	if err != nil {
 		_, err2 := os.Stat(repoURL)
 		if err2 != nil {
@@ -84,46 +85,10 @@ func cloneStackFromRepo(repoURL string) (map[string]string, error) {
 			return loadStackFromFS(repoURL)
 		}
 	}
-	gitUrl := strings.ReplaceAll(repoURL, gitAddress.RawQuery, "")
-	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
 
-	fs := memfs.New()
-	opts := &git.CloneOptions{
-		URL: gitUrl,
-	}
-	repo, err := git.Clone(memory.NewStorage(), fs, opts)
-	if err != nil {
-		return nil, fmt.Errorf("cannot clone: %s", err)
-	}
 	worktree, err := repo.Worktree()
 	if err != nil {
 		return nil, fmt.Errorf("cannot get worktree: %s", err)
-	}
-
-	params, _ := url.ParseQuery(gitAddress.RawQuery)
-	if v, found := params["sha"]; found {
-		err = worktree.Checkout(&git.CheckoutOptions{
-			Hash: plumbing.NewHash(v[0]),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("cannot checkout sha: %s", err)
-		}
-	}
-	if v, found := params["tag"]; found {
-		err = worktree.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewTagReferenceName(v[0]),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("cannot checkout tag: %s", err)
-		}
-	}
-	if v, found := params["branch"]; found {
-		err = worktree.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewRemoteReferenceName("origin", v[0]),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("cannot checkout branch: %s", err)
-		}
 	}
 
 	paths, err := util.Glob(worktree.Filesystem, "*/*")
@@ -146,7 +111,7 @@ func cloneStackFromRepo(repoURL string) (map[string]string, error) {
 	}
 	paths = append(paths, paths4...)
 
-	fs = worktree.Filesystem
+	fs := worktree.Filesystem
 
 	var stackIgnorePatterns []gitignore.Pattern
 	const stackIgnoreFile = ".stackignore"

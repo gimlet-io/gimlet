@@ -60,8 +60,7 @@ export const EVENT_IMAGE_BUILD_LOG_EVENT = 'imageBuildLogEvent';
 export const EVENT_FLUX_STATE_UPDATED_EVENT = 'fluxStateUpdatedEvent';
 export const EVENT_FLUX_EVENTS_UPDATED_EVENT = 'fluxK8sEventsUpdatedEvent';
 
-export const EVENT_DEPLOYMENT_DETAILS_EVENT = 'deploymentDetailsEvent';
-export const EVENT_POD_DETAILS_EVENT = 'podDetailsEvent';
+export const EVENT_DESCRIBE_RESULT_EVENT = 'describeResultEvent';
 
 export const EVENT_TYPE_COMMITEVENT = 'commitEvent';
 
@@ -198,10 +197,8 @@ function processStreamingEvent(state, event) {
       return eventHandlers.fluxStateUpdated(state, event);
     case EVENT_FLUX_EVENTS_UPDATED_EVENT:
       return eventHandlers.fluxEventsUpdated(state, event);
-    case EVENT_DEPLOYMENT_DETAILS_EVENT:
-      return eventHandlers.deploymentDetails(state, event);
-    case EVENT_POD_DETAILS_EVENT:
-      return eventHandlers.podDetails(state, event);
+    case EVENT_DESCRIBE_RESULT_EVENT:
+      return eventHandlers.describeResult(state, event);
     case EVENT_TYPE_COMMITEVENT:
       return eventHandlers.commitEvent(state, event)
     default:

@@ -17,7 +17,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/server"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
-	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/gimlet-io/gimlet/pkg/server/token"
 	"github.com/go-git/go-git/v5"
@@ -78,7 +78,7 @@ func bootstrapBuiltInEnv(
 		return fmt.Errorf("cannot get repo: %s", err)
 	}
 
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return fmt.Errorf("cannot get head branch: %s", err)
 	}
@@ -166,11 +166,11 @@ func initRepo(url string) (*git.Repository, string, error) {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
 
-	err = nativeGit.StageFile(w, "", "README.md")
+	err = gogit.StageFile(w, "", "README.md")
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
-	_, err = nativeGit.Commit(repo, "Init")
+	_, err = gogit.Commit(repo, "Init")
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
@@ -215,12 +215,12 @@ func stageCommitAndPush(repo *git.Repository, tmpPath string, user string, passw
 		return err
 	}
 
-	_, err = nativeGit.Commit(repo, msg)
+	_, err = gogit.Commit(repo, msg)
 	if err != nil {
 		return err
 	}
 
-	err = nativeGit.PushWithBasicAuth(repo, user, password)
+	err = gogit.PushWithBasicAuth(repo, user, password)
 	if err != nil {
 		return err
 	}
