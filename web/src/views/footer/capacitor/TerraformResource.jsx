@@ -74,37 +74,21 @@ export function TerraformResource(props) {
           </ErrorBoundary>
         </div>
       </div>
-      <div className="grid grid-cols-1 text-right space-y-1">
+      <div className="grid-cols-1 text-right space-y-1">
         <button
-          className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-2 border border-neutral-300 rounded"
-          onClick={() => {
-            if (item.spec.suspend) {
-              // eslint-disable-next-line no-restricted-globals
-              confirm(
-                `Are you sure you want to resume ${item.metadata.name}?`,
-              ) &&
-                capacitorClient.resume(
-                  "Terraform",
-                  item.metadata.namespace,
-                  item.metadata.name,
-                );
-            } else {
-              // eslint-disable-next-line no-restricted-globals
-              confirm(
-                `Are you sure you want to suspend ${item.metadata.name}?`,
-              ) &&
-                capacitorClient.suspend(
-                  "Terraform",
-                  item.metadata.namespace,
-                  item.metadata.name,
-                );
-            }
-          }}
+          className="w-24 bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-2 border border-neutral-300 rounded"
+          onClick={() =>
+            capacitorClient.reconcile(
+              "Terraform",
+              item.metadata.namespace,
+              item.metadata.name,
+            )
+          }
         >
-          {item.spec.suspend ? "Resume" : "Suspend"}
+          Describe
         </button>
         <button
-          className="bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-2 border border-neutral-300 rounded"
+          className="w-24 bg-transparent hover:bg-neutral-100 font-medium text-sm text-neutral-700 py-1 px-2 border border-neutral-300 rounded"
           onClick={() =>
             capacitorClient.reconcile(
               "Terraform",

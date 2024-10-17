@@ -214,20 +214,13 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	agentHub.StopPodLogs(namespace, deployment)
 }
 
-func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
-	namespace := r.URL.Query().Get("namespace")
-	deployment := r.URL.Query().Get("name")
-
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.DeploymentDetails(namespace, deployment)
-}
-
-func getPodDetails(w http.ResponseWriter, r *http.Request) {
+func describe(w http.ResponseWriter, r *http.Request) {
+	resource := r.URL.Query().Get("resource")
 	namespace := r.URL.Query().Get("namespace")
 	name := r.URL.Query().Get("name")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.PodDetails(namespace, name)
+	agentHub.Describe(resource, namespace, name)
 }
 
 func reconcile(w http.ResponseWriter, r *http.Request) {

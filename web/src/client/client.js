@@ -75,7 +75,7 @@ export default class GimletClient {
 
   stopPodlogsRequest = (namespace, deployment) => this.get(`/api/stopPodLogs?namespace=${namespace}&deploymentName=${deployment}`);
 
-  deploymentDetailsRequest = (namespace, name) => this.get(`/api/deploymentDetails?namespace=${namespace}&name=${name}`);
+  describe = (resource, namespace, name) => this.get(`/api/describe?resource=${resource}&namespace=${namespace}&name=${name}`);
 
   podDetailsRequest = (namespace, name) => this.get(`/api/podDetails?namespace=${namespace}&name=${name}`);
 

@@ -29,13 +29,13 @@ export function Describe(props) {
   store.subscribe(() => setContent(store.getState().details[selected]));
 
   const describeDeployment = () => {
-    capacitorClient.deploymentDetailsRequest(namespace, deployment)
-    setSelected(namespace + "/" + deployment)
+    capacitorClient.describe("Deployment", namespace, deployment)
+    setSelected("Deployment/"+namespace + "/" + deployment)
   }
 
   const describePod = (podNamespace, podName) => {
-    capacitorClient.podDetailsRequest(podNamespace, podName)
-    setSelected(podNamespace + "/" + podName)
+    capacitorClient.describe("Pod", podNamespace, podName)
+    setSelected("Pod/"+podNamespace + "/" + podName)
   }
 
   const closeDetailsHandler = () => {

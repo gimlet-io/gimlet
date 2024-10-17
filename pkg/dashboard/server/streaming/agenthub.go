@@ -96,39 +96,22 @@ func (h *AgentHub) StreamPodLogsSend(namespace string, deployment string, pod st
 	}
 }
 
-func (h *AgentHub) DeploymentDetails(namespace string, deployment string) {
-	deploymentDetailsRequest := map[string]interface{}{
-		"action":         "deploymentDetails",
-		"namespace":      namespace,
-		"deploymentName": deployment,
-	}
-
-	deploymentDetailsRequestString, err := json.Marshal(deploymentDetailsRequest)
-	if err != nil {
-		logrus.Errorf("could not serialize request: %s", err)
-		return
-	}
-
-	for _, a := range h.Agents {
-		a.EventChannel <- []byte(deploymentDetailsRequestString)
-	}
-}
-
-func (h *AgentHub) PodDetails(namespace string, podName string) {
-	deploymentDetailsRequest := map[string]interface{}{
-		"action":    "podDetails",
+func (h *AgentHub) Describe(resource string, namespace string, deployment string) {
+	describeRequest := map[string]interface{}{
+		"action":    "describe",
+		"resource":  resource,
 		"namespace": namespace,
-		"podName":   podName,
+		"name":      deployment,
 	}
 
-	podDetailsRequestString, err := json.Marshal(deploymentDetailsRequest)
+	describeRequestString, err := json.Marshal(describeRequest)
 	if err != nil {
 		logrus.Errorf("could not serialize request: %s", err)
 		return
 	}
 
 	for _, a := range h.Agents {
-		a.EventChannel <- []byte(podDetailsRequestString)
+		a.EventChannel <- []byte(describeRequestString)
 	}
 }
 
