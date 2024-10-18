@@ -25,7 +25,7 @@ export function ReadyWidget(props) {
 
   const readyConditions = jp.query(resource.status, '$..conditions[?(@.type=="Ready")]');
   const readyCondition = readyConditions.length === 1 ? readyConditions[0] : undefined
-  const ready = readyCondition && readyConditions[0].status === "True"
+  const ready = readyCondition?.status === "True"
 
   const dependencyNotReady = readyCondition && readyCondition.reason === "DependencyNotReady"
 
@@ -38,12 +38,22 @@ export function ReadyWidget(props) {
 
   const reconcilingConditions = jp.query(resource.status, '$..conditions[?(@.type=="Reconciling")]');
   const reconcilingCondition = reconcilingConditions.length === 1 ? reconcilingConditions[0] : undefined
-  const reconciling = reconcilingCondition && reconcilingCondition.status === "True"    
+  let reconciling = reconcilingCondition?.status === "True"
+  if (resource.kind === 'Terraform') {
+    const planConditions = jp.query(resource.status, '$..conditions[?(@.type=="Plan")]');
+    const planCondition = planConditions.length === 1 ? planConditions[0] : undefined
+    const planning = planCondition?.status === "False"
+
+    const applyConditions = jp.query(resource.status, '$..conditions[?(@.type=="Apply")]');
+    const applyCondition = applyConditions.length === 1 ? applyConditions[0] : undefined
+    const applying = applyCondition?.status === "False"
+
+    reconciling = !ready && (planning || applying || (!planCondition && !applyCondition))
+  }
 
   const fetchFailedConditions = jp.query(resource.status, '$..conditions[?(@.type=="FetchFailed")]');
   const fetchFailedCondition = fetchFailedConditions.length === 1 ? fetchFailedConditions[0] : undefined
-  const fetchFailed = fetchFailedCondition && fetchFailedCondition.status === "True"  
-
+  const fetchFailed = fetchFailedCondition && fetchFailedCondition.status === "True"
 
   var [color,statusLabel,messageColor] = ['','','']
   const readyLabel = label ? label : "Ready"
@@ -70,18 +80,19 @@ export function ReadyWidget(props) {
         </>
         }
       </div>
-      {displayMessage && readyCondition &&
+      {displayMessage &&
         <div className={`${messageColor} text-neutral-600 dark:text-neutral-400`}>
-          {reconciling &&
+          {reconciling && reconcilingCondition &&
             <span title={reconcilingCondition.message}>{reconcilingCondition.message}</span>
           }
           {dependencyNotReady &&
             <span>Dependency not ready</span>
           }
+          {readyCondition &&
           <span title={readyCondition.message}>{readyCondition.message}</span>
+          }
         </div>
       }
     </div>
-
   )
 }

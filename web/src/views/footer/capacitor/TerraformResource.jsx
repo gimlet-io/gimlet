@@ -60,7 +60,7 @@ export function TerraformResource(props) {
           <ReadyWidget
             resource={item}
             displayMessage={true}
-            label="Reconciled"
+            label="Applied"
           />
         </span>
       </div>
