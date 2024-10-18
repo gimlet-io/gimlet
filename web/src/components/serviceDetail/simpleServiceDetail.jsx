@@ -5,7 +5,7 @@ import { copyToClipboard } from '../../views/settings/settings';
 import Timeline from './timeline';
 import { Logs } from '../../views/footer/logs';
 import { Describe } from '../../views/footer/capacitor/Describe';
-import { Pod, podContainers } from './serviceDetail'
+import { Pod } from './serviceDetail'
 import { ACTION_TYPE_ROLLOUT_HISTORY } from '../../redux/redux'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid';
 
@@ -77,7 +77,7 @@ function SimpleServiceDetail(props) {
                     store={store}
                     namespace={deployment.namespace}
                     deployment={deployment.name}
-                    containers={podContainers(deployment.pods)}
+                    pods={deployment.pods}
                   />
                   <Describe
                     capacitorClient={gimletClient}

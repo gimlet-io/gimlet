@@ -9,25 +9,23 @@ import MenuButton from '../../components/menuButton/menuButton';
 import Dropdown from '../../components/dropdown/dropdown';
 import { DeployStatusModal } from './deployStatus';
 import DeployHandler from '../../deployHandler';
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 export default function Repo(props) {
   const { store, gimletClient } = props
-  const { owner, repo, environment, deployment } = useParams()
+  const { owner, repo } = useParams()
   const repoName = `${owner}/${repo}`
   const navigate = useNavigate()
-  const location = useLocation()
 
   const reduxState = store.getState();
   const [connectedAgents, setConnectedAgents] = useState(reduxState.connectedAgents)
+  const [fluxState, setFluxState] = useState(reduxState.fluxState)
   const [rolloutHistory, setRolloutHistory] = useState(reduxState.rolloutHistory)
   const [envConfigs, setEnvConfigs] = useState(reduxState.envConfigs[repoName])
   const [settings, setSettings] = useState(reduxState.settings)
   const [refreshQueue, setRefreshQueue] = useState(reduxState.repoRefreshQueue.filter(repo => repo === repoName).length)
   const [refreshQueueLength, setRefreshQueueLength] = useState(0)
-  const [agents, setAgents] = useState(reduxState.settings.agents)
   const [envs, setEnvs] = useState(reduxState.envs)
-  const [repoMetas, setRepoMetas] = useState(reduxState.repoMetas)
   const [fileInfos, setFileInfos] = useState(reduxState.fileInfos)
   const [alerts, setAlerts] = useState(reduxState.alerts)
   const [deployStatusModal, setDeployStatusModal] = useState(false)
@@ -38,10 +36,10 @@ export default function Repo(props) {
   store.subscribe(() => {
     const reduxState = store.getState();
     setConnectedAgents(reduxState.connectedAgents)
+    setFluxState(reduxState.fluxState)
     setRolloutHistory(reduxState.rolloutHistory)
     setEnvConfigs(reduxState.envConfigs[repoName])
     setEnvs(reduxState.envs)
-    setRepoMetas(reduxState.repoMetas)
     setFileInfos(reduxState.fileInfos)
     setSettings(reduxState.settings)
     setAlerts(reduxState.alerts)
@@ -53,7 +51,6 @@ export default function Repo(props) {
       }
       return queueLength
     });
-    setAgents(reduxState.settings.agents);
   });
 
   useEffect(() => {
@@ -98,19 +95,9 @@ export default function Repo(props) {
       });
   }
 
-  const navigateToConfigEdit = (env, config) => {
-    navigate(encodeURI(`/repo/${owner}/${repo}/envs/${env}/config/${config}/edit`))
-  }
-
-  const linkToDeployment = (env, deployment) => {
-    navigate(`/repo/${owner}/${repo}/${env}/${deployment}?${location.search}`)
-  }
-
   const fileMetasByEnv = (envName) => {
     return fileInfos.filter(fileInfo => fileInfo.envName === envName)
   }
-
-  const stacksForRepo = envsForRepo(envs, connectedAgents, repoName);
 
   let repoRolloutHistory = undefined;
   if (rolloutHistory && rolloutHistory[repoName]) {
@@ -160,29 +147,25 @@ export default function Repo(props) {
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="pt-8 px-4 sm:px-0">
             <div>
-              {envConfigs && Object.keys(stacksForRepo).sort().map((envName) =>
+              {envConfigs && envs.map((env) =>
                 {
-                  const unselected = envName !== selectedEnv && selectedEnv !== "All Environments"
+                  const unselected = env.name !== selectedEnv && selectedEnv !== "All Environments"
                   return unselected ? null :
                   <Env
-                    key={envName}
-                    env={stacksForRepo[envName]}
+                    key={env.name}
+                    env={env}
+                    connectedAgents={connectedAgents}
+                    fluxState={fluxState}
                     repoRolloutHistory={repoRolloutHistory}
-                    envConfigs={envConfigs[envName]}
-                    navigateToConfigEdit={navigateToConfigEdit}
-                    linkToDeployment={linkToDeployment}
+                    envConfigs={envConfigs[env.name]}
                     rollback={(env, app, rollbackTo) => {
                       setDeployStatusModal(true);
                       deployHandler.rollback(env, app, rollbackTo)
                     }}
-                    owner={owner}
-                    repoName={repo}
-                    fileInfos={fileMetasByEnv(envName)}
+                    fileInfos={fileMetasByEnv(env.name)}
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={gimletClient}
                     store={store}
-                    envFromParams={environment}
-                    deploymentFromParams={deployment}
                     settings={settings}
                     alerts={alerts}
                     appFilter={appFilter}
@@ -218,33 +201,3 @@ function AppFilter(props) {
     </div>
   )
 }
-
-export function envsForRepo(envs, connectedAgents, repoName) {
-  let envsForRepo = {};
-
-  if (!connectedAgents || !envs) {
-    return envsForRepo;
-  }
-  
-  for (const env of envs) {
-    envsForRepo[env.name] = {
-      ...env,
-      isOnline: isOnline(connectedAgents, env)
-    };
-
-    envsForRepo[env.name].stacks = connectedAgents[env.name]?.stacks
-      ? connectedAgents[env.name].stacks.filter(service => service.repo === repoName)
-      : []
-  }
-
-  return envsForRepo;
-}
-
-function isOnline(onlineEnvs, singleEnv) {
-  return Object.keys(onlineEnvs)
-      .map(env => onlineEnvs[env])
-      .some(onlineEnv => {
-          return onlineEnv.name === singleEnv.name
-      })
-};
-

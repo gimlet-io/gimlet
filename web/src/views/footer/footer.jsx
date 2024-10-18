@@ -30,6 +30,7 @@ const Footer = memo(class Footer extends Component {
 
     this.handleToggle = this.handleToggle.bind(this)
     this.handleNavigationSelect = this.handleNavigationSelect.bind(this)
+    window.navigateFooter = this.handleNavigationSelect;
     this.setSelectedEnv = this.setSelectedEnv.bind(this)
   }
 
@@ -47,6 +48,7 @@ const Footer = memo(class Footer extends Component {
 
   handleNavigationSelect(selectedNav, objectNs, objectName, objectKind) {
     this.setState({
+      open: true,
       selectedTab: selectedNav,
       targetReference: {objectNs, objectName, objectKind}
     })

@@ -25,6 +25,7 @@
     "react-diff-viewer-continued": "^3.4.0",
     "react-dom": "^18.3.1",
     "react-emoji-render": "^2.0.1",
+    "react-error-boundary": "^4.1.0",
     "react-infinite-scroll-component": "^6.1.0",
     "react-router-dom": "^6.26.2",
     "react-toastify": "^10.0.5",

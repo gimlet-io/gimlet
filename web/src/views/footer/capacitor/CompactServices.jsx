@@ -16,10 +16,9 @@ limitations under the License.
 Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/CompactServices.jsx
 */
 
-import React, { memo } from 'react';
 import { CompactService } from "./CompactService"
 
-export const CompactServices = memo(function CompactServices(props) {
+export const CompactServices = function CompactServices(props) {
   const { capacitorClient, store, services } = props
 
   return (
@@ -38,4 +37,4 @@ export const CompactServices = memo(function CompactServices(props) {
       }
     </div>
   )
-})
+}

@@ -25,7 +25,7 @@ export function ReadyWidget(props) {
 
   const readyConditions = jp.query(resource.status, '$..conditions[?(@.type=="Ready")]');
   const readyCondition = readyConditions.length === 1 ? readyConditions[0] : undefined
-  const ready = readyCondition && readyConditions[0].status === "True"
+  const ready = readyCondition?.status === "True"
 
   const dependencyNotReady = readyCondition && readyCondition.reason === "DependencyNotReady"
 
@@ -38,46 +38,61 @@ export function ReadyWidget(props) {
 
   const reconcilingConditions = jp.query(resource.status, '$..conditions[?(@.type=="Reconciling")]');
   const reconcilingCondition = reconcilingConditions.length === 1 ? reconcilingConditions[0] : undefined
-  const reconciling = reconcilingCondition && reconcilingCondition.status === "True"    
+  let reconciling = reconcilingCondition?.status === "True"
+  if (resource.kind === 'Terraform') {
+    const planConditions = jp.query(resource.status, '$..conditions[?(@.type=="Plan")]');
+    const planCondition = planConditions.length === 1 ? planConditions[0] : undefined
+    const planning = planCondition?.status === "False"
+
+    const applyConditions = jp.query(resource.status, '$..conditions[?(@.type=="Apply")]');
+    const applyCondition = applyConditions.length === 1 ? applyConditions[0] : undefined
+    const applying = applyCondition?.status === "False"
+
+    reconciling = !ready && (planning || applying || (!planCondition && !applyCondition))
+  }
 
   const fetchFailedConditions = jp.query(resource.status, '$..conditions[?(@.type=="FetchFailed")]');
   const fetchFailedCondition = fetchFailedConditions.length === 1 ? fetchFailedConditions[0] : undefined
-  const fetchFailed = fetchFailedCondition && fetchFailedCondition.status === "True"  
-
+  const fetchFailed = fetchFailedCondition && fetchFailedCondition.status === "True"
 
   var [color,statusLabel,messageColor] = ['','','']
   const readyLabel = label ? label : "Ready"
   if (resource.kind === 'GitRepository' || resource.kind === "OCIRepository" || resource.kind === "Bucket") {
     color = fetchFailed ? "bg-orange-400 animate-pulse" : reconciling ? "bg-blue-400 animate-pulse" : ready ? "bg-green-300 dark:bg-teal-600" : "bg-orange-400 animate-pulse"
     statusLabel = fetchFailed ? "Error" : reconciling ?  "Reconciling" : ready ? readyLabel : "Error"
-    messageColor = fetchFailed ? "bg-orange-400" : reconciling ?  "" : ready ? "field" : "bg-orange-400"
+    messageColor = fetchFailed ? "bg-orange-400" : reconciling ?  "" : ready ? "capacitorField" : "bg-orange-400"
   } else {
     color = ready ? "bg-green-300 dark:bg-teal-600" : (reconciling || dependencyNotReady) && !stalled ? "bg-blue-400 animate-pulse" : "bg-orange-400 animate-pulse"
     statusLabel = ready ? readyLabel : (reconciling || dependencyNotReady) && !stalled ? "Reconciling" : "Error"
-    messageColor = ready ? "field" : (reconciling || dependencyNotReady) && !stalled ? "" : "bg-orange-400"
+    messageColor = ready ? "capacitorField" : (reconciling || dependencyNotReady) && !stalled ? "" : "bg-orange-400"
   }
 
   return (
     <div className="relative">
       <div className="font-medium">
         <span className={`absolute -left-4 top-1 rounded-full h-3 w-3 ${color} inline-block`}></span>
-        <span>{statusLabel}</span>
-        {readyCondition &&
-          <span className='ml-1'><TimeLabel title={exactDate} date={parsed} /> ago</span>
+        {label &&
+        <>
+          <span>{statusLabel}</span>
+          {readyCondition &&
+            <span className='ml-1'><TimeLabel title={exactDate} date={parsed} /> ago</span>
+          }
+        </>
         }
       </div>
-      {displayMessage && readyCondition &&
+      {displayMessage &&
         <div className={`${messageColor} text-neutral-600 dark:text-neutral-400`}>
-          {reconciling &&
+          {reconciling && reconcilingCondition &&
             <span title={reconcilingCondition.message}>{reconcilingCondition.message}</span>
           }
           {dependencyNotReady &&
             <span>Dependency not ready</span>
           }
+          {readyCondition &&
           <span title={readyCondition.message}>{readyCondition.message}</span>
+          }
         </div>
       }
     </div>
-
   )
 }

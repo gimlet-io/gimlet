@@ -16,8 +16,7 @@ const PodLogsEventString = "podLogs"
 const ImageBuildLogEventString = "imageBuildLogEvent"
 const FluxStateUpdatedEventString = "fluxStateUpdatedEvent"
 const FluxK8sEventsUpdatedEventString = "fluxK8sEventsUpdatedEvent"
-const DeploymentDetailsEventString = "deploymentDetailsEvent"
-const PodDetailsEventString = "podDetailsEvent"
+const DescribeResultEventString = "describeResultEvent"
 const AlertPendingEventString = "alertPending"
 const AlertFiredEventString = "alertFired"
 const AlertResolvedEventString = "alertResolved"
@@ -54,15 +53,11 @@ type FluxK8sEventsUpdatedEvent struct {
 	StreamingEvent
 }
 
-type DeploymentDetailsEvent struct {
-	Deployment string `json:"deployment"`
-	Details    string `json:"details"`
-	StreamingEvent
-}
-
-type PodDetailsEvent struct {
-	Pod     string `json:"pod"`
-	Details string `json:"details"`
+type DescribeResultEvent struct {
+	Resource  string `json:"resource"`
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
+	Result    string `json:"result"`
 	StreamingEvent
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/fluxcd/pkg/ssh"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
-	helper "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/gitops/sync"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
@@ -339,10 +339,10 @@ func GitopsRepoFileAndMetaNameFromRepo(repoPath string, contentPath string, bran
 		return "", ""
 	}
 	if branch == "" {
-		branch, _ = helper.HeadBranch(repo)
+		branch, _ = gogit.HeadBranch(repo)
 	}
 
-	files, _ := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, contentPath)
+	files, _ := gogit.RemoteFolderOnBranchWithoutCheckout(repo, branch, contentPath)
 	for fileName, fileContent := range files {
 		if strings.Contains(fileName, "gitops-repo") {
 			gitopsRepoFileName = fileName

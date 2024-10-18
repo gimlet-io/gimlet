@@ -24,6 +24,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	bootstrap "github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/gimlet-io/gimlet/pkg/gitops/sync"
@@ -428,7 +429,7 @@ func processReleaseEvent(
 		}
 
 		appsRepo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
-		defer nativeGit.TmpFsCleanup(repoTmpPath)
+		defer gogit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -534,7 +535,7 @@ func processRollbackEvent(
 	t0 := time.Now().UnixNano()
 	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
 	logrus.Infof("Obtaining instance for write took %d", (time.Now().UnixNano()-t0)/1000/1000)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer gogit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +564,7 @@ func processRollbackEvent(
 	if envFromStore.BuiltIn {
 		url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Token, gitHost, envFromStore.AppsRepo)
 	}
-	err = nativeGit.NativePushWithToken(
+	err = gogit.NativePushWithToken(
 		url,
 		repoTmpPath,
 		head.Name().Short(),
@@ -674,7 +675,7 @@ func processArtifactEvent(
 		}
 
 		appsRepo, repoTmpPath, err := gitRepoCache.InstanceForWrite(envFromStore.AppsRepo)
-		defer nativeGit.TmpFsCleanup(repoTmpPath)
+		defer gogit.TmpFsCleanup(repoTmpPath)
 		if err != nil {
 			deployResult.Status = model.Failure
 			deployResult.StatusDesc = err.Error()
@@ -818,7 +819,7 @@ func comment(
 }
 
 func loadVars(repo *git.Repository, varsPath string) (map[string]string, error) {
-	envVarsString, err := nativeGit.Content(repo, varsPath)
+	envVarsString, err := gogit.Content(repo, varsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -927,7 +928,7 @@ func cloneTemplateWriteAndPush(
 				url = fmt.Sprintf("http://%s:%s@%s/%s", gitUser.Login, gitUser.Token, gitHost, environment.AppsRepo)
 			}
 
-			return nativeGit.NativePushWithToken(
+			return gogit.NativePushWithToken(
 				url,
 				repoTmpPath,
 				head.Name().Short(),
@@ -946,33 +947,6 @@ func cloneTemplateWriteAndPush(
 	return sha, nil
 }
 
-func injectGimletCTA(manifest *dx.Manifest) {
-	if _, ok := manifest.Values["ingress"]; !ok {
-		return
-	}
-
-	ingress := manifest.Values["ingress"].(map[string]interface{})
-	if _, ok := ingress["annotations"]; !ok {
-		ingress["annotations"] = map[string]interface{}{}
-	}
-	annotations := ingress["annotations"].(map[string]interface{})
-	annotations["nginx.ingress.kubernetes.io/configuration-snippet"] = `sub_filter '</body>' '
-		<div class="bg-transparent bottom-0 md:px-0 fixed z-[2147483647] left-0 md:left-[calc(50%-390px)]">
-			<iframe class="h-48 min-h-[initial] max-h-[initial] translate-[initial] bg-transparent border-0 block w-screen md:w-[780px]"
-				id="github-iframe"
-				title="Gimlet Drawer"
-				src=""
-			>
-			</iframe>
-		<script src="https://cdn.tailwindcss.com"></script>
-		<script>
-			fetch("https://api.github.com/repos/dzsak/deploying-a-static-site-with-netlify-sample/contents/gimlet-preview.html?ref=v0.0.1-rc.19").then(function(t){return t.json()})
-				.then(function(t){(iframe=document.getElementById("github-iframe")).src="data:text/html;base64,"+encodeURIComponent(t.content)});
-		</script>
-	</body>';
-	proxy_set_header Accept-Encoding "";`
-}
-
 func cloneTemplateDeleteAndPush(
 	gitopsRepoCache *nativeGit.RepoCache,
 	cleanupPolicy *dx.Cleanup,
@@ -987,7 +961,7 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	repo, repoTmpPath, err := gitopsRepoCache.InstanceForWrite(envFromStore.AppsRepo)
-	defer nativeGit.TmpFsCleanup(repoTmpPath)
+	defer gogit.TmpFsCleanup(repoTmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -1002,18 +976,18 @@ func cloneTemplateDeleteAndPush(
 		if envFromStore.RepoPerEnv {
 			kustomizationFilePath = filepath.Join("flux", fmt.Sprintf("kustomization-%s.yaml", cleanupPolicy.AppToCleanup))
 		}
-		err := nativeGit.DelFile(repo, kustomizationFilePath)
+		err := gogit.DelFile(repo, kustomizationFilePath)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	err = nativeGit.DelDir(repo, path)
+	err = gogit.DelDir(repo, path)
 	if err != nil {
 		return "", err
 	}
 
-	empty, err := nativeGit.NothingToCommit(repo)
+	empty, err := gogit.NothingToCommit(repo)
 	if err != nil {
 		return "", err
 	}
@@ -1022,11 +996,11 @@ func cloneTemplateDeleteAndPush(
 	}
 
 	gitMessage := fmt.Sprintf("[Gimlet] %s/%s deleted by %s", env, cleanupPolicy.AppToCleanup, triggeredBy)
-	sha, err := nativeGit.Commit(repo, gitMessage)
+	sha, err := gogit.Commit(repo, gitMessage)
 
 	if sha != "" { // if there is a change to push
 		head, _ := repo.Head()
-		err = nativeGit.NativePushWithToken(
+		err = gogit.NativePushWithToken(
 			fmt.Sprintf("https://abc123:%s@github.com/%s.git", nonImpersonatedToken, envFromStore.AppsRepo),
 			repoTmpPath,
 			head.Name().Short(),
@@ -1057,7 +1031,7 @@ func revertTo(
 	if err != nil {
 		return errors.WithMessage(err, "could not walk commits")
 	}
-	commits = nativeGit.NewCommitDirIterFromIter(path, commits, repo)
+	commits = gogit.NewCommitDirIterFromIter(path, commits, repo)
 
 	commitsToRevert := []*object.Commit{}
 	err = commits.ForEach(func(c *object.Commit) error {
@@ -1078,7 +1052,7 @@ func revertTo(
 		hasBeenReverted, err := gitops.HasBeenReverted(repo, commit, env, app, repoPerEnv)
 		if !hasBeenReverted {
 			logrus.Infof("reverting %s", commit.Hash.String())
-			err = nativeGit.NativeRevert(repoTmpPath, commit.Hash.String())
+			err = gogit.NativeRevert(repoTmpPath, commit.Hash.String())
 			if err != nil {
 				return errors.WithMessage(err, "could not revert")
 			}
@@ -1111,7 +1085,7 @@ func gitopsTemplateAndWrite(
 	}
 	if strings.Contains(manifest.Chart.Name, ".git") {
 		t0 := time.Now().UnixNano()
-		tmpChartDir, err := dx.CloneChartFromRepo(manifest, tokenForChartClone)
+		tmpChartDir, err := dx.CloneChartFromRepo(manifest.Chart, tokenForChartClone)
 		if err != nil {
 			return "", fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
@@ -1164,7 +1138,7 @@ func gitopsTemplateAndWrite(
 	files[filepath.Join(appFolderPath, "release.json")] = string(releaseString)
 	files[filepath.Join(envReleaseJsonPath, "release.json")] = string(releaseString)
 
-	sha, err := nativeGit.CommitFilesToGit(
+	sha, err := gogit.CommitFilesToGit(
 		repo,
 		files,
 		[]string{appFolderPath},

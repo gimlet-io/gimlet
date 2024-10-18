@@ -16,6 +16,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/server/streaming"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -185,14 +186,14 @@ func (r *RepoCache) syncGitRepo(repoName string) {
 		return
 	}
 
-	headBranch, err := HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		logrus.Errorf("cannot get head branch: %s", err)
 		r.cleanRepo(repoName)
 		return
 	}
 
-	branchHeadHash := BranchHeadHash(repo, headBranch)
+	branchHeadHash := gogit.BranchHeadHash(repo, headBranch)
 	err = w.Reset(&git.ResetOptions{
 		Commit: branchHeadHash,
 		Mode:   git.HardReset,
@@ -324,7 +325,7 @@ func (r *RepoCache) Invalidate(repoName string) {
 func (r *RepoCache) clone(repoName string, withHistory bool) (*repoData, error) {
 	repoPath := filepath.Join(r.config.RepoCachePath, strings.ReplaceAll(repoName, "/", "%"))
 	os.RemoveAll(repoPath)
-	err := os.MkdirAll(repoPath, Dir_RWX_RX_R)
+	err := os.MkdirAll(repoPath, gogit.Dir_RWX_RX_R)
 	if err != nil {
 		return nil, errors.WithMessage(err, "couldn't create folder")
 	}
