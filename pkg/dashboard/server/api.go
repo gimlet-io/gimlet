@@ -392,8 +392,8 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 	for _, component := range catalog["catalog"].([]interface{}) {
 		c := component.(map[string]interface{})
 		url := c["url"].(string)
-		if requiredStackComponent, ok := stackConfig.Config["requiredStackComponent"]; ok {
-			if _, exists := c[requiredStackComponent.(string)]; !exists {
+		if requiredStackComponent, ok := c["requiredStackComponent"]; ok {
+			if _, exists := stackConfig.Config[requiredStackComponent.(string)]; !exists {
 				continue
 			}
 		}
@@ -409,6 +409,11 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	for _, dep := range manifest.Dependencies {
+		chartExists := chartExists(components, &dep.Chart)
+		if chartExists {
+			continue
+		}
+
 		schema, schemaUI, err := dx.ChartSchema(dep.Chart, installationToken)
 		if err != nil {
 			logrus.Warnf("could not get chart schema for %s: %s", dep.Name, err)
@@ -430,6 +435,15 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write([]byte(componentsString))
+}
+
+func chartExists(components []DeploymentTemplate, chart *dx.Chart) bool {
+	for _, c := range components {
+		if c.Reference.Chart.Equals(chart) {
+			return true
+		}
+	}
+	return false
 }
 
 func StackConfig(gitRepoCache *nativeGit.RepoCache, stackYamlPath, infraRepo string) (*dx.StackConfig, error) {

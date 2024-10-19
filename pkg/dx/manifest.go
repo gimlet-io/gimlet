@@ -44,6 +44,12 @@ type Chart struct {
 	Version    string `yaml:"version,omitempty" json:"version,omitempty"`
 }
 
+func (c *Chart) Equals(c2 *Chart) bool {
+	return c.Repository == c2.Repository &&
+		c.Name == c2.Name &&
+		c.Version == c2.Version
+}
+
 type Deploy struct {
 	Tag                   string    `yaml:"tag,omitempty" json:"tag,omitempty"`
 	Branch                string    `yaml:"branch,omitempty" json:"branch,omitempty"`
