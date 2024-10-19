@@ -332,6 +332,7 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 	cfg := ctx.Value("config").(*config.Config)
 	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
 	installationToken, _, _ := tokenManager.Token()
+	db := r.Context().Value("store").(*store.Store)
 
 	owner := chi.URLParam(r, "owner")
 	repoName := chi.URLParam(r, "name")
@@ -348,6 +349,26 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 		})
 	if err != nil {
 		logrus.Errorf("cannot get manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	environment, err := db.GetEnvironment(env)
+	if err != nil {
+		logrus.Errorf("cannot get env: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	stackYamlPath := "stack.yaml"
+	if !environment.RepoPerEnv {
+		stackYamlPath = filepath.Join(environment.Name, "stack.yaml")
+	}
+
+	stackConfig, err := StackConfig(gitRepoCache, stackYamlPath, environment.InfraRepo)
+	if err != nil {
+		logrus.Errorf("cannot get stack config: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -369,7 +390,13 @@ func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
 
 	components := []DeploymentTemplate{}
 	for _, component := range catalog["catalog"].([]interface{}) {
-		url := component.(map[string]interface{})["url"].(string)
+		c := component.(map[string]interface{})
+		url := c["url"].(string)
+		if requiredStackComponent, ok := stackConfig.Config["requiredStackComponent"]; ok {
+			if _, exists := c[requiredStackComponent.(string)]; !exists {
+				continue
+			}
+		}
 		schema, schemaUI, err := dx.ChartSchema(dx.Chart{Name: url}, installationToken)
 		if err != nil {
 			logrus.Warnf("could not get chart schema from %s: %s", url, err)

@@ -27,7 +27,6 @@ export function Describe(props) {
   const [selected, setSelected] = useState("")
   const [content, setContent] = useState()
   store.subscribe(() => {
-    console.log(store.getState().detail)
     setContent(store.getState().details[selected])
   });
 
