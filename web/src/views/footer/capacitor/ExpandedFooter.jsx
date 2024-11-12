@@ -20,7 +20,10 @@ import { Kustomizations } from './Kustomizations';
 import { HelmReleases } from './HelmReleases';
 import FluxEvents from './FluxEvents';
 import { Sources } from './Sources';
+import { TerraformResources } from "./TerraformResources";
 import { CompactServices } from './CompactServices';
+import { ErrorBoundary } from "react-error-boundary";
+import { fallbackRender } from "./FallbackRender"
 
 export function ExpandedFooter(props) {
   const { client, fluxState, fluxEvents, sources, handleNavigationSelect, targetReference, selected, store } = props;
@@ -32,8 +35,13 @@ export function ExpandedFooter(props) {
           <SideBar
             navigation={[
               { name: 'Sources', href: '#', count: sources.length },
-              { name: 'Kustomizations', href: '#', count: fluxState.kustomizations.length },
-              { name: 'Helm Releases', href: '#', count: fluxState.helmReleases.length },
+              { name: 'Kustomizations', href: '#', count: fluxState.kustomizations?.length },
+              { name: 'Helm Releases', href: '#', count: fluxState.helmReleases?.length },
+              {
+                name: "Terraform",
+                href: "#",
+                count: fluxState.tfResources?.length,
+              },
               { name: 'Flux Runtime', href: '#', count: undefined },
               { name: 'Flux Events', href: '#', count: undefined },
             ]}
@@ -52,6 +60,17 @@ export function ExpandedFooter(props) {
             {selected === "Helm Releases" &&
               <HelmReleases capacitorClient={client} helmReleases={fluxState.helmReleases} targetReference={targetReference} handleNavigationSelect={handleNavigationSelect} />
             }
+            {selected === "Terraform" && (
+              <ErrorBoundary fallbackRender={fallbackRender}>
+              <TerraformResources
+                capacitorClient={client}
+                store={store}
+                tfResources={fluxState.tfResources}
+                targetReference={targetReference}
+                handleNavigationSelect={handleNavigationSelect}
+              />
+              </ErrorBoundary>
+            )}
             {selected === "Sources" &&
               <Sources capacitorClient={client} fluxState={fluxState} targetReference={targetReference} />
             }

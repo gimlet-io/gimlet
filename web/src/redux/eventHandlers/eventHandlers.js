@@ -201,13 +201,8 @@ export function fluxEventsUpdated(state, event) {
   return state
 }
 
-export function deploymentDetails(state, event) {
-  state.details[event.deployment] = event.details;
-  return state;
-}
-
-export function podDetails(state, event) {
-  state.details[event.pod] = event.details;
+export function describeResult(state, event) {
+  state.details[`${event.resource}/${event.namespace}/${event.name}`] = event.result;
   return state;
 }
 

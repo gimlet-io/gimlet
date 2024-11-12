@@ -1,6 +1,7 @@
 package dx
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -56,12 +57,13 @@ func SplitHelmOutput(input map[string]string) map[string]string {
 }
 
 // CloneChartFromRepo returns the chart location of the specified chart
-func CloneChartFromRepo(m *Manifest, token string) (string, error) {
-	gitAddress, err := giturl.Parse(m.Chart.Name)
+func CloneChartFromRepo(chart Chart, token string) (string, error) {
+	gitAddress, err := giturl.Parse(chart.Repository)
 	if err != nil {
 		return "", fmt.Errorf("cannot parse chart's git address: %s", err)
 	}
-	gitUrl := strings.ReplaceAll(m.Chart.Name, gitAddress.RawQuery, "")
+
+	gitUrl := strings.ReplaceAll(chart.Repository, gitAddress.RawQuery, "")
 	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
 
 	tmpChartDir, err := ioutil.TempDir("", "gimlet-git-chart")
@@ -89,7 +91,7 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 
 	params, _ := url.ParseQuery(gitAddress.RawQuery)
 	if v, found := params["path"]; found {
-		tmpChartDir = tmpChartDir + v[0]
+		tmpChartDir = tmpChartDir + "/" + v[0]
 	}
 	if v, found := params["sha"]; found {
 		err = worktree.Checkout(&git.CheckoutOptions{
@@ -119,57 +121,77 @@ func CloneChartFromRepo(m *Manifest, token string) (string, error) {
 	return tmpChartDir, nil
 }
 
-func ChartSchema(m *Manifest, installationToken string) (string, string, error) {
-	client, settings := helmClient(m)
-	chartFromManifest, err := loadChartFromManifest(m, client, settings, installationToken)
+func ChartSchema(chart Chart, installationToken string) (interface{}, interface{}, error) {
+	client, settings := helmClient("app", "namespace", chart)
+	chartFromManifest, err := loadChartFromManifest(chart, client, settings, installationToken)
 	if err != nil {
 		return "", "", err
 	}
 
-	var schemaUI string
+	var schemaUIString string
 	for _, file := range chartFromManifest.Files {
 		if file.Name == "helm-ui.json" {
-			schemaUI = string(file.Data)
+			schemaUIString = string(file.Data)
 			break
 		}
 	}
 
-	return string(chartFromManifest.Schema), schemaUI, nil
+	var schema interface{}
+	err = json.Unmarshal([]byte(string(chartFromManifest.Schema)), &schema)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var schemaUI interface{}
+	err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return schema, schemaUI, nil
 }
 
-func templateChart(m *Manifest) (string, error) {
-	client, settings := helmClient(m)
-	chartFromManifest, err := loadChartFromManifest(m, client, settings, "")
+func templateChart(
+	app string, namespace string,
+	chart Chart,
+	values map[string]interface{},
+) (string, error) {
+	client, settings := helmClient(app, namespace, chart)
+	chartFromManifest, err := loadChartFromManifest(chart, client, settings, "")
 	if err != nil {
 		return "", err
 	}
 
-	rel, err := client.Run(chartFromManifest, m.Values)
+	rel, err := client.Run(chartFromManifest, values)
 	if err != nil {
 		return "", err
 	}
 
 	return rel.Manifest, err
-
 }
 
-func loadChartFromManifest(m *Manifest, client *action.Install, settings *helmCLI.EnvSettings, token string) (*chart.Chart, error) {
-	if m.Chart.Name == "" {
+func loadChartFromManifest(chart Chart, client *action.Install, settings *helmCLI.EnvSettings, token string) (*chart.Chart, error) {
+	if chart.Name == "" && chart.Repository == "" {
 		return nil, nil
 	}
 
-	if strings.HasPrefix(m.Chart.Name, "git@") ||
-		strings.Contains(m.Chart.Name, ".git") { // for https:// git urls
-		tmpChartDir, err := CloneChartFromRepo(m, token)
+	if strings.HasPrefix(chart.Name, "git@") ||
+		strings.Contains(chart.Name, ".git") {
+		chart.Repository = chart.Name // backwards compatibility
+		chart.Name = ""               // backwards compatibility
+	}
+
+	if strings.HasPrefix(chart.Repository, "git@") ||
+		strings.Contains(chart.Repository, ".git") { // for https:// git urls
+		tmpChartDir, err := CloneChartFromRepo(chart, token)
 		if err != nil {
 			return nil, fmt.Errorf("cannot fetch chart from git %s", err.Error())
 		}
-		m.Chart.Name = tmpChartDir
+		chart.Name = tmpChartDir
 		defer os.RemoveAll(tmpChartDir)
-
 	}
 
-	cp, err := client.ChartPathOptions.LocateChart(m.Chart.Name, settings)
+	cp, err := client.ChartPathOptions.LocateChart(chart.Name, settings)
 	if err != nil {
 		return nil, err
 	}
@@ -177,19 +199,19 @@ func loadChartFromManifest(m *Manifest, client *action.Install, settings *helmCL
 	return loader.Load(cp)
 }
 
-func helmClient(m *Manifest) (*action.Install, *helmCLI.EnvSettings) {
+func helmClient(app string, namespace string, chart Chart) (*action.Install, *helmCLI.EnvSettings) {
 	actionConfig := new(action.Configuration)
 	client := action.NewInstall(actionConfig)
 
 	client.DryRun = true
-	client.ReleaseName = m.App
+	client.ReleaseName = app
 	client.Replace = true
 	client.ClientOnly = true
 	client.APIVersions = []string{}
 	client.IncludeCRDs = false
-	client.ChartPathOptions.RepoURL = m.Chart.Repository
-	client.ChartPathOptions.Version = m.Chart.Version
-	client.Namespace = m.Namespace
+	client.ChartPathOptions.RepoURL = chart.Repository
+	client.ChartPathOptions.Version = chart.Version
+	client.Namespace = namespace
 
 	var settings = helmCLI.New()
 	return client, settings

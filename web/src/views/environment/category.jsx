@@ -31,7 +31,7 @@ export default function Category(props) {
   )
 }
 
-function InfraComponent(props) {
+export function InfraComponent(props) {
   const { componentDefinition, config, setValues, validationCallback } = props
   const { gimletClient, store } = props;
   const { environment } = props;
@@ -58,6 +58,13 @@ function InfraComponent(props) {
       gimletClient={gimletClient}
       store={store}
       env={environment.name}
+    />,
+    "encryptedSingleLineWidget": (props) => <EncryptedWidget
+      {...props}
+      gimletClient={gimletClient}
+      store={store}
+      env={environment.name}
+      singleLine={true}
     />,
   }
 

@@ -16,27 +16,19 @@ limitations under the License.
 Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Describe.jsx
 */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SkeletonLoader } from './SkeletonLoader'
 import { Modal } from './Modal'
 import { ACTION_TYPE_CLEAR_DETAILS } from '../../../redux/redux';
 
 export function Describe(props) {
-  const { capacitorClient, store, namespace, deployment, pods } = props;
+  const { capacitorClient, store, resource, namespace, name, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
-  const [selected, setSelected] = useState(namespace + "/" + deployment)
+  const [selected, setSelected] = useState("")
   const [content, setContent] = useState()
-  store.subscribe(() => setContent(store.getState().details[selected]));
-
-  const describeDeployment = () => {
-    capacitorClient.deploymentDetailsRequest(namespace, deployment)
-    setSelected(namespace + "/" + deployment)
-  }
-
-  const describePod = (podNamespace, podName) => {
-    capacitorClient.podDetailsRequest(podNamespace, podName)
-    setSelected(podNamespace + "/" + podName)
-  }
+  store.subscribe(() => {
+    setContent(store.getState().details[selected])
+  });
 
   const closeDetailsHandler = () => {
     setShowModal(false)
@@ -52,22 +44,25 @@ export function Describe(props) {
           stopHandler={closeDetailsHandler}
           navBar={
             <DescribeNav
+              resource={resource}
+              namespace={namespace}
+              name={name}
               deployment={deployment}
               pods={pods}
-              describeDeployment={describeDeployment}
-              describePod={describePod}
+              capacitorClient={capacitorClient}
+              selected={selected}
+              setSelected={setSelected}
             />}
         >
-          <code key={selected} className='flex whitespace-pre items-center font-mono text-xs p-2 text-yellow-100 rounded'>
+          <code key={selected} className='text-left flex whitespace-pre font-mono text-xs p-2 text-yellow-100 rounded'>
             {content ?? <SkeletonLoader />}
           </code>
         </Modal>
       }
       <button onClick={() => {
         setShowModal(true);
-        describeDeployment()
       }}
-        className="transparentBtn">
+        className="transparentBtn w-24">
         Describe
       </button>
     </>
@@ -75,23 +70,40 @@ export function Describe(props) {
 }
 
 function DescribeNav(props) {
-  const { deployment, pods, describeDeployment, describePod } = props;
-  const [selected, setSelected] = useState(deployment)
+  const { capacitorClient, selected, setSelected } = props;
+  const { resource, namespace, name, deployment, pods } = props;
+
+  const describeResource = (r, ns, n) => {
+    capacitorClient.describe(r, ns, n)
+    setSelected(`${r}/${ns}/${n}`)
+  }
+
+  useEffect(() => {
+    if (resource) {
+      setSelected(`${resource}/${namespace}/${name}`)
+      describeResource(resource, namespace, name);
+    } else {
+      setSelected(deployment)
+      describeResource("Deployment", namespace, deployment);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex flex-wrap items-center overflow-auto mx-4 space-x-1">
+      {deployment &&
       <button
         title={deployment}
         className={`${deployment === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
         onClick={() => {
-          describeDeployment();
           setSelected(deployment)
+          describeResource("Deployment", namespace, deployment);
         }}
       >
         Deployment
       </button>
-      {
-        pods?.map((pod) => {
+      }
+      {pods?.map((pod) => {
           const podNamespace = pod.metadata ? pod.metadata.namespace : pod.namespace;
           const podName = pod.metadata ? pod.metadata.name : pod.name;
 
@@ -101,13 +113,25 @@ function DescribeNav(props) {
               title={podName}
               className={`${podName === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
               onClick={() => {
-                describePod(podNamespace, podName);
                 setSelected(podName)
+                describeResource("Pod", podNamespace, podName);
               }}
             >
               {podName}
             </button>)
         })
+      }
+      {resource &&
+      <button
+        title={`${resource}/${namespace}/${name}`}
+        className={`${`${resource}/${namespace}/${name}` === selected ? 'bg-white' : 'hover:bg-white bg-neutral-300'} my-2 inline-block rounded-full py-1 px-2 font-medium text-xs leading-tight text-neutral-700`}
+        onClick={() => {
+          setSelected(`${resource}/${namespace}/${name}`)
+          describeResource(resource, namespace, name);
+        }}
+      >
+        {`${resource}/${namespace}/${name}`}
+      </button>
       }
     </div>
   )

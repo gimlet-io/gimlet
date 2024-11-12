@@ -21,6 +21,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet/pkg/gitops"
 	"github.com/gimlet-io/gimlet/pkg/server/token"
@@ -113,7 +114,7 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		logrus.Errorf("cannot get head branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -127,14 +128,14 @@ func saveInfrastructureComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = nativeGit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+	err = gogit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 	if err != nil {
 		logrus.Errorf("cannot checkout branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), gogit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -390,7 +391,7 @@ func BootstrapEnv(
 	if repoPerEnv {
 		envName = ""
 	}
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return "", "", fmt.Errorf("cannot get head branch: %s", err)
 	}
@@ -459,7 +460,7 @@ func MigrateEnv(
 	if repoPerEnv {
 		envName = ""
 	}
-	headBranch, err := nativeGit.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return "", "", fmt.Errorf("cannot get head branch: %s", err)
 	}
@@ -495,7 +496,7 @@ func MigrateEnv(
 
 	head, _ := repo.Head()
 	url := fmt.Sprintf("https://abc123:%s@github.com/%s.git", scmToken, newRepoName)
-	err = nativeGit.NativeForcePushWithToken(
+	err = gogit.NativeForcePushWithToken(
 		url,
 		tmpPath,
 		head.Name().Short(),
@@ -545,12 +546,12 @@ func stageCommitAndPush(repo *git.Repository, tmpPath string, user string, passw
 		return err
 	}
 
-	_, err = nativeGit.Commit(repo, msg)
+	_, err = gogit.Commit(repo, msg)
 	if err != nil {
 		return err
 	}
 
-	err = nativeGit.PushWithBasicAuth(repo, user, password)
+	err = gogit.PushWithBasicAuth(repo, user, password)
 	if err != nil {
 		return err
 	}
@@ -568,11 +569,11 @@ func initRepo(scmURL string, repoName string) (*git.Repository, string, error) {
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
-	err = nativeGit.StageFile(w, "", "README.md")
+	err = gogit.StageFile(w, "", "README.md")
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
-	_, err = nativeGit.Commit(repo, "Init")
+	_, err = gogit.Commit(repo, "Init")
 	if err != nil {
 		return nil, tmpPath, fmt.Errorf("cannot init empty repo: %s", err)
 	}
@@ -683,12 +684,12 @@ func stageCommitAndPushWithHash(repo *git.Repository, tmpPath string, token stri
 		return "", err
 	}
 
-	hash, err := nativeGit.Commit(repo, msg)
+	hash, err := gogit.Commit(repo, msg)
 	if err != nil {
 		return "", err
 	}
 
-	err = nativeGit.PushWithToken(repo, token)
+	err = gogit.PushWithToken(repo, token)
 
 	return hash, err
 }
@@ -706,12 +707,12 @@ func StageCommitAndPushGimletFolder(repo *git.Repository, tmpPath string, token 
 		return err
 	}
 
-	_, err = nativeGit.Commit(repo, msg)
+	_, err = gogit.Commit(repo, msg)
 	if err != nil {
 		return err
 	}
 
-	return nativeGit.PushWithToken(repo, token)
+	return gogit.PushWithToken(repo, token)
 }
 
 func PrepApiKey(
@@ -855,7 +856,7 @@ func PrepInfraComponentManifests(
 		return fmt.Errorf("cannot serialize stack config: %s", err)
 	}
 
-	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), gogit.Dir_RWX_RX_R)
 	if err != nil {
 		return fmt.Errorf("cannot write file: %s", err)
 	}
@@ -957,7 +958,7 @@ func EnsureGimletCloudSettings(
 		return
 	}
 
-	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), nativeGit.Dir_RWX_RX_R)
+	err = os.WriteFile(filepath.Join(tmpPath, stackYamlPath), stackConfigBuff.Bytes(), gogit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file %s: %s", stackYamlPath, err)
 		return

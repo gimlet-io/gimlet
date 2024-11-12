@@ -17,8 +17,6 @@ Original version: https://github.com/gimlet-io/capacitor/blob/main/web/src/Servi
 Trimmed everything that is not used
 */
 
-import jp from 'jsonpath';
-
 export function Pod(props) {
   const {pod} = props;
 
@@ -51,27 +49,7 @@ export function Pod(props) {
 
   return (
     <span className={`inline-block mr-1 mt-2 shadow-lg ${textColor} ${color} ${pulsar} font-bold px-2 cursor-default`} title={`${pod.metadata.name} - ${pod.status.phase}`}>
-      {pod.status.phase}
+      {pod.metadata.name}
     </span>
   );
-}
-
-export function podContainers(pods) {
-  const containers = [];
-
-  pods.forEach((pod) => {
-    const podName = jp.query(pod, '$.metadata.name')[0];
-
-    const initContainerNames = jp.query(pod, '$.spec.initContainers[*].name');
-    initContainerNames.forEach((initContainerName) => {
-      containers.push(`${podName}/${initContainerName}`);
-    });
-
-    const containerNames = jp.query(pod, '$.spec.containers[*].name');
-    containerNames.forEach((containerName) => {
-      containers.push(`${podName}/${containerName}`);
-    });
-  });
-
-  return containers;
 }

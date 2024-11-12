@@ -1,0 +1,6 @@
+catalog:
+  # - url: https://github.com/gimlet-io/charts.git?path=rabbitmq
+  # - url: https://github.com/gimlet-io/charts.git?path=postgresql
+  - url: https://github.com/gimlet-io/charts.git?path=postgresql-database
+    requiredStackComponent: centralizedPostgresql
+  - url: https://github.com/gimlet-io/charts.git?path=containerized-redis

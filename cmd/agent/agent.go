@@ -31,8 +31,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -237,30 +237,28 @@ func serverCommunication(
 						go sendState(kubeEnv, config.Host, config.AgentKey)
 						// go sendEvents(kubeEnv, config.Host, config.AgentKey)
 					case "podLogs":
-						go podLogs(
-							kubeEnv,
-							e["namespace"].(string),
-							e["deploymentName"].(string),
-							messages,
-							runningLogStreams,
-						)
+						var namespace, deploymentName, podName, containerName string
+						namespace = e["namespace"].(string)
+						if val, ok := e["deploymentName"]; ok {
+							deploymentName = val.(string)
+						}
+						if val, ok := e["podName"]; ok {
+							podName = val.(string)
+						}
+						if val, ok := e["containerName"]; ok {
+							containerName = val.(string)
+						}
+						go podLogs(kubeEnv, namespace, deploymentName, podName, containerName, messages, runningLogStreams)
 					case "stopPodLogs":
 						namespace := e["namespace"].(string)
 						deployment := e["deploymentName"].(string)
 						go runningLogStreams.Stop(namespace, deployment)
-					case "deploymentDetails":
-						go deploymentDetails(
+					case "describe":
+						go describeResource(
 							kubeEnv,
+							e["resource"].(string),
 							e["namespace"].(string),
-							e["deploymentName"].(string),
-							config.Host,
-							config.AgentKey,
-						)
-					case "podDetails":
-						go podDetails(
-							kubeEnv,
-							e["namespace"].(string),
-							e["podName"].(string),
+							e["name"].(string),
 							config.Host,
 							config.AgentKey,
 						)
@@ -305,7 +303,7 @@ func serverCommunication(
 }
 
 func sendState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	stacks, err := kubeEnv.Services("")
+	stacks, err := kubeEnv.Services()
 	if err != nil {
 		logrus.Errorf("could not get state from k8s apiServer: %v", err)
 		return
@@ -357,7 +355,7 @@ func sendFluxState(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
 }
 
 func sendEvents(kubeEnv *agent.KubeEnv, gimletHost string, agentKey string) {
-	events, err := kubeEnv.WarningEvents("")
+	events, err := kubeEnv.WarningEvents()
 	if err != nil {
 		logrus.Errorf("could not get events from k8s apiServer: %v", err)
 		return
@@ -399,31 +397,48 @@ func podLogs(
 	kubeEnv *agent.KubeEnv,
 	namespace string,
 	deploymentName string,
+	podName string,
+	containerName string,
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
-	deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
-	if err != nil {
-		logrus.Errorf("could not get deployments: %v", err)
-		return
-	}
+	if podName != "" {
+		if containerName != "" {
+			go streamPodLogs(kubeEnv, namespace, podName, containerName, deploymentName, messages, runningLogStreams)
+		} else {
+			pod, err := kubeEnv.Client.CoreV1().Pods(namespace).Get(context.TODO(), podName, meta_v1.GetOptions{})
+			if err != nil {
+				logrus.Errorf("could not get pod %s: %v", podName, err)
+				return
+			}
 
-	podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		logrus.Errorf("could not get pods: %v", err)
-		return
-	}
-
-	for _, pod := range podsInNamespace.Items {
-		if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
 			containers := agent.PodContainers(pod.Spec)
 			for _, container := range containers {
 				go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
 			}
 		}
-	}
+	} else {
+		deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
+		if err != nil {
+			logrus.Errorf("could not get deployments: %v", err)
+			return
+		}
 
-	logrus.Debug("pod logs sent")
+		podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
+		if err != nil {
+			logrus.Errorf("could not get pods: %v", err)
+			return
+		}
+
+		for _, pod := range podsInNamespace.Items {
+			if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
+				containers := agent.PodContainers(pod.Spec)
+				for _, container := range containers {
+					go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
+				}
+			}
+		}
+	}
 }
 
 func labelsMatchSelectors(labels map[string]string, selectors map[string]string) bool {
@@ -440,39 +455,89 @@ func labelsMatchSelectors(labels map[string]string, selectors map[string]string)
 	return true
 }
 
-func deploymentDetails(
+func describeResource(
 	kubeEnv *agent.KubeEnv,
+	resource string,
 	namespace string,
 	name string,
 	gimletHost string,
 	agentKey string,
 ) {
-	describer, ok := describe.DescriberFor(schema.GroupKind{Group: appsv1.GroupName, Kind: "Deployment"}, kubeEnv.Config)
+	var gvr schema.GroupVersionResource
+	var gvk schema.GroupVersionKind
+	switch resource {
+	case "Deployment":
+		gvr = schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: "deployments",
+		}
+		gvk = schema.GroupVersionKind{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "Deployment",
+		}
+	case "Pod":
+		gvr = schema.GroupVersionResource{
+			Group:    "",
+			Version:  "v1",
+			Resource: "pods",
+		}
+		gvk = schema.GroupVersionKind{
+			Group:   "",
+			Version: "v1",
+			Kind:    "Pod",
+		}
+	case "Terraform":
+		gvr = schema.GroupVersionResource{
+			Group:    "infra.contrib.fluxcd.io",
+			Version:  "v1alpha2",
+			Resource: "terraforms",
+		}
+		gvk = schema.GroupVersionKind{
+			Group:   "infra.contrib.fluxcd.io",
+			Version: "v1alpha2",
+			Kind:    "Terraform",
+		}
+	}
+
+	describer, ok := describe.GenericDescriberFor(
+		&meta.RESTMapping{
+			Resource:         gvr,
+			GroupVersionKind: gvk,
+			Scope:            meta.RESTScopeNamespace,
+		},
+		kubeEnv.Config,
+	)
 	if !ok {
-		logrus.Errorf("could not get describer for deployment")
+		logrus.Errorf("could not get describer for %s", resource)
 		return
 	}
 
-	output, err := describer.Describe(namespace, name, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
+	output, err := describer.Describe(
+		namespace, name,
+		describe.DescriberSettings{ShowEvents: true, ChunkSize: 500},
+	)
 	if err != nil {
 		logrus.Errorf("could not get output of describer: %s", err)
 		return
 	}
 
-	deployment := api.Deployment{
+	result := api.DesrcribeResult{
+		Resource:  resource,
 		Namespace: namespace,
 		Name:      name,
-		Details:   output,
+		Result:    output,
 	}
 
-	deploymentString, err := json.Marshal(deployment)
+	resultString, err := json.Marshal(result)
 	if err != nil {
-		logrus.Errorf("could not serialize deployment: %v", err)
+		logrus.Errorf("could not serialize describe result: %v", err)
 		return
 	}
 
-	reqUrl := fmt.Sprintf("%s/agent/deploymentDetails", gimletHost)
-	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(deploymentString))
+	reqUrl := fmt.Sprintf("%s/agent/describeResult", gimletHost)
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(resultString))
 	if err != nil {
 		logrus.Errorf("could not create http request: %v", err)
 		return
@@ -483,18 +548,16 @@ func deploymentDetails(
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		logrus.Errorf("could not send deployment details: %s", err)
+		logrus.Errorf("could not send describe result: %s", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		logrus.Errorf("could not send deployment details: %d - %v", resp.StatusCode, string(body))
+		logrus.Errorf("could not send describe result: %d - %v", resp.StatusCode, string(body))
 		return
 	}
-
-	logrus.Debug("deployment details sent")
 }
 
 func reconcile(
@@ -505,63 +568,6 @@ func reconcile(
 ) {
 	reconcileCommand := capacitorFlux.NewReconcileCommand(resource)
 	reconcileCommand.Run(kubeEnv.Config, namespace, name)
-}
-
-func podDetails(
-	kubeEnv *agent.KubeEnv,
-	namespace string,
-	name string,
-	gimletHost string,
-	agentKey string,
-) {
-	describer, ok := describe.DescriberFor(schema.GroupKind{Group: v1.GroupName, Kind: "Pod"}, kubeEnv.Config)
-	if !ok {
-		logrus.Errorf("could not get describer for pod")
-		return
-	}
-
-	output, err := describer.Describe(namespace, name, describe.DescriberSettings{ShowEvents: true, ChunkSize: 500})
-	if err != nil {
-		logrus.Errorf("could not get output of describer: %s", err)
-		return
-	}
-
-	pod := api.Pod{
-		Namespace: namespace,
-		Name:      name,
-		Details:   output,
-	}
-
-	podString, err := json.Marshal(pod)
-	if err != nil {
-		logrus.Errorf("could not serialize pod: %v", err)
-		return
-	}
-
-	reqUrl := fmt.Sprintf("%s/agent/podDetails", gimletHost)
-	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(podString))
-	if err != nil {
-		logrus.Errorf("could not create http request: %v", err)
-		return
-	}
-	req.Header.Set("Authorization", "BEARER "+agentKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := httpClient()
-	resp, err := client.Do(req)
-	if err != nil {
-		logrus.Errorf("could not send deployment details: %s", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		logrus.Errorf("could not send deployment details: %d - %v", resp.StatusCode, string(body))
-		return
-	}
-
-	logrus.Debug("deployment details sent")
 }
 
 func restartDeployment(kubeEnv *agent.KubeEnv, namespace, name string) {

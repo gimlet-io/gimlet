@@ -34,10 +34,6 @@ func NewGithubOrgTokenManager(appId string, installationId string, privateKey st
 		privateKey:     privateKey,
 		installationId: installID,
 	}
-	err = manager.refreshOrgToken()
-	if err != nil {
-		return nil, fmt.Errorf("could refresh org token: %s", err)
-	}
 
 	go manager.refreshLoop()
 
@@ -54,14 +50,14 @@ func (tm *GithubOrgTokenManager) Token() (string, string, error) {
 
 func (tm *GithubOrgTokenManager) refreshLoop() {
 	for {
-		time.Sleep(5 * time.Minute)
-		if tm.orgToken != "" && tm.expiresAt != nil && tm.expiresAt.Before(time.Now().Add(time.Minute*10)) {
+		if tm.orgToken == "" ||
+			(tm.orgToken != "" && tm.expiresAt != nil && tm.expiresAt.Before(time.Now().Add(time.Minute*10))) {
 			err := tm.refreshOrgToken()
 			if err != nil {
 				logrus.Errorf("could not refresh orgToken %v", err)
-				continue
 			}
 		}
+		time.Sleep(5 * time.Minute)
 	}
 }
 

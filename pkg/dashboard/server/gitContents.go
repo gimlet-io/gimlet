@@ -21,8 +21,8 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
 	"github.com/gimlet-io/gimlet/pkg/git/genericScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
-	helper "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/go-scm/scm"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5"
@@ -85,12 +85,12 @@ func getMetas(w http.ResponseWriter, r *http.Request) {
 	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		var innerErr error
 
-		headBranch, innerErr = nativeGit.HeadBranch(repo)
+		headBranch, innerErr = gogit.HeadBranch(repo)
 		if innerErr != nil {
 			return innerErr
 		}
 
-		files, innerErr = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+		files, innerErr = gogit.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
 		return innerErr
 	})
 	if err != nil {
@@ -351,7 +351,7 @@ func envConfigs(w http.ResponseWriter, r *http.Request) {
 	var err error
 	err = gitRepoCache.PerformAction(repoName, func(repo *git.Repository) error {
 		var innerErr error
-		files, innerErr = helper.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
+		files, innerErr = gogit.RemoteFolderOnBranchWithoutCheckout(repo, "", ".gimlet")
 		return innerErr
 	})
 	if err != nil {
@@ -433,7 +433,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headBranch, err := helper.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		logrus.Errorf("cannot get head branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -497,7 +497,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+		err = gogit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 		if err != nil {
 			logrus.Errorf("cannot checkout branch: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -510,8 +510,8 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 		message = fmt.Sprintf("[Gimlet] Creating %s gimlet manifest for the %s env", envConfigData.App, env)
 	}
 
-	_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), nativeGit.Dir_RWX_RX_R)
-	err = os.WriteFile(filepath.Join(tmpPath, envConfigFilePath), toSaveBuffer.Bytes(), nativeGit.Dir_RWX_RX_R)
+	_ = os.MkdirAll(filepath.Join(tmpPath, ".gimlet"), gogit.Dir_RWX_RX_R)
+	err = os.WriteFile(filepath.Join(tmpPath, envConfigFilePath), toSaveBuffer.Bytes(), gogit.Dir_RWX_RX_R)
 	if err != nil {
 		logrus.Errorf("cannot write file: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -590,7 +590,7 @@ func deleteEnvConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headBranch, err := helper.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		logrus.Errorf("cannot get head branch: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -638,7 +638,7 @@ func deleteEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = helper.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
+		err = gogit.Branch(repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 		if err != nil {
 			logrus.Errorf("cannot checkout branch: %s", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -716,7 +716,7 @@ func envConfigPath(env string, appName string, existingEnvConfigs map[string]*dx
 }
 
 func existingEnvConfigs(repo *git.Repository, headBranch string) (map[string]*dx.Manifest, error) {
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
+	files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, headBranch, ".gimlet")
 	if err != nil {
 		if !strings.Contains(err.Error(), "directory not found") {
 			return nil, fmt.Errorf("cannot list files in .gimlet/: %s", err)

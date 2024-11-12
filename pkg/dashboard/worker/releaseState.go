@@ -10,6 +10,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/model"
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -152,7 +153,7 @@ func lastCommitThatTouchedAFile(repo *git.Repository, path string) (*object.Comm
 	if err != nil {
 		return nil, err
 	}
-	commits = nativeGit.NewCommitDirIterFromIter(path, commits, repo)
+	commits = gogit.NewCommitDirIterFromIter(path, commits, repo)
 
 	var commit *object.Commit
 	err = commits.ForEach(func(c *object.Commit) error {

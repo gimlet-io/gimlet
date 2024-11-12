@@ -17,7 +17,15 @@ legend { /* Sub Object heading */
 }
 
 .panel-body>div>fieldset>legend { /* anyOf heading */
-    @apply py-4 text-lg
+    @apply pt-8 text-lg
+}
+
+.panel-body>div>fieldset>legend:has(+ :not(p.field-description)) { /* anyOf heading without description */
+    @apply pb-6
+}
+
+.panel-body>div>fieldset>p.field-description { /* anyOf description */
+    @apply pb-4
 }
 
 .panel-body>div>fieldset { /* anyOf heading */
@@ -25,7 +33,11 @@ legend { /* Sub Object heading */
 }
 
 .panel-body {
-    @apply p-2 bg-neutral-200 dark:bg-neutral-600 rounded
+    @apply pt-2 pb-8
+}
+
+.panel-body>div>select {
+    @apply mt-0
 }
 
 .control-label { /* Field heading */
@@ -33,6 +45,10 @@ legend { /* Sub Object heading */
 }
 
 #root>.field-object>fieldset>div {
+    @apply pl-4
+}
+
+.panel .field-object .field-object>fieldset>div {
     @apply pl-4
 }
 
@@ -69,13 +85,8 @@ div.field.field-object {
 }
 
 /* Arrays */
-
-.row {
-
-}
-
 .row .array-item-add {
-    @apply text-left my-4;
+    @apply text-left my-6;
 }
 .row .btn-add {
     @apply h-8 w-8 inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs leading-4 font-medium rounded text-white bg-blue-500 dark:bg-blue-800 transition ease-in-out duration-150
@@ -94,10 +105,7 @@ div.field.field-object {
 }
 
 .row .array-item-remove {
-    @apply my-4
-}
-.row .array-item-remove {
-    @apply h-8 w-8 items-center px-2.5 py-1.5 border border-transparent text-xs text-white leading-4 font-medium rounded bg-red-600 dark:bg-red-700 transition ease-in-out duration-150
+    @apply my-3 h-8 w-8 items-center px-2.5 py-1.5 border border-transparent text-xs text-white leading-4 font-medium rounded bg-red-600 dark:bg-red-700 transition ease-in-out duration-150
 }
 .row .array-item-remove:hover {
     @apply bg-red-500 dark:bg-red-800
@@ -114,10 +122,11 @@ div.field.field-object {
 
 .array-item-list {
     display: block !important;
+    @apply space-y-12
 }
 
 .array-item {
-    @apply flex bg-neutral-200 dark:bg-neutral-600 mt-6 rounded-md
+    @apply flex bg-neutral-200 dark:bg-neutral-600 rounded-md
 }
 
 .array-item .col-xs-9 {

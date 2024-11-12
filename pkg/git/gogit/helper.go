@@ -1,22 +1,26 @@
-package nativeGit
+package gogit
 
 import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	giturl "github.com/whilp/git-urls"
 )
 
 const File_RW_RW_R = 0664
@@ -571,4 +575,54 @@ func StageFile(worktree *git.Worktree, content string, path string) error {
 
 	_, err = worktree.Add(path)
 	return err
+}
+
+func FlexibleURLCloneToMemory(repoURL string) (*git.Repository, error) {
+	gitAddress, err := giturl.ParseScp(repoURL)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse git address: %s", err)
+	}
+	gitUrl := strings.ReplaceAll(repoURL, gitAddress.RawQuery, "")
+	gitUrl = strings.ReplaceAll(gitUrl, "?", "")
+
+	fs := memfs.New()
+	opts := &git.CloneOptions{
+		URL: gitUrl,
+	}
+	repo, err := git.Clone(memory.NewStorage(), fs, opts)
+	if err != nil {
+		return nil, fmt.Errorf("cannot clone: %s", err)
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get worktree: %s", err)
+	}
+
+	params, _ := url.ParseQuery(gitAddress.RawQuery)
+	if v, found := params["sha"]; found {
+		err = worktree.Checkout(&git.CheckoutOptions{
+			Hash: plumbing.NewHash(v[0]),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("cannot checkout sha: %s", err)
+		}
+	}
+	if v, found := params["tag"]; found {
+		err = worktree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.NewTagReferenceName(v[0]),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("cannot checkout tag: %s", err)
+		}
+	}
+	if v, found := params["branch"]; found {
+		err = worktree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.NewRemoteReferenceName("origin", v[0]),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("cannot checkout branch: %s", err)
+		}
+	}
+
+	return repo, nil
 }

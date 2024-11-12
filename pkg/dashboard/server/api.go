@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 
@@ -26,8 +27,8 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/store"
 	"github.com/gimlet-io/gimlet/pkg/dx"
 	"github.com/gimlet-io/gimlet/pkg/git/customScm"
+	"github.com/gimlet-io/gimlet/pkg/git/gogit"
 	"github.com/gimlet-io/gimlet/pkg/git/nativeGit"
-	helper "github.com/gimlet-io/gimlet/pkg/git/nativeGit"
 	"github.com/gimlet-io/gimlet/pkg/server/token"
 	"github.com/gimlet-io/gimlet/pkg/stack"
 	"github.com/gimlet-io/gimlet/pkg/version"
@@ -198,9 +199,11 @@ func fluxK8sEvents(w http.ResponseWriter, r *http.Request) {
 func getPodLogs(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query().Get("namespace")
 	deployment := r.URL.Query().Get("deploymentName")
+	pod := r.URL.Query().Get("podName")
+	container := r.URL.Query().Get("containerName")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.StreamPodLogsSend(namespace, deployment)
+	agentHub.StreamPodLogsSend(namespace, deployment, pod, container)
 }
 
 func stopPodLogs(w http.ResponseWriter, r *http.Request) {
@@ -211,20 +214,13 @@ func stopPodLogs(w http.ResponseWriter, r *http.Request) {
 	agentHub.StopPodLogs(namespace, deployment)
 }
 
-func getDeploymentDetails(w http.ResponseWriter, r *http.Request) {
-	namespace := r.URL.Query().Get("namespace")
-	deployment := r.URL.Query().Get("name")
-
-	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.DeploymentDetails(namespace, deployment)
-}
-
-func getPodDetails(w http.ResponseWriter, r *http.Request) {
+func describe(w http.ResponseWriter, r *http.Request) {
+	resource := r.URL.Query().Get("resource")
 	namespace := r.URL.Query().Get("namespace")
 	name := r.URL.Query().Get("name")
 
 	agentHub, _ := r.Context().Value("agentHub").(*streaming.AgentHub)
-	agentHub.PodDetails(namespace, name)
+	agentHub.Describe(resource, namespace, name)
 }
 
 func reconcile(w http.ResponseWriter, r *http.Request) {
@@ -316,6 +312,140 @@ func stackConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(gitopsEnvString)
 }
 
+func downloadFile(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return []byte(""), err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	return body, nil
+}
+
+func dependencyCatalog(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	cfg := ctx.Value("config").(*config.Config)
+	tokenManager := ctx.Value("tokenManager").(customScm.NonImpersonatedTokenManager)
+	installationToken, _, _ := tokenManager.Token()
+	db := r.Context().Value("store").(*store.Store)
+
+	owner := chi.URLParam(r, "owner")
+	repoName := chi.URLParam(r, "name")
+	env := chi.URLParam(r, "env")
+	configName := chi.URLParam(r, "config")
+	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
+
+	var manifest *dx.Manifest
+	err := gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
+		func(repo *git.Repository) error {
+			var innerErr error
+			manifest, innerErr = getManifest(repo, env, configName)
+			return innerErr
+		})
+	if err != nil {
+		logrus.Errorf("cannot get manifest: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	environment, err := db.GetEnvironment(env)
+	if err != nil {
+		logrus.Errorf("cannot get env: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	stackYamlPath := "stack.yaml"
+	if !environment.RepoPerEnv {
+		stackYamlPath = filepath.Join(environment.Name, "stack.yaml")
+	}
+
+	stackConfig, err := StackConfig(gitRepoCache, stackYamlPath, environment.InfraRepo)
+	if err != nil {
+		logrus.Errorf("cannot get stack config: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	catalogBytes, err := downloadFile(cfg.DependencyCatalogURL)
+	if err != nil {
+		logrus.Errorf("cannot get dependency catalog: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var catalog map[string]interface{}
+	err = yaml.Unmarshal(catalogBytes, &catalog)
+	if err != nil {
+		logrus.Errorf("cannot unmarshal catalog: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	components := []DeploymentTemplate{}
+	for _, component := range catalog["catalog"].([]interface{}) {
+		c := component.(map[string]interface{})
+		url := c["url"].(string)
+		if requiredStackComponent, ok := c["requiredStackComponent"]; ok {
+			if _, exists := stackConfig.Config[requiredStackComponent.(string)]; !exists {
+				continue
+			}
+		}
+		schema, schemaUI, err := dx.ChartSchema(dx.Chart{Name: url}, installationToken)
+		if err != nil {
+			logrus.Warnf("could not get chart schema from %s: %s", url, err)
+		}
+
+		components = append(components, DeploymentTemplate{
+			Reference: config.DefaultChart{Chart: dx.Chart{Repository: url}},
+			Schema:    schema,
+			UISchema:  schemaUI,
+		})
+	}
+	for _, dep := range manifest.Dependencies {
+		chartExists := chartExists(components, &dep.Chart)
+		if chartExists {
+			continue
+		}
+
+		schema, schemaUI, err := dx.ChartSchema(dep.Chart, installationToken)
+		if err != nil {
+			logrus.Warnf("could not get chart schema for %s: %s", dep.Name, err)
+		}
+
+		components = append(components, DeploymentTemplate{
+			Reference: config.DefaultChart{Chart: dep.Chart},
+			Schema:    schema,
+			UISchema:  schemaUI,
+		})
+	}
+
+	componentsString, err := json.Marshal(components)
+	if err != nil {
+		logrus.Errorf("cannot serialize dependency catalog: %s", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte(componentsString))
+}
+
+func chartExists(components []DeploymentTemplate, chart *dx.Chart) bool {
+	for _, c := range components {
+		if c.Reference.Chart.Equals(chart) {
+			return true
+		}
+	}
+	return false
+}
+
 func StackConfig(gitRepoCache *nativeGit.RepoCache, stackYamlPath, infraRepo string) (*dx.StackConfig, error) {
 	var stackConfig *dx.StackConfig
 	err := gitRepoCache.PerformAction(infraRepo, func(repo *git.Repository) error {
@@ -357,12 +487,12 @@ func LoadStackDefinition(stackConfig *dx.StackConfig) (map[string]interface{}, e
 func stackYaml(repo *git.Repository, path string) (*dx.StackConfig, error) {
 	var stackConfig dx.StackConfig
 
-	headBranch, err := helper.HeadBranch(repo)
+	headBranch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	yamlString, err := helper.RemoteContentOnBranchWithoutCheckout(repo, headBranch, path)
+	yamlString, err := gogit.RemoteContentOnBranchWithoutCheckout(repo, headBranch, path)
 	if err != nil {
 		return nil, err
 	}
@@ -466,11 +596,11 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	installationToken, _, _ := tokenManager.Token()
 	gitRepoCache, _ := ctx.Value("gitRepoCache").(*nativeGit.RepoCache)
 
-	var appChart *dx.Chart
+	var manifest *dx.Manifest
 	err := gitRepoCache.PerformAction(fmt.Sprintf("%s/%s", owner, repoName),
 		func(repo *git.Repository) error {
 			var innerErr error
-			appChart, innerErr = getChartForApp(repo, env, configName)
+			manifest, innerErr = getManifest(repo, env, configName)
 			return innerErr
 		})
 	if err != nil {
@@ -480,7 +610,7 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates, err := deploymentTemplates(
-		[]config.DefaultChart{{Chart: *appChart}},
+		[]config.DefaultChart{{Chart: manifest.Chart}},
 		installationToken,
 	)
 	if err != nil {
@@ -503,23 +633,7 @@ func deploymentTemplateForApp(w http.ResponseWriter, r *http.Request) {
 func deploymentTemplates(charts config.DefaultCharts, installationToken string) ([]DeploymentTemplate, error) {
 	var templates []DeploymentTemplate
 	for _, chart := range charts {
-		m := &dx.Manifest{
-			Chart: chart.Chart,
-		}
-
-		schemaString, schemaUIString, err := dx.ChartSchema(m, installationToken)
-		if err != nil {
-			return nil, err
-		}
-
-		var schema interface{}
-		err = json.Unmarshal([]byte(schemaString), &schema)
-		if err != nil {
-			return nil, err
-		}
-
-		var schemaUI interface{}
-		err = json.Unmarshal([]byte(schemaUIString), &schemaUI)
+		schema, schemaUI, err := dx.ChartSchema(chart.Chart, installationToken)
 		if err != nil {
 			return nil, err
 		}
@@ -533,18 +647,17 @@ func deploymentTemplates(charts config.DefaultCharts, installationToken string) 
 	return templates, nil
 }
 
-func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, error) {
-	branch, err := helper.HeadBranch(repo)
+func getManifest(repo *git.Repository, env string, app string) (*dx.Manifest, error) {
+	branch, err := gogit.HeadBranch(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := helper.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
+	files, err := gogit.RemoteFolderOnBranchWithoutCheckout(repo, branch, ".gimlet")
 	if err != nil {
 		return nil, err
 	}
 
-	envConfigs := []dx.Manifest{}
 	for _, content := range files {
 		var envConfig dx.Manifest
 		err = yaml.Unmarshal([]byte(content), &envConfig)
@@ -552,12 +665,8 @@ func getChartForApp(repo *git.Repository, env string, app string) (*dx.Chart, er
 			logrus.Warnf("cannot parse env config string: %s", err)
 			continue
 		}
-		envConfigs = append(envConfigs, envConfig)
-	}
-
-	for _, envConfig := range envConfigs {
 		if envConfig.Env == env && envConfig.App == app {
-			return &envConfig.Chart, nil
+			return &envConfig, nil
 		}
 	}
 

@@ -22,15 +22,16 @@ import { Modal } from './capacitor/Modal'
 import { SkeletonLoader } from './capacitor/SkeletonLoader'
 
 export function Logs(props) {
-  const { capacitorClient, store, namespace, deployment, containers } = props;
+  const { capacitorClient, store, namespace, deployment, pods } = props;
   const [showModal, setShowModal] = useState(false)
   const deploymentName = namespace + "/" + deployment
   const [logs, setLogs] = useState(store.getState().podLogs[deploymentName])
   store.subscribe(() => setLogs(store.getState().podLogs[deploymentName]));
   const [selected, setSelected] = useState("")
+  const containers = podContainers(pods)
 
-  const streamPodLogs = () => {
-    capacitorClient.podLogsRequest(namespace, deployment)
+  const streamPodLogs = (pods) => {
+    pods.forEach(p=>capacitorClient.podLogsRequest(namespace, deployment, p.name) )
   }
 
   const stopLogsHandler = () => {
@@ -65,7 +66,7 @@ export function Logs(props) {
       }
       <button onClick={() => {
         setShowModal(true);
-        streamPodLogs()
+        streamPodLogs(pods)
       }}
         className="transparentBtn">
         Logs
@@ -103,4 +104,15 @@ function LogsNav(props) {
       }
     </div>
   )
+}
+
+function podContainers(pods) {
+  const containers = [];
+  pods?.forEach((pod) => {
+    pod.containers?.forEach(container => {
+      containers.push(`${pod.name}/${container.name}`);
+    })
+  });
+
+  return containers;
 }
