@@ -185,14 +185,18 @@ func getOrCreateUser(store *store.Store, scmUser *scm.User, token *login.Token) 
 }
 
 func setSessionCookie(w http.ResponseWriter, r *http.Request, user *model.User) error {
-	fortyEightHours, _ := time.ParseDuration("48h")
-	exp := time.Now().Add(fortyEightHours).Unix()
-	t := token.New(token.SessToken, user.Login, "")
-	tokenStr, err := t.SignExpires(user.Secret, exp)
+	tokenStr, err := generateSessionCookie(user.Login, user.Secret)
 	if err != nil {
 		return err
 	}
 
 	httputil.SetCookie(w, r, "user_sess", tokenStr)
 	return nil
+}
+
+func generateSessionCookie(user, secret string) (string, error) {
+	fortyEightHours, _ := time.ParseDuration("48h")
+	exp := time.Now().Add(fortyEightHours).Unix()
+	t := token.New(token.SessToken, user, "")
+	return t.SignExpires(secret, exp)
 }

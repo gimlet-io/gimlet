@@ -60,6 +60,10 @@ export function DatabasesTab(props) {
         const dependency = dependencies[id]
         const module = dependencyCatalog.find(m => m.reference.chart.repository === dependency.chart.repository)
 
+        if (!module) {
+          return null
+        }
+
         return (
           <div key={id} className='relative'>
             <button onClick={() => deleteDependency(id)} className="destructiveButtonSecondary absolute top-6 right-6">Delete</button>
