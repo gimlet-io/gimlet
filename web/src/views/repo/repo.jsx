@@ -106,10 +106,6 @@ export default function Repo(props) {
     navigate(`/repo/${owner}/${repo}/${env}/${deployment}?${location.search}`)
   }
 
-  const fileMetasByEnv = (envName) => {
-    return fileInfos.filter(fileInfo => fileInfo.envName === envName)
-  }
-
   const stacksForRepo = envsForRepo(envs, connectedAgents, repoName);
 
   let repoRolloutHistory = undefined;
@@ -177,7 +173,7 @@ export default function Repo(props) {
                     }}
                     owner={owner}
                     repoName={repo}
-                    fileInfos={fileMetasByEnv(envName)}
+                    fileInfos={fileInfos.filter(fileInfo => fileInfo.envName === envName)}
                     releaseHistorySinceDays={settings.releaseHistorySinceDays}
                     gimletClient={gimletClient}
                     store={store}

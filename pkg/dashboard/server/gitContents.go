@@ -537,6 +537,7 @@ func saveEnvConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		gitRepoCache.Invalidate(repoPath)
 		w.WriteHeader(http.StatusOK)
 		w.Write(responseJson)
 		return

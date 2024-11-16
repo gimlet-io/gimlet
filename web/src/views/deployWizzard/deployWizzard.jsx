@@ -9,7 +9,10 @@ import SimpleServiceDetail from '../../components/serviceDetail/simpleServiceDet
 import DeployHandler from '../../deployHandler';
 import Confetti from 'react-confetti'
 import { Loading } from '../repo/deployStatus';
-import { ACTION_TYPE_CLEAR_DEPLOY } from "../../redux/redux";
+import {
+  ACTION_TYPE_CLEAR_DEPLOY,
+  ACTION_TYPE_REPO_METAS,
+} from "../../redux/redux";
 import { v4 as uuidv4 } from 'uuid';
 import SealedSecretWidget from "../envConfig/sealedSecretWidget";
 import { useParams, useNavigate } from 'react-router-dom'
@@ -253,7 +256,15 @@ export function DeployWizzard(props) {
           bodyClassName: "p-2",
           autoClose: false
         });
-
+        gimletClient.getRepoMetas(owner, repo)
+          .then(data => {
+            store.dispatch({
+              type: ACTION_TYPE_REPO_METAS, payload: {
+                repoMetas: data,
+              }
+            });
+          }, () => {/* Generic error handler deals with it */
+        });
         setSavingConfigInProgress(false)
         navigate(`/repo/${repoName}`);
         window.scrollTo({ top: 0, left: 0 });
