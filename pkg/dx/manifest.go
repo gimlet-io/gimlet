@@ -80,6 +80,9 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 	}
 
 	d.Name = dat["name"].(string)
+	if _, ok := dat["kind"]; !ok {
+		return fmt.Errorf("kind is mandatory for dependency")
+	}
 	d.Kind = dat["kind"].(string)
 
 	switch d.Kind {
