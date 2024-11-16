@@ -7,7 +7,7 @@ export function Env(props) {
   const { env, repoRolloutHistory, envConfigs, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos } = props;
   const { releaseHistorySinceDays, deploymentFromParams, settings, alerts, appFilter } = props;
 
-  const renderedServices = renderServices(env.stacks, envConfigs, env, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, settings.scmUrl, alerts, appFilter);
+  const renderedServices = renderServices(env.stacks, envConfigs, env, repoRolloutHistory, navigateToConfigEdit, linkToDeployment, rollback, owner, repoName, fileInfos, releaseHistorySinceDays, gimletClient, store, deploymentFromParams, settings, alerts, appFilter);
   const navigate = useNavigate()
 
   return (
