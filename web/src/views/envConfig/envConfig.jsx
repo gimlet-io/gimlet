@@ -105,7 +105,7 @@ export function EnvConfig(props) {
   }, [selectedTemplate, stackConfigDerivedValues]);
 
   useEffect(() => {
-    if (configFile && configFile.values.ingress) {
+    if (configFile && configFile.values && configFile.values.ingress) {
       if (configFile.values.ingress.protectWithOauthProxy && stackConfigDerivedValues) {
         setConfigFile(prevState => ({
           ...prevState,
@@ -131,7 +131,7 @@ export function EnvConfig(props) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configFile && configFile.values.ingress && configFile.values.ingress.protectWithOauthProxy, stackConfigDerivedValues])
+  }, [configFile && configFile.values && configFile.values.ingress && configFile.values.ingress.protectWithOauthProxy, stackConfigDerivedValues])
 
   const setAppName = (appName) => {
     setConfigFile(prevState => ({
