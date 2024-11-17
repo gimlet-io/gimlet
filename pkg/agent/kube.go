@@ -71,6 +71,13 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	e.Perf.WithLabelValues("gimlet_agent_deployments").Observe(float64(time.Since(t0).Seconds()))
 
 	t0 = time.Now()
+	s, err := e.Client.AppsV1().StatefulSets(e.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not get statefulsets: %s", err)
+	}
+	e.Perf.WithLabelValues("gimlet_agent_statefulsets").Observe(float64(time.Since(t0).Seconds()))
+
+	t0 = time.Now()
 	i, err := e.Client.NetworkingV1().Ingresses(e.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not get ingresses: %s", err)
@@ -87,11 +94,10 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 	t0 = time.Now()
 	var stacks []*api.Stack
 	for _, service := range annotatedServices {
-		deployment, err := e.deploymentForService(service, d.Items)
-		if err != nil {
-			return nil, fmt.Errorf("could not get deployment for service: %s", err)
+		deployment := e.deploymentForService(service, d.Items)
+		if deployment == nil {
+			deployment = e.statefulsetForService(service, s.Items)
 		}
-
 		if deployment != nil {
 			deployment.Pods = []*api.Pod{}
 			for _, pod := range pods.Items {
@@ -272,7 +278,7 @@ func (e *KubeEnv) annotatedServices(repo string) ([]v1.Service, error) {
 	return services, nil
 }
 
-func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment) (*api.Deployment, error) {
+func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.Deployment) *api.Deployment {
 	var deployment *api.Deployment
 
 	for _, d := range deployments {
@@ -289,7 +295,27 @@ func (e *KubeEnv) deploymentForService(service v1.Service, deployments []appsv1.
 		}
 	}
 
-	return deployment, nil
+	return deployment
+}
+
+func (e *KubeEnv) statefulsetForService(service v1.Service, statefulsets []appsv1.StatefulSet) *api.Deployment {
+	var statefulset *api.Deployment
+
+	for _, s := range statefulsets {
+		if SelectorsMatch(s.Spec.Selector.MatchLabels, service.Spec.Selector) {
+			var branch, sha string
+			if hash, ok := s.GetAnnotations()[AnnotationGitSha]; ok {
+				sha = hash
+			}
+			if b, ok := s.GetAnnotations()[AnnotationGitBranch]; ok {
+				branch = b
+			}
+
+			statefulset = &api.Deployment{Name: s.Name, Namespace: s.Namespace, Branch: branch, SHA: sha}
+		}
+	}
+
+	return statefulset
 }
 
 func logs(e *KubeEnv, pod v1.Pod) string {

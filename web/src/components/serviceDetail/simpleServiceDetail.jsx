@@ -47,7 +47,7 @@ function SimpleServiceDetail(props) {
 
   let hostPort = "<host-port>"
   let appPort = "<app-port>"
-  if (config) {
+  if (config && config.values) {
     appPort = config.values.containerPort ?? 80;
 
     if (appPort < 99) {

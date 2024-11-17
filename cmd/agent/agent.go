@@ -402,10 +402,22 @@ func podLogs(
 	messages chan *streaming.WSMessage,
 	runningLogStreams *runningLogStreams,
 ) {
+	var matchLabels map[string]string
 	deployment, err := kubeEnv.Client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
 	if err != nil {
-		logrus.Errorf("could not get deployments: %v", err)
-		return
+		if strings.Contains(err.Error(), "not found") {
+			statefulset, err := kubeEnv.Client.AppsV1().StatefulSets(namespace).Get(context.TODO(), deploymentName, meta_v1.GetOptions{})
+			if err != nil {
+				logrus.Errorf("could not get statefulset: %v", err)
+				return
+			}
+			matchLabels = statefulset.Spec.Selector.MatchLabels
+		} else {
+			logrus.Errorf("could not get deployments: %v", err)
+			return
+		}
+	} else {
+		matchLabels = deployment.Spec.Selector.MatchLabels
 	}
 
 	podsInNamespace, err := kubeEnv.Client.CoreV1().Pods(namespace).List(context.TODO(), meta_v1.ListOptions{})
@@ -415,7 +427,7 @@ func podLogs(
 	}
 
 	for _, pod := range podsInNamespace.Items {
-		if labelsMatchSelectors(pod.ObjectMeta.Labels, deployment.Spec.Selector.MatchLabels) {
+		if labelsMatchSelectors(pod.ObjectMeta.Labels, matchLabels) {
 			containers := agent.PodContainers(pod.Spec)
 			for _, container := range containers {
 				go streamPodLogs(kubeEnv, namespace, pod.Name, container.Name, deploymentName, messages, runningLogStreams)
@@ -568,8 +580,16 @@ func restartDeployment(kubeEnv *agent.KubeEnv, namespace, name string) {
 	data := fmt.Sprintf(`{"spec": {"template": {"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`, time.Now().Format(time.RFC3339))
 	_, err := kubeEnv.Client.AppsV1().Deployments(namespace).Patch(context.TODO(), name, types.StrategicMergePatchType, []byte(data), meta_v1.PatchOptions{})
 	if err != nil {
-		logrus.Errorf("could not patch deployment %s in %s: %s", name, namespace, err)
-		return
+		if strings.Contains(err.Error(), "not found") {
+			_, err := kubeEnv.Client.AppsV1().StatefulSets(namespace).Patch(context.TODO(), name, types.StrategicMergePatchType, []byte(data), meta_v1.PatchOptions{})
+			if err != nil {
+				logrus.Errorf("could not patch statefulset: %v", err)
+				return
+			}
+		} else {
+			logrus.Errorf("could not patch deployment %s in %s: %s", name, namespace, err)
+			return
+		}
 	}
 }
 
