@@ -117,7 +117,7 @@ function ServiceDetail(props) {
 
   let hostPort = "<host-port>"
   let appPort = "<app-port>"
-  if (config) {
+  if (config && config.values) {
     appPort = config.values.containerPort ?? 80;
 
     if (appPort < 99) {
@@ -258,7 +258,7 @@ function ServiceDetail(props) {
           </Menu>
         </div>
       </h3>
-      {deployment && config && <DeployIndicator deploy={config.values.deploy} owner={owner} repo={repoName} branch={deployment.branch} />}
+      {deployment && config && <DeployIndicator deploy={config.values && config.values.deploy} owner={owner} repo={repoName} branch={deployment.branch} />}
       {pullRequests && pullRequests.length !== 0 &&
         <PullRequests items={pullRequests} />
       }

@@ -6,6 +6,7 @@ import (
 	"github.com/gimlet-io/gimlet/pkg/dashboard/api"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 )
@@ -33,26 +34,38 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 					return err
 				}
 
+				allStatefulsets, err := kubeEnv.Client.AppsV1().StatefulSets(kubeEnv.Namespace).List(context.TODO(), metav1.ListOptions{})
+				if err != nil {
+					return err
+				}
+
 				createdPod := obj.(*v1.Pod)
 				for _, svc := range integratedServices {
 					for _, deployment := range allDeployments.Items {
-						if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-							if HasLabels(deployment.Spec.Selector.MatchLabels, createdPod.GetObjectMeta().GetLabels()) &&
-								createdPod.Namespace == deployment.Namespace {
-								update := &api.StackUpdate{
-									Event:   EventPodCreated,
-									Env:     kubeEnv.Name,
-									Repo:    svc.GetAnnotations()[AnnotationGitRepository],
-									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
-									Svc:     svc.Namespace + "/" + svc.Name,
-
-									Status:      string(createdPod.Status.Phase),
-									Deployment:  deployment.Namespace + "/" + deployment.Name,
-									ImChannelId: svc.GetAnnotations()[AnnotationOwnerIm],
-								}
-								sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
-							}
-						}
+						matchAndSendCreatedEvent(
+							deployment.Spec.Selector.MatchLabels,
+							deployment.Namespace,
+							deployment.Name,
+							svc,
+							createdPod,
+							kubeEnv,
+							objectMeta,
+							gimletHost,
+							agentKey,
+						)
+					}
+					for _, statefulset := range allStatefulsets.Items {
+						matchAndSendCreatedEvent(
+							statefulset.Spec.Selector.MatchLabels,
+							statefulset.Namespace,
+							statefulset.Name,
+							svc,
+							createdPod,
+							kubeEnv,
+							objectMeta,
+							gimletHost,
+							agentKey,
+						)
 					}
 				}
 			case "update":
@@ -66,6 +79,11 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 					return err
 				}
 
+				allStatefulsets, err := kubeEnv.Client.AppsV1().StatefulSets(kubeEnv.Namespace).List(context.TODO(), metav1.ListOptions{})
+				if err != nil {
+					return err
+				}
+
 				if obj == nil {
 					return nil
 				}
@@ -73,31 +91,30 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 				updatedPod := obj.(*v1.Pod)
 				for _, svc := range integratedServices {
 					for _, deployment := range allDeployments.Items {
-						if SelectorsMatch(deployment.Spec.Selector.MatchLabels, svc.Spec.Selector) {
-							if HasLabels(deployment.Spec.Selector.MatchLabels, updatedPod.GetObjectMeta().GetLabels()) &&
-								updatedPod.Namespace == deployment.Namespace {
-								podStatus := podStatus(*updatedPod)
-								podLogs := ""
-								if "CrashLoopBackOff" == podStatus {
-									podLogs = logs(kubeEnv, *updatedPod)
-								}
-
-								update := &api.StackUpdate{
-									Event:   EventPodUpdated,
-									Env:     kubeEnv.Name,
-									Repo:    svc.GetAnnotations()[AnnotationGitRepository],
-									Subject: objectMeta.Namespace + "/" + objectMeta.Name,
-									Svc:     svc.Namespace + "/" + svc.Name,
-
-									Status:      podStatus,
-									Deployment:  deployment.Namespace + "/" + deployment.Name,
-									ErrorCause:  podErrorCause(*updatedPod),
-									Logs:        podLogs,
-									ImChannelId: svc.GetAnnotations()[AnnotationOwnerIm],
-								}
-								sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
-							}
-						}
+						newFunction(
+							deployment.Spec.Selector.MatchLabels,
+							deployment.Namespace,
+							deployment.Name,
+							svc,
+							updatedPod,
+							kubeEnv,
+							objectMeta,
+							gimletHost,
+							agentKey,
+						)
+					}
+					for _, statefulset := range allStatefulsets.Items {
+						newFunction(
+							statefulset.Spec.Selector.MatchLabels,
+							statefulset.Namespace,
+							statefulset.Name,
+							svc,
+							updatedPod,
+							kubeEnv,
+							objectMeta,
+							gimletHost,
+							agentKey,
+						)
 					}
 				}
 			case "delete":
@@ -111,6 +128,54 @@ func PodController(kubeEnv *KubeEnv, gimletHost string, agentKey string) *Contro
 			return nil
 		})
 	return podController
+}
+
+func newFunction(matchLabels map[string]string, namespace string, name string, svc v1.Service, updatedPod *v1.Pod, kubeEnv *KubeEnv, objectMeta metav1.ObjectMeta, gimletHost string, agentKey string) {
+	if SelectorsMatch(matchLabels, svc.Spec.Selector) {
+		if HasLabels(matchLabels, updatedPod.GetObjectMeta().GetLabels()) &&
+			updatedPod.Namespace == namespace {
+			podStatus := podStatus(*updatedPod)
+			podLogs := ""
+			if "CrashLoopBackOff" == podStatus {
+				podLogs = logs(kubeEnv, *updatedPod)
+			}
+
+			update := &api.StackUpdate{
+				Event:   EventPodUpdated,
+				Env:     kubeEnv.Name,
+				Repo:    svc.GetAnnotations()[AnnotationGitRepository],
+				Subject: objectMeta.Namespace + "/" + objectMeta.Name,
+				Svc:     svc.Namespace + "/" + svc.Name,
+
+				Status:      podStatus,
+				Deployment:  namespace + "/" + name,
+				ErrorCause:  podErrorCause(*updatedPod),
+				Logs:        podLogs,
+				ImChannelId: svc.GetAnnotations()[AnnotationOwnerIm],
+			}
+			sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
+		}
+	}
+}
+
+func matchAndSendCreatedEvent(matchLabels map[string]string, namespace string, name string, svc v1.Service, createdPod *v1.Pod, kubeEnv *KubeEnv, objectMeta metav1.ObjectMeta, gimletHost string, agentKey string) {
+	if SelectorsMatch(matchLabels, svc.Spec.Selector) {
+		if HasLabels(matchLabels, createdPod.GetObjectMeta().GetLabels()) &&
+			createdPod.Namespace == namespace {
+			update := &api.StackUpdate{
+				Event:   EventPodCreated,
+				Env:     kubeEnv.Name,
+				Repo:    svc.GetAnnotations()[AnnotationGitRepository],
+				Subject: objectMeta.Namespace + "/" + objectMeta.Name,
+				Svc:     svc.Namespace + "/" + svc.Name,
+
+				Status:      string(createdPod.Status.Phase),
+				Deployment:  namespace + "/" + name,
+				ImChannelId: svc.GetAnnotations()[AnnotationOwnerIm],
+			}
+			sendUpdate(gimletHost, agentKey, kubeEnv.Name, update)
+		}
+	}
 }
 
 // hasLabels determines if all the selectors are present as labels
