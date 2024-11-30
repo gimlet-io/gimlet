@@ -35,6 +35,7 @@ import (
 )
 
 const AnnotationGitRepository = "gimlet.io/git-repository"
+const AnnotationApp = "gimlet.io/app"
 const AnnotationGitSha = "gimlet.io/git-sha"
 const AnnotationGitBranch = "gimlet.io/git-branch"
 const AnnotationDocsLink = "v1alpha1.opensca.dev/documentation"
@@ -125,6 +126,7 @@ func (e *KubeEnv) Services(repo string) ([]*api.Stack, error) {
 
 		stacks = append(stacks, &api.Stack{
 			Repo:       service.ObjectMeta.GetAnnotations()[AnnotationGitRepository],
+			App:        service.ObjectMeta.GetAnnotations()[AnnotationApp],
 			Osca:       getOpenServiceCatalogAnnotations(service),
 			Service:    &api.Service{Name: service.Name, Namespace: service.Namespace},
 			Deployment: deployment,

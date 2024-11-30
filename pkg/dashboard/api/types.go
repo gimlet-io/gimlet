@@ -188,6 +188,7 @@ type AgentState struct {
 type Stack struct {
 	Repo       string      `json:"repo"`
 	Env        string      `json:"env"`
+	App        string      `json:"app"`
 	Osca       *Osca       `json:"osca"`
 	Service    *Service    `json:"service"`
 	Deployment *Deployment `json:"deployment,omitempty"`
