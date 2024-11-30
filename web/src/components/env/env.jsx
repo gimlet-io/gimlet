@@ -78,7 +78,9 @@ function renderServices(
     if (!config) {
       config = envConfigs.find((config) => config.app === stack.service.name)
     }
-    configsWeDeployed.push(config.app);
+    if (config) {
+      configsWeDeployed.push(config.app);
+    }
 
     let deployment = "";
     if (stack.deployment) {
