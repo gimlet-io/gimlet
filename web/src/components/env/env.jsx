@@ -74,32 +74,31 @@ function renderServices(
   let configsWeDeployed = [];
   // render services that are deployed on k8s
   services = filteredStacks.map((stack) => {
-    configsWeDeployed.push(stack.service.name);
-    const configExists = configsWeHave.includes(stack.service.name)
-    let config = undefined;
-    if (configExists) {
+    let config = envConfigs.find((config) => config.app === stack.app);
+    if (!config) {
       config = envConfigs.find((config) => config.app === stack.service.name)
     }
+    configsWeDeployed.push(config.app);
 
     let deployment = "";
     if (stack.deployment) {
       deployment = stack.deployment.namespace + "/" + stack.deployment.name
     }
 
+    const appOrServiceName = config ? config.app : stack.service.name
     return (
-      <div key={'sc-'+stack.service.name} className="w-full flex items-center justify-between space-x-6 p-4 card">
+      <div key={'sc-'+appOrServiceName} className="w-full flex items-center justify-between space-x-6 p-4 card">
         <ServiceDetail
-          key={'sc-'+stack.service.name}
+          key={'sc-'+appOrServiceName}
           stack={stack}
-          rolloutHistory={repoRolloutHistory?.[environment.name]?.[stack.service.name]}
+          rolloutHistory={repoRolloutHistory?.[environment.name]?.[appOrServiceName]}
           rollback={rollback}
           environment={environment}
           owner={owner}
           repoName={repoName}
-          fileName={fileName(fileInfos, stack.service.name)}
+          fileName={fileName(fileInfos, appOrServiceName)}
           navigateToConfigEdit={navigateToConfigEdit}
           linkToDeployment={linkToDeployment}
-          configExists={configExists}
           config={config}
           releaseHistorySinceDays={releaseHistorySinceDays}
           gimletClient={gimletClient}
@@ -117,27 +116,27 @@ function renderServices(
   }
 
   const configsWeHaventDeployed = configsWeHave.filter(config => !configsWeDeployed.includes(config) && config.includes(appFilter));
-
   services.push(
-    ...configsWeHaventDeployed.sort().map(config => {
+    ...configsWeHaventDeployed.sort().map(configName => {
+      const config = envConfigs.find((config) => config.app === configName)
       return (
-        <div key={config} className="w-full flex items-center justify-between space-x-6 p-4 pb-8 card">
+        <div key={configName} className="w-full flex items-center justify-between space-x-6 p-4 pb-8 card">
           <ServiceDetail
-            key={config}
+            key={configName}
             stack={{
               service: {
-                name: config
+                name: configName
               }
             }}
-            rolloutHistory={repoRolloutHistory?.[environment.name]?.[config]}
+            rolloutHistory={repoRolloutHistory?.[environment.name]?.[configName]}
             rollback={rollback}
             environment={environment}
             owner={owner}
             repoName={repoName}
-            fileName={fileName(fileInfos, config)}
+            fileName={fileName(fileInfos, configName)}
             navigateToConfigEdit={navigateToConfigEdit}
             linkToDeployment={linkToDeployment}
-            configExists={true}
+            config={config}
             releaseHistorySinceDays={releaseHistorySinceDays}
             gimletClient={gimletClient}
             store={store} 

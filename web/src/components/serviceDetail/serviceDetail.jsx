@@ -21,12 +21,14 @@ function ServiceDetail(props) {
   const { store, gimletClient } = props;
   const { owner, repoName } = props;
   const { environment } = props;
-  const { stack, rolloutHistory, rollback, navigateToConfigEdit, linkToDeployment, configExists, config, fileName, releaseHistorySinceDays, deploymentFromParams, scmUrl, serviceAlerts } = props;
+  const { stack, rolloutHistory, rollback, navigateToConfigEdit, linkToDeployment, config, fileName, releaseHistorySinceDays, deploymentFromParams, scmUrl, serviceAlerts } = props;
   const ref = useRef(null);
   const posthog = usePostHog()
   const [pullRequests, setPullRequests] = useState()
 
   const progressToastId = useRef(null);
+
+  const configExists = config !== undefined
 
   useEffect(() => {
     if (deploymentFromParams === stack.service.name) {
@@ -36,23 +38,25 @@ function ServiceDetail(props) {
   }, [deploymentFromParams, stack.service.name]);
 
   useEffect(() => {
-    gimletClient.getRolloutHistoryPerApp(owner, repoName, environment.name, stack.service.name)
-      .then(data => {
-        store.dispatch({
-          type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
-            owner: owner,
-            repo: repoName,
-            env: environment.name,
-            app: stack.service.name,
-            releases: data,
-          }
-        });
-      }, () => {/* Generic error handler deals with it */ });
-
-    gimletClient.getConfigChangePullRequestsPerConfig(owner, repoName, environment.name, stack.service.name)
-      .then(data => {
-        setPullRequests(data)
-      })
+    if (config) {
+      gimletClient.getRolloutHistoryPerApp(owner, repoName, environment.name, config.app)
+        .then(data => {
+          store.dispatch({
+            type: ACTION_TYPE_ROLLOUT_HISTORY, payload: {
+              owner: owner,
+              repo: repoName,
+              env: environment.name,
+              app: config.app,
+              releases: data,
+            }
+          });
+        }, () => {/* Generic error handler deals with it */ });
+      
+      gimletClient.getConfigChangePullRequestsPerConfig(owner, repoName, environment.name, config.app)
+        .then(data => {
+          setPullRequests(data)
+        })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -194,7 +198,7 @@ function ServiceDetail(props) {
                         onClick={() => {
                           if (configExists) {
                             posthog?.capture('Env config edit pushed')
-                            navigateToConfigEdit(environment.name, stack.service.name)
+                            navigateToConfigEdit(environment.name, config.app)
                           }
                         }}
                       >
@@ -345,12 +349,13 @@ function ServiceDetail(props) {
             </div>
           </div>
           }
+          {config &&
           <div>
             <p className="serviceCardLabel">Deploy History</p>
             <div className="text-neutral-900 text-sm pt-2">
               <RolloutHistory
                 env={environment.name}
-                app={stack.service.name}
+                app={config.app}
                 rollback={rollback}
                 appRolloutHistory={rolloutHistory}
                 releaseHistorySinceDays={releaseHistorySinceDays}
@@ -359,6 +364,7 @@ function ServiceDetail(props) {
               />
             </div>
           </div>
+          }
         </div>
       </div>
     </div>
