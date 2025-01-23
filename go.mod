@@ -30,7 +30,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/gobwas/glob v0.2.3
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/securecookie v1.1.2
